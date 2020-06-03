@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.views.generic import UpdateView, DeleteView, ListView
 from django.utils import timezone
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found

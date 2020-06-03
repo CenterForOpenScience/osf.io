@@ -9,7 +9,6 @@ from django.conf import settings
 from django.db import models
 
 from osf.utils.fields import NonNaiveDateTimeField
-from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -22,7 +21,6 @@ from osf.exceptions import (
 )
 from website.project import tasks as project_tasks
 
-from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
@@ -355,30 +353,15 @@ class EmailApprovableSanction(TokenApprovableSanction):
         abstract = True
 
 
-class PreregCallbackMixin(object):
+class SanctionCallbackMixin(object):
     def _notify_initiator(self):
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
+        raise NotImplementedError()
 
-        registration = self._get_registration()
-        prereg_schema = RegistrationSchema.get_prereg_schema()
-        draft = DraftRegistration.objects.get(registered_node=registration)
-
-        if registration.registered_schema.filter(id=prereg_schema.id).exists():
-            mails.send_mail(draft.initiator.username,
-                            mails.PREREG_CHALLENGE_ACCEPTED,
-                            user=draft.initiator,
-                            registration_url=registration.absolute_url,
-                            mimetype='html')
-
-    def _email_template_context(self,  # TODO: remove after prereg challenge
-                                user,
-                                node,
-                                is_authorizer=False,
-                                urls=None):
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         return {}
 
 
-class Embargo(PreregCallbackMixin, EmailApprovableSanction):
+class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
@@ -709,7 +692,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
+class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
@@ -859,22 +842,7 @@ class DraftRegistrationApproval(Sanction):
     meta = DateTimeAwareJSONField(default=dict, blank=True)
 
     def _send_rejection_email(self, user, draft):
-        schema = draft.registration_schema
-        prereg_schema = prereg_utils.get_prereg_schema()
-
-        if schema._id == prereg_schema._id:
-            mails.send_mail(
-                user.username,
-                mails.PREREG_CHALLENGE_REJECTED,
-                user=user,
-                draft_url=draft.absolute_url,
-                can_change_preferences=False,
-                logo=osf_settings.OSF_PREREG_LOGO
-            )
-        else:
-            raise NotImplementedError(
-                'TODO: add a generic email template for registration approvals'
-            )
+        raise NotImplementedError('TODO: add a generic email template for registration approvals')
 
     def approve(self, user):
         if not user.has_perm('osf.administer_prereg'):

@@ -6,7 +6,7 @@ import requests
 from django.http import Http404
 from django.core import serializers
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
 from django.views.generic.edit import FormView
@@ -130,6 +130,7 @@ class PreprintProviderDisplay(PermissionRequiredMixin, DetailView):
         preprint_provider_attributes['subjects_acceptable'] = subject_html
         preprint_provider_attributes['lower_name'] = preprint_provider._id
 
+        kwargs['preprint_provider_id'] = preprint_provider._id
         kwargs['preprint_provider'] = preprint_provider_attributes
         kwargs['subject_ids'] = list(subject_ids)
         kwargs['logo'] = preprint_provider.get_asset_url('square_color_no_transparent')
@@ -159,6 +160,7 @@ class PreprintProviderDetail(PermissionRequiredMixin, View):
 
 class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     permission_required = 'osf.change_preprintprovider'
+    template_name = 'preprint_providers/update_preprint_provider_form.html'
     raise_exception = True
     model = PreprintProvider
     form_class = PreprintProviderForm
@@ -169,6 +171,7 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
+        kwargs['preprint_provider_id'] = self.kwargs.get('preprint_provider_id')
         return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
@@ -176,9 +179,10 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
 
 class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
-
+    template_name = 'preprint_providers/enter_custom_taxonomy.html'
     permission_required = 'osf.change_preprintprovider'
     raise_exception = True
+    form_class = PreprintProviderCustomTaxonomyForm
 
     def post(self, request, *args, **kwargs):
         # Import here to avoid test DB access errors when importing preprint provider views
@@ -204,18 +208,58 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
                     # Actually do the migration of the custom taxonomies
                     migrate(provider=provider._id, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
                     return redirect('preprint_providers:detail', preprint_provider_id=provider.id)
-            except (ValueError, RuntimeError) as error:
-                response_data = {
-                    'message': 'There is an error with the submitted JSON or the provider. Here are some details: ' + error.message,
-                    'feedback_type': 'error'
-                }
+            except (ValueError, RuntimeError, AssertionError) as error:
+                messages.error(request, f'There is an error with the submitted JSON or the provider. Here are some details: {str(error)}')
         else:
-            response_data = {
-                'message': 'There is a problem with the form. Here are some details: ' + str(provider_form.errors),
-                'feedback_type': 'error'
+            messages.error(request, f'There is a problem with the form. Here are some details:  {provider_form.errors}')
+
+        return redirect(
+            reverse_lazy(
+                'preprint_providers:process_custom_taxonomy',
+                kwargs={
+                    'preprint_provider_id': provider.id
+                }
+            )
+        )
+
+    def get_subjects(self, request, *args, **kwargs):
+        parent_id = request.GET.get('parent_id')
+        level = request.GET.get('level', None)
+        subjects_from_parent = Subject.objects.filter(parent__id=parent_id)
+        subject_ids = [sub.id for sub in subjects_from_parent]
+
+        new_level = 'secondlevel_subjects'
+        if level == 'secondlevel_subjects':
+            new_level = 'thirdlevel_subjects'
+
+        subject_html = '<ul class="other-levels" style="list-style-type:none">'
+        for subject in subjects_from_parent:
+            subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
+            if subject.children.count():
+                    subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
+            subject_html += '</li>'
+        subject_html += '</ul>'
+
+        return {
+            'html': subject_html,
+            'subject_ids': subject_ids
+        }
+
+    def get(self, request, *args, **kwargs):
+        data = self.get_subjects(request)
+        return render(
+            request,
+            self.template_name,
+            {
+                'preprint_provider_id': self.kwargs.get('preprint_provider_id'),
+                'subject_ids': data['subject_ids'],
+                'taxonomy_form': PreprintProviderCustomTaxonomyForm()
             }
-        # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
-        return JsonResponse(response_data)
+        )
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse_lazy('preprint_providers:process_custom_taxonomy', kwargs={'preprint_provider_id': self.kwargs.get('preprint_provider_id')})
+
 
 class ExportPreprintProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'
@@ -331,7 +375,7 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
         provider.save()
 
         if licenses:
-            provider.licenses_acceptable = licenses
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
         # Only adds the JSON taxonomy if there is no existing taxonomy data

@@ -31,7 +31,6 @@ common.output = {
 var config = Object.assign({}, common, {
     entry: {
         'admin-base-page': staticAdminPath('js/pages/base-page.js'),
-        'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
         'admin-registration-edit-page': staticAdminPath('js/pages/admin-registration-edit-page.js'),
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),

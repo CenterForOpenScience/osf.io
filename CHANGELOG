@@ -2,6 +2,41 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.9.0 (2020-06-02)
+===================
+- Update Django to 1.11.28
+- Fix to prevent preprints from getting into a bad state
+- Fix broken /v2/ endpoint in browsable API
+- Make institution metrics department ids unique
+- Serve institution dashboard route
+- Add meaningful error message to Sloan indicators
+- Sort and filter institution user metrics properly
+- Fix Sloan preprint API inconsistencies
+- Fix admin app preprint provider post-upgrade
+- Fix API filtering for non-root node giving 502
+
+20.8.0 (2020-05-12)
+===================
+- Fix permissions for draft registrations when branched from node
+- Add burst rate throttling
+- Fix institutional metrics user name
+- Fix type of summary_metrics relationship from institutions
+- Remove unused code from prereg challenge
+
+20.7.0 (2020-05-05)
+===================
+- Added Institutional Dashboard api and models
+- Normalized user tags
+- Updated email to tell people about Chronos
+
+20.6.0 (2020-05-01)
+===================
+- Additional fixes for Sloan Signals of Trust
+
+20.5.0 (2020-04-20)
+===================
+- Fixes for Sloan Signals of Trust
+
 20.4.0 (2020-03-23)
 ===================
 - Add DraftNode Model and improve DraftRegistrations

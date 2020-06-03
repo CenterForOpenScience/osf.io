@@ -15,7 +15,7 @@ from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.paginator import Paginator
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -75,6 +75,7 @@ from osf.utils.permissions import (
     READ_NODE,
     WRITE
 )
+from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
@@ -1449,7 +1450,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = self
             alternative_resource = None
 
-        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
+        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource, contributors=False)
+        registered.copy_contributors_from(self)
+        registered.copy_unclaimed_records(self)
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()
@@ -2367,6 +2370,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key)
+
+    # Overrides ContributorMixin
+    # TODO: Deprecate this when we emberize contributors management for nodes
+    def add_contributor(self, *args, **kwargs):
+        contributor = super(AbstractNode, self).add_contributor(*args, **kwargs)
+        if contributor and not contributor.is_registered:
+            self._add_related_source_tags(contributor)
+
+        return contributor
+
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+        source_tag = self.all_tags.filter(
+            system=True,
+            name__in=[
+                CampaignSourceTags.Prereg.value,
+                CampaignSourceTags.OsfRegisteredReports.value,
+                CampaignSourceTags.Osf4m.value
+            ]
+        ).first() or osf_provider_tag
+        contributor.add_system_tag(source_tag)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

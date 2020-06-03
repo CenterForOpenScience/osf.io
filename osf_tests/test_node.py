@@ -34,6 +34,7 @@ from osf.models import (
     Registration,
     DraftRegistration,
     DraftRegistrationApproval,
+    CollectionSubmission
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -3772,6 +3773,21 @@ class TestOnNodeUpdate:
         s = SessionFactory(user=user)
         set_session(s)
         return s
+
+    @pytest.fixture()
+    def collection(self):
+        collection_provider = CollectionProviderFactory()
+        return CollectionFactory(provider=collection_provider)
+
+    @pytest.fixture()
+    def node_in_collection(self, collection):
+        node = ProjectFactory(is_public=True)
+        CollectionSubmission(
+            guid=node.guids.first(),
+            collection=collection,
+            creator=node.creator,
+        ).save()
+        return node
 
     @pytest.fixture()
     def node(self):

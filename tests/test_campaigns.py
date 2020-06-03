@@ -6,6 +6,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import campaigns, views as auth_views, cas
 from website.util import web_url_for
+from website.util.metrics import provider_source_tag
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
@@ -154,7 +155,7 @@ class TestCampaignMethods(OsfTestCase):
 
     def test_campaign_for_user(self):
         user = factories.UserFactory()
-        user.add_system_tag('osf_preprints')
+        user.add_system_tag(provider_source_tag('osf', 'preprint'))
         user.save()
         campaign = campaigns.campaign_for_user(user)
         assert_equal(campaign, 'osf-preprints')
@@ -167,8 +168,8 @@ class TestCampaignsAuthViews(OsfTestCase):
         super(TestCampaignsAuthViews, self).setUp()
         self.campaigns = {
             'prereg': {
-                'title_register': 'Preregistration Challenge',
-                'title_landing': 'Welcome to the Prereg Challenge!'
+                'title_register': 'OSF Preregistration',
+                'title_landing': 'Welcome to the OSF Preregistration!'
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
