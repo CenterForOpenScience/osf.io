@@ -1,7 +1,7 @@
 """
 Utility functions and classes
 """
-from osf.models import Subject, NodeLicense
+from osf.models import Subject, NodeLicense, Brand
 
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.urls import reverse
