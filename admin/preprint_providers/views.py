@@ -169,9 +169,17 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
         provider_id = self.kwargs.get('preprint_provider_id')
         return PreprintProvider.objects.get(id=provider_id)
 
+    def get_subject_ids(self, request, *args, **kwargs):
+        parent_id = request.GET.get('parent_id')
+        subjects_from_parent = Subject.objects.filter(parent__id=parent_id)
+        subject_ids = [sub.id for sub in subjects_from_parent]
+        return subject_ids
+
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         kwargs['preprint_provider_id'] = self.kwargs.get('preprint_provider_id')
+        kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
+        kwargs['subject_ids'] = self.get_subject_ids(self.request)
         return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
