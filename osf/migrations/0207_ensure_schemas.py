@@ -6,7 +6,7 @@ from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0205_auto_20200323_1850'),
+        ('osf', '0206_auto_20200528_1319'),
     ]
 
     operations = [
