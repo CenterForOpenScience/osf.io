@@ -183,3 +183,19 @@ class TaskStatus(RdmPermissionMixin, View):
             json.dumps(result),
             content_type='application/json'
         )
+
+class DownloadErrors(RdmPermissionMixin, View):
+
+    def test_func(self):
+        """validate user permissions"""
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
+
+    def post(self, request, *args, **kwargs):
+        node = AbstractNode.objects.get(id=self.kwargs['guid'])
+        data = json.loads(self.request.body)
+        timestamp.add_log_download_errors(node, self.request.user.id, data)
+        return HttpResponse(
+            json.dumps({'status': 'OK'}),
+            content_type='application/json'
+        )

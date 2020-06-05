@@ -104,7 +104,7 @@ $(function () {
             timestampCommon.cancel(urls.cancel);
         }).focus();
         $('#btn-download').on('click', function () {
-            timestampCommon.download();
+            timestampCommon.download(urls.downloadErrors);
         });
         updatePaginationElements();
     });

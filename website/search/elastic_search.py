@@ -9,6 +9,7 @@ import logging
 import math
 import re
 from framework import sentry
+import os.path
 
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -26,8 +27,10 @@ from osf.models import OSFGroup
 from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
+from osf.models import Guid
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
+from osf.models import Comment
 from osf.utils.sanitize import unescape_entities
 from website import settings
 from website.filters import profile_image_url
@@ -38,10 +41,12 @@ from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
 
+# True: use ALIASES_COMMENT
+ENABLE_DOC_TYPE_COMMENT = False
 
 # These are the doc_types that exist in the search database
 # If changes of ALIASES text happen, please change js_messages.js text as well.
-ALIASES = {
+ALIASES_BASE = {
     'project': 'Projects',
     'component': 'Components',
     'registration': 'Registrations',
@@ -52,6 +57,16 @@ ALIASES = {
     'preprint': 'Preprints',
     'group': 'Groups',
 }
+
+ALIASES_EXT = {
+    'wiki': 'Wiki',
+}
+
+ALIASES_COMMENT = {
+    'comment': 'Comments',
+}
+
+ALIASES = {}
 
 DOC_TYPE_TO_MODEL = {
     'component': AbstractNode,
@@ -69,7 +84,11 @@ DOC_TYPE_TO_MODEL = {
 NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 
 # Perform stemming on the field it's applied to.
-ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
+ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english',
+                             'term_vector': 'with_positions_offsets'}
+GRDM_JA_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'grdm_ja_analyzer',
+                             'term_vector': 'with_positions_offsets'}
+# with_positions_offsets: adjust highlighted fields to the middle position.
 
 # INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
@@ -156,7 +175,7 @@ def requires_search(func):
 
 
 @requires_search
-def get_aggregations(query, doc_type):
+def get_aggregations(query, index, doc_type):
     query['aggregations'] = {
         'licenses': {
             'terms': {
@@ -165,7 +184,7 @@ def get_aggregations(query, doc_type):
         }
     }
 
-    res = client().search(index=es_index(), doc_type=doc_type, search_type='count', body=query)
+    res = client().search(index=index, doc_type=doc_type, search_type='count', body=query)
     ret = {
         doc_type: {
             item['key']: item['doc_count']
@@ -178,7 +197,7 @@ def get_aggregations(query, doc_type):
 
 
 @requires_search
-def get_counts(count_query, clean=True):
+def get_counts(count_query, index, clean=True):
     count_query['aggregations'] = {
         'counts': {
             'terms': {
@@ -187,7 +206,7 @@ def get_counts(count_query, clean=True):
         }
     }
 
-    res = client().search(index=es_index(), doc_type=None, search_type='count', body=count_query)
+    res = client().search(index=index, doc_type=None, search_type='count', body=count_query)
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -208,8 +227,30 @@ def get_tags(query, index):
     return tags
 
 
+def get_query_string(query):
+    if isinstance(query, list):
+        if len(query) == 1:  # expect query[0] only
+            rv = get_query_string(query[0])
+            if rv:
+                return rv
+
+    if not isinstance(query, dict):
+        return None
+
+    for key, val in query.items():
+        if key == 'query' and \
+           (isinstance(val, str) or isinstance(val, unicode)):
+            return val  # found
+        rv = get_query_string(val)
+        if rv:
+            return rv
+        # next key
+
+    return None
+
+
 @requires_search
-def search(query, index=None, doc_type='_all', raw=False, normalize=True, private=False):
+def search(query, index=None, doc_type=None, raw=False, normalize=True, private=False, ext=False):
     """Search for a query
 
     :param query: The substring of the username/project name/tag to search for
@@ -218,6 +259,8 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
     :param normalize: normalize unicode string
     :param private: allow searching private data
                     (ENABLE_PRIVATE_SEARCH is also required)
+    :param ext: include extended doc_types.
+                (ENABLE_PRIVATE_SEARCH is also required)
 
     :return: List of dictionaries, each containing the results, counts, tags and typeAliases
         results: All results returned by the query, that are within the index and search type
@@ -225,6 +268,19 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
         tags: A list of tags that are returned by the search query
         typeAliases: the doc_types that exist in the search database
     """
+    global ALIASES
+
+    ALIASES = copy.deepcopy(ALIASES_BASE)
+    if settings.ENABLE_PRIVATE_SEARCH and ext:
+        ALIASES.update(ALIASES_EXT)
+    if ENABLE_DOC_TYPE_COMMENT:
+        ALIASES.update(ALIASES_COMMENT)
+
+    if doc_type is None:
+        doc_type = ','.join(ALIASES.keys())
+        if raw:
+            doc_type += ',collectionSubmission'
+
     index = es_index_protected(index, private)
 
     # Quote query string for mutilingual search.
@@ -258,16 +314,15 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
             query['query']['bool']['should'][0]['query_string']['query'] = q
 
     tag_query = copy.deepcopy(query)
-    aggs_query = copy.deepcopy(query)
-    count_query = copy.deepcopy(query)
 
-    for key in ['from', 'size', 'sort']:
+    for key in ['from', 'size', 'sort', 'highlight']:
         try:
             del tag_query[key]
-            del aggs_query[key]
-            del count_query[key]
         except KeyError:
             pass
+
+    aggs_query = copy.deepcopy(tag_query)
+    count_query = copy.deepcopy(tag_query)
 
     tags = get_tags(tag_query, index)
     try:
@@ -275,45 +330,176 @@ def search(query, index=None, doc_type='_all', raw=False, normalize=True, privat
         del count_query['query']['filtered']['filter']
     except KeyError:
         pass
-    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
+    aggregations = get_aggregations(aggs_query, index, doc_type)
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
     raw_results = client().search(index=index, doc_type=doc_type, body=query)
-    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+
+    if raw:
+        results = raw_results['hits']['hits']
+    else:
+        hits = raw_results['hits']['hits']
+        hits = merge_highlight(hits)
+        hits = set_last_comment(hits)
+        results = [hit['_source'] for hit in hits]
+        results = format_results(results)
 
     return_value = {
-        'results': raw_results['hits']['hits'] if raw else format_results(results),
+        'results': results,
         'counts': counts,
         'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
+
     return return_value
+
+def merge_highlight(hits):
+    for hit in hits:
+        hit['_source']['highlight'] = hit.get('highlight', {})
+    return hits
+
+def set_last_comment(hits):
+    for hit in hits:
+        s = hit['_source']
+        highlight = s['highlight']
+        last_comment = None
+        last_text = None
+        for key, value in highlight.items():
+            if not key.startswith('comments.'):
+                continue
+            try:
+                comment_id = int(key.split('.')[1])
+            except Exception:
+                continue  # unexpected type, ignore
+            c = Comment.objects.get(id=comment_id)
+            if last_comment is None or c.created > last_comment.created:
+                last_comment = c
+                last_text = value[0]
+        if last_comment is None:
+            s['comment'] = None
+            continue  # no comment, skip
+        d = {}
+        d['text'] = last_text
+        d['user_id'] = last_comment.user._id
+        d['user_name'] = last_comment.user.fullname
+        d['date_created'] = last_comment.created.isoformat()
+        d['date_modified'] = last_comment.modified.isoformat()
+        replyto_user_id = None
+        replyto_username = None
+        replyto_date_created = None
+        replyto_date_modified = None
+        replyto = last_comment.target.referent
+        if isinstance(replyto, Comment):
+            replyto_user_id = replyto.user._id
+            replyto_username = replyto.user.fullname
+            replyto_date_created = replyto.created.isoformat()
+            replyto_date_modified = replyto.modified.isoformat()
+        d['replyto_user_id'] = replyto_user_id
+        d['replyto_user_name'] = replyto_username
+        d['replyto_date_created'] = replyto_date_created
+        d['replyto_date_modified'] = replyto_date_modified
+        s['comment'] = d
+    return hits
+
+def get_file_path(file_id):
+    file_node = BaseFileNode.load(file_id)
+    if file_node is None:
+        return None
+    app_config = settings.ADDONS_AVAILABLE_DICT.get(file_node.provider)
+    if app_config:
+        provider_name = app_config.full_name
+    else:
+        provider_name = file_node.provider
+    return u'{}{}'.format(provider_name, file_node.materialized_path)
 
 def format_results(results):
     ret = []
     for result in results:
-        if result.get('category') == 'user':
+        category = result.get('category')
+        if category == 'user':
             result['url'] = '/profile/' + result['id']
-        elif result.get('category') == 'file':
+            # unnormalized
+            user = OSFUser.load(result['id'])
+            if user:
+                job, school = user.get_ongoing_job_school()
+                if job is None:
+                    job = {}
+                result['ongoing_job'] = job.get('institution', '')
+                result['ongoing_job_department'] = job.get('department', '')
+                result['ongoing_job_title'] = job.get('title', '')
+                if school is None:
+                    school = {}
+                result['ongoing_school'] = school.get('institution', '')
+                result['ongoing_school_department'] = school.get('department', '')
+                result['ongoing_school_degree'] = school.get('degree', '')
+        elif category == 'wiki':
+            # get unnormalized names
+            wiki = WikiPage.load(result['id'])
+            if wiki:
+                result['name'] = wiki.page_name
+            creator_id, creator_name = user_id_fullname(
+                result.get('creator_id'))
+            modifier_id, modifier_name = user_id_fullname(
+                result.get('modifier_id'))
+            result['creator_name'] = creator_name
+            result['modifier_name'] = modifier_name
+        elif category == 'comment':
+            result['page_url'] = '/' + result['page_id'] + '/'
+            result['user_url'] = '/profile/' + result['user_id']
+            replyto_user_id = result.get('replyto_user_id', None)
+            if replyto_user_id:
+                result['replyto_user_url'] = '/profile/' + replyto_user_id
+            else:
+                result['replyto_user_url'] = None
+        elif category == 'file':
+            file_path = get_file_path(result.get('id'))
+            if file_path:
+                folder_name = os.path.dirname(file_path)
+            else:
+                folder_name = None
+            result['folder_name'] = folder_name
             parent_info = load_parent(result.get('parent_id'))
             result['parent_url'] = parent_info.get('url') if parent_info else None
             result['parent_title'] = parent_info.get('title') if parent_info else None
-        elif result.get('category') in {'project', 'component', 'registration'}:
+            # get unnormalized names
+            creator_id, creator_name = user_id_fullname(
+                result.get('creator_id'))
+            modifier_id, modifier_name = user_id_fullname(
+                result.get('modifier_id'))
+            result['creator_name'] = creator_name
+            result['modifier_name'] = modifier_name
+        elif category in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
-        elif result.get('category') in {'preprint'}:
+        elif category in {'preprint'}:
             result = format_preprint_result(result)
-        elif result.get('category') == 'collectionSubmission':
+        elif category == 'collectionSubmission':
             continue
-        elif not result.get('category'):
+        elif not category:
             continue
 
         ret.append(result)
     return ret
 
+
+# return (guid, fullname)
+def user_id_fullname(guid_id):
+    if guid_id:
+        user = OSFUser.load(guid_id)
+        if user:
+            return (guid_id, user.fullname)
+    return ('', '')
+
+
+# for 'project', 'component', 'registration'
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
+
+    # get unnormalized names
+    creator_id, creator_name = user_id_fullname(result.get('creator_id'))
+    modifier_id, modifier_name = user_id_fullname(result.get('modifier_id'))
+
     formatted_result = {
         'contributors': result['contributors'],
         'groups': result.get('groups'),
@@ -334,10 +520,17 @@ def format_result(result, parent_id=None):
         'description': unescape_entities(result['description']),
         'category': result.get('category'),
         'date_created': result.get('date_created'),
+        'date_modified': result.get('date_modified'),
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis'] or []),
         'license': result.get('license'),
         'affiliated_institutions': result.get('affiliated_institutions'),
+        'highlight': result.get('highlight'),
+        'comment': result.get('comment'),
     }
 
     return formatted_result
@@ -402,11 +595,16 @@ def get_doctype_from_node(node):
         return node.category
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_node_async(self, node_id, index=None, bulk=False):
+def update_node_async(self, node_id, index=None, bulk=False, wiki_page_id=None):
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
+    if wiki_page_id:
+        WikiPage = apps.get_model('addons_wiki.WikiPage')
+        wiki_page = WikiPage.load(wiki_page_id)
+    else:
+        wiki_page = None
     try:
-        update_node(node=node, index=index, bulk=bulk, async_update=True)
+        update_node(node=node, index=index, bulk=bulk, async_update=True, wiki_page=wiki_page)
     except Exception as exc:
         self.retry(exc=exc)
 
@@ -429,6 +627,15 @@ def update_group_async(self, group_id, index=None, bulk=False, deleted_id=None):
         self.retry(exc=exc)
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_comment_async(self, comment_id, index=None, bulk=False):
+    Comment = apps.get_model('osf.Comment')
+    comment = Comment.load(comment_id)
+    try:
+        update_comment(comment=comment, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
+
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_user_async(self, user_id, index=None):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
@@ -445,6 +652,8 @@ def serialize_node(node, category):
 
     tags = list(node.tags.filter(system=False).values_list('name', flat=True))
     normalized_tags = [unicode_normalize(tag) for tag in tags]
+    latest_log = node.logs.order_by('date').last()
+    modifier = latest_log.user
 
     elastic_document = {
         'id': node._id,
@@ -466,6 +675,7 @@ def serialize_node(node, category):
         ],
         'title': node.title,
         'normalized_title': normalized_title,
+        'sort_node_name': node.title,
         'category': category,
         'public': node.is_public,
         'tags': tags,
@@ -483,10 +693,16 @@ def serialize_node(node, category):
         'wikis': {},
         'parent_id': parent_id,
         'date_created': node.created,
+        'date_modified': latest_log.date,
+        'creator_id': node.creator._id,
+        'creator_name': unicode_normalize(node.creator.fullname),
+        'modifier_id': modifier._id if modifier else None,
+        'modifier_name': unicode_normalize(modifier.fullname) if modifier else None,
         'license': serialize_node_license_record(node.license),
         'affiliated_institutions': list(node.affiliated_institutions.values_list('name', flat=True)),
         'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         'extra_search_terms': clean_splitters(node.title),
+        'comments': comments_to_doc(node._id),
     }
     if not node.is_retracted:
         wiki_names = []
@@ -496,14 +712,23 @@ def serialize_node(node, category):
             elastic_document['wikis'][wiki_name] = unicode_normalize(wiki.raw_text(node))
             wiki_names.append(wiki_name)
         elastic_document['wiki_names'] = wiki_names
-
     return elastic_document
+
+def comments_to_doc(guid_id):
+    comments = {}
+    for c in Guid.load(guid_id).comments.iterator():
+        if c.is_deleted or c.root_target is None:
+            continue
+        comments[c.id] = remove_newline(unicode_normalize(c.content))
+    return comments
 
 def serialize_preprint(preprint, category):
     elastic_document = {}
 
     normalized_title = unicode_normalize(preprint.title)
     tags = list(preprint.tags.filter(system=False).values_list('name', flat=True))
+    latest_log = preprint.logs.order_by('created').last()
+    modifier = latest_log.user
     normalized_tags = [unicode_normalize(tag) for tag in tags]
     elastic_document = {
         'id': preprint._id,
@@ -528,11 +753,71 @@ def serialize_preprint(preprint, category):
         'normalized_description': unicode_normalize(preprint.description),
         'url': preprint.url,
         'date_created': preprint.created,
+        'date_modified': latest_log.created,
+        'creator_id': preprint.creator._id,
+        'creator_name': unicode_normalize(preprint.creator.fullname),
+        'modifier_id': modifier._id if modifier else None,
+        'modifier_name': unicode_normalize(modifier.fullname) if modifier else None,
         'license': serialize_node_license_record(preprint.license),
         'boost': 2,  # More relevant than a registration
         'extra_search_terms': clean_splitters(preprint.title),
     }
 
+    return elastic_document
+
+def serialize_wiki(wiki_page, category):
+    w = wiki_page
+    last_ver = w.get_version()
+    first_ver = w.get_version(version=1)
+
+    node = w.node
+    elastic_document = {}
+    name = w.page_name
+    normalized_name = unicode_normalize(name)
+
+    creator = first_ver.user
+    if creator:
+        creator_id = creator._id
+        creator_name = unicode_normalize(creator.fullname)
+    else:
+        creator_id = ''
+        creator_name = ''
+
+    modifier = last_ver.user
+    if modifier:
+        modifier_id = modifier._id
+        modifier_name = unicode_normalize(modifier.fullname)
+    else:
+        modifier_id = ''
+        modifier_name = ''
+
+    elastic_document = {
+        'id': w._id,
+        'name': normalized_name,
+        'sort_wiki_name': name,
+        'sort_node_name': node.title,
+        'category': category,
+        'node_public': node.is_public,
+        'date_created': w.created,
+        'date_modified': w.modified,
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
+        'node_title': node.title,
+        'normalized_node_title': unicode_normalize(node.title),
+        'node_url': node.url,
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('guids___id')
+        ],
+        'url': w.deep_url,
+        'text': unicode_normalize(w.get_version().raw_text(node)),
+        'comments': comments_to_doc(w._id),
+    }
     return elastic_document
 
 def serialize_group(group, category):
@@ -566,8 +851,101 @@ def serialize_group(group, category):
 
     return elastic_document
 
+def remove_newline(text):
+    return text.replace('&#13;&#10;', '')
+
+def serialize_comment(comment, category):
+    c = comment
+    elastic_document = {}
+    page_id = ''  # GUID
+    page_name = ''
+    if c.page == Comment.FILES:
+        guid = c.root_target.referent.get_guid(create=False)
+        page_id = guid._id if guid else None
+        page_name = c.root_target.referent.name
+    elif c.page == Comment.WIKI:
+        page_id = c.root_target.referent._id
+        page_name = c.root_target.referent.page_name
+    else:  # c.page == Comment.OVERVIEW
+        page_id = c.node._id
+        page_name = c.node.title
+
+    replyto_user_id = ''
+    replyto_username = ''
+    if isinstance(c.target.referent, Comment):
+        replyto_user_id = c.target.referent.user._id
+        replyto_username = c.target.referent.user.fullname
+
+    text = remove_newline(unicode_normalize(c.content))
+
+    elastic_document = {
+        'id': c._id,
+        'page_type': c.page,
+        'page_id': page_id,
+        'page_name': page_name,
+        'normalized_page_name': unicode_normalize(page_name),
+        'category': category,
+        'node_public': c.node.is_public,
+        'date_created': c.created,
+        'date_modified': c.modified,
+        'user_id': c.user._id,
+        'user': c.user.fullname,
+        'normalized_user': unicode_normalize(c.user.fullname),
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in c.node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('guids___id')
+        ],
+        'text': text,
+        'replyto_user_id': replyto_user_id,
+        'replyto_user': replyto_username,
+        'normalized_replyto_user': unicode_normalize(replyto_username),
+    }
+    return elastic_document
+
 @requires_search
-def update_node(node, index=None, bulk=False, async_update=False):
+def update_comment(comment, index=None, bulk=False):
+    index = es_index(index)
+    category = 'comment'
+
+    if comment.is_deleted or \
+       comment.root_target is None:  # root Node or File is deleted
+        delete_comment_doc(comment._id, index=index)
+        return None
+
+    elastic_document = serialize_comment(comment, category)
+    if bulk:
+        return elastic_document
+    else:
+        client().index(index=index, doc_type=category, id=comment._id, body=elastic_document, refresh=True)
+
+@requires_search
+def update_wiki(wiki_page, index=None, bulk=False):
+    index = es_index(index)
+    category = 'wiki'
+
+    if wiki_page.deleted:
+        delete_wiki_doc(wiki_page._id, index=index)
+        return None
+
+    # WikiVersion does not exist just after WikiPage.objects.create()
+    if wiki_page.get_version() is None:
+        return None
+
+    elastic_document = serialize_wiki(wiki_page, category)
+    if bulk:
+        return elastic_document
+    else:
+        client().index(index=index, doc_type=category, id=wiki_page._id, body=elastic_document, refresh=True)
+
+@requires_search
+def update_node(node, index=None, bulk=False, async_update=False, wiki_page=None):
+    if wiki_page:
+        update_wiki(wiki_page, index=index)
+        # NOTE: update_node() may be called twice after WikiPage.save()
+
     from addons.osfstorage.models import OsfStorageFile
     index = es_index(index)
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
@@ -576,6 +954,8 @@ def update_node(node, index=None, bulk=False, async_update=False):
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if node.is_deleted or (not settings.ENABLE_PRIVATE_SEARCH and not node.is_public) or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
         delete_doc(node._id, node, index=index)
+        for wiki_page in node.wikis.iterator():
+            delete_wiki_doc(wiki_page._id, index=index)
     else:
         category = get_doctype_from_node(node)
         elastic_document = serialize_node(node, category)
@@ -634,6 +1014,42 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
                 '_index': index,
                 '_id': node._id,
                 '_type': category or get_doctype_from_node(node),
+                'doc': serialized,
+                'doc_as_upsert': True,
+            })
+    if actions:
+        return helpers.bulk(client(), actions)
+
+def bulk_update_wikis(wiki_pages, index=None):
+    index = es_index(index)
+    category = 'wiki'
+    actions = []
+    for wiki in wiki_pages:
+        serialized = update_wiki(wiki, index=index, bulk=True)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': wiki._id,
+                '_type': category,
+                'doc': serialized,
+                'doc_as_upsert': True,
+            })
+    if actions:
+        return helpers.bulk(client(), actions)
+
+def bulk_update_comments(comments, index=None):
+    index = es_index(index)
+    category = 'comment'
+    actions = []
+    for comment in comments:
+        serialized = update_comment(comment, index=index, bulk=True)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': comment._id,
+                '_type': category,
                 'doc': serialized,
                 'doc_as_upsert': True,
             })
@@ -753,9 +1169,24 @@ def update_user(user, index=None):
         if val is not None:
             normalized_names[key] = unicode_normalize(val)
 
+    ogjob, ogschool = user.get_ongoing_job_school()
+    if ogjob is None:
+        ogjob = {}
+    ongoing_job = unicode_normalize(ogjob.get('institution', ''))
+    ongoing_job_department = unicode_normalize(ogjob.get('department', ''))
+    ongoing_job_title = unicode_normalize(ogjob.get('title', ''))
+    if ogschool is None:
+        ogschool = {}
+    ongoing_school = unicode_normalize(ogschool.get('institution', ''))
+    ongoing_school_department = unicode_normalize(ogschool.get('department', ''))
+    ongoing_school_degree = unicode_normalize(ogschool.get('degree', ''))
+
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'sort_user_name': user.fullname,
+        'date_created': user.created,
+        'date_modified': user.modified,
         'normalized_user': normalized_names['fullname'],
         'normalized_names': normalized_names,
         'names': names,
@@ -769,6 +1200,12 @@ def update_user(user, index=None):
         'social': user.social_links,
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
         'user_affiliated_institutions': list(user.affiliated_institutions.values_list('_id', flat=True)),
+        'ongoing_job': ongoing_job,
+        'ongoing_job_department': ongoing_job_department,
+        'ongoing_job_title': ongoing_job_title,
+        'ongoing_school': ongoing_school,
+        'ongoing_school_department': ongoing_school_department,
+        'ongoing_school_degree': ongoing_school_degree,
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
@@ -822,6 +1259,28 @@ def update_file(file_, index=None, delete=False):
     tags = list(file_.tags.filter(system=False).values_list('name', flat=True))
     normalized_tags = [unicode_normalize(tag) for tag in tags]
 
+    # FileVersion ordering is '-created'. (reversed order)
+    first_file = file_.versions.all().last()  # may be None
+    last_file = file_.versions.all().first()  # may be None
+    if first_file:
+        creator = first_file.creator
+        creator_id = creator._id
+        creator_name = unicode_normalize(creator.fullname)
+        date_created = first_file.created
+    else:
+        creator_id = None
+        creator_name = None
+        date_created = file_.created
+    if last_file:
+        modifier = last_file.creator
+        modifier_id = modifier._id
+        modifier_name = unicode_normalize(modifier.fullname)
+        date_modified = last_file.created
+    else:
+        modifier_id = None
+        modifier_name = None
+        date_modified = file_.created
+
     guid_url = None
     file_guid = file_.get_guid(create=False)
     if file_guid:
@@ -830,6 +1289,14 @@ def update_file(file_, index=None, delete=False):
     # just reroute to preprints detail
     file_doc = {
         'id': file_._id,
+        'date_created': date_created,
+        'date_modified': date_modified,
+        'sort_file_name': file_.name,
+        'sort_node_name': getattr(target, 'title', None),
+        'creator_id': creator_id,
+        'creator_name': creator_name,
+        'modifier_id': modifier_id,
+        'modifier_name': modifier_name,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
         'tags': tags,
@@ -850,7 +1317,8 @@ def update_file(file_, index=None, delete=False):
             for x in target._contributors.filter(contributor__visible=True).order_by('contributor___order')
             .values('guids___id')
         ],
-        'node_public': target.is_public
+        'node_public': target.is_public,
+        'comments': comments_to_doc(file_guid._id) if file_guid else {}
     }
 
     client().index(
@@ -874,6 +1342,9 @@ def update_institution(institution, index=None):
             'logo_path': institution.logo_path,
             'category': 'institution',
             'name': institution.name,
+            'sort_institution_name': institution.name,
+            'date_created': institution.created,
+            'date_modified': institution.modified,
         }
 
         client().index(index=index, doc_type='institution', body=institution_doc, id=id_, refresh=True)
@@ -938,11 +1409,72 @@ def create_index(index=None):
     all of which are applied to all projects, components, preprints, and registrations.
     """
     index = es_index(index)
-    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
+    document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission', 'wiki', 'comment']
     project_like_types = PROJECT_LIKE_TYPES
-    analyzed_fields = ['title', 'description']
+    analyzed_fields = ['title', 'description']  # for project_like_types
 
-    client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
+    index_settings_ja = {
+        'settings': {
+            'analysis': {
+                'tokenizer': {
+                    'kuromoji_tokenizer_search': {
+                        'type': 'kuromoji_tokenizer',
+                        'mode': 'search'
+                    }
+                },
+                'filter': {
+                    'kuromoji_part_of_speech_search': {
+                        'type': 'kuromoji_part_of_speech'
+                    }
+                },
+                # 'char_filter': {
+                #     'nfkd_normalizer' : {
+                #         'type' : 'icu_normalizer',
+                #         'name' : 'nfkc_cf',
+                #         'mode' : 'decompose'
+                #     }
+                # },
+                'analyzer': {
+                    'grdm_ja_analyzer': {
+                        'type': 'custom',
+                        'tokenizer': 'kuromoji_tokenizer',
+                        'char_filter': [
+                            #'nfkd_normalizer'
+                            'icu_normalizer',
+                            'kuromoji_iteration_mark',
+                        ],
+                        'filter': [
+                            'lowercase',
+                            'kuromoji_baseform',
+                            'kuromoji_part_of_speech_search',
+                            'ja_stop',
+                            #'kuromoji_number', ES6 or later
+                            'kuromoji_stemmer',
+
+                        ],
+                    }
+                }
+            }
+        },
+        'mappings': {
+            '_default_': {
+                '_all': {
+                    'analyzer': 'grdm_ja_analyzer',
+                }
+            }
+        }
+    }
+
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+        analyzer = GRDM_JA_ANALYZER_PROPERTY
+        index_settings = index_settings_ja
+    else:
+        analyzer = ENGLISH_ANALYZER_PROPERTY
+        index_settings = None
+
+    client().indices.create(index, body=index_settings,
+                            ignore=[400])  # HTTP 400 if index already exists
+
     for type_ in document_types:
         if type_ == 'collectionSubmission':
             mapping = {
@@ -954,13 +1486,20 @@ def create_index(index=None):
                     'volume': NOT_ANALYZED_PROPERTY,
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
-                    'title': ENGLISH_ANALYZER_PROPERTY,
-                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                    'title': analyzer,
+                    'abstract': analyzer
                 }
             }
         else:
             mapping = {
                 'properties': {
+                    'date_created': {'type': 'date'},
+                    'date_modified': {'type': 'date'},
+                    'sort_node_name': NOT_ANALYZED_PROPERTY,
+                    'sort_file_name': NOT_ANALYZED_PROPERTY,
+                    'sort_wiki_name': NOT_ANALYZED_PROPERTY,
+                    'sort_user_name': NOT_ANALYZED_PROPERTY,
+                    'sort_institution_name': NOT_ANALYZED_PROPERTY,
                     'tags': NOT_ANALYZED_PROPERTY,
                     'normalized_tags': NOT_ANALYZED_PROPERTY,
                     'license': {
@@ -975,12 +1514,26 @@ def create_index(index=None):
                 }
             }
             if type_ in project_like_types:
-                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
+                analyzers = {field: analyzer
                              for field in analyzed_fields}
                 mapping['properties'].update(analyzers)
+                mapping['dynamic_templates'] = [
+                    {
+                        'comments_fields': {
+                            'path_match': 'comments.*',
+                            'mapping': analyzer
+                        }
+                    }, {
+                        'wikis_fields': {
+                            'path_match': 'wikis.*',
+                            'mapping': analyzer
+                        }
+                    }
+                ]
 
             if type_ == 'user':
                 fields = {
+                    'user': analyzer,
                     'job': {
                         'type': 'string',
                         'boost': '1',
@@ -997,8 +1550,41 @@ def create_index(index=None):
                         'type': 'string',
                         'boost': '0.01'
                     },
+                    'ongoing_job': analyzer,
+                    'ongoing_job_department': analyzer,
+                    'ongoing_job_title': analyzer,
+                    'ongoing_school': analyzer,
+                    'ongoing_school_department': analyzer,
+                    'ongoing_school_degree': analyzer,
                 }
                 mapping['properties'].update(fields)
+            elif type_ == 'file' or type_ == 'wiki':
+                fields = {
+                    'name': analyzer,
+                    'node_title': analyzer,
+                    'text': analyzer,
+                }
+                mapping['properties'].update(fields)
+                mapping['dynamic_templates'] = [
+                    {
+                        'comments_fields': {
+                            'path_match': 'comments.*',
+                            'mapping': analyzer
+                        }
+                    }
+                ]
+            elif type_ == 'comment':
+                fields = {
+                    'page_name': analyzer,
+                    'text': analyzer,
+                }
+                mapping['properties'].update(fields)
+            elif type_ == 'institution':
+                fields = {
+                    'name': analyzer,
+                }
+                mapping['properties'].update(fields)
+
         client().indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search
@@ -1017,6 +1603,16 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
 def delete_group_doc(deleted_id, index=None):
     index = es_index(index)
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
+
+@requires_search
+def delete_wiki_doc(deleted_id, index=None):
+    index = es_index(index)
+    client().delete(index=index, doc_type='wiki', id=deleted_id, refresh=True, ignore=[404])
+
+@requires_search
+def delete_comment_doc(deleted_id, index=None):
+    index = es_index(index)
+    client().delete(index=index, doc_type='comment', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

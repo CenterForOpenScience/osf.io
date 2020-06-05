@@ -9,6 +9,8 @@ var taskStatusUrl = null;
 
 var _ = require('js/rdmGettext')._;
 
+var datepicker = require('js/rdmDatepicker');
+
 var dateString = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -233,7 +235,7 @@ var cancel = function (url) {
     });
 };
 
-var download = function () {
+var download = function (url) {
     var fileFormat = $('#fileFormat').val();
     var fileList = TIMESTAMP_LIST_OBJECT.items.filter(function (item) {
         var checkbox = item.elm.querySelector('[type=checkbox]');
@@ -287,21 +289,39 @@ var download = function () {
         return false;
     }
 
+    var fileFormatStr;
     var fileContent;
     switch (fileFormat) {
         case 'csv':
+            fileFormatStr = 'CSV';
             fileContent = generateCsv(fileList, HEADERS_ORDER, HEADER_NAMES);
             saveTextFile(DOWNLOAD_FILENAME + '.csv', fileContent);
             break;
         case 'json-ld':
+            fileFormatStr = 'JSON/LD';
             fileContent = generateJson(fileList);
             saveTextFile(DOWNLOAD_FILENAME + '.json', fileContent);
             break;
         case 'rdf-xml':
+            fileFormatStr = 'RDF/XML';
             fileContent = generateRdf(fileList);
             saveTextFile(DOWNLOAD_FILENAME + '.rdf', fileContent);
             break;
     }
+
+    var postData = {
+        'file_format': fileFormatStr
+    };
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: JSON.stringify(postData),
+        contentType: 'application/json; charset=utf-8',
+        dataType: 'json'
+    }).done(function (result) {
+    }).fail(function () {
+        $osf.growl('Timestamp', _('Failed to log "downloaded errors" into Recent Activity'), 'danger');
+    });
 };
 
 function generateCsv(fileList, headersOrder, headerNames) {
@@ -831,7 +851,7 @@ function initList() {
 
 }
 
-function initDatePickers() {
+function initTinyDatePicker() {
 
     var datePickerIds = ['startDateFilter', 'endDateFilter'];
 
@@ -850,6 +870,11 @@ function initDatePickers() {
         });
     });
 
+}
+
+function initBootstrapDatePicker() {
+    datepicker.mount('#startDateFilter', null);
+    datepicker.mount('#endDateFilter', null);
 }
 
 function taskStatusUpdater () {
@@ -879,7 +904,7 @@ function checkHasTaskRunning () {
 function init(url) {
     taskStatusUrl = url;
     initList();
-    initDatePickers();
+    initBootstrapDatePicker();
     checkHasTaskRunning();
 }
 

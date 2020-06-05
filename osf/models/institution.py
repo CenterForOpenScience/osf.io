@@ -137,5 +137,6 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
                     logger.exception(e)
 
     def save(self, *args, **kwargs):
+        rv = super(Institution, self).save(*args, **kwargs)
         self.update_search()
-        return super(Institution, self).save(*args, **kwargs)
+        return rv

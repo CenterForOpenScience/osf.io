@@ -64,7 +64,7 @@ $(function () {
     });
 
     $('#btn-download').on('click', function () {
-        timestampCommon.download();
+        timestampCommon.download(nodeApiUrl + 'timestamp/download_errors/');
     });
 
     $('#timestamp_errors_spinner').hide();

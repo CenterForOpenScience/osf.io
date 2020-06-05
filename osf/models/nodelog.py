@@ -134,6 +134,11 @@ class NodeLog(ObjectIDMixin, BaseModel):
     MAPCORE_RDM_PROJECT_NOT_UPDATED = 'mapcore_rdm_project_not_updated'
     MAPCORE_RDM_UNKNOWN_USER = 'mapcore_rdm_unknown_user'
 
+    TIMESTAMP_ALL_VERIFIED = 'timestamp_all_verified'
+    TIMESTAMP_ALL_ADDED = 'timestamp_all_added'
+    TIMESTAMP_ADDED = 'timestamp_added'
+    TIMESTAMP_ERRORS_DOWNLOADED = 'timestamp_errors_downloaded'
+
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
                 NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
@@ -153,7 +158,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
-                MAPCORE_MAP_GROUP_NOT_CREATED, MAPCORE_MAP_GROUP_NOT_UPDATED, MAPCORE_RDM_PROJECT_NOT_UPDATED, MAPCORE_RDM_UNKNOWN_USER] + list(sum([
+                MAPCORE_MAP_GROUP_NOT_CREATED, MAPCORE_MAP_GROUP_NOT_UPDATED, MAPCORE_RDM_PROJECT_NOT_UPDATED, MAPCORE_RDM_UNKNOWN_USER,
+                TIMESTAMP_ALL_VERIFIED, TIMESTAMP_ALL_ADDED, TIMESTAMP_ADDED, TIMESTAMP_ERRORS_DOWNLOADED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
