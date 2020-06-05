@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db.models import Case, CharField, Value, When
 from django.forms.models import model_to_dict
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, UpdateView
@@ -31,7 +31,7 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         rv = {
             'asset_files': query_set,
             'page': page,
-            'filterable_provider_ids': dict({'': '---'}, **{id: ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
+            'filterable_provider_ids': dict({'': '---'}, **{str(id): ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
                 type_=Case(
                     When(type='osf.preprintprovider', then=Value('[preprint]')),
                     When(type='osf.collectionprovider', then=Value('[collection]')),

@@ -141,11 +141,6 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
                     'message_short': 'Invalid schema name',
                     'message_long': 'No registration schema with that name could be found.'
                 })
-        if not node.registered_schema.filter(id=meta_schema.id).exists():
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': 'Invalid schema',
-                'message_long': 'This registration has no registration supplment with that name.'
-            })
 
         ret = _view_project(node, auth, primary=True)
         my_meta = serialize_meta_schema(meta_schema)

@@ -1,7 +1,6 @@
 REG_CAMPAIGNS = {
-    'prereg_challenge': 'Prereg Challenge',
     'prereg': 'OSF Preregistration',
-    'registered_report': 'Registered Report Protocol Preregistration',
+    'osf-registered-reports': 'Registered Report Protocol Preregistration',
 }
 
 def get_campaign_schema(campaign):
@@ -10,7 +9,7 @@ def get_campaign_schema(campaign):
         raise ValueError('campaign must be one of: {}'.format(', '.join(REG_CAMPAIGNS.keys())))
     schema_name = REG_CAMPAIGNS[campaign]
 
-    return RegistrationSchema.objects.get(name=schema_name, schema_version=2)
+    return RegistrationSchema.objects.filter(name=schema_name).order_by('-schema_version').first()
 
 def drafts_for_user(user, campaign=None):
     from osf.models import DraftRegistration, Node

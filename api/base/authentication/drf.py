@@ -18,6 +18,7 @@ from framework.auth import cas
 from framework.auth.core import get_user
 from osf import features
 from osf.models import OSFUser, Session
+from osf.utils.fields import ensure_str
 from website import settings
 
 
@@ -30,7 +31,7 @@ def get_session_from_cookie(cookie_val):
     """
 
     try:
-        session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
+        session_id = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val))
     except itsdangerous.BadSignature:
         return None
     try:
@@ -100,7 +101,7 @@ def created_by_external_idp_and_unconfirmed(user):
     external IdP and is unconfirmed.
     """
 
-    return 'CREATE' in set(sum([each.values() for each in user.external_identity.values()], []))
+    return 'CREATE' in set(sum([list(each.values()) for each in list(user.external_identity.values())], []))
 
 
 # Three customized DRF authentication classes: basic, session/cookie and access token.

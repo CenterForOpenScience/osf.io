@@ -62,7 +62,7 @@ class TestCiteprocpy(OsfTestCase):
 class TestCiteprocpyMLA(OsfTestCase):
     MLA_DATE_FORMAT = '%-d {month} %Y'
 
-    # MLA month abreviations here
+    # MLA month abbreviations here
     #  http://www.pomfret.ctschool.net/computer_classes/documents/mla-abbreviationsofmonths.pdf
     MLA_MONTH_MAP = {
         1: 'Jan.',

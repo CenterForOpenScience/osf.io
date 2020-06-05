@@ -11,56 +11,60 @@
     <title>Preprint Provider</title>
 {% endblock title %}
 {% block content %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-12">
+<div class="container-fluid">
+    <div class="row">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
                 <a class="btn btn-primary" href={% url 'preprint_providers:export' preprint_provider.id %}>Export preprint provider metadata</a>
                 {%  if perms.osf.delete_preprintprovider %}
-                    {%  if preprint_provider.share_source or preprint_provider.access_token %}
+                    <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
+                {% endif %}
+                {%  if preprint_provider.share_source or preprint_provider.access_token %}
                     <a class="btn btn-primary disabled">Share source or token already exist</a>
-                    {% else %}
+                {% else %}
                     <a class="btn btn-primary" href={% url 'preprint_providers:share_source' preprint_provider.id %}>Setup Share Source</a>
-                    {% endif %}
-                <a class="btn btn-danger" href={% url 'preprint_providers:delete' preprint_provider.id %}>Delete preprint provider</a>
+                {% endif %}
+                {% if perms.osf.change_preprintprovider %}
+                    <a class="btn btn-primary" href={% url 'preprint_providers:register_moderator_admin' preprint_provider.id %}>Register Moderator/Admin</a>
+                    <a class="btn btn-primary" href={% url 'preprint_providers:edit' preprint_provider.id %}>Modify Preprint Provider</a>
+                {% if show_taxonomies %}
+                    <a class="btn btn-primary" href={% url 'preprint_providers:process_custom_taxonomy' preprint_provider.id %}>Modify Custom Taxonomy</a>
+                {% else %}
+                    <a class="btn btn-primary disabled">Modify Custom Taxonomy</a>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12 text-center">
-                <img class="institution-logo" src="{{logo}}">
-                <h2>{{ preprint_provider.name }}</h2>
-            </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2>{{ preprint_provider.name }}</h2>
+            <img class="institution-logo" src="{{logo}}" alt="Logo image '{{logo}}' not found" style="height: 100px, width:100px;"/>
         </div>
-        {% if perms.osf.change_preprintprovider %}
-        <div class="row">
-            <div class="col-md-12">
-                <button id="show-modify-form" class="btn btn-link" type="button">
-                    Modify Preprint Provider
-                </button>
-            </div>
-            <div class="col-md-12">
-                <a class="btn btn-link" href={% url 'preprint_providers:register_moderator_admin' preprint_provider.id %}>Register Moderator/Admin</a>
-            </div>
+    </div>
+    <div class="row" id="table-view">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                {% for field, value in preprint_provider.items %}
+                <tr>
+                    <th>{{ field }}</th>
+                    <td>{{ value | safe }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
-        {% endif %}
-        <div class="row" id="table-view">
-            <div class="col-md-12">
-                <table class="table table-striped">
-                    {% for field, value in preprint_provider.items %}
-                        <tr>
-                            <th>{{ field }}</th>
-                            <td>{{ value | safe }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
-        </div>
-        <div id="form-view" style="display:none;">
-            {% include 'preprint_providers/update_preprint_provider_form.html' %}
-            {% if show_taxonomies %}
-            {% include 'preprint_providers/enter_custom_taxonomy.html' %}
-            {% endif %}
-        </div>
+    </div>
+    <div id="form-view" style="display:none;">
+    </div>
 
 {% endblock content %}
 {% block bottom_js %}
@@ -70,7 +74,7 @@
             'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
             'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
             'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
-            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' %}",
+            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' preprint_provider.id %}",
             'originalSubjects': {{ subject_ids | escapejs }}
         };
     </script>

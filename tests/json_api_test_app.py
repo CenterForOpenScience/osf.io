@@ -75,9 +75,10 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             if auth is None:
                 req.environ['HTTP_AUTHORIZATION'] = 'None'
             elif isinstance(auth, bytes):
-                req.environ['HTTP_AUTHORIZATION'] = str(auth.decode())
+                req.environ['HTTP_AUTHORIZATION'] = auth.decode()
             else:
                 req.environ['HTTP_AUTHORIZATION'] = str(auth)
+
             # Curry a data dictionary into an instance of the template renderer
             # callback function.
             data = {}

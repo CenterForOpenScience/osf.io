@@ -198,6 +198,13 @@ class ProjectFactory(BaseNodeFactory):
     category = 'project'
 
 
+class DraftNodeFactory(BaseNodeFactory):
+    category = 'project'
+
+    class Meta:
+        model = models.DraftNode
+
+
 class ProjectWithAddonFactory(ProjectFactory):
     """Factory for a project that has an addon. The addon will be added to
     both the Node and the creator records. ::
@@ -272,7 +279,7 @@ class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
         model = models.PrivateLink
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Private Link #{}'.format(n))
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
@@ -300,7 +307,7 @@ class CollectionFactory(DjangoModelFactory):
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
-        obj.collected_types = collected_types
+        obj.collected_types.add(*collected_types)
         return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
@@ -361,7 +368,7 @@ class RegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, is_public=False,
-                schema=None, data=None,
+                schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
@@ -384,12 +391,12 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        data = data or {'some': 'data'}
+        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             provider=provider,
         )
 
@@ -489,7 +496,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
                 registration = embargo._get_registration()
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
-        with mock.patch('osf.models.sanctions.TokenApprovableSanction.ask', mock.Mock()):
+        with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
             approval = registration.request_embargo_termination(Auth(user))
             return approval
 
@@ -500,27 +507,31 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        branched_from = kwargs.get('branched_from')
-        initiator = kwargs.get('initiator')
+        title = kwargs.pop('title', None)
+        initiator = kwargs.get('initiator', None)
+        description = kwargs.pop('description', None)
+        branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        if not branched_from:
-            project_params = {}
-            if initiator:
-                project_params['creator'] = initiator
-            branched_from = ProjectFactory(**project_params)
-        initiator = branched_from.creator
+        branched_from_creator = branched_from.creator if branched_from else None
+        initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
         draft = models.DraftRegistration.create_from_node(
-            branched_from,
+            node=branched_from,
             user=initiator,
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
         )
+        if title:
+            draft.title = title
+        if description:
+            draft.description = description
+        draft.registration_responses = draft.flatten_registration_metadata()
+        draft.save()
         return draft
 
 class CommentFactory(DjangoModelFactory):
@@ -591,6 +602,8 @@ class SubjectFactory(DjangoModelFactory):
 
 
 class PreprintProviderFactory(DjangoModelFactory):
+    _id = factory.Sequence(lambda n: f'slug{n}')
+
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
@@ -660,7 +673,6 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.article_doi = doi
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
 
@@ -671,6 +683,7 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path='/{}'.format(filename))
 
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -704,7 +717,7 @@ class TagFactory(DjangoModelFactory):
     class Meta:
         model = models.Tag
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'Example Tag #{}'.format(n))
     system = False
 
 class DismissedAlertFactory(DjangoModelFactory):
@@ -723,7 +736,7 @@ class ApiOAuth2ScopeFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2Scope
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: 'scope{}'.format(n))
     is_public = True
     is_active = True
     description = factory.Faker('text')
@@ -859,7 +872,7 @@ class ConferenceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
-        self.admins = extracted or [UserFactory()]
+        self.admins.add(*(extracted or [UserFactory()]))
 
 
 class SessionFactory(DjangoModelFactory):
@@ -1006,7 +1019,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
-        instance.providers = providers
+        instance.providers.add(*providers)
         instance.save()
         return instance
 

@@ -6,9 +6,19 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
-    JSONAPISerializer, IDField, TypeField, HideIfNotWithdrawal, NoneIfWithdrawal,
-    LinksField, RelationshipField, VersionedDateTimeField, JSONAPIListField,
-    NodeFileHyperLinkField, WaterbutlerLink, HideIfPreprint,
+    JSONAPISerializer,
+    IDField,
+    TypeField,
+    HideIfNotWithdrawal,
+    NoneIfWithdrawal,
+    LinksField,
+    RelationshipField,
+    VersionedDateTimeField,
+    JSONAPIListField,
+    NodeFileHyperLinkField,
+    WaterbutlerLink,
+    HideIfPreprint,
+    DisableIfSwitch,
     LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -28,8 +38,21 @@ from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError
-from osf.models import BaseFileNode, Preprint, PreprintProvider, Node, NodeLicense
+from osf.models import (
+    BaseFileNode,
+    Preprint,
+    PreprintProvider,
+    Node,
+    NodeLicense,
+)
 from osf.utils import permissions as osf_permissions
+from osf.features import (
+    SLOAN_DATA_INPUT,
+    SLOAN_COI_INPUT,
+    SLOAN_PREREG_INPUT,
+)
+
+from osf.exceptions import PreprintStateError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -104,6 +127,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     preprint_doi_created = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     date_withdrawn = VersionedDateTimeField(read_only=True, allow_null=True)
     withdrawal_justification = HideIfNotWithdrawal(ser.CharField(required=False, read_only=True, allow_blank=True))
+
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
         'for the current user on this preprint.',
@@ -175,6 +199,71 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'doi': 'get_article_doi_url',
             'preprint_doi': 'get_preprint_doi_url',
         },
+    )
+
+    has_coi = DisableIfSwitch(
+        SLOAN_COI_INPUT,
+        ser.NullBooleanField(required=False),
+    )
+    conflict_of_interest_statement = DisableIfSwitch(
+        SLOAN_COI_INPUT,
+        ser.CharField(
+            required=False,
+            allow_blank=True,
+            allow_null=True,
+        ),
+    )
+    has_data_links = DisableIfSwitch(
+        SLOAN_DATA_INPUT,
+        ser.ChoiceField(
+            Preprint.HAS_LINKS_CHOICES,
+            required=False,
+        ),
+    )
+    why_no_data = DisableIfSwitch(
+        SLOAN_DATA_INPUT,
+        ser.CharField(
+            required=False,
+            allow_blank=True,
+            allow_null=True,
+        ),
+    )
+    data_links = DisableIfSwitch(
+        SLOAN_DATA_INPUT,
+        ser.ListField(
+            child=ser.URLField(),
+            required=False,
+        ),
+    )
+    has_prereg_links = DisableIfSwitch(
+        SLOAN_PREREG_INPUT,
+        ser.ChoiceField(
+            Preprint.HAS_LINKS_CHOICES,
+            required=False,
+        ),
+    )
+    why_no_prereg = DisableIfSwitch(
+        SLOAN_PREREG_INPUT,
+        ser.CharField(
+            required=False,
+            allow_blank=True,
+            allow_null=True,
+        ),
+    )
+    prereg_links = DisableIfSwitch(
+        SLOAN_PREREG_INPUT,
+        ser.ListField(
+            child=ser.URLField(),
+            required=False,
+        ),
+    )
+    prereg_link_info = DisableIfSwitch(
+        SLOAN_PREREG_INPUT,
+        ser.ChoiceField(
+            Preprint.PREREG_LINK_INFO_CHOICES,
+            required=False,
+            allow_blank=True,
+        ),
     )
 
     class Meta:
@@ -286,6 +375,60 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
             save_preprint = True
+
+        if 'has_coi' in validated_data:
+            try:
+                preprint.update_has_coi(auth, validated_data['has_coi'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'conflict_of_interest_statement' in validated_data:
+            try:
+                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'has_data_links' in validated_data:
+            try:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_data' in validated_data:
+            try:
+                preprint.update_why_no_data(auth, validated_data['why_no_data'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'data_links' in validated_data:
+            try:
+                preprint.update_data_links(auth, validated_data['data_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'has_prereg_links' in validated_data:
+            try:
+                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'why_no_prereg' in validated_data:
+            try:
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_links' in validated_data:
+            try:
+                preprint.update_prereg_links(auth, validated_data['prereg_links'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
+
+        if 'prereg_link_info' in validated_data:
+            try:
+                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
+            except PreprintStateError as e:
+                raise exceptions.ValidationError(detail=str(e))
 
         if published is not None:
             if not preprint.primary_file:

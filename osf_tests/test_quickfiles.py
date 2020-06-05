@@ -4,7 +4,7 @@ import pytest
 from framework.auth.core import Auth
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
-from osf.exceptions import MaxRetriesError, NodeStateError
+from osf.exceptions import DraftRegistrationStateError, MaxRetriesError, NodeStateError
 from api_tests.utils import create_test_file
 from tests.utils import assert_equals
 from tests.base import get_default_metaschema
@@ -66,8 +66,8 @@ class TestQuickFilesNode:
         assert not quickfiles.is_deleted
 
     def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.register_node(get_default_metaschema(), auth, '', None)
+        with pytest.raises(DraftRegistrationStateError):
+            quickfiles.register_node(get_default_metaschema(), auth, factories.DraftRegistrationFactory(branched_from=quickfiles), None)
 
     def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
         with pytest.raises(NodeStateError):

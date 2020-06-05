@@ -10,6 +10,7 @@ from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
+from osf_tests.factories import DraftRegistrationFactory
 from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
@@ -123,7 +124,7 @@ def assert_latest_log_not(log_action, node_key, index=0):
     assert last_log._id == new_log._id
 
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, data=None, parent=None,
+def mock_archive(project, schema=None, auth=None, draft_registration=None, parent=None,
                  embargo=False, embargo_end_date=None,
                  retraction=False, justification=None, autoapprove_retraction=False,
                  autocomplete=True, autoapprove=False):
@@ -158,13 +159,13 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    data = data or ''
+    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project)
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             parent=parent,
         )
     if embargo:

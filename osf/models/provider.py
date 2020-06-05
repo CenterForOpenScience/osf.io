@@ -55,7 +55,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
-    def __unicode__(self):
+    def __str__(self):
         return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
 
     @property
@@ -160,6 +160,7 @@ class PreprintProvider(AbstractProvider):
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
     access_token = EncryptedTextField(null=True, blank=True)
     doi_prefix = models.CharField(blank=True, max_length=32)
+    in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

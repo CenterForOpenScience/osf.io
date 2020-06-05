@@ -25,10 +25,10 @@ class ChronosJournal(BaseModel):
 class ChronosSubmission(BaseModel):
     publication_id = models.TextField(null=False, blank=False, unique=True)
 
-    journal = models.ForeignKey(ChronosJournal, null=False, blank=False)
-    preprint = models.ForeignKey('osf.Preprint', null=False, blank=False)
+    journal = models.ForeignKey(ChronosJournal, null=False, blank=False, on_delete=models.CASCADE)
+    preprint = models.ForeignKey('osf.Preprint', null=False, blank=False, on_delete=models.CASCADE)
 
-    submitter = models.ForeignKey('osf.OSFUser', null=False, blank=False)
+    submitter = models.ForeignKey('osf.OSFUser', null=False, blank=False, on_delete=models.CASCADE)
 
     status = models.IntegerField(null=True, blank=True, default=None, choices=ChronosSubmissionStatus.choices())
 

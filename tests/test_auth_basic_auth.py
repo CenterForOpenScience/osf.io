@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''Basic Authorization tests for the OSF.'''
 
@@ -41,7 +41,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
     def test_invalid_credential_fails(self):
         res = self.app.get(self.unreachable_url, auth=(self.user1.username, 'invalid password'), expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
+        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_authenticates_and_has_permissions(self):
@@ -61,7 +61,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
+        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
 
     def test_valid_credential_twofactor_invalid_otp(self):
         user1_addon = self.user1.get_or_add_addon('twofactor')
@@ -72,7 +72,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
         res = self.app.get(self.reachable_url, auth=self.user1.auth, headers={'X-OSF-OTP': 'invalid otp'}, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body)
+        assert_true('<h2 id=\'error\' data-http-status-code="401">Unauthorized</h2>' in res.body.decode())
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_credential_twofactor_valid_otp(self):
@@ -88,7 +88,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
     @pytest.mark.enable_bookmark_creation
     def test_valid_cookie(self):
         cookie = self.user1.get_or_create_cookie()
-        self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
+        self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
         res = self.app.get(self.reachable_url)
         assert_equal(res.status_code, 200)
 

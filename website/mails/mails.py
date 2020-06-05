@@ -187,7 +187,7 @@ CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
-    subject='OSF Account Verification, Preregistration Challenge'
+    subject='OSF Account Verification, OSF Preregistration'
 )
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
@@ -231,6 +231,10 @@ CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
+)
+CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
+    'contributor_added_draft_registration',
+    subject='You have been added as a contributor to a draft registration.'
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
@@ -388,21 +392,6 @@ WELCOME_OSF4I = Mail(
     'welcome_osf4i',
     subject='Welcome to OSF',
     engagement=True
-)
-
-PREREG_CHALLENGE_REJECTED = Mail(
-    'prereg_challenge_rejected',
-    subject='Revisions required, your submission for the Preregistration Challenge is not yet registered'
-)
-
-PREREG_CHALLENGE_ACCEPTED = Mail(
-    'prereg_challenge_accepted',
-    subject='Your research plan has been registered and accepted for the Preregistration Challenge'
-)
-
-PREREG_CSV = Mail(
-    'prereg_csv',
-    subject='[auto] Updated Prereg CSV'
 )
 
 EMPTY = Mail('empty', subject='${subject}')

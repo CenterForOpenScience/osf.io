@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Views tests for the OSF."""
 
@@ -54,9 +54,10 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
 from osf.utils import permissions
 from osf.models import Comment
-from osf.models import OSFUser
+from osf.models import OSFUser, Tag
 from osf.models import Email
 from tests.base import (
     assert_is_redirect,
@@ -93,7 +94,8 @@ from osf_tests.factories import (
     UserFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
-    RegionFactory
+    RegionFactory,
+    DraftRegistrationFactory,
 )
 
 @mock_app.route('/errorexc')
@@ -150,7 +152,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in('Title cannot be blank', res.body.decode())
 
     def test_edit_private_link_invalid(self):
         node = ProjectFactory(creator=self.user)
@@ -160,7 +162,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         url = node.api_url_for('project_private_link_edit')
         res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid link name.', res.body)
+        assert_in('Invalid link name.', res.body.decode())
 
     @mock.patch('framework.auth.core.Auth.private_link')
     def test_can_be_anonymous_for_public_project(self, mock_property):
@@ -183,7 +185,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow(expect_errors=True)
-        assert_equal(res.status_code, 301)
+        assert_equal(res.status_code, 308)
         assert_equal(
             res.request.path,
             '/login'
@@ -343,14 +345,14 @@ class TestProjectViews(OsfTestCase):
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Title cannot be blank', res.body)
+        assert_in('Title cannot be blank', res.body.decode())
 
     def test_edit_title_invalid(self):
         node = ProjectFactory(creator=self.user1)
         url = node.api_url_for('edit_node')
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid title.', res.body)
+        assert_in('Invalid title.', res.body.decode())
 
     def test_view_project_doesnt_select_for_update(self):
         node = ProjectFactory(creator=self.user1)
@@ -402,8 +404,8 @@ class TestProjectViews(OsfTestCase):
         self.child_project.save()
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
-        assert_not_in('Private Project', res.body)
-        assert_in('parent project', res.body)
+        assert_not_in('Private Project', res.body.decode())
+        assert_in('parent project', res.body.decode())
 
     def test_edit_description(self):
         url = '/api/v1/project/{0}/edit/'.format(self.project._id)
@@ -947,8 +949,8 @@ class TestProjectViews(OsfTestCase):
         url = registration.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
 
-        assert_not_in('Mako Runtime Error', res.body)
-        assert_in(registration.title, res.body)
+        assert_not_in('Mako Runtime Error', res.body.decode())
+        assert_in(registration.title, res.body.decode())
         assert_equal(res.status_code, 200)
 
         for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
@@ -956,11 +958,11 @@ class TestProjectViews(OsfTestCase):
             assert_equal(res.status_code, 302, route)
             res = res.follow()
             assert_equal(res.status_code, 200, route)
-            assert_in('This project is a withdrawn registration of', res.body, route)
+            assert_in('This project is a withdrawn registration of', res.body.decode(), route)
 
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
-        assert_in('This project is a withdrawn registration of', res.body)
+        assert_in('This project is a withdrawn registration of', res.body.decode())
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1492,7 +1494,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._id)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_in('Quick files', res.body)
+        assert_in('Quick files', res.body.decode())
 
     def test_user_with_no_quickfiles(self):
         assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
@@ -1500,7 +1502,7 @@ class TestUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.user._primary_key)
         res = self.app.get(url, auth=self.user.auth)
 
-        assert_not_in('Quick files', res.body)
+        assert_not_in('Quick files', res.body.decode())
 
     def test_user_update_region(self):
         user_settings = self.user.get_addon('osfstorage')
@@ -2102,7 +2104,13 @@ class TestAddingContributorViews(OsfTestCase):
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        project.register_node(get_default_metaschema(), Auth(user=project.creator), '', None, provider=provider)
+        project.register_node(
+            get_default_metaschema(),
+            Auth(user=project.creator),
+            DraftRegistrationFactory(branched_from=project),
+            None,
+            provider=provider
+        )
         assert_false(send_mail.called)
 
     @mock.patch('website.mails.send_mail')
@@ -2366,8 +2374,24 @@ class TestClaimViews(OsfTestCase):
         super(TestClaimViews, self).setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
+        self.project_with_source_tag = ProjectFactory(creator=self.referrer, is_public=True)
+        self.preprint_with_source_tag = PreprintFactory(creator=self.referrer, is_public=True)
+        osf_source_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
+        preprint_source_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.preprint_with_source_tag.provider._id, 'preprint'), system=True)
+        self.project_with_source_tag.add_system_tag(osf_source_tag.name)
+        self.preprint_with_source_tag.add_system_tag(preprint_source_tag.name)
         self.given_name = fake.name()
         self.given_email = fake_email()
+        self.project_with_source_tag.add_unregistered_contributor(
+            fullname=self.given_name,
+            email=self.given_email,
+            auth=Auth(user=self.referrer)
+        )
+        self.preprint_with_source_tag.add_unregistered_contributor(
+            fullname=self.given_name,
+            email=self.given_email,
+            auth=Auth(user=self.referrer)
+        )
         self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
@@ -2615,7 +2639,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(url)
         assert res.status_code == 302
         res = res.follow()
-        service_url = 'http://localhost:80{}'.format(url)
+        service_url = 'http://localhost{}'.format(url)
         expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
         assert res.request.url == expected
 
@@ -2770,6 +2794,32 @@ class TestClaimViews(OsfTestCase):
         )
         # Response is a 400
         assert_equal(res.status_code, 400)
+
+    def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
+        assert OsfClaimedTags.Osf.value not in self.user.system_tags
+        url = self.user.get_claim_url(self.project_with_source_tag._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert OsfClaimedTags.Osf.value in self.user.system_tags
+
+    def test_claim_user_with_preprint_id_adds_corresponding_claimed_tag_to_user(self):
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') not in self.user.system_tags
+        url = self.user.get_claim_url(self.preprint_with_source_tag._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') in self.user.system_tags
 
 
 @pytest.mark.enable_bookmark_creation
@@ -3446,7 +3496,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user.email_verifications[token]['confirmed'], True)
         assert_equal(res.status_code, 302)
         login_url = 'login?service'
-        assert_in(login_url, res.body)
+        assert_in(login_url, res.body.decode())
 
     def test_get_email_to_add_no_email(self):
         email_verifications = self.user.unconfirmed_email_info
@@ -4645,7 +4695,7 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
         res2 = res.follow(expect_errors=True)
-        assert_equal(res2.status_code, 301)
+        assert_equal(res2.status_code, 308)
         assert_equal(res2.request.path, '/login')
 
     def test_project_new_from_template_public_non_contributor(self):

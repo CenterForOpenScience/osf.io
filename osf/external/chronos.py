@@ -83,9 +83,19 @@ class ChronosSerializer(object):
 
     @classmethod
     def serialize_user(cls, user):
+
+        username = user.given_name if user.given_name and user.family_name else user.fullname
         if not bool(user.given_name) and not bool(user.family_name):
             raise ValueError(
-                'Cannot submit because user {} requires a given and family name'.format(user.given_name if user.given_name and user.family_name else user.fullname)
+                'Cannot submit because user {} requires a given and family name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.given_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a given name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.family_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a family name be set in your OSF profile.'.format(username)
             )
 
         return {

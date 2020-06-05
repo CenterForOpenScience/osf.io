@@ -195,7 +195,6 @@ class OsfWebRenderer(WebRenderer):
         """
 
         resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
-        secure = get_setting('SECURE')
         max_age = get_setting('MAX_AGE')
 
         if hasattr(request, 'waffles'):
@@ -207,7 +206,7 @@ class OsfWebRenderer(WebRenderer):
                     age = None
                 else:
                     age = max_age
-                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), bytes(active), age, bytes(secure)))
+                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), str(active), max_age=age, expires='True'))
         return resp
 
 #: Use if a view only redirects or raises error
@@ -1094,6 +1093,15 @@ def make_url_map(app):
         Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
+    process_rules(app, [
+        Rule([
+            '/institutions/<inst_id>/dashboard/',
+        ],
+            'get',
+            institution_views.view_institution_dashboard,
+            notemplate)
+    ])
+
     # Project
 
     # Web
@@ -1468,10 +1476,6 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/<draft_id>/submit/',
-        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
-
         # Meta Schemas
         Rule([
             '/project/drafts/schemas/',

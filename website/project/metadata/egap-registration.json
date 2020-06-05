@@ -1,6 +1,9 @@
 {
 	"name": "EGAP Registration",
 	"version": 2,
+	"config": {
+        "hasFiles": true
+    },
 	"description": "The EGAP registry focuses on designs for experiments and observational studies in governance and politics.",
 	"pages": [{
 			"id": "page1",
@@ -12,14 +15,6 @@
 					"format": "text",
 					"title": "B1 Title of Study",
 					"description": "Provide the working title of your study.",
-					"required": true
-				},
-				{
-					"qid": "q2",
-					"nav": "Authors",
-					"title": "B2 Authors",
-					"help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
-					"format": "textarea",
 					"required": true
 				},
 				{

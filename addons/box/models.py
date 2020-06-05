@@ -13,6 +13,7 @@ from framework.exceptions import HTTPError
 from oauthlib.oauth2 import InvalidGrantError
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from osf.utils.fields import ensure_str
 from urllib3.exceptions import MaxRetryError
 from addons.base import exceptions
 from addons.box import settings
@@ -141,7 +142,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         try:
             Provider(self.external_account).refresh_oauth_key()
-            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=ensure_str(self.external_account.oauth_key))
             client = Client(oauth)
         except BoxAPIException:
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
@@ -190,7 +191,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except InvalidGrantError:
             raise exceptions.InvalidAuthError()
         try:
-            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=self.external_account.oauth_key)
+            oauth = OAuth2(client_id=settings.BOX_KEY, client_secret=settings.BOX_SECRET, access_token=ensure_str(self.external_account.oauth_key))
             client = Client(oauth)
             folder_data = client.folder(self.folder_id).get()
         except BoxAPIException:

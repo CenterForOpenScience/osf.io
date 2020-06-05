@@ -65,7 +65,6 @@ logger = logging.getLogger(__name__)
 
 @must_be_valid_project
 @must_have_permission(WRITE)
-@must_not_be_registration
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
@@ -112,13 +111,13 @@ def project_new(**kwargs):
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
     user = auth.user
-
     data = request.get_json()
     title = strip_html(data.get('title'))
     title = title.strip()
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
+    campaign = data.get('campaign', None)
     new_project = {}
 
     if template:
@@ -141,7 +140,7 @@ def project_new_post(auth, **kwargs):
 
     else:
         try:
-            project = new_node(category, title, user, description)
+            project = new_node(category, title, user, description, campaign=campaign)
         except ValidationError as e:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
@@ -573,7 +572,6 @@ def project_set_privacy(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_not_be_registration
 @must_have_permission(WRITE)
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
@@ -813,7 +811,7 @@ def _view_project(node, auth, primary=False,
             'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent_contributor': parent.is_admin_parent(user, include_group_admin=False) if parent else False,
             'is_admin_parent_contributor_or_group_member': parent.is_admin_parent(user) if parent else False,
-            'can_edit': node.has_permission(user, WRITE) and not node.is_registration,
+            'can_edit': node.has_permission(user, WRITE),
             'can_edit_tags': node.has_permission(user, WRITE),
             'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],

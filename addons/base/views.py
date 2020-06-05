@@ -6,6 +6,7 @@ import markupsafe
 from future.moves.urllib.parse import quote
 from django.utils import timezone
 
+from distutils.util import strtobool
 from flask import make_response
 from flask import redirect
 from flask import request
@@ -17,6 +18,7 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
+from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -39,7 +41,7 @@ from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration, RegistrationSchema,
+                        NodeLog, DraftRegistration,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -49,6 +51,18 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
+
+from osf.features import (
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY
+)
+
+SLOAN_FLAGS = (
+    SLOAN_COI_DISPLAY,
+    SLOAN_DATA_DISPLAY,
+    SLOAN_PREREG_DISPLAY
+)
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -201,23 +215,6 @@ def check_access(node, auth, action, cas_resp):
                     return True
                 parent = parent.parent_node
 
-        # Users with the prereg admin permission should be allowed to download files
-        # from prereg challenge draft registrations.
-        try:
-            prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-            allowed_nodes = [node] + node.parents
-            prereg_draft_registration = DraftRegistration.objects.filter(
-                branched_from__in=allowed_nodes,
-                registration_schema=prereg_schema
-            )
-            if action == 'download' and \
-                        auth.user is not None and \
-                        prereg_draft_registration.count() > 0 and \
-                        auth.user.has_perm('osf.administer_prereg'):
-                return True
-        except RegistrationSchema.DoesNotExist:
-            pass
-
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
 def make_auth(user):
@@ -339,12 +336,19 @@ def get_auth(auth, **kwargs):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
+                                sloan_flags = {'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)}
+                                for flag_name in SLOAN_FLAGS:
+                                    value = request.cookies.get(f'dwf_{flag_name}_custom_domain') or request.cookies.get(f'dwf_{flag_name}')
+                                    if value:
+                                        sloan_flags[flag_name.replace('_display', '')] = strtobool(value)
+
                                 try:
                                     metric_class.record_for_preprint(
                                         preprint=node,
                                         user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
-                                        path=path
+                                        path=path,
+                                        **sloan_flags
                                     )
                                 except es_exceptions.ConnectionError:
                                     log_exception()
@@ -360,6 +364,9 @@ def get_auth(auth, **kwargs):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
+    if isinstance(credentials.get('token'), bytes):
+        credentials['token'] = credentials.get('token').decode()
+
     return {'payload': jwe.encrypt(jwt.encode({
         'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
@@ -372,7 +379,7 @@ def get_auth(auth, **kwargs):
                 _internal=True
             )
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY).decode()}
 
 
 LOG_ACTION_MAP = {
@@ -862,7 +869,7 @@ def addon_view_file(auth, node, file_node, version):
         sharejs_uuid = None
 
     internal_furl = furl.furl(settings.INTERNAL_DOMAIN)
-    download_url = furl.furl(request.url.encode('utf-8')).set(
+    download_url = furl.furl(request.url).set(
         netloc=internal_furl.netloc,
         args=dict(request.args, **{
             'direct': None,
@@ -908,22 +915,12 @@ def addon_view_file(auth, node, file_node, version):
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
-        'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
         'version_names': list(version_names)
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
-def is_pre_reg_checkout(node, file_node):
-    checkout_user = file_node.checkout
-    if not checkout_user:
-        return False
-    if checkout_user in node.contributors:
-        return False
-    if checkout_user.has_perm('osf.view_prereg'):
-        return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
-    return False
 
 def get_archived_from_url(node, file_node):
     if file_node.copied_from:

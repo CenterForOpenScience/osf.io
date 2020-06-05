@@ -118,22 +118,6 @@ class ProcessCustomTaxonomyMixinBase:
         assert actual_provider_subjects == expected_subjects
         assert provider.subjects.get(text='Changed Subject Name').parent.text == subject_two.text
 
-    def test_process_taxonomy_invalid_returns_feedback(self, req, view, provider, subject_two, subject_two_a):
-        custom_taxonomy = {
-            'include': [],
-            'exclude': [],
-            'custom': {
-                'Changed Subject Name': {'parent': subject_two.text, 'bepress': subject_two_a.text},
-            }
-        }
-        req.POST = {
-            'custom_taxonomy_json': json.dumps(custom_taxonomy),
-            'provider_id': provider.id
-        }
-
-        with pytest.raises(AssertionError):
-            view.post(req)
-
 
 @pytest.mark.urls('admin.base.urls')
 class ProviderDisplayMixinBase:

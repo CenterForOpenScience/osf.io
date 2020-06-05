@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import uuid
 
 import psycopg2

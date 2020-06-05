@@ -13,7 +13,7 @@ from addons.gitlab.models import NodeSettings
 
 
 def make_signature(secret, data):
-    return hmac.new(secret, data, hashlib.sha1).hexdigest()
+    return hmac.new(secret.encode(), data.encode(), hashlib.sha1).hexdigest()
 
 HOOK_PAYLOAD = json.dumps({
     'files': [],

@@ -42,6 +42,7 @@ class TestCheckCrossrefDOIs:
             return json.loads(fp.read())
 
     @responses.activate
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
     def test_check_crossref_dois(self, crossref_response, stuck_preprint, preprint):
         doi = settings.DOI_FORMAT.format(prefix=stuck_preprint.provider.doi_prefix, guid=stuck_preprint.guids.first()._id)
         responses.add(

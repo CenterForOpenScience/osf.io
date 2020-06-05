@@ -37,7 +37,7 @@ def acceptable_title(node):
     """ Omit projects that have certain words in the title """
 
     omit_titles = ['test', 'photo', 'workshop', 'data']
-    if any(word in ensure_bytes(node['title']).lower() for word in omit_titles):
+    if any(word in node['title'].lower() for word in omit_titles):
         return False
     return True
 

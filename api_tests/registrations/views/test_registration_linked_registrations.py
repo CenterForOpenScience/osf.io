@@ -8,6 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NodeFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
 )
 from osf.utils.permissions import READ
 from tests.base import ApiTestCase, get_default_metaschema
@@ -47,8 +48,12 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             self.private_linked_registration,
             auth=Auth(self.rw_contributor))
         public_node.save()
+        draft_reg = DraftRegistrationFactory(
+            branched_from=public_node,
+            initiator=self.admin_contributor
+        )
         self.public_registration = public_node.register_node(
-            get_default_metaschema(), Auth(self.admin_contributor), '', None)
+            get_default_metaschema(), Auth(self.admin_contributor), draft_reg, None)
         self.public_registration.is_public = True
         self.public_registration.save()
 
@@ -67,8 +72,12 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             self.private_linked_registration,
             auth=Auth(self.rw_contributor))
         private_node.save()
+        draft_reg = DraftRegistrationFactory(
+            branched_from=private_node,
+            initiator=self.admin_contributor
+        )
         self.private_registration = private_node.register_node(
-            get_default_metaschema(), Auth(self.admin_contributor), '', None)
+            get_default_metaschema(), Auth(self.admin_contributor), draft_reg, None)
 
     def tearDown(self):
         super(LinkedRegistrationsTestCase, self).tearDown()

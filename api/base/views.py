@@ -30,7 +30,7 @@ from api.base.serializers import (
     LinkedNodesRelationshipSerializer,
     LinkedRegistrationsRelationshipSerializer,
 )
-from api.base.throttling import RootAnonThrottle, UserRateThrottle
+from api.base.throttling import RootAnonThrottle, UserRateThrottle, BurstRateThrottle
 from api.base.utils import is_bulk_request, get_user_auth, default_node_list_queryset
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.utils import get_file_object
@@ -43,7 +43,8 @@ from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Contributor, MaintenanceState, BaseFileNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
-from waffle import flag_is_active, sample_is_active
+from waffle import sample_is_active
+
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
@@ -398,7 +399,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
 
 
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def root(request, format=None, **kwargs):
     """
     The documentation for the Open Science Framework API can be found at [developer.osf.io](https://developer.osf.io).
@@ -410,7 +411,7 @@ def root(request, format=None, **kwargs):
     else:
         current_user = None
 
-    flags = [name for name in Flag.objects.values_list('name', flat=True) if flag_is_active(request._request, name)]
+    flags = [flag.name for flag in Flag.objects.all() if flag.is_active(request._request)]
     samples = [name for name in Sample.objects.values_list('name', flat=True) if sample_is_active(name)]
     switches = list(Switch.objects.filter(active=True).values_list('name', flat=True))
 
@@ -439,8 +440,9 @@ def root(request, format=None, **kwargs):
 
     return Response(return_val)
 
+
 @api_view(('GET',))
-@throttle_classes([RootAnonThrottle, UserRateThrottle])
+@throttle_classes([RootAnonThrottle, UserRateThrottle, BurstRateThrottle, ])
 def status_check(request, format=None, **kwargs):
     maintenance = MaintenanceState.objects.all().first()
     return Response({

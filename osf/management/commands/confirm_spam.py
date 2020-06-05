@@ -1,6 +1,6 @@
 """Mark specified nodes as spam.
 
-    python manage.py confirm_spam abc12
+    python3 manage.py confirm_spam abc12
 """
 import logging
 

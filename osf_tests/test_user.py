@@ -25,8 +25,20 @@ from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
-from osf.models import AbstractNode, OSFUser, OSFGroup, Tag, Contributor, Session, BlacklistedEmailDomain, QuickFilesNode, PreprintContributor
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    OSFGroup,
+    Tag,
+    Contributor,
+    Session,
+    BlacklistedEmailDomain,
+    QuickFilesNode,
+    PreprintContributor,
+    DraftRegistrationContributor,
+)
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
@@ -41,6 +53,7 @@ from .factories import (
     fake_email,
     AuthUserFactory,
     CollectionFactory,
+    DraftRegistrationFactory,
     ExternalAccountFactory,
     InstitutionFactory,
     NodeFactory,
@@ -386,6 +399,76 @@ class TestOSFUser:
         assert preprint_five.creator != user
         assert not preprint_five.has_permission(user2, permissions.READ)
         assert not preprint_five.is_contributor(user2)
+
+    def test_merge_drafts(self, user):
+        user2 = AuthUserFactory()
+
+        draft_one = DraftRegistrationFactory(creator=user, title='draft_one')
+
+        draft_two = DraftRegistrationFactory(title='draft_two')
+        draft_two.add_contributor(user2)
+
+        draft_three = DraftRegistrationFactory(title='draft_three', creator=user2)
+        draft_three.add_contributor(user, visible=False)
+
+        draft_four = DraftRegistrationFactory(title='draft_four')
+        draft_four.add_contributor(user2, permissions=permissions.READ, visible=False)
+
+        draft_five = DraftRegistrationFactory(title='draft_five')
+        draft_five.add_contributor(user2, permissions=permissions.READ, visible=False)
+        draft_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
+
+        # two drafts shared b/t user and user2
+        assert user.draft_registrations.count() == 3
+        assert user2.draft_registrations.count() == 4
+
+        user.merge_user(user2)
+        draft_one.reload()
+        draft_two.reload()
+        draft_three.reload()
+        draft_four.reload()
+        draft_five.reload()
+
+        assert user.draft_registrations.count() == 5
+        # one group for each draft
+        assert user.groups.filter(name__icontains='draft').count() == 5
+        assert user2.draft_registrations.count() == 0
+        assert not user2.groups.filter(name__icontains='draft').all()
+
+        contrib_obj = DraftRegistrationContributor.objects.get(user=user, draft_registration=draft_one)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN
+        assert draft_one.creator == user
+        assert not draft_one.has_permission(user2, permissions.READ)
+        assert not draft_one.is_contributor(user2)
+
+        contrib_obj = DraftRegistrationContributor.objects.get(user=user, draft_registration=draft_two)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert draft_two.creator != user
+        assert not draft_two.has_permission(user2, permissions.READ)
+        assert not draft_two.is_contributor(user2)
+
+        contrib_obj = DraftRegistrationContributor.objects.get(user=user, draft_registration=draft_three)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.ADMIN  # of the two users the highest perm wins out.
+        assert draft_three.creator == user
+        assert not draft_three.has_permission(user2, permissions.READ)
+        assert not draft_three.is_contributor(user2)
+
+        contrib_obj = DraftRegistrationContributor.objects.get(user=user, draft_registration=draft_four)
+        assert contrib_obj.visible is False
+        assert contrib_obj.permission == permissions.READ
+        assert draft_four.creator != user
+        assert not draft_four.has_permission(user2, permissions.READ)
+        assert not draft_four.is_contributor(user2)
+
+        contrib_obj = DraftRegistrationContributor.objects.get(user=user, draft_registration=draft_five)
+        assert contrib_obj.visible is True
+        assert contrib_obj.permission == permissions.WRITE
+        assert draft_five.creator != user
+        assert not draft_five.has_permission(user2, permissions.READ)
+        assert not draft_five.is_contributor(user2)
 
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
@@ -809,7 +892,7 @@ class TestCookieMethods:
         })
         session.save()
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)) == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
@@ -823,7 +906,7 @@ class TestCookieMethods:
 
         session = Session.objects.filter(data__auth_user_id=user._id).first()
 
-        assert session._id == signer.unsign(cookie)
+        assert session._id == signer.unsign(cookie).decode()
         assert session.data['auth_user_id'] == user._id
         assert session.data['auth_user_username'] == user.username
         assert session.data['auth_user_fullname'] == user.fullname
@@ -1817,8 +1900,8 @@ class TestUserMerging(OsfTestCase):
         self.user.notifications_configured = {'abc12': True}
         other_user.notifications_configured = {'123ab': True}
 
-        self.user.external_accounts = [ExternalAccountFactory()]
-        other_user.external_accounts = [ExternalAccountFactory()]
+        self.user.external_accounts.add(ExternalAccountFactory())
+        other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
             'user': True,
@@ -1973,7 +2056,7 @@ class TestUserMerging(OsfTestCase):
         # TODO: test security_messages
         # TODO: test mailing_lists
 
-        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed'])
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', OsfSourceTags.Osf.value])
 
         # TODO: test emails
         # TODO: test external_accounts
@@ -2293,7 +2376,7 @@ class TestUserGdprDelete:
 
         assert user.fullname == 'Deleted user'
         assert user.suffix == ''
-        assert user.social == []
+        assert user.social == {}
         assert user.schools == []
         assert user.jobs == []
         assert user.external_identity == {}
@@ -2406,7 +2489,7 @@ class TestUserSpam:
                 'degree': degree,
                 'institution': institution
             })
-            expected_content += '{} {} '.format(institution, degree)
+            expected_content += '{} {} '.format(degree, institution)
         saved_fields = {'schools': schools_list}
 
         spam_content = user._get_spam_content(saved_fields)

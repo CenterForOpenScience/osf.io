@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from django.contrib import admin
 from django.contrib.admin.models import DELETION
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.html import escape
 
 from osf.models import AdminLogEntry

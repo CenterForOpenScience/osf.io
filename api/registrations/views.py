@@ -23,6 +23,7 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelations
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
+from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList, NodeSubjectsRelationship
 from api.users.views import UserMixin
@@ -41,6 +42,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
+    RegistrationCreateSerializer,
     RegistrationStorageProviderSerializer,
 )
 
@@ -58,6 +60,8 @@ from api.registrations.serializers import RegistrationNodeLinksSerializer, Regis
 from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
+from framework.sentry import log_exception
+from osf.utils.permissions import ADMIN
 
 
 class RegistrationMixin(NodeMixin):
@@ -86,7 +90,7 @@ class RegistrationMixin(NodeMixin):
         return node
 
 
-class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin):
+class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin, DraftMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_list).
     """
     permission_classes = (
@@ -113,6 +117,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
         """
         if self.request.method in ('PUT', 'PATCH'):
             return RegistrationDetailSerializer
+        elif self.request.method == 'POST':
+            return RegistrationCreateSerializer
         else:
             return RegistrationSerializer
 
@@ -159,6 +165,32 @@ class RegistrationList(JSONAPIBaseView, generics.ListAPIView, bulk_views.BulkUpd
             'root__retraction',
             'root__registration_approval',
         )
+
+    # overrides ListCreateJSONAPIView
+    def perform_create(self, serializer):
+        """Create a registration from a draft.
+        """
+        draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
+        draft = self.get_draft(draft_id)
+        node = draft.branched_from
+        user = get_user_auth(self.request).user
+
+        # A user must be an admin contributor on the node (not group member), and have
+        # admin perms on the draft to register
+        if node.is_admin_contributor(user) and draft.has_permission(user, ADMIN):
+            try:
+                serializer.save(draft=draft)
+            except ValidationError as e:
+                log_exception()
+                raise e
+        else:
+            raise PermissionDenied(
+                'You must be an admin contributor on both the project and the draft registration to create a registration.',
+            )
+
+    def check_branched_from(self, draft):
+        # Overrides DraftMixin - no node_id in kwargs
+        return
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):

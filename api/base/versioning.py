@@ -10,6 +10,13 @@ from api.base import utils
 from api.base.renderers import BrowsableAPIRendererNoForms
 from api.base.settings import LATEST_VERSIONS
 
+# Determines API version to rely on new DraftRegistration Serializers
+DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION = '2.20'
+
+# Determines the API version that will start using new
+# fields to create a registration
+CREATE_REGISTRATION_FIELD_CHANGE_VERSION = '2.19'
+
 # KEBAB_CASE_VERSION determines the API version in which kebab-case will begin being accepted.
 # Note that this version will not deprecate snake_case yet.
 KEBAB_CASE_VERSION = '2.18'

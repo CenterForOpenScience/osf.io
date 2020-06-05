@@ -173,6 +173,7 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
             }
 
         }
+        registration.registration_responses = registration.flatten_registration_metadata()
         registration.save()
         return registration
 
@@ -192,6 +193,10 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
         assert 'q1' in meta
         assert 'q2' in meta
 
+        reg_responses = res.json['data']['attributes']['registration_responses']
+        assert 'q1' in reg_responses
+        assert 'q2' in reg_responses
+
         # Anonymous view only link has q2 (author response) removed
         res = app.get(url, {
             'view_only': reg_report_anonymous_link.key
@@ -200,6 +205,10 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
         meta = res.json['data']['attributes']['registered_meta']
         assert 'q1' in meta
         assert 'q2' not in meta
+
+        reg_responses = res.json['data']['attributes']['registration_responses']
+        assert 'q1' in reg_responses
+        assert 'q2' not in reg_responses
 
 
 class TestRegistrationListViewOnlyLinks(TestNodeListViewOnlyLinks):

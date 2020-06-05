@@ -2,6 +2,80 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.10.0 (2020-06-04)
+====================
+- Use proper bibliographic status for registration creators
+- Fix Figshare Article Type 4 "Fileset" Deprecation
+- Add management command to add and remove waffle flags and switches
+
+20.9.0 (2020-06-02)
+===================
+- Update Django to 1.11.28
+- Fix to prevent preprints from getting into a bad state
+- Fix broken /v2/ endpoint in browsable API
+- Make institution metrics department ids unique
+- Serve institution dashboard route
+- Add meaningful error message to Sloan indicators
+- Sort and filter institution user metrics properly
+- Fix Sloan preprint API inconsistencies
+- Fix admin app preprint provider post-upgrade
+- Fix API filtering for non-root node giving 502
+
+20.8.0 (2020-05-12)
+===================
+- Fix permissions for draft registrations when branched from node
+- Add burst rate throttling
+- Fix institutional metrics user name
+- Fix type of summary_metrics relationship from institutions
+- Remove unused code from prereg challenge
+
+20.7.0 (2020-05-05)
+===================
+- Added Institutional Dashboard api and models
+- Normalized user tags
+- Updated email to tell people about Chronos
+
+20.6.0 (2020-05-01)
+===================
+- Additional fixes for Sloan Signals of Trust
+
+20.5.0 (2020-04-20)
+===================
+- Fixes for Sloan Signals of Trust
+
+20.4.0 (2020-03-23)
+===================
+- Add DraftNode Model and improve DraftRegistrations
+- Add Sloan Signals of Trust functionality
+- Add waffle flag for EGAP Registration Schema
+- Upgrade werkzeug to 1.0
+- Fix opening two pages in ember-osf-web would log user out
+- Fix API not found error upon logging in
+
+20.3.0 (2020-02-04)
+===================
+- Fix typo in waffle flag pages
+- Update language for withdrawal declined email
+- Optimize update_storage_usage_cache
+- Update docker-compose readme for python 3
+- Allow write contributors to edit metadata on registrations
+- Fix composite queries for Impact
+- Update log fetching to only get current level of node
+
+20.2.0 (2020-01-29)
+===================
+- Fix bugs in EGAP migration script
+
+20.1.0 (2020-01-15)
+===================
+- Switch to Python 3
+
+19.32.0 (2019-12-16)
+===================
+- Add SchemaBlocks, normalization for Registration.registered_meta
+- Update RegistrationSchemas
+- EGAP Ingestor improvements
+
 19.31.0 (2019-11-7)
 ===================
 - EGAP: Parse project structure, add contributors, add files, ingest the draft registration, and add a Jupyter notebook

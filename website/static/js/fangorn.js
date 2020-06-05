@@ -726,7 +726,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         orderFolder.call(tb, from.parent());
     }).always(function(){
 
-        tb.pendingReadyFiles = tb.pendingReadyFiles.filter(function (file) { return file.data.id !== from.data.id; });
+        tb.pendingReadyFiles = (tb.pendingReadyFiles || []).filter(function (file) { return file.data.id !== from.data.id; });
         from.inProgress = false;
         if (notRenameOp && !tb.pendingReadyFiles.length){
             doSyncMove(tb, to.data.provider);

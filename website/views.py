@@ -23,7 +23,7 @@ from website import settings
 from website.institutions.views import serialize_institution
 
 from osf import features
-from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, Registration
+from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration
 from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
@@ -36,7 +36,6 @@ from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
-registries_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['registries']['path']))
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 
@@ -224,7 +223,7 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
-    if not isinstance(url, unicode):
+    if not isinstance(url, str):
         url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
@@ -308,6 +307,10 @@ def resolve_guid(guid, suffix=None):
 
             return send_from_directory(preprints_dir, 'index.html')
 
+        # Handle DraftNodes - these should never be accessed directly
+        if isinstance(referent, DraftNode):
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
         if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
             if referent.is_deleted:
                 raise HTTPError(http_status.HTTP_410_GONE)
@@ -326,7 +329,7 @@ def resolve_guid(guid, suffix=None):
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
                     return Response(stream_with_context(resp.iter_content()), resp.status_code)
 
-                return send_from_directory(registries_dir, 'index.html')
+                return send_from_directory(ember_osf_web_dir, 'index.html')
 
         url = _build_guid_url(unquote(referent.deep_url), suffix)
         return proxy_url(url)

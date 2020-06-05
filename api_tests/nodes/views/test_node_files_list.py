@@ -271,7 +271,7 @@ class TestNodeFilesList(ApiTestCase):
         wb_request = responses.calls[-1].request
         url = furl.furl(wb_request.url)
 
-        assert_equal(url.query, 'meta=True&view_only={}'.format(unicode(vol.key, 'utf-8')))
+        assert_equal(url.query, 'meta=True&view_only={}'.format(str(vol.key)))
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
         assert_in(vol.key, res.json['data'][0]['links']['info'])

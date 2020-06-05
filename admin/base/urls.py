@@ -28,12 +28,12 @@ urlpatterns = [
             url(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
             url(r'^meetings/', include('admin.meetings.urls',
                                        namespace='meetings')),
-            url(r'^project/', include('admin.pre_reg.urls', namespace='pre_reg')),
             url(r'^metrics/', include('admin.metrics.urls',
                                       namespace='metrics')),
             url(r'^desk/', include('admin.desk.urls',
                                    namespace='desk')),
             url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
+            url(r'^management/', include('admin.management.urls', namespace='management')),
         ]),
     ),
 ]

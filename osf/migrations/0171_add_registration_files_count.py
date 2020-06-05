@@ -11,7 +11,6 @@ logger = logging.getLogger(__file__)
 def add_registration_files_count(state, *args, **kwargs):
     """
     Caches registration files count on Registration object.
-
     Importing Registration model outside of this method to take advantage of files
     relationship for speed purposes in this migration.  If this model changes significantly,
     this migration may have to be modified in the future so it runs on an empty db.

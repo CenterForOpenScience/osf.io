@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # noqa; PEP8 asserts
@@ -97,7 +97,7 @@ class TestAuthUtils(OsfTestCase):
                                      mail=mails.WELCOME)
 
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
+        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
         res = self.app.get('/confirm/{}/{}'.format(user._id, token))
 
         res = res.follow()
@@ -302,7 +302,7 @@ class TestPrivateLink(OsfTestCase):
             {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
-        assert_equal(res.body, 'success')
+        assert_equal(res.body.decode(), 'success')
 
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_does_not_have_key(self, mock_from_kwargs):

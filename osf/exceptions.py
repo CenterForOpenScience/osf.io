@@ -132,6 +132,11 @@ class PreprintStateError(PreprintError):
     pass
 
 
+class DraftRegistrationStateError(OSFError):
+    """Raised when an action cannot be performed on a Draft Registration model"""
+    pass
+
+
 class PreprintProviderError(PreprintError):
     """Raised when there is an error with the preprint provider"""
     pass
@@ -140,5 +145,12 @@ class PreprintProviderError(PreprintError):
 class BlacklistedEmailError(OSFError):
     """Raised if a user tries to register an email that is included
     in the blacklisted domains list
+    """
+    pass
+
+class SchemaBlockConversionError(OSFError):
+    """Raised if unexpected data breaks the conversion between the legacy
+    nested registration schema/metadata format and the new, flattened,
+    'schema block' format.
     """
     pass

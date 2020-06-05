@@ -10,6 +10,7 @@ from api.metrics.permissions import IsPreprintMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
+from elasticsearch_dsl.connections import get_connection
 
 
 class PreprintMetricMixin(JSONAPIBaseView):
@@ -69,10 +70,21 @@ class PreprintMetricMixin(JSONAPIBaseView):
             'data': data,
         }
 
-    def execute_search(self, search):
-        # TODO - this is copied from get_count_for_preprint in metrics.py - abstract this out in the future
+    def execute_search(self, search, query=None):
         try:
-            response = search.execute()
+            # There's a bug in the ES python library the prevents us from updating the search object, so lets just make
+            # the raw query. If we have it.
+            if query:
+                es = get_connection(search._using)
+                response = search._response_class(
+                    search,
+                    es.search(
+                        index=search._index,
+                        body=query,
+                    ),
+                )
+            else:
+                response = search.execute()
         except NotFoundError:
             # _get_relevant_indices returned 1 or more indices
             # that doesn't exist. Fall back to unoptimized query
@@ -105,11 +117,14 @@ class PreprintMetricMixin(JSONAPIBaseView):
         """
         search = self.metric.search()
         query = request.data.get('query')
-        search = search.update_from_dict(query)
+
         try:
-            results = self.execute_search(search)
-        except RequestError:
-            raise ValidationError('Misformed elasticsearch query.')
+            results = self.execute_search(search, query)
+        except RequestError as e:
+            if e.args:
+                raise ValidationError(e.info['error']['root_cause'][0]['reason'])
+            raise ValidationError('Malformed elasticsearch query.')
+
         return JsonResponse(results.to_dict())
 
 

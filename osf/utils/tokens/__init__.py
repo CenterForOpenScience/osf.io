@@ -90,7 +90,7 @@ def encode(payload):
         payload,
         settings.JWT_SECRET,
         algorithm=settings.JWT_ALGORITHM
-    )
+    ).decode()
 
 
 def decode(encoded_token):

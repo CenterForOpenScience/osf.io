@@ -398,7 +398,7 @@ def serialize_node(node, category):
         normalized_title = six.u(node.title)
     except TypeError:
         normalized_title = node.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore').decode()
+    normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
         'id': node._id,
         'contributors': [
@@ -452,7 +452,7 @@ def serialize_preprint(preprint, category):
         normalized_title = six.u(preprint.title)
     except TypeError:
         normalized_title = preprint.title
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
         'id': preprint._id,
         'contributors': [
@@ -487,7 +487,7 @@ def serialize_group(group, category):
         normalized_title = six.u(group.name)
     except TypeError:
         normalized_title = group.name
-    normalized_title = unicodedata.normalize('NFKD', normalized_title).encode('ascii', 'ignore')
+    normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
         'id': group._id,
         'members': [
@@ -699,7 +699,7 @@ def update_user(user, index=None):
                 val = six.u(val)
             except TypeError:
                 pass  # This is fine, will only happen in 2.x if val is already unicode
-            normalized_names[key] = unicodedata.normalize('NFKD', val).encode('ascii', 'ignore').decode()
+            normalized_names[key] = unicodedata.normalize('NFKD', val)
 
     user_doc = {
         'id': user._id,
@@ -974,7 +974,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             normalized_item = six.u(item)
         except TypeError:
             normalized_item = item
-        normalized_item = unicodedata.normalize('NFKD', normalized_item).encode('ascii', 'ignore')
+        normalized_item = unicodedata.normalize('NFKD', normalized_item)
         normalized_items.append(normalized_item)
     items = normalized_items
 

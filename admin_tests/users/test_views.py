@@ -9,7 +9,7 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -620,8 +620,10 @@ class TestUserWorkshopFormView(AdminTestCase):
             ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
             [None, '9/1/16', None, None, None, self.user.username, None],
         ]
+        data = csv.reader(data)
+        data = bytes(str(data), 'utf-8')
 
-        uploaded = SimpleUploadedFile('test_name', bytes(csv.reader(data)), content_type='text/csv')
+        uploaded = SimpleUploadedFile('test_name', data, content_type='text/csv')
 
         form = WorkshopForm(data={'document': uploaded})
         form.is_valid()

@@ -122,6 +122,7 @@ OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_HTTPONLY = True
 
 # local path to private key and cert for local development using https, overwrite in local.py
@@ -399,16 +400,16 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
-        'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
+        'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -417,6 +418,10 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
+        'website.collections.tasks',
+        'website.identifier.tasks',
+        'website.preprints.tasks',
+        'website.project.tasks',
     }
 
     high_pri_modules = {
@@ -488,6 +493,8 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.update_institution_project_counts',
     )
 
     # Modules that need metrics and release requirements
@@ -603,6 +610,9 @@ class CeleryConfig:
             #   'task': 'management.commands.migrate_pagecounter_data',
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
+            # 'migrate_registration_responses': {
+            #   'task': 'management.commands.migrate_registration_responses',
+            #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
             # 'migrate_deleted_date': {
             #   'task': 'management.commands.migrate_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),
@@ -621,6 +631,10 @@ class CeleryConfig:
             'check_crossref_doi': {
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
+            },
+            'update_institution_project_counts': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
         }
 
@@ -654,6 +668,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
+
+ENABLE_STORAGE_USAGE_CACHE = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False
