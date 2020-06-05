@@ -18,24 +18,27 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission, Comment
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.elastic_search import es_index
+from website.search.elastic_search import comments_to_doc
 from website.search.search import update_institution, bulk_update_collected_metadata
 from website.search.util import unicode_normalize
-
+from addons.wiki.models import WikiPage
+from addons.osfstorage.models import OsfStorageFile
 
 logger = logging.getLogger(__name__)
 
 # see:
 # - website.search.elastic_search.update_user
+# - website.search.elastic_search.update_file
 # - website.search.elastic_search.serialize_node
 # - website.search.elastic_search.create_index
-def normalize(docs):
+def fill_and_normalize(docs):
     assert docs
 
     doc_op_type = docs[0]['_op_type']
@@ -45,33 +48,63 @@ def normalize(docs):
     doc_type = docs[0]['_type']
     if doc_type == 'user':
         for doc in docs:
+            d = doc['doc']
+            d['sort_user_name'] = d['user']
             normalized_names = {}
-            for key, val in doc['doc']['names'].items():
+            for key, val in d['names'].items():
                 if val is not None:
                     normalized_names[key] = unicode_normalize(val)
-            doc['doc']['normalized_user'] = normalized_names['fullname']
-            doc['doc']['normalized_names'] = normalized_names
+            d['normalized_user'] = normalized_names['fullname']
+            d['normalized_names'] = normalized_names
+
+            ongoing_list = ('job', 'job_department', 'job_title',
+                            'school', 'school_department', 'school_degree')
+            for suffix in ongoing_list:
+                name = 'ongoing_' + suffix
+                d[name] = unicode_normalize(d[name])
     elif doc_type == 'file':
         for doc in docs:
-            name = doc['doc']['name']
-            doc['doc']['normalized_name'] = unicode_normalize(name)
+            d = doc['doc']
+            name = d['name']
+            d['sort_file_name'] = name
+            d['sort_node_name'] = d['node_title']
+            d['normalized_name'] = unicode_normalize(name)
             normalized_tags = []
-            for tag in doc['doc']['tags']:
+            for tag in d['tags']:
                 normalized_tags.append(unicode_normalize(tag))
-            doc['doc']['normalized_tags'] = normalized_tags
+            d['normalized_tags'] = normalized_tags
+
+            creator_name = d['creator_name']
+            d['creator_name'] = unicode_normalize(creator_name)
+            modifier_name = d['modifier_name']
+            d['modifier_name'] = unicode_normalize(modifier_name)
+            f = OsfStorageFile.load(d['id'])
+            comments = {}
+            if f:
+                file_guid = f.get_guid(create=False)
+                if file_guid:
+                    comments = comments_to_doc(file_guid._id)
+            d['comments'] = comments
     elif doc_type in PROJECT_LIKE_TYPES:
         for doc in docs:
-            title = doc['doc']['title']
-            doc['doc']['normalized_title'] = unicode_normalize(title)
-            description = doc['doc']['description']
+            d = doc['doc']
+            title = d['title']
+            d['sort_node_name'] = title
+            d['normalized_title'] = unicode_normalize(title)
+            description = d['description']
             if description:
-                doc['doc']['normalized_description'] = unicode_normalize(description)
+                d['normalized_description'] = unicode_normalize(description)
             normalized_tags = []
-            for tag in doc['doc']['tags']:
+            for tag in d['tags']:
                 normalized_tags.append(unicode_normalize(tag))
-            doc['doc']['normalized_tags'] = normalized_tags
+            d['normalized_tags'] = normalized_tags
 
-            wikis = doc['doc']['wikis']
+            creator_name = d['creator_name']
+            d['creator_name'] = unicode_normalize(creator_name)
+            modifier_name = d['modifier_name']
+            d['modifier_name'] = unicode_normalize(modifier_name)
+
+            wikis = d['wikis']
             if isinstance(wikis, list):
                 new_wikis = {}
                 for kv in wikis:
@@ -87,8 +120,10 @@ def normalize(docs):
                 wikiname = unicode_normalize(wikiname)
                 normalized_wikis[wikiname] = unicode_normalize(wikidata)
                 normalized_wiki_names.append(wikiname)
-            doc['doc']['wikis'] = normalized_wikis
-            doc['doc']['wiki_names'] = normalized_wiki_names
+            d['wikis'] = normalized_wikis
+            d['wiki_names'] = normalized_wiki_names
+            node = AbstractNode.load(doc['_id'])
+            d['comments'] = comments_to_doc(node._id)
 
 def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
     """ Run provided SQL and send output to elastic.
@@ -129,14 +164,18 @@ def sql_migrate(index, sql, max_id, increment, es_args=None, **kwargs):
             ser_objs = cursor.fetchone()[0]
             if ser_objs:
                 total_objs += len(ser_objs)
-                normalize(ser_objs)
+                fill_and_normalize(ser_objs)
                 helpers.bulk(client(), ser_objs, **es_args)
         page_start = page_end
     return total_objs
 
 def migrate_nodes(index, delete, increment=10000):
     logger.info('Migrating nodes to index: {}'.format(index))
-    max_nid = AbstractNode.objects.last().id
+    last = AbstractNode.objects.last()
+    if last is None:
+        logger.info('0 node migrated')
+        return
+    max_nid = last.id
     total_nodes = sql_migrate(
         index,
         JSON_UPDATE_NODES_SQL,
@@ -184,9 +223,33 @@ def migrate_groups(index, delete):
         logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
         OSFGroup.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
+def migrate_wikis(index, delete):
+    logger.info('Migrating wiki pages to index: {}'.format(index))
+    wikis = WikiPage.objects.order_by('-id')
+    increment = 100
+    paginator = Paginator(wikis, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_wikis(paginator.page(page_number).object_list, index=index)
+    logger.info('{} wikis migrated'.format(wikis.count()))
+
+def migrate_comments(index, delete):
+    logger.info('Migrating comments to index: {}'.format(index))
+    comments = Comment.objects.order_by('-id')
+    increment = 100
+    paginator = Paginator(comments, increment)
+    for page_number in paginator.page_range:
+        logger.info('Updating page {} / {}'.format(page_number, paginator.num_pages))
+        search.bulk_update_comments(paginator.page(page_number).object_list, index=index)
+    logger.info('{} comments migrated'.format(comments.count()))
+
 def migrate_files(index, delete, increment=10000):
     logger.info('Migrating files to index: {}'.format(index))
-    max_fid = BaseFileNode.objects.last().id
+    last = BaseFileNode.objects.last()
+    if last is None:
+        logger.info('0 file migrated')
+        return
+    max_fid = last.id
     total_files = sql_migrate(
         index,
         JSON_UPDATE_FILES_SQL,
@@ -208,7 +271,11 @@ def migrate_files(index, delete, increment=10000):
 
 def migrate_users(index, delete, increment=10000):
     logger.info('Migrating users to index: {}'.format(index))
-    max_uid = OSFUser.objects.last().id
+    last = OSFUser.objects.last()
+    if last is None:
+        logger.info('0 user migrated')
+        return
+    max_uid = last.id
     total_users = sql_migrate(
         index,
         JSON_UPDATE_USERS_SQL,
@@ -279,6 +346,8 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
         migrate_institutions(new_index)
     migrate_nodes(new_index, delete=delete)
     migrate_files(new_index, delete=delete)
+    migrate_wikis(new_index, delete=delete)
+    migrate_comments(new_index, delete=delete)
     migrate_users(new_index, delete=delete)
     migrate_preprints(new_index, delete=delete)
     migrate_preprint_files(new_index, delete=delete)
@@ -315,6 +384,7 @@ def set_up_index(idx):
         version = int(alias.keys()[0].split('_v')[1]) + 1
         logger.info('Incrementing index version to {}'.format(version))
         index = '{0}_v{1}'.format(idx, version)
+        es_client().indices.delete(index=index, ignore=404)
         search.create_index(index=index)
         logger.info('{} index created'.format(index))
     return index

@@ -1,5 +1,7 @@
 FROM python:2.7-slim-stretch
 
+ARG NODE_OPTIONS='--max-old-space-size=4096'
+
 ENV GOSU_VERSION=1.10 \
     NODE_ENV=production \
     NODE_VERSION=8.6.0 \

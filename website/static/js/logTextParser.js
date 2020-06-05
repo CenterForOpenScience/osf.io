@@ -10,6 +10,7 @@ var $ = require('jquery');  // jQuery
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
 var lodashGet = require('lodash.get');
+var _ = require('js/rdmGettext')._;
 
 var ravenMessagesCache = []; // Cache messages to avoid sending multiple times in one page view
 var nodeCategories = require('json-loader!built/nodeCategories.json');
@@ -174,7 +175,7 @@ var LogText = {
         return null;
         };
         var message = '';
-        var text = logText();
+        var text = _(logText());
         if(text){
             if (logObject.anonymous) { return m('span.osf-log-item', text); }
             var list = text.split(/(\${.*?})/);
@@ -493,7 +494,8 @@ var LogPieces = {
                     var action = logObject.attributes.action;
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
-                    's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out'];
+                    's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out',
+                    'timestamp_added'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
                        return logObject.attributes.params.urls.view;
                     }
@@ -814,6 +816,12 @@ var LogPieces = {
                 return m('span', folder === '/' ? '(Full IQB-RIMS)' : folder);
             }
             return m('span', '');
+        }
+    },
+
+    timestamp_errors_file_format: {
+        view: function(ctrl, logObject) {
+            return returnTextParams('file_format', _('unknown format'), logObject);
         }
     },
 };

@@ -254,15 +254,16 @@ def replace_normalized_field(qs):
     return qs
 
 def convert_query_string(qs, normalize=False):
-    qs = quote_query_string(qs)
-    qs = replace_normalized_field(qs)
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_ENGLISH:
+        qs = quote_query_string(qs)
+        qs = replace_normalized_field(qs)
     logger.debug(u'convert_query_string: {}'.format(qs))
     if normalize:
         return unicode_normalize(qs)
     else:
         return qs
 
-def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
+def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highlight=None):
     match_node = {
         'bool': {
             'must': [
@@ -324,6 +325,64 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
+    match_wiki = {
+        'bool': {
+            'must': [
+                {
+                    'term': {
+                        'category': 'wiki'
+                    }
+                },
+                {
+                    'bool': {
+                        'should': [
+                            {
+                                'term': {
+                                    'node_contributors.id': user._id
+                                }
+                            },
+                            {
+                                'term': {
+                                    'node_public': True
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    match_comment = {
+        'bool': {
+            'must': [
+                {
+                    'term': {
+                        'category': 'comment'
+                    }
+                },
+                {
+                    'bool': {
+                        'should': [
+                            {
+                                'term': {
+                                    'node_contributors.id': user._id
+                                }
+                            },
+                            {
+                                'term': {
+                                    'node_public': True
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+
+    inner_query = build_query_string(qs)
+
     query_body = {
         'bool': {
             # This is a filter to search only accessible data.
@@ -333,12 +392,14 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
             # So "must" is used instead of "filter" here.
             # See: https://www.elastic.co/guide/en/elasticsearch/reference/2.3/query-dsl-bool-query.html
             'must': [
-                build_query_string(qs),
+                inner_query,
                 {
                     'bool': {
                         'should': [
                             match_node,
                             match_file,
+                            match_wiki,
+                            match_comment,
                             {
                                 'terms': {
                                     'category': [
@@ -355,13 +416,159 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None):
         }
     }
 
-    return {
+    highlight_fields = {}
+    # Example:
+    # highlight='title:30,comments.*:30'
+    #   ->
+    # highlight_fields = {
+    #     'title': {
+    #         'fragment_size': 30,
+    #     },
+    #     'comments.*': {
+    #         'fragment_size': 124,
+    #     },
+    # }
+    if highlight:
+        fields = highlight.split(',')
+        for field in fields:
+            key_val = field.split(':')
+            if len(key_val) >= 1:
+                key = key_val[0]
+                if len(key_val) == 2:
+                    try:
+                        val = int(key_val[1])
+                    except Exception:
+                        val = settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                else:
+                    val = settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE
+                highlight_fields[key] = {'fragment_size': val}
+
+    query = {
         'query': query_body,
+        'highlight': {
+            'number_of_fragments': 1,
+            'pre_tags': ['<b>'],
+            'post_tags': ['</b>'],
+            'fields': highlight_fields,
+            'require_field_match': False,
+            'highlight_query': inner_query,
+        },
         'from': start,
         'size': size,
+        'sort': sort_query(sort),
     }
+    return query
+
+def sort_query(sort):
+    if sort is None:  # default
+        sort = 'modified_desc'
+
+    def _split_target_order(sort):
+        try:
+            to = sort.split('_')
+            return to[0], to[1]
+        except Exception:
+            return None, None
+
+    target, order = _split_target_order(sort)
+
+    ASC = 'asc'
+    DESC = 'desc'
+    MODIFIED = 'date_modified'
+    CREATED = 'date_created'
+    PROJECT = 'sort_node_name'
+    FILE = 'sort_file_name'
+    WIKI = 'sort_wiki_name'
+    USER = 'sort_user_name'
+    INSTITUTION = 'sort_institution_name'
+    SCORE = '_score'
+
+    ERROR = 'unknown sort parameter: {}'.format(sort)
+
+    if order != ASC and order != DESC:
+        # order = None  # use default
+        raise Exception(ERROR)
+
+    if target == 'project':
+        query = [
+            {PROJECT: order},
+            {FILE: order},
+            {WIKI: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'file':
+        query = [
+            {FILE: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'wiki':
+        query = [
+            {WIKI: order},
+            {PROJECT: order},
+            {FILE: order},
+            {USER: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'user':
+        query = [
+            {USER: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {FILE: order},
+            {INSTITUTION: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'institution':
+        query = [
+            {INSTITUTION: order},
+            {PROJECT: order},
+            {WIKI: order},
+            {FILE: order},
+            {USER: order},
+            {MODIFIED: DESC},
+            {SCORE: ASC}
+        ]
+    elif target == 'created':
+        query = [
+            {CREATED: order},
+            {PROJECT: ASC},
+            {FILE: ASC},
+            {WIKI: ASC},
+            {USER: ASC},
+            {INSTITUTION: ASC},
+            {SCORE: ASC}
+        ]
+    elif target == 'modified':
+        query = [
+            {MODIFIED: order},
+            {PROJECT: ASC},
+            {FILE: ASC},
+            {WIKI: ASC},
+            {USER: ASC},
+            {INSTITUTION: ASC},
+            {SCORE: ASC}
+        ]
+    else:
+        raise Exception(ERROR)
+
+    return query
 
 def unicode_normalize(text):
+    if text is None:
+        return None
+    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+        return text
     if not isinstance(text, unicode):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
