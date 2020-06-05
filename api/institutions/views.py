@@ -417,7 +417,6 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     view_category = 'institutions'
 
-
     @property
     def is_csv_export(self):
         if isinstance(self.request.accepted_renderer, MetricsCSVRenderer):
