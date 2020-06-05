@@ -1,5 +1,7 @@
 import pytest
 import datetime
+import csv
+from io import StringIO
 from random import random
 import time
 
@@ -21,7 +23,10 @@ class TestInstitutionUserMetricList:
 
     @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
+        user = AuthUserFactory()
+        user.fullname = user.fullname + ',a'
+        user.save()
+        return user
 
     @pytest.fixture()
     def user2(self):
@@ -188,6 +193,25 @@ class TestInstitutionUserMetricList:
                 }
             }
         ]
+
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+
+        response_body = resp.text
+
+        expected_response = [['id', 'user_name', 'public_projects', 'private_projects', 'type'],
+            [user._id, user.fullname, '6', '5', 'institution-users'],
+            [user2._id, user2.fullname, '3', '2', 'institution-users']]
+
+        with StringIO(response_body) as csv_file:
+            csvreader = csv.reader(csv_file, delimiter=',')
+            for index, row in enumerate(csvreader):
+                assert row == expected_response[index]
 
     def test_filter(self, app, url, admin, populate_counts):
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
