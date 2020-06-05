@@ -1139,9 +1139,24 @@ class DraftRegistrationGroupObjectPermission(GroupObjectPermissionBase):
 def create_django_groups_for_draft_registration(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-        DraftRegistrationContributor.objects.get_or_create(
-            user=instance.initiator,
-            draft_registration=instance,
-            visible=True,
-        )
-        instance.add_permission(instance.initiator, ADMIN)
+
+        initiator = instance.initiator
+
+        if instance.branched_from.contributor_set.filter(user=initiator).exists():
+            initiator_node_contributor = instance.branched_from.contributor_set.get(user=initiator)
+            initiator_visibility = initiator_node_contributor.visible
+            initiator_order = initiator_node_contributor._order
+
+            DraftRegistrationContributor.objects.get_or_create(
+                user=initiator,
+                draft_registration=instance,
+                visible=initiator_visibility,
+                _order=initiator_order
+            )
+        else:
+            DraftRegistrationContributor.objects.get_or_create(
+                user=initiator,
+                draft_registration=instance,
+                visible=True,
+            )
+        instance.add_permission(initiator, ADMIN)

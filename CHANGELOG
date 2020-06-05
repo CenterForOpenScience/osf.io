@@ -2,6 +2,25 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.10.0 (2020-06-04)
+====================
+- Use proper bibliographic status for registration creators
+- Fix Figshare Article Type 4 "Fileset" Deprecation
+- Add management command to add and remove waffle flags and switches
+
+20.9.0 (2020-06-02)
+===================
+- Update Django to 1.11.28
+- Fix to prevent preprints from getting into a bad state
+- Fix broken /v2/ endpoint in browsable API
+- Make institution metrics department ids unique
+- Serve institution dashboard route
+- Add meaningful error message to Sloan indicators
+- Sort and filter institution user metrics properly
+- Fix Sloan preprint API inconsistencies
+- Fix admin app preprint provider post-upgrade
+- Fix API filtering for non-root node giving 502
+
 20.8.0 (2020-05-12)
 ===================
 - Fix permissions for draft registrations when branched from node
