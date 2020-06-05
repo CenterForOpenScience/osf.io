@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-05 13:40+0900\n"
-"PO-Revision-Date: 2020-06-05 13:40+0900\n"
+"POT-Creation-Date: 2020-06-05 15:40+0900\n"
+"PO-Revision-Date: 2020-06-05 15:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.8.0\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: .\templates\banners\confirm_delete.html:4
 msgid "GakuNin RDM Admin | Delete banner"
@@ -97,34 +97,7 @@ msgstr "バナーを削除"
 #: .\templates\base.html:168 .\templates\base.html:233
 #: .\templates\base.html:236 .\templates\base.html:239
 #: .\templates\base.html:242 .\templates\base.html:246
-#: .\templates\base.html:273 .\templates\base.html:274
-#: .\templates\base.html:275 .\templates\base.html:279
-#: .\templates\rdm_addons\addon_list.html:6
-#: .\templates\rdm_addons\addon_list.html:17
-#: .\templates\rdm_addons\addon_list.html:19
-#: .\templates\rdm_addons\institution_list.html:13
-#: .\templates\rdm_addons\institution_list.html:17
-#: .\templates\rdm_announcement\index.html:6
-#: .\templates\rdm_announcement\index.html:11
-#: .\templates\rdm_announcement\index.html:13
-#: .\templates\rdm_announcement\send.html:7
-#: .\templates\rdm_announcement\send.html:12
-#: .\templates\rdm_announcement\send.html:14
-#: .\templates\rdm_announcement\settings.html:7
-#: .\templates\rdm_announcement\settings.html:12
-#: .\templates\rdm_announcement\settings.html:14
-#: .\templates\rdm_statistics\crawl.html:6
-#: .\templates\rdm_statistics\crawl.html:9
-#: .\templates\rdm_statistics\index.html:6
-#: .\templates\rdm_statistics\index.html:9
-#: .\templates\rdm_statistics\institution_list.html:13
-#: .\templates\rdm_statistics\institution_list.html:17
-#: .\templates\rdm_statistics\mail.html:11
-#: .\templates\rdm_statistics\mail.html:14
-#: .\templates\rdm_statistics\settings.html:6
-#: .\templates\rdm_statistics\settings.html:9
-#: .\templates\rdm_statistics\statistics.html:32
-#: .\templates\rdm_statistics\statistics.html:35
+#: .\templates\base.html:279
 msgid "RDM"
 msgstr "RDM"
 
@@ -280,14 +253,13 @@ msgstr "バナー"
 msgid "Maintenance Alerts"
 msgstr "メンテナスアラート"
 
-#: .\templates\base.html:273 .\templates\metrics\osf_metrics.html:35
-#: .\templates\metrics\osf_metrics.html:926
-#: .\templates\rdm_addons\addon_list.html:6
+#: .\templates\base.html:273 .\templates\rdm_addons\addon_list.html:6
+#: .\templates\rdm_addons\addon_list.html:17
 #: .\templates\rdm_addons\addon_list.html:19
 #: .\templates\rdm_addons\institution_list.html:13
 #: .\templates\rdm_addons\institution_list.html:17
-msgid "Addons"
-msgstr "アドオン"
+msgid "RDM Addons"
+msgstr "アドオン利用制御"
 
 #: .\templates\base.html:274 .\templates\rdm_statistics\crawl.html:6
 #: .\templates\rdm_statistics\crawl.html:9
@@ -299,15 +271,19 @@ msgstr "アドオン"
 #: .\templates\rdm_statistics\mail.html:14
 #: .\templates\rdm_statistics\statistics.html:32
 #: .\templates\rdm_statistics\statistics.html:35
-msgid "Statistics"
-msgstr "統計"
+msgid "RDM Statistics"
+msgstr "利用統計"
 
 #: .\templates\base.html:275 .\templates\rdm_announcement\index.html:6
+#: .\templates\rdm_announcement\index.html:11
 #: .\templates\rdm_announcement\index.html:13
-#: .\templates\rdm_announcement\index.html:19
 #: .\templates\rdm_announcement\send.html:7
+#: .\templates\rdm_announcement\send.html:12
 #: .\templates\rdm_announcement\send.html:14
-msgid "Announcement"
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:12
+#: .\templates\rdm_announcement\settings.html:14
+msgid "RDM Announcement"
 msgstr "アナウンス"
 
 #: .\templates\base.html:276
@@ -343,14 +319,6 @@ msgstr "GakuNin RDM管理者ホームページへようこそ"
 #: .\templates\base.html:313
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
-
-#: .\templates\base.html:314
-msgid "Terms of Use"
-msgstr "利用規約"
-
-#: .\templates\base.html:315
-msgid "Privacy Policy"
-msgstr "プライバシーポリシー"
 
 #: .\templates\collection_providers\cannot_delete.html:7
 msgid "Collection Provider Delete"
@@ -814,9 +782,7 @@ msgstr "現在のアラート："
 msgid ""
 "The site will undergo maintenance between &lt;localized start "
 "time&gt;-&lt;localized end time&gt;. Thank you for your patience."
-msgstr ""
-"サイトは、&lt;ローカライズされた開始時間&gt;-&lt;ローカライズされた終了時間&gt;の間でメンテナンスされます。 "
-"お待ちいただいてありがとうございます。"
+msgstr "サイトは、<ローカライズされた開始時間>-<ローカライズされた終了時間>の間でメンテナンスされます。 お待ちいただいてありがとうございます。"
 
 #: .\templates\maintenance\display.html:37
 msgid "Remove alert"
@@ -890,6 +856,14 @@ msgstr "API URL"
 msgid "None"
 msgstr "無し"
 
+#: .\templates\messages.html:10
+msgid "title"
+msgstr "件名"
+
+#: .\templates\messages.html:11
+msgid "text"
+msgstr "本文"
+
 #: .\templates\metrics\osf_metrics.html:7
 #: .\templates\metrics\osf_metrics.html:26
 #: .\templates\metrics\osf_statistics.html:6
@@ -919,6 +893,11 @@ msgstr "健全なユーザメトリクス"
 #: .\templates\metrics\osf_metrics.html:636
 msgid "Raw Numbers"
 msgstr "生の数値"
+
+#: .\templates\metrics\osf_metrics.html:35
+#: .\templates\metrics\osf_metrics.html:926
+msgid "Addons"
+msgstr "アドオン"
 
 #: .\templates\metrics\osf_metrics.html:37
 #: .\templates\metrics\osf_metrics.html:645
@@ -1738,10 +1717,6 @@ msgstr "テキスト"
 msgid "Edit"
 msgstr "編集"
 
-#: .\templates\rdm_addons\addon_list.html:17
-msgid "Addons "
-msgstr "アドオン"
-
 #: .\templates\rdm_addons\addon_list.html:25
 msgid "Configure Add-on Accounts"
 msgstr "ユーザが利用可能なアドオンを設定する"
@@ -1926,6 +1901,11 @@ msgstr "アクセスキー"
 msgid "Secret Key"
 msgstr "シークレットキー"
 
+#: .\templates\rdm_addons\institution_list.html:27
+#: .\templates\rdm_statistics\institution_list.html:27
+msgid "Institution List"
+msgstr "機関リスト"
+
 #: .\templates\rdm_addons\oauth_complete.html:17
 msgid "OAuth Complete"
 msgstr "OAuthの完了"
@@ -1938,12 +1918,16 @@ msgstr "%(addon_name|title)sアカウントに正常に接続しました。"
 msgid "Please close this tab."
 msgstr "このタブを閉じてください"
 
-#: .\templates\rdm_announcement\index.html:11
-#: .\templates\rdm_announcement\send.html:12
-msgid "Announcement "
+#: .\templates\rdm_announcement\index.html:19
+msgid "Announcement"
 msgstr "アナウンス"
 
 #: .\templates\rdm_announcement\index.html:64
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:12
+#: .\templates\rdm_announcement\settings.html:14
+#: .\templates\rdm_statistics\settings.html:6
+#: .\templates\rdm_statistics\settings.html:9
 msgid "Options"
 msgstr "オプション"
 
@@ -1954,15 +1938,6 @@ msgstr "プレビュー"
 #: .\templates\rdm_announcement\send.html:34
 msgid "Send"
 msgstr "送信"
-
-#: .\templates\rdm_announcement\settings.html:7
-#: .\templates\rdm_announcement\settings.html:14
-msgid "Announcement - Options"
-msgstr "アナウンス - オプション"
-
-#: .\templates\rdm_announcement\settings.html:12
-msgid "Announcement - Options "
-msgstr "アナウンス - オプション"
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
 msgid "Institutional Storage "
@@ -2166,10 +2141,6 @@ msgstr "統計情報"
 msgid "institution "
 msgstr "機関"
 
-#: .\templates\rdm_statistics\institution_list.html:27
-msgid "Institution List"
-msgstr "機関リスト"
-
 #: .\templates\rdm_statistics\mail.html:19
 msgid "Send statistic information mail"
 msgstr "統計情報メールを送信する"
@@ -2180,8 +2151,8 @@ msgstr "送信結果"
 
 #: .\templates\rdm_statistics\settings.html:6
 #: .\templates\rdm_statistics\settings.html:9
-msgid "Announcements - Options"
-msgstr "アナウンス - オプション"
+msgid "RDM Announcements"
+msgstr "アナウンス"
 
 #: .\templates\rdm_statistics\statistics.html:40
 msgid "Institution"

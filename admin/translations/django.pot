@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-18 10:44+0900\n"
-"PO-Revision-Date: 2020-05-18 14:44+0900\n"
+"POT-Creation-Date: 2020-06-05 15:40+0900\n"
+"PO-Revision-Date: 2020-06-05 15:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -93,34 +93,7 @@ msgstr ""
 #: .\templates\base.html:168 .\templates\base.html:233
 #: .\templates\base.html:236 .\templates\base.html:239
 #: .\templates\base.html:242 .\templates\base.html:246
-#: .\templates\base.html:273 .\templates\base.html:274
-#: .\templates\base.html:275 .\templates\base.html:279
-#: .\templates\rdm_addons\addon_list.html:6
-#: .\templates\rdm_addons\addon_list.html:17
-#: .\templates\rdm_addons\addon_list.html:19
-#: .\templates\rdm_addons\institution_list.html:13
-#: .\templates\rdm_addons\institution_list.html:17
-#: .\templates\rdm_announcement\index.html:6
-#: .\templates\rdm_announcement\index.html:11
-#: .\templates\rdm_announcement\index.html:13
-#: .\templates\rdm_announcement\send.html:7
-#: .\templates\rdm_announcement\send.html:12
-#: .\templates\rdm_announcement\send.html:14
-#: .\templates\rdm_announcement\settings.html:7
-#: .\templates\rdm_announcement\settings.html:12
-#: .\templates\rdm_announcement\settings.html:14
-#: .\templates\rdm_statistics\crawl.html:6
-#: .\templates\rdm_statistics\crawl.html:9
-#: .\templates\rdm_statistics\index.html:6
-#: .\templates\rdm_statistics\index.html:9
-#: .\templates\rdm_statistics\institution_list.html:13
-#: .\templates\rdm_statistics\institution_list.html:17
-#: .\templates\rdm_statistics\mail.html:11
-#: .\templates\rdm_statistics\mail.html:14
-#: .\templates\rdm_statistics\settings.html:6
-#: .\templates\rdm_statistics\settings.html:9
-#: .\templates\rdm_statistics\statistics.html:32
-#: .\templates\rdm_statistics\statistics.html:35
+#: .\templates\base.html:279
 msgid "RDM"
 msgstr ""
 
@@ -134,7 +107,7 @@ msgstr ""
 
 #: .\templates\base.html:69
 #, python-format
-msgid "Logged in as %(username)s"
+msgid "Logged in as %(userfullname)s"
 msgstr ""
 
 #: .\templates\base.html:77
@@ -276,13 +249,12 @@ msgstr ""
 msgid "Maintenance Alerts"
 msgstr ""
 
-#: .\templates\base.html:273 .\templates\metrics\osf_metrics.html:35
-#: .\templates\metrics\osf_metrics.html:926
-#: .\templates\rdm_addons\addon_list.html:6
+#: .\templates\base.html:273 .\templates\rdm_addons\addon_list.html:6
+#: .\templates\rdm_addons\addon_list.html:17
 #: .\templates\rdm_addons\addon_list.html:19
 #: .\templates\rdm_addons\institution_list.html:13
 #: .\templates\rdm_addons\institution_list.html:17
-msgid "Addons"
+msgid "RDM Addons"
 msgstr ""
 
 #: .\templates\base.html:274 .\templates\rdm_statistics\crawl.html:6
@@ -295,15 +267,19 @@ msgstr ""
 #: .\templates\rdm_statistics\mail.html:14
 #: .\templates\rdm_statistics\statistics.html:32
 #: .\templates\rdm_statistics\statistics.html:35
-msgid "Statistics"
+msgid "RDM Statistics"
 msgstr ""
 
 #: .\templates\base.html:275 .\templates\rdm_announcement\index.html:6
+#: .\templates\rdm_announcement\index.html:11
 #: .\templates\rdm_announcement\index.html:13
-#: .\templates\rdm_announcement\index.html:19
 #: .\templates\rdm_announcement\send.html:7
+#: .\templates\rdm_announcement\send.html:12
 #: .\templates\rdm_announcement\send.html:14
-msgid "Announcement"
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:12
+#: .\templates\rdm_announcement\settings.html:14
+msgid "RDM Announcement"
 msgstr ""
 
 #: .\templates\base.html:276
@@ -338,14 +314,6 @@ msgstr ""
 
 #: .\templates\base.html:313
 msgid "National Institute of Informatics"
-msgstr ""
-
-#: .\templates\base.html:314
-msgid "Terms of Use"
-msgstr ""
-
-#: .\templates\base.html:315
-msgid "Privacy Policy"
 msgstr ""
 
 #: .\templates\collection_providers\cannot_delete.html:7
@@ -565,7 +533,7 @@ msgstr ""
 
 #: .\templates\home.html:5
 #, python-format
-msgid "Hello %(username)s, "
+msgid "Hello %(userfullname)s, "
 msgstr ""
 
 #: .\templates\home.html:8
@@ -884,6 +852,14 @@ msgstr ""
 msgid "None"
 msgstr ""
 
+#: .\templates\messages.html:10
+msgid "title"
+msgstr ""
+
+#: .\templates\messages.html:11
+msgid "text"
+msgstr ""
+
 #: .\templates\metrics\osf_metrics.html:7
 #: .\templates\metrics\osf_metrics.html:26
 #: .\templates\metrics\osf_statistics.html:6
@@ -912,6 +888,11 @@ msgstr ""
 #: .\templates\metrics\osf_metrics.html:34
 #: .\templates\metrics\osf_metrics.html:636
 msgid "Raw Numbers"
+msgstr ""
+
+#: .\templates\metrics\osf_metrics.html:35
+#: .\templates\metrics\osf_metrics.html:926
+msgid "Addons"
 msgstr ""
 
 #: .\templates\metrics\osf_metrics.html:37
@@ -1732,10 +1713,6 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: .\templates\rdm_addons\addon_list.html:17
-msgid "Addons "
-msgstr ""
-
 #: .\templates\rdm_addons\addon_list.html:25
 msgid "Configure Add-on Accounts"
 msgstr ""
@@ -1909,6 +1886,11 @@ msgstr ""
 msgid "Secret Key"
 msgstr ""
 
+#: .\templates\rdm_addons\institution_list.html:27
+#: .\templates\rdm_statistics\institution_list.html:27
+msgid "Institution List"
+msgstr ""
+
 #: .\templates\rdm_addons\oauth_complete.html:17
 msgid "OAuth Complete"
 msgstr ""
@@ -1922,12 +1904,16 @@ msgstr ""
 msgid "Please close this tab."
 msgstr ""
 
-#: .\templates\rdm_announcement\index.html:11
-#: .\templates\rdm_announcement\send.html:12
-msgid "Announcement "
+#: .\templates\rdm_announcement\index.html:19
+msgid "Announcement"
 msgstr ""
 
 #: .\templates\rdm_announcement\index.html:64
+#: .\templates\rdm_announcement\settings.html:7
+#: .\templates\rdm_announcement\settings.html:12
+#: .\templates\rdm_announcement\settings.html:14
+#: .\templates\rdm_statistics\settings.html:6
+#: .\templates\rdm_statistics\settings.html:9
 msgid "Options"
 msgstr ""
 
@@ -1937,15 +1923,6 @@ msgstr ""
 
 #: .\templates\rdm_announcement\send.html:34
 msgid "Send"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:7
-#: .\templates\rdm_announcement\settings.html:14
-msgid "Announcement - Options"
-msgstr ""
-
-#: .\templates\rdm_announcement\settings.html:12
-msgid "Announcement - Options "
 msgstr ""
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:20
@@ -2137,10 +2114,6 @@ msgstr ""
 msgid "institution "
 msgstr ""
 
-#: .\templates\rdm_statistics\institution_list.html:27
-msgid "Institution List"
-msgstr ""
-
 #: .\templates\rdm_statistics\mail.html:19
 msgid "Send statistic information mail"
 msgstr ""
@@ -2151,7 +2124,7 @@ msgstr ""
 
 #: .\templates\rdm_statistics\settings.html:6
 #: .\templates\rdm_statistics\settings.html:9
-msgid "Announcements - Options"
+msgid "RDM Announcements"
 msgstr ""
 
 #: .\templates\rdm_statistics\statistics.html:40
