@@ -139,7 +139,7 @@ msgstr "管理者"
 #: .\templates\base.html:69
 #, python-format
 msgid "Logged in as %(username)s"
-msgstr "%(username)sとしてログイン"
+msgstr "%(username)sとしてログイン中"
 
 #: .\templates\base.html:77
 msgid "Admin-User Registration"
@@ -151,7 +151,7 @@ msgstr "デスク情報"
 
 #: .\templates\base.html:89
 msgid "Sign out"
-msgstr "サインアウト"
+msgstr "ログアウト"
 
 #: .\templates\base.html:105
 msgid "Menu"
@@ -184,7 +184,7 @@ msgstr "プレプリント"
 
 #: .\templates\base.html:134
 msgid "Withdrawal Requests"
-msgstr "撤回のリクエスト"
+msgstr "削除のリクエスト"
 
 #: .\templates\base.html:141 .\templates\base.html:145
 #: .\templates\metrics\osf_statistics.html:23
@@ -569,11 +569,11 @@ msgstr "-GakuNin RDM 管理者"
 #: .\templates\home.html:5
 #, python-format
 msgid "Hello %(username)s, "
-msgstr "こんにちは %(username)s, "
+msgstr "こんにちは %(username)sさん"
 
 #: .\templates\home.html:8
 msgid " Use the menu on the left to access admin pages. "
-msgstr " 左側のメニューを使用して、管理ページにアクセスします。 "
+msgstr " 左側のメニューから、それぞれの管理ページにアクセスします。 "
 
 #: .\templates\institutions\cannot_delete.html:7
 #: .\templates\institutions\confirm_delete.html:11
@@ -703,7 +703,7 @@ msgstr "%(institution_name)sユーザーリスト - 施設内ストレージの�
 #: .\templates\users\user_details.html:11
 #: .\templates\users\user_details.html:16
 msgid "Statistical Status of Institutional Storage"
-msgstr "機関ストレージの統計的状況"
+msgstr "ストレージクォータ設定"
 
 #: .\templates\institutions\statistical_status_default_storage_user.html:3
 #, python-format
@@ -1592,7 +1592,7 @@ msgstr "公開"
 #: .\templates\nodes\node_list.html:33
 #: .\templates\rdm_timestampadd\node_list.html:47
 msgid "Withdrawn"
-msgstr "撤回"
+msgstr "削除"
 
 #: .\templates\nodes\node_list.html:34
 #: .\templates\rdm_timestampadd\node_list.html:48
@@ -1602,7 +1602,7 @@ msgstr "禁止"
 #: .\templates\nodes\node_list.html:35
 #: .\templates\rdm_timestampadd\node_list.html:49
 msgid "Contributors"
-msgstr "コントリビュータ"
+msgstr "メンバー"
 
 #: .\templates\nodes\node_list.html:98
 #: .\templates\rdm_timestampadd\node_list.html:112
@@ -1618,7 +1618,7 @@ msgstr "選択したノードはスパムですか？"
 #: .\templates\nodes\remove_contributor.html:6
 #, python-format
 msgid "Removing contributor: %(userName)s"
-msgstr "コントリビュータを削除する：%(userName)s"
+msgstr "メンバーを削除する：%(userName)s"
 
 #: .\templates\nodes\remove_contributor.html:9
 #, python-format
@@ -1744,7 +1744,7 @@ msgstr "アドオン"
 
 #: .\templates\rdm_addons\addon_list.html:25
 msgid "Configure Add-on Accounts"
-msgstr "アドオンアカウントを構成する"
+msgstr "ユーザが利用可能なアドオンを設定する"
 
 #: .\templates\rdm_addons\addon_list.html:51
 #: .\templates\rdm_timestampsettings\list.html:51
@@ -1840,7 +1840,7 @@ msgstr "承認者: "
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:12
 msgid "Management project"
-msgstr "管理プロジェクト"
+msgstr "管理用プロジェクト"
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:14
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:28
@@ -1849,15 +1849,15 @@ msgstr "除外"
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:18
 msgid "Management project URL"
-msgstr "管理プロジェクトURL"
+msgstr "管理用プロジェクトURL"
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:26
 msgid "Organizational project"
-msgstr "組織プロジェクト"
+msgstr "組織用プロジェクト"
 
 #: .\templates\rdm_addons\addons\iqbrims_institution_settings.html:32
 msgid "Organizational project URL"
-msgstr "組織プロジェクトURL"
+msgstr "組織用プロジェクトURL"
 
 #: .\templates\rdm_addons\addons\owncloud_credentials_modal.html:6
 #: .\templates\rdm_custom_storage_location\providers\owncloud_modal.html:7
@@ -1974,7 +1974,7 @@ msgstr "名前："
 
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:35
 msgid "Configure Institutional Storage Accounts"
-msgstr "組織のストレージアカウントを構成する"
+msgstr "組織の機関ストレージを設定する"
 
 #: .\templates\rdm_custom_storage_location\providers\box_modal.html:8
 msgid "Connect a Box Account"
@@ -2091,7 +2091,7 @@ msgstr "NII ストレージが機関ストレージとして選択されてい�
 #: .\templates\rdm_custom_storage_location\providers\s3_modal.html:25
 #: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:29
 msgid "Bucket"
-msgstr "Bucket"
+msgstr "バケット"
 
 #: .\templates\rdm_custom_storage_location\providers\s3compat_modal.html:9
 msgid "Connect a S3 Compatible Storage Account"
@@ -2107,7 +2107,7 @@ msgstr "OpenStack Swiftアカウントを接続する"
 
 #: .\templates\rdm_custom_storage_location\providers\swift_modal.html:15
 msgid "Authentication(Keystone) Version"
-msgstr "認証（キーストーン）バージョン"
+msgstr "認証(Keystone)バージョン"
 
 #: .\templates\rdm_custom_storage_location\providers\swift_modal.html:22
 msgid "Authentication URL"
@@ -2206,7 +2206,7 @@ msgstr "タイムスタンプ追加リスト"
 #: .\templates\rdm_timestampadd\timestampadd.html:20
 #, python-format
 msgid "TimeStamp Add (%(project_title)s)"
-msgstr "タイムスタンプの追加(%(project_title)s)"
+msgstr "証跡管理(%(project_title)s)"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:28
 msgid "Start Date"
@@ -2227,7 +2227,7 @@ msgstr "適用"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:56
 msgid "Verify"
-msgstr "確認"
+msgstr "タイムスタンプを確認する"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:57
 msgid "Request Trusted Timestamp"
@@ -2243,7 +2243,7 @@ msgstr "1ページあたり："
 
 #: .\templates\rdm_timestampadd\timestampadd.html:109
 msgid "Page of "
-msgstr "ページ"
+msgstr "ページあたり"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:138
 msgid "File Path"
@@ -2251,7 +2251,7 @@ msgstr "ファイルパス"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:147
 msgid "Timestamp by"
-msgstr "承認者"
+msgstr "タイムスタンプ押印者"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:156
 msgid "Updated at"
@@ -2259,7 +2259,7 @@ msgstr "更新日時"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:165
 msgid "Timestamp Verification"
-msgstr "タイムスタンプ検証"
+msgstr "タイムスタンプの検証"
 
 #: .\templates\rdm_timestampadd\timestampadd.html:229
 msgid "Download"
