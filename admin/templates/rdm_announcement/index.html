@@ -3,14 +3,14 @@
 {% load i18n %}
 
 {% block title %}
-<title>{% trans "RDM" %} {% trans "Announcement" %}</title>
+<title>{% trans "RDM Announcement" %}</title>
 {% endblock title %}
 {% block content %}
 
 {% if institution_name %}
-  <h2>{% trans "RDM" %} {% trans "Announcement " %}<small>({{ institution_name }})</small></h2>
+  <h2>{% trans "RDM Announcement" %} <small>({{ institution_name }})</small></h2>
 {% else %}
-  <h2>{% trans "RDM" %} {% trans "Announcement" %}</h2>
+  <h2>{% trans "RDM Announcement" %}</h2>
 {% endif %}
 
 <div class="row">

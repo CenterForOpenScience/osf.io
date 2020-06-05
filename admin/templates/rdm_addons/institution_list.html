@@ -10,11 +10,11 @@
 
 
 {% block title %}
-<title>{% trans "RDM" %} {% trans "Addons" %}</title>
+<title>{% trans "RDM Addons" %}</title>
 {% endblock title %}
 
 {% block content %}
-<h2>{% trans "RDM" %} {% trans "Addons" %}</h2>
+<h2>{% trans "RDM Addons" %}</h2>
 
 <!--pre>
 User: {{ user|pprint }}
@@ -24,7 +24,7 @@ Is Affilated with Institution: {{ user.is_affiliated_with_institution|pprint }}
 Institutions: {{ user.institutions|pprint }}
 </pre-->
 
-<h3>Institution List</h3>
+<h3>{% trans "Institution List" %}</h3>
 <table id="datatables" class="table table-striped table-bordered" cellspacing="0" width="100%">
     <thead><tr><th>{% trans "Logo" %}</th><th>{% trans "Name" %}</th></tr></thead>
     <tbody>

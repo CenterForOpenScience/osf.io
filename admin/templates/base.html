@@ -270,9 +270,9 @@
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>{% trans "Maintenance Alerts" %}</span></a></li>
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
-            <li><a href="{% url 'addons:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "RDM" %} {% trans "Addons" %}</span></a></li>
-            <li><a href="{% url 'statistics:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "RDM" %} {% trans "Statistics" %}</span></a></li>
-            <li><a href="{% url 'announcement:index' %}"><i class='fa fa-link'></i> <span>{% trans "RDM" %} {% trans "Announcement" %}</span></a></li>
+            <li><a href="{% url 'addons:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Addons" %}</span></a></li>
+            <li><a href="{% url 'statistics:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Statistics" %}</span></a></li>
+            <li><a href="{% url 'announcement:index' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Announcement" %}</span></a></li>
             <li><a href="{% url 'timestampadd:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "Timestamp Control" %}</span></a></li>
 {% comment GRDM 7117 disable some timestamp features %}
             <li><a href="{% url 'keymanagement:institutions' %}"><i class='fa fa-link'></i> <span>{% trans "User Keys Management" %}</span></a></li>
