@@ -4,14 +4,14 @@
 {% load filters %}
 
 {% block title %}
-<title>{% trans "RDM" %} {% trans "Announcement - Options" %}</title>
+<title>{% trans "RDM Announcement" %} - {% trans "Options" %}</title>
 {% endblock title %}
 {% block content %}
 
 {% if institution_name %}
-  <h2>{% trans "RDM" %} {% trans "Announcement - Options " %}<small>({{ institution_name }})</small></h2>
+  <h2>{% trans "RDM Announcement" %} - {% trans "Options" %} <small>({{ institution_name }})</small></h2>
 {% else %}
-  <h2>{% trans "RDM" %} {% trans "Announcement - Options" %}</h2>
+  <h2>{% trans "RDM Announcement" %} - {% trans "Options" %}</h2>
 {% endif %}
 
 <div class="row">

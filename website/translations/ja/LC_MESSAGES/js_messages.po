@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-28 13:23+0000\n"
-"PO-Revision-Date: 2020-05-23 10:00+0900\n"
-"Last-Translator: Takuya Ishibashi\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-03 16:30+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
@@ -857,8 +857,9 @@ msgid "Create"
 msgstr "作成"
 
 #: website/static/js/addProjectPlugin.js:362
-msgid "Saving your "
-msgstr "保存中："
+#, python-format
+msgid "Saving your %s..."
+msgstr "%sを保存中..."
 
 #: website/static/js/addProjectPlugin.js:376
 msgid "New %1$s created successfully!"
@@ -1940,7 +1941,7 @@ msgstr "<a href=\"%2$s\">アカウント設定ページ</a>で%1$sアカウン�
 msgid ""
 "Could not retrieve %1$s settings at this time. The %1$s addon credentials"
 " may no longer be valid."
-msgstr "現在、%1$sの設定を取得できませんでした。 ％1 $ sアドオンの資格情報は無効になっている可能性があります。"
+msgstr "現在、%1$sの設定を取得できませんでした。%1$sアドオンの資格情報は無効になっている可能性があります。"
 
 #: website/static/js/folderPickerNodeConfig.js:113
 msgid " Contact %1$s to verify."
@@ -4419,7 +4420,7 @@ msgstr "次のメールアドレスを追加中に問題が発生しました：
 #: website/static/js/pages/base-page.js:146
 #: website/static/js/pages/base-page.js:149
 msgid "</b>. Please contact %1$s if the problem persists."
-msgstr "</b>。問題が解決しない場合は％1 $ sにお問い合わせください。"
+msgstr "</b>。問題が解決しない場合は%1$sにお問い合わせください。"
 
 #: website/static/js/pages/base-page.js:148
 msgid "There was a problem removing <b>"

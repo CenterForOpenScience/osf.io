@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block content %}
-<h1> {% blocktrans with username=user.get_username %}Hello {{ username }}, {% endblocktrans %}</h1>
+<h1> {% blocktrans with userfullname=user.get_full_name %}Hello {{ userfullname }}, {% endblocktrans %}</h1>
     <section class="content">
         <h3>{% trans "Welcome to the GakuNin RDM Admin Home Page" %}</h3>
         <p>{% trans " Use the menu on the left to access admin pages. " %}</p>
