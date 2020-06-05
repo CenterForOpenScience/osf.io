@@ -359,7 +359,7 @@ var AddProject = {
                         ])
                     ]),
                     m('.modal-body.text-left', [
-                            m('.add-project-processing', _('Saving your ') + ctrl.nodeType + '...')
+                            m('.add-project-processing', sprintf(_('Saving your %s...'), _(ctrl.nodeType)))
                         ]
                     )
                 )

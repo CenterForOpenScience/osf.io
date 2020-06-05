@@ -35,24 +35,24 @@
 
             $submitForm
                 .attr('disabled', 'disabled')
-                .text('Creating new wiki page');
+                .text('${_("Creating new wiki page")}');
 
             if ($.trim($data.val()) === '') {
                 $alert.text('${_("The new wiki page name cannot be empty")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('Add');
+                    .text('${_("Add")}');
             } else if ($data.val().length > 100) {
                 $alert.text('${_("The new wiki page name cannot be more than 100 characters.")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('Add');
+                    .text('${_("Add")}');
 
             } else if ($data.val().indexOf('/') != -1) {
                 $alert.text('${_("The new wiki page name cannot contain forward slashes.")}');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('Add');
+                    .text('${_("Add")}');
             } else {
                 // TODO: helper to eliminate slashes in the url.
                 var wikiName = $data.val();
@@ -91,7 +91,7 @@
                     }
                     $submitForm
                         .removeAttr('disabled', 'disabled')
-                        .text('Add');
+                        .text('${_("Add")}');
                 });
             }
         });
