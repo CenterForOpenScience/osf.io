@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-19 13:52+0900\n"
-"PO-Revision-Date: 2020-05-19 13:52+0900\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-03 16:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -857,8 +857,9 @@ msgid "Create"
 msgstr "作成"
 
 #: website/static/js/addProjectPlugin.js:362
-msgid "Saving your "
-msgstr "保存中："
+#, python-format
+msgid "Saving your %s..."
+msgstr "%sを保存中..."
 
 #: website/static/js/addProjectPlugin.js:376
 msgid "New %1$s created successfully!"

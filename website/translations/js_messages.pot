@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-19 13:52+0900\n"
-"PO-Revision-Date: 2020-05-19 13:52+0900\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-03 16:38+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -848,7 +848,8 @@ msgid "Create"
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:362
-msgid "Saving your "
+#, python-format
+msgid "Saving your %s..."
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:376

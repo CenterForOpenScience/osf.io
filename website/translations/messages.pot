@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-27 20:38+0900\n"
-"PO-Revision-Date: 2020-05-27 20:38+0900\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-03 16:38+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -748,6 +748,10 @@ msgid "New Wiki Name"
 msgstr ""
 
 #: addons/wiki/templates/add_wiki_page.mako:18
+#: addons/wiki/templates/add_wiki_page.mako:44
+#: addons/wiki/templates/add_wiki_page.mako:49
+#: addons/wiki/templates/add_wiki_page.mako:55
+#: addons/wiki/templates/add_wiki_page.mako:94
 #: website/templates/project/contributors.mako:57
 #: website/templates/project/contributors.mako:164
 #: website/templates/project/contributors.mako:337
@@ -758,6 +762,10 @@ msgstr ""
 #: website/templates/project/settings.mako:209
 #: website/templates/project/settings.mako:522
 msgid "Add"
+msgstr ""
+
+#: addons/wiki/templates/add_wiki_page.mako:38
+msgid "Creating new wiki page"
 msgstr ""
 
 #: addons/wiki/templates/add_wiki_page.mako:41

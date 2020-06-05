@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-27 20:38+0900\n"
-"PO-Revision-Date: 2020-05-27 20:38+0900\n"
+"POT-Creation-Date: 2020-06-03 16:28+0900\n"
+"PO-Revision-Date: 2020-06-03 16:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -760,13 +760,17 @@ msgstr "接続されたアカウントに関連付けられたインデックス
 
 #: addons/wiki/templates/add_wiki_page.mako:8
 msgid "Add new wiki page"
-msgstr "新しいWikiページを追加"
+msgstr "新規Wikiページを追加"
 
 #: addons/wiki/templates/add_wiki_page.mako:12
 msgid "New Wiki Name"
-msgstr "新しいWiki名"
+msgstr "新規Wiki名"
 
 #: addons/wiki/templates/add_wiki_page.mako:18
+#: addons/wiki/templates/add_wiki_page.mako:44
+#: addons/wiki/templates/add_wiki_page.mako:49
+#: addons/wiki/templates/add_wiki_page.mako:55
+#: addons/wiki/templates/add_wiki_page.mako:94
 #: website/templates/project/contributors.mako:57
 #: website/templates/project/contributors.mako:164
 #: website/templates/project/contributors.mako:337
@@ -779,17 +783,21 @@ msgstr "新しいWiki名"
 msgid "Add"
 msgstr "追加"
 
+#: addons/wiki/templates/add_wiki_page.mako:38
+msgid "Creating new wiki page"
+msgstr "新規Wikiページを作成中"
+
 #: addons/wiki/templates/add_wiki_page.mako:41
 msgid "The new wiki page name cannot be empty"
-msgstr "新しいWikiページ名は空にできません"
+msgstr "新規Wikiページ名は空にできません"
 
 #: addons/wiki/templates/add_wiki_page.mako:46
 msgid "The new wiki page name cannot be more than 100 characters."
-msgstr "新しいWikiページ名は100文字を超えることはできません。"
+msgstr "新規Wikiページ名は100文字を超えることはできません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:52
 msgid "The new wiki page name cannot contain forward slashes."
-msgstr "新しいWikiページ名にスラッシュを含めることはできません。"
+msgstr "新規Wikiページ名にスラッシュを含めることはできません。"
 
 #: addons/wiki/templates/add_wiki_page.mako:70
 msgid "A wiki page with that name already exists."
@@ -1055,7 +1063,11 @@ msgid ""
 "please change your browser settings to disable cookies or stop using our "
 "website.                  Please be aware that you may not be able to use"
 " some functions on our website when you have cookies disabled."
-msgstr "国立情報学研究所では、NII Research Data Cloudサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin RDMをご利用されるお客様には、<a %(meatwikiUrl)s>プライバシーポリシー</a>、および<a %(meatwikiUrl)s>クッキー使用に関する情報</a>をご覧ください。「同意する」をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
+msgstr ""
+"国立情報学研究所では、NII Research Data "
+"Cloudサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin RDMをご利用されるお客様には、<a "
+"%(meatwikiUrl)s>プライバシーポリシー</a>、および<a "
+"%(meatwikiUrl)s>クッキー使用に関する情報</a>をご覧ください。「同意する」をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
 
 #: website/templates/base.mako:172
 msgid "Start managing your projects on the GakuNin RDM today."
