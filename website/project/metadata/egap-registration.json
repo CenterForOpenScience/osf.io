@@ -18,14 +18,6 @@
 					"required": true
 				},
 				{
-					"qid": "q2",
-					"nav": "Authors",
-					"title": "B2 Authors",
-					"help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
-					"format": "textarea",
-					"required": true
-				},
-				{
 					"qid": "q3",
 					"nav": "EGAP Registration ID",
 					"title": "EGAP Registration ID",

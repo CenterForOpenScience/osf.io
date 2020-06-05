@@ -51,7 +51,6 @@ class TestRegistrationSchemaValidation:
     def prereg_test_data(self):
         return {
             'q1': 'This is a test.',
-            'q2': 'Grapes McGee',
             'q3': 'Here is an answer to this question.',
             'q4': 'This is a hypothesis',
             'q5': 'Registration prior to creation of data',
