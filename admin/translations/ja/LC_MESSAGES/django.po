@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-18 10:44+0900\n"
-"PO-Revision-Date: 2020-05-18 10:44+0900\n"
+"POT-Creation-Date: 2020-06-05 13:40+0900\n"
+"PO-Revision-Date: 2020-06-05 13:40+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -138,8 +138,8 @@ msgstr "管理者"
 
 #: .\templates\base.html:69
 #, python-format
-msgid "Logged in as %(username)s"
-msgstr "%(username)sとしてログイン中"
+msgid "Logged in as %(userfullname)s"
+msgstr "%(userfullname)sとしてログイン中"
 
 #: .\templates\base.html:77
 msgid "Admin-User Registration"
@@ -324,7 +324,7 @@ msgstr "タイムスタンプ環境"
 
 #: .\templates\base.html:284
 msgid "Quota for NII Storage"
-msgstr "NIIストレージのクォータ"
+msgstr "ストレージクォータ"
 
 #: .\templates\base.html:287
 #: .\templates\rdm_custom_storage_location\institutional_storage.html:16
@@ -568,8 +568,8 @@ msgstr "-GakuNin RDM 管理者"
 
 #: .\templates\home.html:5
 #, python-format
-msgid "Hello %(username)s, "
-msgstr "こんにちは %(username)sさん"
+msgid "Hello %(userfullname)s, "
+msgstr "こんにちは %(userfullname)sさん"
 
 #: .\templates\home.html:8
 msgid " Use the menu on the left to access admin pages. "
