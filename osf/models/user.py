@@ -1888,6 +1888,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             pass
         return entity_ids
 
+    def get_ongoing_job_school(self):
+        ongoing_job = None
+        for job in self.jobs:
+            if job.get('ongoing', False):
+                ongoing_job = job
+                break
+        ongoing_school = None
+        for school in self.schools:
+            if school.get('ongoing', False):
+                ongoing_school = school
+                break
+        return (ongoing_job, ongoing_school)
+
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App
         permissions = (

@@ -287,8 +287,8 @@ class WikiPage(GuidMixin, BaseModel):
 
     def save(self, *args, **kwargs):
         rv = super(WikiPage, self).save(*args, **kwargs)
-        if self.node and self.node.is_public:
-            self.node.update_search()
+        if self.node and (self.node.is_public or settings.ENABLE_PRIVATE_SEARCH):
+            self.node.update_search(wiki_page=self)
         return rv
 
     def update(self, user, content):

@@ -822,6 +822,8 @@ msgstr ""
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
+#: website/templates/search_grdm.mako:405
+#: website/templates/search_grdm.mako:581
 msgid "Wiki"
 msgstr ""
 
@@ -1335,7 +1337,7 @@ msgstr ""
 
 #: website/templates/nav.mako:54
 #: website/templates/project/modal_add_contributor.mako:22
-#: website/templates/search.mako:2
+#: website/templates/search.mako:2 website/templates/search_grdm.mako:2
 msgid "Search"
 msgstr ""
 
@@ -1569,32 +1571,33 @@ msgstr ""
 msgid "Switch account"
 msgstr ""
 
-#: website/templates/search.mako:36
-msgid "Improve your search:"
+#: website/templates/search.mako:36 website/templates/search_grdm.mako:37
+msgid "Improve your search"
 msgstr ""
 
-#: website/templates/search.mako:69
-msgid "Filter by license:"
+#: website/templates/search.mako:69 website/templates/search_grdm.mako:70
+msgid "Filter by license"
 msgstr ""
 
-#: website/templates/search.mako:93
+#: website/templates/search.mako:93 website/templates/search_grdm.mako:95
 msgid "No results found."
 msgstr ""
 
-#: website/templates/search.mako:96
+#: website/templates/search.mako:96 website/templates/search_grdm.mako:98
 msgid "Type your search terms in the box above."
 msgstr ""
 
-#: website/templates/search.mako:104
+#: website/templates/search.mako:104 website/templates/search_nav_grdm.mako:4
 msgid "Previous Page"
 msgstr ""
 
-#: website/templates/search.mako:110
+#: website/templates/search.mako:110 website/templates/search_nav_grdm.mako:61
 msgid "Next Page"
 msgstr ""
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:555
 msgid "Withdrawn "
 msgstr ""
 
@@ -1622,55 +1625,83 @@ msgid ""
 " %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
-#: website/templates/search.mako:240
-msgid " Contributors:"
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:367
+msgid " Contributors"
 msgstr ""
 
-#: website/templates/search.mako:262
-msgid "Affiliated institutions:"
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:389
+#: website/templates/search_grdm.mako:461
+msgid "Affiliated institutions"
 msgstr ""
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
+#: website/templates/search_grdm.mako:403
+#: website/templates/search_grdm.mako:579
 msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
 #: website/templates/search.mako:280 website/templates/search.mako:372
+#: website/templates/search_grdm.mako:407
+#: website/templates/search_grdm.mako:583
 msgid "Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:291
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:502
 msgid "(Preprint)"
 msgstr ""
 
-#: website/templates/project/project.mako:265
-#: website/templates/project/settings.mako:107
 #: website/templates/search.mako:292 website/templates/search.mako:348
-msgid "Description:"
+#: website/templates/search_grdm.mako:440
+#: website/templates/search_grdm.mako:503
+#: website/templates/search_grdm.mako:559
+msgid "Description"
 msgstr ""
 
-#: website/templates/project/project.mako:165 website/templates/search.mako:295
-#: website/templates/search.mako:352
-msgid "Contributors:"
+#: website/templates/project/contributors.mako:2
+#: website/templates/project/contributors.mako:8
+#: website/templates/project/contributors.mako:54
+#: website/templates/project/project.mako:163
+#: website/templates/project/project_header.mako:72
+#: website/templates/search.mako:295 website/templates/search.mako:352
+#: website/templates/search_grdm.mako:446
+#: website/templates/search_grdm.mako:506
+#: website/templates/search_grdm.mako:563
+msgid "Contributors"
 msgstr ""
 
-#: website/templates/search.mako:314
-msgid "Managers:"
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:525
+msgid "Managers"
 msgstr ""
 
-#: website/templates/search.mako:327
-msgid "Members:"
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:538
+msgid "Members"
 msgstr ""
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
+#: website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:555
 msgid "Registration"
 msgstr ""
 
-#: website/templates/search.mako:377
-msgid "Tags:"
+#: website/templates/project/project.mako:587
+#: website/templates/project/view_file.mako:76
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:475
+#: website/templates/search_grdm.mako:588
+msgid "Tags"
 msgstr ""
 
 #: website/templates/search_bar.mako:7 website/templates/search_bar.mako:8
+#: website/templates/search_bar_grdm.mako:7
+#: website/templates/search_bar_grdm.mako:8
 msgid "GakuNin RDM Search"
+msgstr ""
+
+#: website/templates/search_bar_grdm.mako:20
+msgid "sort by"
+msgstr ""
+
+#: website/templates/search_bar_grdm.mako:22
+msgid "per page"
 msgstr ""
 
 #: website/templates/search_bar_help_modal.mako:6
@@ -1687,6 +1718,46 @@ msgid ""
 "<p>Search uses the <a %(searchQuerySyntaxUrl)s>Lucene search "
 "syntax</a>.This gives you many options, but can be very simple as well. "
 "Examples of valid searches include:</p>"
+msgstr ""
+
+#: website/templates/project/project_header.mako:16
+#: website/templates/search_grdm.mako:143
+#: website/templates/search_grdm.mako:317
+msgid "Project"
+msgstr ""
+
+#: website/templates/search_grdm.mako:150
+msgid "Folder"
+msgstr ""
+
+#: website/templates/search_grdm.mako:160
+#: website/templates/search_grdm.mako:339
+#: website/templates/search_grdm.mako:492
+msgid "Comment"
+msgstr ""
+
+#: website/templates/search_grdm.mako:196
+msgid "Employment@search"
+msgstr ""
+
+#: website/templates/search_grdm.mako:206
+msgid "Education@search"
+msgstr ""
+
+#: website/templates/search_grdm.mako:327
+msgid "Body of Wiki"
+msgstr ""
+
+#: website/templates/search_grdm.mako:602
+msgid "Modified by"
+msgstr ""
+
+#: website/templates/search_grdm.mako:605
+msgid "Created by"
+msgstr ""
+
+#: website/templates/search_nav_grdm.mako:65
+msgid "Page"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:3
@@ -1795,6 +1866,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
+#: website/templates/project/project.mako:610
 msgid "Start date"
 msgstr ""
 
@@ -1814,6 +1886,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
+#: website/templates/project/project.mako:613
 msgid "End date"
 msgstr ""
 
@@ -2518,14 +2591,6 @@ msgid ""
 "have questions."
 msgstr ""
 
-#: website/templates/project/contributors.mako:2
-#: website/templates/project/contributors.mako:8
-#: website/templates/project/contributors.mako:54
-#: website/templates/project/project.mako:163
-#: website/templates/project/project_header.mako:72
-msgid "Contributors"
-msgstr ""
-
 #: website/templates/project/contributors.mako:13
 msgid "Filter by name"
 msgstr ""
@@ -2949,6 +3014,10 @@ msgstr ""
 msgid "Log in to request access"
 msgstr ""
 
+#: website/templates/project/project.mako:165
+msgid "Contributors:"
+msgstr ""
+
 #: website/templates/project/project.mako:169
 msgid "Anonymous Contributors"
 msgstr ""
@@ -2992,6 +3061,11 @@ msgstr ""
 
 #: website/templates/project/project.mako:260
 msgid "category"
+msgstr ""
+
+#: website/templates/project/project.mako:265
+#: website/templates/project/settings.mako:107
+msgid "Description:"
 msgstr ""
 
 #: website/templates/project/project.mako:282
@@ -3098,62 +3172,45 @@ msgstr ""
 msgid "Enter custom citation"
 msgstr ""
 
-#: website/templates/project/project.mako:587
-#: website/templates/project/view_file.mako:76
-msgid "Tags"
-msgstr ""
-
 #: website/templates/project/project.mako:601
 msgid "Recent Activity"
 msgstr ""
 
 #: website/templates/project/project.mako:602
+msgid "Clear Filters"
+msgstr ""
+
+#: website/templates/project/project.mako:603
 msgid "Refresh"
 msgstr ""
 
-#: website/templates/project/project.mako:608
-msgid "Parts of User's Fullname"
-msgstr ""
-
-#: website/templates/project/project.mako:613
-msgid "Start Date[yyyy-mm-dd]"
-msgstr ""
-
-#: website/templates/project/project.mako:616
-msgid "End Date[yyyy-mm-dd]"
-msgstr ""
-
-#: website/templates/project/project.mako:624
+#: website/templates/project/project.mako:635
 msgid "Loading logs..."
 msgstr ""
 
-#: website/templates/project/project.mako:630
+#: website/templates/project/project.mako:641
 msgid "Download as file"
 msgstr ""
 
-#: website/templates/project/project.mako:631
+#: website/templates/project/project.mako:642
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr ""
 
-#: website/templates/project/project.mako:644
+#: website/templates/project/project.mako:655
 msgid "Components"
 msgstr ""
 
-#: website/templates/project/project.mako:648
+#: website/templates/project/project.mako:659
 msgid "Add Component"
 msgstr ""
 
-#: website/templates/project/project.mako:650
+#: website/templates/project/project.mako:661
 msgid "Link Projects"
 msgstr ""
 
-#: website/templates/project/project.mako:660
+#: website/templates/project/project.mako:671
 msgid "Add components to organize your project."
-msgstr ""
-
-#: website/templates/project/project_header.mako:16
-msgid "Project"
 msgstr ""
 
 #: website/templates/project/project_header.mako:16

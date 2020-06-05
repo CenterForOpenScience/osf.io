@@ -50,6 +50,7 @@ var entry = {
     'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'search-page-grdm': staticPath('js/pages/search-page-grdm.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'forgotpassword-page': staticPath('js/pages/forgotpassword-page.js'),
     'resetpassword-page': staticPath('js/pages/resetpassword-page.js'),
@@ -60,6 +61,8 @@ var entry = {
     'institution-page': staticPath('js/pages/institution-page.js'),
     'rdm-firebase': staticPath('js/rdm-firebase.js'),
     'rdmGettext': staticPath('js/rdmGettext.js'),
+    'rdmDatepicker': staticPath('js/rdmDatepicker.js'),
+    'rdmSelect2': staticPath('js/rdmSelect2.js'),
     // Commons chunk
     'vendor': [
         // Vendor libraries
@@ -69,6 +72,7 @@ var entry = {
         'bootstrap',
         'bootbox',
         'bootstrap-editable',
+        'bootstrap-datepicker',
         'select2',
         'dropzone',
         'knockout-sortable',
@@ -139,6 +143,10 @@ var resolve = {
     alias: {
         'knockout-sortable': staticPath('vendor/knockout-sortable/knockout-sortable.js'),
         'bootstrap-editable': staticPath('vendor/bootstrap-editable-custom/js/bootstrap-editable.js'),
+        'bootstrap-datepicker': nodePath('bootstrap-datepicker/dist/js/bootstrap-datepicker.js'),
+        'bootstrap-datepicker-ja': nodePath('bootstrap-datepicker/dist/locales/bootstrap-datepicker.ja.min.js'),
+        'bootstrap-datepicker-css': nodePath('bootstrap-datepicker/dist/css/bootstrap-datepicker3.css'),
+        'select2-ja': nodePath('select2/select2_locale_ja.js'),
         'jquery-blockui': staticPath('vendor/jquery-blockui/jquery.blockui.js'),
         'bootstrap': nodePath('bootstrap/dist/js/bootstrap.js'),
         'Caret.js': staticPath('vendor/bower_components/Caret.js/dist/jquery.caret.min.js'),

@@ -15,6 +15,7 @@ from framework import sentry
 from website import language
 from osf import features
 from osf.models import OSFUser, AbstractNode
+from osf.models.session import Session
 from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -55,8 +56,14 @@ def handle_search_errors(func):
     return wrapped
 
 
-SEARCH_API_VERSION = 1
 SEARCH_API_VENDOR = 'grdm'
+SEARCH_API_VERSION_1 = 1
+SEARCH_API_VERSION_2 = 2  # supports 'wiki' and 'comment'
+
+SUPPORTED_VERSIONS = {SEARCH_API_VERSION_1, SEARCH_API_VERSION_2}
+
+def IS_SUPPORTED(version, vendor):
+    return version in SUPPORTED_VERSIONS and vendor == SEARCH_API_VENDOR
 
 def toint(obj):
     try:
@@ -69,56 +76,124 @@ def toint(obj):
 def search_search(**kwargs):
     _type = kwargs.get('type', None)
     auth = kwargs.get('auth', None)
+    raw = kwargs.get('raw', False)
 
-    if settings.ENABLE_PRIVATE_SEARCH and not auth.logged_in:
+    if raw and not settings.DEBUG_MODE:
+        raise HTTPError(http.BAD_REQUEST)
+
+    tick = time.time()
+
+    if settings.ENABLE_PRIVATE_SEARCH:
+        results = _private_search(_type, auth, raw=raw)
+    else:
+        results = _default_search(_type)
+
+    results['time'] = round(time.time() - tick, 2)
+    return results
+
+
+@handle_search_errors
+@collect_auth
+def search_search_raw(**kwargs):
+    kwargs.update({'raw': True})
+    return search_search(**kwargs)
+
+
+def get_user_session(user):
+    user_session = Session.objects.filter(
+        data__auth_user_id=user._id
+    ).order_by(
+        '-modified'
+    ).first()
+    if user_session and user_session.data:
+        return user_session
+    return None
+
+
+def _private_search(doc_type, auth, raw=False):
+    results = {}
+
+    if not auth or not auth.logged_in:
         raise HTTPError(http.UNAUTHORIZED)
     user = auth.user
 
-    tick = time.time()
-    results = {}
-
-    if request.method == 'POST' and not settings.ENABLE_PRIVATE_SEARCH:
-        results = search.search(request.get_json(), doc_type=_type)
-    elif request.method == 'GET' and not settings.ENABLE_PRIVATE_SEARCH:
-        q = request.args.get('q', '*')
-        # TODO Match javascript params?
-        start = request.args.get('from', '0')
-        size = request.args.get('size', '10')
-        results = search.search(build_query(q, start, size), doc_type=_type)
-    elif request.method == 'POST' and settings.ENABLE_PRIVATE_SEARCH:
+    qs = None
+    if request.method == 'POST':
         # Since the scope of the renovation of a new API is widened,
         # for the time being, only the query string is extracted from
         # the JSON that came from the client, and the search query is
         # reassembled on the server side.
         json = request.get_json()
         api_ver = json.get('api_version', None)
-        if api_ver is None or \
-           toint(api_ver.get('version', None)) != SEARCH_API_VERSION or \
-           api_ver.get('vendor', None) != SEARCH_API_VENDOR:
+        if api_ver:
+            version = toint(api_ver.get('version', None))
+            vendor = api_ver.get('vendor', None)
+        else:
+            version = None
+            vendor = None
+
+        if not IS_SUPPORTED(version, vendor):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'api_version field is invalid',
                 'message_long': 'api_version field is invalid'
             })
         es_dsl = json['elasticsearch_dsl']
         qs = es_dsl['query']['filtered']['query']['query_string']['query']
-        es_dsl = build_private_search_query(user, qs, es_dsl['from'], es_dsl['size'])
-        results = search.search(es_dsl, doc_type=_type, private=True)
-    elif request.method == 'GET' and settings.ENABLE_PRIVATE_SEARCH:
-        version = request.args.get('version', None)
-        if version is None or toint(version) != SEARCH_API_VERSION or \
-           request.args.get('vendor', None) != SEARCH_API_VENDOR:
+        start = es_dsl['from']
+        size = es_dsl['size']
+        sort = json.get('sort', None)
+        highlight = json.get('highlight', None)
+    elif request.method == 'GET':
+        version = toint(request.args.get('version', None))
+        vendor = request.args.get('vendor', None)
+        if not IS_SUPPORTED(version, vendor):
             raise HTTPError(http.BAD_REQUEST, data={
                 'message_short': 'version or vendor parameter is invalid',
                 'message_long': 'version or vendor parameter is invalid'
             })
+        qs = request.args.get('q', '*')
+        # TODO Match javascript params?
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        sort = request.args.get('sort', None)
+        highlight = request.args.get('highlight', None)
+
+    if qs is not None:
+        ext = False
+        if version == SEARCH_API_VERSION_2:
+            ext = True  # include extended doc_types
+        try:
+            es_dsl = build_private_search_query(user, qs, start, size, sort, highlight)
+        except Exception as e:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': e.message,
+                'message_long': e.message
+            })
+        results = search.search(es_dsl, doc_type=doc_type,
+                                private=True, ext=ext, raw=raw)
+
+    user_session = get_user_session(user)
+    if user_session:
+        try:
+            size = int(size)
+        except Exception:
+            size = None
+        user_session.data['search_size'] = size
+        user_session.data['search_sort'] = sort
+        user_session.save()
+
+    return results
+
+def _default_search(doc_type):
+    results = {}
+    if request.method == 'POST':
+        results = search.search(request.get_json(), doc_type=doc_type)
+    elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
-        es_dsl = build_private_search_query(user, q, start, size)
-        results = search.search(es_dsl, doc_type=_type, private=True)
-
-    results['time'] = round(time.time() - tick, 2)
+        results = search.search(build_query(q, start, size), doc_type=doc_type)
     return results
 
 
@@ -134,7 +209,28 @@ def must_be_logged_in_for_private_search(func):
 @ember_flag_is_active(features.EMBER_SEARCH_PAGE)
 @must_be_logged_in_for_private_search
 def search_view(**kwargs):
-    return {'shareUrl': settings.SHARE_URL},
+    return search_view_base(**kwargs)
+
+@ember_flag_is_active(features.EMBER_SEARCH_PAGE)
+@must_be_logged_in_for_private_search
+def search_view_cos(**kwargs):
+    return search_view_base(**kwargs)
+
+def search_view_base(**kwargs):
+    sort = None
+    size = None
+    auth = kwargs.get('auth')
+    if auth:
+        user = auth.user
+        user_session = get_user_session(user)
+        if user_session:
+            sort = user_session.data.get('search_sort')
+            size = user_session.data.get('search_size')
+    return {
+        'shareUrl': settings.SHARE_URL,
+        'search_sort': sort,
+        'search_size': size,
+    },
 
 def conditionally_add_query_item(query, item, condition, value):
     """ Helper for the search_projects_by_title function which will add a condition to a query

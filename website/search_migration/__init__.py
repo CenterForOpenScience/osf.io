@@ -98,6 +98,11 @@ SELECT json_agg(
             )
             , 'url', '/' || NODE_GUID._id || '/'
             , 'date_created', N.created
+            , 'date_modified', LATESTLOG.date
+            , 'creator_id', CREATOR_GUID._id
+            , 'modifier_id', MODIFIER_GUID._id
+            , 'creator_name', CREATOR.fullname
+            , 'modifier_name', MODIFIER.fullname
             , 'wikis', CASE
                        WHEN RETRACTION.state != 'approved'
                          THEN
@@ -143,12 +148,51 @@ FROM osf_abstractnode AS N
             LIMIT 1
             ) PARENT_GUID ON TRUE
   LEFT JOIN LATERAL (
+            SELECT fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = N.creator_id
+            LIMIT 1
+            ) CREATOR ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = N.creator_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) CREATOR_GUID ON TRUE
+  LEFT JOIN LATERAL (
             SELECT array_agg(TAG.name) as names
             FROM osf_tag AS TAG
             INNER JOIN osf_abstractnode_tags ON (TAG.id = osf_abstractnode_tags.tag_id)
             WHERE (TAG.system = FALSE AND osf_abstractnode_tags.abstractnode_id = N.id)
             LIMIT 1
             ) TAGS ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT
+              osf_nodelog.date,
+              osf_nodelog.user_id
+            FROM osf_nodelog
+            WHERE (osf_nodelog.node_id =  N.id)
+            ORDER BY osf_nodelog.date DESC
+            LIMIT 1
+            ) LATESTLOG ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = LATESTLOG.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) MODIFIER_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = LATESTLOG.user_id
+            LIMIT 1
+            ) MODIFIER ON TRUE
   LEFT JOIN LATERAL (
             SELECT
               osf_nodelicense.license_id,
@@ -320,6 +364,12 @@ SELECT json_agg(
         , '_op_type', 'update'
         , 'doc', json_build_object(
             'id', F._id
+            , 'date_created', FIRST.created
+            , 'date_modified', LAST.created
+            , 'creator_id', CREATOR_GUID._id
+            , 'creator_name', CREATOR.fullname
+            , 'modifier_id', MODIFIER_GUID._id
+            , 'modifier_name', MODIFIER.fullname
             , 'deep_url', CASE WHEN F.provider = 'osfstorage'
                           THEN '/' || (NODE.DATA ->> 'guid') || '/files/' || F.provider || '/' || F._id
                           ELSE '/' || (NODE.DATA ->> 'guid') || '/files/' || F.provider || F._path
@@ -365,6 +415,52 @@ FROM osf_basefilenode AS F
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'basefilenode')
             LIMIT 1
             ) FILE_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT created, creator_id
+            FROM osf_fileversion
+            INNER JOIN osf_basefilenode_versions
+            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
+            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            ORDER BY osf_fileversion.created ASC
+            LIMIT 1
+            ) FIRST ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT created, creator_id
+            FROM osf_fileversion
+            INNER JOIN osf_basefilenode_versions
+            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
+            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            ORDER BY osf_fileversion.created DESC
+            LIMIT 1
+            ) LAST ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT id AS user_id, fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = FIRST.creator_id
+            ) CREATOR ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT id AS user_id, fullname
+            FROM osf_osfuser
+            WHERE osf_osfuser.id = LAST.creator_id
+            ) MODIFIER ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = CREATOR.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) CREATOR_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT _id
+            FROM osf_guid
+            WHERE object_id = MODIFIER.user_id
+                  AND content_type_id = ANY (SELECT id
+                                             FROM django_content_type
+                                             WHERE model = 'osfuser')
+            LIMIT 1
+            ) MODIFIER_GUID ON TRUE
   LEFT JOIN LATERAL (
             SELECT array_agg(TAG.name) AS names
             FROM osf_tag AS TAG
@@ -485,6 +581,8 @@ SELECT json_agg(
         , '_op_type', 'update'
         , 'doc', json_build_object(
             'id', USER_GUID._id
+            , 'date_created', U.created
+            , 'date_modified', U.modified
             , 'user', U.fullname
             , 'normalized_user', U.fullname
             , 'normalized_names', json_build_object(
@@ -501,34 +599,40 @@ SELECT json_agg(
                 , 'middle_names', U.middle_names
                 , 'suffix', U.suffix
             )
+            , 'ongoing_job', (ONGOING_JOB.JOB :: JSON ->> 'institution') :: TEXT
+            , 'ongoing_job_department', (ONGOING_JOB.JOB :: JSON ->> 'department') :: TEXT
+            , 'ongoing_job_title', (ONGOING_JOB.JOB :: JSON ->> 'title') :: TEXT
+            , 'ongoing_school', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'institution') :: TEXT
+            , 'ongoing_school_department', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'department') :: TEXT
+            , 'ongoing_school_degree', (ONGOING_SCHOOL.SCHOOL :: JSON ->> 'degree') :: TEXT
             , 'job', CASE
-                     WHEN U.jobs :: JSON -> 0 -> 'institution' IS NOT NULL
+                     WHEN U.jobs :: JSON -> 0 ->> 'institution' IS NOT NULL
                        THEN
-                         (U.jobs :: JSON -> 0 -> 'institution') :: TEXT
+                         (U.jobs :: JSON -> 0 ->> 'institution') :: TEXT
                      ELSE
                        ''
                      END
             , 'job_title', (CASE
-                            WHEN U.jobs :: JSON -> 0 -> 'title' IS NOT NULL
+                            WHEN U.jobs :: JSON -> 0 ->> 'title' IS NOT NULL
                               THEN
-                                (U.jobs :: JSON -> 0 -> 'title') :: TEXT
+                                (U.jobs :: JSON -> 0 ->> 'title') :: TEXT
                             ELSE
                               ''
                             END)
-            , 'all_jobs', (SELECT array_agg(DISTINCT (JOB :: JSON -> 'institution') :: TEXT)
+            , 'all_jobs', (SELECT (array_agg(DISTINCT (JOB :: JSON ->> 'institution') :: TEXT))[2:]
                            FROM
                              (SELECT json_array_elements(jobs :: JSON) AS JOB
                               FROM osf_osfuser
                               WHERE id = U.id
                              ) AS JOBS)
             , 'school', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'institution' IS NOT NULL
+                         WHEN U.schools :: JSON -> 0 ->> 'institution' IS NOT NULL
                            THEN
-                             (U.schools :: JSON -> 0 -> 'institution') :: TEXT
+                             (U.schools :: JSON -> 0 ->> 'institution') :: TEXT
                          ELSE
                            ''
                          END)
-            , 'all_schools', (SELECT array_agg(DISTINCT (SCHOOL :: JSON -> 'institution') :: TEXT)
+            , 'all_schools', (SELECT array_agg(DISTINCT (SCHOOL :: JSON ->> 'institution') :: TEXT)
                               FROM
                                 (SELECT json_array_elements(schools :: JSON) AS SCHOOL
                                  FROM osf_osfuser
@@ -536,9 +640,9 @@ SELECT json_agg(
                                 ) AS SCHOOLS)
             , 'category', 'user'
             , 'degree', (CASE
-                         WHEN U.schools :: JSON -> 0 -> 'degree' IS NOT NULL
+                         WHEN U.schools :: JSON -> 0 ->> 'degree' IS NOT NULL
                            THEN
-                             (U.schools :: JSON -> 0 -> 'degree') :: TEXT
+                             (U.schools :: JSON -> 0 ->> 'degree') :: TEXT
                          ELSE
                            ''
                          END)
@@ -602,6 +706,24 @@ FROM osf_osfuser AS U
                                              WHERE model = 'osfuser')
             LIMIT 1
             ) USER_GUID ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT JOB
+            FROM
+            (SELECT json_array_elements(jobs :: JSON) AS JOB
+             FROM osf_osfuser
+             WHERE id = U.id) AS JOBS
+            WHERE (JOB :: JSON ->> 'ongoing') :: BOOLEAN = TRUE
+            LIMIT 1
+            ) ONGOING_JOB ON TRUE
+  LEFT JOIN LATERAL (
+            SELECT SCHOOL
+            FROM
+            (SELECT json_array_elements(schools :: JSON) AS SCHOOL
+             FROM osf_osfuser
+             WHERE id = U.id) AS SCHOOLS
+            WHERE (SCHOOL :: JSON ->> 'ongoing') :: BOOLEAN = TRUE
+            LIMIT 1
+            ) ONGOING_SCHOOL ON TRUE
 WHERE is_active = TRUE
       AND id > {page_start}
       AND id <= {page_end}
