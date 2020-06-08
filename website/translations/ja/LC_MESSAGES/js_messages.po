@@ -2505,129 +2505,129 @@ msgstr "コード用 - その他"
 #: website/static/js/logActionsList_extract.js:3
 #: website/static/js/logActionsList_extract.js:70
 msgid "${user} created ${node}"
-msgstr ""
+msgstr "${user}が${node}を作成しました"
 
 #: website/static/js/logActionsList_extract.js:4
 msgid "${user} registered ${node}"
-msgstr ""
+msgstr "${user}が${node}を登録しました"
 
 #: website/static/js/logActionsList_extract.js:5
 msgid "${node} registered"
-msgstr ""
+msgstr "${node}が登録されました"
 
 #: website/static/js/logActionsList_extract.js:6
 msgid ""
 "${user} submitted for review to the Preregistration Challenge a "
 "registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録を事前登録チャレンジにレビューのために提出しました"
 
 #: website/static/js/logActionsList_extract.js:7
 msgid "${user} deleted ${node}"
-msgstr ""
+msgstr "${user}が${node}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:8
 msgid "${user} created ${node} based on ${template}"
-msgstr ""
+msgstr "${user}が${template}に基づいて${node}を作成しました"
 
 #: website/static/js/logActionsList_extract.js:9
 msgid "${user} created a link to ${pointer_category} ${pointer}"
-msgstr ""
+msgstr "${user}が${pointer_category} ${pointer}へのリンクを作成しました"
 
 #: website/static/js/logActionsList_extract.js:10
 msgid "${user} forked a link to ${pointer_category} ${pointer}"
-msgstr ""
+msgstr "${user}が${pointer_category} ${pointer}へのリンクをforkしました"
 
 #: website/static/js/logActionsList_extract.js:11
 msgid "${user} removed a link to ${pointer_category} ${pointer}"
-msgstr ""
+msgstr "${user}が${pointer_category} ${pointer}へのリンクを削除しました"
 
 #: website/static/js/logActionsList_extract.js:12
 msgid "${user} added ${group} to ${node}"
-msgstr ""
+msgstr "${user}が${group}を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:13
 msgid "${user} removed ${group} from ${node}"
-msgstr ""
+msgstr "${user}が${node}から${group}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:14
 msgid "${user} changed ${group} permissions to ${node}"
-msgstr ""
+msgstr "${user}が${group}の権限を${node}に変更しました"
 
 #: website/static/js/logActionsList_extract.js:15
 msgid "${user} made ${node} public"
-msgstr ""
+msgstr "${user}が${node}を公開しました"
 
 #: website/static/js/logActionsList_extract.js:16
 msgid "${node} made public"
-msgstr ""
+msgstr "${node}が公開されました"
 
 #: website/static/js/logActionsList_extract.js:17
 msgid "${user} made ${node} private"
-msgstr ""
+msgstr "${user}が${node}を非公開にしました"
 
 #: website/static/js/logActionsList_extract.js:18
 msgid "${user} added tag ${tag} to ${node}"
-msgstr ""
+msgstr "${user}さんがタグ${tag}を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:19
 msgid "${user} removed tag ${tag} from ${node}"
-msgstr ""
+msgstr "${user}が${node}からタグ${tag}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:20
 msgid "${user} changed the title from ${title_original} to ${title_new}"
-msgstr ""
+msgstr "${user}がタイトルを${title_original}から${title_new}に変更しました"
 
 #: website/static/js/logActionsList_extract.js:21
 msgid "${user} edited description of ${node}"
-msgstr ""
+msgstr "${user}が${node}の説明を編集しました"
 
 #: website/static/js/logActionsList_extract.js:22
 msgid "${user} changed the ${updated_fields} for ${node}"
-msgstr ""
+msgstr "${user}が${node}の${updated_fields}を変更しました"
 
 #: website/static/js/logActionsList_extract.js:23
 msgid "${user} created external identifier(s) ${identifiers} on ${node}"
-msgstr ""
+msgstr "${user}が${node}に外部識別子${identifiers}を作成しました"
 
 #: website/static/js/logActionsList_extract.js:24
 msgid "${user} created a custom citation for ${node}"
-msgstr ""
+msgstr "${user}が${node}のカスタム引用を作成しました"
 
 #: website/static/js/logActionsList_extract.js:25
 msgid "${user} edited a custom citation for ${node}"
-msgstr ""
+msgstr "${user}が${node}のカスタム引用を編集しました"
 
 #: website/static/js/logActionsList_extract.js:26
 msgid "${user} removed a custom citation for ${node}"
-msgstr ""
+msgstr "${user}が${node}のカスタム引用を削除しました"
 
 #: website/static/js/logActionsList_extract.js:27
 msgid "${user} added ${contributors} as contributor(s) to ${node}"
-msgstr ""
+msgstr "${user}が${contributors}をコントリビューターとして${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:28
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
-msgstr ""
+msgstr "${user}が${node}からコントリビューターとして${contributors}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
-msgstr ""
+msgstr "${user}が${node}の投稿者を並べ替えました"
 
 #: website/static/js/logActionsList_extract.js:30
 msgid "${user} changed permissions for ${node}"
-msgstr ""
+msgstr "${user}が${node}の権限を変更しました"
 
 #: website/static/js/logActionsList_extract.js:31
 msgid ""
 "${user} made non-bibliographic contributor ${contributors} a "
 "bibliographic contributor on ${node}"
-msgstr ""
+msgstr "${user}が目録非表示メンバー(${contributors})を${node}の目録表示メンバーにしました"
 
 #: website/static/js/logActionsList_extract.js:32
 msgid ""
 "${user} made bibliographic contributor ${contributors} a non-"
 "bibliographic contributor on ${node}"
-msgstr ""
+msgstr "${user}が目録表示メンバー(${contributors})を${node}の目録非表示メンバーにしました"
 
 #: website/static/js/logActionsList_extract.js:33
 msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
@@ -2635,227 +2635,227 @@ msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新"
 
 #: website/static/js/logActionsList_extract.js:34
 msgid "${user} deleted wiki page ${page} of ${node}"
-msgstr ""
+msgstr "${user}が${node}のWikiページ${page}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:35
 msgid "${user} renamed wiki page ${old_page} to ${page} of ${node}"
-msgstr ""
+msgstr "${user}がWikiページ${old_page}の名前を${node}の${page}に変更しました"
 
 #: website/static/js/logActionsList_extract.js:36
 msgid "${user} made the wiki of ${node} publicly editable"
-msgstr ""
+msgstr "${user}が${node}のwikiをパブリックに編集可能にしました"
 
 #: website/static/js/logActionsList_extract.js:37
 msgid "${user} made the wiki of ${node} privately editable"
-msgstr ""
+msgstr "${user}が${node}のwikiをプライベートに編集可能にしました"
 
 #: website/static/js/logActionsList_extract.js:38
 msgid "${user} added addon ${addon} to ${node}"
-msgstr ""
+msgstr "${user}が${node}にアドオン${addon}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:39
 msgid "${user} removed addon ${addon} from ${node}"
-msgstr ""
+msgstr "${user}が${node}からアドオン${addon}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:40
 msgid "${user} moved ${source} to ${destination} in ${node}"
-msgstr ""
+msgstr "${user}が${source}を${node}の${destination}に移動しました"
 
 #: website/static/js/logActionsList_extract.js:41
 msgid "${user} copied ${source} to ${destination} in ${node}"
-msgstr ""
+msgstr "${user}が${source}を${node}の${destination}にコピーしました"
 
 #: website/static/js/logActionsList_extract.js:42
 msgid "${user} renamed ${source} to ${destination} in ${node}"
-msgstr ""
+msgstr "${user}は${node}で${source}を${destination}に名前変更しました"
 
 #: website/static/js/logActionsList_extract.js:43
 msgid "${user} created a folder in ${node}"
-msgstr ""
+msgstr "${user}が${node}にフォルダを作成しました"
 
 #: website/static/js/logActionsList_extract.js:44
 msgid "${user} added file ${path} to ${node}"
-msgstr ""
+msgstr "${user}がファイル${path}を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:45
 msgid "${user} updated file in ${node}"
-msgstr ""
+msgstr "${user}が${node}のファイルを更新しました"
 
 #: website/static/js/logActionsList_extract.js:46
 msgid "${user} removed ${path_type} ${path} from ${node}"
-msgstr ""
+msgstr "${user}が${node}から${path_type} ${path}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:47
 msgid "${user} restored file ${path} from ${node}"
-msgstr ""
+msgstr "${user}が${node}からファイル${path}を復元しました"
 
 #: website/static/js/logActionsList_extract.js:48
 msgid "${user} updated the file metadata for ${path}"
-msgstr ""
+msgstr "${user}が${path}のファイルメタデータを更新しました"
 
 #: website/static/js/logActionsList_extract.js:49
 msgid "${user} checked out ${kind} ${path} from ${node}"
-msgstr ""
+msgstr "${user}が${node}から${kind} ${path}をチェックアウトしました"
 
 #: website/static/js/logActionsList_extract.js:50
 msgid "${user} checked in ${kind} ${path} to ${node}"
-msgstr ""
+msgstr "${user}が${kind} ${path}を${node}にチェックインしました"
 
 #: website/static/js/logActionsList_extract.js:51
 msgid "${user} added a comment ${comment_location} in ${node}"
-msgstr ""
+msgstr "${user}さんが${node}にコメント${comment_location}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:52
 msgid "${user} deleted a comment ${comment_location} in ${node}"
-msgstr ""
+msgstr "${user}さんが${node}のコメント${comment_location}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:53
 msgid "${user} restored a comment ${comment_location}  in ${node}"
-msgstr ""
+msgstr "${user}が${node}のコメント${comment_location}を復元しました"
 
 #: website/static/js/logActionsList_extract.js:54
 msgid "${user} updated a comment ${comment_location} in ${node}"
-msgstr ""
+msgstr "${user}が${node}のコメント${comment_location}を更新しました"
 
 #: website/static/js/logActionsList_extract.js:55
 msgid "${user} initiated an embargoed registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の禁止登録を開始しました"
 
 #: website/static/js/logActionsList_extract.js:56
 msgid "${user} approved embargoed registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の禁止登録を承認しました"
 
 #: website/static/js/logActionsList_extract.js:57
 msgid "Embargo of registration of ${node} approved"
-msgstr ""
+msgstr "${node}の登録の禁止が承認されました"
 
 #: website/static/js/logActionsList_extract.js:58
 msgid "${user} cancelled embargoed registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の禁止登録をキャンセルしました"
 
 #: website/static/js/logActionsList_extract.js:59
 msgid "${user} completed embargo of ${node}"
-msgstr ""
+msgstr "${user}が${node}の禁止を完了しました"
 
 #: website/static/js/logActionsList_extract.js:60
 msgid "Embargo for ${node} completed"
-msgstr ""
+msgstr "${node}の禁止が完了しました"
 
 #: website/static/js/logActionsList_extract.js:61
 msgid "Embargo for ${node} ended"
-msgstr ""
+msgstr "${node}の禁止が終了しました"
 
 #: website/static/js/logActionsList_extract.js:62
 msgid "${user} initiated withdrawal of registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録の取り消しを開始しました"
 
 #: website/static/js/logActionsList_extract.js:63
 msgid "A withdrawal of registration of ${node} is proposed"
-msgstr ""
+msgstr "${node}の登録の削除が提案されています"
 
 #: website/static/js/logActionsList_extract.js:64
 msgid "${user} approved withdrawal of registration of ${node}"
-msgstr ""
+msgstr "${user}は${node}の登録の取り消しを承認しました"
 
 #: website/static/js/logActionsList_extract.js:65
 msgid "${user} cancelled withdrawal of registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録の取り消しをキャンセルしました"
 
 #: website/static/js/logActionsList_extract.js:66
 msgid "${user} initiated registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録を開始しました"
 
 #: website/static/js/logActionsList_extract.js:67
 msgid "${user} approved registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録を承認しました"
 
 #: website/static/js/logActionsList_extract.js:68
 msgid "Registration of ${node} approved"
-msgstr ""
+msgstr "${node}の登録が承認されました"
 
 #: website/static/js/logActionsList_extract.js:69
 msgid "${user} cancelled registration of ${node}"
-msgstr ""
+msgstr "${user}が${node}の登録をキャンセルしました"
 
 #: website/static/js/logActionsList_extract.js:71
 msgid "${user} created fork from ${forked_from}"
-msgstr ""
+msgstr "${user}が${forked_from}からフォークを作成しました"
 
 #: website/static/js/logActionsList_extract.js:72
 msgid "${user} removed ${node}"
-msgstr ""
+msgstr "${user}が${node}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:73
 msgid "${user} enabled access requests for ${node}"
-msgstr ""
+msgstr "${user}が${node}のアクセス要求を有効にしました"
 
 #: website/static/js/logActionsList_extract.js:74
 msgid "${user} disabled access requests for ${node}"
-msgstr ""
+msgstr "${user}が${node}のアクセス要求を無効にしました"
 
 #: website/static/js/logActionsList_extract.js:75
 msgid "${user} updated the license of ${node} ${license}"
-msgstr ""
+msgstr "${user}が${node} ${license}のライセンスを更新しました"
 
 #: website/static/js/logActionsList_extract.js:76
 msgid "${user} added tag ${tag} to ${path} in ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}が${node}の${storage_name}の${path}にタグ${tag}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:77
 msgid "${user} removed tag ${tag} from ${path} in ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}が${node}の${storage_name}の${path}からタグ${tag}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:78
 msgid "${user} added file ${path} to ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}が${node}の${storage_name}にファイル${path}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:79
 msgid "${user} created folder ${path} in ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}が${node}の${storage_name}にフォルダ${path}を作成しました"
 
 #: website/static/js/logActionsList_extract.js:80
 msgid "${user} updated file ${path} in ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}が${node}の${storage_name}のファイル${path}を更新しました"
 
 #: website/static/js/logActionsList_extract.js:81
 msgid "${user} removed ${path_type} ${path} from ${storage_name} in ${node}"
-msgstr ""
+msgstr "${user}は${node}の${storage_name}から${path_type} ${path}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:82
 msgid "${user} added ${institution} affiliation to ${node}"
-msgstr ""
+msgstr "${user}が${institution}の所属を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:83
 msgid "${user} removed ${institution} affiliation from ${node}"
-msgstr ""
+msgstr "${user}が${institution}の所属を${node}から削除しました"
 
 #: website/static/js/logActionsList_extract.js:84
 msgid "${user} made ${node} a ${preprint} on ${preprint_provider} Preprints"
-msgstr ""
+msgstr "${user}が${preprint_provider}プレプリントで${node}を${preprint}にしました"
 
 #: website/static/js/logActionsList_extract.js:85
 msgid ""
 "${user} updated the primary file of this ${preprint} on "
 "${preprint_provider} Preprints"
-msgstr ""
+msgstr "$ß{user}が${preprint_provider}プレプリントでこの${preprint}のプライマリファイルを更新しました"
 
 #: website/static/js/logActionsList_extract.js:86
 msgid ""
 "${user} updated the license of this ${preprint} on ${preprint_provider} "
 "Preprints ${license}"
-msgstr ""
+msgstr "${user}が${preprint_provider}プレプリント${license}でこの${preprint}のライセンスを更新しました"
 
 #: website/static/js/logActionsList_extract.js:87
 msgid "${user} updated the subjects on ${node} to ${subjects}"
-msgstr ""
+msgstr "${user}が${node}の件名を${subjects}に更新しました"
 
 #: website/static/js/logActionsList_extract.js:88
 msgid "${user} created ${anonymous_link} view-only link to ${node}"
-msgstr ""
+msgstr "${user}が${node}への${anonymous_link}参照専用リンクを作成しました"
 
 #: website/static/js/logActionsList_extract.js:89
 msgid "${user} removed ${anonymous_link} view-only link to ${node}"
-msgstr ""
+msgstr "${user}が${node}への${anonymous_link}参照専用リンクを削除しました"
 
 #: website/static/js/logActionsList_extract.js:90
 msgid "${user} verified timestamp"
