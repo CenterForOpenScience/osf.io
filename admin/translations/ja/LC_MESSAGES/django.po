@@ -422,6 +422,10 @@ msgstr "GakuNin RDMユーザー\"%(user_id)s\"は最新のdesk.comケースを�
 msgid "Type"
 msgstr "タイプ"
 
+#: .\admin\templates\desk\cases.html:10 .\admin\templates\desk\customer.html:40
+msgid "Type@announcement"
+msgstr "配信方法"
+
 #: .\admin\templates\desk\cases.html:11
 msgid "Status"
 msgstr "ステータス"

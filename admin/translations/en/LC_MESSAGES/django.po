@@ -412,6 +412,10 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
+#: .\admin\templates\desk\cases.html:10 .\admin\templates\desk\customer.html:40
+msgid "Type@announcement"
+msgstr "Type"
+
 #: .\templates\desk\cases.html:11
 msgid "Status"
 msgstr ""
