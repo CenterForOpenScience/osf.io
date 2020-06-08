@@ -6,11 +6,11 @@ from django.utils.translation import gettext_lazy as _
 class PreviewForm(forms.Form):
     title = forms.CharField(max_length=100,
                             required=False,
-                            widget=forms.TextInput(attrs=dict(placeholder=_('title'), class='form-control')),
+                            widget=forms.TextInput(attrs=dict(placeholder='title', class='form-control')),
                             label='Title')
     body = forms.CharField(max_length=60000,
                            required=True,
-                           widget=forms.Textarea(attrs=dict(placeholder=_('text'), class='form-control', rows='4')),
+                           widget=forms.Textarea(attrs=dict(placeholder='text', class='form-control', rows='4')),
                            label='Body',)
     announcement_type = forms.ChoiceField(
         choices=[('Email', _('Email')),
@@ -19,7 +19,7 @@ class PreviewForm(forms.Form):
                  #('Push notification', 'Push notification')
                  ],
         widget=forms.RadioSelect,
-        label='Type',
+        label=_('Type@announcement'),
         initial='Email',
     )
 
