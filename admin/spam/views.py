@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from django.views.generic import FormView, ListView, DetailView
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import Http404
+from django.utils import timezone
 
 from osf.models.comment import Comment
 from osf.models.user import OSFUser
@@ -106,27 +107,32 @@ class SpamDetail(PermissionRequiredMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
-        item = Comment.load(self.kwargs.get('spam_id'))
-        if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
-            item.confirm_spam()
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=self.kwargs.get('spam_id'),
-                object_repr='Comment',
-                message=f'Confirmed SPAM: {self.kwargs.get("spam_id")}',
-                action_flag=CONFIRM_SPAM
-            )
-        else:
-            item.confirm_ham()
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=self.kwargs.get('spam_id'),
-                object_repr='Comment',
-                message=f'Confirmed HAM: {self.kwargs.get("spam_id")}',
-                action_flag=CONFIRM_HAM
-            )
-
-        return super().form_valid(form)
+        spam_id = self.kwargs.get('spam_id')
+        item = Comment.load(spam_id)
+        try:
+            if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
+                item.confirm_spam()
+                item.is_deleted = True
+                item.deleted = timezone.now()
+                log_message = 'Confirmed SPAM: {}'.format(spam_id)
+                log_action = CONFIRM_SPAM
+            else:
+                item.confirm_ham()
+                item.is_deleted = False
+                item.deleted = None
+                log_message = 'Confirmed HAM: {}'.format(spam_id)
+                log_action = CONFIRM_HAM
+            item.save()
+        except AttributeError:
+            raise Http404('Spam with id "{}" not found.'.format(spam_id))
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=spam_id,
+            object_repr='Comment',
+            message=log_message,
+            action_flag=log_action
+        )
+        return super(SpamDetail, self).form_valid(form)
 
     @property
     def success_url(self):
