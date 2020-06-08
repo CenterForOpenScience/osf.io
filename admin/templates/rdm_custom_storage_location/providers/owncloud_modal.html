@@ -16,8 +16,9 @@
                                 <input required type="text" class="form-control owncloud-params" id="owncloud_host" name="customHost" data-bind="value: customHost" placeholder="owncloud.example.org">
                             </div>
                             <div class="text-muted" style="text-align: center">
-                                <em>Only ownCloud instances supporting <a href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank">WebDAV</a> and <a href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank">
-                                        OCS v1.7</a> are supported.
+                                <em>{% blocktrans with webdavUrl='href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html" target="_blank"' ocsUrl='href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/" target="_blank"' %}
+                                    Only ownCloud instances supporting <a {{ webdavUrl }}>WebDAV</a> and <a {{ ocsUrl }}>OCS v1.7</a> are supported.
+                                    {% endblocktrans %}
                                 </em>
                             </div>
                         </div>
@@ -29,14 +30,16 @@
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label for="owncloud_username">{% trans "Username" %}</label>
-                            <input required type="text" class="form-control owncloud-params" id="owncloud_username" placeholder="username">
+                            <input required type="text" class="form-control owncloud-params" id="owncloud_username" placeholder="{% trans 'username' %}">
                         </div>
                         <div class="form-group">
                             <label for="owncloud_password">{% trans "Password" %}</label>
                             <input required type="password" class="form-control owncloud-params" id="owncloud_password" placeholder="********">
                         </div>
                         <div class="text-muted" style="text-align: center">
-                            <em> These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"> Device (or App) Password</a>.
+                            <em>{% blocktrans with openWithNewWindow='href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"' %} 
+                                These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a {{ openWithNewWindow }}> Device (or App) Password</a>.
+                                {% endblocktrans %}
                             </em>
                         </div>
                     </div>
