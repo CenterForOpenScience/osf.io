@@ -11,7 +11,7 @@ urlpatterns = [
         name=views.SparseNodeList.view_name,
     ),
     url(
-        r'^nodes/(?P<node_id>\w+)/',
+        r'^nodes/(?P<node_id>\w+)/$',
         views.SparseNodeDetail.as_view(),
         name=views.SparseNodeDetail.view_name,
     ),
@@ -37,7 +37,7 @@ urlpatterns = [
         name=views.SparseRegistrationList.view_name,
     ),
     url(
-        r'^registrations/(?P<node_id>\w+)/',
+        r'^registrations/(?P<node_id>\w+)/$',
         views.SparseRegistrationDetail.as_view(),
         name=views.SparseRegistrationDetail.view_name,
     ),
