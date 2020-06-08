@@ -989,13 +989,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         validated before this method is called.  If writing to registration_responses
         field, persist the expanded version of this to Draft.registration_metadata.
         """
-        registration_responses = self.escape_registration_responses(registration_responses)
+        registration_responses = self.unescape_registration_file_names(registration_responses)
         self.registration_responses.update(registration_responses)
         registration_metadata = self.expand_registration_responses()
         self.registration_metadata = registration_metadata
         return
 
-    def escape_registration_responses(self, registration_responses):
+    def unescape_registration_file_names(self, registration_responses):
         if registration_responses.get('uploader', []):
             for upload in registration_responses.get('uploader', []):
                 upload['file_name'] = html.unescape(upload['file_name'])
