@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-05 20:15+0900\n"
-"PO-Revision-Date: 2020-06-05 15:40+0900\n"
+"POT-Creation-Date: 2020-06-08 14:43+0900\n"
+"PO-Revision-Date: 2020-06-08 14:43+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -421,10 +421,6 @@ msgstr "GakuNin RDMユーザー\"%(user_id)s\"は最新のdesk.comケースを�
 #: .\admin\templates\desk\cases.html:10 .\admin\templates\desk\customer.html:40
 msgid "Type"
 msgstr "タイプ"
-
-#: .\admin\templates\desk\cases.html:10 .\admin\templates\desk\customer.html:40
-msgid "Type@announcement"
-msgstr "配信方法"
 
 #: .\admin\templates\desk\cases.html:11
 msgid "Status"
@@ -885,6 +881,10 @@ msgstr "件名"
 #: .\admin\templates\messages.html:11
 msgid "text"
 msgstr "本文"
+
+#: .\admin\templates\messages.html:12
+msgid "Type@announcement"
+msgstr "配信方法"
 
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
@@ -2060,7 +2060,9 @@ msgid ""
 "supporting <a %(webdavUrl)s>WebDAV</a> and <a %(ocsUrl)s>OCS v1.7</a> are"
 " supported.\n"
 "                                        "
-msgstr "<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
+msgstr ""
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS "
+"v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:36
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:33
@@ -2070,12 +2072,12 @@ msgstr "ユーザ名"
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:44
 #, python-format
 msgid ""
-" \n"
+"\n"
 "                                    These credentials will be encrypted. "
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
 "                                    "
-msgstr "この資格情報は暗号化されます。ただし、<a %(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+msgstr "これらの資格情報は暗号化されます。ただし、<a %(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
 msgid "Connect NII Storage"
@@ -2092,12 +2094,14 @@ msgid ""
 "                                    Only ownCloud instances supporting <a"
 " %(webdavUrl)s>WebDAV</a> and <a %(ocsUrl)s>OCS v1.7</a> are supported.\n"
 "                                    "
-msgstr "<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
+msgstr ""
+"<a %(webdavUrl)s>WebDAV</a>および<a %(ocsUrl)s>OCS "
+"v1.7</a>をサポートするownCloudインスタンスのみがサポートされます。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:40
 #, python-format
 msgid ""
-" \n"
+"\n"
 "                                These credentials will be encrypted. "
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"

@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-05 20:15+0900\n"
-"PO-Revision-Date: 2020-06-05 20:15+0900\n"
+"POT-Creation-Date: 2020-06-08 14:43+0900\n"
+"PO-Revision-Date: 2020-06-08 14:43+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -876,6 +876,10 @@ msgstr ""
 
 #: .\admin\templates\messages.html:11
 msgid "text"
+msgstr ""
+
+#: .\admin\templates\messages.html:12
+msgid "Type@announcement"
 msgstr ""
 
 #: .\admin\templates\metrics\osf_metrics.html:7
@@ -2051,7 +2055,7 @@ msgstr ""
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:44
 #, python-format
 msgid ""
-" \n"
+"\n"
 "                                    These credentials will be encrypted. "
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
@@ -2078,7 +2082,7 @@ msgstr ""
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:40
 #, python-format
 msgid ""
-" \n"
+"\n"
 "                                These credentials will be encrypted. "
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
