@@ -1460,6 +1460,7 @@ def create_index(index=None):
             '_default_': {
                 '_all': {
                     'analyzer': 'grdm_ja_analyzer',
+                    'search_analyzer': 'whitespace',
                 }
             }
         }
