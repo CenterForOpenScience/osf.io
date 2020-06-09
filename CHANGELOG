@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.10.0 (2020-06-04)
+====================
+- Use proper bibliographic status for registration creators
+- Fix Figshare Article Type 4 "Fileset" Deprecation
+- Add management command to add and remove waffle flags and switches
+
 20.9.0 (2020-06-02)
 ===================
 - Update Django to 1.11.28
