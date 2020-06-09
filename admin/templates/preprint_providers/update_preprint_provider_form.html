@@ -53,61 +53,74 @@
 
         </script>
     </head>
-<div class="row">
-    <div class="col-md-9">
-        <form action="" method="post">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            {% for field in form %}
-                {%  if field.label != 'Toplevel subjects' %}
-                    <div class="fieldWrapper">
-                        {{ field.errors }}
-                        <p>
-                            {{ field.label_tag }}
-                            {{ field }}
-                        </p>
-                    </div>
-                {% endif %}
-            {% endfor %}
-            {% if show_taxonomies %}
-            <div class="row" id="subjects">
-                <div class="col-md-4">
-                    <div class="firstlevel_subjects">
-                        <ul style="list-style-type:none">
-                            {% for subject in form.toplevel_subjects %}
-                                <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div id="secondlevel_subjects">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div id="thirdlevel_subjects">
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            <input class="form-button" type="submit" value="Save" />
-            <a id="discard" class="btn btn-danger form-button">Discard</a>
-        </form>
-    </div>
-    <div class="col-md-3">
-        <div>
-            <h4>Import from JSON</h4>
-            <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
-                pre-populate the Preprint Provider change form with those details.</p>
-            {% if preprint_provider %}
-                <form action = {% url 'preprint_providers:import' preprint_provider_id=preprint_provider.id %} method="post" enctype="multipart/form-data" >
-            {% else %}
-                <form action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data" >
-            {% endif %}
+
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Preprint Providers</title>
+{% endblock title %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-9">
+            <form action="" method="post">
                 {% csrf_token %}
-                {{ import_form.as_p }}
-                <input class="form-button" type="submit" value="Import" />
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    {%  if field.label != 'Toplevel subjects' %}
+                        <div class="fieldWrapper">
+                            {{ field.errors }}
+                            <p>
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </p>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if show_taxonomies %}
+                <div class="row" id="subjects">
+                    <div class="col-md-4">
+                        <div class="firstlevel_subjects">
+                            <ul style="list-style-type:none">
+                                {% for subject in form.toplevel_subjects %}
+                                    <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="secondlevel_subjects">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="thirdlevel_subjects">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <input class="btn btn-success form-button" type="submit" value="Save" />
+                <a id="discard" class="btn btn-danger form-button">Discard</a>
             </form>
+        </div>
+        <div class="col-md-3">
+            <div>
+                <h4>Import from JSON</h4>
+                <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
+                    pre-populate the Preprint Provider change form with those details.</p>
+                {% if preprint_provider %}
+                    <form action = {% url 'preprint_providers:import' preprint_provider_id=preprint_provider.id %} method="post" enctype="multipart/form-data" >
+                {% else %}
+                    <form action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data" >
+                {% endif %}
+                    {% csrf_token %}
+                    {{ import_form.as_p }}
+                    <input class="form-button" type="submit" value="Import" />
+                </form>
+            </div>
         </div>
     </div>
 </div>
+
+ {% endblock content %}
+

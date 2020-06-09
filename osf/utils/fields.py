@@ -18,6 +18,11 @@ def ensure_bytes(value):
     return value.encode('utf-8')
 
 
+def ensure_str(value):
+    if isinstance(value, bytes):
+        return value.decode()
+    return value
+
 def encrypt_string(value, prefix='jwe:::'):
     prefix = ensure_bytes(prefix)
     if value:

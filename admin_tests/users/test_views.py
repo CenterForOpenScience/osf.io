@@ -9,7 +9,7 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage

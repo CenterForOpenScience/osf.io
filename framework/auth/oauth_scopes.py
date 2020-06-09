@@ -127,6 +127,7 @@ class CoreScopes(object):
     ALERTS_WRITE = 'alerts_write'
 
     INSTITUTION_READ = 'institutions_read'
+    INSTITUTION_METRICS_READ = 'institutions_metrics_read'
 
     SCOPES_READ = 'scopes_read'
 

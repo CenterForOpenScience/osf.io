@@ -1,134 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Preprint Providers</title>
+{% endblock title %}
+{% block content %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+{% endblock %}
 <head>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
 </head>
-
-<div class="row">
-    <div class="col-md-12">
-        <div>
-            <h2>Custom Taxonomy</h2>
-            <p>Use the form below to build a custom taxonomy. In each dropdown menu, start typing to select an existing subject. After selecting a subject, or entering
-                a custom mapping, click the "Add" button to add it to the taxonomy. The result will be displayed in the 'Built Custom Taxonomy' section.</p>
-
-            <p>To remove an entry, delete it from the text box in the Built Custom Taxonomy section. If deleting the last item in a list, be sure to also remove the
-                final comma.</p>
-
-            <p>Click <a role="button" data-toggle="modal" href="#exampleModal">here</a> to see an example of a full custom taxonomy and for more information about each field.</p>
-        </div>
-        <form id="taxonomy-form" action="{% url 'preprint_providers:process_custom_taxonomy' %}" method="post">
-            {% csrf_token %}
-            {{ taxonomy_form.non_field_errors }}
-            {{ taxonomy_form.provider_id }}
-
+<div class="container-fluid">
+    <div class="row">
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-md-12">
             <div>
-                <div class="fieldWrapper">
-                    {{ taxonomy_form.add_missing.errors }}
-                    <div class="row">
-                        <div class="col-md-2">
-                            {{ taxonomy_form.add_missing.label_tag }}
-                        </div>
-                        <div class="col-md-10">
-                            {{ taxonomy_form.add_missing }}
-                        </div>
-                    </div>
-                </div>
-                <div class="fieldWrapper">
-                    {{ taxonomy_form.include.errors }}
-                    <div class="row">
-                        <div class="col-md-2">
-                            {{ taxonomy_form.include.label_tag }}
-                        </div>
-                        <div class="col-md-10">
-                            {{ taxonomy_form.include }}
-                            <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.include.html_name }} value={{ taxonomy_form.include.id_for_label }}>Add</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="fieldWrapper">
-                    {{ taxonomy_form.exclude.errors }}
-                    <div class="row">
-                        <div class="col-md-2">
-                            {{ taxonomy_form.exclude.label_tag }}
-                        </div>
-                        <div class="col-md-10">
-                            {{ taxonomy_form.exclude }}
-                            <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.exclude.html_name }} value={{ taxonomy_form.exclude.id_for_label }}>Add</button>
-                        </div>
-                    </div>
-                </div>
+                <h2>Custom Taxonomy</h2>
+                <p>Use the form below to build a custom taxonomy. In each dropdown menu, start typing to select an existing subject. After selecting a subject, or entering
+                    a custom mapping, click the "Add" button to add it to the taxonomy. The result will be displayed in the 'Built Custom Taxonomy' section.</p>
+
+                <p>To remove an entry, delete it from the text box in the Built Custom Taxonomy section. If deleting the last item in a list, be sure to also remove the
+                    final comma.</p>
+
+                <p>Click <a role="button" data-toggle="modal" href="#exampleModal">here</a> to see an example of a full custom taxonomy and for more information about each field.</p>
             </div>
+            <form id="taxonomy-form" action="{% url 'preprint_providers:process_custom_taxonomy' preprint_provider_id %}" method="post">
+                {% csrf_token %}
+                {{ taxonomy_form.non_field_errors }}
+                {{ taxonomy_form.provider_id }}
 
-            <div>
-                <div><b>Custom:</b></div>
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        {{ taxonomy_form.custom_name.errors }}
-                        <p>
-                            {{ taxonomy_form.custom_name.label_tag }}
-                            {{ taxonomy_form.custom_name }}
-                        </p>
-                        {{ taxonomy_form.custom_parent.errors }}
-                        <p>
-                            {{ taxonomy_form.custom_parent.label_tag }}
-                            {{ taxonomy_form.custom_parent }}
-                        </p>
-                        {{ taxonomy_form.bepress.errors }}
-                        <p>
-                            {{ taxonomy_form.bepress.label_tag }}
-                            {{ taxonomy_form.bepress }}
-                        </p>
-                        <div class="pull-right">
-                            <button type="button" id="id-add-custom">Add</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <div><b>Merge:</b></div>
-                <div class="panel panel-default">
-                    <div class="panel-body">
-                        {{ taxonomy_form.merge_from.errors }}
-                        <p>
-                            {{ taxonomy_form.merge_from.label_tag }}
-                            {{ taxonomy_form.merge_from }}
-                        </p>
-                        {{ taxonomy_form.merge_into.errors }}
-                        <p>
-                            {{ taxonomy_form.merge_into.label_tag }}
-                            {{ taxonomy_form.merge_into }}
-                        </p>
-                        <div class="pull-right">
-                            <button type="button" id="id-add-merge">Add</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div>
-                <div class="fieldWrapper">
-                    {{ taxonomy_form.custom_taxonomy_json.errors }}
-                    <div class="row">
-                        <div class="col-md-12">
-                            <h4>Built Custom Taxonomy</h4>
-                            {{ taxonomy_form.custom_taxonomy_json }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <button type="button" id="id-validate-custom">Validate</button>
-                <p>Click the 'Validate' button to check your taxonomy before clicking the 'Save' button to submit.</p>
-                <div id="taxonomy-field-info"></div>
                 <div>
+                    <div class="fieldWrapper">
+                        {{ taxonomy_form.add_missing.errors }}
+                        <div class="row">
+                            <div class="col-md-2">
+                                {{ taxonomy_form.add_missing.label_tag }}
+                            </div>
+                            <div class="col-md-10">
+                                {{ taxonomy_form.add_missing }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fieldWrapper">
+                        {{ taxonomy_form.include.errors }}
+                        <div class="row">
+                            <div class="col-md-2">
+                                {{ taxonomy_form.include.label_tag }}
+                            </div>
+                            <div class="col-md-10">
+                                {{ taxonomy_form.include }}
+                                <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.include.html_name }} value={{ taxonomy_form.include.id_for_label }}>Add</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="fieldWrapper">
+                        {{ taxonomy_form.exclude.errors }}
+                        <div class="row">
+                            <div class="col-md-2">
+                                {{ taxonomy_form.exclude.label_tag }}
+                            </div>
+                            <div class="col-md-10">
+                                {{ taxonomy_form.exclude }}
+                                <button type="button" class="taxonomy-action-button" id={{ taxonomy_form.exclude.html_name }} value={{ taxonomy_form.exclude.id_for_label }}>Add</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <input class="form-button" type="submit" value="Save" />
-            </div>
-        </form>
+
+                <div>
+                    <div><b>Custom:</b></div>
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            {{ taxonomy_form.custom_name.errors }}
+                            <p>
+                                {{ taxonomy_form.custom_name.label_tag }}
+                                {{ taxonomy_form.custom_name }}
+                            </p>
+                            {{ taxonomy_form.custom_parent.errors }}
+                            <p>
+                                {{ taxonomy_form.custom_parent.label_tag }}
+                                {{ taxonomy_form.custom_parent }}
+                            </p>
+                            {{ taxonomy_form.bepress.errors }}
+                            <p>
+                                {{ taxonomy_form.bepress.label_tag }}
+                                {{ taxonomy_form.bepress }}
+                            </p>
+                            <div class="pull-right">
+                                <button type="button" id="id-add-custom">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div><b>Merge:</b></div>
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            {{ taxonomy_form.merge_from.errors }}
+                            <p>
+                                {{ taxonomy_form.merge_from.label_tag }}
+                                {{ taxonomy_form.merge_from }}
+                            </p>
+                            {{ taxonomy_form.merge_into.errors }}
+                            <p>
+                                {{ taxonomy_form.merge_into.label_tag }}
+                                {{ taxonomy_form.merge_into }}
+                            </p>
+                            <div class="pull-right">
+                                <button type="button" id="id-add-merge">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div>
+                    <div class="fieldWrapper">
+                        {{ taxonomy_form.custom_taxonomy_json.errors }}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Built Custom Taxonomy</h4>
+                                {{ taxonomy_form.custom_taxonomy_json }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" id="id-validate-custom">Validate</button>
+                    <p>Click the 'Validate' button to check your taxonomy before clicking the 'Save' button to submit.</p>
+                    <div id="taxonomy-field-info"></div>
+                    <div>
+                    </div>
+                </div>
+                <div>
+                    <input class="form-button" type="submit" value="Save" />
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -217,6 +240,20 @@
     </div>
 </div>
 
-<script>
-    $("#id_provider_id").val({{ preprint_provider.id }})
-</script>
+
+ {% endblock content %}
+{% block bottom_js %}
+    <script>
+
+        window.templateVars = {
+            'importUrl': '{% url 'preprint_providers:import' %}',
+            'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
+            'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
+            'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' preprint_provider_id %}",
+            'originalSubjects': {{ subject_ids | escapejs }}
+        };
+        $("#id_provider_id").val({{ preprint_provider_id }})
+
+    </script>
+{% endblock %}

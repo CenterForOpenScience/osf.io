@@ -260,42 +260,6 @@ class PreprintIsValidListMixin:
         preprint.add_contributor(user_write_contrib, WRITE, save=True)
         return preprint
 
-    def test_preprint_is_preprint_orphan_invisible_no_auth(
-            self, app, project, preprint, url):
-        res = app.get(url)
-        assert len(res.json['data']) == 1
-        preprint.primary_file = None
-        preprint.save()
-        res = app.get(url)
-        assert len(res.json['data']) == 0
-
-    def test_preprint_is_preprint_orphan_visible_non_contributor(
-            self, app, project, preprint, user_non_contrib, url):
-        res = app.get(url, auth=user_non_contrib.auth)
-        assert len(res.json['data']) == 1
-        preprint.primary_file = None
-        preprint.save()
-        res = app.get(url, auth=user_non_contrib.auth)
-        assert len(res.json['data']) == 0
-
-    def test_preprint_is_preprint_orphan_visible_write(
-            self, app, project, preprint, url, user_write_contrib):
-        res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 1
-        preprint.primary_file = None
-        preprint.save()
-        res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 1
-
-    def test_preprint_is_preprint_orphan_visible_owner(
-            self, app, project, preprint, url, user_admin_contrib):
-        res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
-        preprint.primary_file = None
-        preprint.save()
-        res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
-
     def test_preprint_private_invisible_no_auth(
             self, app, project, preprint, url):
         res = app.get(url)

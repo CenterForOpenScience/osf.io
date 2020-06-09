@@ -1,5 +1,6 @@
 import pytest
 import mock
+import random
 
 from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
@@ -80,6 +81,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             url_public, url_private, make_contrib_id):
 
         #   test_return_public_contributor_list_logged_in
+        # Since permissions are based on the branched from node, this will not pass
         res = app.get(url_public, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
@@ -165,6 +167,27 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         id_two = [item['id'] for item in req_two.json['data']]
         for a, b in zip(id_one, id_two):
             assert a == b
+
+    def test_permissions_work_with_many_users(
+            self, app, user, project_private, url_private):
+        users = {
+            permissions.ADMIN: [user._id],
+            permissions.WRITE: []
+        }
+        for i in range(0, 25):
+            perm = random.choice(list(users.keys()))
+            user = AuthUserFactory()
+
+            project_private.add_contributor(user, permissions=perm)
+            users[perm].append(user._id)
+
+        res = app.get(url_private, auth=user.auth)
+        data = res.json['data']
+        for user in data:
+            api_perm = user['attributes']['permission']
+            user_id = user['id'].split('-')[1]
+            assert user_id in users[api_perm], 'Permissions incorrect for {}. Should not have {} permission.'.format(
+                user_id, api_perm)
 
 
 class TestDraftRegistrationContributorAdd(DraftRegistrationCRUDTestCase, TestNodeContributorAdd):

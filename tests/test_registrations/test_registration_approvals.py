@@ -18,7 +18,7 @@ from osf.utils import tokens
 from osf.models.sanctions import (
     EmailApprovableSanction,
     Sanction,
-    PreregCallbackMixin,
+    SanctionCallbackMixin,
     RegistrationApproval,
 )
 from framework.auth import Auth
@@ -258,7 +258,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify_initiator:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify_initiator:
             self.registration.registration_approval._on_complete(self.user)
         assert_equal(mock_notify_initiator.call_count, 0)
 
@@ -277,7 +277,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.registration_approval._on_complete(self.user)
         assert_equal(mock_notify.call_count, 1)
 
@@ -291,7 +291,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         grandchild = NodeFactory(creator=grandchild_admin, parent=child, is_public=False)  # noqa
 
         registration = RegistrationFactory(project=project)
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator'):
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator'):
             registration.registration_approval._on_complete(self.user)
 
     def test__on_complete_raises_error_if_project_is_spam(self):
@@ -301,7 +301,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         )
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             with assert_raises(NodeStateError):
                 self.registration.registration_approval._on_complete(self.user)
         assert_equal(mock_notify.call_count, 0)

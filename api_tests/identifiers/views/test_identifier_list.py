@@ -407,30 +407,6 @@ class TestPreprintIdentifierList:
         res = app.get(url_preprint_identifier, expect_errors=True)
         assert res.status_code == 404
 
-    def test_preprint_identifier_list_permissions_no_primary_file(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
-        preprint.primary_file = None
-        preprint.save()
-
-        # test_unpublished_preprint_identifier_unauthenticated
-        res = app.get(url_preprint_identifier, expect_errors=True)
-        assert res.status_code == 401
-
-        # test_unpublished_preprint_identifier_noncontrib_authenticated
-        non_contrib = AuthUserFactory()
-        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test_unpublished_preprint_identifier_readcontrib_authenticated
-        read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, READ, save=True)
-        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # test_unpublished_preprint_identifier_admin_authenticated
-        res = app.get(url_preprint_identifier, auth=user.auth)
-        assert res.status_code == 200
-
     def test_preprint_identifier_list_permissions_abandoned(
             self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.machine_state = DefaultStates.INITIAL.value

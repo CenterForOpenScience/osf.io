@@ -302,17 +302,6 @@ class TestUserPreprintIsValidList(PreprintIsValidListMixin):
         res = app.get(url, auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 
-    # test override: user preprints routes do not show orphaned preprints to
-    # anyone but the self
-    def test_preprint_is_preprint_orphan_visible_write(
-            self, app, project, preprint, url, user_write_contrib):
-        res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 1
-        preprint.primary_file = None
-        preprint.save()
-        res = app.get(url, auth=user_write_contrib.auth)
-        assert len(res.json['data']) == 0
-
     # test override, abandoned don't show up for anyone under UserPreprints
     def test_preprint_has_abandoned_preprint(
             self, app, user_admin_contrib, user_write_contrib, user_non_contrib,

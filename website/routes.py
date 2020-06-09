@@ -1093,6 +1093,15 @@ def make_url_map(app):
         Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
+    process_rules(app, [
+        Rule([
+            '/institutions/<inst_id>/dashboard/',
+        ],
+            'get',
+            institution_views.view_institution_dashboard,
+            notemplate)
+    ])
+
     # Project
 
     # Web
@@ -1467,10 +1476,6 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/<draft_id>/submit/',
-        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
-
         # Meta Schemas
         Rule([
             '/project/drafts/schemas/',

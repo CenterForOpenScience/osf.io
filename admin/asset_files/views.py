@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db.models import Case, CharField, Value, When
 from django.forms.models import model_to_dict
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, UpdateView

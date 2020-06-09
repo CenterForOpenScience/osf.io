@@ -62,7 +62,7 @@ class DraftRegistrationTestCase:
         return project_public
 
     @pytest.fixture()
-    def prereg_metadata(self):
+    def metadata(self):
         def metadata(draft):
             test_metadata = {}
             json_schema = create_jsonschema_from_metaschema(
@@ -492,7 +492,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata, url_draft_registrations):
+            self, app, user, provider, project_public, metadata, url_draft_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)
@@ -505,7 +505,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         url = '{}&embed=initiator&embed=branched_from'.format(url_draft_registrations)
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
@@ -543,14 +543,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 201
         data = res.json['data']
-        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'Test response'
-        assert res.json['data']['attributes']['registration_responses']['q2'] == 'Test response'
         assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
     def test_required_registration_responses_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata):
+            self, app, user, provider, project_public):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)

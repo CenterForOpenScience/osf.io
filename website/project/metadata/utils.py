@@ -1,7 +1,5 @@
 from framework import utils
 
-from osf.utils import permissions as osf_permissions
-
 def serialize_initiator(initiator):
     return {
         'fullname': initiator.fullname,
@@ -42,7 +40,6 @@ def serialize_draft_registration(draft, auth=None):
         'flags': draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id, _guid=True),
-            'submit': node.api_url_for('submit_draft_for_review', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': absolute_reverse('nodes:node-registrations', kwargs={'node_id': node._id, 'version': 'v2'}),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
@@ -295,20 +292,3 @@ def base_metaschema(metaschema):
         }
     }
     return json_schema
-
-def is_prereg_admin(user):
-    """
-    Returns true if user has reviewer permissions
-    """
-    if user is not None:
-        return user.has_perm('osf.administer_prereg')
-    return False
-
-def is_prereg_admin_not_project_admin(request, draft):
-    """
-    Returns true if user is prereg admin, but not admin on project
-    """
-    user = request.user
-    is_project_admin = draft.branched_from.has_permission(user, osf_permissions.ADMIN)
-
-    return is_prereg_admin(user) and not is_project_admin

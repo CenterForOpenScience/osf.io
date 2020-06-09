@@ -36,8 +36,6 @@
                 <p><strong>metrics_only:</strong><br>User can only view metrics on the OSF Admin page</p>
                 <p><strong>read_only</strong><br>User can view details of nodes, preprints, users, meetings, metrics, and spam, but cannot make changes</p>
                 <p><strong>osf_admin</strong><br>User make changes to nodes, preprints, users, meetings, and mark spam</p>
-                <p><strong>prereg_admin</strong><br>User can view, approve, and make changes to entries to the preregistration challenge</p>
-                <p><strong>prereg_view</strong><br>User can view entries to the preregistration challenge, but not approve or make changes.</p>
 
                 <p>{{ form.group_perms }}</p>
                 {% if form.group_perms.errors %}<span class="text-danger"> {{ form.group_perms.errors }}</span>{% endif %}

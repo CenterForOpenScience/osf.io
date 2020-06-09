@@ -1,6 +1,6 @@
 from django.utils import six
 from collections import OrderedDict
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
 from django.db.models import QuerySet
 

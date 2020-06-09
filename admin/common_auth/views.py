@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
@@ -8,7 +8,6 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
-from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
@@ -73,7 +72,6 @@ class RegisterUser(PermissionRequiredMixin, FormView):
         # create AdminProfile for this new user
         profile, created = AdminProfile.objects.get_or_create(user=osf_user)
 
-        prereg_admin_group = Group.objects.get(name='prereg_admin')
         for group in form.cleaned_data.get('group_perms'):
             osf_user.groups.add(group)
             split = group.name.split('_')
@@ -82,9 +80,6 @@ class RegisterUser(PermissionRequiredMixin, FormView):
                 provider_id = split[2]
                 provider = AbstractProvider.objects.get(id=provider_id)
                 provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
-            if group == prereg_admin_group:
-                administer_permission = Permission.objects.get(codename='administer_prereg')
-                osf_user.user_permissions.add(administer_permission)
 
         osf_user.save()
 
