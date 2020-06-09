@@ -6,12 +6,12 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PROJECT VERSION\n"
-"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-05-28 13:23+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Project-Id-Version: 0.6.0\n"
+"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-03 16:38+0900\n"
+"Last-Translator: Shunta Nishikawa\n"
+"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -748,6 +748,10 @@ msgid "New Wiki Name"
 msgstr ""
 
 #: addons/wiki/templates/add_wiki_page.mako:18
+#: addons/wiki/templates/add_wiki_page.mako:44
+#: addons/wiki/templates/add_wiki_page.mako:49
+#: addons/wiki/templates/add_wiki_page.mako:55
+#: addons/wiki/templates/add_wiki_page.mako:94
 #: website/templates/project/contributors.mako:57
 #: website/templates/project/contributors.mako:164
 #: website/templates/project/contributors.mako:337
@@ -758,6 +762,10 @@ msgstr ""
 #: website/templates/project/settings.mako:209
 #: website/templates/project/settings.mako:522
 msgid "Add"
+msgstr ""
+
+#: addons/wiki/templates/add_wiki_page.mako:38
+msgid "Creating new wiki page"
 msgstr ""
 
 #: addons/wiki/templates/add_wiki_page.mako:41
@@ -1015,38 +1023,44 @@ msgid ""
 "performance, please switch to another browser."
 msgstr ""
 
-#: website/templates/base.mako:148 website/templates/base.mako:159
+#: website/templates/base.mako:148 website/templates/base.mako:161
 msgid "Accept"
 msgstr ""
 
 #: website/templates/base.mako:154
 #, python-format
 msgid ""
-"This website relies on cookies to help provide a better user experience. "
-"By clicking Accept or continuing to use the site, you agree. For more "
-"information,            see our <a %(meatwikiUrl)s>Privacy Policy</a>"
-"            and information on <a %(meatwikiUrl)s>cookie use</a>."
+"The National Institute of Informatics (NII) uses cookies to operate the "
+"NII Research Data Cloud service and to improve your user experience."
+"                  If you intend to use the GakuNin RDM, please read our "
+"<a %(meatwikiUrl)s>Privacy Policy</a> and information on <a "
+"%(meatwikiUrl)s>NII use of cookies</a>.                  By clicking "
+"Accept or continuing to use our website, you consent to the cookies use "
+"on this site.                  If you do not agree with the cookies use, "
+"please change your browser settings to disable cookies or stop using our "
+"website.                  Please be aware that you may not be able to use"
+" some functions on our website when you have cookies disabled."
 msgstr ""
 
-#: website/templates/base.mako:170
+#: website/templates/base.mako:172
 msgid "Start managing your projects on the GakuNin RDM today."
 msgstr ""
 
-#: website/templates/base.mako:171
+#: website/templates/base.mako:173
 msgid ""
 "Free and easy to use, the GakuNin RDM supports the entire research "
 "lifecycle: planning, execution, reporting, archiving, and discovery."
 msgstr ""
 
-#: website/templates/base.mako:173
+#: website/templates/base.mako:175
 msgid "Create an Account"
 msgstr ""
 
-#: website/templates/base.mako:175
+#: website/templates/base.mako:177
 msgid "Learn More"
 msgstr ""
 
-#: website/templates/base.mako:176
+#: website/templates/base.mako:178
 msgid "Hide this message"
 msgstr ""
 
