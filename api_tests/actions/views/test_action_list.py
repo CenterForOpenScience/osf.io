@@ -5,7 +5,6 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
-    DraftNodeFactory,
     ReviewActionFactory
 )
 from osf.utils import permissions as osf_permissions
@@ -44,11 +43,10 @@ class TestReviewActionCreateRoot(object):
         return AuthUserFactory()
 
     @pytest.fixture()
-    def preprint_with_draft_node(self, moderator, provider):
-        draft_node = DraftNodeFactory(creator=moderator)
+    def preprint_without_node(self, moderator, provider):
         preprint = PreprintFactory(
             provider=provider,
-            node=draft_node,
+            project=None,
             creator=moderator
         )
         preprint.save()
@@ -153,16 +151,16 @@ class TestReviewActionCreateRoot(object):
         assert preprint.machine_state == 'accepted'
         assert preprint.is_published
 
-    def test_preprint_with_draft_node(self, app, url, preprint_with_draft_node, moderator):
+    def test_preprint_with_draft_node(self, app, url, preprint_without_node, moderator):
         res = app.get(url, auth=moderator.auth)
         assert res.status_code == 200
 
         assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == preprint_with_draft_node.actions.first()._id
+        assert res.json['data'][0]['id'] == preprint_without_node.actions.first()._id
 
-        preprint_with_draft_node.refresh_from_db()
-        assert preprint_with_draft_node.machine_state == 'accepted'
-        assert preprint_with_draft_node.is_published
+        preprint_without_node.refresh_from_db()
+        assert preprint_without_node.machine_state == 'accepted'
+        assert preprint_without_node.is_published
 
     def test_cannot_create_actions_for_unmoderated_provider(
             self, app, url, preprint, provider, node_admin
