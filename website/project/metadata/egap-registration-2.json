@@ -7,7 +7,7 @@
 	"description": "The EGAP registry focuses on designs for experiments and observational studies in governance and politics.",
 	"pages": [{
 			"id": "page1",
-			"title": "General Information About the Project",
+			"title": "General Information About the Study",
 			"questions": [{
 					"qid": "q1",
 					"nav": "Title",
@@ -49,7 +49,7 @@
 						"N/A",
 						"Yes",
 						"No",
-						"Other (describe in text box below)"
+						"Other author affiliation"
 					],
 					"description": "Please choose one"
 				},
@@ -58,7 +58,7 @@
 					"title": "Other",
 					"format": "textarea",
 					"required": false,
-					"description": "Other (additional information if 'other' was selected above)"
+					"description": "Other study author affiliation (additional information if 'other' was selected above)"
 
 				},
 				{
@@ -75,7 +75,7 @@
 						"Registration prior to researcher access to outcome data",
 						"Registration prior to researcher analysis of outcome data",
 						"Registration after researcher analysis of outcome data",
-						"Other (describe in text box below)"
+						"Other description of registration timing"
 					],
 					"description": "Please choose one"
 				},
@@ -83,11 +83,13 @@
 					"qid": "q9",
 					"title": "Other",
 					"format": "textarea",
-					"required": false
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
 				},
 				{
 					"qid": "q10",
 					"title": "Is this an experimental study?",
+					"description": "With “experimental” defined as random assignment of units to treatment and control conditions.",
 					"nav": "Experimental study?",
 					"type": "choose",
 					"format": "singleselect",
@@ -157,7 +159,7 @@
 					"nav": "Country",
 					"type": "string",
 					"format": "text",
-					"help": "comma separated names of countries (e.g. Canada, United States of America, Mexico)"
+					"help": "Comma separated names of countries (e.g. Canada, United States, Mexico)"
 				},
 				{
 					"qid": "q19",
@@ -176,13 +178,14 @@
 						"N/A",
 						"No",
 						"Yes",
-						"Other (describe in text box below)"
+						"Other power analysis information"
 					]
 				},
 				{
 					"qid": "q21",
 					"title": "Other",
 					"format": "textarea",
+					"description": "Other (additional information if 'other' was selected above)",
 					"required": false
 				},
 				{
@@ -195,12 +198,13 @@
 						"N/A",
 						"No",
 						"Yes",
-						"Other (describe in text box below)"
+						"Other IRB information"
 					]
 				},
 				{
 					"qid": "q23",
 					"title": "Other",
+					"description": "Other (additional information if 'other' was selected above)",
 					"format": "textarea",
 					"required": false
 				},
@@ -226,7 +230,7 @@
 					"format": "singleselect",
 					"options": [
 						"Researchers",
-						"Other (describe in text box below)"
+						"Third party (describe in text box below)"
 					]
 				},
 				{
@@ -234,7 +238,7 @@
 					"title": "Other",
 					"format": "textarea",
 					"required": false,
-					"description": "Other (additional information if 'other' was selected above)"
+					"description": "Third party implementer information. List any third party implementer(s), if third party was selected above,"
 				},
 				{
 					"qid": "q28",
@@ -246,7 +250,7 @@
 						"N/A",
 						"Yes",
 						"No",
-						"Other (describe in text box below)"
+						"Other Remuneration Information"
 					]
 				},
 				{
@@ -266,7 +270,7 @@
 						"N/A",
 						"Yes",
 						"No",
-						"Other (describe in text box below)"
+						"Other publication agreement information"
 					]
 				},
 				{
@@ -348,14 +352,14 @@
 				"title": "Additional documentation",
 				"type": "osf-upload",
 				"format": "osf-upload-open",
-				"description": "Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc."
+				"description": "Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>"
 			}, {
 				"qid": "q38",
-				"nav": "Anonymous documentation",
-				"title": "Anonymous documentation",
+				"nav": "DeclareDesign",
+				"title": "DeclareDesign",
 				"type": "osf-upload",
 				"format": "osf-upload-open",
-				"description": "Please upload your anonymized pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc."
+				"description": "If you have used DeclareDesign to simulate your study, attach the output here. DeclareDesign is a system for describing research designs in code and simulating them in order to understand their properties. Learn more at https://declaredesign.org/."
 			}]
 		}
 	]
