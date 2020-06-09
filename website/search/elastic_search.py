@@ -153,6 +153,7 @@ def requires_search(func):
             except NotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except RequestError as e:
+                logger.error(str(e))
                 if e.error == 'search_phase_execution_exception':
                     raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
@@ -1439,20 +1440,36 @@ def create_index(index=None):
                         'type': 'custom',
                         'tokenizer': 'kuromoji_tokenizer',
                         'char_filter': [
-                            #'nfkd_normalizer'
                             'icu_normalizer',
                             'kuromoji_iteration_mark',
                         ],
                         'filter': [
+                            #'nfkd_normalizer'
                             'lowercase',
                             'kuromoji_baseform',
                             'kuromoji_part_of_speech_search',
                             'ja_stop',
                             #'kuromoji_number', ES6 or later
                             'kuromoji_stemmer',
-
                         ],
-                    }
+                    },
+                    'grdm_ja_search_analyzer': {
+                        'type': 'custom',
+                        'tokenizer': 'whitespace',
+                        'char_filter': [
+                            'icu_normalizer',
+                            'kuromoji_iteration_mark',
+                        ],
+                        'filter': [
+                            #'nfkd_normalizer'
+                            'lowercase',
+                            'kuromoji_baseform',
+                            'kuromoji_part_of_speech_search',
+                            'ja_stop',
+                            #'kuromoji_number', ES6 or later
+                            'kuromoji_stemmer',
+                        ],
+                    },
                 }
             }
         },
@@ -1460,7 +1477,7 @@ def create_index(index=None):
             '_default_': {
                 '_all': {
                     'analyzer': 'grdm_ja_analyzer',
-                    'search_analyzer': 'whitespace',
+                    'search_analyzer': 'grdm_ja_search_analyzer',
                 }
             }
         }
