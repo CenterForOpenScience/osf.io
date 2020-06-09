@@ -296,7 +296,7 @@ def query_private_search(self, qs, user, category=None, version=1, sort=None):
         auth=user.auth,
         expect_errors=True
     )
-    DEBUG('query_private_search: res=', res)
+    DEBUG('query_private_search: res=', res.json)
     return res, res.json.get('results')
 
 def query_public_search(self, qs, user):
@@ -424,7 +424,7 @@ class TestSearchJapanese(OsfTestCase):
         各フィールドごとに検索できることを確認する。
         削除して影響ないことを確認する。
         """
-        nfd_str = nfd(u'がぎぐげご')  # 結合文字
+        nfd_str = nfd(u'"ギガバイト"')  # 結合文字
         nfc_str = nfc(nfd_str)  # 合成済み文字
         search_user = factories.AuthUserFactory()
 
@@ -726,7 +726,10 @@ class TestSearchJapanese(OsfTestCase):
              u'{} AND category:wiki'),
 
             # institution
-            (24, _save_institution_name, _del_institution, None),
+            (25, _save_institution_name, _del_institution, None),
+
+            # 最後の削除処理が次の検索に影響しないことを確認
+            (999, _save_username, _del_user, None),
         )
 
         for pattern in patterns:
