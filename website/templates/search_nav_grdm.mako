@@ -3,7 +3,7 @@
                                 <li data-bind="css: {disabled: !prevPageExists()}">
                                     <a href="#" data-bind="click: pagePrev">${_("Previous Page")} </a>
                                 </li>
-                                <!-- ko if: totalPages() < pagesShown() -->
+                                <!-- ko if: totalPages() <= pagesShown() -->
                                     <!-- ko foreach: listIndices() -->
                                     <span data-bind="css: {disabled: $parent.isCurrentPage($data)}">
                                         <a data-bind="click: $parent.pageNth, text: $data"></a>
