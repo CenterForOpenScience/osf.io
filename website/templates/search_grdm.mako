@@ -156,11 +156,7 @@
         <div data-bind="template: {name: 'updated-time', data: $data}"></div>
         <!-- /ko -->
         <!-- ko if: comment !== null -->
-        <p>
-            <strong>${_("Comment")}:</strong>
-            <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
-        </p>
+        <div data-bind="template: {name: 'comment', data: $data}"></div>
         <!-- /ko -->
     </script>
     <script type="text/html" id="user">
@@ -335,11 +331,7 @@
         <br>
         <!-- /ko -->
         <!-- ko if: comment !== null -->
-        <p>
-            <strong>${_("Comment")}:</strong>
-            <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
-        </p>
+        <div data-bind="template: {name: 'comment', data: $data}"></div>
         <!-- /ko -->
     </script>
     <script type="text/html" id="institution">
@@ -493,11 +485,7 @@
         <div data-bind="template: {name: 'updated-time', data: $data}"></div>
         <!-- /ko -->
         <!-- ko if: comment !== null -->
-        <p>
-            <strong>${_("Comment")}:</strong>
-            <span data-bind="html: $root.makeComment(comment.text)"></span>
-            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name  + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
-        </p>
+        <div data-bind="template: {name: 'comment', data: $data}"></div>
         <!-- /ko -->
     </script>
     <script type="text/html" id="component">
@@ -610,6 +598,13 @@
             <strong>${_("Created by")}:</strong> <a data-bind="attr: {href: $root.getGuidUrl(creator_id)}, text: creator_name + '@' + $root.getGuidText(creator_id)"></a> at <span data-bind="text: $root.toDate(date_created)"></span>
             <!-- /ko -->
         </div>
+    </script>
+    <script type="text/html" id="comment">
+        <p>
+            <strong>${_("Comment")}:</strong>
+            <span data-bind="html: $root.makeComment(comment.text)"></span>
+            <a data-bind="attr: {href: $root.getGuidUrl(comment.user_id)}, text: comment.user_name + '@' + $root.getGuidText(comment.user_id)"></a> at <span data-bind="text: $root.toDate(comment.date_created)"></span>
+        </p>
     </script>
 </%def>
 
