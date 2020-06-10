@@ -61,8 +61,7 @@
                     {% csrf_token %}
                     {{ form.as_p }}
                     <p><label>{% trans "Message:" %}</label><textarea name="message"></textarea></p>
-                    <p><b>{% trans "Reminder:" %}</b> {% trans "This alert will go up as soon as it is created and will have to be manually removed.
-                        (Creating a new alert automatically removes an existing one.)" %}</p>
+                    <p><b>{% trans "Reminder:" %}</b> {% trans "This alert will go up as soon as it is created and will have to be manually removed. (Creating a new alert automatically removes an existing one.)" %}</p>
                     <input class="btn btn-primary" type="submit" value="Submit" />
                 </form>
             </div>
