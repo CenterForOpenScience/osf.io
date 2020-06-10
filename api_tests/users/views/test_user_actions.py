@@ -53,7 +53,8 @@ class TestReviewActionFilters:
 
         some_rando = AuthUserFactory()
         res = app.get(url, auth=some_rando.auth, expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 200
+        assert res.json['data'] == []
 
 
 @pytest.mark.django_db
