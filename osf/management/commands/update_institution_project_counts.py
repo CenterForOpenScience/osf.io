@@ -13,8 +13,8 @@ def update_institution_project_counts():
 
     for institution in Institution.objects.all():
 
-        institution_public_projects_qs = institution.nodes.filter(type='osf.node', parent_nodes=None, is_public=True)
-        institution_private_projects_qs = institution.nodes.filter(type='osf.node', parent_nodes=None, is_public=False)
+        institution_public_projects_qs = institution.nodes.filter(type='osf.node', parent_nodes=None, is_public=True, is_deleted=False)
+        institution_private_projects_qs = institution.nodes.filter(type='osf.node', parent_nodes=None, is_public=False, is_deleted=False)
 
         institution_public_projects_count = institution_public_projects_qs.count()
         institution_private_projects_count = institution_private_projects_qs.count()
@@ -29,8 +29,7 @@ def update_institution_project_counts():
         for user in institution.osfuser_set.all():
             user_public_project_count = Node.objects.get_nodes_for_user(
                 user=user,
-                base_queryset=institution_public_projects_qs,
-                include_public=True
+                base_queryset=institution_public_projects_qs
             ).count()
 
             user_private_project_count = Node.objects.get_nodes_for_user(
