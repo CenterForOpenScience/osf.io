@@ -478,6 +478,24 @@ class TestDraftRegistrationContributorMethods():
         assert draft_registration.is_contributor(noncontrib) is False
         assert draft_registration.is_contributor(None) is False
 
+    def test_visible_initiator(self, project, user):
+        project_contributor = project.contributor_set.get(user=user)
+        assert project_contributor.visible is True
+
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project, initiator=user)
+        draft_reg_contributor = draft_reg.contributor_set.get(user=user)
+        assert draft_reg_contributor.visible is True
+
+    def test_non_visible_initiator(self, project, user):
+        invisible_user = factories.UserFactory()
+        project.add_contributor(contributor=invisible_user, permissions=ADMIN, visible=False)
+        invisible_project_contributor = project.contributor_set.get(user=invisible_user)
+        assert invisible_project_contributor.visible is False
+
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project, initiator=invisible_user)
+        invisible_draft_reg_contributor = draft_reg.contributor_set.get(user=invisible_user)
+        assert invisible_draft_reg_contributor.visible is False
+
     def test_visible_contributor_ids(self, draft_registration, user):
         visible_contrib = factories.UserFactory()
         invisible_contrib = factories.UserFactory()

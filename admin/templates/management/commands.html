@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1> Management Commands </h1>
+    <section class="content">
+        <p> Use the buttons below to manually run management commands. </p>
+        <div class="row">
+            <h4> <u>Update Waffle Flags and Switches </u>
+            </h4>
+            <ul>
+                Use this management command to update the flags and switches on OSF
+                with the flags and switches in osf/features/switches.py and osf/features/flags.py
+                <br>
+                <form method="post"
+                      action="{% url 'management:waffle_flag'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+        </div>
+    </section>
+{% endblock %}
