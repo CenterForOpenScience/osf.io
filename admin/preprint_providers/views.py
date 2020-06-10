@@ -198,20 +198,15 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
         provider_form = PreprintProviderCustomTaxonomyForm(request.POST)
         if provider_form.is_valid():
-            provider = PreprintProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
+            provider = PreprintProvider.objects.get(id=request.POST.get('provider_id'))
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
                 if request.is_ajax():
                     # An ajax request is for validation only, so run that validation!
-                    try:
-                        response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
-                        if response_data:
-                            added_subjects = [subject.text for subject in response_data]
-                            response_data = {'message': 'Custom taxonomy validated with added subjects: {}'.format(added_subjects), 'feedback_type': 'success'}
-                    except (RuntimeError, AssertionError) as script_feedback:
-                        response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
-                    if not response_data:
-                        response_data = {'message': 'Custom taxonomy validated!', 'feedback_type': 'success'}
+                    response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
+                    if response_data:
+                        added_subjects = [subject.text for subject in response_data]
+                        messages.success(f'Custom taxonomy validated with added subjects: {added_subjects}')
                 else:
                     # Actually do the migration of the custom taxonomies
                     migrate(provider=provider._id, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
@@ -219,13 +214,14 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             except (ValueError, RuntimeError, AssertionError) as error:
                 messages.error(request, f'There is an error with the submitted JSON or the provider. Here are some details: {str(error)}')
         else:
-            messages.error(request, f'There is a problem with the form. Here are some details:  {provider_form.errors}')
+            for key, value in provider_form.errors.items():
+                messages.error(request, f'{key}: {value}')
 
         return redirect(
             reverse_lazy(
                 'preprint_providers:process_custom_taxonomy',
                 kwargs={
-                    'preprint_provider_id': provider.id
+                    'preprint_provider_id': kwargs.get('preprint_provider_id')
                 }
             )
         )
@@ -255,13 +251,15 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         data = self.get_subjects(request)
+        preprint_provider = PreprintProvider.objects.get(id=int(self.kwargs.get('preprint_provider_id')))
         return render(
             request,
             self.template_name,
             {
                 'preprint_provider_id': self.kwargs.get('preprint_provider_id'),
                 'subject_ids': data['subject_ids'],
-                'taxonomy_form': PreprintProviderCustomTaxonomyForm()
+                'taxonomy_form': PreprintProviderCustomTaxonomyForm(request.POST),
+                'taxonomies_created': False if not preprint_provider.subjects.exists() else True
             }
         )
 
