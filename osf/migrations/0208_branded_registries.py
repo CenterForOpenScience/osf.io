@@ -11,7 +11,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0206_auto_20200528_1319'),
+        ('osf', '0207_ensure_schemas'),
     ]
 
     operations = [
