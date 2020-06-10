@@ -151,7 +151,7 @@ class TestReviewActionCreateRoot(object):
         assert preprint.machine_state == 'accepted'
         assert preprint.is_published
 
-    def test_preprint_with_draft_node(self, app, url, preprint_without_node, moderator):
+    def test_preprint_without_node(self, app, url, preprint_without_node, moderator):
         res = app.get(url, auth=moderator.auth)
         assert res.status_code == 200
 
