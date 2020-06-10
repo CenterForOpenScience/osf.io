@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-08 14:43+0900\n"
-"PO-Revision-Date: 2020-06-08 14:43+0900\n"
+"POT-Creation-Date: 2020-06-10 14:43+0900\n"
+"PO-Revision-Date: 2020-06-10 14:43+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -320,9 +320,9 @@ msgstr "機関ストレージ"
 msgid "Quota for Institutional Storage"
 msgstr "機関ストレージのクォータ"
 
-#: .\admin\templates\base.html:303 .\admin\templates\home.html:7
+#: .\admin\templates\base.html:303 .\admin\templates\home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
-msgstr "GakuNin RDM管理者ホームページへようこそ"
+msgstr "GakuNin RDM機関管理者ページへようこそ"
 
 #: .\admin\templates\base.html:313
 msgid "National Institute of Informatics"
@@ -553,6 +553,10 @@ msgid "Hello %(userfullname)s, "
 msgstr "こんにちは %(userfullname)sさん"
 
 #: .\admin\templates\home.html:8
+msgid "Welcome to the GakuNin RDM General Admin Home Page"
+msgstr "GakuNin RDM総合管理者(NII)ページへようこそ"
+
+#: .\admin\templates\home.html:12
 msgid " Use the menu on the left to access admin pages. "
 msgstr " 左側のメニューから、それぞれの管理ページにアクセスします。 "
 
@@ -2077,7 +2081,9 @@ msgid ""
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
 "                                    "
-msgstr "これらの資格情報は暗号化されます。ただし、<a %(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+msgstr ""
+"これらの資格情報は暗号化されます。ただし、<a "
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
 msgid "Connect NII Storage"
@@ -2106,7 +2112,9 @@ msgid ""
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
 "                                "
-msgstr "これらの資格情報は暗号化されます。ただし、<a %(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
+msgstr ""
+"これらの資格情報は暗号化されます。ただし、<a "
+"%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:25
 #: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:29

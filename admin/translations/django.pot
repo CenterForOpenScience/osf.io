@@ -316,7 +316,7 @@ msgstr ""
 msgid "Quota for Institutional Storage"
 msgstr ""
 
-#: .\admin\templates\base.html:303 .\admin\templates\home.html:7
+#: .\admin\templates\base.html:303 .\admin\templates\home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr ""
 
@@ -550,6 +550,10 @@ msgid "Hello %(userfullname)s, "
 msgstr ""
 
 #: .\admin\templates\home.html:8
+msgid "Welcome to the GakuNin RDM General Admin Home Page"
+msgstr ""
+
+#: .\admin\templates\home.html:12
 msgid " Use the menu on the left to access admin pages. "
 msgstr ""
 

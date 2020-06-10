@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-08 14:43+0900\n"
-"PO-Revision-Date: 2020-06-08 14:43+0900\n"
+"POT-Creation-Date: 2020-06-10 14:43+0900\n"
+"PO-Revision-Date: 2020-06-10 14:43+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -318,7 +318,7 @@ msgstr ""
 msgid "Quota for Institutional Storage"
 msgstr ""
 
-#: .\admin\templates\base.html:303 .\admin\templates\home.html:7
+#: .\admin\templates\base.html:303 .\admin\templates\home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr ""
 
@@ -551,6 +551,10 @@ msgid "Hello %(userfullname)s, "
 msgstr ""
 
 #: .\admin\templates\home.html:8
+msgid "Welcome to the GakuNin RDM General Admin Home Page"
+msgstr ""
+
+#: .\admin\templates\home.html:12
 msgid " Use the menu on the left to access admin pages. "
 msgstr ""
 
