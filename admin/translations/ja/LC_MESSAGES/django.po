@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-10 14:43+0900\n"
-"PO-Revision-Date: 2020-06-10 14:43+0900\n"
+"POT-Creation-Date: 2020-06-10 17:06+0900\n"
+"PO-Revision-Date: 2020-06-10 17:06+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -597,6 +597,13 @@ msgstr "機関を作成"
 msgid "Create An Institution"
 msgstr "機関を作成する"
 
+#: .\admin\templates\institutions\create.html:30
+msgid ""
+"Choose a JSON file that has been previously exported from another "
+"Institution detail page. This will pre-populate the Institution change "
+"form with those details."
+msgstr "別の教育機関の詳細ページから以前にエクスポートされたJSONファイルを選択します。これにより、機関の変更フォームにそれらの詳細が事前に入力されます。"
+
 #: .\admin\templates\institutions\detail.html:16
 msgid "Export institution metadata"
 msgstr "機関のメタデータをエクスポートする"
@@ -819,6 +826,13 @@ msgstr "メッセージ："
 #: .\admin\templates\maintenance\display.html:64
 msgid "Reminder:"
 msgstr "リマインダ："
+
+#: .\admin\templates\maintenance\display.html:64
+msgid ""
+"This alert will go up as soon as it is created and will have to be "
+"manually removed. (Creating a new alert automatically removes an existing"
+" one.)"
+msgstr "このアラートは、作成されるとすぐに表示され、手動で削除する必要があります。(新しいアラートを作成すると、既存のアラートは自動的に削除されます)"
 
 #: .\admin\templates\meetings\create.html:7
 msgid "GakuNIn RDM Admin | Meetings"

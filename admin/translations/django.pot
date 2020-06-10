@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-08 14:43+0900\n"
-"PO-Revision-Date: 2020-06-08 14:43+0900\n"
+"POT-Creation-Date: 2020-06-10 17:06+0900\n"
+"PO-Revision-Date: 2020-06-10 17:06+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -594,6 +594,13 @@ msgstr ""
 msgid "Create An Institution"
 msgstr ""
 
+#: .\admin\templates\institutions\create.html:30
+msgid ""
+"Choose a JSON file that has been previously exported from another "
+"Institution detail page. This will pre-populate the Institution change form "
+"with those details."
+msgstr ""
+
 #: .\admin\templates\institutions\detail.html:16
 msgid "Export institution metadata"
 msgstr ""
@@ -814,6 +821,12 @@ msgstr ""
 
 #: .\admin\templates\maintenance\display.html:64
 msgid "Reminder:"
+msgstr ""
+
+#: .\admin\templates\maintenance\display.html:64
+msgid ""
+"This alert will go up as soon as it is created and will have to be manually "
+"removed. (Creating a new alert automatically removes an existing one.)"
 msgstr ""
 
 #: .\admin\templates\meetings\create.html:7
