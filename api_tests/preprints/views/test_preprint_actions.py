@@ -44,6 +44,15 @@ class TestPreprintActionFilters(TestReviewActionFilters):
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
+    def test_no_permission(self, app, url, expected_actions):
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        some_rando = AuthUserFactory()
+        res = app.get(url, auth=some_rando.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data'] == []
+
 
 @pytest.mark.enable_quickfiles_creation
 class TestReviewActionSettings(ReviewActionCommentSettingsMixin):
