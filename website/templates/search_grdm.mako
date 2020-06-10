@@ -450,7 +450,12 @@
                 <a data-bind="attr: {href: url}, text: fullname + '@' + $root.getGuidText(url)"></a>
                 <!-- /ko-->
                 <!-- ko ifnot: url -->
-                <span data-bind="text: fullname + '@' + $root.getGuidText(url)"></span>
+                    <!-- ko if: id -->
+                    <span data-bind="text: fullname + '@' + id"></span>
+                    <!-- /ko -->
+                    <!-- ko ifnot: id -->
+                    <span data-bind="text: fullname"></span>
+                    <!-- /ko -->
                 <!-- /ko -->
             </span>
         </span>

@@ -963,6 +963,10 @@ var ViewModel = function(params) {
     };
 
     self.getProjectName = function(result) {
+        if (result === undefined || result === null || result === '') {
+            return '';
+        }
+
         var originalStr = result.title;
         var highlightArray = result.highlight.title;
         var lengthLimit = self.titleLengthLimit;
@@ -970,6 +974,10 @@ var ViewModel = function(params) {
     };
 
     self.getFileName = function(result) {
+        if (result === undefined || result === null || result === '') {
+            return '';
+        }
+
         var originalStr = result.name;
         var highlightArray = result.highlight.name;
         var lengthLimit = self.nameLengthLimit;
@@ -977,6 +985,10 @@ var ViewModel = function(params) {
     };
 
     self.getUserName = function(result) {
+        if (result === undefined || result === null || result === '') {
+            return '';
+        }
+
         var originalStr = result.user;
         var highlightArray = result.highlight.user;
         var lengthLimit = self.titleLengthLimit;
@@ -984,6 +996,10 @@ var ViewModel = function(params) {
     };
 
     self.getWikiName = function(result) {
+        if (result === undefined || result === null || result === '') {
+            return '';
+        }
+
         var originalStr = result.name;
         var highlightArray = result.highlight.name;
         var lengthLimit = self.titleLengthLimit;
@@ -991,6 +1007,10 @@ var ViewModel = function(params) {
     };
 
     self.makeText = function(text) {
+        if (text === undefined || text === null || text === '') {
+            return '';
+        }
+
         var extracted = text.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
         if (extracted.length >= self.textLengthLimit) {
             return text.substr(0, self.textLengthLimit) + '...';
@@ -1000,6 +1020,10 @@ var ViewModel = function(params) {
     };
 
     self.makeComment = function(comment) {
+        if (comment === undefined || comment === null || comment === '') {
+            return '';
+        }
+
         var extracted = comment.replace(/<b>/gi,'').replace(/<\/b>/gi, '');
         if (extracted.length >= self.commentLengthLimit) {
             return comment.substr(0, self.commentLengthLimit) + '...';
@@ -1009,10 +1033,18 @@ var ViewModel = function(params) {
     };
 
     self.getGuidText = function(guid) {
+        if (guid === undefined || guid === null || guid === '') {
+            return '';
+        }
+
         return guid.toUpperCase().split('/').join('');
     };
 
     self.getGuidUrl = function(guid) {
+        if (guid === undefined || guid === null || guid === '') {
+            return '';
+        }
+
         return window.location.origin + '/' + guid.split('/').join('') + '/';
     };
 
