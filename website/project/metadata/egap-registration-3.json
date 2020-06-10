@@ -46,19 +46,19 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
 						"Yes",
 						"No",
-						"Other author affiliation"
+						"N/A",
+						"Other (describe in text box below)"
 					],
 					"description": "Please choose one"
 				},
 				{
 					"qid": "q7",
-					"title": "Other",
+					"title": "Other author affiliation",
 					"format": "textarea",
 					"required": false,
-					"description": "Other study author affiliation (additional information if 'other' was selected above)"
+					"description": "Other author affiliation (additional information if 'other' was selected above)"
 
 				},
 				{
@@ -68,20 +68,20 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
 						"Registration prior to any research activities",
 						"Registration prior to assignment of treatment",
 						"Registration prior to realization of outcomes",
 						"Registration prior to researcher access to outcome data",
 						"Registration prior to researcher analysis of outcome data",
 						"Registration after researcher analysis of outcome data",
-						"Other description of registration timing"
+						"N/A",
+						"Other (descrbe in text box below)"
 					],
 					"description": "Please choose one"
 				},
 				{
 					"qid": "q9",
-					"title": "Other",
+					"title": "Other description of registration timing",
 					"format": "textarea",
 					"required": false,
 					"description": "Other (additional information if 'other' was selected above)"
@@ -94,9 +94,9 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
 						"Yes",
-						"No"
+						"No",
+						"N/A"
 					]
 				},
 				{
@@ -106,9 +106,10 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
+						"Yes",
 						"No",
-						"Yes"
+						"N/A"
+
 					]
 				},
 				{
@@ -118,9 +119,9 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
+						"Yes",
 						"No",
-						"Yes"
+						"N/A"
 					],
 					"description": "If so, please attach it in the Additional Documentation section on the final screen."
 				}
@@ -175,15 +176,15 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
-						"No",
 						"Yes",
-						"Other power analysis information"
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
 					]
 				},
 				{
 					"qid": "q21",
-					"title": "Other",
+					"title": "Other power analysis information",
 					"format": "textarea",
 					"description": "Other (additional information if 'other' was selected above)",
 					"required": false
@@ -195,15 +196,15 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
-						"No",
 						"Yes",
-						"Other IRB information"
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
 					]
 				},
 				{
 					"qid": "q23",
-					"title": "Other",
+					"title": "Other IRB information",
 					"description": "Other (additional information if 'other' was selected above)",
 					"format": "textarea",
 					"required": false
@@ -227,7 +228,7 @@
 					"title": "Will the intervention be implemented by the researcher or a third party? If a third party, please provide the name.",
 					"nav": "Review Board (IRB) or ethics committee approval?",
 					"type": "choose",
-					"format": "singleselect",
+					"format": "multiselect",
 					"options": [
 						"Researchers",
 						"Third party (describe in text box below)"
@@ -235,10 +236,10 @@
 				},
 				{
 					"qid": "q27",
-					"title": "Other",
+					"title": "Third party implementer information",
 					"format": "textarea",
 					"required": false,
-					"description": "Third party implementer information. List any third party implementer(s), if third party was selected above,"
+					"description": "List any third party implementer(s), if third party was selected above"
 				},
 				{
 					"qid": "q28",
@@ -247,15 +248,15 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
 						"Yes",
 						"No",
-						"Other Remuneration Information"
+						"N/A",
+						"Other (describe in text box below)"
 					]
 				},
 				{
 					"qid": "q29",
-					"title": "Other",
+					"title": "Other renumeration information",
 					"format": "textarea",
 					"required": false,
 					"description": "Other (additional information if 'other' was selected above)"
@@ -267,15 +268,15 @@
 					"type": "choose",
 					"format": "singleselect",
 					"options": [
-						"N/A",
 						"Yes",
 						"No",
-						"Other publication agreement information"
+						"N/A",
+						"Other (describe in text box below)"
 					]
 				},
 				{
 					"qid": "q31",
-					"title": "Other",
+					"title": "Other publication agreement information",
 					"format": "textarea",
 					"required": false,
 					"description": "Other (additional information if 'other' was selected above)"
@@ -286,7 +287,7 @@
 					"nav": "JEL classification(s)",
 					"type": "string",
 					"format": "text",
-					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see here<https://www.aeaweb.org/jel/guide/jel.php>."
+					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see <a href=\"https://www.aeaweb.org/jel/guide/jel.php\">here</a>."
 				}
 			]
 		},
