@@ -287,7 +287,7 @@
 					"nav": "JEL classification(s)",
 					"type": "string",
 					"format": "text",
-					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see <a href=\"https://www.aeaweb.org/jel/guide/jel.php\">here</a>."
+					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see https://www.aeaweb.org/jel/guide/jel.php"
 				}
 			]
 		},
