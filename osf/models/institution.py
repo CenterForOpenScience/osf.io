@@ -22,13 +22,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
-    last_logged = models.CharField(_('Last logged'))
-    name = models.CharField(_('Name'), max_length=255)
-    description = models.TextField(_('Description'), blank=True, default='', null=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='', null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
     banner_name = models.CharField(_('Banner name'), max_length=255, blank=True, null=True)
-    logo_name = models.CharField(_('Logo name'), max_length=255, blank=True, null=True)
+    logo_name = models.CharField(max_length=255, blank=True, null=True)
 
     # The protocol which is used to delegate authentication.
     # Currently, we have `CAS`, `SAML`, `OAuth` available.
@@ -41,14 +40,14 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         ('saml-shib', 'SAML by Shibboleth'),
         ('', 'No Delegation Protocol'),
     )
-    delegation_protocol = models.CharField(_('Delegation protocol'), max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 
     # login_url and logout_url can be null or empty
-    login_url = models.URLField(_('Login url'), null=True, blank=True)
-    logout_url = models.URLField(_('Logout url'), null=True, blank=True)
+    login_url = models.URLField(null=True, blank=True)
+    logout_url = models.URLField(null=True, blank=True)
 
-    domains = fields.ArrayField(_('Domains'), models.CharField(max_length=255), db_index=True, null=True, blank=True)
-    email_domains = fields.ArrayField(_('Email domains'), models.CharField(max_length=255), db_index=True, null=True, blank=True)
+    domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
+    email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
 
     contributors = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
