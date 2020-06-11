@@ -80,10 +80,12 @@ def build_private_search_query(query_string, version=1, sort=None, highlight=Non
     return q
 
 
-def DEBUG(name, obj):
+def DEBUG(msg, obj=None):
     if ENABLE_DEBUG:
-        print('{}:\n{}'.format(name, se(u2s(obj))), file=sys.stderr)
-
+        if obj:
+            print('{}:\n{}'.format(msg, se(u2s(obj))), file=sys.stderr)
+        else:
+            print(msg, file=sys.stderr)
 
 # FIXME: use Unicode in Python3
 def s2u(obj):
@@ -357,15 +359,12 @@ def retry_call_func(func, **kwargs):
 
 @enable_private_search
 def rebuild_search(self_):
-    DEBUG('self._use_migrate', self_._use_migrate)
-    if self_._use_migrate:
-        migrate(delete=False, remove=False,
-                index=None, app=self_.app.app)
+    migrate(delete=False, remove=False,
+            index=None, app=self_.app.app)
 
 def run_after_rebuild_search(self_, func, **kwargs):
-    # run_test_all_after_rebuild_search から呼ばれたテスト内で
-    # rebuild_search を実行したい場合に利用する。
-    if self_._use_migrate:
+    # _use_migrate = False の場合は rebuild_search を実行しない。
+    if not hasattr(self_, '_use_migrate') or self_._use_migrate:
         rebuild_search(self_)
         # migrate() may not update elasticsearch-data immediately.
         retry_call_func(func, **kwargs)
@@ -390,6 +389,8 @@ def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
                 search.create_index(None)
             # migrate() may not update elasticsearch-data immediately.
             retry_call_func(getattr(self_, method_name))
+        # テスト中に run_after_rebuild_search を呼ぶ場合があるので、
+        # rebuild_search 呼び出し回数を上記 1 回だけにする。
         self_._use_migrate = False
 
 
@@ -401,8 +402,6 @@ class TestSearchJapanese(OsfTestCase):
     """
     SEARCH_ANALYZER_JAPANESEを使う場合のテスト
     """
-
-    _use_migrate = False
 
     @enable_private_search
     @use_ja_analyzer
@@ -676,7 +675,7 @@ class TestSearchJapanese(OsfTestCase):
             try:
                 assert_equal(len(results), 1)
             except Exception:
-                print('test ID={}: error'.format(_id), file=sys.stderr)
+                DEBUG('test ID={}: error'.format(_id))
                 raise
 
         patterns = (
@@ -769,7 +768,6 @@ class TestSearchJapanese(OsfTestCase):
                 qs=qs)
             with run_celery_tasks():
                 del_func(obj)
-
 
 
 # see osf_tests/test_search_views.py
