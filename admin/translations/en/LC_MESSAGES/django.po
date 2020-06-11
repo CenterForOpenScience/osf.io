@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-11 15:31+0900\n"
-"PO-Revision-Date: 2020-06-11 15:31+0900\n"
+"POT-Creation-Date: 2020-06-11 17:44+0900\n"
+"PO-Revision-Date: 2020-06-11 17:44+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -63,7 +63,7 @@ msgstr ""
 #: .\admin\templates\desk\customer.html:16
 #: .\admin\templates\institutions\institution_list.html:21
 #: .\admin\templates\institutions\list.html:21
-#: .\admin\templates\meetings\list.html:21
+#: .\admin\templates\meetings\list.html:21 .\admin\templates\messages.html:16
 #: .\admin\templates\osf\providerassetfile_list.html:28
 #: .\admin\templates\rdm_addons\institution_list.html:29
 #: .\admin\templates\rdm_keymanagement\institutions.html:21
@@ -380,6 +380,7 @@ msgstr ""
 #: .\admin\templates\collection_providers\list.html:16
 #: .\admin\templates\institutions\institution_list.html:22
 #: .\admin\templates\institutions\list.html:22
+#: .\admin\templates\messages.html:17
 #: .\admin\templates\rdm_keymanagement\institutions.html:22
 #: .\admin\templates\rdm_timestampadd\list.html:22
 msgid "Description"
@@ -931,6 +932,34 @@ msgstr ""
 
 #: .\admin\templates\messages.html:14
 msgid "email"
+msgstr ""
+
+#: .\admin\templates\messages.html:15
+msgid "Last logged"
+msgstr ""
+
+#: .\admin\templates\messages.html:18
+msgid "Logo name"
+msgstr ""
+
+#: .\admin\templates\messages.html:19
+msgid "Delegation protocol"
+msgstr ""
+
+#: .\admin\templates\messages.html:20
+msgid "Login url"
+msgstr ""
+
+#: .\admin\templates\messages.html:21
+msgid "Logout url"
+msgstr ""
+
+#: .\admin\templates\messages.html:22
+msgid "Domains"
+msgstr ""
+
+#: .\admin\templates\messages.html:23
+msgid "Email domains"
 msgstr ""
 
 #: .\admin\templates\metrics\osf_metrics.html:7
