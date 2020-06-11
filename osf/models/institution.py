@@ -22,6 +22,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
+    last_logged = models.CharField(_('Last logged'))
     name = models.CharField(_('Name'), max_length=255)
     description = models.TextField(_('Description'), blank=True, default='', null=True)
 
