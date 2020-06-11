@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-10 17:06+0900\n"
-"PO-Revision-Date: 2020-06-10 17:06+0900\n"
+"POT-Creation-Date: 2020-06-11 15:31+0900\n"
+"PO-Revision-Date: 2020-06-11 15:31+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -595,11 +595,34 @@ msgstr ""
 msgid "Create An Institution"
 msgstr ""
 
+#: .\admin\templates\institutions\create.html:24
+#: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
+#: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
+#: .\admin\templates\rdm_addons\addons\s3_credentials_modal.html:31
+#: .\admin\templates\rdm_announcement\settings.html:94
+#: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:63
+#: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
+#: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:55
+#: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:38
+#: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:42
+#: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:59
+msgid "Save"
+msgstr ""
+
 #: .\admin\templates\institutions\create.html:30
 msgid ""
 "Choose a JSON file that has been previously exported from another "
 "Institution detail page. This will pre-populate the Institution change "
 "form with those details."
+msgstr ""
+
+#: .\admin\templates\institutions\create.html:34
+msgid "Import"
 msgstr ""
 
 #: .\admin\templates\institutions\detail.html:16
@@ -901,6 +924,14 @@ msgstr ""
 #: .\admin\templates\messages.html:12
 msgid "Type@announcement"
 msgstr "Type"
+
+#: .\admin\templates\messages.html:13
+msgid "name"
+msgstr ""
+
+#: .\admin\templates\messages.html:14
+msgid "email"
+msgstr ""
 
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
@@ -1666,6 +1697,11 @@ msgstr ""
 msgid "Node GUID:"
 msgstr ""
 
+#: .\admin\templates\nodes\search.html:20
+#: .\admin\templates\users\search.html:21
+msgid "Submit"
+msgstr ""
+
 #: .\admin\templates\nodes\spam_status.html:3
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:206
 #: .\admin\templates\spam\detail.html:86
@@ -1793,24 +1829,6 @@ msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:42
 msgid "(Get from Dataverse <i class=\"fa fa-external-link-square\"></i>)"
-msgstr ""
-
-#: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
-#: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
-#: .\admin\templates\rdm_addons\addons\s3_credentials_modal.html:31
-#: .\admin\templates\rdm_announcement\settings.html:94
-#: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:63
-#: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:59
-#: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
-#: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:59
-#: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
-#: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:55
-#: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:38
-#: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:42
-#: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:59
-msgid "Save"
 msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\dataverse_institution_settings.html:15
