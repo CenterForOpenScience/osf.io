@@ -24,7 +24,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     description = models.TextField(blank=True, default='', null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    banner_name = models.CharField(max_length=255, blank=True, null=True)
+    banner_name = models.CharField(_('Banner name'), max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
     # The protocol which is used to delegate authentication.

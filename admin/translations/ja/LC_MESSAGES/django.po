@@ -2715,3 +2715,7 @@ msgstr "選択したユーザーはスパムですか？"
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
+#: .\admin\templates\messages.html:8
+msgid "Banner name"
+msgstr "バナー名"
+
