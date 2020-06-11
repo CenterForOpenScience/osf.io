@@ -18,7 +18,7 @@
                 <form action="{% url 'users:search' %}" method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <input type="submit" class="btn btn-primary" value="Submit" />
+                    <input type="submit" class="btn btn-primary" value="{% trans 'Submit' %}" />
                 </form>
             </div>
         </div>

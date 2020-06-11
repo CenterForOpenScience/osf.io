@@ -21,7 +21,7 @@
                 <form action="" method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <input class="form-button" type="submit" value="Save" />
+                    <input class="form-button" type="submit" value="{% trans 'Save' %}" />
                 </form>
             </div>
             <div class="col-md-5">
@@ -31,7 +31,7 @@
                     <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ import_form.as_p }}
-                        <input class="form-button" type="submit" value="Import" />
+                        <input class="form-button" type="submit" value="{% trans 'Import' %}" />
                     </form>
                 </div>
             </div>
