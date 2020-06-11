@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 import sys
+import time
 import inspect
 import functools
 from unicodedata import normalize
@@ -766,6 +767,104 @@ class TestSearchJapanese(OsfTestCase):
                 self, _search,
                 _id='{}(after rebuild_search)'.format(i),
                 qs=qs)
+            with run_celery_tasks():
+                del_func(obj)
+
+
+@pytest.mark.enable_search
+@pytest.mark.enable_enqueue_task
+class TestSearchBugfix(OsfTestCase):
+    """
+    GakuNin RDM 版にて改修した挙動を確認するテスト
+    """
+
+    @enable_private_search
+    @use_ja_analyzer
+    def setUp(self):
+        setup(TestSearchBugfix, self, create_obj=False)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def tearDown(self):
+        tear_down(TestSearchBugfix, self)
+
+    def _search(self, _id, search_user, qs, num):
+        # 検索結果が存在しないことを確認する場合は、数回試す。
+        # そうしないと、rebuild_search 後に
+        # しばらくしてから検索結果に出現する問題を見逃す。
+        if num == 0:
+            test_count = 3
+        else:
+            test_count = 1
+        for i in range(test_count):
+            DEBUG('test ID={}: test_count {}/{}'.format(
+                _id, i+1, test_count))
+            if i != 0:
+                time.sleep(1)
+            res, results = query_for_normalize_tests(
+                self, u'{}'.format(qs), user=search_user, version=2)
+            DEBUG('results', results)
+            try:
+                assert_equal(len(results), num)
+            except Exception:
+                DEBUG('test ID={}: error'.format(_id))
+                raise
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_ignore_folder(self):
+        """
+        osfstoragefile のみが検索対象であることが期待動作である。
+        フォルダーが検索結果に現れないことを確認する。
+        rebuild_search 相当を実行後も同様に確認する。
+
+        オリジナル osf.io の実装では、Web UI 上でファイル登録時には
+        osfstragefile のみの情報が Elasticsearch に格納されていたが、
+        rebuild_search 実行後は osfstoragefile 以外のフォルダーや
+        他アドオンのファイル情報 が Elasticsearch に格納されていた。
+        [GRDM-14562-4,19845]
+        """
+
+        search_user = factories.AuthUserFactory()
+
+        def _create_file(name):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            osfstorage = project.get_addon('osfstorage')
+            root_node = osfstorage.get_root()
+            test_file = root_node.append_file(name)
+            return project
+
+        def _create_folder(name):
+            project = factories.ProjectFactory(
+                creator=search_user, is_public=False)
+            osfstorage = project.get_addon('osfstorage')
+            root_node = osfstorage.get_root()
+            test_folder = root_node.append_folder(name)
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        patterns = (
+            (1, _create_file, _del_project, u'ファイル', 1),
+            (2, _create_folder, _del_project, u'フォルダー', 0),
+        )
+
+        for pattern in patterns:
+            i = pattern[0]
+            save_func = pattern[1]
+            del_func = pattern[2]
+            name = pattern[3]
+            num = pattern[4]
+
+            with run_celery_tasks():
+                obj = save_func(name)
+            self._search(_id=i, search_user=search_user, qs=name, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(i),
+                search_user=search_user, qs=name, num=num)
             with run_celery_tasks():
                 del_func(obj)
 
