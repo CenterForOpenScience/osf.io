@@ -12,6 +12,8 @@ from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
 from website import settings as website_settings
 
+from django.utils.translation import ugettext_lazy as _
+
 logger = logging.getLogger(__name__)
 
 
