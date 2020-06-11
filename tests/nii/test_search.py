@@ -868,6 +868,80 @@ class TestSearchBugfix(OsfTestCase):
             with run_celery_tasks():
                 del_func(obj)
 
+    @enable_private_search
+    @use_ja_analyzer
+    def test_update_contributors(self):
+        """
+        Contributors に追加されたユーザーがそのプロジェクトを検索できる
+        ことを確認する。
+
+        Contributors から削除されたユーザーがそのプロジェクトを検索でき
+        なくなることを確認する。
+
+        Contributors に所属していたユーザー自体が削除されたら、その
+        プロジェクトの検索結果にそのユーザーが含まれなくなることを確認
+        する。
+
+        オリジナル osf.io の実装では Contributors を増減させた直後は
+        プロジェクトの検索結果に反映されず、
+        タイトルなどを更新すると検索結果に Contributors が反映された。
+        GRDM 版では検索可能範囲のアクセスコントロールのために
+        Conotributors を見ているため、修正した。
+        [GRDM-14562-4,19891]
+        """
+
+        admin = factories.AuthUserFactory()
+        user1 = factories.AuthUserFactory()
+        user2 = factories.AuthUserFactory()
+
+        def _create_project(name):
+            project = factories.ProjectFactory(
+                title=name,
+                creator=admin, is_public=False)
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        name = u'プロジェクト'
+        i = 1
+        with run_celery_tasks():
+            p = _create_project(name)
+
+        _search(1, admin, name, 1)  # visible
+        _search(2, user1, name, 0)  # invisible
+
+        with run_celery_tasks():
+            p.add_contributor(user1, auth=Auth(admin))
+            p.add_contributor(user2, auth=Auth(admin))
+
+        _search(3, user1, name, 1)
+
+        with run_celery_tasks():
+            p.remove_contributor(user1, auth=Auth(admin))
+
+        _search(4, user1, name, 0)
+        _search(5, admin, u'category:project AND contributors.id:{}'.format(user1._id), 0)
+        _search(6, admin, u'category:project AND contributors.id:{}'.format(user2._id), 1)
+
+        with run_celery_tasks():
+            user2.gdpr_delete()  # include remove_contributor
+
+        _search(7, user2, name, 0)
+        _search(8, admin, u'category:project AND contributors.id:{}'.format(user2._id), 0)
+
+        with run_celery_tasks():
+            _del_project(p)
+
+        _search(9, admin, name, 0)
+
 
 # see osf_tests/test_search_views.py
 @pytest.mark.enable_search

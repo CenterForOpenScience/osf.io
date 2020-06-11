@@ -169,3 +169,16 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
+
+
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
+from osf.models.contributor import Contributor
+
+@receiver(post_save, sender=Contributor)
+@receiver(post_delete, sender=Contributor)
+def update_contributors(sender, instance, **kwargs):
+    node = instance.node
+    if node.is_deleted:
+        return
+    node.update_search()
