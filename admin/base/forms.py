@@ -1,5 +1,6 @@
 from django import forms
 from django.core.validators import validate_email
+from django.utils.translation import ugettext_lazy as _
 
 
 class GuidForm(forms.Form):
@@ -20,4 +21,4 @@ class MultiEmailField(forms.Field):
 
 
 class ImportFileForm(forms.Form):
-    file = forms.FileField(label=_('file'))
+    file = forms.FileField(label=_('File'))
