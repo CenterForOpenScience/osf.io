@@ -1176,6 +1176,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         return self.is_contributor_or_group_member(auth.user)
 
+    def make_ham(self):
+        if self.state_before_spam:
+            self.is_public = self.state_before_spam['is_public']
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
@@ -1206,7 +1210,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.is_pending_embargo:
+            if self.is_spam:
+                self.state_before_spam = {'is_public': self.is_public}
+            if self.is_public and self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
             else:
                 self.is_public = False

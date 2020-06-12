@@ -1950,6 +1950,8 @@ class SpamOverrideMixin(SpamMixin):
     # Override on model
     SPAM_CHECK_FIELDS = {}
 
+    state_before_spam = {}
+
     @property
     def log_class(self):
         return NotImplementedError()
@@ -1960,6 +1962,10 @@ class SpamOverrideMixin(SpamMixin):
 
     def get_spam_fields(self):
         return NotImplementedError()
+
+    def confirm_ham(self, save=False):
+        super(SpamOverrideMixin, self).confirm_ham(save=False)
+        self.make_ham()
 
     def confirm_spam(self, save=False):
         super(SpamOverrideMixin, self).confirm_spam(save=False)

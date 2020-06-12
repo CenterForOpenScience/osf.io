@@ -552,6 +552,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.is_published and not published:
             raise ValueError('Cannot unpublish preprint.')
 
+        if auth.user:
+            request, user_id = get_request_and_user_id()
+            request_headers = string_type_request_headers(request)
+            user = OSFUser.load(user_id)
+            self.check_spam(user, self.SPAM_CHECK_FIELDS, request_headers)
+
         self.is_published = published
 
         if published:
@@ -623,12 +629,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields:
-            request, user_id = get_request_and_user_id()
-            request_headers = string_type_request_headers(request)
-            user = OSFUser.load(user_id)
-            if user:
-                self.check_spam(user, saved_fields, request_headers)
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
@@ -817,6 +817,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 
+    def make_ham(self):
+        if self.state_before_spam:
+            self.machine_state = self.state_before_spam['machine_state']
+            self.is_public = self.state_before_spam['is_public']
+        else:
+            if 'published' in self.logs.values_list('action', flat=True):
+                self.machine_state = DefaultStates.ACCEPTED.value
+                self.is_public = True
+            else:
+                self.machine_state = DefaultStates.PENDING.value
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
         """Set the permissions for this preprint - mainly for spam purposes.
 
@@ -833,7 +844,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 # TODO: Should say will review within a certain agreed upon time period.
                 raise PreprintStateError('This preprint has been marked as spam. Please contact the help desk if you think this is in error.')
             self.is_public = True
-        elif permissions == 'private' and self.is_public:
+        elif permissions == 'private':
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+                self.state_before_spam = {'machine_state': self.machine_state, 'is_public': self.is_public}
+                self.machine_state = DefaultStates.REJECTED.value
             self.is_public = False
         else:
             return False
