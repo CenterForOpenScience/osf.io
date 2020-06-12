@@ -842,7 +842,7 @@ msgstr "サイトは、<ローカライズされた開始時間>-<ローカラ�
 
 #: .\admin\templates\maintenance\display.html:37
 msgid "Remove alert"
-msgstr "アラートを除外"
+msgstr "アラートを削除"
 
 #: .\admin\templates\maintenance\display.html:54
 msgid "Put up an alert:"
@@ -1835,7 +1835,7 @@ msgstr "アクション"
 #: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:14
 #: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:28
 msgid "Remove"
-msgstr "除外"
+msgstr "削除"
 
 #: .\admin\templates\nodes\node.html:246
 msgid "Node id"
