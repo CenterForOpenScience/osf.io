@@ -6,7 +6,7 @@ from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict, InvalidModelValueError
+from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -526,7 +526,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             self.fields['draft_registration_id'] = ser.CharField(write_only=True)
         else:
             self.fields['draft_registration'] = ser.CharField(write_only=True)
-            self.fields['registration_choice'] = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
 
     # For newer versions
     embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
@@ -534,6 +533,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
     children = ser.ListField(write_only=True, required=False)
+    registration_choice = ser.ChoiceField(write_only=True, required=False, choices=['immediate', 'embargo'])
 
     users = RelationshipField(
         related_view='users:user-detail',
@@ -548,6 +548,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         New API versions should pass in an "embargo_end_date" if it should be embargoed, else it will be None
         """
         if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('registration_choice'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/registration_choice'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
             return 'embargo' if validated_data.get('embargo_end_date', None) else 'immediate'
         return validated_data.get('registration_choice', 'immediate')
 
@@ -557,6 +562,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         New API versions should pass in "embargo_end_date"
         """
         if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('lift_embargo'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/lift_embargo'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
             return validated_data.get('embargo_end_date', None)
         return validated_data.get('lift_embargo')
 
