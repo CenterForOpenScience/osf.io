@@ -967,7 +967,7 @@ msgid "Email domains"
 msgstr ""
 
 #: .\admin\templates\messages.html:25
-msgid "file"
+msgid "File"
 msgstr ""
 
 #: .\admin\templates\messages.html:26

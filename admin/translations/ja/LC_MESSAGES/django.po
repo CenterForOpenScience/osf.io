@@ -969,8 +969,8 @@ msgid "Email domains"
 msgstr "メールドメイン"
 
 #: .\admin\templates\messages.html:25
-msgid "file"
-msgstr "ファイル"
+msgid "File"
+msgstr ""
 
 #: .\admin\templates\messages.html:26
 msgid "CAS by pac4j"
