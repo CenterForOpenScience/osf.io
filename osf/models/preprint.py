@@ -553,9 +553,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             raise ValueError('Cannot unpublish preprint.')
 
         if auth.user:
+            user = auth.user
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
-            user = OSFUser.load(user_id)
             self.check_spam(user, self.SPAM_CHECK_FIELDS, request_headers)
 
         self.is_published = published

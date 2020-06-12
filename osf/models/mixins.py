@@ -1964,7 +1964,7 @@ class SpamOverrideMixin(SpamMixin):
         return NotImplementedError()
 
     def confirm_ham(self, save=False):
-        super(SpamOverrideMixin, self).confirm_ham(save=False)
+        super(SpamOverrideMixin, self).confirm_ham(save)
         self.make_ham()
 
     def confirm_spam(self, save=False):
