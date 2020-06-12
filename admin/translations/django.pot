@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-11 17:44+0900\n"
-"PO-Revision-Date: 2020-06-11 17:44+0900\n"
+"POT-Creation-Date: 2020-06-12 15:05+0900\n"
+"PO-Revision-Date: 2020-06-12 15:05+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -936,27 +936,51 @@ msgid "Last logged"
 msgstr ""
 
 #: .\admin\templates\messages.html:18
-msgid "Logo name"
+msgid "Banner name"
 msgstr ""
 
 #: .\admin\templates\messages.html:19
-msgid "Delegation protocol"
+msgid "Logo name"
 msgstr ""
 
 #: .\admin\templates\messages.html:20
-msgid "Login url"
+msgid "Delegation protocol"
 msgstr ""
 
 #: .\admin\templates\messages.html:21
-msgid "Logout url"
+msgid "Login url"
 msgstr ""
 
 #: .\admin\templates\messages.html:22
-msgid "Domains"
+msgid "Logout url"
 msgstr ""
 
 #: .\admin\templates\messages.html:23
+msgid "Domains"
+msgstr ""
+
+#: .\admin\templates\messages.html:24
 msgid "Email domains"
+msgstr ""
+
+#: .\admin\templates\messages.html:25
+msgid "file"
+msgstr ""
+
+#: .\admin\templates\messages.html:26
+msgid "CAS by pac4j"
+msgstr ""
+
+#: .\admin\templates\messages.html:27
+msgid "OAuth by pac4j"
+msgstr ""
+
+#: .\admin\templates\messages.html:28
+msgid "SAML by Shibboleth"
+msgstr ""
+
+#: .\admin\templates\messages.html:29
+msgid "No Delegation Protocol"
 msgstr ""
 
 #: .\admin\templates\metrics\osf_metrics.html:7
