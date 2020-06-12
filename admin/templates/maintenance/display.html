@@ -56,13 +56,13 @@
         <div class="row">
             <div class="col-md-9">
                 <form action="" method="post">
-                    <p><label>Start:</label><input type="text" name="start" class="datepicker" placeholder="Eastern Date/Time"></p>
-                    <p><label>End:</label><input type="text" name="end" class="datepicker" placeholder="Eastern Date/Time"></p>
+                    <p><label>{% trans "Start" %}:</label><input type="text" name="start" class="datepicker" placeholder="{% trans 'Eastern Date/Time' %}"></p>
+                    <p><label>{% trans "End" %}:</label><input type="text" name="end" class="datepicker" placeholder="{% trans 'Eastern Date/Time' %}"></p>
                     {% csrf_token %}
                     {{ form.as_p }}
                     <p><label>{% trans "Message:" %}</label><textarea name="message"></textarea></p>
                     <p><b>{% trans "Reminder:" %}</b> {% trans "This alert will go up as soon as it is created and will have to be manually removed. (Creating a new alert automatically removes an existing one.)" %}</p>
-                    <input class="btn btn-primary" type="submit" value="Submit" />
+                    <input class="btn btn-primary" type="submit" value="{% trans 'Submit@send' %}" />
                 </form>
             </div>
         </div>
