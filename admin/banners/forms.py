@@ -3,6 +3,7 @@ from osf.exceptions import ValidationValueError
 from django.forms.widgets import TextInput, DateInput
 from osf.models.banner import ScheduledBanner, validate_banner_dates
 
+from django.utils.translation import ugettext_lazy as _
 
 ACCEPTABLE_FILE_TYPES = ('svg',)
 
@@ -14,12 +15,20 @@ class BannerForm(forms.ModelForm):
             'color': TextInput(attrs={'class': 'colorpicker'}),
             'start_date': DateInput(attrs={'class': 'datepicker'}),
             'end_date': DateInput(attrs={'class': 'datepicker'}),
-            'default_alt_text': TextInput(attrs={'placeholder': 'Alt text for accessibility'}),
-            'mobile_alt_text': TextInput(attrs={'placeholder': 'Alt text for accessibility'}),
+            'default_alt_text': TextInput(attrs={'placeholder': _('Alt text for accessibility')}),
+            'mobile_alt_text': TextInput(attrs={'placeholder': _('Alt text for accessibility')}),
         }
         labels = {
-            'default_alt_text': 'Default photo alt text',
-            'mobile_alt_text': 'Mobile photo alt text'
+            'default_alt_text': _('Default photo alt text'),
+            'mobile_alt_text': _('Mobile photo alt text'),
+            "name": _("Name"),
+            "start_date": _("Start date"),
+            "end_date": _("End date"),
+            "color": _("Color"),
+            "license": _("License"),
+            "link": _("Link"),
+            "default_photo": _("Default photo"),
+            "mobile_photo": _("Mobile photo"),
         }
 
     def __init__(self, *args, **kwargs):
