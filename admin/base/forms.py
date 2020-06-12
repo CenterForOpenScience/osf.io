@@ -20,4 +20,4 @@ class MultiEmailField(forms.Field):
 
 
 class ImportFileForm(forms.Form):
-    file = forms.FileField()
+    file = forms.FileField(label=_('file'))

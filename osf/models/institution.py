@@ -22,12 +22,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
-    name = models.CharField(_('Name'), max_length=255)
-    description = models.TextField(_('Description'), blank=True, default='', null=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='', null=True)
 
     # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    banner_name = models.CharField(_('Banner name'), max_length=255, blank=True, null=True)
-    logo_name = models.CharField(_('Logo name'), max_length=255, blank=True, null=True)
+    banner_name = models.CharField(max_length=255, blank=True, null=True)
+    logo_name = models.CharField(max_length=255, blank=True, null=True)
 
     # The protocol which is used to delegate authentication.
     # Currently, we have `CAS`, `SAML`, `OAuth` available.
@@ -35,12 +35,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # For `CAS` and `OAuth`, we use pac4j.
     # Only institutions with a valid delegation protocol show up on the institution login page.
     DELEGATION_PROTOCOL_CHOICES = (
-        ('cas-pac4j', 'CAS by pac4j'),
-        ('oauth-pac4j', 'OAuth by pac4j'),
-        ('saml-shib', 'SAML by Shibboleth'),
-        ('', 'No Delegation Protocol'),
+        ('cas-pac4j', _('CAS by pac4j')),
+        ('oauth-pac4j', _('OAuth by pac4j')),
+        ('saml-shib', _('SAML by Shibboleth')),
+        ('', _('No Delegation Protocol')),
     )
-    delegation_protocol = models.CharField(_('Delegation protocol'), max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
