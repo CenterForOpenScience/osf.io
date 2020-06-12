@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-12 15:05+0900\n"
-"PO-Revision-Date: 2020-06-12 15:05+0900\n"
+"POT-Creation-Date: 2020-06-12 19:25+0900\n"
+"PO-Revision-Date: 2020-06-12 19:25+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -43,6 +43,26 @@ msgstr ""
 
 #: .\admin\templates\banners\create.html:11
 msgid "Schedule a banner"
+msgstr ""
+
+#: .\admin\templates\banners\create.html:29
+#: .\admin\templates\institutions\create.html:24
+#: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
+#: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
+#: .\admin\templates\rdm_addons\addons\s3_credentials_modal.html:31
+#: .\admin\templates\rdm_announcement\settings.html:94
+#: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:63
+#: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
+#: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:55
+#: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:38
+#: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:42
+#: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:59
+msgid "Save"
 msgstr ""
 
 #: .\admin\templates\banners\detail.html:11
@@ -433,7 +453,7 @@ msgstr ""
 msgid "Links to Desk"
 msgstr ""
 
-#: .\admin\templates\desk\cases.html:23
+#: .\admin\templates\desk\cases.html:23 .\admin\templates\messages.html:35
 msgid "Link"
 msgstr ""
 
@@ -594,25 +614,6 @@ msgstr ""
 
 #: .\admin\templates\institutions\create.html:16
 msgid "Create An Institution"
-msgstr ""
-
-#: .\admin\templates\institutions\create.html:24
-#: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:57
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:24
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:38
-#: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:64
-#: .\admin\templates\rdm_addons\addons\s3_credentials_modal.html:31
-#: .\admin\templates\rdm_announcement\settings.html:94
-#: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:63
-#: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:59
-#: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
-#: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:59
-#: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
-#: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:55
-#: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:38
-#: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:42
-#: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:59
-msgid "Save"
 msgstr ""
 
 #: .\admin\templates\institutions\create.html:30
@@ -819,6 +820,7 @@ msgid "Message"
 msgstr ""
 
 #: .\admin\templates\maintenance\display.html:18
+#: .\admin\templates\messages.html:30
 #: .\admin\templates\osf\subject_list.html:18
 msgid "Level"
 msgstr ""
@@ -841,6 +843,19 @@ msgstr ""
 msgid "Put up an alert:"
 msgstr ""
 
+#: .\admin\templates\maintenance\display.html:59
+msgid "Start"
+msgstr ""
+
+#: .\admin\templates\maintenance\display.html:59
+#: .\admin\templates\maintenance\display.html:60
+msgid "Eastern Date/Time"
+msgstr ""
+
+#: .\admin\templates\maintenance\display.html:60
+msgid "End"
+msgstr ""
+
 #: .\admin\templates\maintenance\display.html:63
 msgid "Message:"
 msgstr ""
@@ -855,6 +870,10 @@ msgid ""
 "manually removed. (Creating a new alert automatically removes an existing"
 " one.)"
 msgstr ""
+
+#: .\admin\templates\maintenance\display.html:65
+msgid "Submit@send"
+msgstr "Submit"
 
 #: .\admin\templates\meetings\create.html:7
 msgid "GakuNIn RDM Admin | Meetings"
@@ -984,6 +1003,38 @@ msgstr ""
 
 #: .\admin\templates\messages.html:29
 msgid "No Delegation Protocol"
+msgstr ""
+
+#: .\admin\templates\messages.html:31
+msgid "Alt text for accessibility"
+msgstr ""
+
+#: .\admin\templates\messages.html:32
+msgid "Start date"
+msgstr ""
+
+#: .\admin\templates\messages.html:33
+msgid "End date"
+msgstr ""
+
+#: .\admin\templates\messages.html:34
+msgid "License"
+msgstr ""
+
+#: .\admin\templates\messages.html:36
+msgid "Default photo"
+msgstr ""
+
+#: .\admin\templates\messages.html:37
+msgid "Mobile photo"
+msgstr ""
+
+#: .\admin\templates\messages.html:38
+msgid "Default photo alt text"
+msgstr ""
+
+#: .\admin\templates\messages.html:39
+msgid "Mobile photo alt text"
 msgstr ""
 
 #: .\admin\templates\metrics\osf_metrics.html:7
@@ -1752,8 +1803,8 @@ msgstr ""
 
 #: .\admin\templates\nodes\search.html:20
 #: .\admin\templates\users\search.html:21
-msgid "Submit"
-msgstr ""
+msgid "Submit@search"
+msgstr "Submit"
 
 #: .\admin\templates\nodes\spam_status.html:3
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:206
@@ -2747,4 +2798,7 @@ msgstr ""
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
+
+#~ msgid "Submit"
+#~ msgstr ""
 
