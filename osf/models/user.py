@@ -42,6 +42,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
+from osf.models.nodelog import NodeLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -1420,6 +1421,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.update_search_nodes()
 
         return True
+
+    def confirm_spam(self, save=True):
+        super().confirm_spam(save=save)
+        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+            node.confirm_spam()
+
+    def confirm_ham(self, save=False):
+        super().confirm_ham(save=save)
+        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+            node.confirm_ham(save=save)
 
     def update_search(self):
         from website.search.search import update_user
