@@ -1527,7 +1527,17 @@ class JSONAPISerializer(BaseAPISerializer):
         Exclude 'type' and '_id' from validated_data.
 
         """
-        ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        try:
+            ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        except exceptions.ValidationError as e:
+
+            # The following is for special error handling for ListFields.
+            # Without the following, the error detail on the API response would be
+            # a list instead of a string.
+            for key in e.detail.keys():
+                if isinstance(e.detail[key], dict):
+                    e.detail[key] = next(iter(e.detail[key].values()))
+            raise e
 
         if clean_html is True:
             self._validated_data = self.sanitize_data()

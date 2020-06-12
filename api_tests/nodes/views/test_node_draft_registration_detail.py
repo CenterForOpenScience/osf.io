@@ -430,7 +430,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 'type': 'draft_registrations',
                 'attributes': {
                     'registration_metadata': {
-                        'q2': {
+                        'q3': {
                             'value': 'New response'
                         }
                     }
@@ -442,7 +442,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
+        assert res.json['data']['attributes']['registration_metadata']['q3']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
     def test_required_registration_responses_questions_not_required_on_update(

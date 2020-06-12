@@ -2,7 +2,7 @@ import time
 import pytest
 import datetime
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -127,14 +127,34 @@ class TestInstitutionDepartmentList:
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }, {
-            'id': f'{institution._id}-N/A',
+            'id': f'{institution._id}-{DEFAULT_ES_NULL_VALUE}',
             'type': 'institution-departments',
             'attributes': {
-                'name': 'N/A',
+                'name': DEFAULT_ES_NULL_VALUE,
                 'number_of_users': 1
             },
             'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
         }]
+
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+        response_body = resp.text
+        rows = response_body.split('\r\n')
+        header_row = rows[0].split(',')
+        new_department_row = rows[1].split(',')
+        smaller_department_row = rows[2].split(',')
+        na_row = rows[3].split(',')
+
+        assert header_row == ['id', 'name', 'number_of_users', 'type']
+        assert new_department_row == [f'{institution._id}-New-Department', 'New Department', '2', 'institution-departments']
+        assert smaller_department_row == [f'{institution._id}-Smaller-Department', 'Smaller Department', '1', 'institution-departments']
+        assert na_row == [f'{institution._id}-N/A', 'N/A', '1', 'institution-departments']
 
     def test_pagination(self, app, url, admin, institution, populate_counts):
         resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)

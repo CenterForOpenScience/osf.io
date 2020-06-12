@@ -1,9 +1,11 @@
 import pytest
 import datetime
+import csv
+from io import StringIO
 from random import random
 import time
 
-from api.base.settings.defaults import API_BASE
+from api.base.settings.defaults import API_BASE, DEFAULT_ES_NULL_VALUE
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
@@ -21,7 +23,10 @@ class TestInstitutionUserMetricList:
 
     @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
+        user = AuthUserFactory()
+        user.fullname = user.fullname + ',a'
+        user.save()
+        return user
 
     @pytest.fixture()
     def user2(self):
@@ -30,6 +35,10 @@ class TestInstitutionUserMetricList:
     @pytest.fixture()
     def user3(self):
         return AuthUserFactory(fullname='Zedd')
+
+    @pytest.fixture()
+    def user4(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def admin(self, institution):
@@ -93,6 +102,17 @@ class TestInstitutionUserMetricList:
             department='Psychology dept',
             public_project_count=int(10 * random()),
             private_project_count=int(10 * random()),
+        ).save()
+
+        time.sleep(2)
+
+    @pytest.fixture()
+    def populate_na_department(self, institution, user4):
+        UserInstitutionProjectCounts.record(
+            user_id=user4._id,
+            institution_id=institution._id,
+            public_project_count=1,
+            private_project_count=1,
         ).save()
 
         time.sleep(2)
@@ -174,6 +194,25 @@ class TestInstitutionUserMetricList:
             }
         ]
 
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+
+        response_body = resp.text
+
+        expected_response = [['id', 'user_name', 'public_projects', 'private_projects', 'type'],
+            [user._id, user.fullname, '6', '5', 'institution-users'],
+            [user2._id, user2.fullname, '3', '2', 'institution-users']]
+
+        with StringIO(response_body) as csv_file:
+            csvreader = csv.reader(csv_file, delimiter=',')
+            for index, row in enumerate(csvreader):
+                assert row == expected_response[index]
+
     def test_filter(self, app, url, admin, populate_counts):
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'
@@ -195,3 +234,30 @@ class TestInstitutionUserMetricList:
         resp = app.get(f'{url}?filter[user_name]=Zedd', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
+
+    def test_filter_and_sort(self, app, url, admin, user4, populate_counts, populate_na_department):
+        """
+        Testing for bug where sorting and filtering would throw 502.
+        :param app:
+        :param url:
+        :param admin:
+        :param populate_more_counts:
+        :return:
+        """
+        resp = app.get(f'{url}?page=1&page[size]=10&filter[department]={DEFAULT_ES_NULL_VALUE}&sort=user_name', auth=admin.auth)
+        assert resp.status_code == 200
+
+        data = resp.json['data']
+        assert len(data) == 1
+        assert resp.json['links']['meta']['total'] == 1
+        assert data[0]['id'] == user4._id
+
+        resp = app.get(f'{url}?page=1&page[size]=10&sort=department', auth=admin.auth)
+        assert resp.status_code == 200
+
+        data = resp.json['data']
+        assert len(data) == 3
+        assert resp.json['links']['meta']['total'] == 3
+        assert data[0]['attributes']['department'] == 'Biology dept'
+        assert data[1]['attributes']['department'] == 'N/A'
+        assert data[2]['attributes']['department'] == 'Psychology dept'

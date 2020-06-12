@@ -508,14 +508,14 @@ class DraftRegistrationFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         title = kwargs.pop('title', None)
-        initiator = kwargs.get('initiator')
+        initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
         branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
-        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
+        branched_from_creator = branched_from.creator if branched_from else None
+        initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
@@ -602,6 +602,8 @@ class SubjectFactory(DjangoModelFactory):
 
 
 class PreprintProviderFactory(DjangoModelFactory):
+    _id = factory.Sequence(lambda n: f'slug{n}')
+
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
