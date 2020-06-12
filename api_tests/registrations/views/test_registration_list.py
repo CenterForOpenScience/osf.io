@@ -1264,6 +1264,54 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 201
         assert res.json['data']['attributes']['pending_embargo_approval'] is True
 
+    def test_new_API_version_errors_on_lift_embargo(
+            self, app, user, draft_registration, url_registrations_ver):
+        today = timezone.now()
+        three_years = (
+            today +
+            dateutil.relativedelta.relativedelta(
+                years=3)).strftime('%Y-%m-%dT%H:%M:%S')
+
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'lift_embargo': three_years
+                }
+            }
+        }
+        res = app.post_json_api(
+            url_registrations_ver,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert (res.json['errors'][0]['detail'] ==
+            f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/lift_embargo'
+
+    def test_new_API_version_errors_on_registration_choice(
+            self, app, user, draft_registration, url_registrations_ver):
+        payload = {
+            'data': {
+                'type': 'registrations',
+                'attributes': {
+                    'draft_registration_id': draft_registration._id,
+                    'registration_choice': 'embargo'
+                }
+            }
+        }
+        res = app.post_json_api(
+            url_registrations_ver,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert (res.json['errors'][0]['detail'] ==
+            f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.')
+        assert res.json['errors'][0]['source']['pointer'] == '/data/attributes/registration_choice'
+
     def test_new_API_version_uses_included_node_ids_instead_of_children(
             self, app, user, draft_registration, url_registrations_ver, project_public,
             project_public_child, project_public_grandchild, project_public_excluded_sibling):
@@ -1488,8 +1536,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             'data': {
                 'type': 'registrations',
                 'attributes': {
-                    'draft_registration_id': draft_registration._id,
-                    'registration_choice': 'immediate'
+                    'draft_registration_id': draft_registration._id
                 }
             }
         }

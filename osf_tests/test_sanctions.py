@@ -11,6 +11,7 @@ from osf.models import DraftRegistrationApproval, RegistrationSchema, NodeLog
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
+from osf.utils import permissions
 
 from framework.auth import Auth
 
@@ -195,3 +196,38 @@ class TestDraftRegistrationApprovals:
         approval._on_reject(user)
         assert approval.meta == {}
         assert mock_send_mail.call_count == 1
+
+@pytest.mark.django_db
+class TestRegistrationEmbargoTermination:
+
+    @pytest.fixture()
+    def user(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture()
+    def user2(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture()
+    def registration_with_contribs(self, user, user2):
+        proj = factories.NodeFactory(creator=user)
+        proj.add_contributor(user2, permissions.ADMIN)
+        embargo = factories.EmbargoFactory()
+        embargo.end_date = timezone.now() + datetime.timedelta(days=4)
+        return factories.RegistrationFactory(project=proj, creator=user, embargo=embargo)
+
+    @pytest.fixture()
+    def embargo_termination(self, registration_with_contribs, user):
+        return factories.EmbargoTerminationApprovalFactory(registration=registration_with_contribs, creator=user)
+
+    def test_reject_then_approve_stays_rejected(self, user, user2, embargo_termination):
+        user_1_tok = embargo_termination.token_for_user(user, 'rejection')
+        user_2_tok = embargo_termination.token_for_user(user2, 'approval')
+        embargo_termination.reject(user, user_1_tok)
+        embargo_termination.approve(user2, user_2_tok)
+        assert embargo_termination.state == embargo_termination.REJECTED
+
+    def test_single_approve_stays_unapproved(self, user, user2, embargo_termination):
+        user_1_tok = embargo_termination.token_for_user(user, 'approval')
+        embargo_termination.approve(user, user_1_tok)
+        assert embargo_termination.state == embargo_termination.UNAPPROVED
