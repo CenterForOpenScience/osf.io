@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-12 19:25+0900\n"
+"POT-Creation-Date: 2020-06-12 20:15+0900\n"
 "PO-Revision-Date: 2020-06-12 19:25+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
@@ -84,6 +84,7 @@ msgstr ""
 #: .\admin\templates\institutions\institution_list.html:21
 #: .\admin\templates\institutions\list.html:21
 #: .\admin\templates\meetings\list.html:21 .\admin\templates\messages.html:16
+#: .\admin\templates\nodes\node.html:200
 #: .\admin\templates\osf\providerassetfile_list.html:28
 #: .\admin\templates\rdm_addons\institution_list.html:29
 #: .\admin\templates\rdm_keymanagement\institutions.html:21
@@ -470,12 +471,14 @@ msgid "Close"
 msgstr ""
 
 #: .\admin\templates\desk\customer.html:10
+#: .\admin\templates\nodes\node.html:139 .\admin\templates\nodes\node.html:328
 #: .\admin\templates\users\user.html:165
 #: .\admin\templates\users\user_details.html:23
 msgid "Field"
 msgstr ""
 
 #: .\admin\templates\desk\customer.html:11
+#: .\admin\templates\nodes\node.html:140 .\admin\templates\nodes\node.html:329
 #: .\admin\templates\users\user.html:166
 #: .\admin\templates\users\user_details.html:24
 msgid "Value"
@@ -1668,6 +1671,7 @@ msgstr ""
 
 #: .\admin\templates\nodes\confirm_ham.html:11
 #: .\admin\templates\nodes\confirm_spam.html:11
+#: .\admin\templates\nodes\node.html:397
 #: .\admin\templates\nodes\node_list.html:110
 #: .\admin\templates\nodes\remove_contributor.html:18
 #: .\admin\templates\nodes\remove_node.html:15
@@ -1715,16 +1719,177 @@ msgstr ""
 msgid "Known Spam Nodes"
 msgstr ""
 
+#: .\admin\templates\nodes\node.html:11 .\admin\templates\nodes\node.html:299
+#: .\admin\templates\nodes\node.html:305 .\admin\templates\users\user.html:293
+msgid "Registration"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:13
+msgid "Node"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:27
+msgid "View Logs"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:34 .\admin\templates\users\user.html:327
+msgid "Delete Node"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:55
+msgid "Restart Registration"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:60
+msgid "Remove Registration"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:70
+#: .\admin\templates\nodes\node_list.html:98
+#: .\admin\templates\rdm_timestampadd\node_list.html:112
+#: .\admin\templates\users\user_list.html:61
+msgid "Confirm Spam"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:81
+msgid "Confirm <strong>Not</strong> Spam"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:93
+msgid "SHARE Reindex"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:116 .\admin\templates\users\user.html:81
+msgid "Elastic Reindex"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:129
+msgid "Registration Details"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:131
+msgid "Node Details"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:145
+#: .\admin\templates\rdm_keymanagement\user_list.html:9
+#: .\admin\templates\rdm_timestampadd\node_list.html:39
+#: .\admin\templates\rdm_timestampsettings\node_list.html:35
+#: .\admin\templates\users\user.html:290
+#: .\admin\templates\users\user_details.html:34
+#: .\admin\templates\users\user_list.html:22
+msgid "GUID"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:149 .\admin\templates\nodes\node.html:247
 #: .\admin\templates\nodes\node_list.html:26
 #: .\admin\templates\rdm_timestampadd\node_list.html:41
 #: .\admin\templates\rdm_timestampsettings\node_list.html:38
 msgid "Title"
 msgstr ""
 
+#: .\admin\templates\nodes\node.html:153 .\admin\templates\nodes\node.html:248
+#: .\admin\templates\nodes\node_list.html:32
+#: .\admin\templates\rdm_timestampadd\node_list.html:46
+#: .\admin\templates\users\user.html:292
+msgid "Public"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:157
 #: .\admin\templates\nodes\node_list.html:29
 #: .\admin\templates\rdm_timestampadd\node_list.html:43
 #: .\admin\templates\rdm_timestampsettings\node_list.html:41
 msgid "Parent"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:170
+msgid "Creator"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:181
+msgid "OSF Groups"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:194
+#: .\admin\templates\nodes\node_list.html:35
+#: .\admin\templates\rdm_timestampadd\node_list.html:49
+msgid "Contributors"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:199
+msgid "User id"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:201
+msgid "Permissions"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:202 .\admin\templates\nodes\node.html:250
+#: .\admin\templates\users\user.html:296
+msgid "Actions"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:222
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:14
+#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:28
+msgid "Remove"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:246
+msgid "Node id"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:249
+msgid "# of Contributors"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:306 .\admin\templates\nodes\node.html:334
+msgid "Date Created"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:307 .\admin\templates\nodes\node.html:342
+msgid "Pending"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:308 .\admin\templates\nodes\node.html:346
+#: .\admin\templates\nodes\node_list.html:33
+#: .\admin\templates\rdm_timestampadd\node_list.html:47
+msgid "Withdrawn"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:309 .\admin\templates\nodes\node.html:350
+#: .\admin\templates\nodes\node_list.html:34
+#: .\admin\templates\rdm_timestampadd\node_list.html:48
+msgid "Embargo"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:338
+msgid "Datetime Registered"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:378
+msgid "Registered From"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:389
+msgid "Are you sure you want to update this embargo?"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:392
+msgid "Make sure you have confirmed this change with all the project admins."
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:406
+msgid "SPAM Pro Tip"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:411 .\admin\templates\users\user.html:277
+#: .\admin\templates\users\user.html:295
+msgid "SPAM Status"
+msgstr ""
+
+#: .\admin\templates\nodes\node.html:415
+msgid "SPAM Data"
 msgstr ""
 
 #: .\admin\templates\nodes\node_list.html:30
@@ -1736,33 +1901,6 @@ msgstr ""
 #: .\admin\templates\nodes\node_list.html:31
 #: .\admin\templates\rdm_timestampadd\node_list.html:45
 msgid "Date created"
-msgstr ""
-
-#: .\admin\templates\nodes\node_list.html:32
-#: .\admin\templates\rdm_timestampadd\node_list.html:46
-#: .\admin\templates\users\user.html:292
-msgid "Public"
-msgstr ""
-
-#: .\admin\templates\nodes\node_list.html:33
-#: .\admin\templates\rdm_timestampadd\node_list.html:47
-msgid "Withdrawn"
-msgstr ""
-
-#: .\admin\templates\nodes\node_list.html:34
-#: .\admin\templates\rdm_timestampadd\node_list.html:48
-msgid "Embargo"
-msgstr ""
-
-#: .\admin\templates\nodes\node_list.html:35
-#: .\admin\templates\rdm_timestampadd\node_list.html:49
-msgid "Contributors"
-msgstr ""
-
-#: .\admin\templates\nodes\node_list.html:98
-#: .\admin\templates\rdm_timestampadd\node_list.html:112
-#: .\admin\templates\users\user_list.html:61
-msgid "Confirm Spam"
 msgstr ""
 
 #: .\admin\templates\nodes\node_list.html:105
@@ -1986,11 +2124,6 @@ msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:12
 msgid "Management project"
-msgstr ""
-
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:14
-#: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:28
-msgid "Remove"
 msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\iqbrims_institution_settings.html:18
@@ -2276,15 +2409,6 @@ msgstr ""
 #: .\admin\templates\rdm_keymanagement\delete_user_list.html:5
 #: .\admin\templates\users\list.html:5
 msgid "User Search Results"
-msgstr ""
-
-#: .\admin\templates\rdm_keymanagement\user_list.html:9
-#: .\admin\templates\rdm_timestampadd\node_list.html:39
-#: .\admin\templates\rdm_timestampsettings\node_list.html:35
-#: .\admin\templates\users\user.html:290
-#: .\admin\templates\users\user_details.html:34
-#: .\admin\templates\users\user_list.html:22
-msgid "GUID"
 msgstr ""
 
 #: .\admin\templates\rdm_keymanagement\user_list.html:12
@@ -2706,10 +2830,6 @@ msgstr ""
 msgid "Send reset"
 msgstr ""
 
-#: .\admin\templates\users\user.html:81
-msgid "Elastic Reindex"
-msgstr ""
-
 #: .\admin\templates\users\user.html:175
 msgid "GakuNin RDM account"
 msgstr ""
@@ -2762,24 +2882,8 @@ msgstr ""
 msgid "User is spammy"
 msgstr ""
 
-#: .\admin\templates\users\user.html:277 .\admin\templates\users\user.html:295
-msgid "SPAM Status"
-msgstr ""
-
 #: .\admin\templates\users\user.html:281
 msgid "Profile content checked for spam"
-msgstr ""
-
-#: .\admin\templates\users\user.html:293
-msgid "Registration"
-msgstr ""
-
-#: .\admin\templates\users\user.html:296
-msgid "Actions"
-msgstr ""
-
-#: .\admin\templates\users\user.html:327
-msgid "Delete Node"
 msgstr ""
 
 #: .\admin\templates\users\user.html:346
