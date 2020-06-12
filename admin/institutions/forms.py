@@ -12,11 +12,11 @@ class InstitutionForm(forms.ModelForm):
         "description": _("Description"),
         "banner_name": _("Banner name"),
         "logo_name": _("Logo name"),
-        "delegation_protocol": "Delegation protocol",
-        "login_url": "Login url",
-        "logout_url": "Logout url",
-        "domains": "Domains",
-        "email_domains": "Email domains",
+        "delegation_protocol": _("Delegation protocol"),
+        "login_url": _("Login url"),
+        "logout_url": _("Logout url"),
+        "domains": _("Domains"),
+        "email_domains": _("Email domains"),
         }
 
         exclude = [
