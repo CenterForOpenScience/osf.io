@@ -1990,9 +1990,10 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_ham()
 
-        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+        if self.logs.filter(action=self.log_class.FLAG_SPAM):
+            flag_spam_log = self.logs.filter(action=self.log_class.FLAG_SPAM).latest()
             # ensures only 'accepted' status preprints/any nodes get made public
-            if self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
+            if flag_spam_log.params['was_public'] and self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False
@@ -2092,10 +2093,11 @@ class SpamOverrideMixin(SpamMixin):
         """
         super(SpamOverrideMixin, self).flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            was_public = self.is_public
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
-                params=self.log_params,
+                params={**self.log_params, 'was_public': was_public},
                 auth=None,
                 save=False
             )

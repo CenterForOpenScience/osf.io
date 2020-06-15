@@ -323,7 +323,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def log_params(self):
         # Property needed for ContributorMixin
         return {
-            'preprint': self._id
+            'preprint': self._id,
         }
 
     @property
@@ -623,7 +623,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields:
+        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.is_public):
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
