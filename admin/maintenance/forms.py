@@ -7,6 +7,6 @@ class MaintenanceForm(forms.ModelForm):
     class Meta:
         model = MaintenanceState
         labels = {
-        "level": _("Level"),
+            "level": _("Level"),
         }
         fields = ['level']
