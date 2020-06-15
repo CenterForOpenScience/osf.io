@@ -14,10 +14,14 @@ logger = logging.getLogger(__name__)
 
 
 def _get_client():
+    """
+    AKISMET_APIKEY should be `None` for local testing.
+    :return:
+    """
     return akismet.AkismetClient(
         apikey=settings.AKISMET_APIKEY,
         website=settings.DOMAIN,
-        verify=True
+        verify=bool(settings.AKISMET_APIKEY)
     )
 
 
@@ -193,18 +197,15 @@ class SpamMixin(models.Model):
         remote_addr = request_headers['Remote-Addr']
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
-        try:
-            is_spam, pro_tip = client.check_comment(
-                user_ip=remote_addr,
-                user_agent=user_agent,
-                referrer=referer,
-                comment_content=content,
-                comment_author=author,
-                comment_author_email=author_email
-            )
-        except akismet.AkismetClientError:
-            logger.exception('Error performing SPAM check')
-            return False
+        is_spam, pro_tip = client.check_comment(
+            user_ip=remote_addr,
+            user_agent=user_agent,
+            referrer=referer,
+            comment_content=content,
+            comment_author=author,
+            comment_author_email=author_email
+        )
+
         if update:
             self.spam_pro_tip = pro_tip
             self.spam_data['headers'] = {
