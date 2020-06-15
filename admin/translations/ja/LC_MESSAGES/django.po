@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-15 11:08+0900\n"
-"PO-Revision-Date: 2020-06-15 11:08+0900\n"
+"POT-Creation-Date: 2020-06-15 18:00+0900\n"
+"PO-Revision-Date: 2020-06-15 16:55+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -440,7 +440,9 @@ msgid ""
 "Choose a JSON file that has been previously exported from another "
 "Collection Provider detail page. This will pre-populate the Collection "
 "Provider change form with those details."
-msgstr "別のコレクションプロバイダーの詳細ページから以前にエクスポートされたJSONファイルを選択します。 これにより、コレクションプロバイダーの変更フォームにそれらの詳細が事前に入力されます。"
+msgstr ""
+"別のコレクションプロバイダーの詳細ページから以前にエクスポートされたJSONファイルを選択します。 "
+"これにより、コレクションプロバイダーの変更フォームにそれらの詳細が事前に入力されます。"
 
 #: .\admin\templates\desk\cases.html:6
 #, python-format
@@ -1746,6 +1748,11 @@ msgstr "ログを表示"
 msgid "Delete Node"
 msgstr "ノードを削除"
 
+#: .\admin\templates\nodes\node.html:47 .\admin\templates\nodes\node.html:273
+#: .\admin\templates\users\user.html:321
+msgid "Restore Node"
+msgstr "ノードを復元"
+
 #: .\admin\templates\nodes\node.html:55
 msgid "Restart Registration"
 msgstr "登録を再開"
@@ -2515,6 +2522,7 @@ msgid "User"
 msgstr "ユーザ"
 
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:46
+#: .\admin\templates\users\user.html:353
 msgid "Apply"
 msgstr "適用"
 

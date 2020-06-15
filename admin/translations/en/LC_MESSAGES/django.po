@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-15 11:08+0900\n"
-"PO-Revision-Date: 2020-06-15 11:08+0900\n"
+"POT-Creation-Date: 2020-06-15 18:00+0900\n"
+"PO-Revision-Date: 2020-06-15 16:55+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1744,6 +1744,11 @@ msgstr ""
 msgid "Delete Node"
 msgstr ""
 
+#: .\admin\templates\nodes\node.html:47 .\admin\templates\nodes\node.html:273
+#: .\admin\templates\users\user.html:321
+msgid "Restore Node"
+msgstr ""
+
 #: .\admin\templates\nodes\node.html:55
 msgid "Restart Registration"
 msgstr ""
@@ -2495,6 +2500,7 @@ msgid "User"
 msgstr ""
 
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:46
+#: .\admin\templates\users\user.html:353
 msgid "Apply"
 msgstr ""
 
