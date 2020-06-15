@@ -21,14 +21,14 @@ class BannerForm(forms.ModelForm):
         labels = {
             'default_alt_text': _('Default photo alt text'),
             'mobile_alt_text': _('Mobile photo alt text'),
-            "name": _("Name"),
-            "start_date": _("Start date"),
-            "end_date": _("End date"),
-            "color": _("Color"),
-            "license": _("License"),
-            "link": _("Link"),
-            "default_photo": _("Default photo"),
-            "mobile_photo": _("Mobile photo"),
+            'name': _('Name'),
+            'start_date': _('Start date'),
+            'end_date': _('End date'),
+            'color': _('Color'),
+            'license': _('License'),
+            'link': _('Link'),
+            'default_photo': _('Default photo'),
+            'mobile_photo': _('Mobile photo'),
         }
 
     def __init__(self, *args, **kwargs):

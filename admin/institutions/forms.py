@@ -6,18 +6,18 @@ from django.utils.translation import ugettext_lazy as _
 class InstitutionForm(forms.ModelForm):
     class Meta:
         model = Institution
-        
+
         labels = {
-            "last_logged": _("Last logged"),
-            "name": _("Name"),
-            "description": _("Description"),
-            "banner_name": _("Banner name"),
-            "logo_name": _("Logo name"),
-            "delegation_protocol": _("Delegation protocol"),
-            "login_url": _("Login url"),
-            "logout_url": _("Logout url"),
-            "domains": _("Domains"),
-            "email_domains": _("Email domains"),
+            'last_logged': _('Last logged'),
+            'name': _('Name'),
+            'description': _('Description'),
+            'banner_name': _('Banner name'),
+            'logo_name': _('Logo name'),
+            'delegation_protocol': _('Delegation protocol'),
+            'login_url': _('Login url'),
+            'logout_url': _('Logout url'),
+            'domains': _('Domains'),
+            'email_domains': _('Email domains'),
         }
 
         exclude = [
