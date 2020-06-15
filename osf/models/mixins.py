@@ -1961,11 +1961,46 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=False):
-        super(SpamOverrideMixin, self).confirm_spam(save=False)
+    def confirm_spam(self, save=True):
+        """
+        This should add behavior specific nodes/preprints confirmed to be spam.
+        :param save:
+        :return:
+        """
+        super().confirm_spam(save=save)
+        self.deleted = timezone.now()
         self.set_privacy('private', auth=None, log=False, save=False)
+
         log = self.add_log(
-            action=self.log_class.MADE_PRIVATE,
+            action=self.log_class.CONFIRM_SPAM,
+            params=self.log_params,
+            auth=None,
+            save=False
+        )
+        log.should_hide = True
+        log.save()
+        if save:
+            self.save()
+
+    def confirm_ham(self, save=False):
+        """
+        This should add behavior specific nodes/preprints confirmed to be ham.
+        :param save:
+        :return:
+        """
+        super().confirm_ham()
+
+        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+            # ensures only 'accepted' status preprints/any nodes get made public
+            if self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
+                self.set_privacy('public', log=False)
+
+            self.is_deleted = False
+            self.deleted = None
+            self.update_search()
+
+        log = self.add_log(
+            action=self.log_class.CONFIRM_HAM,
             params=self.log_params,
             auth=None,
             save=False
@@ -2059,7 +2094,7 @@ class SpamOverrideMixin(SpamMixin):
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
             log = self.add_log(
-                action=self.log_class.MADE_PRIVATE,
+                action=self.log_class.FLAG_SPAM,
                 params=self.log_params,
                 auth=None,
                 save=False
