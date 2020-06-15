@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-12 20:15+0900\n"
-"PO-Revision-Date: 2020-06-12 19:25+0900\n"
+"POT-Creation-Date: 2020-06-15 11:08+0900\n"
+"PO-Revision-Date: 2020-06-15 11:08+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -435,6 +435,13 @@ msgstr "プログラムエリアの選択"
 msgid "Import from JSON"
 msgstr "JSONからインポート"
 
+#: .\admin\templates\collection_providers\update_collection_provider_form.html:97
+msgid ""
+"Choose a JSON file that has been previously exported from another "
+"Collection Provider detail page. This will pre-populate the Collection "
+"Provider change form with those details."
+msgstr "別のコレクションプロバイダーの詳細ページから以前にエクスポートされたJSONファイルを選択します。 これにより、コレクションプロバイダーの変更フォームにそれらの詳細が事前に入力されます。"
+
 #: .\admin\templates\desk\cases.html:6
 #, python-format
 msgid "GakuNin RDM user \"%(user_id)s\" up to 50 most recent desk.com cases:"
@@ -622,6 +629,7 @@ msgid "Create An Institution"
 msgstr "機関を作成する"
 
 #: .\admin\templates\institutions\create.html:30
+#: .\admin\templates\institutions\detail.html:81
 msgid ""
 "Choose a JSON file that has been previously exported from another "
 "Institution detail page. This will pre-populate the Institution change "
@@ -654,11 +662,11 @@ msgid "Banner:"
 msgstr "バナー："
 
 #: .\admin\templates\institutions\detail.html:52
-#: .\admin\templates\institutions\detail.html:104
+#: .\admin\templates\institutions\detail.html:103
 msgid "Modify Institution"
 msgstr "機関を変更"
 
-#: .\admin\templates\institutions\detail.html:104
+#: .\admin\templates\institutions\detail.html:103
 msgid "Hide Form"
 msgstr "フォームを隠す"
 
