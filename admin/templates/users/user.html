@@ -318,7 +318,7 @@
                                                 {% csrf_token %}
                                                 <input class="btn btn-success"
                                                        type="submit"
-                                                       value="Restore Node" />
+                                                       value="{% trans 'Restore Node' %}" />
                                             </form>
                                         {% else %}
                                         <a href="{% url 'nodes:remove' guid=node.id %}"
@@ -350,7 +350,7 @@
                             <div class="col-xs-2 storageLimitContainer">
                                 <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" required value="{{ user.quota }}" oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')" oninput="setCustomValidity('')" />
                             </div>
-                            <input type="submit" id="applyMaxQuota" class="btn btn-success" value="Apply" />
+                            <input type="submit" id="applyMaxQuota" class="btn btn-success" value="{% trans 'Apply' %}" />
                         </form>
                     </td>
                 </tr>

@@ -44,7 +44,7 @@
                                       action="{% url 'nodes:restore' guid=node.id %}">
                                     {% csrf_token %}
                                     <input class="btn btn-success" type="submit"
-                                           value="Restore Node" />
+                                           value="{% trans 'Restore Node' %}" />
                                 </form>
                             {% endif %}
                         {% else %}
@@ -270,7 +270,7 @@
                                             {% csrf_token %}
                                             <input class="btn btn-success"
                                                    type="submit"
-                                                   value="Restore Node" />
+                                                   value="{% trans 'Restore Node' %}" />
                                         </form>
                                     {% else %}
                                     <a href="{% url 'nodes:remove' guid=child.id %}"
