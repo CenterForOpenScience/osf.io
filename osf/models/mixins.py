@@ -1990,8 +1990,7 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_ham()
 
-        if self.logs.filter(action=self.log_class.CONFIRM_SPAM):
-
+        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             # ensures only 'accepted' status preprints/any nodes get made public
             if self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
                 self.set_privacy('public', log=False)
