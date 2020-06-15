@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-03 16:30+0900\n"
-"PO-Revision-Date: 2020-06-03 16:30+0900\n"
+"POT-Creation-Date: 2020-06-15 15:15+0900\n"
+"PO-Revision-Date: 2020-06-15 15:15+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2368,6 +2368,12 @@ msgstr "これらは、作成または追加される新しいプロジェクト
 #: website/static/js/js_messages.js:23
 msgid "Project Notifications"
 msgstr "プロジェクト通知"
+
+#: website/static/js/js_messages.js:23
+msgid ""
+"These are settings for each of your projects. Modifying these settings "
+"will only modify the settings for the selected project."
+msgstr "これらは、プロジェクトごとの設定です。 これらの設定を変更すると、選択したプロジェクトの設定のみが変更されます。"
 
 #: website/static/js/js_messages.js:25
 msgid "moved"
