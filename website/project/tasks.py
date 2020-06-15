@@ -46,14 +46,8 @@ def update_collecting_metadata(node, saved_fields):
         else:
             update_collected_metadata(node._id, op='delete')
 
-def update_node_share(node):
-    # Wrapper that ensures share_url and token exist
-    if settings.SHARE_URL:
-        if not settings.SHARE_API_TOKEN:
-            return logger.warning('SHARE_API_TOKEN not set. Could not send "{}" to SHARE.'.format(node._id))
-        _update_node_share(node)
 
-def _update_node_share(node):
+def update_node_share(node):
     # Any modifications to this function may need to change _async_update_node_share
     data = serialize_share_node_data(node)
     resp = send_share_node_data(data)
