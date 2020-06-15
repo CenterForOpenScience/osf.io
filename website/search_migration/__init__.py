@@ -546,6 +546,7 @@ FROM osf_basefilenode AS F
             ) NODE ON TRUE
 WHERE name IS NOT NULL
       AND name != ''
+      AND type = 'osf.osfstoragefile'
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
                          WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
