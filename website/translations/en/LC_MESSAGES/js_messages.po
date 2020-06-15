@@ -1,14 +1,14 @@
-# English translations for PROJECT.
+# English translations for .
 # Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-05-28 13:23+0000\n"
-"PO-Revision-Date: 2020-05-19 13:52+0900\n"
+"POT-Creation-Date: 2020-06-03 16:30+0900\n"
+"PO-Revision-Date: 2020-06-15 11:15+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -849,7 +849,8 @@ msgid "Create"
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:362
-msgid "Saving your "
+#, python-format
+msgid "Saving your %s..."
 msgstr ""
 
 #: website/static/js/addProjectPlugin.js:376
