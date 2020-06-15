@@ -39,6 +39,7 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-preregistration.json')),
     ensure_schema_structure(from_json('osf-preregistration-3.json')),
     ensure_schema_structure(from_json('egap-registration.json')),
+    ensure_schema_structure(from_json('egap-registration-3.json'))
 ]
 
 METASCHEMA_ORDERING = (
