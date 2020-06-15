@@ -1969,11 +1969,14 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_spam(save=save)
         self.deleted = timezone.now()
+        initial_privacy = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False)
 
+        params = self.log_params
+        params.update({'initial_privacy': initial_privacy})
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
-            params=self.log_params,
+            params=params,
             auth=None,
             save=False
         )
@@ -1990,9 +1993,10 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_ham()
 
-        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+        if self.logs.filter(action=self.log_class.CONFIRM_SPAM):
+            confirm_spam_log = self.logs.filter(action=self.log_class.CONFIRM_SPAM).latest()
             # ensures only 'accepted' status preprints/any nodes get made public
-            if self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
+            if confirm_spam_log.params['initial_privacy'] and self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False

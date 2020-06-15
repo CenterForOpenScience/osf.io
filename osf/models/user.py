@@ -1424,7 +1424,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def confirm_spam(self, save=True):
         super().confirm_spam(save=save)
-        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.exclude(type='osf.quickfilesnode'):
             node.confirm_spam()
 
     def confirm_ham(self, save=False):

@@ -24,6 +24,10 @@ class TestSpam:
         return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture()
+    def node_private(self, user):
+        return ProjectFactory(creator=user, is_public=False)
+
+    @pytest.fixture()
     def request_headers(self):
         return {
             'Remote-Addr': 'test-remote-addr',
@@ -157,3 +161,42 @@ class TestSpam:
         assert node.is_public
         assert node.logs.latest().action == NodeLog.CONFIRM_HAM
         assert node.logs.latest().should_hide
+
+    @responses.activate
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_revert_spam_private(self, user, node_private, spam_data):
+        user.spam_data = spam_data
+        user.save()
+        responses.add(
+            responses.Response(
+                responses.POST,
+                'https://none.rest.akismet.com/1.1/submit-spam',
+                status=200,
+            )
+        )
+        responses.add(
+            responses.Response(
+                responses.POST,
+                'https://none.rest.akismet.com/1.1/submit-ham',
+                status=200,
+            )
+        )
+
+        assert not node_private.is_public
+
+        user.confirm_spam()
+        assert user.spam_status == SpamStatus.SPAM
+        node_private.refresh_from_db()
+
+        assert not node_private.is_public
+        assert node_private.logs.latest().action == NodeLog.CONFIRM_SPAM
+        assert node_private.logs.latest().should_hide
+
+        user.confirm_ham()
+        assert user.spam_status == SpamStatus.HAM
+
+        node_private.refresh_from_db()
+
+        assert not node_private.is_public
+        assert node_private.logs.latest().action == NodeLog.CONFIRM_HAM
+        assert node_private.logs.latest().should_hide
