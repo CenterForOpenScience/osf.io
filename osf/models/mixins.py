@@ -26,14 +26,23 @@ from osf.exceptions import (
     InvalidTagError,
     BlacklistedEmailError
 )
-from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog
-from osf.models.subject import Subject
-from osf.models.spam import SpamMixin, SpamStatus
-from osf.models.validators import validate_title
-from osf.models.tag import Tag
+from osf.models import (
+    NodeRelation,
+    NodeLog,
+    Subject,
+    SpamMixin,
+    SpamStatus,
+    Tag,
+    Node,
+    Preprint,
+)
+from osf.models.validators import (
+    validate_title,
+    validate_subject_hierarchy,
+    validate_email,
+    expand_subject_hierarchy,
+)
 from osf.utils import sanitize
-from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
@@ -1994,7 +2003,7 @@ class SpamOverrideMixin(SpamMixin):
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
             # ensures only 'accepted' status preprints/any nodes get made public
-            if spam_log.params.get('was_public', False) and self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
+            if spam_log.params.get('was_public', False) and (isinstance(self, Node) or (isinstance(self, Preprint) and self.machine_state == DefaultStates.ACCEPTED.value)):
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False
