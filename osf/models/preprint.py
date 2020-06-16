@@ -266,6 +266,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def is_deleted(self):
         return bool(self.deleted)
 
+    @is_deleted.setter
+    def is_deleted(self, val):
+        """Set whether or not this preprint has been deleted."""
+        if val and not self.deleted:
+            self.deleted = timezone.now()
+        elif val is False:
+            self.deleted = None
+
     @property
     def root_folder(self):
         try:
