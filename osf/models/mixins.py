@@ -24,7 +24,7 @@ from osf.exceptions import (
     UserStateError,
     UserNotAffiliatedError,
     InvalidTagError,
-    BlacklistedEmailError
+    BlacklistedEmailError,
 )
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -1969,11 +1969,12 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_spam(save=save)
         self.deleted = timezone.now()
+        was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
-            params=self.log_params,
+            params={**self.log_params, 'was_public': was_public},
             auth=None,
             save=False
         )
@@ -1990,9 +1991,13 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_ham()
 
+        Node = apps.get_model('osf.Node')
+        Preprint = apps.get_model('osf.Preprint')
+
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
             # ensures only 'accepted' status preprints/any nodes get made public
-            if self.type == 'osf.node' or (self.type == 'osf.preprint' and self.machine_state == DefaultStates.ACCEPTED.value):
+            if spam_log.params.get('was_public', False) and (isinstance(self, Node) or (isinstance(self, Preprint) and self.machine_state == DefaultStates.ACCEPTED.value)):
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False
@@ -2092,10 +2097,11 @@ class SpamOverrideMixin(SpamMixin):
         """
         super(SpamOverrideMixin, self).flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            was_public = self.is_public
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
-                params=self.log_params,
+                params={**self.log_params, 'was_public': was_public},
                 auth=None,
                 save=False
             )
