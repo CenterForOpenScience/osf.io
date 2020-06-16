@@ -9,7 +9,7 @@ from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftRegistrationDelete,
     TestDraftPreregChallengeRegistrationMetadataValidation
 )
-from osf.models import DraftNode, Node, NodeLicense
+from osf.models import DraftNode, Node, NodeLicense, RegistrationSchema
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import (
     DraftRegistrationFactory,
@@ -267,6 +267,49 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         draft_registration.save()
         return draft_registration
 
+    @pytest.fixture()
+    def schema_open_ended(self):
+        return RegistrationSchema.objects.get(
+            name='Open-Ended Registration',
+            schema_version=3)
+
+    @pytest.fixture
+    def draft_registration_open_ended(self, user, schema_open_ended):
+        return DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema_open_ended,
+            branched_from=None
+        )
+
+    @pytest.fixture()
+    def url_draft_registration_open_ended(self, draft_registration_open_ended):
+        return f'/{API_BASE}draft_registrations/{draft_registration_open_ended._id}/'
+
+    @pytest.fixture()
+    def upload_payload(self, draft_registration_open_ended):
+        return {
+            'data': {
+                'id': draft_registration_open_ended._id,
+                'attributes': {
+                    'registration_responses': {
+                        'uploader': [{
+                            'file_id': '5eda89dfc00e6f0570715e5b',
+                            'file_name': 'Cafe&LunchMenu.pdf',
+                            'file_hashes': {
+                                'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad'
+                            },
+                            'file_urls': {
+                                'html': f'{API_BASE}/etch4/files/osfstorage/5eda89dfc00e6f0570715e5b',
+                                'download': f'{API_BASE}/download/b56ve/'
+                            }
+                        }]
+                    }
+                },
+                'relationships': {},
+                'type': 'draft_registrations'
+            }
+        }
+
     def test_update_editable_fields(self, app, url_draft_registrations, draft_registration, license, copyright_holders,
             year, institution_one, user, title, description, category, subject, editable_fields_payload):
         user.affiliated_institutions.add(institution_one)
@@ -311,6 +354,14 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         assert 'draft_registrations/{}/relationships/institutions'.format(draft_registration._id) in relationships['affiliated_institutions']['links']['self']['href']
 
         assert 'draft_registrations/{}/contributors'.format(draft_registration._id) in relationships['contributors']['links']['related']['href']
+
+    def test_update_upload(self, app, url_draft_registration_open_ended, draft_registration_open_ended, upload_payload, user):
+        res = app.patch_json_api(
+            url_draft_registration_open_ended,
+            upload_payload,
+            auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['registration_responses']['uploader'][0]['file_name'] == 'Cafe&LunchMenu.pdf'
 
     def test_registration_metadata_must_be_supplied(
             self, app, user, payload, url_draft_registrations):

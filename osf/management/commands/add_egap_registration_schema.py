@@ -15,7 +15,7 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        egap_registration_schema = ensure_schema_structure(from_json('egap-registration.json'))
+        egap_registration_schema = ensure_schema_structure(from_json('egap-registration-3.json'))
         schema_obj, created = RegistrationSchema.objects.update_or_create(
             name=egap_registration_schema['name'],
             schema_version=egap_registration_schema.get('version', 1),

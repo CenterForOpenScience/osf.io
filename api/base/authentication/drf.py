@@ -186,7 +186,7 @@ class OSFBasicAuthentication(BasicAuthentication):
 
         if userid and not user:
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
-        elif userid is None and password is None:
+        elif userid is None or not password:
             raise exceptions.NotAuthenticated()
 
         check_user(user)
