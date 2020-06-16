@@ -24,25 +24,16 @@ from osf.exceptions import (
     UserStateError,
     UserNotAffiliatedError,
     InvalidTagError,
-    BlacklistedEmailError
+    BlacklistedEmailError,
 )
-from osf.models import (
-    NodeRelation,
-    NodeLog,
-    Subject,
-    SpamMixin,
-    SpamStatus,
-    Tag,
-    Node,
-    Preprint,
-)
-from osf.models.validators import (
-    validate_title,
-    validate_subject_hierarchy,
-    validate_email,
-    expand_subject_hierarchy,
-)
+from osf.models.node_relation import NodeRelation
+from osf.models.nodelog import NodeLog
+from osf.models.subject import Subject
+from osf.models.spam import SpamMixin, SpamStatus
+from osf.models.validators import validate_title
+from osf.models.tag import Tag
 from osf.utils import sanitize
+from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
@@ -1999,6 +1990,9 @@ class SpamOverrideMixin(SpamMixin):
         :return:
         """
         super().confirm_ham()
+
+        Node = apps.get_model('osf.Node')
+        Preprint = apps.get_model('osf.Preprint')
 
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
