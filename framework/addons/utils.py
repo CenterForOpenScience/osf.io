@@ -15,7 +15,7 @@ CAPABILITY_SET = [
     'Delete files',
     'Logs',
     'Forking'
-#    'Registering'
+    #'Registering'
 ]
 
 def read_capabilities(filename):
