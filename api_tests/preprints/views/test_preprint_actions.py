@@ -6,12 +6,12 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions as osf_permissions
 
-from api_tests.users.views.test_user_actions import TestReviewActionFilters
+from api_tests.users.views.test_user_actions import TestReviewActions
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
 @pytest.mark.enable_quickfiles_creation
-class TestPreprintActionFilters(TestReviewActionFilters):
+class TestPreprintActionFilters(TestReviewActions):
 
     @pytest.fixture()
     def preprint(self, all_actions):

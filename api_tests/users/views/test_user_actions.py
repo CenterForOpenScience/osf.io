@@ -14,7 +14,7 @@ from osf.utils import permissions as osf_permissions
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
-class TestReviewActionFilters:
+class TestReviewActions:
     @pytest.fixture()
     def url(self):
         return '/{}actions/reviews/'.format(API_BASE)
