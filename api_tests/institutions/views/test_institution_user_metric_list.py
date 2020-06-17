@@ -217,7 +217,7 @@ class TestInstitutionUserMetricList:
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'
 
-    def test_sort_and_pagination(self, app, url, admin, populate_more_counts, institution):
+    def test_sort_and_pagination(self, app, url, user, user2, user3, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?sort=user_name&page[size]=1&page=2', auth=admin.auth)
         assert resp.status_code == 200
         assert resp.json['links']['meta']['total'] == 11
@@ -227,7 +227,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][-1]['attributes']['user_name'] == 'Zedd'
 
-    def test_filter_and_pagination(self, app, url, admin, populate_more_counts, institution):
+    def test_filter_and_pagination(self, app, user, user2, user3, url, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?page=2', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
@@ -235,7 +235,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
 
-    def test_filter_and_sort(self, app, url, admin, user4, populate_counts, populate_na_department, institution):
+    def test_filter_and_sort(self, app, url, user, user2, user3, admin, user4, populate_counts, populate_na_department, institution):
         """
         Testing for bug where sorting and filtering would throw 502.
         :param app:
