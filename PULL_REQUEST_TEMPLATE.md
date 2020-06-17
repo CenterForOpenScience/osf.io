@@ -14,7 +14,7 @@
 <!-- Briefly describe or list your changes  -->
 
 ## QA Notes
-Please make verification statements inspired by your code and what your code touches. 
+Please make verification statements inspired by your code and what your code touches.
 - Verify
 - Verify
 
