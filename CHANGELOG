@@ -2,6 +2,19 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.11.0 (2020-06-17)
+====================
+- Add more tests for ending embargos
+- Fix filenames containing &s preventing registrations from registering
+- Ensure API complains when trying to embargo using deprecated methods
+- Modify EGAP form and add new form
+- Update EGAP import script to use new form
+- Remove Authors from registration forms
+- Ensure forks have region of forked-from node
+- Fix statistics for institutional dashboard node counts
+- Allow institutional dashboard to export user stats as CSV
+- Fix probabilistically failing tests
+
 20.10.0 (2020-06-04)
 ====================
 - Use proper bibliographic status for registration creators
