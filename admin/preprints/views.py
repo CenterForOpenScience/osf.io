@@ -376,7 +376,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
     template_name = 'preprints/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.has_perm('auth.mark_spam'):
+        if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
         preprint_ids = [
             pid for pid in request.POST.keys()
