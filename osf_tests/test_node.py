@@ -2091,8 +2091,6 @@ class TestRegisterNode:
 
         # Author questions are overridden with bibliographic contributors upon registration,
         # so there aren't discrepancies
-        assert registration.registered_meta[registration.registration_schema._id]['q2']['value'] == user.fullname + ', ' + bib_contrib.fullname
-        assert registration.registration_responses['q2'] == user.fullname + ', ' + bib_contrib.fullname
 
         # assert that other registration_metadata not overridden
         assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'

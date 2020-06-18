@@ -57,6 +57,10 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     UPDATE_PREREG_LINKS = 'prereg_links_updated'
     UPDATE_PREREG_LINKS_INFO = 'prereg_links_info_updated'
 
+    CONFIRM_HAM = 'confirm_ham'
+    FLAG_SPAM = 'flag_spam'
+    CONFIRM_SPAM = 'confirm_spam'
+
     actions = ([
         DELETED,
         CONTRIB_ADDED,
@@ -85,7 +89,10 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         UPDATE_HAS_PREREG_LINKS,
         UPDATE_WHY_NO_PREREG,
         UPDATE_PREREG_LINKS,
-        UPDATE_PREREG_LINKS_INFO
+        UPDATE_PREREG_LINKS_INFO,
+        CONFIRM_HAM,
+        FLAG_SPAM,
+        CONFIRM_SPAM,
     ] + list(sum([config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')], tuple())))
 
     action_choices = [(action, action.upper()) for action in actions]

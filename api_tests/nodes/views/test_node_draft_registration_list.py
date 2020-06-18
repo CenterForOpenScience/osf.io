@@ -543,8 +543,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 201
         data = res.json['data']
-        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'Test response'
-        assert res.json['data']['attributes']['registration_responses']['q2'] == 'Test response'
         assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id

@@ -112,3 +112,6 @@ datacite==1.0.1
 
 # Metrics
 django-elasticsearch-metrics==5.0.0
+
+# Impact Metrics CSV Export
+djangorestframework-csv==2.1.0

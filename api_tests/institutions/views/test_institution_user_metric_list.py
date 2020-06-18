@@ -1,5 +1,7 @@
 import pytest
 import datetime
+import csv
+from io import StringIO
 from random import random
 import time
 
@@ -21,7 +23,10 @@ class TestInstitutionUserMetricList:
 
     @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
+        user = AuthUserFactory()
+        user.fullname = user.fullname + ',a'
+        user.save()
+        return user
 
     @pytest.fixture()
     def user2(self):
@@ -72,7 +77,7 @@ class TestInstitutionUserMetricList:
             private_project_count=2,
         ).save()
 
-        time.sleep(2)
+        time.sleep(10)
 
     @pytest.fixture()
     def populate_more_counts(self, institution, user, user2, user3, populate_counts):
@@ -99,7 +104,7 @@ class TestInstitutionUserMetricList:
             private_project_count=int(10 * random()),
         ).save()
 
-        time.sleep(2)
+        time.sleep(10)
 
     @pytest.fixture()
     def populate_na_department(self, institution, user4):
@@ -110,7 +115,7 @@ class TestInstitutionUserMetricList:
             private_project_count=1,
         ).save()
 
-        time.sleep(2)
+        time.sleep(10)
 
     @pytest.fixture()
     def url(self, institution):
@@ -189,11 +194,30 @@ class TestInstitutionUserMetricList:
             }
         ]
 
+        # Tests CSV Export
+        headers = {
+            'accept': 'text/csv'
+        }
+        resp = app.get(url, auth=admin.auth, headers=headers)
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+
+        response_body = resp.text
+
+        expected_response = [['id', 'user_name', 'public_projects', 'private_projects', 'type'],
+            [user._id, user.fullname, '6', '5', 'institution-users'],
+            [user2._id, user2.fullname, '3', '2', 'institution-users']]
+
+        with StringIO(response_body) as csv_file:
+            csvreader = csv.reader(csv_file, delimiter=',')
+            for index, row in enumerate(csvreader):
+                assert row == expected_response[index]
+
     def test_filter(self, app, url, admin, populate_counts):
         resp = app.get(f'{url}?filter[department]=Psychology dept', auth=admin.auth)
         assert resp.json['data'][0]['attributes']['department'] == 'Psychology dept'
 
-    def test_sort_and_pagination(self, app, url, admin, populate_more_counts):
+    def test_sort_and_pagination(self, app, url, user, user2, user3, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?sort=user_name&page[size]=1&page=2', auth=admin.auth)
         assert resp.status_code == 200
         assert resp.json['links']['meta']['total'] == 11
@@ -203,7 +227,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][-1]['attributes']['user_name'] == 'Zedd'
 
-    def test_filter_and_pagination(self, app, url, admin, populate_more_counts):
+    def test_filter_and_pagination(self, app, user, user2, user3, url, admin, populate_counts, populate_more_counts, institution):
         resp = app.get(f'{url}?page=2', auth=admin.auth)
         assert resp.json['links']['meta']['total'] == 11
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
@@ -211,7 +235,7 @@ class TestInstitutionUserMetricList:
         assert resp.json['links']['meta']['total'] == 1
         assert resp.json['data'][0]['attributes']['user_name'] == 'Zedd'
 
-    def test_filter_and_sort(self, app, url, admin, user4, populate_counts, populate_na_department):
+    def test_filter_and_sort(self, app, url, user, user2, user3, admin, user4, populate_counts, populate_na_department, institution):
         """
         Testing for bug where sorting and filtering would throw 502.
         :param app:
