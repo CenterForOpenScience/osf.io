@@ -6,7 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory
 )
-from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
+from osf.metrics import InstitutionProjectCounts
 
 
 @pytest.mark.es
@@ -47,15 +47,6 @@ class TestInstitutionSummaryMetrics:
         private_project_count_latest = 26
         institution_user_count_latest = 9
         timestamp_latest = datetime.datetime.now()
-
-        # Record for timestamp
-        UserInstitutionProjectCounts.record(
-            user_id=user._id,
-            institution_id=institution._id,
-            public_project_count=1,
-            private_project_count=1,
-            timestamp=timestamp_latest
-        ).save()
 
         # Uses record to specify user_count
         InstitutionProjectCounts.record(

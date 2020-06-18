@@ -403,7 +403,7 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
     def get_object(self):
         institution = self.get_institution()
         results = InstitutionProjectCounts.get_latest_institution_project_document(institution)
-        results['last_updated'] = UserInstitutionProjectCounts.get_recent_datetime(institution)
+        results['last_updated'] = results['timestamp'].replace(microsecond=0, second=0)
         return results
 
 
