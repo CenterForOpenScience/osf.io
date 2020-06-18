@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-18 18:21+0900\n"
-"PO-Revision-Date: 2020-06-15 16:55+0900\n"
+"POT-Creation-Date: 2020-06-18 20:30+0900\n"
+"PO-Revision-Date: 2020-06-18 20:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -36,6 +36,31 @@ msgid ""
 "for %(startDate)s -\n"
 "                        %(endDate)s"
 msgstr ""
+
+#: .\admin\templates\banners\confirm_delete.html:16
+#: .\admin\templates\institutions\confirm_delete.html:20
+#: .\admin\templates\maintenance\delete_maintenance.html:12
+#: .\admin\templates\nodes\confirm_ham.html:9
+#: .\admin\templates\nodes\confirm_spam.html:9
+#: .\admin\templates\nodes\node.html:395
+#: .\admin\templates\nodes\node_list.html:108
+#: .\admin\templates\nodes\reindex_node_elastic.html:8
+#: .\admin\templates\nodes\reindex_node_share.html:8
+#: .\admin\templates\nodes\remove_contributor.html:15
+#: .\admin\templates\nodes\remove_node.html:12
+#: .\admin\templates\nodes\remove_registrations_modal.html:8
+#: .\admin\templates\nodes\restart_registrations_modal.html:8
+#: .\admin\templates\rdm_timestampadd\node_list.html:122
+#: .\admin\templates\users\GDPR_delete_user.html:12
+#: .\admin\templates\users\add_system_tag.html:12
+#: .\admin\templates\users\reindex_user_elastic.html:9
+#: .\admin\templates\users\remove_2_factor.html:16
+#: .\admin\templates\users\remove_spam_user.html:12
+#: .\admin\templates\users\remove_user.html:12
+#: .\admin\templates\users\restore_ham_user.html:12
+#: .\admin\templates\users\user_list.html:71
+msgid "Confirm"
+msgstr "確認"
 
 #: .\admin\templates\banners\create.html:5
 msgid "GakuNin RDM Admin | Schedule banner"
@@ -1660,7 +1685,7 @@ msgid "The number of unique downloads of files on the GakuNin RDM."
 msgstr ""
 
 #: .\admin\templates\metrics\osf_statistics.html:22
-#: .\admin\templates\nodes\node_logs.html:12
+#: .\admin\templates\nodes\node_logs.html:13
 #: .\admin\templates\spam\spam_list.html:44 .\admin\templates\spam\user.html:46
 #: .\admin\templates\users\spam.html:40
 msgid "Date"
@@ -1696,6 +1721,8 @@ msgstr ""
 #: .\admin\templates\nodes\confirm_spam.html:11
 #: .\admin\templates\nodes\node.html:397
 #: .\admin\templates\nodes\node_list.html:110
+#: .\admin\templates\nodes\reindex_node_elastic.html:10
+#: .\admin\templates\nodes\reindex_node_share.html:10
 #: .\admin\templates\nodes\remove_contributor.html:18
 #: .\admin\templates\nodes\remove_node.html:15
 #: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:55
@@ -1936,22 +1963,32 @@ msgstr ""
 msgid "Are you sure the selected node(s) are spam?"
 msgstr ""
 
-#: .\admin\templates\nodes\node_logs.html:5
+#: .\admin\templates\nodes\node_logs.html:6
 msgid "Node Logs"
 msgstr ""
 
-#: .\admin\templates\nodes\node_logs.html:15
+#: .\admin\templates\nodes\node_logs.html:16
 msgid "Action"
 msgstr ""
 
-#: .\admin\templates\nodes\node_logs.html:18
+#: .\admin\templates\nodes\node_logs.html:19
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:39
 #: .\admin\templates\users\user.html:11
 msgid "User"
 msgstr ""
 
-#: .\admin\templates\nodes\node_logs.html:21
+#: .\admin\templates\nodes\node_logs.html:22
 msgid "Parameters"
+msgstr ""
+
+#: .\admin\templates\nodes\reindex_node_elastic.html:4
+#, python-format
+msgid "Are you sure you want to reindex this %(resource_type)s (Elastic)?"
+msgstr ""
+
+#: .\admin\templates\nodes\reindex_node_share.html:4
+#, python-format
+msgid "Are you sure you want to reindex this %(resource_type)s (SHARE)?"
 msgstr ""
 
 #: .\admin\templates\nodes\remove_contributor.html:6
