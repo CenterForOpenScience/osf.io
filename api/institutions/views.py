@@ -4,6 +4,7 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -17,11 +18,12 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
-from api.base.pagination import MaxSizePagination
+from api.base.pagination import JSONAPIPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
+from api.base.settings import MAX_SIZE_OF_ES_QUERY
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import MockQueryset
 from api.base.settings import DEFAULT_ES_NULL_VALUE
@@ -41,11 +43,7 @@ from api.institutions.serializers import (
     InstitutionUserMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from rest_framework.settings import api_settings
-
-import logging
-
-logger = logging.getLogger(__name__)
+from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
 
 
 class InstitutionMixin(object):
@@ -419,10 +417,25 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     view_category = 'institutions'
 
+    @property
+    def is_csv_export(self):
+        if isinstance(self.request.accepted_renderer, MetricsCSVRenderer):
+            return True
+        return False
+
+    @property
+    def pagination_class(self):
+        if self.is_csv_export:
+            return MaxSizePagination
+        return JSONAPIPagination
+
     def _format_search(self, search, default_kwargs=None):
         raise NotImplementedError()
 
     def _paginate(self, search):
+        if self.pagination_class is MaxSizePagination:
+            return search.extra(size=MAX_SIZE_OF_ES_QUERY)
+
         page = self.request.query_params.get('page')
         page_size = self.request.query_params.get('page[size]')
 
@@ -454,10 +467,12 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+
 class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
     serializer_class = InstitutionDepartmentMetricsSerializer
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
     ordering = ('-number_of_users', 'name',)
 
@@ -481,6 +496,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     view_name = 'institution-user-metrics'
 
     serializer_class = InstitutionUserMetricsSerializer
+    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
     ordering = ('user_name',)
 
