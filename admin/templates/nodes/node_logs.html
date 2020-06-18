@@ -1,23 +1,24 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% block title %}
-    <title>Node Logs</title>
+    <title>{% trans "Node Logs" %}</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <table class="table table-striped table-hover table-responsive">
             <thead>
                 <th>
-                    Date
+                    {% trans "Date" %}
                 </th>
                 <th>
-                    Action
+                    {% trans "Action" %}
                 </th>
                 <th>
-                    User
+                    {% trans "User" %}
                 </th>
                 <th>
-                    Parameters
+                    {% trans "Parameters" %}
                 </th>
             </thead>
             <tbody>
@@ -35,7 +36,7 @@
                     <td>
                         {% for key, value in params %}
                             <div>
-                                <span><b>{{ key }}</b></span> : <span>{{ value }}</span>
+                                <span><b>{{ key|transValue }}</b></span> : <span>{{ value|transValue }}</span>
                             </div>
                         {% endfor %}
                     </td>

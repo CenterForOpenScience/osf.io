@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-15 18:00+0900\n"
+"POT-Creation-Date: 2020-06-18 18:21+0900\n"
 "PO-Revision-Date: 2020-06-15 16:55+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -115,10 +115,7 @@ msgstr "テキスト"
 msgid "Delete banner"
 msgstr "バナーを削除"
 
-#: .\admin\templates\base.html:10 .\admin\templates\base.html:108
-#: .\admin\templates\base.html:113 .\admin\templates\base.html:141
-#: .\admin\templates\base.html:145 .\admin\templates\base.html:153
-#: .\admin\templates\base.html:157 .\admin\templates\base.html:168
+#: .\admin\templates\base.html:10 .\admin\templates\base.html:157
 #: .\admin\templates\base.html:233 .\admin\templates\base.html:236
 #: .\admin\templates\base.html:239 .\admin\templates\base.html:242
 #: .\admin\templates\base.html:246 .\admin\templates\base.html:279
@@ -155,10 +152,8 @@ msgid "Menu"
 msgstr "メニュー"
 
 #: .\admin\templates\base.html:108 .\admin\templates\base.html:113
-#: .\admin\templates\metrics\osf_metrics.html:724
-#: .\admin\templates\users\user.html:285
-msgid "Nodes"
-msgstr "ノード"
+msgid "RDM Nodes"
+msgstr "ノード管理"
 
 #: .\admin\templates\base.html:114 .\admin\templates\base.html:131
 #: .\admin\templates\base.html:146
@@ -185,18 +180,12 @@ msgid "Withdrawal Requests"
 msgstr "削除のリクエスト"
 
 #: .\admin\templates\base.html:141 .\admin\templates\base.html:145
-#: .\admin\templates\metrics\osf_statistics.html:23
-msgid "Users"
-msgstr "ユーザ"
+msgid "RDM Users"
+msgstr "ユーザ管理"
 
-#: .\admin\templates\base.html:153 .\admin\templates\nodes\spam_status.html:7
-#: .\admin\templates\spam\detail.html:90
-#: .\admin\templates\spam\spam_list.html:22
-#: .\admin\templates\spam\spam_list.html:25 .\admin\templates\spam\user.html:25
-#: .\admin\templates\spam\user.html:28 .\admin\templates\users\spam.html:19
-#: .\admin\templates\users\spam.html:22
-msgid "Spam"
-msgstr "スパム"
+#: .\admin\templates\base.html:153
+msgid "RDM Spam"
+msgstr "スパム管理"
 
 #: .\admin\templates\base.html:157
 msgid "Registrations"
@@ -211,8 +200,8 @@ msgid "Stuck Registrations"
 msgstr "スタックされた登録"
 
 #: .\admin\templates\base.html:168
-msgid "Institutions"
-msgstr "機関"
+msgid "RDM Institutions"
+msgstr "機関設定"
 
 #: .\admin\templates\base.html:172 .\admin\templates\base.html:185
 #: .\admin\templates\base.html:199 .\admin\templates\base.html:212
@@ -329,7 +318,7 @@ msgstr "タイムスタンプ環境"
 
 #: .\admin\templates\base.html:284
 msgid "Quota for NII Storage"
-msgstr "ストレージクォータ"
+msgstr "クォータ管理"
 
 #: .\admin\templates\base.html:287
 #: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:16
@@ -339,7 +328,7 @@ msgstr "機関ストレージ"
 
 #: .\admin\templates\base.html:288
 msgid "Quota for Institutional Storage"
-msgstr "機関ストレージのクォータ"
+msgstr "クォータ管理"
 
 #: .\admin\templates\base.html:303 .\admin\templates\home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
@@ -694,7 +683,7 @@ msgstr "機関のリスト"
 #: .\admin\templates\rdm_timestampsettings\list.html:20
 #: .\admin\templates\rdm_timestampsettings\list.html:50
 msgid "Logo"
-msgstr "ログ"
+msgstr "ロゴ"
 
 #: .\admin\templates\institutions\list_institute.html:10
 #, python-format
@@ -1051,6 +1040,22 @@ msgstr "デフォルトの写真の代替テキスト"
 #: .\admin\templates\messages.html:39
 msgid "Mobile photo alt text"
 msgstr "モバイル写真の代替テキスト"
+
+#: .\admin\templates\messages.html:40
+msgid "Select a file"
+msgstr "ファイルを選択"
+
+#: .\admin\templates\messages.html:41
+msgid "node"
+msgstr "ノード"
+
+#: .\admin\templates\messages.html:42
+msgid "project"
+msgstr "プロジェクト"
+
+#: .\admin\templates\messages.html:43
+msgid "addon"
+msgstr "アドオン"
 
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
@@ -1506,6 +1511,11 @@ msgstr "プライベートトップレベルプロジェクトの総数"
 msgid "Public vs Private Projects"
 msgstr "パブリックプロジェクトとプライベートプロジェクト"
 
+#: .\admin\templates\metrics\osf_metrics.html:724
+#: .\admin\templates\users\user.html:285
+msgid "Nodes"
+msgstr "ノード"
+
 #: .\admin\templates\metrics\osf_metrics.html:731
 msgid "Total Nodes - Projects and Components"
 msgstr "合計ノード-プロジェクトとコンポーネント"
@@ -1654,10 +1664,15 @@ msgid "The number of unique downloads of files on the GakuNin RDM."
 msgstr "GakuNin RDM上のファイルの一意のダウンロードの数。"
 
 #: .\admin\templates\metrics\osf_statistics.html:22
+#: .\admin\templates\nodes\node_logs.html:12
 #: .\admin\templates\spam\spam_list.html:44 .\admin\templates\spam\user.html:46
 #: .\admin\templates\users\spam.html:40
 msgid "Date"
 msgstr "日付"
+
+#: .\admin\templates\metrics\osf_statistics.html:23
+msgid "Users"
+msgstr "ユーザ"
 
 #: .\admin\templates\metrics\osf_statistics.html:25
 msgid "Public projects"
@@ -1925,6 +1940,24 @@ msgstr "作成日"
 msgid "Are you sure the selected node(s) are spam?"
 msgstr "選択したノードはスパムですか？"
 
+#: .\admin\templates\nodes\node_logs.html:5
+msgid "Node Logs"
+msgstr "ノードログ"
+
+#: .\admin\templates\nodes\node_logs.html:15
+msgid "Action"
+msgstr "アクション"
+
+#: .\admin\templates\nodes\node_logs.html:18
+#: .\admin\templates\rdm_timestampadd\timestampadd.html:39
+#: .\admin\templates\users\user.html:11
+msgid "User"
+msgstr "ユーザ"
+
+#: .\admin\templates\nodes\node_logs.html:21
+msgid "Parameters"
+msgstr "パラメータ"
+
 #: .\admin\templates\nodes\remove_contributor.html:6
 #, python-format
 msgid "Removing contributor: %(userName)s"
@@ -1975,6 +2008,15 @@ msgstr "不明"
 #: .\admin\templates\users\spam.html:16
 msgid "Flagged"
 msgstr "フラグ付き"
+
+#: .\admin\templates\nodes\spam_status.html:7
+#: .\admin\templates\spam\detail.html:90
+#: .\admin\templates\spam\spam_list.html:22
+#: .\admin\templates\spam\spam_list.html:25 .\admin\templates\spam\user.html:25
+#: .\admin\templates\spam\user.html:28 .\admin\templates\users\spam.html:19
+#: .\admin\templates\users\spam.html:22
+msgid "Spam"
+msgstr "スパム"
 
 #: .\admin\templates\nodes\spam_status.html:9
 #: .\admin\templates\spam\detail.html:92
@@ -2516,11 +2558,6 @@ msgstr "開始日"
 msgid "End Date"
 msgstr "終了日"
 
-#: .\admin\templates\rdm_timestampadd\timestampadd.html:39
-#: .\admin\templates\users\user.html:11
-msgid "User"
-msgstr "ユーザ"
-
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:46
 #: .\admin\templates\users\user.html:353
 msgid "Apply"
@@ -2934,6 +2971,10 @@ msgstr "機関ストレージの割当て(GB)"
 msgid "Are you sure the selected user(s) are spam?"
 msgstr "選択したユーザーはスパムですか？"
 
+#: .\admin\templates\users\workshop.html:15
+msgid "Upload"
+msgstr "アップロード"
+
 #: .\admin\templates\util\pagination.html:25
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
@@ -2941,4 +2982,7 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
 #~ msgid "Submit"
 #~ msgstr "検索"
+
+#~ msgid "Institutions"
+#~ msgstr "機関"
 

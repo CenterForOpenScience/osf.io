@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-15 18:00+0900\n"
+"POT-Creation-Date: 2020-06-18 18:21+0900\n"
 "PO-Revision-Date: 2020-06-15 16:55+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: en\n"
@@ -113,10 +113,7 @@ msgstr ""
 msgid "Delete banner"
 msgstr ""
 
-#: .\admin\templates\base.html:10 .\admin\templates\base.html:108
-#: .\admin\templates\base.html:113 .\admin\templates\base.html:141
-#: .\admin\templates\base.html:145 .\admin\templates\base.html:153
-#: .\admin\templates\base.html:157 .\admin\templates\base.html:168
+#: .\admin\templates\base.html:10 .\admin\templates\base.html:157
 #: .\admin\templates\base.html:233 .\admin\templates\base.html:236
 #: .\admin\templates\base.html:239 .\admin\templates\base.html:242
 #: .\admin\templates\base.html:246 .\admin\templates\base.html:279
@@ -153,9 +150,7 @@ msgid "Menu"
 msgstr ""
 
 #: .\admin\templates\base.html:108 .\admin\templates\base.html:113
-#: .\admin\templates\metrics\osf_metrics.html:724
-#: .\admin\templates\users\user.html:285
-msgid "Nodes"
+msgid "RDM Nodes"
 msgstr ""
 
 #: .\admin\templates\base.html:114 .\admin\templates\base.html:131
@@ -183,17 +178,11 @@ msgid "Withdrawal Requests"
 msgstr ""
 
 #: .\admin\templates\base.html:141 .\admin\templates\base.html:145
-#: .\admin\templates\metrics\osf_statistics.html:23
-msgid "Users"
+msgid "RDM Users"
 msgstr ""
 
-#: .\admin\templates\base.html:153 .\admin\templates\nodes\spam_status.html:7
-#: .\admin\templates\spam\detail.html:90
-#: .\admin\templates\spam\spam_list.html:22
-#: .\admin\templates\spam\spam_list.html:25 .\admin\templates\spam\user.html:25
-#: .\admin\templates\spam\user.html:28 .\admin\templates\users\spam.html:19
-#: .\admin\templates\users\spam.html:22
-msgid "Spam"
+#: .\admin\templates\base.html:153
+msgid "RDM Spam"
 msgstr ""
 
 #: .\admin\templates\base.html:157
@@ -209,7 +198,7 @@ msgid "Stuck Registrations"
 msgstr ""
 
 #: .\admin\templates\base.html:168
-msgid "Institutions"
+msgid "RDM Institutions"
 msgstr ""
 
 #: .\admin\templates\base.html:172 .\admin\templates\base.html:185
@@ -1048,6 +1037,22 @@ msgstr ""
 msgid "Mobile photo alt text"
 msgstr ""
 
+#: .\admin\templates\messages.html:40
+msgid "Select a file"
+msgstr ""
+
+#: .\admin\templates\messages.html:41
+msgid "node"
+msgstr ""
+
+#: .\admin\templates\messages.html:42
+msgid "project"
+msgstr ""
+
+#: .\admin\templates\messages.html:43
+msgid "addon"
+msgstr ""
+
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
 #: .\admin\templates\metrics\osf_statistics.html:6
@@ -1502,6 +1507,11 @@ msgstr ""
 msgid "Public vs Private Projects"
 msgstr ""
 
+#: .\admin\templates\metrics\osf_metrics.html:724
+#: .\admin\templates\users\user.html:285
+msgid "Nodes"
+msgstr ""
+
 #: .\admin\templates\metrics\osf_metrics.html:731
 msgid "Total Nodes - Projects and Components"
 msgstr ""
@@ -1650,9 +1660,14 @@ msgid "The number of unique downloads of files on the GakuNin RDM."
 msgstr ""
 
 #: .\admin\templates\metrics\osf_statistics.html:22
+#: .\admin\templates\nodes\node_logs.html:12
 #: .\admin\templates\spam\spam_list.html:44 .\admin\templates\spam\user.html:46
 #: .\admin\templates\users\spam.html:40
 msgid "Date"
+msgstr ""
+
+#: .\admin\templates\metrics\osf_statistics.html:23
+msgid "Users"
 msgstr ""
 
 #: .\admin\templates\metrics\osf_statistics.html:25
@@ -1921,6 +1936,24 @@ msgstr ""
 msgid "Are you sure the selected node(s) are spam?"
 msgstr ""
 
+#: .\admin\templates\nodes\node_logs.html:5
+msgid "Node Logs"
+msgstr ""
+
+#: .\admin\templates\nodes\node_logs.html:15
+msgid "Action"
+msgstr ""
+
+#: .\admin\templates\nodes\node_logs.html:18
+#: .\admin\templates\rdm_timestampadd\timestampadd.html:39
+#: .\admin\templates\users\user.html:11
+msgid "User"
+msgstr ""
+
+#: .\admin\templates\nodes\node_logs.html:21
+msgid "Parameters"
+msgstr ""
+
 #: .\admin\templates\nodes\remove_contributor.html:6
 #, python-format
 msgid "Removing contributor: %(userName)s"
@@ -1970,6 +2003,15 @@ msgstr ""
 #: .\admin\templates\spam\user.html:22 .\admin\templates\users\spam.html:13
 #: .\admin\templates\users\spam.html:16
 msgid "Flagged"
+msgstr ""
+
+#: .\admin\templates\nodes\spam_status.html:7
+#: .\admin\templates\spam\detail.html:90
+#: .\admin\templates\spam\spam_list.html:22
+#: .\admin\templates\spam\spam_list.html:25 .\admin\templates\spam\user.html:25
+#: .\admin\templates\spam\user.html:28 .\admin\templates\users\spam.html:19
+#: .\admin\templates\users\spam.html:22
+msgid "Spam"
 msgstr ""
 
 #: .\admin\templates\nodes\spam_status.html:9
@@ -2494,11 +2536,6 @@ msgstr ""
 msgid "End Date"
 msgstr ""
 
-#: .\admin\templates\rdm_timestampadd\timestampadd.html:39
-#: .\admin\templates\users\user.html:11
-msgid "User"
-msgstr ""
-
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:46
 #: .\admin\templates\users\user.html:353
 msgid "Apply"
@@ -2912,11 +2949,18 @@ msgstr ""
 msgid "Are you sure the selected user(s) are spam?"
 msgstr ""
 
+#: .\admin\templates\users\workshop.html:15
+msgid "Upload"
+msgstr ""
+
 #: .\admin\templates\util\pagination.html:25
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
 
 #~ msgid "Submit"
+#~ msgstr ""
+
+#~ msgid "Institutions"
 #~ msgstr ""
 
