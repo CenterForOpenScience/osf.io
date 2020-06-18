@@ -13,7 +13,7 @@
                         {% blocktrans with objectName=object.name startDate=object.start_date endDate=object.end_date %}Are you sure you want to delete <b>{{ objectName }}</b>? It is scheduled for {{ startDate }} -
                         {{ endDate }}{% endblocktrans %}
                     </p>
-                    <input class="btn btn-primary" type="submit" value="Confirm" />
+                    <input class="btn btn-primary" type="submit" value="{% trans 'Confirm' %}" />
                 </form>
             </div>
         </div>

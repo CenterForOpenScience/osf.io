@@ -17,7 +17,7 @@
                 <h4>{% blocktrans %}Confirm Institution Delete{% endblocktrans %}</h4>
                 <form action="" method="post">{% csrf_token %}
                     <p>{% blocktrans with objectName=object.name %}Are you sure you want to delete "{{ objectName }}"?{% endblocktrans %}</p>
-                    <input class="btn btn-primary" type="submit" value="Confirm" />
+                    <input class="btn btn-primary" type="submit" value="{% trans 'Confirm' %}" />
                 </form>
             </div>
         </div>

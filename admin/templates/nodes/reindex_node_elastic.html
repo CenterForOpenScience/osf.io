@@ -1,13 +1,13 @@
 <form class="well" method="post" action="{% url link guid=guid %}">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">x</button>
-        <h3>Are you sure you want to reindex this {{ resource_type }} (Elastic)? {{ guid }}</h3>
+        <h3>{% blocktrans %}Are you sure you want to reindex this {{ resource_type }} (Elastic)?{% endblocktrans %} {{ guid }}</h3>
     </div>
     {% csrf_token %}
     <div class="modal-footer">
-        <input class="btn btn-danger" type="submit" value="Confirm" />
+        <input class="btn btn-danger" type="submit" value="{% trans 'Confirm' %}" />
         <button type="button" class="btn btn-default" data-dismiss="modal">
-            Cancel
+            {% trans "Cancel" %}
         </button>
     </div>
 </form>
