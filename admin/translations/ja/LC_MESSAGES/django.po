@@ -1082,6 +1082,10 @@ msgstr "プロジェクト"
 msgid "addon"
 msgstr "アドオン"
 
+#: .\admin\templates\messages.html:44
+msgid "comment"
+msgstr "コメント"
+
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
 #: .\admin\templates\metrics\osf_statistics.html:6

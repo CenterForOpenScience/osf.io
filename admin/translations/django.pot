@@ -1075,6 +1075,10 @@ msgstr ""
 msgid "addon"
 msgstr ""
 
+#: .\admin\templates\messages.html:44
+msgid "comment"
+msgstr ""
+
 #: .\admin\templates\metrics\osf_metrics.html:7
 #: .\admin\templates\metrics\osf_metrics.html:26
 #: .\admin\templates\metrics\osf_statistics.html:6
