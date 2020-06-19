@@ -73,7 +73,7 @@ class TestInstitutionSummaryMetrics:
         ).save()
 
         import time
-        time.sleep(2)
+        time.sleep(5)
 
         # Tests authorized user with institution with metrics
         resp = app.get(url, auth=admin.auth)

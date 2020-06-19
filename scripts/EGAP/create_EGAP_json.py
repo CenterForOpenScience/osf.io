@@ -27,7 +27,6 @@ schema_to_spreadsheet_mapping = [
     {'q6': 'B4 FACULTY MEMBER?'},
     {'q8': 'B5 PROSPECTIVE OR RETROSPECTIVE?'},
     {'q10': 'B6 EXPERIMENTAL STUDY?'},
-    {'q11': 'B7 DATE OF START OF STUDY'},
     {'q12': 'B8 GATE DATE'},
     {'q13': 'B9 PRESENTED AT EGAP MEETING?'},
     {'q14': 'B10 PRE-ANALYSIS PLAN WITH REGISTRATION?'},

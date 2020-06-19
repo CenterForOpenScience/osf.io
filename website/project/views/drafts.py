@@ -1,6 +1,7 @@
 import functools
 from rest_framework import status as http_status
 import itertools
+import html
 
 from operator import itemgetter
 
@@ -229,6 +230,13 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
 
     schema_data = data.get('schema_data', {})
     schema_data = rapply(schema_data, strip_html)
+
+    # Unencodes HTML special characters in filenames
+    if schema_data.get('uploader', {}).get('value'):
+        schema_data['uploader']['value'] = html.unescape(schema_data['uploader']['value'])
+    if schema_data.get('uploader', {}).get('extra'):
+        for extra in schema_data['uploader']['extra']:
+            extra['selectedFileName'] = html.unescape(extra['selectedFileName'])
 
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
