@@ -52,7 +52,7 @@ class SparseLinkedNodesList(SparseNodeMixin, LinkedNodesList):
     pass
 
 
-class SparseNodeLinkedRegistrationsList(SparseRegistrationMixin, NodeLinkedRegistrationsList):
+class SparseLinkedRegistrationsList(SparseRegistrationMixin, NodeLinkedRegistrationsList):
     pass
 
 

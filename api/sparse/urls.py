@@ -27,8 +27,8 @@ urlpatterns = [
     ),
     url(
         r'^nodes/(?P<node_id>\w+)/linked_registrations/$',
-        views.SparseNodeLinkedRegistrationsList.as_view(),
-        name=views.SparseNodeLinkedRegistrationsList.view_name,
+        views.SparseLinkedRegistrationsList.as_view(),
+        name=views.SparseLinkedRegistrationsList.view_name,
     ),
 
     url(
@@ -48,13 +48,13 @@ urlpatterns = [
     ),
     url(
         r'^registrations/(?P<node_id>\w+)/linked_nodes/$',
-        views.LinkedNodesList.as_view(),
+        views.SparseLinkedNodesList.as_view(),
         name=views.LinkedNodesList.view_name,
     ),
     url(
         r'^registrations/(?P<node_id>\w+)/linked_registrations/$',
-        views.SparseLinkedNodesList.as_view(),
-        name=views.NodeLinkedRegistrationsList.view_name,
+        views.SparseLinkedRegistrationsList.as_view(),
+        name=views.SparseLinkedRegistrationsList.view_name,
     ),
 
     url(
