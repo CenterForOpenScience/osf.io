@@ -115,7 +115,7 @@ def send_mail(
         to_addr = settings.TO_EMAIL_FOR_DEBUG
 
     logger.debug('Sending email...')
-    logger.debug(unicode('To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}','utf-8').format(**locals()))
+#    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}').format(**locals()))
 
     kwargs = dict(
         from_addr=from_addr,
