@@ -942,7 +942,6 @@ class TestSearchBugfix(OsfTestCase):
 
         _search(9, admin, name, 0)
 
-
     @enable_private_search
     @use_ja_analyzer
     def test_delete_component(self):
@@ -992,6 +991,64 @@ class TestSearchBugfix(OsfTestCase):
             _del_project(p)
 
         _search(2, admin, component_name, 0)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_visible_contributor(self):
+        """
+        目録表示メンバー(Bibliographic Contributor)ではないメンバーは、
+        そのプロジェクトを検索できるが、検索結果には含まれないことを
+        確認する。
+
+        オリジナル osf.io の実装では、visible を ON/OFF しても、即座に
+        検索結果に反映されない。
+        [GRDM-20003]
+        """
+
+        admin = factories.AuthUserFactory()
+        user1 = factories.AuthUserFactory()
+
+        def _create_project():
+            project = factories.ProjectFactory(
+                creator=admin, is_public=False)
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        i = 1
+        with run_celery_tasks():
+            p = _create_project()
+            p.add_contributor(user1)
+            p.set_visible(user1, False, save=True)
+
+        qs_title = 'category:project AND title:"{}"'.format(p.title)
+        qs_username = 'category:project AND contributors.id:"{}"'.format(user1._id)
+
+        _search(1, user1, qs_title, 1)
+        _search(2, user1, qs_username, 0)
+        _search(3, admin, qs_username, 0)
+
+        with run_celery_tasks():
+            p.set_visible(user1, True, save=True)
+
+        _search(4, user1, qs_title, 1)
+        _search(5, user1, qs_username, 1)
+        _search(6, admin, qs_username, 1)
+
+        with run_celery_tasks():
+            _del_project(p)
+
+        _search(7, user1, qs_title, 0)
+        _search(8, user1, qs_username, 0)
+        _search(9, admin, qs_username, 0)
 
 
 # see osf_tests/test_search_views.py

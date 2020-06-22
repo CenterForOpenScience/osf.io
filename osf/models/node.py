@@ -1182,14 +1182,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
+        contrib = None
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            contrib = Contributor.objects.filter(node=self, user=user, visible=False).first()
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
-            Contributor.objects.filter(node=self, user=user, visible=True).update(visible=False)
+            contrib = Contributor.objects.filter(node=self, user=user, visible=True).first()
         else:
             return
+        if contrib:
+            contrib.visible = visible
+            contrib.save()
+
         message = (
             NodeLog.MADE_CONTRIBUTOR_VISIBLE
             if visible
