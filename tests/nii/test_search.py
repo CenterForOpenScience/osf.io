@@ -943,6 +943,57 @@ class TestSearchBugfix(OsfTestCase):
         _search(9, admin, name, 0)
 
 
+    @enable_private_search
+    @use_ja_analyzer
+    def test_delete_component(self):
+        """
+        コンポーネントを削除すると検索結果から消えることを確認する。
+
+        オリジナル osf.io の実装では、コンポーネントを削除したあとも、
+        検索結果に残る。
+        [GRDM-19998]
+        """
+
+        admin = factories.AuthUserFactory()
+
+        def _create_project(project_name, component_name):
+            project = factories.ProjectFactory(
+                title=project_name,
+                creator=admin, is_public=False)
+            component = factories.NodeFactory(
+                parent=project,
+                description='',
+                title=component_name,
+                creator=admin,
+                is_public=False
+            )
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        project_name = u'プロジェクト'
+        component_name = u'コンポーネント'
+        i = 1
+        with run_celery_tasks():
+            p = _create_project(project_name, component_name)
+
+        _search(1, admin, component_name, 1)
+
+        with run_celery_tasks():
+            # 親プロジェクトを削除すると、コンポーネントも削除される
+            _del_project(p)
+
+        _search(2, admin, component_name, 0)
+
+
 # see osf_tests/test_search_views.py
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task

@@ -2223,8 +2223,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth)
         return updated
 
-    def add_remove_node_log(self, auth, date):
+    def add_remove_node_log(self, auth, date, save=True):
         node_to_log = self.parent_node if self.parent_node else self
+        if node_to_log != self:
+            save = True
         log_action = NodeLog.NODE_REMOVED if self.parent_node else NodeLog.PROJECT_DELETED
         node_to_log.add_log(
             log_action,
@@ -2233,7 +2235,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             },
             auth=auth,
             log_date=date,
-            save=True,
+            save=save,
         )
 
     def remove_node(self, auth, date=None):
@@ -2265,7 +2267,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             # Add log to parents
             node.is_deleted = True
             node.deleted_date = date
-            node.add_remove_node_log(auth=auth, date=log_date)
+            node.add_remove_node_log(auth=auth, date=log_date, save=False)
+            node.save()
             project_signals.node_deleted.send(node)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date'])
