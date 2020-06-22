@@ -18,6 +18,7 @@ from osf.models.admin_log_entry import (
     PREPRINT_REMOVED,
     PREPRINT_RESTORED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     APPROVE_WITHDRAWAL,
     REJECT_WITHDRAWAL
 )
@@ -380,19 +381,29 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
         preprint_ids = [
             pid for pid in request.POST.keys()
-            if pid != 'csrfmiddlewaretoken'
+            if pid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
             osf_admin_change_status_identifier(preprint)
-            preprint.confirm_spam(save=True)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=pid,
-                object_repr='Preprint',
-                message='Confirmed SPAM: {}'.format(pid),
-                action_flag=CONFIRM_SPAM
-            )
+            if ('spam_confirm' in list(request.POST.keys())):
+                preprint.confirm_spam(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=pid,
+                    object_repr='Preprint',
+                    message='Confirmed SPAM: {}'.format(pid),
+                    action_flag=CONFIRM_SPAM
+                )
+            elif ('ham_confirm' in list(request.POST.keys())):
+                preprint.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=pid,
+                    object_repr='Preprint',
+                    message='Confirmed HAM: {}'.format(pid),
+                    action_flag=CONFIRM_HAM
+                )
         return redirect('preprints:flagged-spam')
 
 

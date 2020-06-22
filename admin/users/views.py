@@ -37,6 +37,7 @@ from osf.models.admin_log_entry import (
     USER_RESTORED,
     USER_GDPR_DELETED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     REINDEX_ELASTIC,
 )
 
@@ -253,21 +254,31 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
         user_ids = [
             uid for uid in request.POST.keys()
-            if uid != 'csrfmiddlewaretoken'
+            if uid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
         for uid in user_ids:
             user = OSFUser.load(uid)
-            if 'spam_flagged' in user.system_tags:
-                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
-            user.confirm_spam()
-            user.save()
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=uid,
-                object_repr='User',
-                message='Confirmed SPAM: {}'.format(uid),
-                action_flag=CONFIRM_SPAM
-            )
+            if ('spam_confirm' in list(request.POST.keys())):
+                if 'spam_flagged' in user.system_tags:
+                    user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+                user.confirm_spam()
+                user.save()
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=uid,
+                    object_repr='User',
+                    message='Confirmed SPAM: {}'.format(uid),
+                    action_flag=CONFIRM_SPAM
+                )
+            elif ('ham_confirm' in list(request.POST.keys())):
+                user.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=uid,
+                    object_repr='User',
+                    message='Confirmed HAM: {}'.format(uid),
+                    action_flag=CONFIRM_HAM
+                )
         return redirect('users:flagged-spam')
 
 
