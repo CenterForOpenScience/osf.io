@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-18 20:30+0900\n"
-"PO-Revision-Date: 2020-06-18 20:30+0900\n"
+"POT-Creation-Date: 2020-06-22 10:23+0900\n"
+"PO-Revision-Date: 2020-06-22 10:23+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -52,7 +52,7 @@ msgstr ""
 #: .\admin\templates\users\GDPR_delete_user.html:12
 #: .\admin\templates\users\add_system_tag.html:12
 #: .\admin\templates\users\reindex_user_elastic.html:9
-#: .\admin\templates\users\remove_2_factor.html:16
+#: .\admin\templates\users\remove_2_factor.html:12
 #: .\admin\templates\users\remove_spam_user.html:12
 #: .\admin\templates\users\remove_user.html:12
 #: .\admin\templates\users\restore_ham_user.html:12
@@ -1748,7 +1748,7 @@ msgstr ""
 #: .\admin\templates\users\merge_accounts_modal.html:14
 #: .\admin\templates\users\notes.html:18
 #: .\admin\templates\users\reindex_user_elastic.html:11
-#: .\admin\templates\users\remove_2_factor.html:19
+#: .\admin\templates\users\remove_2_factor.html:15
 #: .\admin\templates\users\remove_spam_user.html:15
 #: .\admin\templates\users\remove_user.html:15
 #: .\admin\templates\users\reset.html:16
@@ -2814,6 +2814,13 @@ msgstr ""
 
 #: .\admin\templates\users\remove_2_factor.html:5
 msgid "This will remove two factor auth."
+msgstr ""
+
+#: .\admin\templates\users\remove_2_factor.html:8
+msgid ""
+"Removing this will let the user log in with only one form of authentication."
+"The only way to reverse this action is for the user to re-enable the addon "
+"after logging in."
 msgstr ""
 
 #: .\admin\templates\users\remove_spam_user.html:5
