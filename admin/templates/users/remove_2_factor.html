@@ -5,11 +5,7 @@
         <h3>{% trans "This will remove two factor auth." %}</h3>
     </div>
     <div class="modal-body">
-        {% trans "Removing this will let the user log in
-        with only one form of authentication.
-        The only way to reverse this action is
-        for the user to re-enable the addon
-        after logging in." %}
+        {% trans "Removing this will let the user log in with only one form of authentication.The only way to reverse this action is for the user to re-enable the addon after logging in." %}
         {% csrf_token %}
     </div>
     <div class="modal-footer">
