@@ -34,6 +34,8 @@ EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
+    input_encoding='utf-8',
+    output_encoding='utf-8',
 )
 
 HTML_EXT = '.html.mako'
