@@ -176,9 +176,21 @@ from django.db.models.signals import post_save, post_delete
 from osf.models.contributor import Contributor
 
 @receiver(post_save, sender=Contributor)
-@receiver(post_delete, sender=Contributor)
-def update_contributors(sender, instance, **kwargs):
+def update_contributor(sender, instance, **kwargs):
     node = instance.node
     if node.is_deleted:
         return
+    if node.contributors.all().count() == 1 and \
+       node.contributors.filter(guids___id=node.creator._id):
+        # ignore first node.save() (avoid redundant updating)
+        return
+
+    node.update_search()
+
+@receiver(post_delete, sender=Contributor)
+def delete_contributor(sender, instance, **kwargs):
+    node = instance.node
+    if node.is_deleted:
+        return
+
     node.update_search()
