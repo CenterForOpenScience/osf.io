@@ -72,6 +72,7 @@ class Mail(object):
 
 def render_message(tpl_name, **context):
     """Render an email message."""
+    _tpl_lookup = TemplateLookup(output_encoding='utf-8')
     tpl = _tpl_lookup.get_template(tpl_name)
     return tpl.render(**context)
 
