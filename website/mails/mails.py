@@ -34,9 +34,6 @@ EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
-    default_filters=[
-        'unicode',  # default filter; must set explicitly when overriding
-    ],
 )
 
 HTML_EXT = '.html.mako'
