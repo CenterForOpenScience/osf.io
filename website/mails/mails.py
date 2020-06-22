@@ -34,6 +34,7 @@ EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
+    output_encoding='utf-8',
 )
 
 HTML_EXT = '.html.mako'
@@ -72,7 +73,6 @@ class Mail(object):
 
 def render_message(tpl_name, **context):
     """Render an email message."""
-    _tpl_lookup = TemplateLookup(output_encoding='utf-8')
     tpl = _tpl_lookup.get_template(tpl_name)
     return tpl.render(**context)
 
