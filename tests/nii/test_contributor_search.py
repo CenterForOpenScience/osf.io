@@ -212,7 +212,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
         self.search_contrib(self.TOTAL_USERS)
         self.search_project(self.TOTAL_PROJECTS)
 
-        migrate(delete=False, remove=False,
+        migrate(delete=False, remove=True,
                 index=None, app=self.app.app)
         # after migrate (= rebuild_search)
         self.search_contrib(self.TOTAL_USERS)
@@ -220,7 +220,7 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
 
     def test_rebuild_search_check_not_normalized(self):
         with mock.patch('website.search_migration.migrate.fill_and_normalize'):
-            migrate(delete=False, remove=False,
+            migrate(delete=False, remove=True,
                     index=None, app=self.app.app)
             # after migrate (= rebuild_search)
 

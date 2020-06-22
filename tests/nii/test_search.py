@@ -360,7 +360,7 @@ def retry_call_func(func, **kwargs):
 
 @enable_private_search
 def rebuild_search(self_):
-    migrate(delete=False, remove=False,
+    migrate(delete=False, remove=True,
             index=None, app=self_.app.app)
 
 def run_after_rebuild_search(self_, func, **kwargs):
