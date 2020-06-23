@@ -158,7 +158,7 @@ class PreprintProviderDetail(PermissionRequiredMixin, View):
 
 class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     permission_required = 'osf.change_preprintprovider'
-    template_name = 'preprint_providers/update_preprint_provider_form.html'
+    template_name = 'preprint_providers/create_or_update_preprint_provider_form.html'
     raise_exception = True
     model = PreprintProvider
     form_class = PreprintProviderForm
@@ -256,7 +256,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             {
                 'preprint_provider_id': self.kwargs.get('preprint_provider_id'),
                 'subject_ids': data['subject_ids'],
-                'taxonomy_form': PreprintProviderCustomTaxonomyForm(request.POST),
+                'taxonomy_form': PreprintProviderCustomTaxonomyForm(),
                 'taxonomies_created': False if not preprint_provider.subjects.exists() else True
             }
         )
