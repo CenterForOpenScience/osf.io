@@ -28,6 +28,8 @@ from framework.email import tasks
 from osf import features
 from website import settings
 
+from flask_babel import lazy_gettext as _
+
 logger = logging.getLogger(__name__)
 
 EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
@@ -69,8 +71,7 @@ class Mail(object):
         return render_message(tpl_name, **context)
 
     def subject(self, **context):
-        lookup_obj = TemplateLookup(imports=['from flask_babel import gettext as _',])
-        return Template(self._subject, lookup=lookup_obj).render(**context)
+        return Template(self._subject).render(**context)
 
 
 def render_message(tpl_name, **context):
@@ -439,7 +440,7 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
 
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
-    subject='${_("A GakuNin RDM user has requested access to your %(projectOrComponent)s") % dict(projectOrComponent=_(node.project_or_component))}'
+    subject=_('A GakuNin RDM user has requested access to your %(projectOrComponent)s') % dict(projectOrComponent=_(node.project_or_component))
 )
 
 ACCESS_REQUEST_DENIED = Mail(
