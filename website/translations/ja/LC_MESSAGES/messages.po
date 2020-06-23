@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-23 18:04+0900\n"
+"POT-Creation-Date: 2020-06-23 19:59+0900\n"
 "PO-Revision-Date: 2020-06-23 18:04+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -1030,11 +1030,6 @@ msgstr "ライブラリ"
 msgid "Select"
 msgstr "選択"
 
-#: website/mails/mails.py:443
-#, python-format
-msgid "A GakuNin RDM user has requested access to your %(projectOrComponent)s"
-msgstr "GakuNin RDMのユーザーからあなたの%(projectOrComponent)sへのアクセスの要求がありました"
-
 #: website/templates/base.mako:110
 msgid "Title"
 msgstr "タイトル"
@@ -1311,8 +1306,13 @@ msgstr "プロフィールデータを読込む"
 msgid "Read your primary email address."
 msgstr "プライマリメールアドレスを読込む"
 
+#: website/templates/messages.mako:21
+#, python-format
+msgid "A GakuNin RDM user has requested access to your %(projectOrComponent)s"
+msgstr "GakuNin RDMのユーザーからあなたの%(projectOrComponent)sへのアクセスの要求がありました"
+
 # ##Please translate carefully with html.
-#: website/templates/messages.mako:22
+#: website/templates/messages.mako:23
 msgid ""
 "\n"
 "<div style=\"text-align: center\">\n"
@@ -1332,7 +1332,7 @@ msgstr ""
 "href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">プライバシーポリシー</a>を更新しました。注意深くお読みください。</h4>"
 
 # ##Please translate carefully with html.
-#: website/templates/messages.mako:26
+#: website/templates/messages.mako:27
 msgid ""
 "<h5><input type=\"checkbox\" id=\"accept\" style=\"margin-right: 5px\">I "
 "have read and agree to these terms.</input></h5>\n"
@@ -1343,7 +1343,7 @@ msgstr ""
 "    </div>"
 
 # ##Please translate carefully with html.
-#: website/templates/messages.mako:28
+#: website/templates/messages.mako:29
 msgid ""
 "<button class=\"btn btn-primary\" data-dismiss=\"alert\" id=\"continue\" "
 "disabled>Continue</button>\n"

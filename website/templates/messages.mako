@@ -18,6 +18,7 @@ ${_("View all information associated with this account, including for private pr
 ${_("View and edit all information associated with this account, including for private projects.")}
 ${_("Read your profile data.")}
 ${_("Read your primary email address.")}
+${_("A GakuNin RDM user has requested access to your %(projectOrComponent)s") % dict(projectOrComponent=_(node.project_or_component))}
 
 ${_("""
 <div style="text-align: center">
