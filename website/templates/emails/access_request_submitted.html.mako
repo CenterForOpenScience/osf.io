@@ -19,9 +19,9 @@
     <br>
     GRDMチーム<br>
     <br>
-    詳細をご希望ですか？GRDMについては https://rdm.nii.ac.jp/ を、支持機構である国立情報学研究所については https://nii.ac.jp/ をご覧ください。<br>
+    詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、支持機構である国立情報学研究所についてはhttps://nii.ac.jp/をご覧ください。<br>
     <br>
-    お問い合わせは rdm_support@nii.ac.jp までお願いいたします。<br>
+    お問い合わせはrdm_support@nii.ac.jpまでお願いいたします。<br>
 
 
 </tr>
