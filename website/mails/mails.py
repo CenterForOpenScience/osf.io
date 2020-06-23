@@ -104,7 +104,7 @@ def send_mail(
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
-    message = mail.html(**context)
+    message = unicode(mail.html(**context), 'utf-8')
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
 
@@ -115,7 +115,7 @@ def send_mail(
         to_addr = settings.TO_EMAIL_FOR_DEBUG
 
     logger.debug('Sending email...')
-#    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}').format(**locals()))
+    logger.debug(u'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}').format(**locals()))
 
     kwargs = dict(
         from_addr=from_addr,
