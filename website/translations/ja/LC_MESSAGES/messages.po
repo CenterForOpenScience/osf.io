@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-23 18:04+0900\n"
-"PO-Revision-Date: 2020-06-23 18:04+0900\n"
+"POT-Creation-Date: 2020-06-03 16:28+0900\n"
+"PO-Revision-Date: 2020-06-03 16:30+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1029,11 +1029,6 @@ msgstr "ライブラリ"
 #: addons/zotero/templates/zotero_node_settings.mako:69
 msgid "Select"
 msgstr "選択"
-
-#: website/mails/mails.py:443
-#, python-format
-msgid "A GakuNin RDM user has requested access to your %(projectOrComponent)s"
-msgstr "GakuNin RDMのユーザーからあなたの%(projectOrComponent)sへのアクセスの要求がありました"
 
 #: website/templates/base.mako:110
 msgid "Title"
