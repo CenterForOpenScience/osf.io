@@ -13,10 +13,14 @@
             'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
             'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
             'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
-            'processCustomTaxonomyUrl': "{% url 'preprint_providers:process_custom_taxonomy' preprint_provider_id %}",
             'originalSubjects': {{ subject_ids | escapejs }}
         };
     </script>
+    {% if show_taxonomies %}
+        <script>
+            window.templateVars.processCustomTaxonomyUrl = "{% url 'preprint_providers:process_custom_taxonomy' preprint_provider_id %}",
+        </script>
+    {% endif %}
 
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />

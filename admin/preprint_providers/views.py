@@ -23,8 +23,6 @@ from osf.models import PreprintProvider, Subject, NodeLicense, OSFUser
 from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as osf_settings
 
-# When preprint_providers exclusively use Subject relations for creation, set this to False
-SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
 FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'primary_collection']
 
 
@@ -465,14 +463,14 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
 class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_preprintprovider'
     raise_exception = True
-    template_name = 'preprint_providers/create.html'
+    template_name = 'preprint_providers/create_or_update_preprint_provider_form.html'
     success_url = reverse_lazy('preprint_providers:list')
     model = PreprintProvider
     form_class = PreprintProviderForm
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
+        kwargs['show_taxonomies'] = False
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
 
