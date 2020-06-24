@@ -92,10 +92,10 @@
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016-2020 国立情報学研究所 |
                                     <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">プライバシーポリシー</a>
                                 </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">〒101-8430 東京都千代田区一ツ橋2-1-2</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016-2020 National Institute of Informatics |
                                     <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>
                                 </p>
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">〒101-8430 東京都千代田区一ツ橋2-1-2</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">${self.footer()}</p>
                             </td>
