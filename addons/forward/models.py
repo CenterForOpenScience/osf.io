@@ -44,7 +44,7 @@ class NodeSettings(DirtyFieldsMixin, BaseNodeSettings):
             else:
                 user = request.user
 
-            self.owner.check_spam(user, {'addons_forward_node_settings__url'}, get_headers_from_request(request), force=True)
+            self.owner.do_check_spam(user, {'addons_forward_node_settings__url'}, get_headers_from_request(request), force=True)
 
     def clean(self):
         if self.url and self.owner._id in self.url:

@@ -2012,7 +2012,7 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def _get_spam_content(self, saved_fields, force=False):
+    def _get_spam_content(self, saved_fields):
         """
         This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
         django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
@@ -2022,10 +2022,7 @@ class SpamOverrideMixin(SpamMixin):
         :param force: bool if set to true `get_spam_fields` will be ignored
         :return: str
         """
-        if force:
-            spam_fields = saved_fields
-        else:
-            spam_fields = self.get_spam_fields(saved_fields)
+        spam_fields = self.get_spam_fields(saved_fields)
 
         content = []
         for field in spam_fields:
@@ -2039,7 +2036,7 @@ class SpamOverrideMixin(SpamMixin):
             return None
         return b' '.join(content).decode()
 
-    def check_spam(self, user, saved_fields, request_headers, force=False):
+    def check_spam(self, user, saved_fields, request_headers):
         """
         This function will take a set of fields on the model and send them to an external service to check if the values
         of those fields are spam. Typically these fields will be an intersection of the changed fields being saved and
@@ -2061,7 +2058,7 @@ class SpamOverrideMixin(SpamMixin):
         if user.spam_status == SpamStatus.HAM:
             return False
 
-        content = self._get_spam_content(saved_fields, force)
+        content = self._get_spam_content(saved_fields)
         if not content:
             return
         is_spam = self.do_check_spam(
