@@ -4,12 +4,13 @@
 <tr>
   <td style="border-collapse: collapse;">
     The Japanese statement will be followed by an English statement.<br>
+    <br>
     <%!
         from website import settings
     %>
     こんにちは、${admin.fullname}さん<br>
     <br>
-    <a href="${requester.absolute_url}">${requester.fullname}</a>から、あなたの${node.project_or_component}(<a href="${node.absolute_url}">${node.title}</a>)へのアクセス申請がありました。<br>
+    <a href="${requester.absolute_url}">${requester.fullname}</a>から、あなたの${'プロジェクト' if node.project_or_component == 'project' else 'コンポーネント'}${node.project_or_component}(<a href="${node.absolute_url}">${node.title}</a>)へのアクセス申請がありました。<br>
     <br>
     申請をレビューするには<a href="${contributors_url}">こちら</a>をクリックしてください。アクセスの許可/拒否および権限設定ができます。<br>
     <br>
