@@ -40,7 +40,7 @@
     <br>
     The GRDM Team<br>
     <br>
-    Want more information? Visit https://rdm.nii.ac.jp/ to learn about GRDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
+    Want more information? Visit https://rdm.nii.ac.jp/ to learn about GRDM, or https://www.nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 
