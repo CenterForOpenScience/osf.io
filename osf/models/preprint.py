@@ -636,7 +636,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
             if user:
-                self.check_spam(user, saved_fields, request_headers)
+                self.check_spam(user, self.get_spam_fields(saved_fields), request_headers)
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')

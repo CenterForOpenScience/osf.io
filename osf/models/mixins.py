@@ -2021,9 +2021,8 @@ class SpamOverrideMixin(SpamMixin):
         :param saved_fields: set
         :return: str
         """
-        spam_fields = self.get_spam_fields(saved_fields)
         content = []
-        for field in spam_fields:
+        for field in saved_fields:
             exclude_null = {field + '__isnull': False}
             values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
             if values:
