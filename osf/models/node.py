@@ -269,6 +269,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
+        'addons_forward_node_settings__url'  # the often spammed redirect URL
     }
 
     # Fields that are writable by Node.update
@@ -1139,8 +1140,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
-        return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
-            saved_fields)
+        if self.is_public and 'is_public' in saved_fields:
+            if self.get_addon('forward'):
+                return self.SPAM_CHECK_FIELDS
+            else:
+                return self.SPAM_CHECK_FIELDS.difference('addons_forward_node_settings__url')
+
+        else:
+            return self.SPAM_CHECK_FIELDS.intersection(saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.

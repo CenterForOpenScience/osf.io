@@ -2013,17 +2013,7 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def _get_spam_content(self, saved_fields):
-        """
-        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
-        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
-        field of {'addons_forward_node_settings__url'}.
-
-        :param saved_fields: set the saved_fields to check for spam or an arbitrary field if `force` kwarg is used
-        :param force: bool if set to true `get_spam_fields` will be ignored
-        :return: str
-        """
         spam_fields = self.get_spam_fields(saved_fields)
-
         content = []
         for field in spam_fields:
             exclude_null = {field + '__isnull': False}
