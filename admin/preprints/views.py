@@ -379,37 +379,33 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
     def delete(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
-        preprint_ids = [
-            pid for pid in request.POST.keys()
-            if pid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
-        ]
-
-        if 'spam_confirm' in list(request.POST.keys()):
-            action = 'spam'
-        elif 'ham_confirm' in list(request.POST.keys()):
-            action = 'ham'
+        preprint_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_HAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_SPAM
+            elif key != 'csrfmiddlwaretoken':
+                preprint_ids.append(key)
 
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
             osf_admin_change_status_identifier(preprint)
-            if action == 'spam':
+
+            if action == 'SPAM':
                 preprint.confirm_spam(save=True)
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=pid,
-                    object_repr='Preprint',
-                    message='Confirmed SPAM: {}'.format(pid),
-                    action_flag=CONFIRM_SPAM
-                )
-            elif action == 'ham':
+            elif action == 'HAM':
                 preprint.confirm_ham(save=True)
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=pid,
-                    object_repr='Preprint',
-                    message='Confirmed HAM: {}'.format(pid),
-                    action_flag=CONFIRM_HAM
-                )
+
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=pid,
+                object_repr='Preprint',
+                message=f'Confirmed {action}: {pid}',
+                action_flag=action_flag
+            )
         return redirect('preprints:flagged-spam')
 
 

@@ -252,39 +252,34 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     def delete(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
-        user_ids = [
-            uid for uid in request.POST.keys()
-            if uid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
-        ]
 
-        if 'spam_confirm' in list(request.POST.keys()):
-            action = 'spam'
-        elif 'ham_confirm' in list(request.POST.keys()):
-            action = 'ham'
+        user_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_SPAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_HAM
+            elif key != 'csrfmiddlwaretoken':
+                user_ids.append(key)
 
         for uid in user_ids:
             user = OSFUser.load(uid)
-            if action == 'spam':
-                if 'spam_flagged' in user.system_tags:
-                    user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+
+            if action == 'SPAM':
                 user.confirm_spam()
-                user.save()
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=uid,
-                    object_repr='User',
-                    message='Confirmed SPAM: {}'.format(uid),
-                    action_flag=CONFIRM_SPAM
-                )
-            elif action == 'ham':
+            elif action == 'HAM':
                 user.confirm_ham(save=True)
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=uid,
-                    object_repr='User',
-                    message='Confirmed HAM: {}'.format(uid),
-                    action_flag=CONFIRM_HAM
-                )
+
+            user.save()
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=uid,
+                object_repr='User',
+                message=f'Confirmed {action}: {uid}',
+                action_flag=action_flag
+            )
         return redirect('users:flagged-spam')
 
 
