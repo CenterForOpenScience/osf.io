@@ -438,7 +438,7 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
 
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
-    subject='GakuNin RDMのユーザーからあなたの${node.project_or_component}へのアクセスの要求がありました / A GakuNin RDM user has requested access to your ${node.project_or_component}'
+    subject='GakuNin RDMのユーザーからあなたの${u"プロジェクト" if node.project_or_component == "project" else u"コンポーネント"}へのアクセスの要求がありました / A GakuNin RDM user has requested access to your ${node.project_or_component}'
 )
 
 ACCESS_REQUEST_DENIED = Mail(
