@@ -2013,9 +2013,16 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def _get_spam_content(self, saved_fields):
+        """
+        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
+        field of {'addons_forward_node_settings__url'}.
+
+        :param saved_fields: set
+        :return: str
+        """
         spam_fields = self.get_spam_fields(saved_fields)
         content = []
-
         for field in spam_fields:
             exclude_null = {field + '__isnull': False}
             values = list(self.__class__.objects.filter(id=self.id, **exclude_null).values_list(field, flat=True))
@@ -2028,20 +2035,6 @@ class SpamOverrideMixin(SpamMixin):
         return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
-        """
-        This function will take a set of fields on the model and send them to an external service to check if the values
-        of those fields are spam. Typically these fields will be an intersection of the changed fields being saved and
-        SPAM_CHECK_FIELDS, but if `force` is set to True any field may be checked for.
-
-        :param user:
-        :param saved_fields: set the field to check for spam.
-        :param request_headers:
-        :param force: force these exact saved fields to be checked, regardless of `get_spam_fields`,
-        this shoudn't happened on every save, but is sometimes appropriate if the spam is on a closely related model
-        (like NodeSettings) which doesn't have a SpamMixin itself. In that situation the field is on a join. For example
-        `addons_forward_node_settings__url` is passed as string for checking the Forward addon.
-        :return:
-        """
         if not settings.SPAM_CHECK_ENABLED:
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
