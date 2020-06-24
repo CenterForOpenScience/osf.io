@@ -383,10 +383,16 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
             pid for pid in request.POST.keys()
             if pid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
+
+        if 'spam_confirm' in list(request.POST.keys()):
+            action = 'spam'
+        elif 'ham_confirm' in list(request.POST.keys()):
+            action = 'ham'
+
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
             osf_admin_change_status_identifier(preprint)
-            if ('spam_confirm' in list(request.POST.keys())):
+            if action == 'spam':
                 preprint.confirm_spam(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
@@ -395,7 +401,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
                     message='Confirmed SPAM: {}'.format(pid),
                     action_flag=CONFIRM_SPAM
                 )
-            elif ('ham_confirm' in list(request.POST.keys())):
+            elif action == 'ham':
                 preprint.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,

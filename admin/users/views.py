@@ -256,9 +256,15 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
             uid for uid in request.POST.keys()
             if uid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
         ]
+
+        if 'spam_confirm' in list(request.POST.keys()):
+            action = 'spam'
+        elif 'ham_confirm' in list(request.POST.keys()):
+            action = 'ham'
+
         for uid in user_ids:
             user = OSFUser.load(uid)
-            if ('spam_confirm' in list(request.POST.keys())):
+            if action == 'spam':
                 if 'spam_flagged' in user.system_tags:
                     user.tags.through.objects.filter(tag__name='spam_flagged').delete()
                 user.confirm_spam()
@@ -270,7 +276,7 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
                     message='Confirmed SPAM: {}'.format(uid),
                     action_flag=CONFIRM_SPAM
                 )
-            elif ('ham_confirm' in list(request.POST.keys())):
+            elif action == 'ham':
                 user.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
