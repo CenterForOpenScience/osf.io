@@ -20,7 +20,16 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import Tag
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import (
+    AbstractNode,
+    DraftRegistration,
+    OSFGroup,
+    OSFUser,
+    Preprint,
+    PreprintProvider,
+    RecentlyAddedContributor,
+    Registration,
+)
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import mails, language, settings
@@ -867,21 +876,31 @@ def claim_user_form(auth, **kwargs):
 def _add_related_claimed_tag_to_user(pid, user):
     """
     Adds claimed tag to incoming users, depending on whether the resource has related source tags
-    :param pid: guid of either the node or the preprint
+    :param pid: guid of either the node or the preprint or the registration
     :param user: the claiming user
     """
     node = AbstractNode.load(pid)
     preprint = Preprint.load(pid)
+    registration = Registration.load(pid)
     osf_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('osf'), system=True)
-    if node:
-        node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
-        if node_source_tags.exists():
-            for tag in node_source_tags:
-                claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
-                                                                  system=True)
-                user.add_system_tag(claimed_tag)
+    if registration:
+        registration_id = registration.provider._id
+        registration_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(registration_id, 'registry'), system=True)
+        user.add_system_tag(registration_claimed_tag)
+    elif node:
+        if node.is_collected:
+            collection_provider_id = node.collecting_metadata_list[0].collection.provider._id
+            collection_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(collection_provider_id, 'collections'), system=True)
+            user.add_system_tag(collection_claimed_tag)
         else:
-            user.add_system_tag(osf_claimed_tag)
+            node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
+            if node_source_tags.exists():
+                for tag in node_source_tags:
+                    claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
+                                                                    system=True)
+                    user.add_system_tag(claimed_tag)
+            else:
+                user.add_system_tag(osf_claimed_tag)
     elif preprint:
         provider_id = preprint.provider._id
         preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),

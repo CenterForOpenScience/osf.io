@@ -9,9 +9,9 @@
     <br>
     ${confirmation_url}<br>
     <br>
-    Sincerely yours,<br>
+    Sincerely,<br>
     <br>
-    Your ${provider} and OSF teams<br>
+    Open Science Framework Robot<br>
 
 </tr>
 </%def>

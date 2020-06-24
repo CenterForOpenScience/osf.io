@@ -197,9 +197,13 @@ CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
     subject='OSF Account Verification, {}'.format(provider)
 )
-CONFIRM_EMAIL_REGISTRIES_OSF = Mail(
-    'confirm_registries_osf',
-    subject='OSF Account Verification, OSF Registries'
+CONFIRM_EMAIL_COLLECTIONS = lambda collection: Mail(
+    'confirm_collections',
+    subject='OSF Account Verification, {}'.format(collection)
+)
+CONFIRM_EMAIL_REGISTRIES = lambda template, registration_provider: Mail(
+    'confirm_registries_{}'.format(template),
+    subject='OSF Account Verification, {}'.format(registration_provider)
 )
 CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
     'confirm_moderation',
