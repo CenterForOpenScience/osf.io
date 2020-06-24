@@ -69,7 +69,7 @@ class Mail(object):
         return render_message(tpl_name, **context)
 
     def subject(self, **context):
-        return Template(self._subject).render(**context)
+        return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render(**context)
 
 
 def render_message(tpl_name, **context):
@@ -103,7 +103,7 @@ def send_mail(
 
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
-    subject = unicode(mail.subject(**context), 'utf-8')
+    subject = mail.subject(**context)
     message = unicode(mail.html(**context), 'utf-8')
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
