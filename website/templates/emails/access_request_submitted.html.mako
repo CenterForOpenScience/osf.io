@@ -1,3 +1,4 @@
+## -*- coding: utf-8 -*-
 <%inherit file="notify_base.mako" />
 
 <%def name="content()">
@@ -10,7 +11,7 @@
     %>
     こんにちは、${admin.fullname}さん<br>
     <br>
-    <a href="${requester.absolute_url}">${requester.fullname}</a>から、あなたの${u'プロジェクト' if node.project_or_component == 'project' else u'コンポーネント'}(<a href="${node.absolute_url}">${node.title}</a>)へのアクセス申請がありました。<br>
+    <a href="${requester.absolute_url}">${requester.fullname}</a>から、あなたの${'プロジェクト' if node.project_or_component == 'project' else 'コンポーネント'}(<a href="${node.absolute_url}">${node.title}</a>)へのアクセス申請がありました。<br>
     <br>
     申請をレビューするには<a href="${contributors_url}">こちら</a>をクリックしてください。アクセスの許可/拒否および権限設定ができます。<br>
     <br>
@@ -20,7 +21,7 @@
     <br>
     GRDMチーム<br>
     <br>
-    詳細をご希望ですか？GRDMについては https://rdm.nii.ac.jp/ を、支持機構である国立情報学研究所については https://nii.ac.jp/ をご覧ください。<br>
+    詳細をご希望ですか？GRDMについては https://rdm.nii.ac.jp/ を、支持機構である国立情報学研究所については https://www.nii.ac.jp/ をご覧ください。<br>
     <br>
     お問い合わせは rdm_support@nii.ac.jp までお願いいたします。<br>
 
