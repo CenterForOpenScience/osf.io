@@ -1756,6 +1756,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     def _get_spam_content(self, saved_fields):
+        """
+        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
+        field of {'addons_forward_node_settings__url'}.
+        :param saved_fields: set
+        :return: str
+        """
         content = []
         for field, contents in saved_fields.items():
             if field in self.SPAM_USER_PROFILE_FIELDS.keys():
