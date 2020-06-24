@@ -50,12 +50,25 @@
                             % if context.get('is_reviews_moderator_notification', False):
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
                                   % if not context.get('referrer', False):
+                                        本メールは${provider_name}の${'管理者' if is_admin else 'a モデレータ'}に送信されています。
+                                    % endif
+                                    モデレーション通知の設定は
+                                    <a href=${notification_settings_url}>通知設定</a>から変更できます。
+                                </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">
+                                  % if not context.get('referrer', False):
                                         You are receiving these emails because you are ${'an administrator' if is_admin else 'a moderator'} on ${provider_name}.
                                     % endif
                                     To change your moderation notification preferences,
                                     visit your <a href=${notification_settings_url}>notification settings</a>.
                                 </p>
                             % else:
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">メール受信頻度を変更するには、
+                                    % if context.get('can_change_node_preferences', False) and node:
+                                        <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">プロジェクトのメール設定</a>あるいは
+                                    % endif
+                                    あなたの<a href="${settings.DOMAIN + "settings/notifications/"}">ユーザー設定</a>からデフォルトのメール設定を変更してください。
+                                </p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
                                     % if context.get('can_change_node_preferences', False) and node:
                                         this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
@@ -76,9 +89,13 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2018National Institute of Informatics, All rights reserved. |
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016-2020 国立情報学研究所 |
+                                    <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">プライバシーポリシー</a>
+                                </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2016-2020 National Institute of Informatics |
                                     <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>
                                 </p>
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">〒101-8430 東京都千代田区一ツ橋2-1-2</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN</p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">${self.footer()}</p>
                             </td>
