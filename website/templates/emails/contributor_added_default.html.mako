@@ -12,13 +12,13 @@
     <br>
     このプロジェクト${u'から' if all_global_subscriptions_none else u'の'}通知メール${u'は送られてきません' if all_global_subscriptions_none else u'の送信が自動で始まります'}。メール通知設定はプロジェクトページまたはユーザー設定から変更できます： ${settings.DOMAIN + "settings/notifications/"}<br>
     <br>
-    手違いであなたが${node.title}と関連付けられている場合、プロジェクトのメンバーページに行ってご自分をメンバーから外してください。"<br>
+    手違いであなたが「${node.title}」と関連付けられている場合、プロジェクトのメンバーページに行ってご自分をメンバーから外してください。<br>
     <br>
     よろしくお願いいたします。<br>
     <br>
     GakuNin RDMロボット<br>
     <br>
-    詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、支持機構である国立情報科学研究所についてはhttps://www.nii.ac.jp/をご覧ください。<br>
+    詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、国立情報科学研究所についてはhttps://www.nii.ac.jp/をご覧ください。<br>
     <br>
     お問い合わせはrdm_support@nii.ac.jpまでお願いいたします。<br>
 
@@ -39,7 +39,7 @@
     <br>
     Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
-    Questions? Email ${osf_contact_email}<br>
+    Questions? Email rdm_support@nii.ac.jp<br>
 
 </tr>
 </%def>

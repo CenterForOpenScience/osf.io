@@ -2,6 +2,9 @@
     <tr>
         <td width="40" class="icon" valign="middle" style="border-collapse: collapse;font-size: 24px;color: #999;"> <img class="avatar" src="${profile_image_url}" width="48" alt="avatar" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;border-radius: 25px;"> </td>
         <td style="line-height: 17px;border-collapse: collapse;">
+            <span class="timestamp" style="color: grey;">${localized_timestamp}</span>に
+            <span class="person" style="font-weight: bold;">${user.fullname}</span>が
+            <span class="text" style="color: grey;">あなたの${provider + ' ' if page_type == 'file' else ''}${page_type}上のコメント(${parent_comment}")に返信しました / </span>
             <span class="person" style="font-weight: bold;">${user.fullname} </span>
             <span class="text" style="color: grey;"> replied to your comment "${parent_comment}" on your ${provider + ' ' if page_type == 'file' else ''}${page_type} </span>
             %if page_type == 'file' or page_type == 'wiki':
