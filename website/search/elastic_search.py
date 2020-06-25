@@ -658,6 +658,15 @@ def serialize_node(node, category):
 
     elastic_document = {
         'id': node._id,
+        # Contributors for Access control
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in node._contributors.all().order_by('contributor___order')
+            .values('guids___id')
+        ],
+        # Bibliographic Contributors (visible=True only) (show in results)
         'contributors': [
             {
                 'fullname': x['fullname'],
@@ -733,6 +742,15 @@ def serialize_preprint(preprint, category):
     normalized_tags = [unicode_normalize(tag) for tag in tags]
     elastic_document = {
         'id': preprint._id,
+        # Contributors for Access control
+        'node_contributors': [
+            {
+                'id': x['guids___id']
+            }
+            for x in preprint._contributors.all().order_by('preprintcontributor___order')
+            .values('guids___id')
+        ],
+        # Bibliographic Contributors (visible=True only)
         'contributors': [
             {
                 'fullname': x['fullname'],
@@ -808,11 +826,12 @@ def serialize_wiki(wiki_page, category):
         'node_title': node.title,
         'normalized_node_title': unicode_normalize(node.title),
         'node_url': node.url,
+        # Contributors for Access control
         'node_contributors': [
             {
                 'id': x['guids___id']
             }
-            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            for x in node._contributors.all().order_by('contributor___order')
             .values('guids___id')
         ],
         'url': w.deep_url,
@@ -892,11 +911,12 @@ def serialize_comment(comment, category):
         'user_id': c.user._id,
         'user': c.user.fullname,
         'normalized_user': unicode_normalize(c.user.fullname),
+        # Contributors for Access control
         'node_contributors': [
             {
                 'id': x['guids___id']
             }
-            for x in c.node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            for x in c.node._contributors.all().order_by('contributor___order')
             .values('guids___id')
         ],
         'text': text,
@@ -922,12 +942,21 @@ def update_comment(comment, index=None, bulk=False):
     else:
         client().index(index=index, doc_type=category, id=comment._id, body=elastic_document, refresh=True)
 
+def node_is_ignored(node):
+    is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
+    return node.is_deleted \
+        or (not settings.ENABLE_PRIVATE_SEARCH and not node.is_public) \
+        or node.archiving or node.is_spam \
+        or (node.spam_status == SpamStatus.FLAGGED
+            and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) \
+        or node.is_quickfiles or is_qa_node
+
 @requires_search
 def update_wiki(wiki_page, index=None, bulk=False):
     index = es_index(index)
     category = 'wiki'
 
-    if wiki_page.deleted:
+    if wiki_page.deleted or node_is_ignored(wiki_page.node):
         delete_wiki_doc(wiki_page._id, index=index)
         return None
 
@@ -1311,11 +1340,12 @@ def update_file(file_, index=None, delete=False):
         'is_registration': getattr(target, 'is_registration', False),
         'is_retracted': getattr(target, 'is_retracted', False),
         'extra_search_terms': clean_splitters(file_.name),
+        # Contributors for Access control
         'node_contributors': [
             {
                 'id': x['guids___id']
             }
-            for x in target._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            for x in target._contributors.all().order_by('contributor___order')
             .values('guids___id')
         ],
         'node_public': target.is_public,

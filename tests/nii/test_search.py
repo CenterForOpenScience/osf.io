@@ -81,10 +81,12 @@ def build_private_search_query(query_string, version=1, sort=None, highlight=Non
     return q
 
 
-def DEBUG(name, obj):
+def DEBUG(msg, obj=None):
     if ENABLE_DEBUG:
-        print('{}:\n{}'.format(name, se(u2s(obj))), file=sys.stderr)
-
+        if obj:
+            print('{}:\n{}'.format(msg, se(u2s(obj))), file=sys.stderr)
+        else:
+            print(msg, file=sys.stderr)
 
 # FIXME: use Unicode in Python3
 def s2u(obj):
@@ -358,15 +360,12 @@ def retry_call_func(func, **kwargs):
 
 @enable_private_search
 def rebuild_search(self_):
-    DEBUG('self._use_migrate', self_._use_migrate)
-    if self_._use_migrate:
-        migrate(delete=False, remove=False,
-                index=None, app=self_.app.app)
+    migrate(delete=False, remove=True,
+            index=None, app=self_.app.app)
 
 def run_after_rebuild_search(self_, func, **kwargs):
-    # run_test_all_after_rebuild_search から呼ばれたテスト内で
-    # rebuild_search を実行したい場合に利用する。
-    if self_._use_migrate:
+    # _use_migrate = False の場合は rebuild_search を実行しない。
+    if not hasattr(self_, '_use_migrate') or self_._use_migrate:
         rebuild_search(self_)
         # migrate() may not update elasticsearch-data immediately.
         retry_call_func(func, **kwargs)
@@ -391,6 +390,8 @@ def run_test_all_after_rebuild_search(self_, my_method_name, clear_index=False):
                 search.create_index(None)
             # migrate() may not update elasticsearch-data immediately.
             retry_call_func(getattr(self_, method_name))
+        # テスト中に run_after_rebuild_search を呼ぶ場合があるので、
+        # rebuild_search 呼び出し回数を上記 1 回だけにする。
         self_._use_migrate = False
 
 
@@ -402,8 +403,6 @@ class TestSearchJapanese(OsfTestCase):
     """
     SEARCH_ANALYZER_JAPANESEを使う場合のテスト
     """
-
-    _use_migrate = False
 
     @enable_private_search
     @use_ja_analyzer
@@ -677,7 +676,7 @@ class TestSearchJapanese(OsfTestCase):
             try:
                 assert_equal(len(results), 1)
             except Exception:
-                print('test ID={}: error'.format(_id), file=sys.stderr)
+                DEBUG('test ID={}: error'.format(_id))
                 raise
 
         patterns = (
@@ -779,8 +778,6 @@ class TestSearchBugfix(OsfTestCase):
     GakuNin RDM 版にて改修した挙動を確認するテスト
     """
 
-    _use_migrate = False
-
     @enable_private_search
     @use_ja_analyzer
     def setUp(self):
@@ -801,7 +798,7 @@ class TestSearchBugfix(OsfTestCase):
             test_count = 1
         for i in range(test_count):
             DEBUG('test ID={}: test_count {}/{}'.format(
-                _id, i+1, test_count), None)
+                _id, i+1, test_count))
             if i != 0:
                 time.sleep(1)
             res, results = query_for_normalize_tests(
@@ -810,7 +807,7 @@ class TestSearchBugfix(OsfTestCase):
             try:
                 assert_equal(len(results), num)
             except Exception:
-                DEBUG('test ID={}: error'.format(_id), None)
+                DEBUG('test ID={}: error'.format(_id))
                 raise
 
     @enable_private_search
@@ -870,6 +867,188 @@ class TestSearchBugfix(OsfTestCase):
                 search_user=search_user, qs=name, num=num)
             with run_celery_tasks():
                 del_func(obj)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_update_contributors(self):
+        """
+        Contributors に追加されたユーザーがそのプロジェクトを検索できる
+        ことを確認する。
+
+        Contributors から削除されたユーザーがそのプロジェクトを検索でき
+        なくなることを確認する。
+
+        Contributors に所属していたユーザー自体が削除されたら、その
+        プロジェクトの検索結果にそのユーザーが含まれなくなることを確認
+        する。
+
+        オリジナル osf.io の実装では Contributors を増減させた直後は
+        プロジェクトの検索結果に反映されず、
+        タイトルなどを更新すると検索結果に Contributors が反映された。
+        GRDM 版では検索可能範囲のアクセスコントロールのために
+        Conotributors を見ているため、修正した。
+        [GRDM-14562-4,19891]
+        """
+
+        admin = factories.AuthUserFactory()
+        user1 = factories.AuthUserFactory()
+        user2 = factories.AuthUserFactory()
+
+        def _create_project(name):
+            project = factories.ProjectFactory(
+                title=name,
+                creator=admin, is_public=False)
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        name = u'プロジェクト'
+        i = 1
+        with run_celery_tasks():
+            p = _create_project(name)
+
+        _search(1, admin, name, 1)  # visible
+        _search(2, user1, name, 0)  # invisible
+
+        with run_celery_tasks():
+            p.add_contributor(user1, auth=Auth(admin))
+            p.add_contributor(user2, auth=Auth(admin))
+
+        _search(3, user1, name, 1)
+
+        with run_celery_tasks():
+            p.remove_contributor(user1, auth=Auth(admin))
+
+        _search(4, user1, name, 0)
+        _search(5, admin, u'category:project AND contributors.id:{}'.format(user1._id), 0)
+        _search(6, admin, u'category:project AND contributors.id:{}'.format(user2._id), 1)
+
+        with run_celery_tasks():
+            user2.gdpr_delete()  # include remove_contributor
+
+        _search(7, user2, name, 0)
+        _search(8, admin, u'category:project AND contributors.id:{}'.format(user2._id), 0)
+
+        with run_celery_tasks():
+            _del_project(p)
+
+        _search(9, admin, name, 0)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_delete_component(self):
+        """
+        コンポーネントを削除すると検索結果から消えることを確認する。
+
+        オリジナル osf.io の実装では、コンポーネントを削除したあとも、
+        検索結果に残る。
+        [GRDM-19998]
+        """
+
+        admin = factories.AuthUserFactory()
+
+        def _create_project(project_name, component_name):
+            project = factories.ProjectFactory(
+                title=project_name,
+                creator=admin, is_public=False)
+            component = factories.NodeFactory(
+                parent=project,
+                description='',
+                title=component_name,
+                creator=admin,
+                is_public=False
+            )
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        project_name = u'プロジェクト'
+        component_name = u'コンポーネント'
+        i = 1
+        with run_celery_tasks():
+            p = _create_project(project_name, component_name)
+
+        _search(1, admin, component_name, 1)
+
+        with run_celery_tasks():
+            # 親プロジェクトを削除すると、コンポーネントも削除される
+            _del_project(p)
+
+        _search(2, admin, component_name, 0)
+
+    @enable_private_search
+    @use_ja_analyzer
+    def test_visible_contributor(self):
+        """
+        目録表示メンバー(Bibliographic Contributor)ではないメンバーは、
+        そのプロジェクトを検索できるが、検索結果には含まれないことを
+        確認する。
+
+        オリジナル osf.io の実装では、visible を ON/OFF しても、即座に
+        検索結果に反映されない。
+        [GRDM-20003]
+        """
+
+        admin = factories.AuthUserFactory()
+        user1 = factories.AuthUserFactory()
+
+        def _create_project():
+            project = factories.ProjectFactory(
+                creator=admin, is_public=False)
+            return project
+
+        def _del_project(project):
+            project.remove_node(auth=Auth(project.creator))
+
+        def _search(_id, search_user, qs, num):
+            self._search(_id=_id, search_user=search_user, qs=qs, num=num)
+            run_after_rebuild_search(
+                self, self._search,
+                _id='{}(after rebuild_search)'.format(_id),
+                search_user=search_user, qs=qs, num=num)
+
+        i = 1
+        with run_celery_tasks():
+            p = _create_project()
+            p.add_contributor(user1)
+            p.set_visible(user1, False, save=True)
+
+        qs_title = 'category:project AND title:"{}"'.format(p.title)
+        qs_username = 'category:project AND contributors.id:"{}"'.format(user1._id)
+
+        _search(1, user1, qs_title, 1)
+        _search(2, user1, qs_username, 0)
+        _search(3, admin, qs_username, 0)
+
+        with run_celery_tasks():
+            p.set_visible(user1, True, save=True)
+
+        _search(4, user1, qs_title, 1)
+        _search(5, user1, qs_username, 1)
+        _search(6, admin, qs_username, 1)
+
+        with run_celery_tasks():
+            _del_project(p)
+
+        _search(7, user1, qs_title, 0)
+        _search(8, user1, qs_username, 0)
+        _search(9, admin, qs_username, 0)
 
 
 # see osf_tests/test_search_views.py

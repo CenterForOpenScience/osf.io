@@ -638,12 +638,14 @@ class TestPreprint(OsfTestCase):
         assert_equal(len(docs), 0)
 
     def test_hide_contributor(self):
-        user2 = factories.UserFactory(fullname='Brian May')
-        self.published_preprint.add_contributor(user2)
-        self.published_preprint.set_visible(user2, False, save=True)
+        with run_celery_tasks():
+            user2 = factories.UserFactory(fullname='Brian May')
+            self.published_preprint.add_contributor(user2)
+            self.published_preprint.set_visible(user2, False, save=True)
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)
-        self.published_preprint.set_visible(user2, True, save=True)
+        with run_celery_tasks():
+            self.published_preprint.set_visible(user2, True, save=True)
         docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 1)
 
@@ -999,9 +1001,9 @@ class TestPublicNodes(OsfTestCase):
         assert_equal(len(docs), 0)
 
     def test_hide_contributor(self):
-        user2 = factories.UserFactory(fullname='Brian May')
-        self.project.add_contributor(user2)
         with run_celery_tasks():
+            user2 = factories.UserFactory(fullname='Brian May')
+            self.project.add_contributor(user2)
             self.project.set_visible(user2, False, save=True)
         docs = query('category:project AND "{}"'.format(user2.fullname))['results']
         assert_equal(len(docs), 0)

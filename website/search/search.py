@@ -169,3 +169,28 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
+
+
+from django.dispatch import receiver
+from django.db.models.signals import post_save, post_delete
+from osf.models.contributor import Contributor
+
+@receiver(post_save, sender=Contributor)
+def update_contributor(sender, instance, **kwargs):
+    node = instance.node
+    if node.is_deleted:
+        return
+    if node.contributors.all().count() == 1 and \
+       node.contributors.filter(guids___id=node.creator._id):
+        # ignore first node.save() (avoid redundant updating)
+        return
+
+    node.update_search()
+
+@receiver(post_delete, sender=Contributor)
+def delete_contributor(sender, instance, **kwargs):
+    node = instance.node
+    if node.is_deleted:
+        return
+
+    node.update_search()

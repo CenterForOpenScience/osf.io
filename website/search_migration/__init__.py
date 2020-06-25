@@ -28,6 +28,15 @@ SELECT json_agg(
                                LEFT OUTER JOIN osf_guid AS USER_GUID
                                  ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
                              WHERE (CONTRIB.node_id = N.id AND CONTRIB.visible = TRUE))
+            , 'node_contributors', (SELECT json_agg(json_build_object(
+                                                 'id', USER_GUID._id
+                                             ))
+                             FROM osf_osfuser AS U
+                               INNER JOIN osf_contributor AS CONTRIB
+                                 ON (U.id = CONTRIB.user_id)
+                               LEFT OUTER JOIN osf_guid AS USER_GUID
+                                 ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
+                             WHERE (CONTRIB.node_id = N.id))
             , 'groups', (SELECT json_agg(json_build_object(
                                             'url',  '/' || osf_osfgroup._id || '/'
                                             , 'name', osf_osfgroup.name
@@ -402,7 +411,7 @@ SELECT json_agg(
                                  ON (U.id = CONTRIB.user_id)
                                LEFT OUTER JOIN osf_guid AS USER_GUID
                                  ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
-                             WHERE (CONTRIB.node_id = (NODE.DATA ->> 'id')::integer AND CONTRIB.visible = TRUE))
+                             WHERE (CONTRIB.node_id = (NODE.DATA ->> 'id')::integer))
             , 'node_public', NODE.DATA ->> 'public'
         )
     )

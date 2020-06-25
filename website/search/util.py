@@ -282,7 +282,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highli
                         'should': [
                             {
                                 'term': {
-                                    'contributors.id': user._id
+                                    'node_contributors.id': user._id
                                 }
                             },
                             {
