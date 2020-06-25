@@ -219,14 +219,14 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your GakuNin RDM account')
-PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
+REMOVED_EMAIL = Mail('email_removed', subject='GakuNin RDMアカウントのメールアドレス削除 / Email address removed from your GakuNin RDM account')
+PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリメールアドレスの変更 / Primary email changed')
 
 
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
     'invite_default',
-    subject='You have been added as a contributor to a GakuNin RDM project.'
+    subject='GakuNin RDMプロジェクトのコントリビュータに追加されました / You have been added as a contributor to a GakuNin RDM project.'
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
@@ -234,7 +234,7 @@ INVITE_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
-    subject='You have been added as a contributor to a GakuNin RDM project.'
+    subject='GakuNin RDMプロジェクトのコントリビュータに追加されました / You have been added as a contributor to a GakuNin RDM project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
@@ -283,7 +283,7 @@ CONFERENCE_FAILED = Mail(
 )
 
 DIGEST = Mail(
-    'digest', subject='GakuNin RDM Notifications',
+    'digest', subject='GakuNin RDM からの通知 / GakuNin RDM Notifications',
     categories=['notifications', 'notifications-digest']
 )
 
@@ -443,7 +443,7 @@ ACCESS_REQUEST_SUBMITTED = Mail(
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to a GakuNin RDM project has been declined'
+    subject='GakuNin RDMプロジェクトへのアクセス申請が拒否されました / Your access request to a GakuNin RDM project has been declined'
 )
 
 CROSSREF_ERROR = Mail(
