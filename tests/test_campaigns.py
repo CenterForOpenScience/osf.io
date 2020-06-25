@@ -29,12 +29,44 @@ def set_preprint_providers():
         provider.save()
 
 
+def set_registration_providers():
+    """Populate `RegistrationProvider` to test database for testing."""
+
+    providers = {
+        'osf': 'OSF Registries',
+        'egap': 'EGAP Registries'
+    }
+
+    for key, value in providers.items():
+        provider = factories.RegistrationProviderFactory()
+        provider._id = key
+        provider.name = value
+        provider.save()
+
+
+def set_collection_providers():
+    """Populate `CollectionProvider` to test database for testing."""
+
+    providers = {
+        'apa': 'American Psychological Association',
+        'osf': 'OSF Collection'
+    }
+
+    for key, value in providers.items():
+        provider = factories.CollectionProviderFactory()
+        provider._id = key
+        provider.name = value
+        provider.save()
+
+
 # tests for campaign initialization and update
 class TestCampaignInitialization(OsfTestCase):
 
     def setUp(self):
         super(TestCampaignInitialization, self).setUp()
         set_preprint_providers()
+        set_registration_providers()
+        set_collection_providers()
         self.campaign_lists = [
             'prereg',
             'erpc',
@@ -43,7 +75,10 @@ class TestCampaignInitialization(OsfTestCase):
             'socarxiv-preprints',
             'engrxiv-preprints',
             'psyarxiv-preprints',
+            'osf-collections',
+            'apa-collections',
             'osf-registries',
+            'egap-registries',
             'osf-registered-reports',
         ]
         self.refresh = timezone.now()
