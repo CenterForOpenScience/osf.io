@@ -10,7 +10,7 @@
     <br>
     ${referrer_name + u'があなたのアクセス申請を承認しました' if referrer_name else u'あなたのアクセス申請が承認されました'}。GakuNin RDM上のプロジェクト(<a href="${node.absolute_url}">${node.title}</a>)のメンバーとして追加されました。<br>
     <br>
-    このプロジェクト${'から' if all_global_subscriptions_none else 'の'}通知メール${u'は送られてきません' if all_global_subscriptions_none else u'の送信が自動で始まります'}。メール通知設定はプロジェクトページあるいは<a href="${settings.DOMAIN + "settings/notifications/"}">ユーザ設定</a>から変更できます。<br>
+    このプロジェクト${u'から' if all_global_subscriptions_none else u'の'}通知メール${u'は送られてきません' if all_global_subscriptions_none else u'の送信が自動で始まります'}。メール通知設定はプロジェクトページあるいは<a href="${settings.DOMAIN + "settings/notifications/"}">ユーザ設定</a>から変更できます。<br>
     <br>
     よろしくお願いします。<br>
     <br>
