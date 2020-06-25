@@ -6,6 +6,25 @@
     <%!
         from website import settings
     %>
+    こんにちは、${user.fullname}さん<br>
+    <br>
+    ${referrer_name + u'があなたを' if referrer_name else u'あなたは'}GakuNin RDM上のプロジェクト(${node.title})のメンバーとして追加${u'しました' if referrer_name else u'されました'}: ${node.absolute_url}<br>
+    <br>
+    このプロジェクト${u'から' if all_global_subscriptions_none else u'の'}通知メール${u'は送られてきません' if all_global_subscriptions_none else u'の送信が自動で始まります'}。メール通知設定はプロジェクトページまたはユーザー設定から変更できます： ${settings.DOMAIN + "settings/notifications/"}<br>
+    <br>
+    手違いであなたが${node.title}と関連付けられている場合、プロジェクトのメンバーページに行ってご自分をメンバーから外してください。"<br>
+    <br>
+    よろしくお願いいたします。<br>
+    <br>
+    GakuNin RDMロボット<br>
+    <br>
+    詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、支持機構である国立情報科学研究所についてはhttps://www.nii.ac.jp/をご覧ください。<br>
+    <br>
+    お問い合わせはrdm_support@nii.ac.jpまでお願いいたします。<br>
+
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
     ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the project "${node.title}" on the GakuNin RDM: ${node.absolute_url}<br>
