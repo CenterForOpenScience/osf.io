@@ -254,7 +254,7 @@ PREPRINT_CONFIRMATION_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to a GakuNin RDM project has been approved'
+    subject='GakuNin RDMプロジェクトへのアクセス申請が承認されました / Your access request to a GakuNin RDM project has been approved'
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
