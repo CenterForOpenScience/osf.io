@@ -100,6 +100,15 @@
 					]
 				},
 				{
+					"qid": "q11",
+					"title": "Date of start of study",
+					"nav": "Date of start of study",
+					"type": "string",
+					"format": "text",
+					"description": "Understood as first date of treatment assignment or equivalent for observational study",
+					"help": "E.g., 06/02/2018"
+				},
+				{
 					"qid": "q13",
 					"title": "Was this design presented at an EGAP meeting?",
 					"nav": "Presented at an EGAP meeting?",
