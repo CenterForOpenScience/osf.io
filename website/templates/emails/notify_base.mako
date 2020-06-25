@@ -42,7 +42,6 @@
                 <tr>
                   <td style="border-collapse: collapse;">
                   The Japanese statement will be followed by an English statement.<br>
-                  <br>
                   </td>
                 </tr>
               </tbody>
