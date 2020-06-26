@@ -109,6 +109,15 @@
 					"help": "E.g., 06/02/2018"
 				},
 				{
+					"qid": "q12",
+					"title": "B8 Gate Date",
+					"nav": "Gate Date?",
+					"type": "string",
+					"format": "text",
+					"description": "Gating is discouraged, but if necessary, EGAP policy limits the gate range to 18 months maximum.",
+					"help": "E.g., 06/02/2018"
+				},
+				{
 					"qid": "q13",
 					"title": "Was this design presented at an EGAP meeting?",
 					"nav": "Presented at an EGAP meeting?",
