@@ -49,7 +49,7 @@ urlpatterns = [
     url(
         r'^registrations/(?P<node_id>\w+)/linked_nodes/$',
         views.SparseLinkedNodesList.as_view(),
-        name=views.LinkedNodesList.view_name,
+        name=views.SparseLinkedNodesList.view_name,
     ),
     url(
         r'^registrations/(?P<node_id>\w+)/linked_registrations/$',

@@ -11,6 +11,7 @@ from api.registrations.views import (
     RegistrationDetail,
     RegistrationChildrenList,
     RegistrationList,
+    RegistrationMixin,
     RegistrationLinkedRegistrationsList,
 )
 
@@ -53,7 +54,7 @@ class SparseNodeList(SparseNodeMixin, NodeList):
     pass
 
 
-class SparseLinkedNodesList(SparseNodeMixin, LinkedNodesList):
+class SparseLinkedNodesList(RegistrationMixin, SparseNodeMixin, LinkedNodesList):
     pass
 
 

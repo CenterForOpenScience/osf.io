@@ -10,6 +10,7 @@ from osf_tests.factories import (
 
 from website.settings import API_DOMAIN
 
+
 @pytest.mark.django_db
 class TestSparseRegistration:
 
