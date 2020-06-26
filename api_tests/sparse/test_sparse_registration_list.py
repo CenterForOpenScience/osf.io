@@ -8,6 +8,7 @@ from osf_tests.factories import (
     NodeRelationFactory
 )
 
+from website.settings import API_DOMAIN
 
 @pytest.mark.django_db
 class TestSparseRegistration:
@@ -53,11 +54,11 @@ class TestSparseRegistration:
 
     @pytest.fixture()
     def sparse_linked_nodes_url(self, registration):
-        return f'/{API_BASE}registrations/{registration._id}/linked_nodes/'
+        return f'{API_DOMAIN}{API_BASE}sparse/registrations/{registration._id}/linked_nodes/'
 
     @pytest.fixture()
     def sparse_linked_registration_url(self, registration):
-        return f'/{API_BASE}registrations/{registration._id}/linked_registrations/'
+        return f'{API_DOMAIN}{API_BASE}sparse/registrations/{registration._id}/linked_registrations/'
 
     def test_linked_nodes(self, app, user, node, sparse_linked_nodes_url):
         res = app.get(sparse_linked_nodes_url, auth=user.auth)
