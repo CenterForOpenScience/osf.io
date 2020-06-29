@@ -139,7 +139,6 @@ USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
 #nii institution name
-NII_FORMAL_NAME_JA = '国立情報学研究所'
 NII_FORMAL_NAME_EN = 'National Institute of Informatics'
 #rdm url
 RDM_URL = 'https://rdm.nii.ac.jp/'

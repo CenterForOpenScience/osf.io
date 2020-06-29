@@ -194,7 +194,6 @@ def get_globals():
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'nii_formal_name_ja': settings.NII_FORMAL_NAME_JA,
         'nii_formal_name_en': settings.NII_FORMAL_NAME_EN,
         'rdm_url': settings.RDM_URL,
         'nii_homepage_url': settings.NII_HOMEPAGE_URL,
