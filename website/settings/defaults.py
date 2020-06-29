@@ -138,6 +138,13 @@ USE_CDN_FOR_CLIENT_LIBS = True
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 
+#nii institution name
+NII_FORMAL_NAME_JA = '国立情報学研究所'
+NII_FORMAL_NAME_EN = 'National Institute of Informatics'
+#rdm url
+RDM_URL = 'https://rdm.nii.ac.jp/'
+#nii url
+NII_HOMEPAGE_URL = 'https://www.nii.ac.jp/'
 # support email
 OSF_SUPPORT_EMAIL = 'rdm_support@nii.ac.jp'
 # contact email
