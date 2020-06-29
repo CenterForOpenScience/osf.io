@@ -18,7 +18,7 @@
     <br>
     GakuNin RDM ボット<br>
     <br>
-    詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、国立情報科学研究所についてはhttps://www.nii.ac.jp/をご覧ください。<br>
+    GakuNin RDMの詳細については ${rdm_url} を、 ${nii_formal_name_ja} については ${nii_homepage_url} をご覧ください。<br>
     <br>
     メールでのお問い合わせは ${osf_contact_email} までお願いいたします。<br>
 
@@ -37,7 +37,7 @@
     <br>
     GakuNin RDM Robot<br>
     <br>
-    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
+    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the ${nii_formal_name_en}.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 
