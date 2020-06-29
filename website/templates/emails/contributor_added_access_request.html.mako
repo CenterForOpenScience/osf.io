@@ -14,11 +14,11 @@
     <br>
     よろしくお願いします。<br>
     <br>
-    GRDMチーム<br>
+    GakuNin RDMチーム<br>
     <br>
     詳細をご希望ですか？GRDMについてはhttps://rdm.nii.ac.jp/を、国立情報科学研究所についてはhttps://www.nii.ac.jp/をご覧ください。<br>
     <br>
-    お問い合わせはrdm_support@nii.ac.jpまでお願いいたします。<br>
+    メールでのお問い合わせは ${osf_contact_email} までお願いいたします。<br>
 
 </tr>
 <tr>
@@ -35,7 +35,7 @@
     <br>
     Want more information? Visit https://rdm.nii.ac.jp/ to learn about GRDM, or https://nii.ac.jp/ for information about its supporting organization, the National Institute of Informatics.<br>
     <br>
-    Questions? Email rdm_support@nii.ac.jp<br>
+    Questions? Email ${osf_contact_email}<br>
 
 </tr>
 </%def>
