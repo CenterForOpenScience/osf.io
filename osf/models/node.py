@@ -1461,6 +1461,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
         registered.root = None  # Recompute root on save
+
+        if self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
+            registered.branched_from_node = False
+        else:
+            registered.branched_from_node = True
+
         registered.save()
 
         # Copying over editable fields as the last step so the root is accurate
