@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.13.0 (2020-06-30)
+====================
+- Fixes for EGAP migration
+- Add bulk ham-ify in admin app for preprints and users
+- Add bibliographic_contributors relationship to preprints
+- Replace missing admin functionality for preprint providers
+- Fix sparse node children endpoints
+
 20.12.0 (2020-06-24)
 ====================
 - Fix EGAP form
