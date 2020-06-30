@@ -75,6 +75,12 @@ class Mail(object):
 def render_message(tpl_name, **context):
     """Render an email message."""
     tpl = _tpl_lookup.get_template(tpl_name)
+    context = {
+        'nii_formal_name_ja': settings.NII_FORMAL_NAME_JA,
+        'nii_formal_name_en': settings.NII_FORMAL_NAME_EN,
+        'rdm_url': settings.RDM_URL,
+        'nii_homepage_url': settings.NII_HOMEPAGE_URL,
+    }
     return tpl.render(**context)
 
 
@@ -194,7 +200,7 @@ INITIAL_CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL = Mail(
     'confirm',
-    subject='Add a new email to your GakuNin RDM account'
+    subject='GakuNin RDMアカウントのメールアドレス追加 / Add a new email to your GakuNin RDM account'
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
@@ -218,7 +224,7 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 )
 
 # Merge account, add or remove email confirmation emails.
-CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+CONFIRM_MERGE = Mail('confirm_merge', subject='アカウントの統合確認 / Confirm account merge')
 REMOVED_EMAIL = Mail('email_removed', subject='GakuNin RDMアカウントのメールアドレス削除 / Email address removed from your GakuNin RDM account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリメールアドレスの変更 / Primary email changed')
 
@@ -226,7 +232,7 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリ�
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
     'invite_default',
-    subject='GakuNin RDMプロジェクトのコントリビュータに追加されました / You have been added as a contributor to a GakuNin RDM project.'
+    subject='You have been added as a contributor to a GakuNin RDM project.'
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
@@ -264,10 +270,10 @@ PASSWORD_RESET = Mail('password_reset', subject='Your GakuNin RDM password has b
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
-REQUEST_EXPORT = Mail('support_request', subject='[via GakuNin RDM] Export Request')
-REQUEST_DEACTIVATION = Mail('support_request', subject='[via GakuNin RDM] Deactivation Request')
+REQUEST_EXPORT = Mail('support_request', subject='[GakuNin RDM経由]出力リクエスト / [via GakuNin RDM] Export Request')
+REQUEST_DEACTIVATION = Mail('support_request', subject='[GakuNin RDM経由]認証解除リクエスト / Deactivation Request')
 
-SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM] Account flagged as spam')
+SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM]アカウントにスパムの疑いがあります / [GakuNin RDM] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
@@ -394,7 +400,7 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
-    subject='Welcome to the GakuNin RDM',
+    subject='GakuNin RDMにようこそ / Welcome to the GakuNin RDM',
     engagement=True
 )
 
