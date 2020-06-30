@@ -102,7 +102,6 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         if recipient.is_disabled:
             continue
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
-        context['localized_timestamp_ja'] = localize_timestamp_ja(timestamp, recipientm, 'ja')
         context['recipient'] = recipient
         message = mails.render_message(template, **context)
         digest = NotificationDigest(
@@ -207,7 +206,7 @@ def fix_locale(locale):
     else:
         return '_'.join([language, territory.upper()])
 
-def localize_timestamp(timestamp, user, lang):
+def localize_timestamp(timestamp, user):
     try:
         user_timezone = dates.get_timezone(user.timezone)
     except LookupError:
@@ -231,7 +230,5 @@ def localize_timestamp(timestamp, user, lang):
 
     formatted_date = dates.format_date(timestamp, format='full', locale=user_locale)
     formatted_time = dates.format_time(timestamp, format='short', tzinfo=user_timezone, locale=user_locale)
-    if lang == 'ja':
-        return u'{date} {time}'.format(time=formatted_time, date=formatted_date)
-    else:
-        return u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
+
+    return u'{time} on {date}'.format(time=formatted_time, date=formatted_date)
