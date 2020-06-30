@@ -703,10 +703,6 @@ class NodeCRUDTestCase:
         return '/{}nodes/{}/'.format(API_BASE, project_public._id)
 
     @pytest.fixture()
-    def sparse_url_public(self, project_public):
-        return '/{}sparse/nodes/{}/'.format(API_BASE, project_public._id)
-
-    @pytest.fixture()
     def url_private(self, project_private):
         return '/{}nodes/{}/'.format(API_BASE, project_private._id)
 
@@ -722,24 +718,6 @@ class NodeCRUDTestCase:
                 'data': {
                     'id': node._id,
                     'type': 'nodes',
-                    'attributes': attributes,
-                }
-            }
-
-            if relationships:
-                payload_data['data']['relationships'] = relationships
-
-            return payload_data
-        return payload
-
-    @pytest.fixture()
-    def make_sparse_node_payload(self):
-        def payload(node, attributes, relationships=None):
-
-            payload_data = {
-                'data': {
-                    'id': node._id,
-                    'type': 'sparse-nodes',
                     'attributes': attributes,
                 }
             }
@@ -846,7 +824,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_errors(
             self, app, user, user_two, title_new, description_new,
             category_new, project_public, project_private,
-            url_public, url_private, sparse_url_public, make_sparse_node_payload):
+            url_public, url_private):
 
         #   test_update_project_properties_not_nested
         res = app.put_json_api(url_public, {
@@ -860,15 +838,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
-
-        #   test_cannot_update_sparse
-        res = app.patch_json_api(
-            sparse_url_public,
-            make_sparse_node_payload(project_public, {'public': False}),
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 405
 
         #   test_update_invalid_id
         res = app.put_json_api(url_public, {
@@ -1427,7 +1396,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_node_errors(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            url_fake, sparse_url_public):
+            url_fake):
 
         #   test_deletes_public_node_logged_out
         res = app.delete(url_public, expect_errors=True)
@@ -1441,16 +1410,6 @@ class TestNodeDelete(NodeCRUDTestCase):
             expect_errors=True)
         project_public.reload()
         assert res.status_code == 403
-        assert project_public.is_deleted is False
-        assert 'detail' in res.json['errors'][0]
-
-    #   test_deletes_from_sparse_fails
-        res = app.delete_json_api(
-            sparse_url_public,
-            auth=user.auth,
-            expect_errors=True)
-        project_public.reload()
-        assert res.status_code == 405
         assert project_public.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 

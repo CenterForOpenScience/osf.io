@@ -11,7 +11,7 @@ urlpatterns = [
         name=views.SparseNodeList.view_name,
     ),
     url(
-        r'^nodes/(?P<node_id>\w+)/',
+        r'^nodes/(?P<node_id>\w+)/$',
         views.SparseNodeDetail.as_view(),
         name=views.SparseNodeDetail.view_name,
     ),
@@ -27,8 +27,8 @@ urlpatterns = [
     ),
     url(
         r'^nodes/(?P<node_id>\w+)/linked_registrations/$',
-        views.SparseNodeLinkedRegistrationsList.as_view(),
-        name=views.SparseNodeLinkedRegistrationsList.view_name,
+        views.SparseLinkedRegistrationsList.as_view(),
+        name=views.SparseLinkedRegistrationsList.view_name,
     ),
 
     url(
@@ -37,7 +37,7 @@ urlpatterns = [
         name=views.SparseRegistrationList.view_name,
     ),
     url(
-        r'^registrations/(?P<node_id>\w+)/',
+        r'^registrations/(?P<node_id>\w+)/$',
         views.SparseRegistrationDetail.as_view(),
         name=views.SparseRegistrationDetail.view_name,
     ),
@@ -48,13 +48,13 @@ urlpatterns = [
     ),
     url(
         r'^registrations/(?P<node_id>\w+)/linked_nodes/$',
-        views.LinkedNodesList.as_view(),
-        name=views.LinkedNodesList.view_name,
+        views.SparseLinkedNodesList.as_view(),
+        name=views.SparseLinkedNodesList.view_name,
     ),
     url(
         r'^registrations/(?P<node_id>\w+)/linked_registrations/$',
-        views.SparseLinkedNodesList.as_view(),
-        name=views.NodeLinkedRegistrationsList.view_name,
+        views.SparseLinkedRegistrationsList.as_view(),
+        name=views.SparseLinkedRegistrationsList.view_name,
     ),
 
     url(
