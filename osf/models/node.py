@@ -2382,19 +2382,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # Overrides ContributorMixin
     def _add_related_source_tags(self, contributor):
+        osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
         if self.is_collected:
             collection_provider_id = self.collecting_metadata_list[0].collection.provider._id
-            source_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(collection_provider_id, 'collections'), system=True)
-        else:
-            osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
-            source_tag = self.all_tags.filter(
-                system=True,
-                name__in=[
-                    CampaignSourceTags.Prereg.value,
-                    CampaignSourceTags.OsfRegisteredReports.value,
-                    CampaignSourceTags.Osf4m.value
-                ]
-            ).first() or osf_provider_tag
+            collection_provider_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(collection_provider_id, 'collections'), system=True)
+        source_tag = self.all_tags.filter(
+            system=True,
+            name__in=[
+                CampaignSourceTags.Prereg.value,
+                CampaignSourceTags.OsfRegisteredReports.value,
+                CampaignSourceTags.Osf4m.value
+            ]
+        ).first() or collection_provider_tag or osf_provider_tag
         contributor.add_system_tag(source_tag)
 
 

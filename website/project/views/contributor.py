@@ -888,19 +888,18 @@ def _add_related_claimed_tag_to_user(pid, user):
         registration_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(registration_id, 'registry'), system=True)
         user.add_system_tag(registration_claimed_tag)
     elif node:
-        if node.is_collected:
+        node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
+        if node_source_tags.exists():
+            for tag in node_source_tags:
+                claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
+                                                                system=True)
+                user.add_system_tag(claimed_tag)
+        elif node.is_collected:
             collection_provider_id = node.collecting_metadata_list[0].collection.provider._id
             collection_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(collection_provider_id, 'collections'), system=True)
             user.add_system_tag(collection_claimed_tag)
         else:
-            node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
-            if node_source_tags.exists():
-                for tag in node_source_tags:
-                    claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
-                                                                    system=True)
-                    user.add_system_tag(claimed_tag)
-            else:
-                user.add_system_tag(osf_claimed_tag)
+            user.add_system_tag(osf_claimed_tag)
     elif preprint:
         provider_id = preprint.provider._id
         preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),
