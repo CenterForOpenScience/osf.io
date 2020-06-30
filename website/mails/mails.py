@@ -75,12 +75,6 @@ class Mail(object):
 def render_message(tpl_name, **context):
     """Render an email message."""
     tpl = _tpl_lookup.get_template(tpl_name)
-    context = {
-        'nii_formal_name_ja': settings.NII_FORMAL_NAME_JA,
-        'nii_formal_name_en': settings.NII_FORMAL_NAME_EN,
-        'rdm_url': settings.RDM_URL,
-        'nii_homepage_url': settings.NII_HOMEPAGE_URL,
-    }
     return tpl.render(**context)
 
 
