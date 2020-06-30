@@ -10,13 +10,13 @@
             %if page_type == 'project':
                 プロジェクト</span>
             %elif page_type == 'file':
-                ファイル(</span><span class="title" style="font-style: italic; color: grey;">${page_title}</span>
+                ファイル</span>(<span class="title" style="font-style: italic; color: grey;">${page_title}</span>)
             %elif page_type == 'wiki':
-                wiki(</span><span class="title" style="font-style: italic; color: grey;">${page_title}</span>
+                wiki</span>(<span class="title" style="font-style: italic; color: grey;">${page_title}</span>)
             %else:
                 ${page_type}</span>
             %endif
-            <span class="text" style="color: grey;">)にコメントしました。 / </span>
+            <span class="text" style="color: grey;">にコメントしました。 / </span>
             <span class="person" style="font-weight: bold;">${user.fullname} </span>
             <span class="text" style="color: grey;"> commented on your ${provider + ' ' if page_type == 'file' else ''}${page_type}</span>
             %if page_type == 'file' or page_type == 'wiki':

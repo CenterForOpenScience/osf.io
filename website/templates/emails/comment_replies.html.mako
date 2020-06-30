@@ -4,7 +4,17 @@
         <td style="line-height: 17px;border-collapse: collapse;">
             <span class="timestamp" style="color: grey;">${localized_timestamp}</span>に
             <span class="person" style="font-weight: bold;">${user.fullname}</span>が
-            <span class="text" style="color: grey;">あなたの${provider + ' ' if page_type == 'file' else ''}${page_type}上のコメント(${parent_comment})に返信しました / </span>
+            <span class="text" style="color: grey;">あなたの${provider + ' ' if page_type == 'file' else ''}
+            %if page_type == 'project':
+                プロジェクト</span>
+            %elif page_type == 'file':
+                ファイル</span>(<span class="title" style="font-style: italic; color: grey;">${page_title})</span>
+            %elif page_type == 'wiki':
+                wiki</span>(<span class="title" style="font-style: italic; color: grey;">${page_title})</span>
+            %else:
+                ${page_type}</span>
+            %endif
+            <span class="text" style="color: grey;">上のコメント(${parent_comment})に返信しました / </span>
             <span class="person" style="font-weight: bold;">${user.fullname} </span>
             <span class="text" style="color: grey;"> replied to your comment "${parent_comment}" on your ${provider + ' ' if page_type == 'file' else ''}${page_type} </span>
             %if page_type == 'file' or page_type == 'wiki':
