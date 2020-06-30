@@ -18,7 +18,7 @@
     <br>
     GakuNin RDM ボット<br>
     <br>
-    GakuNin RDMの詳細については ${rdm_url} を、 ${nii_formal_name_ja} については ${nii_homepage_url} をご覧ください。<br>
+    GakuNin RDMの詳細については ${settings.RDM_URL} を、 ${settings.NII_FORMAL_NAME_JA} については ${settings.NII_HOMEPAGE_URL} をご覧ください。<br>
     <br>
     メールでのお問い合わせは ${osf_contact_email} までお願いいたします。<br>
 
@@ -37,7 +37,7 @@
     <br>
     GakuNin RDM Robot<br>
     <br>
-    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the ${nii_formal_name_en}.<br>
+    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the ${settings.NII_FORMAL_NAME_EN}.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 
