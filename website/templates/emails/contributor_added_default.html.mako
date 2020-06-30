@@ -18,7 +18,7 @@
     <br>
     GakuNin RDM ボット<br>
     <br>
-    GakuNin RDMの詳細については ${settings.RDM_URL} を、 ${settings.NII_FORMAL_NAME_JA} については ${settings.NII_HOMEPAGE_URL} をご覧ください。<br>
+    GakuNin RDMの詳細については ${settings.RDM_URL} を、${settings.NII_FORMAL_NAME_JA}については ${settings.NII_HOMEPAGE_URL} をご覧ください。<br>
     <br>
     メールでのお問い合わせは ${osf_contact_email} までお願いいたします。<br>
 
