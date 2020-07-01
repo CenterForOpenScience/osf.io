@@ -125,7 +125,7 @@ NO_ADDON = {
 
 NO_LOGIN = {
     'template': 'no_login',
-    'subject': u'GakuNin RDMでお客様が見逃していること / What you\'re missing on the GakuNin RDM',
+    'subject': 'GakuNin RDMでお客様が見逃していること / What you\'re missing on the GakuNin RDM',
     'presend': presends.no_login,
     'categories': ['engagement', 'engagement-no-login'],
     'engagement': True
