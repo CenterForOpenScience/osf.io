@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import waffle
 
 from django.db import models
