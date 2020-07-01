@@ -80,6 +80,7 @@ from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
     AuthUserFactory,
     CollectionFactory,
+    CollectionProviderFactory,
     CommentFactory,
     InstitutionFactory,
     NodeFactory,
@@ -2397,6 +2398,9 @@ class TestClaimViews(OsfTestCase):
             email=self.given_email,
             auth=Auth(user=self.referrer)
         )
+        self.registration_provider = RegistrationProviderFactory()
+        self.registration = RegistrationFactory(project=self.project, provider=self.registration_provider)
+        self.user.refresh_from_db()
         self.project.save()
 
     @mock.patch('website.project.views.contributor.send_claim_email')
@@ -2820,6 +2824,36 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         self.user.reload()
         assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') in self.user.system_tags
+
+    def test_claim_user_with_registration_id_adds_corresponding_claimed_tag_to_user(self):
+        assert provider_claimed_tag(self.registration.provider._id, 'registry') not in self.user.system_tags
+        url = self.user.get_claim_url(self.registration._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert provider_claimed_tag(self.registration.provider._id, 'registry')in self.user.system_tags
+
+    def test_claim_user_with_collected_project_id_adds_corresponding_claimed_tag_to_user(self):
+        collection_provider = CollectionProviderFactory()
+        collection = CollectionFactory(provider=collection_provider)
+        collection.collect_object(self.project, self.project.creator)
+        assert provider_claimed_tag(collection_provider._id, 'collections') not in self.user.system_tags
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+        assert provider_claimed_tag(collection_provider._id, 'collections') in self.user.system_tags
 
 
 @pytest.mark.enable_bookmark_creation
