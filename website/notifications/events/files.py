@@ -52,6 +52,18 @@ class FileEvent(Event):
         )
 
     @property
+    def html_message_ja(self):
+        """Most basic html message"""
+        f_type, action = self.action.split('_')
+        if self.payload['metadata']['materialized'].endswith('/'):
+            f_type = u'folder'
+        return u'{action} {f_type} "<b>{name}</b>".'.format(
+            action=markupsafe.escape(action),
+            f_type=markupsafe.escape(f_type),
+            name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
+        )
+
+    @property
     def text_message(self):
         """Most basic message without html tags. For future use."""
         f_type, action = self.action.split('_')
@@ -165,6 +177,10 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def html_message(self):
+        return self._build_message(html=True)
+
+    @property
+    def html_message_ja(self):
         return self._build_message(html=True)
 
     @property
