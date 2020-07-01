@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """File event module
 
 These classes are registered in event_registry and are callable through the
