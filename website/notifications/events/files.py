@@ -200,6 +200,13 @@ class AddonFileRenamed(ComplexFileEvent):
             source_name=markupsafe.escape(self.payload['source']['materialized']),
             destination_name=markupsafe.escape(self.payload['destination']['materialized']),
         )
+    @property
+    def html_message_ja(self):
+        return u'が{kind}名を(<b>{source_name}</b>)を「<b>{destination_name}</b>」へ変更しました。'.format(
+            kind=markupsafe.escape(self.payload['destination']['kind']),
+            source_name=markupsafe.escape(self.payload['source']['materialized']),
+            destination_name=markupsafe.escape(self.payload['destination']['materialized']),
+        )
 
     @property
     def text_message(self):

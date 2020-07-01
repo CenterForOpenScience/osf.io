@@ -5,7 +5,7 @@
             <span class="timestamp" style="color: grey;">At ${localized_timestamp}: </span>
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
                 <span class="person" style="font-weight: bold;">${user.fullname} </span>
-                ${message}
+                ${message_ja}
             </span>
         </td>
         <td width="25" style="text-align:center;border-collapse: collapse;font-size: 24px;border-left: 1px solid #ddd;">

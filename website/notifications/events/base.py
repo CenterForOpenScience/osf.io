@@ -39,6 +39,7 @@ class Event(object):
             node=self.node,
             timestamp=self.timestamp,
             message=self.html_message,
+            message_ja=self.html_message_ja,
             profile_image_url=self.profile_image_url,
             url=self.url
         )
