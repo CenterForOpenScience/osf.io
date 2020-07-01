@@ -58,7 +58,7 @@ class FileEvent(Event):
         if self.payload['metadata']['materialized'].endswith('/'):
             f_type = u'folder'
         return u'が{f_type}(<b>{name}</b>)を{action}しました。 / '.format(
-            action='追加' if markupsafe.escape(action) == 'added' else '削除' if markupsafe.escape(action)=='removed' else '更新' if markupsafe.escape(action)=='updated' else '作成' if action=='created' else markupsafe.escape(action),
+            action=u'追加' if markupsafe.escape(action) == u'added' else u'削除' if markupsafe.escape(action)=='removed' else u'更新' if markupsafe.escape(action)=='updated' else u'作成' if action=='created' else markupsafe.escape(action),
             f_type=markupsafe.escape(f_type),
             name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
         )
