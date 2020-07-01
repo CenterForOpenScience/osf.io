@@ -58,7 +58,7 @@ class FileEvent(Event):
         if self.payload['metadata']['materialized'].endswith('/'):
             f_type = u'folder'
         return u'が{f_type}(<b>{name}</b>)を{action}しました。 / '.format(
-            action=u'追加' if markupsafe.escape(action) == u'added' else u'削除' if markupsafe.escape(action)=='removed' else u'更新' if markupsafe.escape(action)=='updated' else u'作成' if action=='created' else markupsafe.escape(action),
+            action=u'追加' if markupsafe.escape(action) == u'added' else u'削除' if markupsafe.escape(action) == 'removed' else u'更新' if markupsafe.escape(action) == 'updated' else u'作成' if action == 'created' else markupsafe.escape(action),
             f_type=markupsafe.escape(f_type),
             name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
         )
@@ -219,7 +219,7 @@ class AddonFileRenamed(ComplexFileEvent):
         )
     @property
     def html_message_ja(self):
-        return u'が{kind}名を(<b>{source_name}</b>)を「<b>{destination_name}</b>」へ変更しました。'.format(
+        return u'が{kind}名(<b>{source_name}</b>)を「<b>{destination_name}</b>」へ変更しました。'.format(
             kind=markupsafe.escape(self.payload['destination']['kind']),
             source_name=markupsafe.escape(self.payload['source']['materialized']),
             destination_name=markupsafe.escape(self.payload['destination']['materialized']),
