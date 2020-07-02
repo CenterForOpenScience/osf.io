@@ -942,6 +942,32 @@ class TestPreprintSpam:
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is True
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    def test_confirm_ham_on_private_preprint_stays_private(self, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                preprint.set_privacy('private')
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is False
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_confirm_ham_on_public_preprint_stays_public(self, preprint, user):
+        preprint.is_public = True
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is True
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is True
+
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)

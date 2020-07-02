@@ -23,8 +23,6 @@ from osf.models import PreprintProvider, Subject, NodeLicense, OSFUser
 from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as osf_settings
 
-# When preprint_providers exclusively use Subject relations for creation, set this to False
-SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE = True
 FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_acceptable', 'primary_collection']
 
 
@@ -160,7 +158,7 @@ class PreprintProviderDetail(PermissionRequiredMixin, View):
 
 class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
     permission_required = 'osf.change_preprintprovider'
-    template_name = 'preprint_providers/update_preprint_provider_form.html'
+    template_name = 'preprint_providers/create_or_update_preprint_provider_form.html'
     raise_exception = True
     model = PreprintProvider
     form_class = PreprintProviderForm
@@ -169,9 +167,17 @@ class PreprintProviderChangeForm(PermissionRequiredMixin, UpdateView):
         provider_id = self.kwargs.get('preprint_provider_id')
         return PreprintProvider.objects.get(id=provider_id)
 
+    def get_subject_ids(self, request, *args, **kwargs):
+        parent_id = request.GET.get('parent_id')
+        subjects_from_parent = Subject.objects.filter(parent__id=parent_id)
+        subject_ids = [sub.id for sub in subjects_from_parent]
+        return subject_ids
+
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         kwargs['preprint_provider_id'] = self.kwargs.get('preprint_provider_id')
+        kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
+        kwargs['subject_ids'] = self.get_subject_ids(self.request)
         return super(PreprintProviderChangeForm, self).get_context_data(*args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
@@ -190,20 +196,15 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
         provider_form = PreprintProviderCustomTaxonomyForm(request.POST)
         if provider_form.is_valid():
-            provider = PreprintProvider.objects.get(id=provider_form.cleaned_data['provider_id'])
+            provider = PreprintProvider.objects.get(id=request.POST.get('provider_id'))
             try:
                 taxonomy_json = json.loads(provider_form.cleaned_data['custom_taxonomy_json'])
                 if request.is_ajax():
                     # An ajax request is for validation only, so run that validation!
-                    try:
-                        response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
-                        if response_data:
-                            added_subjects = [subject.text for subject in response_data]
-                            response_data = {'message': 'Custom taxonomy validated with added subjects: {}'.format(added_subjects), 'feedback_type': 'success'}
-                    except (RuntimeError, AssertionError) as script_feedback:
-                        response_data = {'message': script_feedback.message, 'feedback_type': 'error'}
-                    if not response_data:
-                        response_data = {'message': 'Custom taxonomy validated!', 'feedback_type': 'success'}
+                    response_data = validate_input(custom_provider=provider, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
+                    if response_data:
+                        added_subjects = [subject.text for subject in response_data]
+                        messages.success(f'Custom taxonomy validated with added subjects: {added_subjects}')
                 else:
                     # Actually do the migration of the custom taxonomies
                     migrate(provider=provider._id, data=taxonomy_json, add_missing=provider_form.cleaned_data['add_missing'])
@@ -211,13 +212,14 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             except (ValueError, RuntimeError, AssertionError) as error:
                 messages.error(request, f'There is an error with the submitted JSON or the provider. Here are some details: {str(error)}')
         else:
-            messages.error(request, f'There is a problem with the form. Here are some details:  {provider_form.errors}')
+            for key, value in provider_form.errors.items():
+                messages.error(request, f'{key}: {value}')
 
         return redirect(
             reverse_lazy(
                 'preprint_providers:process_custom_taxonomy',
                 kwargs={
-                    'preprint_provider_id': provider.id
+                    'preprint_provider_id': kwargs.get('preprint_provider_id')
                 }
             )
         )
@@ -247,13 +249,15 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         data = self.get_subjects(request)
+        preprint_provider = PreprintProvider.objects.get(id=int(self.kwargs.get('preprint_provider_id')))
         return render(
             request,
             self.template_name,
             {
                 'preprint_provider_id': self.kwargs.get('preprint_provider_id'),
                 'subject_ids': data['subject_ids'],
-                'taxonomy_form': PreprintProviderCustomTaxonomyForm()
+                'taxonomy_form': PreprintProviderCustomTaxonomyForm(),
+                'taxonomies_created': False if not preprint_provider.subjects.exists() else True
             }
         )
 
@@ -459,14 +463,14 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
 class CreatePreprintProvider(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_preprintprovider'
     raise_exception = True
-    template_name = 'preprint_providers/create.html'
+    template_name = 'preprint_providers/create_or_update_preprint_provider_form.html'
     success_url = reverse_lazy('preprint_providers:list')
     model = PreprintProvider
     form_class = PreprintProviderForm
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        kwargs['show_taxonomies'] = SHOW_TAXONOMIES_IN_PREPRINT_PROVIDER_CREATE
+        kwargs['show_taxonomies'] = False
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
         return super(CreatePreprintProvider, self).get_context_data(*args, **kwargs)
 

@@ -5,10 +5,16 @@ from api.nodes.views import (
     NodeChildrenList,
     NodeList,
     LinkedNodesList,
-    NodeLinkedRegistrationsList,
 )
 
-from api.registrations.views import RegistrationDetail, RegistrationChildrenList, RegistrationList
+from api.registrations.views import (
+    RegistrationDetail,
+    RegistrationChildrenList,
+    RegistrationList,
+    RegistrationMixin,
+    RegistrationLinkedRegistrationsList,
+)
+
 from api.users.views import UserNodes, UserRegistrations
 
 
@@ -48,11 +54,11 @@ class SparseNodeList(SparseNodeMixin, NodeList):
     pass
 
 
-class SparseLinkedNodesList(SparseNodeMixin, LinkedNodesList):
+class SparseLinkedNodesList(RegistrationMixin, SparseNodeMixin, LinkedNodesList):
     pass
 
 
-class SparseNodeLinkedRegistrationsList(SparseRegistrationMixin, NodeLinkedRegistrationsList):
+class SparseLinkedRegistrationsList(SparseRegistrationMixin, RegistrationLinkedRegistrationsList):
     pass
 
 
