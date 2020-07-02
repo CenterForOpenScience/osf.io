@@ -2041,6 +2041,8 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if user.spam_status == SpamStatus.HAM:
             return False
+        if request_headers['Host'].startswith('admin') or ':8001' in request_headers['Host']:
+            return False
 
         content = self._get_spam_content(saved_fields)
         if not content:
