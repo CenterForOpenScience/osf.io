@@ -153,7 +153,7 @@ class ComplexFileEvent(FileEvent):
                     u'{dest_node_title}にある{dest_addon}の「<b>{dest_name}</b>」へ{action}しました。'
                 ).format(
                     action=u'移動' if markupsafe.escape(action) == u'moved' else markupsafe.escape(action),
-                    f_type=markupsafe.escape(f_type),
+                    f_type=u'ファイル' if markupsafe.escape(f_type) == u'file' else u'フォルダ' if markupsafe.escape(f_type) == 'folder' else markupsafe.escape(f_type),
                     source_name=markupsafe.escape(source_name),
                     source_addon=markupsafe.escape(self.payload['source']['addon']),
                     source_node_title=markupsafe.escape(self.payload['source']['node']['title']),
