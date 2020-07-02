@@ -193,7 +193,7 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def html_message(self):
-        return self._build_message(html=True)
+        return self._build_message('', html=True)
 
     @property
     def html_message_ja(self):
