@@ -146,7 +146,7 @@ class ComplexFileEvent(FileEvent):
         source_name = self.payload['source']['materialized'].lstrip('/')
 
         if html:
-            if lang == 'ja'
+            if lang == 'ja':
                 return (
                     u'が{f_type}(<b>{source_name}</b>)を'
                     u'{source_node_title}にある{source_addon}から'
