@@ -201,7 +201,7 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def text_message(self):
-        return self._build_message(html=False)
+        return self._build_message('', html=False)
 
     @property
     def waterbutler_id(self):
