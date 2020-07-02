@@ -234,7 +234,7 @@ INVITE_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
-    subject='GakuNin RDMプロジェクトのコントリビュータに追加されました / You have been added as a contributor to a GakuNin RDM project.'
+    subject='GakuNin RDMプロジェクトのメンバーに追加されました / You have been added as a contributor to a GakuNin RDM project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
