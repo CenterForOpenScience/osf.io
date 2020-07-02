@@ -4,8 +4,8 @@
     <tr>
         <td width="40" class="icon" valign="middle" style="border-collapse: collapse;font-size: 24px;color: #999;"> <img class="avatar" src="${profile_image_url}" width="48" alt="avatar" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;border-radius: 25px;"> </td>
         <td style="line-height: 17px;border-collapse: collapse;">
-            <span class="timestamp" style="color: grey;">${localized_timestamp}</span>に
-            <span class="person" style="font-weight: bold;">${user.fullname}</span>が
+            <span class="timestamp" style="color: grey;">${localized_timestamp}に</span>
+            <span class="person" style="font-weight: bold;">${user.fullname}が</span>
             <span class="text" style="color: grey;">あなたの${provider + ' ' if page_type == 'file' else ''}
             %if page_type == 'project':
                 プロジェクト
