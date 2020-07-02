@@ -136,7 +136,7 @@ class ComplexFileEvent(FileEvent):
         self.source_node = AbstractNode.load(source_nid) or Preprint.load(source_nid)
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
-    def _build_message(self, html=False, lang):
+    def _build_message(self, lang, html=Falsex):
         addon, f_type, action = tuple(self.action.split('_'))
         # f_type is always file for the action
         if self.payload['destination']['kind'] == u'folder':
@@ -197,7 +197,7 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def html_message_ja(self):
-        return self._build_message(html=True, 'ja')
+        return self._build_message('ja', html=True)
 
     @property
     def text_message(self):
