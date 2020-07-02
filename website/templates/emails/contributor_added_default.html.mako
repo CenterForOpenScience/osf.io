@@ -37,7 +37,7 @@
     <br>
     GakuNin RDM Robot<br>
     <br>
-    Want more information? Visit https://rdm.nii.ac.jp/ to learn about the GakuNin RDM, or https://nii.ac.jp/ for information about its supporting organization, the ${settings.NII_FORMAL_NAME_EN}.<br>
+    Want more information? Visit ${settings.RDM_URL} to learn about the GakuNin RDM, or ${settings.NII_HOMEPAGE_URL} for information about its supporting organization, the ${settings.NII_FORMAL_NAME_EN}.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 
