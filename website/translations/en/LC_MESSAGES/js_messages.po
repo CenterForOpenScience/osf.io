@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-02 20:20+0900\n"
-"PO-Revision-Date: 2020-07-02 20:20+0900\n"
+"POT-Creation-Date: 2020-07-03 13:12+0900\n"
+"PO-Revision-Date: 2020-07-03 13:12+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2426,79 +2426,79 @@ msgstr ""
 msgid "Copy failed!"
 msgstr ""
 
-#: website/static/js/comment.js:54
+#: website/static/js/comment.js:55
 msgid "Error getting contributors and group members"
 msgstr ""
 
-#: website/static/js/comment.js:72
+#: website/static/js/comment.js:73
 msgid "Spam or advertising"
 msgstr ""
 
-#: website/static/js/comment.js:73
+#: website/static/js/comment.js:74
 msgid "Hate speech"
 msgstr ""
 
-#: website/static/js/comment.js:74
+#: website/static/js/comment.js:75
 msgid "Violence or harmful behavior"
 msgstr ""
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Commenting"
 msgstr ""
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Comment"
 msgstr ""
 
-#: website/static/js/comment.js:229
+#: website/static/js/comment.js:232
 msgid "Exceeds character limit. Please reduce to %1$s characters or less."
 msgstr ""
 
-#: website/static/js/comment.js:344 website/static/js/comment.js:552
+#: website/static/js/comment.js:347 website/static/js/comment.js:555
 msgid "Please enter a comment"
 msgstr ""
 
-#: website/static/js/comment.js:390 website/static/js/comment.js:585
+#: website/static/js/comment.js:393 website/static/js/comment.js:588
 msgid "Could not submit comment"
 msgstr ""
 
-#: website/static/js/comment.js:391
+#: website/static/js/comment.js:394
 msgid "Error creating comment"
 msgstr ""
 
-#: website/static/js/comment.js:586
+#: website/static/js/comment.js:589
 msgid "Error editing comment"
 msgstr ""
 
-#: website/static/js/comment.js:631
+#: website/static/js/comment.js:634
 msgid "Could not report abuse."
 msgstr ""
 
-#: website/static/js/comment.js:632
+#: website/static/js/comment.js:635
 msgid "Error reporting abuse"
 msgstr ""
 
-#: website/static/js/comment.js:661
+#: website/static/js/comment.js:664
 msgid "Error deleting comment"
 msgstr ""
 
-#: website/static/js/comment.js:699
+#: website/static/js/comment.js:702
 msgid "Error undeleting comment"
 msgstr ""
 
-#: website/static/js/comment.js:724
+#: website/static/js/comment.js:727
 msgid "Error unreporting comment"
 msgstr ""
 
-#: website/static/js/comment.js:804
+#: website/static/js/comment.js:807
 msgid "Your comments have unsaved changes. Are you sure "
 msgstr ""
 
-#: website/static/js/comment.js:805
+#: website/static/js/comment.js:808
 msgid "you want to leave this page?"
 msgstr ""
 
-#: website/static/js/comment.js:823
+#: website/static/js/comment.js:826
 msgid "Could not update comment timestamp"
 msgstr ""
 
@@ -4833,6 +4833,10 @@ msgstr ""
 
 #: website/static/js/logActionsList_extract.js:261
 msgid "${user} authorized the Zotero addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:262
+msgid "${user} deauthorized the Zotero addon for ${node}"
 msgstr ""
 
 #: website/static/js/logTextParser.js:824

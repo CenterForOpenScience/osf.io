@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-02 20:20+0900\n"
-"PO-Revision-Date: 2020-07-02 20:20+0900\n"
+"POT-Creation-Date: 2020-07-03 13:12+0900\n"
+"PO-Revision-Date: 2020-07-03 13:12+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -3530,79 +3530,79 @@ msgstr "コピーされました！"
 msgid "Copy failed!"
 msgstr "コピーが失敗しました！"
 
-#: website/static/js/comment.js:54
+#: website/static/js/comment.js:55
 msgid "Error getting contributors and group members"
 msgstr "メンバーとグループメンバーの取得エラー"
 
-#: website/static/js/comment.js:72
+#: website/static/js/comment.js:73
 msgid "Spam or advertising"
 msgstr "スパムまたは広告"
 
-#: website/static/js/comment.js:73
+#: website/static/js/comment.js:74
 msgid "Hate speech"
 msgstr "ヘイトスピーチ"
 
-#: website/static/js/comment.js:74
+#: website/static/js/comment.js:75
 msgid "Violence or harmful behavior"
 msgstr "暴力や有害な行動"
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Commenting"
 msgstr "コメント中"
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Comment"
 msgstr "コメント"
 
-#: website/static/js/comment.js:229
+#: website/static/js/comment.js:232
 msgid "Exceeds character limit. Please reduce to %1$s characters or less."
 msgstr "文字数の制限を超えています。%1$s文字以下に減らしてください。"
 
-#: website/static/js/comment.js:344 website/static/js/comment.js:552
+#: website/static/js/comment.js:347 website/static/js/comment.js:555
 msgid "Please enter a comment"
 msgstr "コメントを入れて下さい"
 
-#: website/static/js/comment.js:390 website/static/js/comment.js:585
+#: website/static/js/comment.js:393 website/static/js/comment.js:588
 msgid "Could not submit comment"
 msgstr "コメントを送信できませんでした"
 
-#: website/static/js/comment.js:391
+#: website/static/js/comment.js:394
 msgid "Error creating comment"
 msgstr "コメント作成エラー"
 
-#: website/static/js/comment.js:586
+#: website/static/js/comment.js:589
 msgid "Error editing comment"
 msgstr "コメント編集エラー"
 
-#: website/static/js/comment.js:631
+#: website/static/js/comment.js:634
 msgid "Could not report abuse."
 msgstr "不正行為を報告できませんでした。"
 
-#: website/static/js/comment.js:632
+#: website/static/js/comment.js:635
 msgid "Error reporting abuse"
 msgstr "不正行為の報告エラー"
 
-#: website/static/js/comment.js:661
+#: website/static/js/comment.js:664
 msgid "Error deleting comment"
 msgstr "コメントの削除エラー"
 
-#: website/static/js/comment.js:699
+#: website/static/js/comment.js:702
 msgid "Error undeleting comment"
 msgstr "コメントの削除解除エラー"
 
-#: website/static/js/comment.js:724
+#: website/static/js/comment.js:727
 msgid "Error unreporting comment"
 msgstr "コメントの報告エラー"
 
-#: website/static/js/comment.js:804
+#: website/static/js/comment.js:807
 msgid "Your comments have unsaved changes. Are you sure "
 msgstr "コメントには未保存の変更があります。"
 
-#: website/static/js/comment.js:805
+#: website/static/js/comment.js:808
 msgid "you want to leave this page?"
 msgstr "このページから移動してもよろしいですか？"
 
-#: website/static/js/comment.js:823
+#: website/static/js/comment.js:826
 msgid "Could not update comment timestamp"
 msgstr "コメントのタイムスタンプを更新できませんでした"
 
@@ -5943,6 +5943,10 @@ msgstr ""
 
 #: website/static/js/logActionsList_extract.js:261
 msgid "${user} authorized the Zotero addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:262
+msgid "${user} deauthorized the Zotero addon for ${node}"
 msgstr ""
 
 #: website/static/js/logTextParser.js:824
