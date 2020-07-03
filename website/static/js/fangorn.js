@@ -510,7 +510,7 @@ function displayConflict(tb, item, folder, cb) {
         m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, gettext('Skip')),
         m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, gettext('Stop'))
     ];
-    var header = m('h3.break-word.modal-title', sprintf(gettext('Replace "%s"?'),item.data.name);
+    var header = m('h3.break-word.modal-title', sprintf(gettext('Replace "%s"?'),item.data.name));
     tb.modal.update(mithrilContent, mithrilButtons, header);
 }
 
