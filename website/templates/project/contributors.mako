@@ -140,7 +140,7 @@
 
     % if permissions.ADMIN in user['permissions'] and access_requests and node['access_requests_enabled']:
     <div id="manageAccessRequests">
-        <h3> Requests for Access</h3>
+        <h3> ${_("Requests for Access")}</h3>
         <p class="m-b-xs">${_("The following users have requested access to this project.")}</p>
         <table  id="manageAccessRequestsTable"
         class="table responsive-table responsive-table-xxs"
