@@ -259,5 +259,5 @@ var weko_node_deauthorized_no_user = _('WEKO addon for ${node} deauthorized');
 var zotero_folder_selected = _('${user} linked Zotero folder ${folder_name} to ${node}');
 var zotero_library_selected = _('${user} linked Zotero library ${library_name} to ${node}');
 var zotero_node_authorized = _('${user} authorized the Zotero addon for ${node}');
-var zotero_node_deauthorized = _('${user} deauthorized the Zotero addon for ${node};
+var zotero_node_deauthorized = _('${user} deauthorized the Zotero addon for ${node}');
 
