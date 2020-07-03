@@ -782,7 +782,7 @@ msgstr "比"
 #: .\admin\templates\institutions\statistical_status_default_storage_user.html:26
 #: .\admin\templates\institutions\user_list_by_institute.html:26
 msgid "Usage"
-msgstr "使用法"
+msgstr "使用率"
 
 #: .\admin\templates\institutions\statistical_status_default_storage_user.html:31
 #: .\admin\templates\institutions\user_list_by_institute.html:31
