@@ -5599,37 +5599,37 @@ msgstr "${user}がGitLabリポジトリ(${gitlab_repo})を${node}にリンクし
 
 #: website/static/js/logActionsList_extract.js:176
 msgid "${user} added file ${googledrive_path} to Google Drive in ${node}"
-msgstr "${user}がファイル(${googledrive_path})を${node}のGoogleドライブに追加しました"
+msgstr "${user}がファイル(${googledrive_path})を${node}のGoogle Driveに追加しました"
 
 #: website/static/js/logActionsList_extract.js:177
 msgid ""
 "${user} removed ${path_type} ${googledrive_path} from Google Drive in "
 "${node}"
-msgstr "${user}が${node}のGoogleドライブから${path_type}(${googledrive_path})を削除しました"
+msgstr "${user}が${node}のGoogle Driveから${path_type}(${googledrive_path})を削除しました"
 
 #: website/static/js/logActionsList_extract.js:178
 msgid "${user} updated file ${googledrive_path} in Google Drive in ${node}"
-msgstr "${user}が${node}のGoogleドライブのファイル(${googledrive_path})を更新しました"
+msgstr "${user}が${node}のGoogle Driveのファイル(${googledrive_path})を更新しました"
 
 #: website/static/js/logActionsList_extract.js:179
 msgid "${user} created folder ${googledrive_path} in Google Drive in ${node}"
-msgstr "${user}が${node}のGoogleドライブにフォルダ(${googledrive_path})を作成しました"
+msgstr "${user}が${node}のGoogle Driveにフォルダ(${googledrive_path})を作成しました"
 
 #: website/static/js/logActionsList_extract.js:180
 msgid "${user} linked Google Drive folder ${googledrive_folder} to ${node}"
-msgstr "${user}がGoogleドライブフォルダ(${googledrive_folder})を${node}にリンクしました"
+msgstr "${user}がGoogle Driveフォルダ(${googledrive_folder})を${node}にリンクしました"
 
 #: website/static/js/logActionsList_extract.js:181
 msgid "${user} authorized the Google Drive addon for ${node}"
-msgstr "${user}が${node}のGoogleドライブアドオンを承認しました"
+msgstr "${user}が${node}のGoogle Driveアドオンを承認しました"
 
 #: website/static/js/logActionsList_extract.js:182
 msgid "${user} deauthorized the Google Drive addon for ${node}"
-msgstr "${user}が${node}のGoogleドライブアドオンの認証を解除しました"
+msgstr "${user}が${node}のGoogle Driveアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:183
 msgid "Google Drive addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGoogleドライブアドオン"
+msgstr "許可されていない${node}のGoogle Driveアドオン"
 
 #: website/static/js/logActionsList_extract.js:184
 msgid "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}"
