@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-17 14:28+0900\n"
-"PO-Revision-Date: 2020-06-18 13:30+0900\n"
+"POT-Creation-Date: 2020-07-02 20:20+0900\n"
+"PO-Revision-Date: 2020-07-02 20:20+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -1326,8 +1326,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin "
-"GakuNin RDMプロジェクトを公開または非公開にする設定は、Zoteroフォルダをパブリックまたはプライベートにする設定とは独立しています。GakuNin RDMはリンクされたZoteroフォルダの権限を変更することはありません。</td>\n"
+"                <td>GakuNin GakuNin "
+"RDMプロジェクトを公開または非公開にする設定は、Zoteroフォルダをパブリックまたはプライベートにする設定とは独立しています。GakuNin "
+"RDMはリンクされたZoteroフォルダの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
@@ -1428,8 +1429,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin "
-"GakuNin RDMプロジェクトを公開または非公開にする設定は、ownCloudのプライバシー設定とは独立しています。GakuNin RDMはリンクされたownCloudフォルダの権限を変更することはありません。</td>\n"
+"                <td>GakuNin GakuNin "
+"RDMプロジェクトを公開または非公開にする設定は、ownCloudのプライバシー設定とは独立しています。GakuNin "
+"RDMはリンクされたownCloudフォルダの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -1789,9 +1791,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin "
-"RDMプロジェクトを公開または非公開にする設定は、Google Driveのプライバシー設定とは独立しています。GakuNin "
-"RDMはリンクされたGoogle Driveフォルダの権限を変更することはありません。</td>\n"
+"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Google "
+"Driveのプライバシー設定とは独立しています。GakuNin RDMはリンクされたGoogle "
+"Driveフォルダの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -1800,8 +1802,8 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルの追加/更新</td>\n"
-"                <td>GakuNin "
-"RDM経由でプロジェクトのファイルを追加/更新すると、Google Driveにも反映されます。</td>\n"
+"                <td>GakuNin RDM経由でプロジェクトのファイルを追加/更新すると、Google "
+"Driveにも反映されます。</td>\n"
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルの削除</td>\n"
@@ -1814,9 +1816,9 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
-"                "
-"<td>プロジェクトやコンポーネントのフォーク時、Google Driveの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでGoogle Driveアドオンを承認したユーザーと同一である場合はコピーされます。</td>"
-"\n"
+"                <td>プロジェクトやコンポーネントのフォーク時、Google "
+"Driveの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでGoogle "
+"Driveアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -1911,8 +1913,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin "
-"GakuNin RDMプロジェクトを公開または非公開にする設定は、Bitbucketリポジトリをパブリックまたはプライベートにする設定とは独立しています。GakuNin RDMはリンクされたBitbucketリポジトリの権限を変更することはありません。</td>\n"
+"                <td>GakuNin GakuNin "
+"RDMプロジェクトを公開または非公開にする設定は、Bitbucketリポジトリをパブリックまたはプライベートにする設定とは独立しています。GakuNin"
+" RDMはリンクされたBitbucketリポジトリの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2031,7 +2034,8 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Azure Blob Storageコンテナをパブリックまたはプライベートにする設定とは独立しています。</td>\n"
+"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Azure Blob "
+"Storageコンテナをパブリックまたはプライベートにする設定とは独立しています。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2056,8 +2060,9 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
-"                "
-"<td>プロジェクトやコンポーネントのフォーク時、Azure Blob Storageの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでAzure Blob Storageアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
+"                <td>プロジェクトやコンポーネントのフォーク時、Azure Blob "
+"Storageの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでAzure Blob "
+"Storageアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -2153,7 +2158,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Nextcloudのプライバシー設定とは独立しています。GakuNin RDMはリンクされたNextcloudフォルダの権限を変更することはありません。</td>\n"
+"                <td>GakuNin "
+"RDMプロジェクトを公開または非公開にする設定は、Nextcloudのプライバシー設定とは独立しています。GakuNin "
+"RDMはリンクされたNextcloudフォルダの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2271,8 +2278,8 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin "
-"GakuNin RDMプロジェクトを公開または非公開にする設定は、Swiftコンテナをパブリックまたはプライベートにする設定とは独立しています。</td>\n"
+"                <td>GakuNin GakuNin "
+"RDMプロジェクトを公開または非公開にする設定は、Swiftコンテナをパブリックまたはプライベートにする設定とは独立しています。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2392,7 +2399,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、S3 Compatible Storageバケットをパブリックまたはプライベートにする設定とは独立しています。GakuNin RDMはリンクされたS3 Compatible Storageバケットの権限を変更することはありません。</td>\n"
+"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、S3 Compatible "
+"Storageバケットをパブリックまたはプライベートにする設定とは独立しています。GakuNin RDMはリンクされたS3 Compatible "
+"Storageバケットの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2417,8 +2426,9 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
-"                "
-"<td>プロジェクトやコンポーネントのフォーク時、S3 Compatible Storageの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでS3 Compatible Storageアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
+"                <td>プロジェクトやコンポーネントのフォーク時、S3 Compatible "
+"Storageの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでS3 Compatible "
+"Storageアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -2726,7 +2736,9 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"warning\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Google Driveのプライバシー設定とは独立しています。GakuNin RDMはリンクされたGoogle Driveフォルダの権限を変更することはありません。</td>\n"
+"                <td>GakuNin RDMプロジェクトを公開または非公開にする設定は、Google "
+"Driveのプライバシー設定とは独立しています。GakuNin RDMはリンクされたGoogle "
+"Driveフォルダの権限を変更することはありません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
@@ -2735,8 +2747,8 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルの追加/更新</td>\n"
-"                <td>GakuNin "
-"RDM経由でプロジェクトのファイルを追加/更新すると、Google Driveにも反映されます。</td>\n"
+"                <td>GakuNin RDM経由でプロジェクトのファイルを追加/更新すると、Google "
+"Driveにも反映されます。</td>\n"
 "            </tr>\n"
 "            <tr class=\"success\">\n"
 "                <td>ファイルの削除</td>\n"
@@ -2749,8 +2761,9 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
-"                <td"
-">プロジェクトやコンポーネントのフォーク時、Google Driveの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでIQB-RIMSアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
+"                <td>プロジェクトやコンポーネントのフォーク時、Google Drive"
+"の認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでIQB-"
+"RIMSアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -3778,7 +3791,8 @@ msgstr "Wiki画像フォルダーを置き換えることはできません"
 msgid "An item named \"%1$s\" already exists in this location."
 msgstr "\"%1$s\"という名前のアイテムはこの場所に既に存在します"
 
-#: website/static/js/fangorn.js:499 website/static/js/fangorn.js:532
+#: website/static/js/fangorn.js:499 website/static/js/fangorn.js:508
+#: website/static/js/fangorn.js:532
 msgid "Keep Both"
 msgstr "両方を保持"
 
@@ -3786,7 +3800,8 @@ msgstr "両方を保持"
 msgid " will retain both files (and their version histories) in this location."
 msgstr "はこの場所に両方のファイル（およびそれらのバージョン履歴）が保持されます。"
 
-#: website/static/js/fangorn.js:501 website/static/js/fangorn.js:534
+#: website/static/js/fangorn.js:501 website/static/js/fangorn.js:509
+#: website/static/js/fangorn.js:534
 msgid "Replace"
 msgstr "置換"
 
@@ -3794,13 +3809,34 @@ msgstr "置換"
 msgid " will overwrite the existing file in this location. "
 msgstr "はこの場所にある既存のファイルを上書きします。"
 
-#: website/static/js/fangorn.js:535
+#: website/static/js/fangorn.js:502 website/static/js/fangorn.js:535
 msgid "You will lose previous versions of the overwritten file. "
 msgstr "上書きされたファイルの以前のバージョンは失われます。"
 
-#: website/static/js/fangorn.js:536
+#: website/static/js/fangorn.js:503 website/static/js/fangorn.js:536
 msgid "You will keep previous versions of the moved file."
 msgstr "移動したファイルの以前のバージョンを保持します。"
+
+#: website/static/js/fangorn.js:504
+msgid "\"Skip\" will skip the current file."
+msgstr "\"スキップ\"は現在のファイルをスキップします。"
+
+#: website/static/js/fangorn.js:505
+msgid "\"Stop\" will only move files with no conflicts."
+msgstr "\"停止\"は、競合のないファイルのみを移動します。"
+
+#: website/static/js/fangorn.js:510
+msgid "Skip"
+msgstr "スキップ"
+
+#: website/static/js/fangorn.js:511
+msgid "Stop"
+msgstr "停止"
+
+#: website/static/js/fangorn.js:513
+#, python-format
+msgid "Replace \"%s\"?"
+msgstr "\"%s\"を置換しますか？"
 
 #: website/static/js/fangorn.js:537
 msgid " will cancel the move."
@@ -4171,6 +4207,14 @@ msgstr "ステータスをアップロード"
 #: website/static/js/fangorn.js:2504
 msgid " files succeeded."
 msgstr "ファイルが成功しました。"
+
+#: website/static/js/fangorn.js:2605
+msgid "Done"
+msgstr "完了"
+
+#: website/static/js/fangorn.js:2607
+msgid "Move Status"
+msgstr "移動ステータス"
 
 #: website/static/js/fangorn.js:2609
 msgid " files successfully moved."
@@ -4681,19 +4725,35 @@ msgstr "これらは、プロジェクトごとの設定です。 これらの�
 msgid "moved"
 msgstr "移動"
 
+#: website/static/js/js_messages.js:25
+msgid "renamed"
+msgstr "名前の変更"
+
 #: website/static/js/js_messages.js:27
+msgid "Skipped"
+msgstr "スキップ済"
+
+#: website/static/js/js_messages.js:27
+msgid "Moved or replaced old version"
+msgstr "古いバージョンを移動または置換"
+
+#: website/static/js/js_messages.js:27
+msgid "Kept both versions"
+msgstr "両方のバージョンを保持"
+
+#: website/static/js/js_messages.js:29
 msgid "admin"
 msgstr "管理者"
 
-#: website/static/js/js_messages.js:27
+#: website/static/js/js_messages.js:29
 msgid "write"
 msgstr "書込み"
 
-#: website/static/js/js_messages.js:27
+#: website/static/js/js_messages.js:29
 msgid "read"
 msgstr "読込み"
 
-#: website/static/js/js_messages.js:29
+#: website/static/js/js_messages.js:31
 msgid "home"
 msgstr "ホーム"
 
@@ -5205,6 +5265,684 @@ msgstr ""
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:98
+msgid "${user} linked the Azure Blob Storage container ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:99
+msgid "${user} unselected the Azure Blob Storage container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:100
+msgid ""
+"${user} added file ${path} to Azure Blob Storage container ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:101
+msgid ""
+"${user} removed ${path} in Azure Blob Storage container ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:102
+msgid ""
+"${user} updated file ${path} in Azure Blob Storage container ${bucket} in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:103
+msgid ""
+"${user} created folder ${path} in Azure Blob Storage container ${bucket} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:104
+msgid "${user} authorized the Azure Blob Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:105
+msgid "${user} deauthorized the Azure Blob Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:106
+msgid "Azure Blob Storage addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:107
+msgid "${user} added file ${path} to Bitbucket repo ${bitbucket_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:108
+msgid ""
+"${user} removed ${path_type} ${path} in Bitbucket repo ${bitbucket_repo} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:109
+msgid ""
+"${user} updated file ${path} in Bitbucket repo ${bitbucket_repo} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:110
+msgid ""
+"${user} created folder ${path} in Bitbucket repo ${bitbucket_repo} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:111
+msgid "${user} authorized the Bitbucket addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:112
+msgid "${user} deauthorized the Bitbucket addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:113
+msgid "Bitbucket addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:114
+msgid "${user} linked Bitbucket repo ${bitbucket_repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:115
+msgid "${user} added file ${path} to Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:116
+msgid "${user} removed ${path_type} ${path} from Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:117
+msgid "${user} updated file ${path} in Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:118
+msgid "${user} created folder ${path} in Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:119
+msgid "${user} linked Box folder ${box_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:120
+msgid "${user} authorized the Box addon in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:121
+msgid "${user} deauthorized the Box addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:122
+msgid "Box addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:123
+msgid "${user} added a citation ${citation} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:124
+msgid "${user} updated a citation ${citation} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:125
+msgid "${user} removed a citation ${citation} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:126
+msgid "${user} added file ${filename} to Dataverse dataset ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:127
+msgid ""
+"${user} removed file ${filename} from Dataverse dataset ${dataset} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:128
+msgid "${user} linked Dataverse dataset ${dataset} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:129
+msgid "${user} linked Dataverse dataset ${study} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:130
+msgid "${user} published a new version of Dataverse dataset ${dataset} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:131
+msgid "${user} published a new version of Dataverse dataset ${study} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:132
+msgid "${user} authorized the Dataverse addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:133
+msgid "${user} deauthorized the Dataverse addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:134
+msgid "Dataverse addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:135
+msgid "${user} added file ${path} to Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:136
+msgid "${user} removed ${path_type} ${path} from Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:137
+msgid "${user}updated file ${path} in Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:138
+msgid "${user} created folder ${path} in Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:139
+msgid "${user} linked Dropbox folder ${dropbox_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:140
+msgid "${user} authorized the Dropbox addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:141
+msgid "${user} deauthorized the Dropbox addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:142
+msgid "Dropbox addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:143
+msgid "${user} added file ${path} to Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:144
+msgid "${user} removed ${path_type} ${path} from Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:145
+msgid "${user}updated file ${path} in Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:146
+msgid "${user} created folder ${path} in Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:147
+msgid ""
+"${user} linked Dropbox Business folder ${dropboxbusiness_folder} to "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:148
+msgid "${user} authorized the Dropbox Business addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:149
+msgid "${user} deauthorized the Dropbox Business addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:150
+msgid "Dropbox Business addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:151
+msgid "${user} linked figshare ${folder} ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:152
+msgid "${user} unlinked content from figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:153
+msgid "${user} added file ${path} to figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:154
+msgid "${user} removed ${path_type} ${path} from figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:155
+msgid "${user} created folder ${path} in figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:156
+msgid "${user} authorized the figshare addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:157
+msgid "${user} deauthorized the figshare addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:158
+msgid "figshare addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:159
+msgid "${user} changed external link to ${forward_url} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:160
+msgid "${user} added file ${path} to GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:161
+msgid "${user} removed ${path_type} ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:162
+msgid "${user} updated file ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:163
+msgid "${user} created folder ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:164
+msgid "${user} authorized the GitHub addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:165
+msgid "${user} deauthorized the GitHub addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:166
+msgid "GitHub addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:167
+msgid "${user} linked GitHub repo ${repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:168
+msgid "${user} added file ${path} to GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:169
+msgid "${user} removed file ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:170
+msgid "${user} updated file ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:171
+msgid "${user} created folder ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:172
+msgid "${user} authorized the GitLab addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:173
+msgid "${user} deauthorized the GitLab addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:174
+msgid "GitLab addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:175
+msgid "${user} linked GitLab repo ${gitlab_repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:176
+msgid "${user} added file ${googledrive_path} to Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:177
+msgid ""
+"${user} removed ${path_type} ${googledrive_path} from Google Drive in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:178
+msgid "${user} updated file ${googledrive_path} in Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:179
+msgid "${user} created folder ${googledrive_path} in Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:180
+msgid "${user} linked Google Drive folder ${googledrive_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:181
+msgid "${user} authorized the Google Drive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:182
+msgid "${user} deauthorized the Google Drive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:183
+msgid "Google Drive addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:184
+msgid "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:185
+msgid "${user} removed ${path_type} ${iqbrims_path} from IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:186
+msgid "${user} updated file ${iqbrims_path} in IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:187
+msgid "${user} created folder ${iqbrims_path} in IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:188
+msgid "${user} linked IQB-RIMS folder ${iqbrims_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:189
+msgid "${user} authorized the IQB-RIMS addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:190
+msgid "${user} deauthorized the IQB-RIMS addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:191
+msgid "IQB-RIMS addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:192
+#: website/static/js/logActionsList_extract.js:194
+msgid "${user} started IQB-RIMS workflow for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:193
+#: website/static/js/logActionsList_extract.js:195
+msgid "Finished workflow of ${user} for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:196
+msgid "${user} linked Mendeley folder ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:197
+msgid "${user} authorized the Mendeley addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:198
+msgid "${user} deauthorized the Mendeley addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:199
+msgid "${user} added file ${path} to Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:200
+msgid "${user} removed ${path_type} ${path} from Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:201
+msgid "${user} updated file ${path} in Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:202
+msgid "${user} created folder ${path} in Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:203
+msgid "${user} linked Nextcloud folder ${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:204
+msgid "${user} authorized the Nextcloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:205
+msgid "${user} deauthorized the Nextcloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:206
+msgid "Nextcloud addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:207
+msgid "${user} added file ${path} to Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:208
+msgid "${user} removed ${path_type} ${path} from Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:209
+msgid "${user} updated file ${path} in Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:210
+msgid "${user} created folder ${path} in Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:211
+msgid "${user} linked Microsoft OneDrive folder ${onedrive_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:212
+msgid "${user} authorized the Microsoft OneDrive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:213
+msgid "${user} deauthorized the Microsoft OneDrive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:214
+msgid "Microsoft OneDrive addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:215
+msgid "${user} added file ${path} to ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:216
+msgid "${user} removed ${path_type} ${path} from ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:217
+msgid "${user} updated file ${path} in ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:218
+msgid "${user} created folder ${path} in ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:219
+msgid "${user} linked ownCloud folder ${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:220
+msgid "${user} authorized the ownCloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:221
+msgid "${user} deauthorized the ownCloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:222
+msgid "ownCloud addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:223
+msgid "${user} linked the Amazon S3 bucket ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:224
+msgid "${user} unselected the Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:225
+msgid "${user} added file ${path} to Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:226
+msgid "${user} removed ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:227
+msgid "${user} updated file ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:228
+msgid "${user} created folder ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:229
+msgid "${user} authorized the Amazon S3 addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:230
+msgid "${user} deauthorized the Amazon S3 addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:231
+msgid "Amazon S3 addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:232
+msgid "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:233
+msgid "${user} unselected the S3 Compatible Storage bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:234
+msgid ""
+"${user} added file ${path} to S3 Compatible Storage bucket ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:235
+msgid ""
+"${user} removed ${path} in S3 Compatible Storage bucket ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:236
+msgid ""
+"${user} updated file ${path} in S3 Compatible Storage bucket ${bucket} in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:237
+msgid ""
+"${user} created folder ${path} in S3 Compatible Storage bucket ${bucket} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:238
+msgid "${user} authorized the S3 Compatible Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:239
+msgid "${user} deauthorized the S3 Compatible Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:240
+msgid "S3 Compatible Storage addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:241
+msgid "${user} linked the Swift container ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:242
+msgid "${user} unselected the Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:243
+msgid "${user} added file ${path} to Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:244
+msgid "${user} removed ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:245
+msgid "${user} updated file ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:246
+msgid "${user} created folder ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:247
+msgid "${user} authorized the Swift addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:248
+msgid "${user} deauthorized the Swift addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:249
+msgid "Swift addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:250
+msgid "${user} added file ${filename} to WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:251
+msgid "${user} removed file ${filename} from WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:252
+msgid "${user} linked WEKO index ${dataset} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:253
+msgid "${user} created an index ${filename} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:254
+msgid "${user} created an item ${filename} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:255
+msgid "${user} created folder ${filename} in WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:256
+msgid "${user} authorized the WEKO addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:257
+msgid "${user} deauthorized the WEKO addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:258
+msgid "WEKO addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:259
+msgid "${user} linked Zotero folder ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:260
+msgid "${user} linked Zotero library ${library_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:261
+msgid "${user} authorized the Zotero addon for ${node}"
 msgstr ""
 
 #: website/static/js/logTextParser.js:824
@@ -6270,6 +7008,10 @@ msgstr "アクセス権をリクエスト"
 #: website/static/js/requestAccess.js:27 website/static/js/requestAccess.js:62
 msgid "Access requested"
 msgstr "アクセス権がリクエストされました"
+
+#: website/static/js/requestAccess.js:30
+msgid "Request declined"
+msgstr "リクエストは拒否されました"
 
 #: website/static/js/requestAccess.js:67
 msgid "Access request failed. Please contact %1$s if the problem persists."

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-03 16:28+0900\n"
-"PO-Revision-Date: 2020-06-03 16:30+0900\n"
+"POT-Creation-Date: 2020-07-02 20:20+0900\n"
+"PO-Revision-Date: 2020-07-02 20:20+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2744,6 +2744,10 @@ msgstr "親プロジェクトの管理者"
 #: website/templates/project/contributors.mako:135
 msgid "No administrators from parent project found."
 msgstr "親プロジェクトの管理者が見つかりません"
+
+#: website/templates/project/contributors.mako:143
+msgid "Requests for Access"
+msgstr "アクセスのリクエスト"
 
 #: website/templates/project/contributors.mako:144
 msgid "The following users have requested access to this project."
