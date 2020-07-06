@@ -884,15 +884,16 @@ def _add_related_claimed_tag_to_user(pid, user):
     registration = Registration.load(pid)
     osf_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('osf'), system=True)
     if registration:
-        registration_id = registration.provider._id
-        registration_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(registration_id, 'registry'), system=True)
+        registration_provider_id = registration.provider._id
+        registration_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(registration_provider_id, 'registry'), system=True)
         user.add_system_tag(registration_claimed_tag)
     elif node:
         node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
         if node_source_tags.exists():
             for tag in node_source_tags:
-                claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
-                                                                system=True)
+                claimed_tag, created = Tag.all_tags.get_or_create(
+                    name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
+                    system=True)
                 user.add_system_tag(claimed_tag)
         elif node.is_collected:
             collection_provider_id = node.collecting_metadata_list[0].collection.provider._id
