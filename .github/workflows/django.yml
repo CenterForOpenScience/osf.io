@@ -2,9 +2,9 @@ name: Django CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ develop ]
   pull_request:
-    branches: [ master ]
+    branches: [ develop ]
 
 jobs:
   build:
@@ -23,8 +23,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install Dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        sudo apt-get install libxml2-dev libxslt1-dev
+        python3 -m pip install --upgrade pip
+        pip3 install -r requirements.txt
     - name: Run Tests
       run: |
-        python manage.py test
+        python3 manage.py test
