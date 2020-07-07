@@ -3738,7 +3738,7 @@ msgstr ""
 
 #: website/templates/util/render_addon_widget.mako:200
 #: website/templates/util/render_addon_widget.mako:225
-msgid "Image Scan Service"
+msgid "Image Scan only"
 msgstr ""
 
 #: website/templates/util/render_node.mako:5
@@ -3766,4 +3766,3 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
-

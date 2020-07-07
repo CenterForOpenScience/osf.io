@@ -139,7 +139,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                   'addProtectedRange': {
                     'protectedRange': {
@@ -196,6 +196,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                   }
                 })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 2,
+                    }
+                  }
+                })
 
     def test_add_files_with_dir(self):
         client = SpreadsheetClient('0001')
@@ -214,17 +224,20 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
-                assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A4:I4',
-                  'values': [[u'\u251c\u2212\u2212', 'test', '', '', '', '.txt', '', ''],
-                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '']],
-                  'majorDimension': 'ROWS'
-                })
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
+                assert_equal(len(json.loads(kwargs['data'])['values']), 4)
+                assert_equal(json.loads(kwargs['data'])['values'][0],
+                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][1],
+                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][2],
+                             [u'\u2514\u2212\u2212', 'test', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][3],
+                             [u'', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -280,6 +293,118 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 3,
+                    }
+                  }
+                })
+
+    def test_add_files_with_dirs(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['file1.txt', 'file2.txt', 'test2/file4.txt', 'test1/file3.txt'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
+                assert_equal(len(json.loads(kwargs['data'])['values']), 6)
+                assert_equal(json.loads(kwargs['data'])['values'][0],
+                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][1],
+                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][2],
+                             [u'\u251c\u2212\u2212', 'test1', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][3],
+                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][4],
+                             [u'\u2514\u2212\u2212', 'test2', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][5],
+                             [u'', u'\u2514\u2212\u2212', 'file4.txt', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 5);
+                assert_equal(requests[0], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1,
+                          'endColumnIndex': 8,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[1], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 8,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[2], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 7 + 3,
+                          'endColumnIndex': 3,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[3], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 7 + 3,
+                          'endColumnIndex': 6,
+                          'sheetId': 1,
+                          'startColumnIndex': 5,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 3,
+                    }
+                  }
                 })
 
     def test_add_files_with_multibytes_dir(self):
@@ -302,15 +427,15 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A4:I4',
-                  'values': [[u'\u251c\u2212\u2212', u'テスト', '', '', '', '.txt', '', ''],
-                             [u'\u2502', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', ''],
-                             [u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', '']],
+                  'values': [[u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '.txt', '', ''],
+                             [u'\u251c\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', u'テスト', '', '', '', '', '', ''],
+                             [u'', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 4);
+                assert_equal(len(requests), 5);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -366,6 +491,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                         'warningOnly': True
                       }
                     }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 3,
+                    }
+                  }
                 })
 
     def test_add_files_with_preset_cols(self):
@@ -393,7 +528,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 reqs = json.loads(kwargs['data'])['requests']
-                assert_equal(len(reqs), 6)
+                assert_equal(len(reqs), 7)
                 assert_equal(reqs[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -451,6 +586,16 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                 })
                 assert_equal(reqs[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 2,
+                    }
+                  }
+                })
+                assert_equal(reqs[5], {
                     'updateDimensionProperties': {
                       'range': {
                         'sheetId': 1,
@@ -464,7 +609,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'fields': 'hiddenByUser',
                     }
                 })
-                assert_equal(reqs[5], {
+                assert_equal(reqs[6], {
                     'updateDimensionProperties': {
                       'range': {
                         'sheetId': 1,

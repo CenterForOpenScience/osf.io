@@ -3860,8 +3860,8 @@ msgstr "論文登録申請"
 
 #: website/templates/util/render_addon_widget.mako:200
 #: website/templates/util/render_addon_widget.mako:225
-msgid "Image Scan Service"
-msgstr "画像スキャン依頼"
+msgid "Image Scan only"
+msgstr "投稿前画像スキャン依頼"
 
 #: website/templates/util/render_node.mako:5
 msgid "component"
@@ -3888,4 +3888,3 @@ msgstr "%(summaryTitle)sのフォークを作成"
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr "メンバー管理"
-

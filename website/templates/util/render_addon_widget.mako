@@ -197,7 +197,7 @@
                             <!-- ko if: (!isSubmitted() && modeCheck()) -->
                               <div class="form-group">
                                 <button type="button" class="btn btn-primary"
-                                        data-bind="click: gotoCheckForm">${_("Image Scan Service")}</button>
+                                        data-bind="click: gotoCheckForm">${_("Image Scan only")}</button>
                                 <small class="form-text text-muted" data-bind="text: checkHelp">
                                 </small>
                               </div>
@@ -222,7 +222,7 @@
                           </div>
                           <div class="form-group">
                             <button type="button" class="btn btn-primary"
-                                    data-bind="click: gotoCheckForm">${_("Image Scan Service")}</button>
+                                    data-bind="click: gotoCheckForm">${_("Image Scan only")}</button>
                             <small class="form-text text-muted" data-bind="text: checkHelp">
                             </small>
                           </div>

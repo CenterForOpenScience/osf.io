@@ -12,7 +12,6 @@
     <p>
       ${notify_body}
     </p>
-    <a href="${settings.DOMAIN + guid}">${settings.DOMAIN + guid}</a>
   </td>
 </tr>
 </%def>
