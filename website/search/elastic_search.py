@@ -45,7 +45,7 @@ USE_NGRAM_FIELD = False
 
 HIGHLIGHT_PRIORITY_DEFAULT_FIELD = '__default'
 
-### kuromoji > ngram 
+### kuromoji > ngram
 HIGHLIGHT_PRIORITY = ('ngram', HIGHLIGHT_PRIORITY_DEFAULT_FIELD)
 ### ngram > kuromoji
 #HIGHLIGHT_PRIORITY = (HIGHLIGHT_PRIORITY_DEFAULT_FIELD, 'ngram')
@@ -397,13 +397,13 @@ def merge_highlight(hits):
         merged_highlight = {}
         for key, value in highlight.items():
             splk = key.split('.')
-            lang_field = splk[len(splk)-1]
+            lang_field = splk[len(splk) - 1]
             if lang_field in HIGHLIGHT_PRIORITY:
-                new_key = '.'.join(splk[:(len(splk)-1)])
+                new_key = '.'.join(splk[:(len(splk) - 1)])
                 v = tmp.get(new_key)
                 if v:
-                    lang_field2 =  v[0]
-                    value2 =  v[1]
+                    lang_field2 = v[0]
+                    # value2 = v[1]   # unused
                     if highlight_priority_check(lang_field, lang_field2):
                         tmp[new_key] = (lang_field, value)
                 else:
@@ -1512,13 +1512,13 @@ def create_index(index=None):
                         'mode': 'normal',
                         #'user_dictionary': 'dict.txt'
                     },
-                    'ngram_tokenizer' : {
+                    'ngram_tokenizer': {
                         'type': 'nGram',
                         'min_gram': '2',
                         'max_gram': '3',
-                        'token_chars' : [
+                        'token_chars': [
                             'letter',
-                            'digit' 
+                            'digit'
                         ]
                     }
                 },
@@ -1566,7 +1566,7 @@ def create_index(index=None):
                             'icu_normalizer',
                         ],
                         'tokenizer': 'ngram_tokenizer',
-                        'filter' : [
+                        'filter': [
                             'cjk_width',
                             'lowercase',
                         ],
