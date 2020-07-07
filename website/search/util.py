@@ -8,6 +8,10 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
+if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+    DEFAULT_OPERATOR = 'AND'
+else:
+    DEFAULT_OPERATOR = 'OR'
 
 TITLE_WEIGHT = 4
 DESCRIPTION_WEIGHT = 1.2
@@ -61,8 +65,16 @@ def build_query_string(qs):
     }
 
     fields = ['{}^{}'.format(k, v) for k, v in field_boosts.items()]
+
+    # for highlight
+    add_fields = ['name', 'user', 'text', 'comments.*']
+    for f in add_fields:
+        fields.append('{}^1'.format(f))
+        fields.append('{}.*^1'.format(f))
+
     return {
         'query_string': {
+            'default_operator': DEFAULT_OPERATOR,
             'default_field': '_all',
             'fields': fields,
             'query': qs,
@@ -442,6 +454,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highli
                 else:
                     val = settings.SEARCH_HIGHLIGHT_FRAGMENT_SIZE
                 highlight_fields[key] = {'fragment_size': val}
+                highlight_fields[key + '.*'] = {'fragment_size': val}
 
     query = {
         'query': query_body,

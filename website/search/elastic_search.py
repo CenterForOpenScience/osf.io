@@ -41,6 +41,15 @@ from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
 
+USE_NGRAM_FIELD = False
+
+HIGHLIGHT_PRIORITY_DEFAULT_FIELD = '__default'
+
+### kuromoji > ngram 
+HIGHLIGHT_PRIORITY = ('ngram', HIGHLIGHT_PRIORITY_DEFAULT_FIELD)
+### ngram > kuromoji
+#HIGHLIGHT_PRIORITY = (HIGHLIGHT_PRIORITY_DEFAULT_FIELD, 'ngram')
+
 # True: use ALIASES_COMMENT
 ENABLE_DOC_TYPE_COMMENT = False
 
@@ -86,9 +95,23 @@ NOT_ANALYZED_PROPERTY = {'type': 'string', 'index': 'not_analyzed'}
 # Perform stemming on the field it's applied to.
 ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english',
                              'term_vector': 'with_positions_offsets'}
-GRDM_JA_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'grdm_ja_analyzer',
-                             'term_vector': 'with_positions_offsets'}
+
 # with_positions_offsets: adjust highlighted fields to the middle position.
+GRDM_JA_ANALYZER_PROPERTY = {'type': 'string',
+                             'analyzer': 'kuromoji_analyzer',
+                             'term_vector': 'with_positions_offsets',
+                             'fields': {}}
+if USE_NGRAM_FIELD:
+    GRDM_JA_ANALYZER_PROPERTY['fields'].update({
+        'ngram': {
+            'type': 'string',
+            'analyzer': 'ngram_analyzer',
+            'term_vector': 'with_positions_offsets',
+        },
+    })
+
+def node_includes_wiki():
+    return settings.SEARCH_ANALYZER != settings.SEARCH_ANALYZER_JAPANESE
 
 # INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
@@ -356,9 +379,40 @@ def search(query, index=None, doc_type=None, raw=False, normalize=True, private=
 
     return return_value
 
+def highlight_priority_check(a, b):
+    if a is None:  # shortcut
+        return True
+    index_a = -1
+    index_b = -1
+    if a in HIGHLIGHT_PRIORITY:
+        index_a = HIGHLIGHT_PRIORITY.index(a)
+    if b in HIGHLIGHT_PRIORITY:
+        index_b = HIGHLIGHT_PRIORITY.index(b)
+    return index_a > index_b
+
 def merge_highlight(hits):
     for hit in hits:
-        hit['_source']['highlight'] = hit.get('highlight', {})
+        highlight = hit.get('highlight', {})
+        tmp = {}
+        merged_highlight = {}
+        for key, value in highlight.items():
+            splk = key.split('.')
+            lang_field = splk[len(splk)-1]
+            if lang_field in HIGHLIGHT_PRIORITY:
+                new_key = '.'.join(splk[:(len(splk)-1)])
+                v = tmp.get(new_key)
+                if v:
+                    lang_field2 =  v[0]
+                    value2 =  v[1]
+                    if highlight_priority_check(lang_field, lang_field2):
+                        tmp[new_key] = (lang_field, value)
+                else:
+                    tmp[new_key] = (lang_field, value)
+            else:
+                tmp[key] = (HIGHLIGHT_PRIORITY_DEFAULT_FIELD, value)
+        for key, v in tmp.items():
+            merged_highlight[key] = v[1]
+        hit['_source']['highlight'] = merged_highlight
     return hits
 
 def set_last_comment(hits):
@@ -714,7 +768,7 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
         'comments': comments_to_doc(node._id),
     }
-    if not node.is_retracted:
+    if node_includes_wiki() and not node.is_retracted:
         wiki_names = []
         for wiki in WikiPage.objects.get_wiki_pages_latest(node):
             # '.' is not allowed in field names in ES2
@@ -1450,12 +1504,33 @@ def create_index(index=None):
                 'tokenizer': {
                     'kuromoji_tokenizer_search': {
                         'type': 'kuromoji_tokenizer',
-                        'mode': 'search'
+                        'mode': 'search',
+                        #'user_dictionary': 'dict.txt'
+                    },
+                    'kuromoji_tokenizer_normal': {
+                        'type': 'kuromoji_tokenizer',
+                        'mode': 'normal',
+                        #'user_dictionary': 'dict.txt'
+                    },
+                    'ngram_tokenizer' : {
+                        'type': 'nGram',
+                        'min_gram': '2',
+                        'max_gram': '3',
+                        'token_chars' : [
+                            'letter',
+                            'digit' 
+                        ]
                     }
                 },
                 'filter': {
                     'kuromoji_part_of_speech_search': {
                         'type': 'kuromoji_part_of_speech'
+                    },
+                    'my_synonym': {
+                        'type': 'synonym',
+                        'synonyms': [
+                            'nii,国立情報学研究所',
+                        ]
                     }
                 },
                 # 'char_filter': {
@@ -1466,13 +1541,13 @@ def create_index(index=None):
                 #     }
                 # },
                 'analyzer': {
-                    'grdm_ja_analyzer': {
+                    'kuromoji_analyzer': {
                         'type': 'custom',
-                        'tokenizer': 'kuromoji_tokenizer',
                         'char_filter': [
                             'icu_normalizer',
                             'kuromoji_iteration_mark',
                         ],
+                        'tokenizer': 'kuromoji_tokenizer_search',
                         'filter': [
                             #'nfkd_normalizer'
                             'lowercase',
@@ -1481,23 +1556,19 @@ def create_index(index=None):
                             'ja_stop',
                             #'kuromoji_number', ES6 or later
                             'kuromoji_stemmer',
+                            #'my_synonym',
                         ],
                     },
-                    'grdm_ja_search_analyzer': {
+                    'ngram_analyzer': {
                         'type': 'custom',
-                        'tokenizer': 'whitespace',
                         'char_filter': [
+                            'html_strip',
                             'icu_normalizer',
-                            'kuromoji_iteration_mark',
                         ],
-                        'filter': [
-                            #'nfkd_normalizer'
+                        'tokenizer': 'ngram_tokenizer',
+                        'filter' : [
+                            'cjk_width',
                             'lowercase',
-                            'kuromoji_baseform',
-                            'kuromoji_part_of_speech_search',
-                            'ja_stop',
-                            #'kuromoji_number', ES6 or later
-                            'kuromoji_stemmer',
                         ],
                     },
                 }
@@ -1506,8 +1577,8 @@ def create_index(index=None):
         'mappings': {
             '_default_': {
                 '_all': {
-                    'analyzer': 'grdm_ja_analyzer',
-                    'search_analyzer': 'grdm_ja_search_analyzer',
+                    'analyzer': 'kuromoji_analyzer',
+                    #'analyzer': 'ngram_analyzer',
                 }
             }
         }
@@ -1539,10 +1610,11 @@ def create_index(index=None):
                 }
             }
         else:
+            DATE_PROPERTY = {'type': 'date'}
             mapping = {
                 'properties': {
-                    'date_created': {'type': 'date'},
-                    'date_modified': {'type': 'date'},
+                    'date_created': DATE_PROPERTY,
+                    'date_modified': DATE_PROPERTY,
                     'sort_node_name': NOT_ANALYZED_PROPERTY,
                     'sort_file_name': NOT_ANALYZED_PROPERTY,
                     'sort_wiki_name': NOT_ANALYZED_PROPERTY,
