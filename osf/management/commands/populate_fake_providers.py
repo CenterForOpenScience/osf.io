@@ -102,6 +102,13 @@ PREPRINT_PROVIDERS = [
 ]
 REGISTRATION_PROVIDERS = [
     {
+        '_id': 'osf',
+        'name': '[TEST] OSF Registries',
+        'default_license': 'CC0 1.0 Universal',
+        'licenses_acceptable': ['CC0 1.0 Universal', 'No license'],
+        'description': 'The default provider',
+    },
+    {
         '_id': 'ridie',
         'name': '[TEST] RIDIE Registries',
         'default_license': 'CC0 1.0 Universal',

@@ -416,7 +416,7 @@ class RegistrationFactory(BaseNodeFactory):
         with patch('framework.celery_tasks.handlers.enqueue_task'):
             reg = register()
             add_approval_step(reg)
-        if not archive:
+        if not archive and reg.archive_job:
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 archive_job = reg.archive_job
                 archive_job.status = ARCHIVER_SUCCESS
