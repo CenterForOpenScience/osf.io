@@ -29,7 +29,7 @@ from osf.models import NodeLicense, Subject, CollectionProvider, PreprintProvide
 from osf_tests import factories
 from scripts import utils as script_utils
 from scripts.update_taxonomies import update_taxonomies
-from website.settings import PREPRINT_PROVIDER_DOMAINS
+from website.settings import PREPRINT_PROVIDER_DOMAINS, REGISTRATION_PROVIDER_DEFAULT__ID
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +249,7 @@ def populate_registration_providers(*args):
             logger.info('Updated registration provider: {}'.format(_id))
 
 def remove_registration_providers(*args):
-    providers = RegistrationProvider.objects.exclude(_id='osf')
+    providers = RegistrationProvider.objects.exclude(_id=REGISTRATION_PROVIDER_DEFAULT__ID)
     for provider in providers:
         logger.info('Removing registration provider: {}'.format(provider._id))
         provider.delete()

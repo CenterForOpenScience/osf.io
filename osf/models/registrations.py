@@ -556,6 +556,13 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
         get_latest_by = 'created'
 
 
+def get_default_provider_id():
+    return RegistrationProvider.objects.get(
+        _id=settings.REGISTRATION_PROVIDER_DEFAULT__ID,
+        type='osf.registrationprovider'
+    ).id
+
+
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
         BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
     # Fields that are writable by DraftRegistration.update
@@ -590,7 +597,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     provider = models.ForeignKey(
         'RegistrationProvider',
         related_name='draft_registrations',
-        null=True,
+        default=get_default_provider_id,
         on_delete=models.CASCADE,
     )
 
