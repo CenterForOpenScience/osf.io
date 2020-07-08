@@ -213,9 +213,9 @@ class TestRegistrationFiltering(ApiTestCase):
         )
 
         self.private_project_user_one = ProjectFactory(
-            title='Private Project User One', is_public=False, creator=self.user_one)
+            title='Private Project User One', is_public=False, creator=self.user_one, description='')
         self.private_project_user_two = ProjectFactory(
-            title='Private Project User Two', is_public=False, creator=self.user_two)
+            title='Private Project User Two', is_public=False, creator=self.user_two, description='')
 
         self.project_one.add_tag('tag1', Auth(
             self.project_one.creator), save=False)
