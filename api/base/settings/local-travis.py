@@ -19,3 +19,5 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
 }
 
 ALLOWED_HOSTS.append('localhost')
+
+TRAVIS_ENV = True
