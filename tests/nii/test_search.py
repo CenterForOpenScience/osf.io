@@ -424,7 +424,7 @@ class TestSearchJapanese(OsfTestCase):
         各フィールドごとに検索できることを確認する。
         削除して影響ないことを確認する。
         """
-        nfd_str = nfd(u'"ギガバイト"')  # 結合文字
+        nfd_str = nfd(u'ギガバイト')  # 結合文字
         nfc_str = nfc(nfd_str)  # 合成済み文字
         search_user = factories.AuthUserFactory()
 

@@ -26,6 +26,7 @@ from website.search.elastic_search import bulk_update_cgm
 from website.search.elastic_search import PROJECT_LIKE_TYPES
 from website.search.elastic_search import es_index
 from website.search.elastic_search import comments_to_doc
+from website.search.elastic_search import node_includes_wiki
 from website.search.search import update_institution, bulk_update_collected_metadata
 from website.search.util import unicode_normalize
 from addons.wiki.models import WikiPage
@@ -103,25 +104,28 @@ def fill_and_normalize(docs):
             d['creator_name'] = unicode_normalize(creator_name)
             modifier_name = d['modifier_name']
             d['modifier_name'] = unicode_normalize(modifier_name)
-
-            wikis = d['wikis']
-            if isinstance(wikis, list):
-                new_wikis = {}
-                for kv in wikis:
-                    if isinstance(kv, dict):
-                        for k, v in kv.items():
-                            new_wikis[k] = v
-                wikis = new_wikis
-            elif not isinstance(wikis, dict):
-                wikis = {}
-            normalized_wikis = {}
-            normalized_wiki_names = []
-            for wikiname, wikidata in wikis.items():
-                wikiname = unicode_normalize(wikiname)
-                normalized_wikis[wikiname] = unicode_normalize(wikidata)
-                normalized_wiki_names.append(wikiname)
-            d['wikis'] = normalized_wikis
-            d['wiki_names'] = normalized_wiki_names
+            if node_includes_wiki():
+                wikis = d['wikis']
+                if isinstance(wikis, list):
+                    new_wikis = {}
+                    for kv in wikis:
+                        if isinstance(kv, dict):
+                            for k, v in kv.items():
+                                new_wikis[k] = v
+                    wikis = new_wikis
+                elif not isinstance(wikis, dict):
+                    wikis = {}
+                normalized_wikis = {}
+                normalized_wiki_names = []
+                for wikiname, wikidata in wikis.items():
+                    wikiname = unicode_normalize(wikiname)
+                    normalized_wikis[wikiname] = unicode_normalize(wikidata)
+                    normalized_wiki_names.append(wikiname)
+                d['wikis'] = normalized_wikis
+                d['wiki_names'] = normalized_wiki_names
+            else:  # clear
+                d['wikis'] = None
+                d['wiki_names'] = None
             node = AbstractNode.load(doc['_id'])
             d['comments'] = comments_to_doc(node._id)
 
