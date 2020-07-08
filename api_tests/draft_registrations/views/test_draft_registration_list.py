@@ -297,20 +297,14 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
 
     def test_create_draft_with_provider(self, app, user, url_draft_registrations, provider2, payload_with_provider):
 
-        url = '{}embed=branched_from&embed=initiator'.format(url_draft_registrations)
-        res = app.post_json_api(url, payload_with_provider, auth=user.auth)
+        res = app.post_json_api(url_draft_registrations, payload_with_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
-        assert data['attributes']['registration_metadata'] == {}
         assert data['relationships']['provider']['links']['related']['href'] == \
                f'{settings.API_DOMAIN}v2/providers/registrations/{provider2._id}/'
 
-        assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
-        assert data['embeds']['initiator']['data']['id'] == user._id
-
         draft = DraftRegistration.load(data['id'])
-        assert draft.creator == user
-        assert draft.has_permission(user, ADMIN) is True
+        assert draft.provider == provider2
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(
