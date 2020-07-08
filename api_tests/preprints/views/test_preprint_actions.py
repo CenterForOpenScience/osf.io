@@ -6,12 +6,12 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions as osf_permissions
 
-from api_tests.users.views.test_user_actions import TestReviewActions
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 from api_tests.reviews.mixins.comment_settings import ReviewActionCommentSettingsMixin
 
 
 @pytest.mark.enable_quickfiles_creation
-class TestPreprintActionFilters(TestReviewActions):
+class TestPreprintActionFilters(ReviewActionFilterMixin):
 
     @pytest.fixture()
     def preprint(self, all_actions):
@@ -42,14 +42,6 @@ class TestPreprintActionFilters(TestReviewActions):
 
         user = AuthUserFactory()
         res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    def test_no_permission(self, app, url, expected_actions):
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
-
-        some_rando = AuthUserFactory()
-        res = app.get(url, auth=some_rando.auth, expect_errors=True)
         assert res.status_code == 403
 
 

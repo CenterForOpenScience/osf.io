@@ -1,10 +1,14 @@
+from datetime import timedelta
 
 import pytest
 from furl import furl
 
 from osf_tests.factories import (
+    ReviewActionFactory,
     AuthUserFactory,
+    PreprintFactory,
     PreprintProviderFactory,
+    ProjectFactory,
 )
 from osf.utils import permissions
 
@@ -35,6 +39,118 @@ def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
     if sort is None:
         return set(actual)
     return actual
+
+
+@pytest.mark.django_db
+class ReviewActionFilterMixin(object):
+
+    @pytest.fixture()
+    def url(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def providers(self):
+        return [
+            PreprintProviderFactory(
+                reviews_workflow='pre-moderation'
+            ) for _ in range(5)]
+
+    @pytest.fixture()
+    def all_actions(self, providers):
+        actions = []
+        for provider in providers:
+            preprint = PreprintFactory(
+                provider=provider,
+                project=ProjectFactory(is_public=True)
+            )
+            for _ in range(5):
+                actions.append(ReviewActionFactory(target=preprint))
+        return actions
+
+    @pytest.fixture()
+    def allowed_providers(self, providers):
+        return providers
+
+    @pytest.fixture()
+    def expected_actions(self, all_actions, allowed_providers):
+        provider_ids = set([p.id for p in allowed_providers])
+        return [a for a in all_actions if a.target.provider_id in provider_ids]
+
+    @pytest.fixture()
+    def user(self, allowed_providers):
+        user = AuthUserFactory()
+        for provider in allowed_providers:
+            user.groups.add(provider.get_group('moderator'))
+        return user
+
+    def test_filter_actions(self, app, url, user, expected_actions):
+        # unfiltered
+        expected = set([l._id for l in expected_actions])
+        actual = get_actual(app, url, user)
+        assert expected == actual
+
+        if not expected_actions:
+            return
+
+        action = expected_actions[0]
+
+        # filter by id
+        expected = set([action._id])
+        actual = get_actual(app, url, user, id=action._id)
+        assert expected == actual
+
+        # filter by trigger
+        expected = set(
+            [l._id for l in expected_actions if l.trigger == action.trigger])
+        actual = get_actual(app, url, user, trigger=action.trigger)
+        assert expected == actual
+
+        # filter by from_state
+        expected = set(
+            [l._id for l in expected_actions if l.from_state == action.from_state])
+        actual = get_actual(app, url, user, from_state=action.from_state)
+        assert expected == actual
+
+        # filter by to_state
+        expected = set(
+            [l._id for l in expected_actions if l.to_state == action.to_state])
+        actual = get_actual(app, url, user, to_state=action.to_state)
+        assert expected == actual
+
+        # filter by date_created
+        expected = set([l._id for l in expected_actions])
+        actual = get_actual(app, url, user, date_created=action.created)
+        assert expected == actual
+
+        expected = set()
+        actual = get_actual(
+            app, url, user,
+            date_created=action.created - timedelta(days=1))
+        assert expected == actual
+
+        # filter by date_modified
+        expected = set([l._id for l in expected_actions])
+        actual = get_actual(app, url, user, date_modified=action.modified)
+        assert expected == actual
+
+        expected = set()
+        actual = get_actual(
+            app, url, user,
+            date_modified=action.modified - timedelta(days=1))
+        assert expected == actual
+
+        # filter by target
+        expected = set(
+            [l._id for l in expected_actions if l.target_id == action.target_id])
+        actual = get_actual(app, url, user, target=action.target._id)
+        assert expected == actual
+
+        # filter by provider
+        expected = set(
+            [l._id for l in expected_actions if l.target.provider_id == action.target.provider_id])
+        actual = get_actual(
+            app, url, user, provider=action.target.provider._id)
+        assert expected == actual
 
 
 @pytest.mark.django_db

@@ -6,55 +6,35 @@ from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
     PreprintProviderFactory,
-    ProjectFactory,
-    ReviewActionFactory
 )
 from osf.utils import permissions as osf_permissions
 
+from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
 
-@pytest.mark.django_db
+
 @pytest.mark.enable_quickfiles_creation
-class TestReviewActions:
+class TestReviewActionFilters(ReviewActionFilterMixin):
     @pytest.fixture()
     def url(self):
         return '/{}actions/reviews/'.format(API_BASE)
 
     @pytest.fixture()
-    def providers(self):
-        return [
-            PreprintProviderFactory(
-                reviews_workflow='pre-moderation'
-            ) for _ in range(5)]
-
-    @pytest.fixture()
-    def all_actions(self, providers):
-        actions = []
-        for provider in providers:
-            preprint = PreprintFactory(
-                provider=provider,
-                project=ProjectFactory(is_public=True)
-            )
-            for _ in range(5):
-                actions.append(ReviewActionFactory(target=preprint))
-        return actions
-
-    @pytest.fixture()
-    def allowed_providers(self, providers):
-        return providers
-
-    @pytest.fixture()
     def expected_actions(self, all_actions, allowed_providers):
-        provider_ids = set([p.id for p in allowed_providers])
-        return [a for a in all_actions if a.target.provider_id in provider_ids]
+        actions = super(
+            TestReviewActionFilters, self
+        ).expected_actions(all_actions, allowed_providers)
+        node = actions[0].target.node
+        node.is_public = False
+        node.save()
+        return [a for a in actions if a.target.node.is_public]
 
     def test_no_permission(self, app, url, expected_actions):
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
         some_rando = AuthUserFactory()
-        res = app.get(url, auth=some_rando.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert res.json['data'] == []
+        res = app.get(url, auth=some_rando.auth)
+        assert not res.json['data']
 
 
 @pytest.mark.django_db
