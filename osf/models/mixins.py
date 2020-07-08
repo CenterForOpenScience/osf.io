@@ -2046,21 +2046,25 @@ class SpamOverrideMixin(SpamMixin):
             host = request_headers.get('Host', '')
         if host.startswith('admin') or ':8001' in host:
             return False
+        if hasattr(self, 'conferences') and self.conferences.filter(auto_check_spam=False).exists():
+            return False
 
         content = self._get_spam_content(saved_fields)
         if not content:
             return
+
         is_spam = self.do_check_spam(
             user.fullname,
             user.username,
             content,
-            request_headers
+            request_headers,
         )
         logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
             self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
         if is_spam:
             self._check_spam_user(user)
+
         return is_spam
 
     def _check_spam_user(self, user):
