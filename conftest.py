@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import logging
+import responses
 
 import mock
 import pytest
@@ -144,3 +145,17 @@ def _es_marker(request, es6_client):
         teardown_es()
     else:
         yield
+
+
+@pytest.fixture
+def mock_akismet():
+    """
+    This should be used to mock our anti-spam service akismet.
+    Relevent endpoints:
+    'https://{api_key}.rest.akismet.com/1.1/submit-spam'
+    'https://{api_key}.rest.akismet.com/1.1/submit-ham'
+    'https://{api_key}.rest.akismet.com/1.1/comment-check'
+    """
+    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            yield rsps
