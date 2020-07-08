@@ -180,7 +180,8 @@ def update_user(auth):
                 )
 
             if settings.ENABLE_USER_MERGE is False:
-                if Email.objects.filter(address=address).exists():
+                if Email.objects.filter(address=address).exists() \
+                   or OSFUser.objects.filter(username=address).exists():
                     raise HTTPError(http.BAD_REQUEST, data=dict(
                         message_long='Existing email address')
                     )
