@@ -87,6 +87,7 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         registration_provider = self.get_object()
         registration_provider_attributes = model_to_dict(registration_provider)
         registration_provider_attributes['default_license'] = registration_provider.default_license.name if registration_provider.default_license else None
+        registration_provider_attributes['brand'] = registration_provider.brand.name if registration_provider.brand else None
 
         # compile html list of licenses_acceptable so we can render them as a list
         licenses_acceptable = list(registration_provider.licenses_acceptable.values_list('name', flat=True))

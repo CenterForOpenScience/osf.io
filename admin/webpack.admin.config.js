@@ -35,6 +35,7 @@ var config = Object.assign({}, common, {
         'dashboard': staticAdminPath('js/sales_analytics/dashboard.js'),
         'metrics-page': staticAdminPath('js/pages/metrics-page.js'),
         'banners': staticAdminPath('js/banners/banners.js'),
+        'brands': staticAdminPath('js/brands/brands.js'),
         'maintenance': staticAdminPath('js/maintenance/maintenance.js'),
         'whitelist-page': staticAdminPath('js/pages/whitelist-page.js'),
         'collection-provider-page': staticAdminPath('js/pages/collection-provider-page.js'),
