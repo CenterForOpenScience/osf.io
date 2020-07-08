@@ -26,7 +26,7 @@ class TestReviewActionFilters(ReviewActionFilterMixin):
         node = actions[0].target.node
         node.is_public = False
         node.save()
-        return [a for a in actions if a.target.node.is_public]
+        return actions
 
     def test_no_permission(self, app, url, expected_actions):
         res = app.get(url, expect_errors=True)
