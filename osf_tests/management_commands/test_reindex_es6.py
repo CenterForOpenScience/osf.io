@@ -14,6 +14,8 @@ from elasticsearch_metrics.field import Keyword
 
 from tests.json_api_test_app import JSONAPITestApp
 
+from api.base import settings as django_settings
+
 
 @pytest.fixture()
 def app():
@@ -43,8 +45,8 @@ class TestReindexingMetrics:
     def url(self):
         return f'{settings.API_DOMAIN}_/metrics/preprints/downloads/'
 
-    @pytest.mark.skip('Nondeterministic failures')
     @pytest.mark.es
+    @pytest.mark.skipif(django_settings.TRAVIS_ENV, reason='Non-deterministic fails on travis')
     def test_reindexing(self, app, url, preprint, user, admin, es6_client):
         preprint_download = PreprintDownload.record_for_preprint(
             preprint,
@@ -90,7 +92,7 @@ class TestReindexingMetrics:
                                                   ' Alternatively use a keyword field instead.'
 
         call_command('reindex_es6', f'--indices={preprint_download.meta["index"]}')
-        time.sleep(20)  # This is set for Travis, a 1-2 second latency should be good for testing locally.
+        time.sleep(2)
 
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 200
@@ -103,7 +105,7 @@ class TestReindexingMetrics:
         es6_client.indices.get(f'{preprint_download.meta["index"]}')
 
         call_command('reindex_es6', f'--indices={preprint_download.meta["index"]}')
-        time.sleep(20)  # This is set for Travis, a 1-2 second latency should be good for testing locally.
+        time.sleep(2)
 
         # Just checking version number incremented properly again
         es6_client.indices.get(f'{preprint_download.meta["index"]}_v3')
