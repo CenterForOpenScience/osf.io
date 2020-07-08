@@ -11,7 +11,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0208_update_EGAP_schema'),
+        ('osf', '0209_conference_auto_check_spam'),
     ]
 
     operations = [
