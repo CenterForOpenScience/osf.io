@@ -42,6 +42,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
+from osf.models.nodelog import NodeLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -54,6 +55,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +230,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
+    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
 
     # verification key v1: only the token string, no expiration time
     # used for cas login with username and verification key
@@ -349,7 +351,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # date the user last sent a request
-    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True, db_index=True)
 
     # date the user first successfully confirmed an email address
     date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
@@ -388,6 +390,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
+
+    # The primary department to which the institution user belongs,
+    # in case we support multiple departments in the future.
+    department = models.TextField(null=True, blank=True)
 
     objects = OSFUserManager()
 
@@ -556,8 +562,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        default_region_subquery = osfs_settings.objects.filter(owner=self.id).values('default_region_id')
-        return Region.objects.get(id=default_region_subquery)
+        region_subquery = osfs_settings.objects.get(owner=self.id).default_region_id
+        return Region.objects.get(id=region_subquery)
 
     @property
     def contributor_to(self):
@@ -1100,6 +1106,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
             user.add_system_tag(system_tag_for_campaign(campaign))
+        else:
+            user.save()
+            user.add_system_tag(OsfSourceTags.Osf.value)
         return user
 
     @classmethod
@@ -1412,6 +1421,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.update_search_nodes()
 
         return True
+
+    def confirm_spam(self, save=True):
+        super().confirm_spam(save=save)
+        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+            node.confirm_spam()
+
+    def confirm_ham(self, save=False):
+        super().confirm_ham(save=save)
+        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+            node.confirm_ham(save=save)
 
     def update_search(self):
         from website.search.search import update_user

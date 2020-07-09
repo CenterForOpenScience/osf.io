@@ -427,12 +427,10 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.send_share_node_data')
-    def test_approval_retracts_descendant_nodes(self, mock_update_share, mock_format_registration, mock_format_node):
+    def test_approval_retracts_descendant_nodes(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -455,8 +453,6 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
 
         assert mock_update_share.called
-        assert mock_format_registration.called
-        assert not mock_format_node.called
 
     def test_disapproval_cancels_retraction_on_descendant_nodes(self):
         # Initiate retraction for parent registration
@@ -577,12 +573,10 @@ class RegistrationRetractionShareHook(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
     @mock.patch('website.project.tasks.send_share_node_data')
-    def test_approval_calls_share_hook(self, mock_update_share, mock_format_registration, mock_format_node):
+    def test_approval_calls_share_hook(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -592,8 +586,6 @@ class RegistrationRetractionShareHook(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_retracted)
         assert mock_update_share.called
-        assert mock_format_registration.called
-        assert not mock_format_node.called
 
     @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
     @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')

@@ -15,6 +15,9 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-user': '2/hour',
     'test-anon': '1/hour',
     'send-email': '2/minute',
+    'burst': '1000000/second',
 }
 
 ALLOWED_HOSTS.append('localhost')
+
+TRAVIS_ENV = True

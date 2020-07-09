@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -87,6 +87,7 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         registration_provider = self.get_object()
         registration_provider_attributes = model_to_dict(registration_provider)
         registration_provider_attributes['default_license'] = registration_provider.default_license.name if registration_provider.default_license else None
+        registration_provider_attributes['brand'] = registration_provider.brand.name if registration_provider.brand else None
 
         # compile html list of licenses_acceptable so we can render them as a list
         licenses_acceptable = list(registration_provider.licenses_acceptable.values_list('name', flat=True))
@@ -294,7 +295,7 @@ class ImportRegistrationProvider(PermissionRequiredMixin, View):
             provider.save()
 
         if licenses:
-            provider.licenses_acceptable = licenses
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
 

@@ -7,7 +7,8 @@ from framework.exceptions import PermissionsError
 from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError, NodeStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
 from osf.utils.permissions import ADMIN, READ, WRITE
-from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeLicenses, TestNodeSubjects
+from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
+from osf_tests.test_node_license import TestNodeLicenses
 
 from website import settings
 
@@ -307,12 +308,12 @@ class TestDraftRegistrations:
         assert draft.description == description
         assert draft.category == category
         assert user in draft.contributors.all()
-        assert write_contrib in draft.contributors.all()
+        assert write_contrib not in draft.contributors.all()
         assert member not in draft.contributors.all()
         assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
-        assert draft.get_permissions(write_contrib) == [READ, WRITE]
+        assert draft.get_permissions(write_contrib) == []
 
         assert draft.node_license.license_id == GPL3.license_id
         assert draft.node_license.name == GPL3.name
@@ -476,6 +477,24 @@ class TestDraftRegistrationContributorMethods():
         assert draft_registration.is_contributor(contrib) is True
         assert draft_registration.is_contributor(noncontrib) is False
         assert draft_registration.is_contributor(None) is False
+
+    def test_visible_initiator(self, project, user):
+        project_contributor = project.contributor_set.get(user=user)
+        assert project_contributor.visible is True
+
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project, initiator=user)
+        draft_reg_contributor = draft_reg.contributor_set.get(user=user)
+        assert draft_reg_contributor.visible is True
+
+    def test_non_visible_initiator(self, project, user):
+        invisible_user = factories.UserFactory()
+        project.add_contributor(contributor=invisible_user, permissions=ADMIN, visible=False)
+        invisible_project_contributor = project.contributor_set.get(user=invisible_user)
+        assert invisible_project_contributor.visible is False
+
+        draft_reg = factories.DraftRegistrationFactory(branched_from=project, initiator=invisible_user)
+        invisible_draft_reg_contributor = draft_reg.contributor_set.get(user=invisible_user)
+        assert invisible_draft_reg_contributor.visible is False
 
     def test_visible_contributor_ids(self, draft_registration, user):
         visible_contrib = factories.UserFactory()

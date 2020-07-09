@@ -185,6 +185,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
         'api.base.throttling.NonCookieAuthThrottle',
+        'api.base.throttling.BurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '10000/day',
@@ -195,6 +196,7 @@ REST_FRAMEWORK = {
         'test-user': '2/hour',
         'test-anon': '1/hour',
         'send-email': '2/minute',
+        'burst': '10/second',
     },
 }
 
@@ -228,8 +230,8 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'waffle.middleware.WaffleMiddleware',
-    'api.base.middleware.SloanIdMiddleware',
+    # 'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanOverrideWaffleMiddleware',  # Delete this and uncomment WaffleMiddleware to revert Sloan
 )
 
 TEMPLATES = [
@@ -333,4 +335,10 @@ CACHES = {
 }
 
 SLOAN_ID_COOKIE_NAME = 'sloan_id'
+
 EGAP_PROVIDER_NAME = 'EGAP'
+
+MAX_SIZE_OF_ES_QUERY = 10000
+DEFAULT_ES_NULL_VALUE = 'N/A'
+
+TRAVIS_ENV = False

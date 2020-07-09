@@ -38,7 +38,6 @@
     </div>
 </div>
 
-<%include file="project/registration_utils.mako" />
 <%include file="project/registration_editor_extensions.mako" />
 
 <%def name="javascript_bottom()">

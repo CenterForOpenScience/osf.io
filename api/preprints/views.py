@@ -2,7 +2,7 @@ import re
 from distutils.version import StrictVersion
 
 from rest_framework import generics
-from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
+from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -414,6 +414,27 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         context['resource'] = self.get_preprint()
         context['default_email'] = 'preprint'
         return context
+
+
+class PreprintBibliographicContributorsList(PreprintContributorsList):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    pagination_class = PreprintContributorPagination
+    serializer_class = PreprintContributorsSerializer
+
+    view_category = 'preprints'
+    view_name = 'preprint-bibliographic-contributors'
+
+    def get_default_queryset(self):
+        contributors = super().get_default_queryset()
+        return contributors.filter(visible=True)
+
+    def post(self, request, *args, **kwargs):
+        raise MethodNotAllowed(method=request.method)
 
 
 class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):

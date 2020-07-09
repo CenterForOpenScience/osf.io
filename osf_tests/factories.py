@@ -307,7 +307,7 @@ class CollectionFactory(DjangoModelFactory):
         obj = cls._build(*args, **kwargs)
         obj.save()
         # M2M, requires initial save
-        obj.collected_types = collected_types
+        obj.collected_types.add(*collected_types)
         return obj
 
 class BookmarkCollectionFactory(CollectionFactory):
@@ -508,14 +508,14 @@ class DraftRegistrationFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         title = kwargs.pop('title', None)
-        initiator = kwargs.get('initiator')
+        initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
         branched_from = kwargs.get('branched_from', None)
         registration_schema = kwargs.get('registration_schema')
         registration_metadata = kwargs.get('registration_metadata')
         provider = kwargs.get('provider')
-        initiator = branched_from.creator if branched_from else kwargs.get('initiator', None)
-        initiator = initiator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
+        branched_from_creator = branched_from.creator if branched_from else None
+        initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
@@ -602,6 +602,8 @@ class SubjectFactory(DjangoModelFactory):
 
 
 class PreprintProviderFactory(DjangoModelFactory):
+    _id = factory.Sequence(lambda n: f'slug{n}')
+
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
@@ -671,7 +673,6 @@ class PreprintFactory(DjangoModelFactory):
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
         instance.article_doi = doi
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
         user = kwargs.pop('creator', None) or instance.creator
         instance.save()
 
@@ -682,6 +683,7 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path='/{}'.format(filename))
 
+        instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -870,7 +872,7 @@ class ConferenceFactory(DjangoModelFactory):
 
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
-        self.admins = extracted or [UserFactory()]
+        self.admins.add(*(extracted or [UserFactory()]))
 
 
 class SessionFactory(DjangoModelFactory):
@@ -926,7 +928,7 @@ class ScheduledBannerFactory(DjangoModelFactory):
     default_photo = factory.Faker('file_name')
     mobile_photo = factory.Faker('file_name')
     license = factory.Faker('name')
-    color = 'white'
+    color = factory.Faker('color')
     start_date = timezone.now()
     end_date = factory.LazyAttribute(lambda o: o.start_date)
 
@@ -1017,7 +1019,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
         instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
-        instance.providers = providers
+        instance.providers.add(*providers)
         instance.save()
         return instance
 
@@ -1067,3 +1069,16 @@ class ChronosSubmissionFactory(DjangoModelFactory):
         instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
         instance.save()
         return instance
+
+
+class BrandFactory(DjangoModelFactory):
+    class Meta:
+        model = models.Brand
+
+    name = factory.Faker('company')
+    hero_logo_image = factory.Faker('url')
+    topnav_logo_image = factory.Faker('url')
+    hero_background_image = factory.Faker('url')
+
+    primary_color = factory.Faker('hex_color')
+    secondary_color = factory.Faker('hex_color')

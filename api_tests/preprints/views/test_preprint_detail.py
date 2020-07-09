@@ -807,7 +807,7 @@ class TestPreprintUpdate:
             res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You do not have ability to edit a conflict of interest while the ' \
+        assert res.json['errors'][0]['detail'] == 'You do not have the ability to edit a conflict of interest while the ' \
                                                   'has_coi field is set to false or unanswered'
 
         preprint.has_coi = True
@@ -870,7 +870,7 @@ class TestPreprintUpdate:
         assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
                                                   ' is set to true or is unanswered.'
 
-        preprint.has_data_links = 'available'
+        preprint.has_data_links = 'no'
         preprint.save()
         with override_switch(features.SLOAN_DATA_INPUT, active=True):
             res = app.patch_json_api(url, update_payload, auth=user.auth)
@@ -928,6 +928,17 @@ class TestPreprintUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
+    @override_switch(features.SLOAN_DATA_INPUT, active=True)
+    def test_invalid_data_links(self, app, user, preprint, url):
+        preprint.has_data_links = 'available'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': ['thisaintright']})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
+
     def test_update_has_prereg_links(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'available'})
 
@@ -952,6 +963,48 @@ class TestPreprintUpdate:
         log = preprint.logs.first()
         assert log.action == PreprintLog.UPDATE_HAS_PREREG_LINKS
         assert log.params == {'value': 'available', 'user': user._id, 'preprint': preprint._id}
+
+    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
+    def test_invalid_prereg_links(self, app, user, preprint, url):
+        preprint.has_prereg_links = 'available'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': ['thisaintright']})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
+
+    @override_switch(features.SLOAN_DATA_INPUT, active=True)
+    def test_no_data_links_clears_links(self, app, user, preprint, url):
+        preprint.has_data_links = 'available'
+        preprint.data_links = ['http://www.apple.com']
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_data_links': 'no'})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_data_links'] == 'no'
+        assert res.json['data']['attributes']['data_links'] == []
+
+    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
+    def test_no_prereg_links_clears_links(self, app, user, preprint, url):
+        preprint.has_prereg_links = 'available'
+        preprint.prereg_links = ['http://example.com']
+        preprint.prereg_link_info = 'prereg_analysis'
+        preprint.save()
+
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'no'})
+
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['has_prereg_links'] == 'no'
+        assert res.json['data']['attributes']['prereg_links'] == []
+        assert not res.json['data']['attributes']['prereg_link_info']
 
     def test_update_why_no_prereg(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})
@@ -1771,30 +1824,6 @@ class TestPreprintDetailPermissions:
 
     #   test_private_invisible_to_public
         res = app.get(private_url, expect_errors=True)
-        assert res.status_code == 401
-
-    def test_preprint_is_orphaned_detail(
-            self, app, admin, write_contrib, non_contrib,
-            published_preprint):
-        published_preprint.primary_file = None
-        published_preprint.save()
-
-        url = '/{}preprints/{}/'.format(API_BASE, published_preprint._id)
-
-    #   test_orphaned_visible_to_admins
-        res = app.get(url, auth=admin.auth)
-        assert res.json['data']['id'] == published_preprint._id
-
-    #   test_orphaned_visible_to_write_contribs
-        res = app.get(url, auth=write_contrib.auth)
-        assert res.status_code == 200
-
-    #   test_orphaned_invisible_to_non_contribs
-        res = app.get(url, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_orphaned_invisible_to_public
-        res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
     def test_preprint_is_abandoned_detail(

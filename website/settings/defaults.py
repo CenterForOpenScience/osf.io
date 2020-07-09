@@ -54,6 +54,7 @@ INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
 
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+DATE_LAST_LOGIN_THROTTLE_DELTA = datetime.timedelta(seconds=DATE_LAST_LOGIN_THROTTLE)
 
 # Seconds that must elapse before change password attempts are reset(currently 1 hour)
 TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
@@ -400,17 +401,16 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
-        'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -419,6 +419,10 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
+        'website.collections.tasks',
+        'website.identifier.tasks',
+        'website.preprints.tasks',
+        'website.project.tasks',
     }
 
     high_pri_modules = {
@@ -490,6 +494,8 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.update_institution_project_counts',
     )
 
     # Modules that need metrics and release requirements
@@ -627,6 +633,10 @@ class CeleryConfig:
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
             },
+            'update_institution_project_counts': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+            },
         }
 
         # Tasks that need metrics and release requirements
@@ -659,6 +669,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
+
+ENABLE_STORAGE_USAGE_CACHE = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False

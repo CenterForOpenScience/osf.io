@@ -8,7 +8,6 @@ from osf_tests.factories import (
 
 from osf.metrics import PreprintDownload
 from api.base.settings import API_PRIVATE_BASE as API_BASE
-from elasticsearch_dsl import Index
 
 
 @pytest.fixture()
@@ -29,20 +28,11 @@ def user():
 def base_url():
     return '/{}metrics/preprints/'.format(API_BASE)
 
+
+@pytest.mark.es
 @pytest.mark.django_db
-class TestElasticSearch():
+class TestElasticSearch:
 
-    @pytest.fixture(autouse=True)
-    def mock_elastic(self):
-        ind = Index('test_2020')
-        PreprintDownload._index = ind
-        PreprintDownload._template_name = 'test'
-        PreprintDownload._template = 'test_2020'
-        ind.save()
-        yield
-        ind.delete()
-
-    @pytest.mark.skip('Try as I might I could not get to run on Travis, but this should pass against a local server.')
     def test_elasticsearch_agg_query(self, app, user, base_url, preprint):
         post_url = '{}downloads/'.format(base_url)
 

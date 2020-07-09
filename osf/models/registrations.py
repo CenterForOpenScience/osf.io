@@ -1,5 +1,6 @@
 import logging
 import datetime
+import html
 from future.moves.urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
@@ -23,8 +24,12 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
-    OSFUser, RegistrationSchema, Node,
-    Retraction, Embargo, DraftRegistrationApproval,
+    Node,
+    OSFUser,
+    Embargo,
+    Retraction,
+    RegistrationSchema,
+    DraftRegistrationApproval,
     EmbargoTerminationApproval,
     DraftRegistrationContributor,
 )
@@ -57,7 +62,12 @@ class Registration(AbstractNode):
         'node_license',
         'category',
     ]
-    provider = models.ForeignKey('RegistrationProvider', related_name='registrations', null=True)
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='registrations',
+        null=True,
+        on_delete=models.SET_NULL
+    )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
     # This is a NullBooleanField because of inheritance issues with using a BooleanField
@@ -577,7 +587,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                                       null=True, on_delete=models.CASCADE)
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
-    provider = models.ForeignKey('RegistrationProvider', related_name='draft_registrations', null=True)
+    provider = models.ForeignKey(
+        'RegistrationProvider',
+        related_name='draft_registrations',
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     # Dictionary field mapping question id to a question's comments and answer
     # {
@@ -907,7 +922,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.copy_editable_fields(node, Auth(user), save=True, contributors=False)
         draft.update(data)
         return draft
 
@@ -974,10 +989,17 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         validated before this method is called.  If writing to registration_responses
         field, persist the expanded version of this to Draft.registration_metadata.
         """
+        registration_responses = self.unescape_registration_file_names(registration_responses)
         self.registration_responses.update(registration_responses)
         registration_metadata = self.expand_registration_responses()
         self.registration_metadata = registration_metadata
         return
+
+    def unescape_registration_file_names(self, registration_responses):
+        if registration_responses.get('uploader', []):
+            for upload in registration_responses.get('uploader', []):
+                upload['file_name'] = html.unescape(upload['file_name'])
+        return registration_responses
 
     def submit_for_review(self, initiated_by, meta, save=False):
         approval = DraftRegistrationApproval(
@@ -1005,6 +1027,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = register
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
+
+        self.copy_contributors_from(node)
+
         if save:
             self.save()
         return register
@@ -1053,6 +1078,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         log.save()
         return log
+
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        # The related source tag behavior for draft registration is currently undefined
+        # Therefore we don't add any source tags to it
+        pass
 
     def save(self, *args, **kwargs):
         if 'old_subjects' in kwargs.keys():
@@ -1116,9 +1147,24 @@ class DraftRegistrationGroupObjectPermission(GroupObjectPermissionBase):
 def create_django_groups_for_draft_registration(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-        DraftRegistrationContributor.objects.get_or_create(
-            user=instance.initiator,
-            draft_registration=instance,
-            visible=True,
-        )
-        instance.add_permission(instance.initiator, ADMIN)
+
+        initiator = instance.initiator
+
+        if instance.branched_from.contributor_set.filter(user=initiator).exists():
+            initiator_node_contributor = instance.branched_from.contributor_set.get(user=initiator)
+            initiator_visibility = initiator_node_contributor.visible
+            initiator_order = initiator_node_contributor._order
+
+            DraftRegistrationContributor.objects.get_or_create(
+                user=initiator,
+                draft_registration=instance,
+                visible=initiator_visibility,
+                _order=initiator_order
+            )
+        else:
+            DraftRegistrationContributor.objects.get_or_create(
+                user=initiator,
+                draft_registration=instance,
+                visible=True,
+            )
+        instance.add_permission(initiator, ADMIN)

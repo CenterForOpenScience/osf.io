@@ -123,12 +123,6 @@ class TestPreprintProperties:
         assert preprint.deleted is not None
         assert preprint.is_deleted is True
 
-    def test_is_preprint_orphan(self, preprint):
-        assert preprint.is_preprint_orphan is False
-        preprint.primary_file = None
-        preprint.save()
-        assert preprint.is_preprint_orphan is True
-
     def test_has_submitted_preprint(self, preprint):
         preprint.machine_state = 'initial'
         preprint.save()
@@ -948,6 +942,32 @@ class TestPreprintSpam:
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is True
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    def test_confirm_ham_on_private_preprint_stays_private(self, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                preprint.set_privacy('private')
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is False
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_confirm_ham_on_public_preprint_stays_public(self, preprint, user):
+        preprint.is_public = True
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is True
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is True
+
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -1468,6 +1488,23 @@ class TestSetPreprintFile(OsfTestCase):
 
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
+
+    def test_cant_save_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=False)
+        self.preprint.primary_file = None
+
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
+    def test_cant_update_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.primary_file = None
+        with assert_raises(ValidationError):
+            self.preprint.save()
 
 
 class TestPreprintPermissions(OsfTestCase):
@@ -2059,7 +2096,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
 
     def test_format_preprint_nones(self):
-        self.preprint.tags = []
+        self.preprint.tags.clear()
         self.preprint.date_published = None
         self.preprint.article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.creator))

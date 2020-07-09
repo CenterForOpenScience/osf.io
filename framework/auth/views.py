@@ -33,8 +33,10 @@ from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
 from osf.models.provider import PreprintProvider
+from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
 from osf import features
+from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 
 @block_bing_preview
 @collect_auth
@@ -109,6 +111,10 @@ def reset_password_post(uid=None, token=None):
         user_obj.verification_key = generate_verification_key(verification_type=None)
         try:
             user_obj.set_password(form.password.data)
+            osf4m_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Osf4m.value, system=True)
+            osf4m_claimed_tag, created = Tag.all_tags.get_or_create(name=CampaignClaimedTags.Osf4m.value, system=True)
+            if user_obj.all_tags.filter(id=osf4m_source_tag.id, system=True).exists():
+                user_obj.add_system_tag(osf4m_claimed_tag)
             user_obj.save()
         except exceptions.ChangePasswordError as error:
             for message in error.messages:
@@ -500,10 +506,12 @@ def external_login_confirm_email_get(auth, uid, token):
 
     user = OSFUser.load(uid)
     if not user:
+        sentry.log_message('external_login_confirm_email_get::400 - Cannot find user')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     destination = request.args.get('destination')
     if not destination:
+        sentry.log_message('external_login_confirm_email_get::400 - bad destination')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # if user is already logged in
@@ -525,6 +533,7 @@ def external_login_confirm_email_get(auth, uid, token):
 
     # token is invalid
     if token not in user.email_verifications:
+        sentry.log_message('external_login_confirm_email_get::400 - bad token')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
@@ -532,12 +541,14 @@ def external_login_confirm_email_get(auth, uid, token):
     provider_id = list(verification['external_identity'][provider].keys())[0]
     # wrong provider
     if provider not in user.external_identity:
+        sentry.log_message('external_login_confirm_email_get::400 - Auth error...wrong provider')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     external_status = user.external_identity[provider][provider_id]
 
     try:
         ensure_external_identity_uniqueness(provider, provider_id, user)
     except ValidationError as e:
+        sentry.log_message('external_login_confirm_email_get::403 - Validation Error')
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, e.message)
 
     if not user.is_registered:

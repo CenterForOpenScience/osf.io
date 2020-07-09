@@ -36,6 +36,7 @@ from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
+from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
@@ -128,7 +129,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
-    PREREG_LINK_INFO_CHIOCES = [('prereg_designs', 'Pre-registration of study designs'),
+    PREREG_LINK_INFO_CHOICES = [('prereg_designs', 'Pre-registration of study designs'),
                                 ('prereg_analysis', 'Pre-registration of study analysis'),
                                 ('prereg_both', 'Pre-registration of study designs and study analysis')
                                 ]
@@ -168,7 +169,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                                             validators=[validate_doi],
                                             null=True, blank=True)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
-    primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
+    primary_file = models.ForeignKey(
+        'osf.OsfStorageFile',
+        null=True,
+        blank=True,
+        related_name='preprint',
+        on_delete=models.CASCADE
+    )
     # (for legacy preprints), pull off of node
     is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
@@ -222,7 +229,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         null=True
     )
     prereg_link_info = models.TextField(
-        choices=PREREG_LINK_INFO_CHIOCES,
+        choices=PREREG_LINK_INFO_CHOICES,
         null=True,
         blank=True
     )
@@ -258,6 +265,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     @property
     def is_deleted(self):
         return bool(self.deleted)
+
+    @is_deleted.setter
+    def is_deleted(self, val):
+        """Set whether or not this preprint has been deleted."""
+        if val and not self.deleted:
+            self.deleted = timezone.now()
+        elif val is False:
+            self.deleted = None
 
     @property
     def root_folder(self):
@@ -316,7 +331,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def log_params(self):
         # Property needed for ContributorMixin
         return {
-            'preprint': self._id
+            'preprint': self._id,
         }
 
     @property
@@ -616,7 +631,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields:
+        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.is_public):
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
@@ -625,6 +640,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
+        if self.has_submitted_preprint and not self.primary_file:
+            raise ValidationError('Cannot save non-initial preprint without primary file.')
 
         ret = super(Preprint, self).save(*args, **kwargs)
 
@@ -946,6 +963,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
+        contributor.add_system_tag(system_tag_to_add)
+
     def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
         """
         This method sets the field `has_coi` to indicate if there's a conflict interest statement for this preprint
@@ -991,7 +1013,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return
 
         if not self.has_coi:
-            raise PreprintStateError('You do not have ability to edit a conflict of interest while the has_coi field is '
+            raise PreprintStateError('You do not have the ability to edit a conflict of interest while the has_coi field is '
                                   'set to false or unanswered')
 
         self.conflict_of_interest_statement = coi_statement
@@ -1034,6 +1056,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
+        if has_data_links != 'available':
+            self.update_data_links(auth, data_links=[], log=False)
         if save:
             self.save()
 
@@ -1053,7 +1077,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.data_links == data_links:
             return
 
-        if not self.has_data_links == 'available':
+        if not self.has_data_links == 'available' and data_links:
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
                                      ' or is unanswered.')
 
@@ -1086,7 +1110,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.why_no_data == why_no_data:
             return
 
-        if not self.has_data_links == 'available':
+        if not self.has_data_links == 'no':
             raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
                                   ' is unanswered.')
         else:
@@ -1130,6 +1154,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth
             )
+        if has_prereg_links != 'available':
+            self.update_prereg_links(auth, prereg_links=[], log=False)
+            self.update_prereg_link_info(auth, prereg_link_info=None, log=False)
         if save:
             self.save()
 
@@ -1182,7 +1209,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if prereg_links == self.prereg_links:
             return
 
-        if not self.has_prereg_links == 'available':
+        if not self.has_prereg_links == 'available' and prereg_links:
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 
@@ -1202,7 +1229,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
         """
         This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
-        contained in the list in the static member `PREREG_LINK_INFO_CHIOCES` that describe the nature of the preprint's
+        contained in the list in the static member `PREREG_LINK_INFO_CHOICES` that describe the nature of the preprint's
         prereg links.
 
         :param auth: Auth object
@@ -1216,7 +1243,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.prereg_link_info == prereg_link_info:
             return
 
-        if not self.has_prereg_links == 'available':
+        if not self.has_prereg_links == 'available' and prereg_link_info:
             raise PreprintStateError('You cannot edit this field while your prereg links'
                                   ' availability is set to false or is unanswered.')
 

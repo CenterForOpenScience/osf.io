@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import logging
+import responses
 
 import mock
 import pytest
@@ -8,6 +9,9 @@ from faker import Factory
 from website import settings as website_settings
 
 from framework.celery_tasks import app as celery_app
+
+from elasticsearch_dsl.connections import connections
+from django.core.management import call_command
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +120,42 @@ def _test_speedups_disable(request, settings, _test_speedups):
 
     for patcher in patchers:
         patcher.start()
+
+
+@pytest.fixture(scope='function')
+def es6_client():
+    return connections.get_connection()
+
+
+@pytest.fixture(scope='function', autouse=True)
+def _es_marker(request, es6_client):
+    """Clear out all indices and index templates before and after
+    tests marked with ``es``.
+    """
+    marker = request.node.get_closest_marker('es')
+    if marker:
+
+        def teardown_es():
+            es6_client.indices.delete(index='*')
+            es6_client.indices.delete_template('*')
+
+        teardown_es()
+        call_command('sync_metrics')
+        yield
+        teardown_es()
+    else:
+        yield
+
+
+@pytest.fixture
+def mock_akismet():
+    """
+    This should be used to mock our anti-spam service akismet.
+    Relevent endpoints:
+    'https://{api_key}.rest.akismet.com/1.1/submit-spam'
+    'https://{api_key}.rest.akismet.com/1.1/submit-ham'
+    'https://{api_key}.rest.akismet.com/1.1/comment-check'
+    """
+    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            yield rsps
