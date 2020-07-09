@@ -12,11 +12,10 @@ from website import settings
 
 from osf.models.registrations import get_default_provider_id
 
-from osf.models import RegistrationProvider
-
 
 def add_default_registration_provider(state, *args, **kwargs):
     try:
+        from osf.models import RegistrationProvider
         default_registration_provider = RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
     except RegistrationProvider.DoesNotExist:
         default_registration_provider = RegistrationProvider(**{
@@ -30,6 +29,7 @@ def add_default_registration_provider(state, *args, **kwargs):
 
 
 def remove_default_registration_provider(state, *args, **kwargs):
+    from osf.models import RegistrationProvider
     RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).delete()
 
     Registration.objects.all().update(provider=None)
