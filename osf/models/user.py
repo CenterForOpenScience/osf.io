@@ -351,7 +351,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # date the user last sent a request
-    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True, db_index=True)
 
     # date the user first successfully confirmed an email address
     date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
