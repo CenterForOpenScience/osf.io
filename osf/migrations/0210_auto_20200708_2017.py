@@ -3,16 +3,21 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+from osf.models import (
+    Registration,
+    DraftRegistration
+)
+
 from website import settings
 
-import osf.models.registrations
+from osf.models.registrations import get_default_provider_id
 
 from osf.models import RegistrationProvider
 
 
 def add_default_registration_provider(state, *args, **kwargs):
     try:
-        RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
+        default_registration_provider = RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
     except RegistrationProvider.DoesNotExist:
         default_registration_provider = RegistrationProvider(**{
             '_id': 'osf',
@@ -20,9 +25,15 @@ def add_default_registration_provider(state, *args, **kwargs):
         })
         default_registration_provider.save()
 
+    Registration.objects.all().update(provider=default_registration_provider)
+    DraftRegistration.objects.all().update(provider=default_registration_provider)
+
 
 def remove_default_registration_provider(state, *args, **kwargs):
     RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).delete()
+
+    Registration.objects.all().update(provider=None)
+    DraftRegistration.objects.all().update(provider=None)
 
 
 class Migration(migrations.Migration):
@@ -36,6 +47,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='draftregistration',
             name='provider',
-            field=models.ForeignKey(default=osf.models.registrations.get_default_provider_id, on_delete=models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
+            field=models.ForeignKey(default=get_default_provider_id, on_delete=models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
         ),
     ]
