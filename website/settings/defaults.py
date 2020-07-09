@@ -54,6 +54,7 @@ INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
 
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+DATE_LAST_LOGIN_THROTTLE_DELTA = datetime.timedelta(seconds=DATE_LAST_LOGIN_THROTTLE)
 
 # Seconds that must elapse before change password attempts are reset(currently 1 hour)
 TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
