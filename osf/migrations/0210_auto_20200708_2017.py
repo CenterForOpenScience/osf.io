@@ -3,8 +3,26 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import django.db.models.deletion
+from website import settings
+
 import osf.models.registrations
+
+from osf.models import RegistrationProvider
+
+
+def add_default_registration_provider(state, *args, **kwargs):
+    try:
+        RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
+    except RegistrationProvider.DoesNotExist:
+        default_registration_provider = RegistrationProvider(**{
+            '_id': 'osf',
+            'name': 'OSF Registries'
+        })
+        default_registration_provider.save()
+
+
+def remove_default_registration_provider(state, *args, **kwargs):
+    RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).delete()
 
 
 class Migration(migrations.Migration):
@@ -14,9 +32,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(add_default_registration_provider, remove_default_registration_provider),
         migrations.AlterField(
             model_name='draftregistration',
             name='provider',
-            field=models.ForeignKey(default=osf.models.registrations.get_default_provider_id, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
+            field=models.ForeignKey(default=osf.models.registrations.get_default_provider_id, on_delete=models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
         ),
     ]

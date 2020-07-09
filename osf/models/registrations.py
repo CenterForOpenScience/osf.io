@@ -557,19 +557,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_provider_id():
-    try:
-        return RegistrationProvider.objects.get(
-            _id=settings.REGISTRATION_PROVIDER_DEFAULT__ID,
-            type='osf.registrationprovider'
-        ).id
-    except RegistrationProvider.DoesNotExist as e:
-        if settings.TEST_ENV:
-            return RegistrationProvider(**{
-                '_id': 'osf',
-                'name': '[TEST] OSF Registries'
-            }).id
-        else:
-            raise e
+    return RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).id
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
