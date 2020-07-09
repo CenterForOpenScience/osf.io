@@ -43,10 +43,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_default_registration_provider, remove_default_registration_provider),
         migrations.AlterField(
             model_name='draftregistration',
             name='provider',
             field=models.ForeignKey(default=get_default_provider_id, on_delete=models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
         ),
+        migrations.RunPython(add_default_registration_provider, remove_default_registration_provider),
     ]
