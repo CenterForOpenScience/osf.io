@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
+def send_email(from_addr, to_addr, subject, message, _charset, mimetype='html', ttls=True, login=True,
                 username=None, password=None, categories=None, attachment_name=None, attachment_content=None,
-                cc_addr=None, replyto=None):
+                cc_addr=None, replyto=None,):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
@@ -55,6 +55,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             replyto=replyto,
             subject=subject,
             message=message,
+            _charset=_charset,
             mimetype=mimetype,
             ttls=ttls,
             login=login,
@@ -64,7 +65,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
 
 
 def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None,
-                    cc_addr=None, replyto=None):
+                    cc_addr=None, replyto=None, _charset='utf-8'):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
 
@@ -72,7 +73,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
         logger.error('Mail username and password not set; skipping send.')
         return
 
-    msg = MIMEText(message, mimetype, _charset='utf-8')
+    msg = MIMEText(message, mimetype, _charset)
     msg['Subject'] = subject
     msg['From'] = from_addr
     msg['To'] = to_addr
