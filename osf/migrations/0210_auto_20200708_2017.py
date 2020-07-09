@@ -3,17 +3,16 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from osf.models import (
-    Registration,
-    DraftRegistration
-)
+from osf.models import DraftRegistration
 
 from website import settings
 
 from osf.models.registrations import get_default_provider_id
 
 
-def add_default_registration_provider(state, *args, **kwargs):
+def add_default_registration_provider(apps, schema_editor):
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+
     try:
         from osf.models import RegistrationProvider
         default_registration_provider = RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
@@ -24,16 +23,12 @@ def add_default_registration_provider(state, *args, **kwargs):
         })
         default_registration_provider.save()
 
-    Registration.objects.all().update(provider=default_registration_provider)
     DraftRegistration.objects.all().update(provider=default_registration_provider)
 
 
-def remove_default_registration_provider(state, *args, **kwargs):
-    from osf.models import RegistrationProvider
+def remove_default_registration_provider(apps, schema_editor):
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
     RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).delete()
-
-    Registration.objects.all().update(provider=None)
-    DraftRegistration.objects.all().update(provider=None)
 
 
 class Migration(migrations.Migration):
