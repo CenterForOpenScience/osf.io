@@ -633,6 +633,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         }
 
         mails.send_mail(
+            self,
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
