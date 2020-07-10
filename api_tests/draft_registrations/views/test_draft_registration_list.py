@@ -14,9 +14,11 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     AuthUserFactory,
+    RegistrationProviderFactory
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
+from website import settings
 
 @pytest.mark.django_db
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
@@ -246,6 +248,27 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     def url_draft_registrations(self, project_public):
         return '/{}draft_registrations/?'.format(API_BASE)
 
+    @pytest.fixture()
+    def provider2(self):
+        return RegistrationProviderFactory()
+
+    @pytest.fixture()
+    def payload_with_provider(self, metaschema_open_ended, provider2):
+        return {
+            'data': {
+                'type': 'draft_registrations',
+                'attributes': {},
+                'relationships': {
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider2._id,
+                        }
+                    }
+                }
+            }
+        }
+
     # Overrides TestDraftRegistrationList
     def test_admin_can_create_draft(
             self, app, user, project_public, url_draft_registrations,
@@ -256,12 +279,26 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
+        assert data['relationships']['provider']['links']['related']['href'] == \
+               f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/'
+
         assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
         draft = DraftRegistration.load(data['id'])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
+
+    def test_create_draft_with_provider(self, app, user, url_draft_registrations, provider2, payload_with_provider):
+
+        res = app.post_json_api(url_draft_registrations, payload_with_provider, auth=user.auth)
+        assert res.status_code == 201
+        data = res.json['data']
+        assert data['relationships']['provider']['links']['related']['href'] == \
+               f'{settings.API_DOMAIN}v2/providers/registrations/{provider2._id}/'
+
+        draft = DraftRegistration.load(data['id'])
+        assert draft.provider == provider2
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(
