@@ -1,11 +1,11 @@
 <%inherit file="notify_base.mako" />
 
 <%def name="content()">
+<%!
+    from website import settings
+%>
 ${_(u'''<tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
     Hello %(adminFullname)s,<br>
     <br>
     <a href="${requester.absolute_url}">%(requesterFullname)s</a> has requested access to your ${%(projectOrComponent)s} "<a href="%(absoluteUrl)s">%(title)s</a>."<br>
