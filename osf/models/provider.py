@@ -142,7 +142,7 @@ class RegistrationProvider(AbstractProvider):
 
     @classmethod
     def get_default(cls):
-        return cls.objects.get(**cls.default)
+        return cls.objects.get(_id=cls.default['_id'])
 
     class Meta:
         permissions = (
