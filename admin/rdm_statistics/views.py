@@ -546,8 +546,8 @@ class GatherView(TemplateView):
         url_api = self.get_wb_url(node_id=node_id, provider=provider, path=re.sub(r'^//', '/', path), cookie=cookies)
         self.session.mount('http://', self.adapter)
         headers = {'content-type': 'application/json'}
-        # connect timeout:10sec, read timeout:30sec
-        res = self.session.get(url=url_api, headers=headers, timeout=(10.0, 30.0))
+        # connect timeout:10sec, read timeout:300sec
+        res = self.session.get(url=url_api, headers=headers, timeout=(10.0, 300.0))
         if not res.status_code == requests.codes.ok:
             return None
         response_json = res.json()
