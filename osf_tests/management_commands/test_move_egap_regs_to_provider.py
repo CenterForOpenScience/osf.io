@@ -16,6 +16,7 @@ from osf.management.commands.move_egap_regs_to_provider import (
 )
 
 from django.conf import settings
+from website import settings as website_settings
 
 
 @pytest.mark.django_db
@@ -36,7 +37,7 @@ class TestEGAPMoveToProvider:
         ).order_by(
             '-schema_version'
         )[0]
-        cos = RegistrationProvider.objects.get(_id='osf')
+        cos = RegistrationProvider.objects.get(_id=website_settings.REGISTRATION_PROVIDER_DEFAULT__ID)
         return RegistrationFactory(schema=egap_schema, provider=cos)
 
     @pytest.fixture()

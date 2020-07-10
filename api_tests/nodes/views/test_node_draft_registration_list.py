@@ -225,7 +225,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def provider(self):
-        return RegistrationProvider.objects.get(_id='osf')
+        return RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID)
 
     @pytest.fixture()
     def metaschema_open_ended(self):

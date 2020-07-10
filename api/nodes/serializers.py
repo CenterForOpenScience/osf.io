@@ -1540,7 +1540,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
 
-        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
+        provider = validated_data.pop('provider', None)
         # TODO: this
         # if not provider.schemas_acceptable.filter(id=schema.id).exists():
         #     raise exceptions.ValidationError('Invalid schema for provider.')
