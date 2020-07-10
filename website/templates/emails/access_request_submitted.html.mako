@@ -8,7 +8,7 @@ ${_(u'''<tr>
   <td style="border-collapse: collapse;">
     Hello %(adminFullname)s,<br>
     <br>
-    <a href="${requester.absolute_url}">%(requesterFullname)s</a> has requested access to your ${%(projectOrComponent)s} "<a href="%(absoluteUrl)s">%(title)s</a>."<br>
+    <a href="${requester.absolute_url}">%(requesterFullname)s</a> has requested access to your %(projectOrComponent)s "<a href="%(absoluteUrl)s">%(title)s</a>."<br>
     <br>
     To review the request, click <a href="%(contributorUrl)s">here</a> to allow or deny access and configure permissions.<br>
     <br>
