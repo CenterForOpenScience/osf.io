@@ -57,12 +57,11 @@ class Mail(object):
         the disable_engagement_emails waffle flag
     """
 
-    def __init__(self, tpl_prefix, subject, categories=None, engagement=False, _charset='ISO-2022-JP'):
+    def __init__(self, tpl_prefix, subject, categories=None, engagement=False):
         self.tpl_prefix = tpl_prefix
         self._subject = subject
         self.categories = categories
         self.engagement = engagement
-        self._charset = _charset
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -80,7 +79,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        self, to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
+        to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
         attachment_content=None, cc_addr=None, replyto=None, **context):
     """Send an email from the GakuNin RDM.
@@ -125,7 +124,6 @@ def send_mail(
         replyto=replyto,
         subject=subject,
         message=message,
-        _charset=self._charset,
         mimetype=mimetype,
         ttls=ttls,
         login=login,
