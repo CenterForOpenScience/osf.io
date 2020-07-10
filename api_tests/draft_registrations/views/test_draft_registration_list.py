@@ -259,6 +259,12 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
                 'type': 'draft_registrations',
                 'attributes': {},
                 'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+                    },
                     'provider': {
                         'data': {
                             'type': 'registration-providers',

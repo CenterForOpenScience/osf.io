@@ -295,8 +295,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
-        assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/?version=2.19'
+        assert data['relationships']['provider']['links']['related']['href'] in \
+               f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/'
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
