@@ -34,6 +34,10 @@ EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
+    imports=[
+        'from flask_babel import gettext as _',
+        'from markupsafe import escape as h',
+    ],
     input_encoding='utf-8',
     output_encoding='utf-8',
 )
