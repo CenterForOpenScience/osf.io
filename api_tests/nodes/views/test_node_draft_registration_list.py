@@ -4,11 +4,10 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema
+from osf.models import RegistrationSchema, RegistrationProvider
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
     OSFGroupFactory,
@@ -226,7 +225,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def provider(self):
-        return RegistrationProviderFactory(_id='osf')
+        return RegistrationProvider.objects.get(_id='osf')
 
     @pytest.fixture()
     def metaschema_open_ended(self):
@@ -295,8 +294,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
-        assert data['relationships']['provider']['links']['related']['href'] in \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/'
+        assert f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/' in \
+               data['relationships']['provider']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 

@@ -556,6 +556,12 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
         get_latest_by = 'created'
 
 
+def get_default_id():
+    from django.apps import apps
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+    return RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).id
+
+
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
         BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
     # Fields that are writable by DraftRegistration.update
@@ -590,8 +596,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     provider = models.ForeignKey(
         'RegistrationProvider',
         related_name='draft_registrations',
-        null=True,
+        null=False,
         on_delete=models.CASCADE,
+        default=get_default_id,
     )
 
     # Dictionary field mapping question id to a question's comments and answer
