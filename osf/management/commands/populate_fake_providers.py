@@ -29,7 +29,7 @@ from osf.models import NodeLicense, Subject, CollectionProvider, PreprintProvide
 from osf_tests import factories
 from scripts import utils as script_utils
 from scripts.update_taxonomies import update_taxonomies
-from website.settings import PREPRINT_PROVIDER_DOMAINS, REGISTRATION_PROVIDER_DEFAULT__ID
+from website.settings import PREPRINT_PROVIDER_DOMAINS
 
 logger = logging.getLogger(__name__)
 

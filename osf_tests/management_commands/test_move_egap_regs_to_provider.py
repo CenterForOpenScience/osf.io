@@ -16,7 +16,6 @@ from osf.management.commands.move_egap_regs_to_provider import (
 )
 
 from django.conf import settings
-from website import settings as website_settings
 
 
 @pytest.mark.django_db
