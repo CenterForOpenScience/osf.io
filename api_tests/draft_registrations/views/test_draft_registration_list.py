@@ -8,7 +8,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 
-from osf.models import DraftRegistration, NodeLicense
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -286,7 +286,7 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
         assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{settings.REGISTRATION_PROVIDER_DEFAULT__ID}/'
+               f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default["_id"]}/'
 
         assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
         assert data['embeds']['initiator']['data']['id'] == user._id

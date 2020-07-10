@@ -133,6 +133,17 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
+
+    default = {
+        '_id': 'osf',
+        'name': 'OSF Registries',
+        'description': 'OSF Registries default provider',
+    }
+
+    @classmethod
+    def get_default(cls):
+        return cls.objects.get(**cls.default)
+
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App

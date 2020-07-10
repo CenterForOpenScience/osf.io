@@ -559,7 +559,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 def get_default_id():
     from django.apps import apps
     RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
-    return RegistrationProvider.objects.get(_id=settings.REGISTRATION_PROVIDER_DEFAULT__ID).id
+    return RegistrationProvider.get_default().id
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
@@ -912,7 +912,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @classmethod
     def create_from_node(cls, user, schema, node=None, data=None, provider=None):
         if not provider:
-            provider = RegistrationProvider.load('osf')
+            provider = RegistrationProvider.get_default()
 
         if not node:
             # If no node provided, a DraftNode is created for you

@@ -8,11 +8,7 @@ from osf.models import RegistrationProvider
 
 
 def add_provider(state, *args, **kwargs):
-    provider, created = RegistrationProvider.objects.get_or_create(
-        **{
-            '_id': 'osf',
-        }
-    )
+    provider, created = RegistrationProvider.objects.get_or_create(**RegistrationProvider.default)
     provider.save()
 
 
