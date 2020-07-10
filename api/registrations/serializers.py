@@ -605,9 +605,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
             # on the draft, the other field was built and populated as well.  Both should exist.
             draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
-        except ValidationValueError:
+        except ValidationValueError as e:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
-            # TODO: Raise an error once our JSON schemas are updated
+            raise exceptions.ValidationError(e.message)
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
