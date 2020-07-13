@@ -8,3 +8,8 @@ class PreprintMetricSerializer(BaseAPISerializer):
 
     class Meta:
         type_ = 'preprint_metrics'
+
+
+class RawMetricsSerializer():
+
+    query = ser.DictField()

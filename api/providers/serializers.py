@@ -107,6 +107,11 @@ class RegistrationProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'registration-providers'
 
+    brand = RelationshipField(
+        related_view='brands:brand-detail',
+        related_view_kwargs={'brand_id': '<brand.id>'},
+    )
+
     primary_collection = RelationshipField(
         related_view='collections:collection-detail',
         related_view_kwargs={'collection_id': '<primary_collection._id>'},
@@ -115,6 +120,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
+        'brand',
         'description',
         'domain',
         'domain_redirect_enabled',

@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.14.0 (2020-07-13)
+====================
+- Add brands to registration providers
+- Index last login field
+- Skip probabilistic test failures on CI
+- Add limited-use raw ES6 metrics endpoint
+- Add management command to move EGAP registrations to EGAP provider
+
 20.13.0 (2020-06-30)
 ====================
 - Fixes for EGAP migration

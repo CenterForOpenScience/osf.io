@@ -35,6 +35,7 @@ urlpatterns = [
                 url(r'^addons/', include('api.addons.urls', namespace='addons')),
                 url(r'^alerts/', include(('api.alerts.urls', 'alerts'), namespace='alerts')),
                 url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                url(r'^brands/', include('api.brands.urls', namespace='brands')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
