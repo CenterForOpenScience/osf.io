@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @app.task
 def send_email(from_addr, to_addr, subject, message, _charset, mimetype='html', ttls=True, login=True,
                 username=None, password=None, categories=None, attachment_name=None, attachment_content=None,
-                cc_addr=None, replyto=None,):
+                cc_addr=None, replyto=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
     settings module.
