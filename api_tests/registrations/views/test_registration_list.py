@@ -966,7 +966,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         )
 
         registration_metadata = metadata(draft_registration)
-        registration_metadata['q16'] = {'value': {}}
+        registration_metadata['q17'] = {'value': {}}
         draft_registration.registration_metadata = registration_metadata
         draft_registration.save()
 
@@ -985,7 +985,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Measured variables\' field is invalid.'
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
@@ -1003,7 +1003,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         )
 
         registration_metadata = metadata(draft_registration)
-        registration_metadata['q16'] = {'value': {'question': {}}}
+        registration_metadata['q17'] = {'value': {'question': {}}}
 
         draft_registration.registration_metadata = registration_metadata
         draft_registration.save()
@@ -1023,7 +1023,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
+        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Measured variables\' field is invalid.'
 
     # @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
