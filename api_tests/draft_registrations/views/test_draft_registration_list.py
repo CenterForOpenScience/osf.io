@@ -286,7 +286,7 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
         assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default["_id"]}/'
+               f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/'
 
         assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
         assert data['embeds']['initiator']['data']['id'] == user._id

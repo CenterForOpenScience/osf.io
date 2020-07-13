@@ -341,7 +341,15 @@ class RegistrationProviderFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
-        obj = cls._build(*args, **kwargs)
+        _id = kwargs.pop('_id', None)
+        try:
+            obj = cls._build(*args, **kwargs)
+        except Exception as e:
+            if _id == models.RegistrationProvider.default__id:
+                pass
+            else:
+                raise e
+
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
         return obj
