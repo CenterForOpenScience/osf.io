@@ -618,6 +618,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             logo = self.provider._id
 
         context = {
+            '_charset': 'ISO-2022-JP',
             'domain': settings.DOMAIN,
             'reviewable': self,
             'workflow': self.provider.reviews_workflow,
@@ -632,9 +633,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             'logo': logo,
         }
 
-        constructorMail = mails.Mail()
         mails.send_mail(
-            constructorMail,
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
