@@ -632,7 +632,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             'logo': logo,
         }
 
+        constructorMail = mails.Mail()
         mails.send_mail(
+            constructorMail,
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
