@@ -80,7 +80,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        self, to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
+        to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
         attachment_content=None, cc_addr=None, replyto=None, **context):
     """Send an email from the GakuNin RDM.
@@ -125,7 +125,7 @@ def send_mail(
         replyto=replyto,
         subject=subject,
         message=message,
-        _charset=self._charset,
+        _charset=mail._charset,
         mimetype=mimetype,
         ttls=ttls,
         login=login,

@@ -637,7 +637,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             mimetype='html',
             user=recipient,
-            _charset='ISO-2022-JP',
             **context
         )
 
