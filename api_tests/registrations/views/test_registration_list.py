@@ -31,7 +31,6 @@ from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
 from website.views import find_bookmark_collection
-from website.project.metadata.schemas import from_json
 from osf.utils import permissions
 
 SCHEMA_VERSION = 2
@@ -912,16 +911,13 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This draft registration is not created from the given node.'
 
-    @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_top_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public,
             metadata, url_registrations):
 
-        test_schema = from_json('prereg-prize.json')
         schema = RegistrationSchema.objects.get(
-            name='Test Schema',
-            schema=test_schema,
+            name='OSF Preregistration',
             schema_version=SCHEMA_VERSION
         )
 
@@ -954,15 +950,12 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'For your registration the \'Title\' field is required'
 
-    @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_second_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public, metadata, url_registrations):
 
-        test_schema = from_json('prereg-prize.json')
         schema = RegistrationSchema.objects.get(
-            name='Test Schema',
-            schema=test_schema,
+            name='OSF Preregistration',
             schema_version=SCHEMA_VERSION
         )
 
@@ -973,7 +966,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         )
 
         registration_metadata = metadata(draft_registration)
-        registration_metadata['q11'] = {'value': {}}
+        registration_metadata['q16'] = {'value': {}}
         draft_registration.registration_metadata = registration_metadata
         draft_registration.save()
 
@@ -994,15 +987,12 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
-    @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_required_third_level_questions_must_be_answered_on_draft(
             self, mock_enqueue, app, user, project_public, metadata, url_registrations):
 
-        test_schema = from_json('prereg-prize.json')
         schema = RegistrationSchema.objects.get(
-            name='Test Schema',
-            schema=test_schema,
+            name='OSF Preregistration',
             schema_version=SCHEMA_VERSION
         )
 
@@ -1013,7 +1003,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         )
 
         registration_metadata = metadata(draft_registration)
-        registration_metadata['q11'] = {'value': {'question': {}}}
+        registration_metadata['q16'] = {'value': {'question': {}}}
 
         draft_registration.registration_metadata = registration_metadata
         draft_registration.save()
@@ -1035,7 +1025,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Manipulated variables\' field is invalid.'
 
-    @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
+    # @pytest.mark.skip('TEMPORARY: Unskip when JSON Schemas are updated')
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_multiple_choice_in_registration_schema_must_match_one_of_choices(
             self, mock_enqueue, app, user, project_public, schema, payload, url_registrations):
