@@ -72,9 +72,9 @@ class Mail(object):
     def subject(self, **context):
         return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render(**context)
 
-    @charset.setter
-    def charset(self, _charset):
-        self.__charset = _charset
+    @_charset.setter
+    def _charset(self, _charset):
+        self.___charset = _charset
 
 
 def render_message(tpl_name, **context):
