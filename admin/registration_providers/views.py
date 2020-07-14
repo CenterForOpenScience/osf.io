@@ -2,7 +2,7 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers
-from django.db.models import When, Case, Value, IntegerField
+from django.db.models import When, Case, Value, IntegerField, F
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.urls import reverse_lazy
@@ -378,7 +378,8 @@ class ChangeSchema(TemplateView):
                 ),
                 default=Value(0),
                 output_field=IntegerField()
-            )
+            ),
+            underscore_id=F('_id')  # django templates ban underscores for some reason...
         )
         return context
 
