@@ -89,6 +89,7 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 class RegistrationSchema(AbstractSchema):
     config = DateTimeAwareJSONField(blank=True, default=dict)
     description = models.TextField(null=True, blank=True)
+    provider = models.ForeignKey('RegistrationProvider', related_name='schemas', on_delete=models.SET_NULL, null=True, blank=True)
 
     @property
     def _config(self):
