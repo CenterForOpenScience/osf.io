@@ -72,6 +72,10 @@ class Mail(object):
     def subject(self, **context):
         return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render(**context)
 
+    @charset.setter
+    def charset(self, _charset):
+        self.__charset = _charset
+
 
 def render_message(tpl_name, **context):
     """Render an email message."""
@@ -82,7 +86,7 @@ def render_message(tpl_name, **context):
 def send_mail(
         to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, cc_addr=None, replyto=None, **context):
+        attachment_content=None, cc_addr=None, replyto=None, _charset='utf-8', **context):
     """Send an email from the GakuNin RDM.
     Example: ::
 
