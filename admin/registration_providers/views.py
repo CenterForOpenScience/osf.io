@@ -2,6 +2,7 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers
+from django.db.models import When, Case, Value, IntegerField
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.urls import reverse_lazy
@@ -15,7 +16,7 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from osf.models import RegistrationProvider, NodeLicense
+from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -356,3 +357,38 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
         return JsonResponse(response_data)
+
+
+class ChangeSchema(TemplateView):
+    permission_required = 'osf.change_registrationprovider'
+    template_name = 'registration_providers/change_schema.html'
+
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        ids = registration_provider.schemas.all().values_list('id', flat=True)
+        context = super().get_context_data(**kwargs)
+        context['registration_provider'] = registration_provider
+        context['schemas'] = RegistrationSchema.objects.all().annotate(
+            value=Case(
+                When(
+                    id__in=ids,
+                    then=Value(1),
+                ),
+                default=Value(0),
+                output_field=IntegerField()
+            )
+        )
+        return context
+
+    def post(self, request, *args, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        registration_provider.schemas.clear()
+        schemas = RegistrationSchema.objects.filter(id__in=list(data.keys()))
+        registration_provider.schemas.add(*schemas)
+
+        return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
