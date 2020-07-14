@@ -39,7 +39,13 @@ class TestRegistrationProviderSchemas:
     def url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/schemas/'
 
-    def test_registration_provider_with_schema(self, app, url, provider, schema, moderator):
+    def test_registration_provider_with_schema(self, app, url, provider, schema, user, moderator):
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
+
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
         res = app.get(url, auth=moderator.auth)
         assert res.status_code == 200
         data = res.json['data']
