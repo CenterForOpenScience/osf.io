@@ -2385,20 +2385,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         osf_provider_tag, created = Tag.all_tags.get_or_create(name=OsfSourceTags.Osf.value, system=True)
 
         if self.is_collected:
-            collection_provider_id = self.collecting_metadata_list[0].collection.provider._id
-            collection_provider_tag, created = Tag.all_tags.get_or_create(name=provider_source_tag(collection_provider_id, 'collections'), system=True)
+            collection_provider_ids = [collection_submission.collection.provider._id for collection_submission in self.collecting_metadata_qs.all()]
+            for collection_provider_id in collection_provider_ids:
+                collection_provider_tag, _ = Tag.all_tags.get_or_create(name=provider_source_tag(collection_provider_id, 'collections'), system=True)
+                contributor.add_system_tag(collection_provider_tag)
+            if self.all_tags.filter(system=True, name=CampaignSourceTags.Osf4m.value).exists():
+                osf4m_source_tag = self.all_tags.get(system=True, name=CampaignSourceTags.Osf4m.value)
+                contributor.add_system_tag(osf4m_source_tag)
         else:
-            collection_provider_tag = None
-
-        source_tag = self.all_tags.filter(
-            system=True,
-            name__in=[
-                CampaignSourceTags.Prereg.value,
-                CampaignSourceTags.OsfRegisteredReports.value,
-                CampaignSourceTags.Osf4m.value
-            ]
-        ).first() or collection_provider_tag or osf_provider_tag
-        contributor.add_system_tag(source_tag)
+            source_tag = self.all_tags.filter(
+                system=True,
+                name__in=[
+                    CampaignSourceTags.Prereg.value,
+                    CampaignSourceTags.OsfRegisteredReports.value,
+                    CampaignSourceTags.Osf4m.value
+                ]
+            ).first() or osf_provider_tag
+            contributor.add_system_tag(source_tag)
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
