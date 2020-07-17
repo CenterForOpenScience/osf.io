@@ -41,7 +41,7 @@ from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
 
-USE_NGRAM_FIELD = true
+USE_NGRAM_FIELD = True
 
 HIGHLIGHT_PRIORITY_DEFAULT_FIELD = '__default'
 
