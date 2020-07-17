@@ -2,6 +2,11 @@
     <tr>
         <td width="40" class="icon" valign="middle" style="border-collapse: collapse;font-size: 24px;color: #999;"> <img class="avatar" src="${profile_image_url}" width="48" alt="avatar" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;border-radius: 25px;"> </td>
         <td style="line-height: 17px;border-collapse: collapse;">
+            <span class="timestamp" style="color: grey;">${localized_timestamp}に</span>
+            <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
+                <span class="person" style="font-weight: bold;">${user.fullname}</span>
+                ${message_ja}
+            </span>
             <span class="timestamp" style="color: grey;">At ${localized_timestamp}: </span>
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
                 <span class="person" style="font-weight: bold;">${user.fullname} </span>

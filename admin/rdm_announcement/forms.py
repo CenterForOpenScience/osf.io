@@ -1,16 +1,16 @@
 from django import forms
 from osf.models.rdm_announcement import RdmAnnouncement, RdmAnnouncementOption
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ugettext_lazy as _
 
 
 class PreviewForm(forms.Form):
     title = forms.CharField(max_length=100,
                             required=False,
-                            widget=forms.TextInput(attrs={'class': 'form-control'}),
+                            widget=forms.TextInput(attrs={'placeholder': _('title'), 'class': 'form-control'}),
                             label='Title')
     body = forms.CharField(max_length=60000,
                            required=True,
-                           widget=forms.Textarea(attrs={'class': 'form-control', 'rows': '4'}),
+                           widget=forms.Textarea(attrs={'placeholder': _('text'), 'class': 'form-control', 'rows': '4'}),
                            label='Body',)
     announcement_type = forms.ChoiceField(
         choices=[('Email', _('Email')),
@@ -19,7 +19,7 @@ class PreviewForm(forms.Form):
                  #('Push notification', 'Push notification')
                  ],
         widget=forms.RadioSelect,
-        label='Type',
+        label=_('Type@announcement'),
         initial='Email',
     )
 

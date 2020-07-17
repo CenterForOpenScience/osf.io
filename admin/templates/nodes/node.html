@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 {% block top_includes %}
     <script src="/static/js/nodes/registrations.js"></script>
 {% endblock %}
@@ -7,9 +8,9 @@
 {% load node_extras %}
 {% block title %}
     {% if node.is_registration %}
-        <title>Registration</title>
+        <title>{% trans "Registration" %}</title>
     {% else %}
-        <title>Node</title>
+        <title>{% trans "Node" %}</title>
     {% endif %}
 {% endblock title %}
 {% block content %}
@@ -23,14 +24,14 @@
             <div class="col-md-12">
                 <div class="btn-group" role="group">
                     <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
-                    <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary">View Logs</a>
+                    <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary">{% trans "View Logs" %}</a>
                     {%  if perms.osf.delete_node %}
                         {% if not node.is_registration %}
                             {% if not node.deleted %}
                                 <a href="{% url 'nodes:remove' guid=node.id %}"
                                    data-toggle="modal" data-target="#deleteModal"
                                         class="btn btn-danger">
-                                    Delete Node
+                                    {% trans "Delete Node" %}
                                 </a>
                                 <div class="modal" id="deleteModal">
                                     <div class="modal-dialog">
@@ -43,7 +44,7 @@
                                       action="{% url 'nodes:restore' guid=node.id %}">
                                     {% csrf_token %}
                                     <input class="btn btn-success" type="submit"
-                                           value="Restore Node" />
+                                           value="{% trans 'Restore Node' %}" />
                                 </form>
                             {% endif %}
                         {% else %}
@@ -51,12 +52,12 @@
                                 <a href="{% url 'nodes:restart-stuck-registrations' guid=node.id %}"
                                    data-toggle="modal" data-target="#confirmRestartRegistration"
                                    class="btn btn-warning">
-                                    Restart Registration
+                                    {% trans "Restart Registration" %}
                                 </a>
                                 <a href="{% url 'nodes:remove-stuck-registrations' guid=node.id %}"
                                    data-toggle="modal" data-target="#confirmRemoveRegistration"
                                    class="btn btn-danger">
-                                    Remove Registration
+                                    {% trans "Remove Registration" %}
                                 </a>
                             {% endif %}
 
@@ -66,7 +67,7 @@
                         <a href="{% url 'nodes:confirm-spam' guid=node.id %}"
                            data-toggle="modal" data-target="#confirmSpamModal"
                            class="btn btn-warning">
-                            Confirm Spam
+                            {% trans "Confirm Spam" %}
                         </a>
                         <div class="modal" id="confirmSpamModal">
                             <div class="modal-dialog">
@@ -77,7 +78,7 @@
                         <a href="{% url 'nodes:confirm-ham' guid=node.id %}"
                            data-toggle="modal" data-target="#confirmHamModal"
                            class="btn btn-default">
-                            Confirm <strong>Not</strong> Spam
+                            {% trans "Confirm <strong>Not</strong> Spam" %}
                         </a>
                         <div class="modal" id="confirmHamModal">
                             <div class="modal-dialog">
@@ -89,7 +90,7 @@
                     <a href="{% url 'nodes:reindex-share-node' guid=node.id %}"
                        data-toggle="modal" data-target="#confirmReindexShareNode"
                        class="btn btn-default">
-                        SHARE Reindex
+                        {% trans "SHARE Reindex" %}
                     </a>
                     <div class="modal" id="confirmReindexShareNode">
                         <div class="modal-dialog">
@@ -112,7 +113,7 @@
                     <a href="{% url 'nodes:reindex-elastic-node' guid=node.id %}"
                        data-toggle="modal" data-target="#confirmReindexElasticNode"
                        class="btn btn-default">
-                        Elastic Reindex
+                        {% trans "Elastic Reindex" %}
                     </a>
                     <div class="modal" id="confirmReindexElasticNode">
                         <div class="modal-dialog">
@@ -125,9 +126,9 @@
         </div>
         <div class="row">
             {% if node.is_registration %}
-                <h3>Registration Details</h3>
+                <h3>{% trans "Registration Details" %}</h3>
             {% else %}
-                <h3>Node Details</h3>
+                <h3>{% trans "Node Details" %}</h3>
             </tr>
             {% endif %}
         </div>
@@ -135,25 +136,25 @@
         <table class="table table-striped">
         <thead>
             <tr>
-                <th>Field</th>
-                <th>Value</th>
+                <th>{% trans "Field" %}</th>
+                <th>{% trans "Value" %}</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>GUID</td>
+                <td>{% trans "GUID" %}</td>
                 <td>{{ node.id }}</td>
             </tr>
             <tr>
-                <td>Title</td>
+                <td>{% trans "Title" %}</td>
                 <td>{{ node.title }}</td>
             </tr>
             <tr>
-                <td>Public</td>
+                <td>{% trans "Public" %}</td>
                 <td>{{ node.public }}</td>
             </tr>
             <tr>
-                <td>Parent</td>
+                <td>{% trans "Parent" %}</td>
                 <td>
                     {% if not node.parent %}
                         {{ node.parent }}
@@ -166,7 +167,7 @@
 
             </tr>
             <tr>
-                <td>Creator</td>
+                <td>{% trans "Creator" %}</td>
                 <td>
                     <a href="{{ node.creator | reverse_user }}">
                         {{ node.creator }}
@@ -177,7 +178,7 @@
             {% if node.osf_groups %}
                 <tr>
                     <td>
-                        OSF Groups
+                        {% trans "OSF Groups" %}
                     </td>
                     <td>
                         <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
@@ -190,15 +191,15 @@
                 </tr>
             {% endif %}
             <tr>
-                <td>Contributors</td>
+                <td>{% trans "Contributors" %}</td>
                 <td>
                     <table class="table table-bordered table-hover">
                     <thead>
                         <tr>
-                            <td>User id</td>
-                            <td>Name</td>
-                            <td>Permissions</td>
-                            <td>Actions</td>
+                            <td>{% trans "User id" %}</td>
+                            <td>{% trans "Name" %}</td>
+                            <td>{% trans "Permissions" %}</td>
+                            <td>{% trans "Actions" %}</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -218,7 +219,7 @@
                                        data-toggle="modal"
                                        data-target="#{{ user.id }}Modal"
                                        class="btn btn-danger">
-                                        Remove
+                                        {% trans "Remove" %}
                                     </a>
                                     <div class="modal" id="{{ user.id }}Modal">
                                         <div class="modal-dialog">
@@ -242,11 +243,11 @@
                     <table class="table table-bordered table-hover">
                     <thead>
                         <tr>
-                            <td>Node id</td>
-                            <td>Title</td>
-                            <td>Public</td>
-                            <td># of Contributors</td>
-                            <td>Actions</td>
+                            <td>{% trans "Node id" %}</td>
+                            <td>{% trans "Title" %}</td>
+                            <td>{% trans "Public" %}</td>
+                            <td>{% trans "# of Contributors" %}</td>
+                            <td>{% trans "Actions" %}</td>
                         </tr>
                     </thead>
                     <tbody>
@@ -269,7 +270,7 @@
                                             {% csrf_token %}
                                             <input class="btn btn-success"
                                                    type="submit"
-                                                   value="Restore Node" />
+                                                   value="{% trans 'Restore Node' %}" />
                                         </form>
                                     {% else %}
                                     <a href="{% url 'nodes:remove' guid=child.id %}"
@@ -295,17 +296,17 @@
                 </td>
             </tr>
             <tr>
-                <td>Registration</td>
+                <td>{% trans "Registration" %}</td>
                 <td>
                     {% if not node.is_registration %}
                         <table class="table table-bordered table-hover">
                                 <thead>
                                 <tr>
-                                    <td>Registration</td>
-                                    <td>Date Created</td>
-                                    <td>Pending</td>
-                                    <td>Withdrawn</td>
-                                    <td>Embargo</td>
+                                    <td>{% trans "Registration" %}</td>
+                                    <td>{% trans "Date Created" %}</td>
+                                    <td>{% trans "Pending" %}</td>
+                                    <td>{% trans "Withdrawn" %}</td>
+                                    <td>{% trans "Embargo" %}</td>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -324,29 +325,29 @@
                         <table class="table table-bordered table-hover">
                         <thead>
                             <tr>
-                                <td>Field</td>
-                                <td>Value</td>
+                                <td>{% trans "Field" %}</td>
+                                <td>{% trans "Value" %}</td>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Date Created</td>
+                                <td>{% trans "Date Created" %}</td>
                                 <td>{{ node.date_created | date }}</td>
                             </tr>
                             <tr>
-                                <td>Datetime Registered</td>
+                                <td>{% trans "Datetime Registered" %}</td>
                                 <td>{{ node.registered_date | date:"F j, Y P" }}</td>
                             </tr>
                             <tr>
-                                <td>Pending</td>
+                                <td>{% trans "Pending" %}</td>
                                 <td>{{ node.pending_registration }}</td>
                             </tr>
                             <tr>
-                                <td>Withdrawn</td>
+                                <td>{% trans "Withdrawn" %}</td>
                                 <td>{{ node.withdrawn }}</td>
                             </tr>
                             <tr>
-                                <td>Embargo</td>
+                                <td>{% trans "Embargo" %}</td>
                                 <td>
                                     <div class="row">
                                         <div class="col-md-10">
@@ -374,7 +375,7 @@
                             </tr>
                             {% if node.registered_from is not None %}
                             <tr>
-                                <td>Registered From</td>
+                                <td>{% trans "Registered From" %}</td>
                                 <td><a href="{% url 'nodes:node' guid=node.registered_from %}">{{ node.registered_from }}</a></td>
                             </tr>
                             {% endif %}
@@ -385,15 +386,15 @@
                                 <form class="well">
                                     <div class="modal-header">
                                         <button type="button" class="close" data-dismiss="modal">x</button>
-                                        <h3>Are you sure you want to update this embargo?</h3>
+                                        <h3>{% trans "Are you sure you want to update this embargo?" %}</h3>
                                     </div>
                                     <div class="modal-body">
-                                        Make sure you have confirmed this change with all the project admins.
+                                        {% trans "Make sure you have confirmed this change with all the project admins." %}
                                     </div>
                                     <div class="modal-footer">
-                                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                                        <input class="btn btn-danger" type="submit" value="{% trans 'Confirm' %}" />
                                         <button type="button" class="btn btn-default" data-dismiss="modal">
-                                            Cancel
+                                            {% trans "Cancel" %}
                                         </button>
                                     </div></form>
                             </div>
@@ -402,16 +403,16 @@
                 </td>
             </tr>
             <tr>
-                <td>SPAM Pro Tip</td>
+                <td>{% trans "SPAM Pro Tip" %}</td>
                     <td>{{ node.spam_pro_tip }}</td>
                 <td>
             </tr>
             <tr>
-                <td>SPAM Status</td>
+                <td>{% trans "SPAM Status" %}</td>
                 <td>{% include "nodes/spam_status.html" with resource=node %}</td>
             </tr>
             <tr>
-                <td>SPAM Data</td>
+                <td>{% trans "SPAM Data" %}</td>
                 <td>
                     <pre>{{ node.spam_data }}</pre>
                 </td>

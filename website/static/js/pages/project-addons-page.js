@@ -50,7 +50,7 @@ $('.addon-container').each(function(ind, elm) {
             data[name] = true;
             var capabilities = $('#capabilities-' + name).html();
             bootbox.confirm({
-                message: capabilities,
+                message: _(capabilities),
                 callback: function(result) {
                     if (result) {
                         var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', data);

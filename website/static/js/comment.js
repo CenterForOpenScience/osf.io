@@ -17,6 +17,7 @@ var atMention = require('js/atMention');
 
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
+var getBrowserLang = require('js/rdmGettext').getBrowserLang;
 
 // Cached contributor and group member data, to prevent multiple fetches for @mentions
 var __contributorCache = null;
@@ -82,6 +83,8 @@ var WIKI = 'wiki';
  * is in the past.
  */
 var relativeDate = function(datetime) {
+    var lang = getBrowserLang();
+    moment.locale(lang);
     var now = moment.utc();
     var then = moment.utc(datetime);
     then = then > now ? now : then;

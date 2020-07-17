@@ -12,6 +12,8 @@ from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable
 from website import settings as website_settings
 
+from django.utils.translation import ugettext_lazy as _
+
 logger = logging.getLogger(__name__)
 
 
@@ -33,10 +35,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # For `CAS` and `OAuth`, we use pac4j.
     # Only institutions with a valid delegation protocol show up on the institution login page.
     DELEGATION_PROTOCOL_CHOICES = (
-        ('cas-pac4j', 'CAS by pac4j'),
-        ('oauth-pac4j', 'OAuth by pac4j'),
-        ('saml-shib', 'SAML by Shibboleth'),
-        ('', 'No Delegation Protocol'),
+        ('cas-pac4j', _('CAS by pac4j')),
+        ('oauth-pac4j', _('OAuth by pac4j')),
+        ('saml-shib', _('SAML by Shibboleth')),
+        ('', _('No Delegation Protocol')),
     )
     delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 

@@ -94,8 +94,7 @@
     <div class="col-md-3">
         <div>
             <h4>{% trans "Import from JSON" %}</h4>
-            <p>{% trans "Choose a JSON file that has been previously exported from another Collection Provider detail page. This will
-                pre-populate the Collection Provider change form with those details." %}</p>
+            <p>{% trans "Choose a JSON file that has been previously exported from another Collection Provider detail page. This will pre-populate the Collection Provider change form with those details." %}</p>
             {% if collection_provider %}
                 <form action = {% url 'collection_providers:import' collection_provider_id=collection_provider.id %} method="post" enctype="multipart/form-data" >
             {% else %}

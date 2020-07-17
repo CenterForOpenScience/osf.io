@@ -3,6 +3,20 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    こんにちは、${user.fullname}さん<br>
+    <br>
+    ${external_id_provider}アカウントをGakuNin RDMにリンクして頂いてありがとうございます。${external_id_provider}をあなたのGakuNin RDMプロフィールに追加します。<br>
+    <br>
+    リンクをクリックしてメールアドレスを認証してください：<br>
+    <br>
+    ${confirmation_url}<br>
+    <br>
+    GakuNin RDM チーム<br>
+
+
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
     Thank you for linking your ${external_id_provider} account to the GakuNin RDM. We will add ${external_id_provider} to your GRDM profile.<br>

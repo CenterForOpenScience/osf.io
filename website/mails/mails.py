@@ -34,6 +34,8 @@ EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
     directories=[EMAIL_TEMPLATES_DIR],
+    input_encoding='utf-8',
+    output_encoding='utf-8',
 )
 
 HTML_EXT = '.html.mako'
@@ -55,11 +57,12 @@ class Mail(object):
         the disable_engagement_emails waffle flag
     """
 
-    def __init__(self, tpl_prefix, subject, categories=None, engagement=False):
+    def __init__(self, tpl_prefix, subject, categories=None, engagement=False, _charset='ISO-2022-JP'):
         self.tpl_prefix = tpl_prefix
         self._subject = subject
         self.categories = categories
         self.engagement = engagement
+        self._charset = _charset
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -67,7 +70,15 @@ class Mail(object):
         return render_message(tpl_name, **context)
 
     def subject(self, **context):
-        return Template(self._subject).render(**context)
+        return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render(**context)
+
+    @property
+    def charset(self):
+        return self.__charset
+
+    @charset.setter
+    def charset(self, _charset):
+        self.__charset = _charset
 
 
 def render_message(tpl_name, **context):
@@ -79,7 +90,7 @@ def render_message(tpl_name, **context):
 def send_mail(
         to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, cc_addr=None, replyto=None, **context):
+        attachment_content=None, cc_addr=None, replyto=None, _charset='utf-8', **context):
     """Send an email from the GakuNin RDM.
     Example: ::
 
@@ -101,8 +112,8 @@ def send_mail(
 
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
-    subject = mail.subject(**context)
-    message = mail.html(**context)
+    subject = unicode(mail.subject(**context), 'utf-8')
+    message = unicode(mail.html(**context), 'utf-8')
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
 
@@ -122,6 +133,7 @@ def send_mail(
         replyto=replyto,
         subject=subject,
         message=message,
+        _charset=mail._charset,
         mimetype=mimetype,
         ttls=ttls,
         login=login,
@@ -168,12 +180,12 @@ EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
 
 FORK_COMPLETED = Mail(
     'fork_completed',
-    subject='Your fork has completed'
+    subject='フォークが完了しました / Your fork has completed'
 )
 
 FORK_FAILED = Mail(
     'fork_failed',
-    subject='Your fork has failed'
+    subject='フォークに失敗しました / Your fork has failed'
 )
 
 EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
@@ -192,7 +204,7 @@ INITIAL_CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL = Mail(
     'confirm',
-    subject='Add a new email to your GakuNin RDM account'
+    subject='GakuNin RDMアカウントのメールアドレス追加 / Add a new email to your GakuNin RDM account'
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
@@ -216,9 +228,9 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 )
 
 # Merge account, add or remove email confirmation emails.
-CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
-REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your GakuNin RDM account')
-PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
+CONFIRM_MERGE = Mail('confirm_merge', subject='アカウントの統合確認 / Confirm account merge')
+REMOVED_EMAIL = Mail('email_removed', subject='GakuNin RDMアカウントのメールアドレス削除 / Email address removed from your GakuNin RDM account')
+PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリメールアドレスの変更 / Primary email changed')
 
 
 # Contributor added confirmation emails
@@ -232,7 +244,7 @@ INVITE_PREPRINT = lambda template, provider: Mail(
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
-    subject='You have been added as a contributor to a GakuNin RDM project.'
+    subject='GakuNin RDMプロジェクトのメンバーに追加されました / You have been added as a contributor to a GakuNin RDM project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
     'contributor_added_preprints_{}'.format(template),
@@ -252,7 +264,7 @@ PREPRINT_CONFIRMATION_DEFAULT = Mail(
 )
 CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
-    subject='Your access request to a GakuNin RDM project has been approved'
+    subject='GakuNin RDMプロジェクトへのアクセス申請が承認されました / Your access request to a GakuNin RDM project has been approved'
 )
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
@@ -262,10 +274,10 @@ PASSWORD_RESET = Mail('password_reset', subject='Your GakuNin RDM password has b
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
-REQUEST_EXPORT = Mail('support_request', subject='[via GakuNin RDM] Export Request')
-REQUEST_DEACTIVATION = Mail('support_request', subject='[via GakuNin RDM] Deactivation Request')
+REQUEST_EXPORT = Mail('support_request', subject='[GakuNin RDM経由]出力リクエスト / [via GakuNin RDM] Export Request')
+REQUEST_DEACTIVATION = Mail('support_request', subject='[GakuNin RDM経由]認証解除リクエスト / Deactivation Request')
 
-SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM] Account flagged as spam')
+SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM]アカウントにスパムの疑いがあります / [GakuNin RDM] Account flagged as spam')
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
@@ -281,7 +293,7 @@ CONFERENCE_FAILED = Mail(
 )
 
 DIGEST = Mail(
-    'digest', subject='GakuNin RDM Notifications',
+    'digest', subject='GakuNin RDM からの通知 / GakuNin RDM Notifications',
     categories=['notifications', 'notifications-digest']
 )
 
@@ -392,7 +404,7 @@ ARCHIVE_SUCCESS = Mail(
 
 WELCOME = Mail(
     'welcome',
-    subject='Welcome to the GakuNin RDM',
+    subject='GakuNin RDMにようこそ / Welcome to the GakuNin RDM',
     engagement=True
 )
 
@@ -436,12 +448,12 @@ REVIEWS_SUBMISSION_CONFIRMATION = Mail(
 
 ACCESS_REQUEST_SUBMITTED = Mail(
     'access_request_submitted',
-    subject='A GakuNin RDM user has requested access to your ${node.project_or_component}'
+    subject='GakuNin RDMのユーザーからあなたの${u"プロジェクト" if node.project_or_component == "project" else u"コンポーネント"}へのアクセスの要求がありました / A GakuNin RDM user has requested access to your ${node.project_or_component}'
 )
 
 ACCESS_REQUEST_DENIED = Mail(
     'access_request_rejected',
-    subject='Your access request to a GakuNin RDM project has been declined'
+    subject='GakuNin RDMプロジェクトへのアクセス申請が拒否されました / Your access request to a GakuNin RDM project has been declined'
 )
 
 CROSSREF_ERROR = Mail(

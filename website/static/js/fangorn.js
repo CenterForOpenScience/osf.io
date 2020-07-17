@@ -499,18 +499,18 @@ function displayConflict(tb, item, folder, cb) {
             '"' + gettext('Keep Both') + '"' + gettext(' will retain both files (and their version histories) in this location.')),
         m('h5.replace-file',
             '"' + gettext('Replace') + '"' + gettext(' will overwrite the existing file in this location. ') +
-            'You will lose previous versions of the overwritten file. ' +
-            'You will keep previous versions of the moved file.'),
-        m('h5.replace-file', '"Skip" will skip the current file.'),
-        m('h5.replace-file', '"Stop" will only move files with no conflicts.')
+            gettext('You will lose previous versions of the overwritten file. ' )+
+            gettext('You will keep previous versions of the moved file.')),
+        m('h5.replace-file', gettext('"Skip" will skip the current file.')),
+        m('h5.replace-file', gettext('"Stop" will only move files with no conflicts.'))
     ]);
     var mithrilButtons = [
-        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, 'Replace'),
-        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, 'Skip'),
-        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, 'Stop')
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, gettext('Keep Both')),
+        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, gettext('Replace')),
+        m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, gettext('Skip')),
+        m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, gettext('Stop'))
     ];
-    var header = m('h3.break-word.modal-title', 'Replace '+ '"' + item.data.name + '"' + '?');
+    var header = m('h3.break-word.modal-title', sprintf(gettext('Replace "%s"?'),item.data.name));
     tb.modal.update(mithrilContent, mithrilButtons, header);
 }
 
@@ -2594,7 +2594,7 @@ function displayMoveStats(tb) {
                            m('.row', [
                                m((status.success ? 'a[href="' + status.link + '"]' : '') + '.col-sm-7', status.name),
                                m('.col-sm-1', m(status.success ? '.fa.fa-check.text-success' : '.fa.fa-times.text-danger')),
-                               m('.col-sm-4' + (status.success ? '.text-info' : '.text-danger'), CONFLICT_INFO[status.op].passed)
+                               m('.col-sm-4' + (status.success ? '.text-info' : '.text-danger'), gettext(CONFLICT_INFO[status.op].passed))
                            ]),
                            m('hr')
                        ]
@@ -2602,9 +2602,9 @@ function displayMoveStats(tb) {
                })
            ])
        ]), m('', [
-           m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, 'Done'), //jshint ignore:line
+           m('a.btn.btn-primary', {onclick: function() {tb.modal.dismiss();}}, gettext('Done')), //jshint ignore:line
        ]), m('', [
-              m('h3.break-word.modal-title', 'Move Status'),
+              m('h3.break-word.modal-title', gettext('Move Status')),
               m('p', [
                   m('span', failed !== total ? total - failed + '/' + total + gettext(' files successfully moved.'): ''),
                   m('span', skipped ? sprintf(gettext(' Skipped %1$s/%2$s files.'),skipped,total): '')

@@ -3,6 +3,21 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    こんにちは、${user.fullname}さん<br>
+    <br>
+    このメールアドレスはGakuNin RDM上のアカウントに追加されました。<br>
+    <br>
+    リンクをクリックしてメールアドレスを認証してください：<br>
+    <br>
+    ${confirmation_url}<br>
+    <br>
+    どうぞよろしくお願いいたします。<br>
+    <br>
+    GakuNin RDM チーム<br>
+
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
     Hello ${user.fullname},<br>
     <br>
     This email address has been added to an account on the GakuNin RDM.<br>

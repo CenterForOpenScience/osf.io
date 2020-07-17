@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-03 16:30+0900\n"
-"PO-Revision-Date: 2020-06-03 16:38+0900\n"
+"POT-Creation-Date: 2020-07-03 13:12+0900\n"
+"PO-Revision-Date: 2020-07-03 13:12+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -454,6 +454,1240 @@ msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:210
 msgid "Institutional Storage set successfully"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:3
+msgid ""
+"\n"
+"\n"
+"<h3>Box Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of Box privacy. The GakuNin RDM does not alter the "
+"permissions of linked Box folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Box files and their versions can be viewed/downloaded"
+" via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Box.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Box.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Box content through the GakuNin RDM, but not for changes made using "
+"Box directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Box "
+"authorization unless the user forking the project is the same user who "
+"authorized the Box add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:5
+msgid ""
+"\n"
+"\n"
+"<h3>Dataverse Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a Dataverse study public or private. The GakuNin "
+"RDM allows you to release the latest draft version of a Dataverse "
+"dataset.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Files from the latest release of the selected "
+"Dataverse study can be viewed/downloaded. GakuNin RDM users with write "
+"permissions can view/download draft files as well.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Dataverse.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Dataverse.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Dataverse studies through the GakuNin RDM, but not for changes made "
+"using Dataverse directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy "
+"Dataverse authorization unless the user forking the project is the same "
+"user who authorized the Dataverse add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:7
+msgid ""
+"\n"
+"\n"
+"<h3>Dropbox Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of Dropbox privacy. The GakuNin RDM does not alter the "
+"permissions of linked Dropbox folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Dropbox files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Dropbox.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Dropbox.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"Dropbox content through GakuNin RDM, but not for changes made using "
+"Dropbox directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Dropbox "
+"authorization unless the user forking the project is the same user who "
+"authorized the Dropbox add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:9
+msgid ""
+"\n"
+"\n"
+"<h3>figshare Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td> Making a GakuNin RDM project public or private is "
+"independent of making figshare content public or private. The GakuNin RDM"
+" does not alter the permissions of linked figshare content.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>figshare files can be viewed/downloaded via GakuNin "
+"RDM, but version history is not supported.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Files can be added but not updated.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Private files and filesets can be deleted via GakuNin"
+" RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"figshare content through GakuNin RDM, but not for changes made using "
+"figshare directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy figshare"
+" authorization unless the user forking the project is the same user who "
+"authorized the figshare add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:11
+msgid ""
+"\n"
+"\n"
+"<h3>GitHub Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a GitHub repo public or private. The GakuNin RDM "
+"does not alter the permissions of linked GitHub repos.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>GitHub files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in GitHub.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"GitHub.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Logs</td>\n"
+"                <td>GitHub dynamically updates GakuNin RDM logs when "
+"files are modified outside the GakuNin RDM. Changes to GitHub repos made "
+"before the repo is linked to the GakuNin RDM will not be reflected in "
+"GakuNin RDM logs.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Github "
+"authorization unless the user forking the project is the same user who "
+"authorized the Github add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:13
+msgid ""
+"\n"
+"\n"
+"<h3>GitLab Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a GitLab repo public or private. The GakuNin RDM "
+"does not alter the permissions of linked GitLab repos.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>GitLab files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"is not implemented yet.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Deleting files via GakuNin RDM is not implemented "
+"yet.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM does not keep track of changes made using"
+" Gitlab directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy GitLab "
+"authorization unless the user forking the project is the same user who "
+"authorized the GitLab add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:15
+msgid ""
+"\n"
+"\n"
+"<h3>Mendeley Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a Mendeley folder public or private. The GakuNin "
+"RDM does not alter the permissions of a linked Mendeley folder.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Mendeley"
+" authorization unless the user forking the project is the same user who "
+"authorized the Mendeley add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:17
+msgid ""
+"\n"
+"\n"
+"<h3>Zotero Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a Zotero folder public or private. The GakuNin RDM "
+"does not alter the permissions of a linked Zotero folder.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Zotero "
+"authorization unless the user forking the project is the same user who "
+"authorized the Zotero add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:19
+msgid ""
+"\n"
+"\n"
+"<h3>ownCloud Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of ownCloud privacy. The GakuNin RDM does not alter the "
+"permissions of linked ownCloud folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>ownCloud files can be viewed/downloaded via GakuNin "
+"RDM, but version history is not supported by the ownCloud WebDAV "
+"API.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in ownCloud.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"ownCloud.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"ownCloud content through GakuNin RDM, but not for changes made using "
+"ownCloud directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy ownCloud"
+" authorization unless the user forking the project is the same user who "
+"authorized the ownCloud add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:21
+msgid ""
+"\n"
+"\n"
+"<h3>OneDrive Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of OneDrive privacy. The GakuNin RDM does not alter the "
+"permissions of linked OneDrive folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>OneDrive files and their versions can be "
+"viewed/downloaded via GakuNin RDM.  OneNote files are unexportable and "
+"cannot be downloaded or viewed.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>The OneDrive add-on is read-only.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>The OneDrive add-on is read-only.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"OneDrive add-on configuration.  It does not track changes to OneDrive "
+"content.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy OneDrive"
+" authorization unless the user forking the project is the same user who "
+"authorized the OneDrive add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:23
+msgid ""
+"\n"
+"\n"
+"<h3>Amazon S3 Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making an S3 bucket public or private. The GakuNin RDM "
+"does not alter the permissions of linked S3 buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The S3 add-on supports file versions if versioning is"
+" enabled for your S3 buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Amazon S3.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Amazon S3.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your S3 buckets through the GakuNin RDM, but not for changes made using "
+"S3 directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy S3 "
+"authorization unless the user forking the project is the same user who "
+"authorized the S3 add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:25
+msgid ""
+"\n"
+"\n"
+"<h3>Google Drive Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of Google Drive privacy. The GakuNin RDM does not alter the "
+"permissions of linked Google Drive folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Google Drive files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Google Drive.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Google Drive.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Google Drive content through the GakuNin RDM, but not for changes "
+"made using Google Drive directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Google "
+"Drive authorization unless the user forking the project is the same user "
+"who authorized the Google Drive add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:27
+msgid ""
+"\n"
+"\n"
+"<h3>Bitbucket Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making a Bitbucket repo public or private. The GakuNin RDM"
+" does not alter the permissions of linked Bitbucket repos.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Bitbucket files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Bitbucket does not support adding or updating files "
+"via their API.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Bitbucket does not support deleting files via their "
+"API.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"Bitbucket content through GakuNin RDM, but not for changes made using "
+"Bitbucket directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy "
+"Bitbucket authorization unless the user forking the project is the same "
+"user who authorized the Bitbucket add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:29
+msgid ""
+"\n"
+"\n"
+"<h3>Azure Blob Storage Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making an Azure Blob Storage container public or "
+"private.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The Azure Blob Storage add-on supports only Block "
+"Blobs, and does not support file versions.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Azure Blob Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Azure Blob Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Azure Blob Storage containers through the GakuNin RDM, but not for "
+"changes made using Azure Blob Storage directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Azure "
+"Blob Storage authorization unless the user forking the project is the "
+"same user who authorized the Azure Blob Storage add-on in the source "
+"project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:31
+msgid ""
+"\n"
+"\n"
+"<h3>Nextcloud Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of Nextcloud privacy. The GakuNin RDM does not alter the "
+"permissions of linked Nextcloud folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>Nextcloud files can be viewed/downloaded via GakuNin "
+"RDM, but version history is not supported by the Nextcloud WebDAV "
+"API.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Nextcloud.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Nextcloud.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>GakuNin RDM keeps track of changes you make to your "
+"Nextcloud content through GakuNin RDM, but not for changes made using "
+"Nextcloud directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy "
+"Nextcloud authorization unless the user forking the project is the same "
+"user who authorized the Nextcloud add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:33
+msgid ""
+"\n"
+"\n"
+"<h3>OpenStack Swift Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making an Swift container public or private.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The Swift add-on does not support file versions.</td>"
+"\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Swift.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Swift.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Swift containers through the GakuNin RDM, but not for changes made "
+"using Swift directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Swift "
+"authorization unless the user forking the project is the same user who "
+"authorized the Swift add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:35
+msgid ""
+"\n"
+"\n"
+"<h3>S3 Compatible Storage Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making an S3 Compatible Storage bucket public or private. "
+"The GakuNin RDM does not alter the permissions of linked S3 Compatible "
+"Storage buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The S3 add-on supports file versions if versioning is"
+" enabled for your S3 Compatible Storage buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in S3 Compatible Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in S3 "
+"Compatible Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your S3 Compatible Storage buckets through the GakuNin RDM, but not for "
+"changes made using S3 Compatible Storage directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy S3 "
+"Compatible Storage authorization unless the user forking the project is "
+"the same user who authorized the S3 Compatible Storage add-on in the "
+"source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:37
+msgid ""
+"\n"
+"\n"
+"<h3>WEKO Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating indices/items in the project via "
+"GakuNin RDM will be reflected in WEKO.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Items deleted via GakuNin RDM will be deleted in "
+"WEKO.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your WEKO index through the GakuNin RDM, but not for changes made using "
+"WEKO directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy WEKO "
+"authorization unless the user forking the project is the same user who "
+"authorized the WEKO add-on in the source project being forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:39
+msgid ""
+"\n"
+"\n"
+"<h3>JupyterHub Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Permissions</td>\n"
+"                <td>The GakuNin RDM does not affect the permissions of "
+"JupyterHub.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The JupyterHub add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>The JupyterHub add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>The JupyterHub add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Logs</td>\n"
+"                <td>The JupyterHub add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component copies information "
+"about linked JupyterHub but the GakuNin RDM does not affect "
+"authentication of JupyterHub.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:41
+msgid ""
+"\n"
+"\n"
+"<h3>IQB-RIMS Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making an GakuNin RDM project public or private is "
+"independent of Google Drive privacy. The GakuNin RDM does not alter the "
+"permissions of linked Google Drive folders.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>IQB-RIMS files and their versions can be "
+"viewed/downloaded via GakuNin RDM.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Google Drive.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Google Drive.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Google Drive content through the GakuNin RDM, but not for changes "
+"made using Google Drive directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Google "
+"Drive authorization unless the user forking the project is the same user "
+"who authorized the IQB-RIMS add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
 msgstr ""
 
 #: website/static/js/accessRequestManager.js:85
@@ -1191,79 +2425,79 @@ msgstr ""
 msgid "Copy failed!"
 msgstr ""
 
-#: website/static/js/comment.js:54
+#: website/static/js/comment.js:55
 msgid "Error getting contributors and group members"
 msgstr ""
 
-#: website/static/js/comment.js:72
+#: website/static/js/comment.js:73
 msgid "Spam or advertising"
 msgstr ""
 
-#: website/static/js/comment.js:73
+#: website/static/js/comment.js:74
 msgid "Hate speech"
 msgstr ""
 
-#: website/static/js/comment.js:74
+#: website/static/js/comment.js:75
 msgid "Violence or harmful behavior"
 msgstr ""
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Commenting"
 msgstr ""
 
-#: website/static/js/comment.js:209
+#: website/static/js/comment.js:212
 msgid "Comment"
 msgstr ""
 
-#: website/static/js/comment.js:229
+#: website/static/js/comment.js:232
 msgid "Exceeds character limit. Please reduce to %1$s characters or less."
 msgstr ""
 
-#: website/static/js/comment.js:344 website/static/js/comment.js:552
+#: website/static/js/comment.js:347 website/static/js/comment.js:555
 msgid "Please enter a comment"
 msgstr ""
 
-#: website/static/js/comment.js:390 website/static/js/comment.js:585
+#: website/static/js/comment.js:393 website/static/js/comment.js:588
 msgid "Could not submit comment"
 msgstr ""
 
-#: website/static/js/comment.js:391
+#: website/static/js/comment.js:394
 msgid "Error creating comment"
 msgstr ""
 
-#: website/static/js/comment.js:586
+#: website/static/js/comment.js:589
 msgid "Error editing comment"
 msgstr ""
 
-#: website/static/js/comment.js:631
+#: website/static/js/comment.js:634
 msgid "Could not report abuse."
 msgstr ""
 
-#: website/static/js/comment.js:632
+#: website/static/js/comment.js:635
 msgid "Error reporting abuse"
 msgstr ""
 
-#: website/static/js/comment.js:661
+#: website/static/js/comment.js:664
 msgid "Error deleting comment"
 msgstr ""
 
-#: website/static/js/comment.js:699
+#: website/static/js/comment.js:702
 msgid "Error undeleting comment"
 msgstr ""
 
-#: website/static/js/comment.js:724
+#: website/static/js/comment.js:727
 msgid "Error unreporting comment"
 msgstr ""
 
-#: website/static/js/comment.js:804
+#: website/static/js/comment.js:807
 msgid "Your comments have unsaved changes. Are you sure "
 msgstr ""
 
-#: website/static/js/comment.js:805
+#: website/static/js/comment.js:808
 msgid "you want to leave this page?"
 msgstr ""
 
-#: website/static/js/comment.js:823
+#: website/static/js/comment.js:826
 msgid "Could not update comment timestamp"
 msgstr ""
 
@@ -1452,7 +2686,8 @@ msgstr ""
 msgid "An item named \"%1$s\" already exists in this location."
 msgstr ""
 
-#: website/static/js/fangorn.js:499 website/static/js/fangorn.js:532
+#: website/static/js/fangorn.js:499 website/static/js/fangorn.js:508
+#: website/static/js/fangorn.js:532
 msgid "Keep Both"
 msgstr ""
 
@@ -1460,7 +2695,8 @@ msgstr ""
 msgid " will retain both files (and their version histories) in this location."
 msgstr ""
 
-#: website/static/js/fangorn.js:501 website/static/js/fangorn.js:534
+#: website/static/js/fangorn.js:501 website/static/js/fangorn.js:509
+#: website/static/js/fangorn.js:534
 msgid "Replace"
 msgstr ""
 
@@ -1468,12 +2704,33 @@ msgstr ""
 msgid " will overwrite the existing file in this location. "
 msgstr ""
 
-#: website/static/js/fangorn.js:535
+#: website/static/js/fangorn.js:502 website/static/js/fangorn.js:535
 msgid "You will lose previous versions of the overwritten file. "
 msgstr ""
 
-#: website/static/js/fangorn.js:536
+#: website/static/js/fangorn.js:503 website/static/js/fangorn.js:536
 msgid "You will keep previous versions of the moved file."
+msgstr ""
+
+#: website/static/js/fangorn.js:504
+msgid "\"Skip\" will skip the current file."
+msgstr ""
+
+#: website/static/js/fangorn.js:505
+msgid "\"Stop\" will only move files with no conflicts."
+msgstr ""
+
+#: website/static/js/fangorn.js:510
+msgid "Skip"
+msgstr ""
+
+#: website/static/js/fangorn.js:511
+msgid "Stop"
+msgstr ""
+
+#: website/static/js/fangorn.js:513
+#, python-format
+msgid "Replace \"%s\"?"
 msgstr ""
 
 #: website/static/js/fangorn.js:537
@@ -1843,6 +3100,14 @@ msgstr ""
 
 #: website/static/js/fangorn.js:2504
 msgid " files succeeded."
+msgstr ""
+
+#: website/static/js/fangorn.js:2605
+msgid "Done"
+msgstr ""
+
+#: website/static/js/fangorn.js:2607
+msgid "Move Status"
 msgstr ""
 
 #: website/static/js/fangorn.js:2609
@@ -2342,23 +3607,45 @@ msgstr ""
 msgid "Project Notifications"
 msgstr ""
 
+#: website/static/js/js_messages.js:23
+msgid ""
+"These are settings for each of your projects. Modifying these settings "
+"will only modify the settings for the selected project."
+msgstr ""
+
 #: website/static/js/js_messages.js:25
 msgid "moved"
 msgstr ""
 
-#: website/static/js/js_messages.js:27
-msgid "admin"
+#: website/static/js/js_messages.js:25
+msgid "renamed"
 msgstr ""
 
 #: website/static/js/js_messages.js:27
-msgid "write"
+msgid "Skipped"
 msgstr ""
 
 #: website/static/js/js_messages.js:27
-msgid "read"
+msgid "Moved or replaced old version"
+msgstr ""
+
+#: website/static/js/js_messages.js:27
+msgid "Kept both versions"
 msgstr ""
 
 #: website/static/js/js_messages.js:29
+msgid "admin"
+msgstr ""
+
+#: website/static/js/js_messages.js:29
+msgid "write"
+msgstr ""
+
+#: website/static/js/js_messages.js:29
+msgid "read"
+msgstr ""
+
+#: website/static/js/js_messages.js:31
 msgid "home"
 msgstr ""
 
@@ -2868,6 +4155,688 @@ msgstr ""
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:98
+msgid "${user} linked the Azure Blob Storage container ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:99
+msgid "${user} unselected the Azure Blob Storage container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:100
+msgid ""
+"${user} added file ${path} to Azure Blob Storage container ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:101
+msgid ""
+"${user} removed ${path} in Azure Blob Storage container ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:102
+msgid ""
+"${user} updated file ${path} in Azure Blob Storage container ${bucket} in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:103
+msgid ""
+"${user} created folder ${path} in Azure Blob Storage container ${bucket} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:104
+msgid "${user} authorized the Azure Blob Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:105
+msgid "${user} deauthorized the Azure Blob Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:106
+msgid "Azure Blob Storage addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:107
+msgid "${user} added file ${path} to Bitbucket repo ${bitbucket_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:108
+msgid ""
+"${user} removed ${path_type} ${path} in Bitbucket repo ${bitbucket_repo} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:109
+msgid ""
+"${user} updated file ${path} in Bitbucket repo ${bitbucket_repo} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:110
+msgid ""
+"${user} created folder ${path} in Bitbucket repo ${bitbucket_repo} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:111
+msgid "${user} authorized the Bitbucket addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:112
+msgid "${user} deauthorized the Bitbucket addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:113
+msgid "Bitbucket addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:114
+msgid "${user} linked Bitbucket repo ${bitbucket_repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:115
+msgid "${user} added file ${path} to Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:116
+msgid "${user} removed ${path_type} ${path} from Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:117
+msgid "${user} updated file ${path} in Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:118
+msgid "${user} created folder ${path} in Box in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:119
+msgid "${user} linked Box folder ${box_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:120
+msgid "${user} authorized the Box addon in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:121
+msgid "${user} deauthorized the Box addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:122
+msgid "Box addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:123
+msgid "${user} added a citation ${citation} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:124
+msgid "${user} updated a citation ${citation} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:125
+msgid "${user} removed a citation ${citation} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:126
+msgid "${user} added file ${filename} to Dataverse dataset ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:127
+msgid ""
+"${user} removed file ${filename} from Dataverse dataset ${dataset} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:128
+msgid "${user} linked Dataverse dataset ${dataset} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:129
+msgid "${user} linked Dataverse dataset ${study} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:130
+msgid "${user} published a new version of Dataverse dataset ${dataset} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:131
+msgid "${user} published a new version of Dataverse dataset ${study} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:132
+msgid "${user} authorized the Dataverse addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:133
+msgid "${user} deauthorized the Dataverse addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:134
+msgid "Dataverse addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:135
+msgid "${user} added file ${path} to Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:136
+msgid "${user} removed ${path_type} ${path} from Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:137
+msgid "${user}updated file ${path} in Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:138
+msgid "${user} created folder ${path} in Dropbox in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:139
+msgid "${user} linked Dropbox folder ${dropbox_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:140
+msgid "${user} authorized the Dropbox addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:141
+msgid "${user} deauthorized the Dropbox addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:142
+msgid "Dropbox addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:143
+msgid "${user} added file ${path} to Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:144
+msgid "${user} removed ${path_type} ${path} from Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:145
+msgid "${user}updated file ${path} in Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:146
+msgid "${user} created folder ${path} in Dropbox Business in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:147
+msgid ""
+"${user} linked Dropbox Business folder ${dropboxbusiness_folder} to "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:148
+msgid "${user} authorized the Dropbox Business addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:149
+msgid "${user} deauthorized the Dropbox Business addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:150
+msgid "Dropbox Business addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:151
+msgid "${user} linked figshare ${folder} ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:152
+msgid "${user} unlinked content from figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:153
+msgid "${user} added file ${path} to figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:154
+msgid "${user} removed ${path_type} ${path} from figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:155
+msgid "${user} created folder ${path} in figshare in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:156
+msgid "${user} authorized the figshare addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:157
+msgid "${user} deauthorized the figshare addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:158
+msgid "figshare addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:159
+msgid "${user} changed external link to ${forward_url} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:160
+msgid "${user} added file ${path} to GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:161
+msgid "${user} removed ${path_type} ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:162
+msgid "${user} updated file ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:163
+msgid "${user} created folder ${path} in GitHub repo ${repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:164
+msgid "${user} authorized the GitHub addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:165
+msgid "${user} deauthorized the GitHub addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:166
+msgid "GitHub addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:167
+msgid "${user} linked GitHub repo ${repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:168
+msgid "${user} added file ${path} to GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:169
+msgid "${user} removed file ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:170
+msgid "${user} updated file ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:171
+msgid "${user} created folder ${path} in GitLab repo ${gitlab_repo} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:172
+msgid "${user} authorized the GitLab addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:173
+msgid "${user} deauthorized the GitLab addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:174
+msgid "GitLab addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:175
+msgid "${user} linked GitLab repo ${gitlab_repo} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:176
+msgid "${user} added file ${googledrive_path} to Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:177
+msgid ""
+"${user} removed ${path_type} ${googledrive_path} from Google Drive in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:178
+msgid "${user} updated file ${googledrive_path} in Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:179
+msgid "${user} created folder ${googledrive_path} in Google Drive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:180
+msgid "${user} linked Google Drive folder ${googledrive_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:181
+msgid "${user} authorized the Google Drive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:182
+msgid "${user} deauthorized the Google Drive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:183
+msgid "Google Drive addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:184
+msgid "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:185
+msgid "${user} removed ${path_type} ${iqbrims_path} from IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:186
+msgid "${user} updated file ${iqbrims_path} in IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:187
+msgid "${user} created folder ${iqbrims_path} in IQB-RIMS in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:188
+msgid "${user} linked IQB-RIMS folder ${iqbrims_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:189
+msgid "${user} authorized the IQB-RIMS addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:190
+msgid "${user} deauthorized the IQB-RIMS addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:191
+msgid "IQB-RIMS addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:192
+#: website/static/js/logActionsList_extract.js:194
+msgid "${user} started IQB-RIMS workflow for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:193
+#: website/static/js/logActionsList_extract.js:195
+msgid "Finished workflow of ${user} for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:196
+msgid "${user} linked Mendeley folder ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:197
+msgid "${user} authorized the Mendeley addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:198
+msgid "${user} deauthorized the Mendeley addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:199
+msgid "${user} added file ${path} to Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:200
+msgid "${user} removed ${path_type} ${path} from Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:201
+msgid "${user} updated file ${path} in Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:202
+msgid "${user} created folder ${path} in Nextcloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:203
+msgid "${user} linked Nextcloud folder ${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:204
+msgid "${user} authorized the Nextcloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:205
+msgid "${user} deauthorized the Nextcloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:206
+msgid "Nextcloud addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:207
+msgid "${user} added file ${path} to Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:208
+msgid "${user} removed ${path_type} ${path} from Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:209
+msgid "${user} updated file ${path} in Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:210
+msgid "${user} created folder ${path} in Microsoft OneDrive in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:211
+msgid "${user} linked Microsoft OneDrive folder ${onedrive_folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:212
+msgid "${user} authorized the Microsoft OneDrive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:213
+msgid "${user} deauthorized the Microsoft OneDrive addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:214
+msgid "Microsoft OneDrive addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:215
+msgid "${user} added file ${path} to ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:216
+msgid "${user} removed ${path_type} ${path} from ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:217
+msgid "${user} updated file ${path} in ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:218
+msgid "${user} created folder ${path} in ownCloud in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:219
+msgid "${user} linked ownCloud folder ${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:220
+msgid "${user} authorized the ownCloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:221
+msgid "${user} deauthorized the ownCloud addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:222
+msgid "ownCloud addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:223
+msgid "${user} linked the Amazon S3 bucket ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:224
+msgid "${user} unselected the Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:225
+msgid "${user} added file ${path} to Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:226
+msgid "${user} removed ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:227
+msgid "${user} updated file ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:228
+msgid "${user} created folder ${path} in Amazon S3 bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:229
+msgid "${user} authorized the Amazon S3 addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:230
+msgid "${user} deauthorized the Amazon S3 addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:231
+msgid "Amazon S3 addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:232
+msgid "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:233
+msgid "${user} unselected the S3 Compatible Storage bucket ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:234
+msgid ""
+"${user} added file ${path} to S3 Compatible Storage bucket ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:235
+msgid ""
+"${user} removed ${path} in S3 Compatible Storage bucket ${bucket} in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:236
+msgid ""
+"${user} updated file ${path} in S3 Compatible Storage bucket ${bucket} in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:237
+msgid ""
+"${user} created folder ${path} in S3 Compatible Storage bucket ${bucket} "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:238
+msgid "${user} authorized the S3 Compatible Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:239
+msgid "${user} deauthorized the S3 Compatible Storage addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:240
+msgid "S3 Compatible Storage addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:241
+msgid "${user} linked the Swift container ${bucket} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:242
+msgid "${user} unselected the Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:243
+msgid "${user} added file ${path} to Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:244
+msgid "${user} removed ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:245
+msgid "${user} updated file ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:246
+msgid "${user} created folder ${path} in Swift container ${bucket} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:247
+msgid "${user} authorized the Swift addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:248
+msgid "${user} deauthorized the Swift addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:249
+msgid "Swift addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:250
+msgid "${user} added file ${filename} to WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:251
+msgid "${user} removed file ${filename} from WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:252
+msgid "${user} linked WEKO index ${dataset} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:253
+msgid "${user} created an index ${filename} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:254
+msgid "${user} created an item ${filename} on ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:255
+msgid "${user} created folder ${filename} in WEKO index ${dataset} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:256
+msgid "${user} authorized the WEKO addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:257
+msgid "${user} deauthorized the WEKO addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:258
+msgid "WEKO addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:259
+msgid "${user} linked Zotero folder ${folder_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:260
+msgid "${user} linked Zotero library ${library_name} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:261
+msgid "${user} authorized the Zotero addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:262
+msgid "${user} deauthorized the Zotero addon for ${node}"
 msgstr ""
 
 #: website/static/js/logTextParser.js:824
@@ -3922,6 +5891,10 @@ msgstr ""
 
 #: website/static/js/requestAccess.js:27 website/static/js/requestAccess.js:62
 msgid "Access requested"
+msgstr ""
+
+#: website/static/js/requestAccess.js:30
+msgid "Request declined"
 msgstr ""
 
 #: website/static/js/requestAccess.js:67

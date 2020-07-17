@@ -21,18 +21,17 @@
                 <form action="" method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
-                    <input class="form-button" type="submit" value="Save" />
+                    <input class="form-button" type="submit" value="{% trans 'Save' %}" />
                 </form>
             </div>
             <div class="col-md-5">
                 <div>
                     <h4>{% trans "Import from JSON" %}</h4>
-                    <p>{% trans "Choose a JSON file that has been previously exported from another Institution detail page. This will
-                        pre-populate the Institution change form with those details." %}</p>
+                    <p>{% trans "Choose a JSON file that has been previously exported from another Institution detail page. This will pre-populate the Institution change form with those details." %}</p>
                     <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ import_form.as_p }}
-                        <input class="form-button" type="submit" value="Import" />
+                        <input class="form-button" type="submit" value="{% trans 'Import' %}" />
                     </form>
                 </div>
             </div>

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """File event module
 
 These classes are registered in event_registry and are callable through the
@@ -47,6 +48,18 @@ class FileEvent(Event):
         return u'{action} {f_type} "<b>{name}</b>".'.format(
             action=markupsafe.escape(action),
             f_type=markupsafe.escape(f_type),
+            name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
+        )
+
+    @property
+    def html_message_ja(self):
+        """Most basic html message"""
+        f_type, action = self.action.split('_')
+        if self.payload['metadata']['materialized'].endswith('/'):
+            f_type = u'folder'
+        return u'が{f_type}(<b>{name}</b>)を{action}しました。 / '.format(
+            action=u'追加' if markupsafe.escape(action) == u'added' else u'削除' if markupsafe.escape(action) == 'removed' else u'更新' if markupsafe.escape(action) == 'updated' else u'作成' if action == 'created' else markupsafe.escape(action),
+            f_type=u'ファイル' if markupsafe.escape(f_type) == u'file' else u'フォルダ' if markupsafe.escape(f_type) == 'folder' else markupsafe.escape(f_type),
             name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
         )
 
@@ -123,7 +136,7 @@ class ComplexFileEvent(FileEvent):
         self.source_node = AbstractNode.load(source_nid) or Preprint.load(source_nid)
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
-    def _build_message(self, html=False):
+    def _build_message(self, lang, html=False):
         addon, f_type, action = tuple(self.action.split('_'))
         # f_type is always file for the action
         if self.payload['destination']['kind'] == u'folder':
@@ -133,20 +146,36 @@ class ComplexFileEvent(FileEvent):
         source_name = self.payload['source']['materialized'].lstrip('/')
 
         if html:
-            return (
-                u'{action} {f_type} "<b>{source_name}</b>" '
-                u'from {source_addon} in {source_node_title} '
-                u'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
-            ).format(
-                action=markupsafe.escape(action),
-                f_type=markupsafe.escape(f_type),
-                source_name=markupsafe.escape(source_name),
-                source_addon=markupsafe.escape(self.payload['source']['addon']),
-                source_node_title=markupsafe.escape(self.payload['source']['node']['title']),
-                dest_name=markupsafe.escape(destination_name),
-                dest_addon=markupsafe.escape(self.payload['destination']['addon']),
-                dest_node_title=markupsafe.escape(self.payload['destination']['node']['title']),
-            )
+            if lang == 'ja':
+                return (
+                    u'が{f_type}(<b>{source_name}</b>)を'
+                    u'{source_node_title}にある{source_addon}から'
+                    u'{dest_node_title}にある{dest_addon}の「<b>{dest_name}</b>」へ{action}しました。'
+                ).format(
+                    action=u'移動' if markupsafe.escape(action) == u'moved' else markupsafe.escape(action),
+                    f_type=u'ファイル' if markupsafe.escape(f_type) == u'file' else u'フォルダ' if markupsafe.escape(f_type) == 'folder' else markupsafe.escape(f_type),
+                    source_name=markupsafe.escape(source_name),
+                    source_addon=markupsafe.escape(self.payload['source']['addon']),
+                    source_node_title=markupsafe.escape(self.payload['source']['node']['title']),
+                    dest_name=markupsafe.escape(destination_name),
+                    dest_addon=markupsafe.escape(self.payload['destination']['addon']),
+                    dest_node_title=markupsafe.escape(self.payload['destination']['node']['title']),
+                )
+            else:
+                return (
+                    u'{action} {f_type} "<b>{source_name}</b>" '
+                    u'from {source_addon} in {source_node_title} '
+                    u'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
+                ).format(
+                    action=markupsafe.escape(action),
+                    f_type=markupsafe.escape(f_type),
+                    source_name=markupsafe.escape(source_name),
+                    source_addon=markupsafe.escape(self.payload['source']['addon']),
+                    source_node_title=markupsafe.escape(self.payload['source']['node']['title']),
+                    dest_name=markupsafe.escape(destination_name),
+                    dest_addon=markupsafe.escape(self.payload['destination']['addon']),
+                    dest_node_title=markupsafe.escape(self.payload['destination']['node']['title']),
+                )
         return (
             u'{action} {f_type} "{source_name}" '
             u'from {source_addon} in {source_node_title} '
@@ -164,11 +193,15 @@ class ComplexFileEvent(FileEvent):
 
     @property
     def html_message(self):
-        return self._build_message(html=True)
+        return self._build_message('', html=True)
+
+    @property
+    def html_message_ja(self):
+        return self._build_message('ja', html=True)
 
     @property
     def text_message(self):
-        return self._build_message(html=False)
+        return self._build_message('', html=False)
 
     @property
     def waterbutler_id(self):
@@ -197,6 +230,13 @@ class AddonFileRenamed(ComplexFileEvent):
     def html_message(self):
         return u'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
             kind=markupsafe.escape(self.payload['destination']['kind']),
+            source_name=markupsafe.escape(self.payload['source']['materialized']),
+            destination_name=markupsafe.escape(self.payload['destination']['materialized']),
+        )
+    @property
+    def html_message_ja(self):
+        return u'が{kind}名(<b>{source_name}</b>)を「<b>{destination_name}</b>」へ変更しました。'.format(
+            kind=u'ファイル' if markupsafe.escape(self.payload['destination']['kind']) == u'file' else u'フォルダ' if markupsafe.escape(self.payload['destination']['kind']) == 'folder' else markupsafe.escape(self.payload['destination']['kind']),
             source_name=markupsafe.escape(self.payload['source']['materialized']),
             destination_name=markupsafe.escape(self.payload['destination']['materialized']),
         )

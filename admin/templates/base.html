@@ -105,12 +105,12 @@
             <li class="header">{% trans "Menu" %}</li>
             {% if perms.osf.view_node %}
                 <li><a role="button" data-toggle="collapse" href="#collapseNodes">
-                  <i class='fa fa-caret-down'></i> {% trans "RDM" %} {% trans "Nodes" %}
+                  <i class='fa fa-caret-down'></i> {% trans "RDM Nodes" %}
               </a></li>
             <li>
                 <div class="collapse" id="collapseNodes">
                     <ul class="sidebar-menu sidebar-menu-inner">
-                        <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> {% trans "RDM" %} {% trans "Nodes" %}</span> </a></li>
+                        <li><a href="{% url 'nodes:search' %}"><i class='fa fa-link'></i><span> {% trans "RDM Nodes" %}</span> </a></li>
                         <li><a href="{% url 'nodes:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> {% trans "Flagged Spam" %}</span> </a></li>
                         <li><a href="{% url 'nodes:known-spam' %}"><i class="fa fa-cutlery"></i><span> {% trans "Known Spam" %}</span> </a></li>
                         <li><a href="{% url 'nodes:known-ham' %}"><i class="fa fa-star"></i><span> {% trans "Known Ham" %}</span> </a></li>
@@ -138,11 +138,11 @@
           {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
-                  <i class='fa fa-caret-down'></i> {% trans "RDM" %} {% trans "Users" %}
+                  <i class='fa fa-caret-down'></i> {% trans "RDM Users" %}
               </a></li>
               <div class="collapse" id="collapseUsers">
                   <ul class="sidebar-menu sidebar-menu-inner">
-                      <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i><span>{% trans "RDM" %} {% trans "Users" %}</span> </a></li>
+                      <li><a href="{% url 'users:search' %}"><i class='fa fa-link'></i><span>{% trans "RDM Users" %}</span> </a></li>
                       <li><a href="{% url 'users:flagged-spam' %}"><i class="fa fa-exclamation-triangle"></i><span> {% trans "Flagged Spam" %}</span> </a></li>
                       <li><a href="{% url 'users:known-spam' %}"><i class="fa fa-cutlery"></i><span> {% trans "Known Spam" %}</span> </a></li>
                       <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> {% trans "Known Ham" %}</span> </a></li>
@@ -150,7 +150,7 @@
               </div>
           {% endif %}
           {% if perms.osf.view_spam %}
-            <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>{% trans "RDM" %} {% trans "Spam" %}</span></a></li>
+            <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Spam" %}</span></a></li>
           {% endif %}
           {% if perms.osf.view_registration %}
               <li><a role="button" data-toggle="collapse" href="#collapseRegistrations">
@@ -165,7 +165,7 @@
           {% endif %}
           {% if perms.osf.view_institution %}
               <li><a role="button" data-toggle="collapse" href="#collapseInstitutions">
-                  <i class='fa fa-caret-down'></i> {% trans "RDM" %} {% trans "Institutions" %}
+                  <i class='fa fa-caret-down'></i> {% trans "RDM Institutions" %}
               </a></li>
               <div class="collapse" id="collapseInstitutions">
                   <ul class="sidebar-menu sidebar-menu-inner">

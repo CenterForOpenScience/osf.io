@@ -12,7 +12,7 @@
                 {% csrf_token %}
                 {{ form }}
                 </br>
-                <p><input class="btn btn-primary" type="submit" value="Upload" /></p>
+                <p><input class="btn btn-primary" type="submit" value="{% trans 'Upload' %}" /></p>
             </form>
         </div>
         <div class="row">

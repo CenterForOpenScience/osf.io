@@ -3,6 +3,67 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">GakuNin RDMにようこそ！</h3>
+  </td>
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
+
+こんにちは、${user.fullname}さん<br>
+<br>
+GakuNin RDMアカウントを認証していただきありがとうございます。GakuNin RDMは国立情報学研究所が提供のオープンソースサービスです。GakuNin RDMの機能の一部をご紹介します：
+<br>
+
+% if storage_flag_is_active:
+<h4>ストレージの場所の指定</h4>
+新しいプロジェクトのファイルの保存場所は、選択肢にある地域の中からお選びいただけます。 <a href="${domain}settings/account/?utm_source=notification&utm_medium=email&utm_campaign=welcome#updateDefaultStorageLocation">ストレージの場所を指定</a>。<br>
+<br>
+% endif
+
+<h4>ファイルの保存</h4>
+資料、データ、原稿など、研究に関連するデータを全て研究途中あるいは完了後にアーカイブ化できます。 <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930613/?utm_source=notification&utm_medium=email&utm_campaign=welcome">やり方を見る</a>。<br>
+<br>
+
+<h4>研究機関とプロジェクトを関連付け</h4>
+プロジェクトをあなたの所属研究機関と関連付けましょう。研究機関で業績が取り上げられることで人目に触れやすくなり、共同研究が促進されます。<br>
+<br>
+
+% if use_viewonlylinks:
+<h4>研究内容の共有</h4>
+研究資料を非公開で管理、特定ユーザとの限定共有をすることができます。<a href="https://openscience.zendesk.com/hc/en-us/articles/360018981414/?utm_source=notification&utm_medium=email&utm_campaign=welcome">プライバシー設定について詳しく</a>。<br>
+<br>
+% endif
+
+<h4>研究の登録</h4>
+プロジェクトやファイルはタイムスタンプ付きの永久ファイルとして保存できます。こうすることで検証的試験を行う際の研究デザインと分析プランを事前登録できるほか、報告書を出版する際に資料やデータ、分析結果をアーカイブ化できます。<a href="https://openscience.zendesk.com/hc/en-us/articles/360019930893/?utm_source=notification&utm_medium=email&utm_campaign=welcome">登録について見る</a>。<br>
+<br>
+
+<h4>研究を引用可能に</h4>
+GakuNin RDM上のプロジェクトは全て固有の永続的識別子がついており、登録には全てデジタルオブジェクト識別子を割り振ることができます。公開プロジェクトの引用は自動生成されるので、訪問者が典拠を表示することができます。<a href="https://openscience.zendesk.com/hc/en-us/articles/360019931013/?utm_source=notification&utm_medium=email&utm_campaign=welcome">もっと詳しく</a>。<br>
+<br>
+
+<h4>インパクトの測定</h4>
+公開プロジェクトへのトラフィックや公開ファイルのダウンロード数をモニタリングできます。 <a href="https://openscience.zendesk.com/hc/en-us/articles/360019737874/?utm_source=notification&utm_medium=email&utm_campaign=welcome">アナリティクスについて詳しく</a>。<br>
+<br>
+
+<h4>使用中のサービスと接続</h4>
+GakuNin RDMはAmazon S3、Azure Blob Storage、Bitbucket、Box、Dataverse、Dropbox、figshare、GitHub、GitLab、Google Drive、Mendeley、Nextcloud、OneDrive、OpenStack Swift、ownCloud、S3 Compatible Storage、WEKO、Zoteroとの統合が可能。各種サービスをGakunin RDMプロジェクトとリンクすれば、研究資料を全て1か所にまとめられます。<a href="https://openscience.zendesk.com/hc/en-us/categories/360001550973/?utm_source=notification&utm_medium=email&utm_campaign=welcome">アドオンについて詳しく見る</a>。<br>
+<br>
+
+<h4>共同研究</h4>
+共同研究者を追加すれば研究資料やデータなどの保管環境を共有でき、ファイルが行方不明になるのを防げます。 <a href="https://openscience.zendesk.com/hc/en-us/categories/360001530674-Collaborating/?utm_source=notification&utm_medium=email&utm_campaign=welcome">共同研究を始める</a>。<br>
+<br>
+
+Gakunin RDMについての詳細は<a href="https://openscience.zendesk.com/hc/en-us/?utm_source=notification&utm_medium=email&utm_campaign=welcome">サポート</a>をご覧ください。<br>
+<br>
+よろしくお願いいたします。<br>
+<br>
+国立情報学研究所チーム<br>
+
+  </td>
+</tr>
+<tr>
+  <td style="border-collapse: collapse;">
     <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Welcome to the GakuNin RDM!</h3>
   </td>
 </tr>

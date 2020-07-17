@@ -27,7 +27,7 @@ var RequestAccessViewModel = function(currentUserRequestState, nodeId, user) {
             self.requestAccessButton = ko.observable(_('Access requested'));
         }
         if (self.requestState() === 'rejected') {
-            self.accessRequestTooltip('Request declined');
+            self.accessRequestTooltip(_('Request declined'));
         }
     };
 
