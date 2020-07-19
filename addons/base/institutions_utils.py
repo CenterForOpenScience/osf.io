@@ -23,8 +23,9 @@ logger = logging.getLogger(__name__)
 
 ENABLED_ADDONS_FOR_INSTITUTIONS = []
 
-def register(addon_name, node_settings_cls):
-    ENABLED_ADDONS_FOR_INSTITUTIONS.append((addon_name, node_settings_cls))
+def register(node_settings_cls):
+    name = node_settings_cls.SHORT_NAME
+    ENABLED_ADDONS_FOR_INSTITUTIONS.append((name, node_settings_cls))
 
 
 class InstitutionsNodeSettings(BaseNodeSettings):
@@ -38,12 +39,6 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     ###
     ### common methods:
     ###
-    @abc.abstractproperty
-    def folder_id(self):
-        raise NotImplementedError(
-            "InstitutionsNodeSettings subclasses must expose a 'folder_id' property."
-        )
-
     @property
     def complete(self):
         return self.has_auth and self.folder_id
@@ -111,6 +106,18 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     ###
     ### required methods:
     ###
+    @abc.abstractproperty
+    def FULL_NAME(self):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def SHORT_NAME(self):
+        raise NotImplementedError()
+
+    @abc.abstractproperty
+    def folder_id(self):
+        raise NotImplementedError()
+
     def serialize_waterbutler_credentials_impl(self):
         raise NotImplementedError()
 

@@ -117,4 +117,4 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             'verify_ssl': settings.USE_SSL
         }
 
-inst_utils.register(SHORT_NAME, NodeSettings)
+inst_utils.register(NodeSettings)
