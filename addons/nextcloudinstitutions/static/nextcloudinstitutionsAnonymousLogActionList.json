@@ -1,0 +1,10 @@
+{
+    "nextcloudinstitutions_file_added" : "A user added a file to Nextcloud (for Institutions) in a project",
+    "nextcloudinstitutions_file_removed" : "A user removed a file from Nextcloud (for Institutions) in a project",
+    "nextcloudinstitutions_file_updated" : "A user updated a file in Nextcloud (for Institutions) in a project",
+    "nextcloudinstitutions_folder_created" : "A user created a folder in Nextcloud (for Institutions) in a project",
+    "nextcloudinstitutions_folder_selected" : "A user linked a Nextcloud (for Institutions) folder in a project",
+    "nextcloudinstitutions_node_authorized" : "A user authorized the Nextcloud (for Institutions) addon for a project",
+    "nextcloudinstitutions_node_deauthorized" : "A user deauthorized the Nextcloud (for Institutions) addon for a project",
+    "nextcloudinstitutions_node_deauthorized_no_user" : "Nextcloud (for Institutions) addon for a project deauthorized"
+}

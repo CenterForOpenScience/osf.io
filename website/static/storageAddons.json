@@ -71,6 +71,10 @@
         "fullName": "IQB-RIMS",
         "externalView": false
     },
+    "nextcloudinstitutions": {
+        "fullName": "Nextcloud for Institutions",
+        "externalView": false
+    },
     "dropboxbusiness": {
         "fullName": "Dropbox Business",
         "externalView": false

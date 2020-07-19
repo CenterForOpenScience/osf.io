@@ -23,11 +23,13 @@
         "jupyterhub",
         "s3compat",
         "nextcloud",
+        "nextcloudinstitutions",
         "iqbrims",
         "dropboxbusiness"
     ],
     "addons_default": [
         "osfstorage",
+        "nextcloudinstitutions",
         "dropboxbusiness"
     ],
     "addons_archivable": {
@@ -50,6 +52,7 @@
         "weko": "partial",
         "s3compat": "partial",
         "nextcloud": "partial",
+        "nextcloudinstitutions": "partial",
         "iqbrims": "partial",
         "dropboxbusiness": "partial"
     },
@@ -72,6 +75,7 @@
         "weko",
         "s3compat",
         "nextcloud",
+        "nextcloudinstitutions",
         "iqbrims",
         "dropboxbusiness"
     ],
@@ -104,11 +108,12 @@
         "swift": "OpenStack Swift is a file storage add-on. Connect your OpenStack Swift account to a GakuNin RDM project to interact with files hosted on OpenStack Swift via the GakuNin RDM.",
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to a GakuNin RDM project to interact with files hosted on Azure Blob Storage (Block Blob) via the GakuNin RDM.",
         "weko": "WEKO is an application server to share, archive data.",
-        "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on an GakuNin RDM project can be imported to/exported from Jupyter",
-        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to an GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
-        "nextcloud": "Nextcloud is an open source, self-hosted file sync and share app platform. Connect your Nextcloud account to an GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
-        "iqbrims": "IQB-RIMS is a file storage add-on. Connect your Google Drive account to an GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
-        "dropboxbusiness": "Dropbox Business"
+        "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from Jupyter",
+        "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
+        "nextcloud": "Nextcloud is an open source, self-hosted file sync and share app platform. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
+        "iqbrims": "IQB-RIMS is a file storage add-on. Connect your Google Drive account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
+        "nextcloudinstitutions": "Nextcloud for Institutions is a file storage add-on for Institutions. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
+        "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM."
     },
     "addons_url": {
         "box": "http://www.box.com",
