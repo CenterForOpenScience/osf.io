@@ -4,12 +4,13 @@ import six
 import logging
 
 from django.db import models
-from django.db.models.signals import pre_save, post_save, post_delete
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
-from osf.models.node import Node, Contributor
+from osf.models.node import Node
 from osf.models.rdm_addons import RdmAddonOption
 from website import settings as website_settings
+from website.project import signals as project_signals
 from admin.rdm.utils import get_institution_id
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.base import exceptions
@@ -215,17 +216,27 @@ class InstitutionsStorageAddon(BaseStorageAddon):
 
     def sync_title(self):
         new_root_folder = self.root_folder(self.addon_option, self.owner)
-        self.rename_folder(self.client, self.folder_id, new_root_folder)
+        try:
+            self.rename_folder(self.client, self.folder_id, new_root_folder)
+        except Exception:
+            logger.error(u'rename_folder({}, {}) failed'.format(self.folder_id, new_root_folder))
+            raise
         self.set_folder(new_root_folder)
         self.save()
 
     _client = None
+    _provider = None
+
+    @property
+    def provider(self):
+        if self._provider is None:
+            self._provider = self.provider_switch(self.addon_option)
+        return self._provider
 
     @property
     def client(self):
         if self._client is None:
-            provider = self.provider_switch(self.addon_option)
-            self._client = self.get_client(provider)
+            self._client = self.get_client(self.provider)
         return self._client
 
     ###
@@ -276,7 +287,6 @@ class SyncInfo(object):
 
     def __init__(self):
         self.old_node_title = None
-        self.need_to_update_members = False
 
     @classmethod
     def get(cls, id):
@@ -333,20 +343,20 @@ def node_post_save(sender, instance, created, **kwargs):
                     ns.sync_title()
                 except Exception:
                     logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, syncinfo.old_node_title, node.title, node._id))
-            if syncinfo.need_to_update_members:
-                try:
-                    ns.sync_contributors()
-                except Exception:
-                    logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(addon_name, node.title, node._id))
-
-        syncinfo.need_to_update_members = False
 
 
-@receiver(post_save, sender=Contributor)
-@receiver(post_delete, sender=Contributor)
-def update_group_members(sender, instance, **kwargs):
-    node = instance.node
+@project_signals.contributors_updated.connect
+def sync_contributors(node):
     if node.is_deleted:
         return
-    syncinfo = SyncInfo.get(node.id)
-    syncinfo.need_to_update_members = True
+    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
+        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+            continue  # skip
+        ns = node.get_addon(addon_name)  # get NodeSetttings
+        if ns is None or not ns.complete:  # disabled
+            continue  # skip
+        try:
+            ns.sync_contributors()
+        except Exception as e:
+            logger.error(str(e))
+            logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(addon_name, node.title, node._id))

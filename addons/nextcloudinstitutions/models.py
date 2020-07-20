@@ -13,6 +13,7 @@ from addons.base.institutions_utils import (
 from addons.nextcloud.models import NextcloudProvider
 from addons.nextcloudinstitutions import settings, apps
 from osf.models.files import File, Folder, BaseFileNode
+from osf.utils.permissions import ADMIN, READ, WRITE
 
 logger = logging.getLogger(__name__)
 
@@ -99,9 +100,140 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
     def root_folder_format(cls):
         return settings.ROOT_FOLDER_FORMAT
 
+    # override
+    def sync_title(self):
+        super(NodeSettings, self).sync_title()
+        # share again to rename folder name for shared users
+        self._delete_all_shares()
+        self.sync_contributors()
+
+    def _delete_all_shares(self):
+        c = self.client
+        for item in c.get_shares(path=self.folder_id):
+            if item.get_share_type() != c.OCS_SHARE_TYPE_USER:
+                continue
+            user_id = item.get_share_with()
+            share_id = item.get_id()
+            try:
+                c.delete_share(share_id)
+            except Exception as e:
+                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id), str(e))
+
     def sync_contributors(self):
-        # TODO
-        pass
+        node = self.owner
+        c = self.client
+
+        # 1 (read only)
+        NC_READ = c.OCS_PERMISSION_READ
+        # 7 (read, write, cannot DELETE)
+        NC_WRITE = NC_READ | c.OCS_PERMISSION_UPDATE | c.OCS_PERMISSION_CREATE
+        # 31 (NC_WRITE | OCS_PERMISSION_DELETE | OCS_PERMISSION_SHARE)
+        NC_ADMIN = c.OCS_PERMISSION_ALL
+
+        def _grdm_perms_to_nc_perms(node, user):
+            if node.has_permission(user, ADMIN):
+                return NC_ADMIN
+            elif node.has_permission(user, WRITE):
+                return NC_WRITE
+            elif node.has_permission(user, READ):
+                return NC_READ
+            else:
+                return None
+
+        # nc_user_id -> (contributor(OSFUser), nc_permissions)
+        grdm_member_all_dict = {}
+        for cont in node.contributors.iterator():
+            if not cont.is_disabled and cont.eppn:
+                nc_user_id = self.eppn_to_remote_user(cont.eppn)
+                if not nc_user_id:
+                    continue
+                grdm_perms = node.get_permissions(cont)
+                nc_perms = _grdm_perms_to_nc_perms(node, cont)
+                if nc_perms is None:
+                    continue
+                grdm_member_all_dict[nc_user_id] = (cont, nc_perms)
+
+        grdm_member_users = [
+            user_id for user_id in grdm_member_all_dict.keys()
+        ]
+
+        # nc_user_id -> (nc_share_id, nc_permissions)
+        nc_member_all_dict = {}
+        for item in c.get_shares(path=self.folder_id):
+            if item.get_share_type() == c.OCS_SHARE_TYPE_USER:
+                nc_member_all_dict[item.get_share_with()] \
+                    = (item.get_id(), item.get_permissions())
+
+        nc_member_users = [
+            user_id for user_id in nc_member_all_dict.keys()
+        ]
+
+        # share_file_with_user() cannot share a file with myself.
+        my_user_id = self.provider.username
+        grdm_member_users_set = set(grdm_member_users) - set([my_user_id])
+        nc_member_users_set = set(nc_member_users) - set([my_user_id])
+
+        add_users_set = grdm_member_users_set - nc_member_users_set
+        remove_users_set = nc_member_users_set - grdm_member_users_set
+        update_users_set = grdm_member_users_set & nc_member_users_set
+
+        first_exception = None
+        for user_id in add_users_set:
+            grdm_info = grdm_member_all_dict.get(user_id)
+            if grdm_info is None:
+                continue  # unexpected
+            osfuser, perms = grdm_info
+            try:
+                c.share_file_with_user(self.folder_id, user_id, perms=perms)
+            except Exception as e:
+                if first_exception:
+                    first_exception = e
+                logger.warning(u'share_file_with_user failed: user_id={}: user_id={}: {}'.format(user_id), str(e))
+
+        for user_id in remove_users_set:
+            nc_info = nc_member_all_dict.get(user_id)
+            if nc_info is None:
+                continue  # unexpected
+            share_id, perms = nc_info
+            try:
+                c.delete_share(share_id)
+            except Exception as e:
+                if first_exception:
+                    first_exception = e
+                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id), str(e))
+
+        for user_id in update_users_set:
+            nc_info = nc_member_all_dict.get(user_id)
+            if nc_info is None:
+                continue  # unexpected
+            share_id, nc_perms = nc_info
+            grdm_info = grdm_member_all_dict.get(user_id)
+            if grdm_info is None:
+                continue  # unexpected
+            osfuser, grdm_perms = grdm_info
+            if nc_perms != grdm_perms:
+                try:
+                    c.update_share(share_id, perms=grdm_perms)
+                except Exception as e:
+                    if first_exception:
+                        first_exception = e
+                    logger.warning(u'update_share failed: user_id={}: {}'.format(user_id, str(e)))
+
+        if first_exception:
+            raise first_exception
+
+    def eppn_to_remote_user(self, eppn):
+        if settings.DEBUG_EPPN_TO_NCUSER_MAP is not None:
+            ncuser = settings.DEBUG_EPPN_TO_NCUSER_MAP.get(eppn)
+            if ncuser:
+                return ncuser
+        extended = self.addon_option.extended
+        eppn_to_remote_user_dict = extended.get('eppn_to_remote_user')
+        if eppn_to_remote_user_dict:
+            ncuser = eppn_to_remote_user_dict.get(eppn)
+            if ncuser:
+                return ncuser
+        return None
 
     def serialize_waterbutler_credentials_impl(self):
         provider = self.provider_switch(self.addon_option)
