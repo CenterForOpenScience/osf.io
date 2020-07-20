@@ -224,14 +224,48 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
-    def provider(self):
-        return RegistrationProvider.get_default()
+    def provider(
+        self, metaschema_open_ended, metaschema_predata_collection, metaschema_prereg_challenge,
+        metaschema_election_research_inactive, metaschema_election_research_active
+    ):
+        provider = RegistrationProvider.get_default()
+        provider.schemas.add(metaschema_open_ended)
+        provider.schemas.add(metaschema_predata_collection)
+        provider.schemas.add(metaschema_prereg_challenge)
+        provider.schemas.add(metaschema_election_research_inactive)
+        provider.schemas.add(metaschema_election_research_active)
+        provider.save()
+        return provider
 
     @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=OPEN_ENDED_SCHEMA_VERSION)
+
+    @pytest.fixture()
+    def metaschema_predata_collection(self):
+        return RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=SCHEMA_VERSION)
+
+    @pytest.fixture()
+    def metaschema_prereg_challenge(self):
+        return RegistrationSchema.objects.get(
+            name='Prereg Challenge',
+            schema_version=SCHEMA_VERSION)
+
+    @pytest.fixture()
+    def metaschema_election_research_inactive(self):
+        return RegistrationSchema.objects.get(
+            name='Election Research Preacceptance Competition',
+            active=False)
+
+    @pytest.fixture()
+    def metaschema_election_research_active(self):
+        return RegistrationSchema.objects.get(
+            name='Election Research Preacceptance Competition',
+            schema_version=2)
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
@@ -370,7 +404,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_registration_supplement_errors(
-            self, app, user, provider, url_draft_registrations):
+            self, app, user, provider, url_draft_registrations, metaschema_election_research_inactive, metaschema_election_research_active):
 
         #   test_registration_supplement_not_found
         draft_data = {
@@ -400,8 +434,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -410,7 +442,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': schema._id
+                            'id': metaschema_election_research_inactive._id
                         }
                     },
                     'provider': {
@@ -430,8 +462,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
     #   test_registration_supplement_must_be_active
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', schema_version=2)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -440,7 +470,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': schema._id
+                            'id': metaschema_election_research_active._id
                         }
                     },
                     'provider': {
@@ -460,11 +490,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
     def test_cannot_create_draft_errors(
-            self, app, user, project_public, payload):
+            self, app, user, project_public, payload, provider):
 
         #   test_cannot_create_draft_from_a_registration
         registration = RegistrationFactory(
-            project=project_public, creator=user)
+            project=project_public, creator=user,
+            provider=provider)
         url = '/{}nodes/{}/draft_registrations/'.format(
             API_BASE, registration._id)
         res = app.post_json_api(
@@ -494,14 +525,10 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, provider, project_public, metadata, url_draft_registrations):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
-
+            self, app, user, provider, project_public, metadata, url_draft_registrations, metaschema_prereg_challenge):
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
-            registration_schema=prereg_schema,
+            registration_schema=metaschema_prereg_challenge,
             branched_from=project_public
         )
 
@@ -528,7 +555,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': prereg_schema._id
+                            'id': metaschema_prereg_challenge._id
                         }
                     },
                     'provider': {
@@ -545,19 +572,15 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 201
         data = res.json['data']
-        assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert metaschema_prereg_challenge._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
     def test_required_registration_responses_questions_not_required_on_post(
-            self, app, user, provider, project_public):
-        prereg_schema = RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
-
+            self, app, user, provider, project_public, metaschema_prereg_challenge):
         prereg_draft_registration = DraftRegistrationFactory(
             initiator=user,
-            registration_schema=prereg_schema,
+            registration_schema=metaschema_prereg_challenge,
             branched_from=project_public
         )
 
@@ -578,7 +601,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': prereg_schema._id
+                            'id': metaschema_prereg_challenge._id
                         }
                     },
                     'provider': {
@@ -597,7 +620,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         data = res.json['data']
         assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == registration_responses['q1']
         assert res.json['data']['attributes']['registration_responses']['q1'] == registration_responses['q1']
-        assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
+        assert metaschema_prereg_challenge._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
@@ -633,12 +656,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert 'Please use `registration_responses` as `registration_metadata` will be deprecated in the future.' in errors['detail']
 
     def test_supply_registration_responses_on_creation(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_responses'] = {
             'looked': 'Yes',
             'datacompletion': 'No, data collection has not begun',
@@ -687,11 +706,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_metadata_question_values_must_be_dictionaries(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
 
@@ -705,12 +721,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_registration_metadata_question_keys_must_be_value(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'incorrect_key': 'No, data collection has not begun'}
@@ -725,12 +737,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                                    'field is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_metadata_must_be_in_schema(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['q11'] = {
             'value': 'No, data collection has not begun'
@@ -746,12 +754,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                                    ' permitted in your response.'
 
     def test_multiple_choice_question_value_must_match_value_in_schema(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'value': 'Nope, data collection has not begun'}
@@ -779,11 +783,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Expected a dictionary of items but got type "str".'
 
     def test_registration_responses_question_values_must_not_be_dictionaries(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['datacompletion'] = {'value': 'No, data collection has not begun'}
 
@@ -797,12 +798,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                                    ' is invalid, your response must be one of the provided options.'
 
     def test_question_in_registration_responses_must_be_in_schema(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['q11'] = 'No, data collection has not begun'
 
@@ -815,12 +812,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert errors['detail'] == 'Additional properties are not allowed (\'q11\' was unexpected)'
 
     def test_registration_responses_multiple_choice_question_value_must_match_value_in_schema(
-            self, app, user, payload, url_draft_registrations):
-        schema = RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
-
-        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+            self, app, user, payload, url_draft_registrations, metaschema_predata_collection):
+        payload['data']['relationships']['registration_schema']['data']['id'] = metaschema_predata_collection._id
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['datacompletion'] = 'Nope, data collection has not begun'
 
