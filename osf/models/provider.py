@@ -133,6 +133,13 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
+
+    default__id = 'osf'
+
+    @classmethod
+    def get_default(cls):
+        return cls.objects.get(_id=cls.default__id)
+
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
