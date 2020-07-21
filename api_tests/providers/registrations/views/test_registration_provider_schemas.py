@@ -3,6 +3,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     RegistrationProviderFactory,
+    AuthUserFactory
 )
 
 from osf.models import RegistrationSchema
@@ -12,6 +13,10 @@ from osf.migrations import update_provider_auth_groups
 
 @pytest.mark.django_db
 class TestRegistrationProviderSchemas:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def schema(self):
@@ -47,8 +52,8 @@ class TestRegistrationProviderSchemas:
     def url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/schemas/'
 
-    def test_registration_provider_with_schema(self, app, url, provider, schema):
-        res = app.get(url)
+    def test_registration_provider_with_schema(self, app, url, provider, schema, user):
+        res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
 

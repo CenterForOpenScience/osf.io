@@ -600,13 +600,14 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
     view_category = 'registration-providers'
     view_name = 'registration-schema-list'
 
-    required_read_scopes = [CoreScopes.MODERATORS_READ]
-    required_write_scopes = [CoreScopes.MODERATORS_WRITE]
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
+    required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = RegistrationSchemaSerializer
 
