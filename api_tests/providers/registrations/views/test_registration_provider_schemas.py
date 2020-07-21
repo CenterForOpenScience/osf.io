@@ -49,11 +49,38 @@ class TestRegistrationProviderSchemas:
         return provider
 
     @pytest.fixture()
+    def provider_with_v2_prereg_only(self, schema):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.schemas.add(schema)
+        provider.save()
+        return provider
+
+    @pytest.fixture()
     def url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/schemas/'
 
-    def test_registration_provider_with_schema(self, app, url, provider, schema, user):
+    @pytest.fixture()
+    def url_with_v2_prereg_only(self, provider_with_v2_prereg_only):
+        return f'/{API_BASE}providers/registrations/{provider_with_v2_prereg_only._id}/schemas/'
+
+    def test_registration_provider_with_schema(
+            self,
+            app,
+            url,
+            schema,
+            user,
+            url_with_v2_prereg_only
+    ):
         res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        assert len(data) == 1
+        assert data[0]['id'] == schema._id
+        assert data[0]['attributes']['name'] == schema.name
+
+        res = app.get(url_with_v2_prereg_only, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
 
