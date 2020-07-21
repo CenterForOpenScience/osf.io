@@ -600,9 +600,7 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     permission_classes = (
-        drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        MustBeModerator,
     )
     view_category = 'registration-providers'
     view_name = 'registration-schema-list'
@@ -616,7 +614,7 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
         return RegistrationProvider.objects.get(_id=self.kwargs['provider_id'])
 
     def get_default_queryset(self):
-        return self.get_provider().schemas.all()
+        return self.get_provider().schemas.get_latest_versions().filter(active=True, visible=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
