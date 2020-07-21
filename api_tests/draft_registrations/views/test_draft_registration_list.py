@@ -249,8 +249,11 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         return '/{}draft_registrations/?'.format(API_BASE)
 
     @pytest.fixture()
-    def non_default_provider(self):
-        return RegistrationProviderFactory()
+    def non_default_provider(self, metaschema_open_ended):
+        non_default_provider = RegistrationProviderFactory()
+        non_default_provider.schemas.add(metaschema_open_ended)
+        non_default_provider.save()
+        return non_default_provider
 
     @pytest.fixture()
     def payload_with_provider(self, metaschema_open_ended, non_default_provider):
