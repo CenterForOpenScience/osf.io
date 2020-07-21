@@ -41,11 +41,7 @@ PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    default_metaschema = models.RegistrationSchema.objects.first()
-    registration_provider = models.RegistrationProvider.get_default()
-    registration_provider.schemas.add(default_metaschema)
-    registration_provider.save()
-    return default_metaschema
+    return models.RegistrationSchema.objects.first()
 
 
 def FakeList(provider, n, *args, **kwargs):
