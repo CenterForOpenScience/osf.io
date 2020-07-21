@@ -148,6 +148,10 @@ class RegistrationProvider(AbstractProvider):
         )
 
     @property
+    def is_default(self):
+        return self._id == self.default__id
+
+    @property
     def readable_type(self):
         return 'registration'
 
