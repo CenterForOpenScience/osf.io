@@ -249,11 +249,11 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         return '/{}draft_registrations/?'.format(API_BASE)
 
     @pytest.fixture()
-    def provider2(self):
+    def non_default_provider(self):
         return RegistrationProviderFactory()
 
     @pytest.fixture()
-    def payload_with_provider(self, metaschema_open_ended, provider2):
+    def payload_with_provider(self, metaschema_open_ended, non_default_provider):
         return {
             'data': {
                 'type': 'draft_registrations',
@@ -268,7 +268,7 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
                     'provider': {
                         'data': {
                             'type': 'registration-providers',
-                            'id': provider2._id,
+                            'id': non_default_provider._id,
                         }
                     }
                 }
@@ -295,16 +295,16 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_draft_with_provider(self, app, user, url_draft_registrations, provider2, payload_with_provider):
+    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_provider):
 
         res = app.post_json_api(url_draft_registrations, payload_with_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
         assert data['relationships']['provider']['links']['related']['href'] == \
-               f'{settings.API_DOMAIN}v2/providers/registrations/{provider2._id}/'
+               f'{settings.API_DOMAIN}v2/providers/registrations/{non_default_provider._id}/'
 
         draft = DraftRegistration.load(data['id'])
-        assert draft.provider == provider2
+        assert draft.provider == non_default_provider
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(

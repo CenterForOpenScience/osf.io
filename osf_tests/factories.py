@@ -344,7 +344,7 @@ class RegistrationProviderFactory(DjangoModelFactory):
         _id = kwargs.pop('_id', None)
         try:
             obj = cls._build(*args, **kwargs)
-        except Exception as e:
+        except IntegrityError as e:
             # This is to ensure legacy tests don't fail when their _ids aren't unique
             if _id == models.RegistrationProvider.default__id:
                 pass
