@@ -316,6 +316,8 @@ def node_post_save(sender, instance, created, **kwargs):
     node = instance
     if node.is_deleted:
         return
+    if not hasattr(node, 'get_addon'):
+        return
     if created:  # node is created
         if node.creator.eppn is None:
             logger.error(u'{} has no ePPN.'.format(node.creator.username))
@@ -348,6 +350,8 @@ def node_post_save(sender, instance, created, **kwargs):
 @project_signals.contributors_updated.connect
 def sync_contributors(node):
     if node.is_deleted:
+        return
+    if not hasattr(node, 'get_addon'):
         return
     for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
         if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
