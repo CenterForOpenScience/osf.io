@@ -88,17 +88,25 @@ class DraftRegistrationTestCase:
 class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
+    def provider(self, schema):
+        provider = RegistrationProvider.get_default()
+        provider.schemas.add(schema)
+        provider.save()
+        return provider
+
+    @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
             schema_version=OPEN_ENDED_SCHEMA_VERSION)
 
     @pytest.fixture()
-    def draft_registration(self, user, project_public, schema):
+    def draft_registration(self, user, project_public, schema, provider):
         return DraftRegistrationFactory(
             initiator=user,
             registration_schema=schema,
-            branched_from=project_public
+            branched_from=project_public,
+            provider=provider
         )
 
     @pytest.fixture()

@@ -41,7 +41,12 @@ PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.RegistrationSchema.objects.first()
+    default_metaschema = models.RegistrationSchema.objects.first()
+    registration_provider = models.RegistrationProvider.get_default()
+    registration_provider.schemas.add(default_metaschema)
+    registration_provider.save()
+    return default_metaschema
+
 
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
@@ -525,7 +530,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
         draft = models.DraftRegistration.create_from_node(
