@@ -1543,7 +1543,10 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        try:
+            draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
 
         if metadata:
             self.update_metadata(draft, metadata)
