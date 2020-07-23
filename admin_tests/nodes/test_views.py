@@ -342,9 +342,12 @@ class TestNodeConfirmHamView(AdminTestCase):
     def test_confirm_registration_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        view.delete(self.request)
+        resp = view.delete(self.request)
+
+        nt.assert_true(resp.status_code == 302)
 
         self.registration.refresh_from_db()
+        nt.assert_false(self.registration.is_public)
         nt.assert_true(self.registration.spam_status == 4)
 
 
