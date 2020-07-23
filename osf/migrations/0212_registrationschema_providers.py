@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='registrationschema',
             name='providers',
-            field=models.ManyToManyField(blank=True, related_name='allowed_schemas', to='osf.RegistrationProvider'),
+            field=models.ManyToManyField(blank=True, related_name='schemas', to='osf.RegistrationProvider'),
         ),
     ]

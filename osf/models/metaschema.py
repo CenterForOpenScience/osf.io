@@ -91,7 +91,7 @@ class RegistrationSchema(AbstractSchema):
     description = models.TextField(null=True, blank=True)
     providers = models.ManyToManyField(
         'RegistrationProvider',
-        related_name='allowed_schemas',
+        related_name='schemas',
         blank=True
     )
 
