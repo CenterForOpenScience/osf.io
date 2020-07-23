@@ -150,4 +150,4 @@ class TestChangeSchemas:
 
         res = view.post(req)
         assert res.status_code == 302
-        assert provider.schemas.get(id=schema_id)
+        assert provider.allowed_schemas.get(id=schema_id)

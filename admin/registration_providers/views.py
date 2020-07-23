@@ -367,7 +367,7 @@ class ChangeSchema(TemplateView):
 
     def get_context_data(self, **kwargs):
         registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
-        ids = registration_provider.schemas.all().values_list('id', flat=True)
+        ids = registration_provider.allowed_schemas.all().values_list('id', flat=True)
         context = super().get_context_data(**kwargs)
         context['registration_provider'] = registration_provider
         context['schemas'] = RegistrationSchema.objects.all().annotate(
@@ -388,8 +388,8 @@ class ChangeSchema(TemplateView):
         data = dict(request.POST)
         del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
 
-        registration_provider.schemas.clear()
+        registration_provider.allowed_schemas.clear()
         schemas = RegistrationSchema.objects.filter(id__in=list(data.keys()))
-        registration_provider.schemas.add(*schemas)
+        registration_provider.allowed_schemas.add(*schemas)
 
         return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)

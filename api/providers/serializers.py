@@ -71,7 +71,7 @@ class ProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
-    schemas = TypedRelationshipField(
+    allowed_schemas = TypedRelationshipField(
         related_view='providers:registration-providers:registration-schema-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )

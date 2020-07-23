@@ -44,7 +44,7 @@ class TestRegistrationProviderSchemas:
     def provider(self, schema, out_dated_schema, invisible_schema, inactive_schema):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
-        provider.schemas.add(*[schema, out_dated_schema, invisible_schema, inactive_schema])
+        provider.allowed_schemas.add(*[schema, out_dated_schema, invisible_schema, inactive_schema])
         provider.save()
         return provider
 
@@ -52,7 +52,7 @@ class TestRegistrationProviderSchemas:
     def provider_with_v2_prereg_only(self, schema):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
-        provider.schemas.add(schema)
+        provider.allowed_schemas.add(schema)
         provider.save()
         return provider
 
