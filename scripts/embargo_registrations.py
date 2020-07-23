@@ -14,7 +14,7 @@ from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import settings
-from osf.models import Embargo, Registration, NodeLog
+from osf.models import Embargo, Registration, NodeLog, EmbargoTerminationApproval
 
 from scripts import utils as scripts_utils
 
@@ -101,6 +101,9 @@ def main(dry_run=True):
                             auth=None,
                         )
                         embargo.save()
+                        for reg in embargo.registrations.all():
+                            EmbargoTerminationApproval.objects.filter(embargoed_registration=reg).update(state=Embargo.COMPLETED)
+
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when completing embargo for '
