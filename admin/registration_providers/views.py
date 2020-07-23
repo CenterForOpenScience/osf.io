@@ -380,7 +380,7 @@ class ChangeSchema(TemplateView):
                 output_field=IntegerField()
             ),
             underscore_id=F('_id')  # django templates ban underscores for some reason...
-        )
+        ).order_by('name', 'schema_version')
         return context
 
     def post(self, request, *args, **kwargs):
