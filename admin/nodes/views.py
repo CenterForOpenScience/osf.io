@@ -440,7 +440,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
             message='Confirmed HAM: {}'.format(node._id),
             action_flag=CONFIRM_HAM
         )
-        if isinstance(node, Node):
+        if isinstance(node, Node) or isinstance(node, Registration):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
 class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
