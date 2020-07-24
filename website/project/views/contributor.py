@@ -480,7 +480,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = preprint_provider._id
+                logo = f'preprints-assets/{preprint_provider._id}'
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -566,7 +566,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = preprint_provider._id
+                logo = f'preprints-assets/{preprint_provider._id}'
         elif email_template == 'draft_registration':
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
         elif email_template == 'access_request':

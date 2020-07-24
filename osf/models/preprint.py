@@ -666,7 +666,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.provider._id == 'osf':
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            logo = self.provider._id
+            logo = f'preprints-assets/{self.provider._id}'
 
         context = {
             'domain': settings.DOMAIN,
