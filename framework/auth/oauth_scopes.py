@@ -181,6 +181,7 @@ class CoreScopes(object):
     METRICS_BASIC = 'metrics_basic'
     METRICS_RESTRICTED = 'metrics_restricted'
 
+
 class ComposedScopes(object):
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.

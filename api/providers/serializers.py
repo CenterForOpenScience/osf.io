@@ -71,6 +71,11 @@ class ProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    schemas = TypedRelationshipField(
+        related_view='providers:registration-providers:registration-schema-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     def get_has_highlighted_subjects(self, obj):
         return obj.has_highlighted_subjects
 

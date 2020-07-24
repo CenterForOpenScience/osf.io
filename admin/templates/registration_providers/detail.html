@@ -19,6 +19,7 @@
         <div class="row">
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'registration_providers:export' registration_provider.id %}>Export registration provider metadata</a>
+                <a class="btn btn-primary" href={% url 'registration_providers:schemas' registration_provider.id %}>Change allowed schemas</a>
                 <a class="btn btn-danger" href={% url 'registration_providers:delete' registration_provider.id %}>Delete registration provider</a>
             </div>
         </div>
