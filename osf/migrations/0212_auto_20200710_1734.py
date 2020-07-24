@@ -10,7 +10,7 @@ import osf.models.registrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0212_add_default_registration_provider'),
+        ('osf', '0211_auto_20200709_1320'),
     ]
 
     operations = [
