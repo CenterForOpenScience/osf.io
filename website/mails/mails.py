@@ -241,7 +241,7 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     subject='You have been added as a contributor to an OSF project.'
 )
 CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = lambda template, provider: Mail(
-    'contributor_added_draft_registration_{}'.format(template),
+    'contributor_added_draft_registrations_{}'.format(template),
     subject='You have been added as a contributor to {} {} draft registration.'.format(get_english_article(provider.name), provider.name)
 )
 MODERATOR_ADDED = lambda provider: Mail(
