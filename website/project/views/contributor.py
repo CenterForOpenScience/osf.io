@@ -468,7 +468,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
-    preprint_provider = None
+    provider = None
     logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
@@ -476,11 +476,22 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
+            provider = preprint_provider
             mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = f'preprints-assets/{preprint_provider._id}'
+        elif email_template == 'draft_registration':
+            email_template, registration_provider = find_registration_provider(node)
+            if not email_template or not registration_provider:
+                return
+            provider = registration_provider
+            mail_tpl = getattr(mails, 'INVITE_DRAFT_REGISTRATION')(email_template, registration_provider)
+            if registration_provider._id == 'osf':
+                logo = settings.OSF_REGISTRIES_LOGO
+            else:
+                logo = f'registries-assets/{registration_provider._id}'
         else:
             mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
 
@@ -534,7 +545,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service=preprint_provider,
+        branded_service=provider,
         can_change_preferences=False,
         logo=logo if logo else settings.OSF_LOGO,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
@@ -556,19 +567,28 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
     if contributor.is_registered and ((isinstance(node, (Preprint, DraftRegistration))) or
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         mimetype = 'html'
-        preprint_provider = None
+        provider = None
         logo = None
         if email_template == 'preprint':
             email_template, preprint_provider = find_preprint_provider(node)
             if not email_template or not preprint_provider:
                 return
+            provider = preprint_provider
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
             if preprint_provider._id == 'osf':
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = f'preprints-assets/{preprint_provider._id}'
         elif email_template == 'draft_registration':
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
+            email_template, registration_provider = find_registration_provider(node)
+            if not email_template or not registration_provider:
+                return
+            provider = registration_provider
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION')(email_template, registration_provider)
+            if registration_provider._id == 'osf':
+                logo = settings.OSF_REGISTRIES_LOGO
+            else:
+                logo = f'registries-assets/{registration_provider._id}'
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
@@ -596,7 +616,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider,
+            branded_service=provider,
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
@@ -652,6 +672,23 @@ def find_preprint_provider(node):
         email_template = 'osf' if provider._id == 'osf' else 'branded'
         return email_template, provider
     except Preprint.DoesNotExist:
+        return None, None
+
+
+def find_registration_provider(node):
+    """
+    Given a node, find the draft_registration and the registration provider.
+
+    :param node: the node to which a contributer or draft_registration author is added
+    :return: tuple containing the type of email template (osf or branded) and the registration provider
+    """
+
+    try:
+        draft_registration = node if isinstance(node, DraftRegistration) else DraftRegistration.objects.get(branched_from=node)
+        provider = draft_registration.provider
+        email_template = 'osf' if provider._id == 'osf' else 'branded'
+        return email_template, provider
+    except DraftRegistration.DoesNotExist:
         return None, None
 
 
