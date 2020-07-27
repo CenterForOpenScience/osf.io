@@ -28,7 +28,8 @@ import datetime
 providers = None
 enabled_providers_list = [
     's3', 'box', 'googledrive', 'osfstorage',
-    'nextcloud', 'swift', 'owncloud', 's3compat'
+    'nextcloud', 'swift', 'owncloud', 's3compat',
+    'dropboxbusiness'
 ]
 
 def get_providers():

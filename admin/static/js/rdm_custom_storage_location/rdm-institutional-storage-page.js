@@ -3,11 +3,24 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
+var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
 
+var preload_accounts = ['dropboxbusiness', 'dropboxbusiness_manage'];
+$(window).on('load', function () {
+    preload_accounts.forEach(function (elm) {
+        var div = $('#' + elm + '_authorization_div');
+        var providerShortName = elm;
+        var institutionId = div.data('institution-id');
+        getAccounts(providerShortName, institutionId);
+    });
+});
+
 $('[name=options]').change(function () {
-    $('#storage_name').attr('disabled', this.value === 'osfstorage');
+    $('#storage_name').attr('disabled',
+                            this.value === 'osfstorage' ||
+                            this.value === 'dropboxbusiness');
 });
 
 $('.modal').on('hidden.bs.modal', function (e) {
@@ -251,13 +264,51 @@ function getParameters(params) {
     });
 }
 
+function authoriseOnClick(elm) {
+    var providerShortName = elm.id.replace('_auth_hyperlink', '');
+    var institutionId = $(elm).data('institution-id');
+    oauthOpener(elm.href, providerShortName, institutionId);
+}
+
 $('.auth-permission-button').click(function(e) {
     $(this).click(false);
     $(this).addClass('disabled');
-    var providerShortName = this.id.replace('_auth_hyperlink', '');
-    oauthOpener(this.href, providerShortName);
+    authoriseOnClick(this);
     e.preventDefault();
 });
+
+function disconnectOnClick(elm, properName, accountName) {
+    var providerShortName = elm.id.replace('_disconnect_hyperlink', '');
+    var institutionId = $(elm).data('institution-id');
+
+    var deletionKey = Math.random().toString(36).slice(-8);
+    var id = providerShortName + "DeleteKey";
+    bootbox.confirm({
+        title: 'Disconnect Account?',
+        message: '<p class="overflow">' +
+            'Are you sure you want to disconnect the ' + $osf.htmlEscape(properName) + ' account <strong>' +
+            $osf.htmlEscape(accountName) + '</strong>?<br>' +
+            'This will revoke access to ' + $osf.htmlEscape(properName) + ' for all projects using this account.<br><br>' +
+            "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
+            "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>" +
+            '</p>',
+        callback: function(confirm) {
+            if (confirm) {
+                if ($('#'+id).val() == deletionKey) {
+                    disconnectAccount(providerShortName, institutionId);
+                } else {
+                    $osf.growl('Verification failed', 'Strings did not match');
+                }
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Disconnect',
+                className:'btn-danger'
+            }
+        }
+    });
+}
 
 $('.auth-cancel').click(function(e) {
     var providerShortName = this.id.replace('_cancel', '');
@@ -274,7 +325,64 @@ function get_token(providerShortName, route) {
     ajaxRequest(params, providerShortName, route);
 }
 
-function oauthOpener(url,providerShortName){
+function getAccounts(providerShortName, institutionId) {
+    var url = '/addons/api/v1/settings/' + providerShortName + '/' + institutionId + '/accounts/';
+    var request = $.get(url);
+    request.done(function (data) {
+        if (data.accounts.length > 0) {
+            authPermissionSucceedWithoutToken(providerShortName, data.accounts[0].display_name);
+            $('#' + providerShortName + '_auth_hyperlink').addClass('disabled');
+            var link = $('#' + providerShortName + '_disconnect_hyperlink');
+            link.click(false);
+            link.click(function (e) {
+                $(this).click(false);
+                $(this).addClass('disabled');
+                disconnectOnClick(this, data.accounts[0].provider_name, data.accounts[0].display_name);
+                e.preventDefault();
+            });
+            link.removeClass('disabled');
+            $('.' + providerShortName + '-disconnect-callback').removeClass('hidden');
+        } else {
+            var link = $('#' + providerShortName + '_auth_hyperlink');
+            link.click(function (e) {
+                $(this).click(false);
+                $(this).addClass('disabled');
+                authoriseOnClick(this);
+                e.preventDefault();
+            });
+            link.removeClass('disabled');
+            $('#' + providerShortName + '_authorization_div').addClass('hidden');
+            $('.' + providerShortName + '-disconnect-callback').addClass('hidden');
+        }
+    }).fail(function (data) {
+        if ('message' in data) {
+            authPermissionFailedWithoutToken(providerShortName, data.message);
+        } else {
+            authPermissionFailedWithoutToken(providerShortName, _('Some errors occurred'));
+        }
+    });
+}
+
+function disconnectAccount(providerShortName, institutionId) {
+    var url = '/addons/api/v1/settings/' + providerShortName + '/' + institutionId + '/accounts/';
+    var request = $.get(url);
+    request.then(function (data) {
+        url = '/addons/api/v1/oauth/accounts/' + data.accounts[0].id + '/' + institutionId + '/';
+        var request2 = $.ajax({
+            url: url,
+            type: 'DELETE'
+        });
+    }).then(
+        function () {
+            getAccounts(providerShortName, institutionId);
+        },
+        function () {
+            getAccounts(providerShortName, institutionId);
+        }
+    );
+}
+
+function oauthOpener(url,providerShortName,institutionId){
     var win = window.open(
         url,
         'OAuth');
@@ -285,7 +393,12 @@ function oauthOpener(url,providerShortName){
     var timer = setInterval(function() {
         if (win.closed) {
             clearInterval(timer);
-            get_token(providerShortName, route);
+            if (providerShortName === 'dropboxbusiness' ||
+                providerShortName === 'dropboxbusiness_manage') {
+                getAccounts(providerShortName, institutionId);
+            } else {
+                get_token(providerShortName, route);
+            }
         }
     }, 1000, [providerShortName, route]);
 }
@@ -299,6 +412,13 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     authSaveButtonState(providerShortName);
 }
 
+function authPermissionSucceedWithoutToken(providerShortName, authorizedBy){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.removeClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text(authorizedBy);
+}
+
 function authPermissionFailed(providerShortName, message){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
@@ -308,6 +428,15 @@ function authPermissionFailed(providerShortName, message){
     $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false);
     $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled');
     authSaveButtonState(providerShortName);
+}
+
+function authPermissionFailedWithoutToken(providerShortName, message){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.addClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text('');
+    $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false);
+    $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled');
 }
 
 function authSaveButtonState(providerShortName) {
