@@ -386,7 +386,7 @@ class RegistrationFactory(BaseNodeFactory):
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.is_admin_contributor(user):
@@ -527,7 +527,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
             user=initiator,

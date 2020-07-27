@@ -29,6 +29,12 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         unique_together = ('_id', 'type')
         permissions = REVIEW_PERMISSIONS
 
+    default__id = 'osf'
+
+    @classmethod
+    def get_default(cls):
+        return cls.objects.get(_id=cls.default__id)
+
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
@@ -133,12 +139,6 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
-
-    default__id = 'osf'
-
-    @classmethod
-    def get_default(cls):
-        return cls.objects.get(_id=cls.default__id)
 
     class Meta:
         permissions = (
