@@ -11,7 +11,7 @@
     <br>
     Sincerely,<br>
     <br>
-    Open Science Framework Robot<br>
+    OSF Robot<br>
 
 </tr>
 </%def>

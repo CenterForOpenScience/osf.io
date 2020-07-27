@@ -15,4 +15,4 @@ ${email_content}
 <br>
 Sincerely,<br>
 <br>
-Open Science Framework Robot
+OSF Robot

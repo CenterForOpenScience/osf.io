@@ -5,4 +5,4 @@ DOIs for the following preprints have been pending at least ${time_since_publish
 
 Sincerely,<br>
 <br>
-Open Science Framework Robot
+OSF Robot

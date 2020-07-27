@@ -25,7 +25,7 @@
         <p>
             For more information about ${reviewable.provider.name}, visit
             <a href="${provider_url}">${provider_url}</a> to learn more. To learn about the
-            Open Science Framework, visit <a href="https://osf.io/">https://osf.io/</a>.
+            OSF, visit <a href="https://osf.io/">https://osf.io/</a>.
         </p>
         <p>For questions regarding submission criteria, please email ${provider_contact_email}</p>
         <br>

@@ -17,7 +17,7 @@
     <br>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To claim yourself as a contributor to the project, visit this url:<br>
+    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the OSF. To claim yourself as a contributor to the project, visit this url:<br>
     <br>
     ${claim_url}<br>
     <br>
@@ -27,7 +27,7 @@
     <br>
     The OSF Team<br>
     <br>
-    Want more information? Visit https://osf.io/ or https://cos.io/ for information about the Open Science Framework and its supporting organization, the Center for Open Science. Questions? Email ${osf_contact_email}<br>
+    Want more information? Visit https://osf.io/ or https://cos.io/ for information about the OSF and its supporting organization, the Center for Open Science. Questions? Email ${osf_contact_email}<br>
 
 
 </tr>

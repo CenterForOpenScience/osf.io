@@ -8,7 +8,7 @@
     %>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To set a password for your account, visit:<br>
+    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the OSF. To set a password for your account, visit:<br>
     <br>
     ${claim_url}<br>
     <br>
@@ -22,9 +22,9 @@
     <br>
     Sincerely,<br>
     <br>
-    Open Science Framework Robot<br>
+    OSF Robot<br>
     <br>
-    Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
+    Want more information? Visit https://osf.io/ to learn about the OSF, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
     Questions? Email ${osf_contact_email}<br>
 

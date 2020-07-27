@@ -8,7 +8,7 @@
     %>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the draft registration "${node.title}" on ${branded_service.name}, powered by the Open Science Framework. To set a password for your account, visit:<br>
+    You have been added by ${referrer.fullname} as a contributor to the draft registration "${node.title}" on ${branded_service.name}, powered by the OSF. To set a password for your account, visit:<br>
     <br>
     ${claim_url}<br>
     <br>
@@ -22,7 +22,7 @@
     <br>
     Your ${branded_service.name} and OSF teams<br>
     <br>
-    Want more information? Visit https://osf.io/registries/${branded_service._id} to learn about ${branded_service.name} or https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
+    Want more information? Visit https://osf.io/registries/${branded_service._id} to learn about ${branded_service.name} or https://osf.io/ to learn about the OSF, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
     <br>
     Questions? Email support+${branded_service._id}@osf.io<br>
 
