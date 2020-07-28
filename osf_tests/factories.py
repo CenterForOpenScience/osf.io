@@ -341,7 +341,16 @@ class RegistrationProviderFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
-        obj = cls._build(*args, **kwargs)
+        _id = kwargs.pop('_id', None)
+        try:
+            obj = cls._build(*args, **kwargs)
+        except IntegrityError as e:
+            # This is to ensure legacy tests don't fail when their _ids aren't unique
+            if _id == models.RegistrationProvider.default__id:
+                pass
+            else:
+                raise e
+
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
         return obj
@@ -377,7 +386,7 @@ class RegistrationFactory(BaseNodeFactory):
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.is_admin_contributor(user):
@@ -518,7 +527,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or models.RegistrationSchema.objects.first()
         registration_metadata = registration_metadata or {}
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
             user=initiator,
