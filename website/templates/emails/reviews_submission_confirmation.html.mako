@@ -3,7 +3,7 @@
 <%def name="content()">
     <% from website import settings %>
     <%
-        isOsfSubmission = reviewable.provider.name == 'OSF'
+        isOsfSubmission = reviewable.provider.name == 'Open Science Framework'
         if isOsfSubmission:
             reviewable.provider.name = 'OSF Preprints'
     %>
