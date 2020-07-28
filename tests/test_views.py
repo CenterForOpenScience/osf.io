@@ -54,7 +54,7 @@ from website.project.views.contributor import (
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
-from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
+from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag, CampaignSourceTags, CampaignClaimedTags
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser, Tag
@@ -2838,7 +2838,7 @@ class TestClaimViews(OsfTestCase):
         self.user.reload()
         assert provider_claimed_tag(self.registration.provider._id, 'registry')in self.user.system_tags
 
-    def test_claim_user_with_collected_project_id_adds_corresponding_claimed_tag_to_user(self):
+    def test_claim_user_with_single_collected_provider_tags(self):
         collection_provider = CollectionProviderFactory()
         collection = CollectionFactory(provider=collection_provider)
         collection.collect_object(self.project, self.project.creator)
@@ -2855,6 +2855,55 @@ class TestClaimViews(OsfTestCase):
         self.user.reload()
         assert provider_claimed_tag(collection_provider._id, 'collections') in self.user.system_tags
 
+    def test_claim_user_with_multiple_collected_provider_tags(self):
+        collection_provider1 = CollectionProviderFactory()
+        collection1 = CollectionFactory(provider=collection_provider1)
+        collection1.collect_object(self.project, self.project.creator)
+
+        collection_provider2 = CollectionProviderFactory()
+        collection2 = CollectionFactory(provider=collection_provider2)
+        collection2.collect_object(self.project, self.project.creator)
+
+        osf4m_tag, _ = Tag.all_tags.get_or_create(name=CampaignSourceTags.Osf4m.value, system=True)
+        self.project.tags.add(osf4m_tag)
+        self.project.save()
+
+        assert self.project.all_tags.filter(name=CampaignSourceTags.Osf4m.value).exists()
+        assert provider_claimed_tag(collection_provider1._id, 'collections') not in self.user.system_tags
+        assert provider_claimed_tag(collection_provider2._id, 'collections') not in self.user.system_tags
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+
+        assert provider_claimed_tag(collection_provider1._id, 'collections') in self.user.system_tags
+        assert provider_claimed_tag(collection_provider2._id, 'collections') in self.user.system_tags
+        assert CampaignClaimedTags.Osf4m.value in self.user.system_tags
+
+    def test_claim_user_with_osfrr_tag(self):
+        osfrr_tag, _ = Tag.all_tags.get_or_create(name=CampaignSourceTags.OsfRegisteredReports.value, system=True)
+        self.project.tags.add(osfrr_tag)
+        self.project.save()
+
+        assert self.project.all_tags.filter(name=CampaignSourceTags.OsfRegisteredReports.value).exists()
+
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, {
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert_equal(res.status_code, 302)
+        self.user.reload()
+
+        assert CampaignClaimedTags.OsfRegisteredReports.value in self.user.system_tags
 
 @pytest.mark.enable_bookmark_creation
 class TestPointerViews(OsfTestCase):
