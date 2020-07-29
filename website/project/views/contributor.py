@@ -675,20 +675,18 @@ def find_preprint_provider(node):
         return None, None
 
 
-def find_registration_provider(node):
+def find_registration_provider(draft_registration):
     """
-    Given a node, find the draft_registration and the registration provider.
+    Given a draft_registration, find the registration provider.
 
-    :param node: the node to which a contributer or draft_registration author is added
+    :param draft_registration: the draft_registration to which a contributor is added
     :return: tuple containing the type of email template (osf or branded) and the registration provider
     """
-
-    try:
-        draft_registration = node if isinstance(node, DraftRegistration) else DraftRegistration.objects.get(branched_from=node)
+    if isinstance(draft_registration, DraftRegistration):
         provider = draft_registration.provider
         email_template = 'osf' if provider._id == 'osf' else 'branded'
         return email_template, provider
-    except DraftRegistration.DoesNotExist:
+    else:
         return None, None
 
 
