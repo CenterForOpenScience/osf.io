@@ -185,7 +185,7 @@ def ensure_schemas(*args):
 
 
 def remove_schemas(*args):
-    from os.models import RegistrationSchema
+    from osf.models import RegistrationSchema
     pre_count = RegistrationSchema.objects.all().count()
     RegistrationSchema.objects.all().delete()
 
