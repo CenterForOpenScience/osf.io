@@ -43,6 +43,7 @@ def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return models.RegistrationSchema.objects.first()
 
+
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
@@ -525,7 +526,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
         draft = models.DraftRegistration.create_from_node(

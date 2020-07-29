@@ -10,7 +10,6 @@ from osf.models import RegistrationSchema
 
 from osf.migrations import update_provider_auth_groups
 
-
 @pytest.mark.django_db
 class TestRegistrationProviderSchemas:
 

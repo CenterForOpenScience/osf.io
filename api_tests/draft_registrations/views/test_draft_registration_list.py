@@ -13,8 +13,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
     ProjectFactory,
-    AuthUserFactory,
-    RegistrationProviderFactory
+    AuthUserFactory
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
@@ -248,33 +247,6 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     def url_draft_registrations(self, project_public):
         return '/{}draft_registrations/?'.format(API_BASE)
 
-    @pytest.fixture()
-    def non_default_provider(self):
-        return RegistrationProviderFactory()
-
-    @pytest.fixture()
-    def payload_with_provider(self, metaschema_open_ended, non_default_provider):
-        return {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': metaschema_open_ended._id
-                        }
-                    },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': non_default_provider._id,
-                        }
-                    }
-                }
-            }
-        }
-
     # Overrides TestDraftRegistrationList
     def test_admin_can_create_draft(
             self, app, user, project_public, url_draft_registrations,
@@ -295,9 +267,9 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_provider):
+    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):
 
-        res = app.post_json_api(url_draft_registrations, payload_with_provider, auth=user.auth)
+        res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
         assert data['relationships']['provider']['links']['related']['href'] == \

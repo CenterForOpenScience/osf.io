@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.apps import apps
 from django.contrib.postgres import fields
+from django.core.exceptions import ValidationError
 from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
@@ -147,6 +148,10 @@ class RegistrationProvider(AbstractProvider):
         )
 
     @property
+    def is_default(self):
+        return self._id == self.default__id
+
+    @property
     def readable_type(self):
         return 'registration'
 
@@ -157,6 +162,11 @@ class RegistrationProvider(AbstractProvider):
     def absolute_api_v2_url(self):
         path = '/providers/registrations/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def validate_schema(self, schema):
+        if not self.schemas.filter(id=schema.id).exists():
+            raise ValidationError('Invalid schema for provider.')
+
 
 class PreprintProvider(AbstractProvider):
     PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
