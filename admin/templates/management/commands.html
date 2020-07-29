@@ -18,6 +18,19 @@
                            value="Run" />
                 </form>
             </ul>
+            <h4> <u>Update Registration Schemas and Schema Blocks </u>
+            </h4>
+            <ul>
+                Use this management command to update the schemas and schma blocks
+                for Registrations to match values in website/project/metadata
+                <br>
+                <form method="post"
+                      action="{%url 'management:update_registration_schemas'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
         </div>
     </section>
 {% endblock %}
