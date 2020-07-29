@@ -1479,6 +1479,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'thepolicylab',
+                'name': 'The Policy Lab at Brown University [Test]',
+                'description': 'The Policy Lab at Brown University conducts applied research to improve public policy in Rhode Island and beyond. Learn more at https://thepolicylab.brown.edu/ and tune into our podcast, 30,000 Leagues.',
+                'banner_name': 'thepolicylab-banner.png',
+                'logo_name': 'thepolicylab-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': ['test-osf-thepolicylab.cos.io'],
+                'email_domains': ['brown.edu'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'thelabatdc',
                 'name': 'The Lab @ DC',
                 'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
