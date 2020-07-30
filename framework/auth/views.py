@@ -505,6 +505,8 @@ def external_login_confirm_email_get(auth, uid, token):
     """
 
     user = OSFUser.load(uid)
+    service_url = request.url
+
     if not user:
         sentry.log_message('external_login_confirm_email_get::400 - Cannot find user')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -531,10 +533,13 @@ def external_login_confirm_email_get(auth, uid, token):
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
         return redirect(web_url_for('dashboard'))
 
-    # token is invalid
     if token not in user.email_verifications:
-        sentry.log_message('external_login_confirm_email_get::400 - bad token')
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        if user.is_registered:
+            # User is registered with account already linked, probably button mashing.
+            return redirect(web_url_for('dashboard'))
+        else:
+            sentry.log_message('external_login_confirm_email_get::400 - bad token')
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     verification = user.email_verifications[token]
     email = verification['email']
     provider = list(verification['external_identity'].keys())[0]
@@ -563,8 +568,6 @@ def external_login_confirm_email_get(auth, uid, token):
     del user.email_verifications[token]
     user.verification_key = generate_verification_key()
     user.save()
-
-    service_url = request.url
 
     if external_status == 'CREATE':
         mails.send_mail(
