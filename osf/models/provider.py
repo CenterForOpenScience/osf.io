@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import requests
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
@@ -29,6 +30,13 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     class Meta:
         unique_together = ('_id', 'type')
         permissions = REVIEW_PERMISSIONS
+
+    PUSH_SHARE_TYPE_CHOICES = (
+        ('Preprint', 'Preprint'),
+        ('Thesis', 'Thesis'),
+        ('Registration', 'Registration'),
+    )
+    PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
     default__id = 'osf'
 
@@ -64,6 +72,16 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     branded_discovery_page = models.BooleanField(default=True)
     advertises_on_discovery = models.BooleanField(default=True)
     has_landing_page = models.BooleanField(default=False)
+
+    share_publish_type = models.CharField(
+        choices=PUSH_SHARE_TYPE_CHOICES,
+        help_text=PUSH_SHARE_TYPE_HELP,
+        default='Thesis',
+        max_length=32
+    )
+    share_source = models.CharField(blank=True, default='', max_length=200)
+    share_title = models.TextField(default='', blank=True)
+    access_token = EncryptedTextField(null=True, blank=True)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -117,6 +135,41 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         except ProviderAssetFile.DoesNotExist:
             return None
 
+    def setup_share_source(self, provider_home_page):
+        if self.access_token:
+            raise ValueError('Cannot update access_token because one or the other already exists')
+        if not settings.SHARE_ENABLED or not settings.SHARE_URL:
+            raise ValueError('SHARE_ENABLED is set to false')
+        if not self.get_asset_url('square_color_no_transparent'):
+            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
+
+        resp = requests.post(
+            f'{settings.SHARE_URL}api/v2/sources/',
+            json={
+                'data': {
+                    'type': 'Source',
+                    'attributes': {
+                        'homePage': provider_home_page,
+                        'longTitle': self.name,
+                        'iconUrl': self.get_asset_url('square_color_no_transparent')
+                    }
+                }
+            },
+            headers={
+                'Authorization': f'Bearer {settings.SHARE_API_TOKEN}',
+                'Content-Type': 'application/vnd.api+json'
+            }
+        )
+        resp.raise_for_status()
+        resp_json = resp.json()
+
+        self.share_source = resp_json['data']['attributes']['longTitle']
+        for data in resp_json['included']:
+            if data['type'] == 'ShareUser':
+                self.access_token = data['attributes']['token']
+
+        self.save()
+
 
 class CollectionProvider(AbstractProvider):
 
@@ -140,6 +193,10 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('share_publish_type').default = 'Registration'
+        super().__init__(*args, **kwargs)
 
     class Meta:
         permissions = (
@@ -169,20 +226,16 @@ class RegistrationProvider(AbstractProvider):
 
 
 class PreprintProvider(AbstractProvider):
-    PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
-                               ('Thesis', 'Thesis'),)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('share_publish_type').default = 'Preprint'
+        super().__init__(*args, **kwargs)
+
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
     REVIEWABLE_RELATION_NAME = 'preprints'
 
-    share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
-                                          default='Preprint',
-                                          help_text=PUSH_SHARE_TYPE_HELP,
-                                          max_length=32)
-    share_source = models.CharField(blank=True, max_length=200)
-    share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-
     doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
 
