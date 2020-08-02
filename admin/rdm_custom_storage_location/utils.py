@@ -34,6 +34,11 @@ enabled_providers_list = [
     'dropboxbusiness',
 ]
 
+no_storage_name_providers = ['osfstorage', 'dropboxbusiness']
+
+def have_storage_name(provider_name):
+    return provider_name not in no_storage_name_providers
+
 def get_providers():
     provider_list = []
     for provider in osf_settings.ADDONS_AVAILABLE:
@@ -79,15 +84,17 @@ def set_default_storage(institution_id):
         region.name = default_region.name
         region.waterbutler_credentials = default_region.waterbutler_credentials
         region.waterbutler_settings = default_region.waterbutler_settings
+        region.waterbutler_url=default_region.waterbutler_url
+        region.mfr_url=default_region.mfr_url
         region.save()
     except Region.DoesNotExist:
         region = Region.objects.create(
             _id=institution_id,
             name=default_region.name,
             waterbutler_credentials=default_region.waterbutler_credentials,
+            waterbutler_settings=default_region.waterbutler_settings,
             waterbutler_url=default_region.waterbutler_url,
             mfr_url=default_region.mfr_url,
-            waterbutler_settings=default_region.wb_settings,
         )
     return region
 

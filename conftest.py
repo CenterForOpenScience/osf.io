@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
     'addons.dropboxbusiness.models',
+    'addons.base.institutions_utils',
     'osf.models.user',
     'api.base.rdmlogger',
     'api.caching.tasks',

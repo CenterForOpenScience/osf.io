@@ -17,11 +17,6 @@ from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
 
 SITE_KEY = 'rdm_custom_storage_location'
-no_storage_name_providers = ['osfstorage', 'dropboxbusiness']
-
-def have_storage_name(provider_name):
-    return provider_name not in no_storage_name_providers
-
 
 class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
     """ Base class for all the Institutional Storage Views """
@@ -53,7 +48,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         kwargs['region'] = region
         kwargs['providers'] = utils.get_providers()
         kwargs['selected_provider_short_name'] = provider_name
-        kwargs['have_storage_name'] = have_storage_name(provider_name)
+        kwargs['have_storage_name'] = utils.have_storage_name(provider_name)
         return kwargs
 
 
@@ -157,7 +152,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             return JsonResponse(response, status=httplib.BAD_REQUEST)
 
         storage_name = data.get('storage_name')
-        if not storage_name and have_storage_name(provider_short_name):
+        if not storage_name and utils.have_storage_name(provider_short_name):
             return JsonResponse({
                 'message': 'Storage name is missing.'
             }, status=httplib.BAD_REQUEST)

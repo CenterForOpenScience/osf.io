@@ -249,10 +249,9 @@ class NodeFileCollector(object):
 
     def _collect_addons(self, node):
         rv = []
-        osfstorage = node.get_addon('osfstorage')
-        region = None
         region_disabled = False
         region_provider = None
+        osfstorage = node.get_addon('osfstorage')
         if osfstorage:
             region = osfstorage.region
             if region and region.waterbutler_settings:

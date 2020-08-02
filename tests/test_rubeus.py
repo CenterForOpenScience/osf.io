@@ -310,7 +310,7 @@ serialized = {
     }
 }
 mock_addon.config.get_hgrid_data.return_value = [serialized]
-
+mock_addon.config.for_institutions = False
 
 class TestSerializingNodeWithAddon(OsfTestCase):
 

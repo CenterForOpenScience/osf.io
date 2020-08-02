@@ -37,6 +37,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             'SwiftAddonAppConfig',
             'S3CompatAddonAppConfig',
             'NextcloudAddonAppConfig',
+            'DropboxBusinessAddonAppConfig',
         ]
 
     def test_admin_login(self):
