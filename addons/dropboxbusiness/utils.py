@@ -571,6 +571,7 @@ class TeamInfo(object):
 
     def __init__(self, fileaccess_token, management_token,
                  max_connections=8,
+                 connecttest=False,
                  team_info=False, members=False,
                  admin=False, admin_dbmid=None,
                  groups=False,
@@ -587,6 +588,10 @@ class TeamInfo(object):
             file_properties = True
         if admin:
             members = True
+
+        if connecttest:
+            members = True
+            self._update_team_folders()
 
         if team_info:
             self._setup_team_info()

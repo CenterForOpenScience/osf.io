@@ -44,9 +44,6 @@
                             </label>
                             <span id="dropboxbusiness_authorized_by"></span>
                         </div>
-                        <div class="col-sm-12 help-block">
-                            <p id="dropboxbusiness_message" class="text-danger"></p>
-                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -76,14 +73,16 @@
                             </label>
                             <span id="dropboxbusiness_manage_authorized_by"></span>
                         </div>
-                        <div class="col-sm-12 help-block">
-                            <p id="dropboxbusiness_manage_message" class="text-danger"></p>
-                        </div>
                     </div>
                 </div>
             </div>
+            <div class="col-sm-12 help-block">
+                 <p id="dropboxbusiness_message" class="text-danger"></p>
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Close" %}</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success test-connection" id="dropboxbusiness_connect">{% trans "Connect" %}</button>
+                <button type="button" class="btn btn-default save-credentials" id="dropboxbusiness_save" disabled>{% trans "Save" %}</button>
             </div>
         </div>
     </div>

@@ -17,6 +17,10 @@ from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
 
 SITE_KEY = 'rdm_custom_storage_location'
+no_storage_name_providers = ['osfstorage', 'dropboxbusiness']
+
+def have_storage_name(provider_name):
+    return provider_name not in no_storage_name_providers
 
 
 class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
@@ -49,6 +53,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         kwargs['region'] = region
         kwargs['providers'] = utils.get_providers()
         kwargs['selected_provider_short_name'] = provider_name
+        kwargs['have_storage_name'] = have_storage_name(provider_name)
         return kwargs
 
 
@@ -126,6 +131,9 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('swift_project_domain_name'),
                 data.get('swift_container'),
             )
+        elif provider_short_name == 'dropboxbusiness':
+            institution = request.user.affiliated_institutions.first()
+            result = utils.test_dropboxbusiness_connection(institution)
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
@@ -137,7 +145,8 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
     Called when clicking the 'Save' Button.
     """
     def post(self, request):
-        institution_id = request.user.affiliated_institutions.first()._id
+        institution = request.user.affiliated_institutions.first()
+        institution_id = institution._id
         data = json.loads(request.body)
 
         provider_short_name = data.get('provider_short_name')
@@ -148,7 +157,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             return JsonResponse(response, status=httplib.BAD_REQUEST)
 
         storage_name = data.get('storage_name')
-        if not storage_name and provider_short_name != 'osfstorage':
+        if not storage_name and have_storage_name(provider_short_name):
             return JsonResponse({
                 'message': 'Storage name is missing.'
             }, status=httplib.BAD_REQUEST)
@@ -221,6 +230,9 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 storage_name,
                 data.get('box_folder'),
             )
+        elif provider_short_name == 'dropboxbusiness':
+            result = utils.save_dropboxbusiness_credentials(
+                institution, provider_short_name)
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
         return JsonResponse(result[0], status=result[1])

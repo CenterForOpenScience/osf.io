@@ -7,20 +7,32 @@ var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
 
-var preload_accounts = ['dropboxbusiness', 'dropboxbusiness_manage'];
-$(window).on('load', function () {
-    preload_accounts.forEach(function (elm) {
-        var div = $('#' + elm + '_authorization_div');
-        var providerShortName = elm;
+var no_storage_name_providers = ['osfstorage', 'dropboxbusiness'];
+
+var preload_accounts = ['dropboxbusiness'];
+function preload(provider) {
+    if (preload_accounts.indexOf(provider) >= 0) {
+        var div = $('#' + provider + '_authorization_div');
         var institutionId = div.data('institution-id');
-        getAccounts(providerShortName, institutionId);
-    });
+        getAccounts(provider, institutionId);
+        if (provider === 'dropboxbusiness') {
+            getAccounts('dropboxbusiness_manage', institutionId);
+        }
+    }
+}
+
+function disable_storage_name(provider) {
+    $('#storage_name').attr('disabled',
+			    no_storage_name_providers.indexOf(provider) >= 0);
+}
+
+$(window).on('load', function () {
+     var selectedProvider = $('input[name=\'options\']:checked').val();
+     disable_storage_name(selectedProvider);
 });
 
 $('[name=options]').change(function () {
-    $('#storage_name').attr('disabled',
-                            this.value === 'osfstorage' ||
-                            this.value === 'dropboxbusiness');
+    disable_storage_name(this.value);
 });
 
 $('.modal').on('hidden.bs.modal', function (e) {
@@ -30,6 +42,7 @@ $('.modal').on('hidden.bs.modal', function (e) {
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
         var selectedProvider = $('input[name=\'options\']:checked').val();
+        preload(selectedProvider);
         var showModal = function () {
             $('#' + selectedProvider + '_modal').modal('show');
             $('body').css('overflow', 'hidden');
@@ -373,9 +386,6 @@ function disconnectAccount(providerShortName, institutionId) {
             type: 'DELETE'
         });
     }).then(
-        function () {
-            getAccounts(providerShortName, institutionId);
-        },
         function () {
             getAccounts(providerShortName, institutionId);
         }

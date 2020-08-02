@@ -9,6 +9,7 @@ from swiftclient import exceptions as swift_exceptions
 import os
 import owncloud
 
+from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
 from addons.box import settings as box_settings
@@ -18,6 +19,7 @@ from addons.s3 import utils as s3_utils
 from addons.s3compat import utils as s3compat_utils
 from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
+from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
@@ -29,7 +31,7 @@ providers = None
 enabled_providers_list = [
     's3', 'box', 'googledrive', 'osfstorage',
     'nextcloud', 'swift', 'owncloud', 's3compat',
-    'dropboxbusiness'
+    'dropboxbusiness',
 ]
 
 def get_providers():
@@ -69,6 +71,26 @@ def get_oauth_info_notification(institution_id, provider_short_name):
             'provider_name': temp_external_account.provider_name,
         }
 
+def set_default_storage(institution_id):
+    default_region = Region.objects.first()
+    try:
+        region = Region.objects.get(_id=institution_id)
+        # copy
+        region.name = default_region.name
+        region.waterbutler_credentials = default_region.waterbutler_credentials
+        region.waterbutler_settings = default_region.waterbutler_settings
+        region.save()
+    except Region.DoesNotExist:
+        region = Region.objects.create(
+            _id=institution_id,
+            name=default_region.name,
+            waterbutler_credentials=default_region.waterbutler_credentials,
+            waterbutler_url=default_region.waterbutler_url,
+            mfr_url=default_region.mfr_url,
+            waterbutler_settings=default_region.wb_settings,
+        )
+    return region
+
 def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
     try:
         region = Region.objects.get(_id=institution_id)
@@ -88,6 +110,20 @@ def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
         region.waterbutler_settings = wb_settings
         region.save()
     return region
+
+def enable_for_institutions(institution, provider_name):
+    addon_option = get_rdm_addon_option(institution.id, provider_name)
+    addon_option.is_allowed = True
+    addon_option.save()
+
+    # disable other storages for Institutions
+    for p in get_providers():
+        if p.short_name == provider_name:
+            continue  # skip this provider
+        if p.for_institutions:
+            o = get_rdm_addon_option(institution.id, p.short_name)
+            o.is_allowed = False
+            o.save()
 
 def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
@@ -352,6 +388,31 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'data': swift_response
     }, httplib.OK)
 
+def test_dropboxbusiness_connection(institution):
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
+    if fm is None:
+        return ({
+            'message': u'Invalid Institution ID.: {}'.format(institution.id)
+        }, httplib.BAD_REQUEST)
+
+    f_option, m_option = fm
+    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
+    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
+        return ({
+            'message': 'No tokens.'
+        }, httplib.BAD_REQUEST)
+    try:
+        # use two tokens and connect
+        dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
+        return ({
+            'message': 'Credentials are valid',
+        }, httplib.OK)
+    except Exception:
+        return ({
+            'message': 'Invalid tokens.'
+        }, httplib.BAD_REQUEST)
+
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != httplib.OK:
@@ -505,13 +566,8 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
     }, httplib.OK)
 
 def save_osfstorage_credentials(institution_id):
-    try:
-        region = Region.objects.get(_id=institution_id)
-    except Region.DoesNotExist:
-        pass
-    else:
-        external_util.remove_region_external_account(region)
-        region.delete()
+    region = set_default_storage(institution_id)
+    external_util.remove_region_external_account(region)
     return ({
         'message': 'NII storage was set successfully'
     }, httplib.OK)
@@ -586,4 +642,30 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
 
     return ({
         'message': 'Saved credentials successfully!!'
+    }, httplib.OK)
+
+def save_dropboxbusiness_credentials(institution, provider):
+    test_connection_result = test_dropboxbusiness_connection(institution)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    wb_credentials = {
+        'storage': {
+        },
+    }
+    wb_settings = {
+        'disabled': True,  # used in rubeus
+        'storage': {
+            'provider': provider
+        },
+    }
+
+    enable_for_institutions(institution, provider)
+    region = update_storage(institution._id,  # not institution.id
+                            'Dropbox Business',
+                            wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
+
+    return ({
+        'message': 'Dropbox Business was set successfully!!'
     }, httplib.OK)

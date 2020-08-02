@@ -38,7 +38,7 @@ def get_addon_template_config(config, user):
 
 def get_addons_by_config_type(config_type, user):
     """get a list of Addon objects from the Config Type of Addon."""
-    addons = [addon for addon in settings.ADDONS_AVAILABLE if config_type in addon.configs]
+    addons = [addon for addon in settings.ADDONS_AVAILABLE if config_type in addon.configs and not addon.for_institutions]
     return [get_addon_template_config(addon_config, user) for addon_config in sorted(addons, key=lambda cfg: cfg.full_name.lower())]
 
 def get_addon_config(config_type, addon_short_name):
@@ -86,7 +86,12 @@ def get_rdm_addon_option(institution_id, addon_name, create=True):
 
     app = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
     if app:
-        is_allowed_default = getattr(app, 'is_allowed_default', True)
+        # is_allowed_default is False when for_institutions is True
+        for_institutions = getattr(app, 'for_institutions', False)
+        if for_institutions:
+            is_allowed_default = True
+        else:
+            is_allowed_default = getattr(app, 'is_allowed_default', True)
         if is_allowed_default is False:
             rdm_addon_option.is_allowed = False
             rdm_addon_option.save()
