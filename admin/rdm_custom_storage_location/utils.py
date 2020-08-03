@@ -84,8 +84,8 @@ def set_default_storage(institution_id):
         region.name = default_region.name
         region.waterbutler_credentials = default_region.waterbutler_credentials
         region.waterbutler_settings = default_region.waterbutler_settings
-        region.waterbutler_url=default_region.waterbutler_url
-        region.mfr_url=default_region.mfr_url
+        region.waterbutler_url = default_region.waterbutler_url
+        region.mfr_url = default_region.mfr_url
         region.save()
     except Region.DoesNotExist:
         region = Region.objects.create(
