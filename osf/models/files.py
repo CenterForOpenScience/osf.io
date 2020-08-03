@@ -108,6 +108,8 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     deleted_on = NonNaiveDateTimeField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(blank=True, null=True)
     deleted_by = models.ForeignKey('osf.OSFUser', related_name='files_deleted_by', null=True, blank=True, on_delete=models.CASCADE)
+    # Deleted in application and removed from cloud storage
+    purged = NonNaiveDateTimeField(blank=True, null=True)
 
     objects = BaseFileNodeManager()
     active = ActiveFileNodeManager()
@@ -645,17 +647,20 @@ class TrashedFileNode(BaseFileNode):
         if isinstance(self, TrashedFileNode):  # TODO Why is this needed
             raise UnableToDelete('You cannot delete things that are deleted.')
 
-    def restore(self, recursive=True, parent=None, save=True, deleted_on=None):
+    def restore(self, recursive=True, parent=None, save=True, deleted_on=None, client=None):
         """
         Restore a file or folder
         :param recursive:
         :param parent:
         :param save:
         :param deleted_on:
+        :param client:
         :return:
         """
         if self.parent and self.parent.is_deleted:
             raise ValueError('No parent to restore to')
+        if self.purged and client:
+            self._unpurge(client=client)
 
         type_cls = File if self.is_file else Folder
 
@@ -666,6 +671,32 @@ class TrashedFileNode(BaseFileNode):
 
         return self
 
+    def _purge(self, client=None, save=True):
+        """ Never call this.
+            Purges cloud storage.
+
+            return: Bytes deleted
+        """
+        if not client:
+            logger.warn(f'No GCS Client detected. Not purging BFN {self.id}')
+            return 0
+        freed = 0
+        for version in self.versions.all():
+            freed += version._purge(client=client, save=save)
+        self.purged = timezone.now()
+        if save:
+            self.save()
+        return freed
+
+    def _unpurge(self, client=None, save=True):
+        if not client:
+            logger.warn(f'No GCS Client detected. Not unpurging BFN {self.id}')
+            return 0
+        consumed = self.versions.latest()._unpurge(client=client, save=save)
+        self.purged = None
+        if save:
+            self.save()
+        return consumed
 
 class TrashedFile(TrashedFileNode):
     @property
@@ -762,6 +793,8 @@ class FileVersion(ObjectIDMixin, BaseModel):
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
+    purged = NonNaiveDateTimeField(blank=True, null=True)
+
     includable_objects = IncludeManager()
 
     @property
@@ -771,6 +804,46 @@ class FileVersion(ObjectIDMixin, BaseModel):
     @property
     def archive(self):
         return self.metadata.get('archive')
+
+    def _purge(self, client=None, save=True):
+        if not client:
+            logger.warn(f'No GCS Client detected. Not purging FV {self.id}')
+            return 0
+        if self.basefilenode_set.filter(deleted__isnull=True).exists():
+            logger.warn(f'Live file detected. Not purging FV {self.id}')
+            return 0
+        if not self.location or not self.location.get('object'):
+            logger.warn(f'No valid location detected. Not purging FV {self.id}')
+            return 0
+        dup = FileVersion.objects.exclude(id=self.id).filter(location__object=self.location['object'], basefilenode__deleted__isnull=True).first()
+        if dup:
+            logger.warn(f'Duplicate live file detected on FV {dup.id}. Not purging FV {self.id}')
+            return 0
+        bucket = client.get_bucket(self.location['bucket'])
+        blob = bucket.get_blob(self.location['object'])
+        if blob:
+            blob.delete()
+        else:
+            logger.warn(f'Blob not found for FV {self.id}. Marking as purged.')
+        self.purged = timezone.now()
+        if save:
+            self.save()
+        return self.size
+
+    def _unpurge(self, client=None, save=True):
+        if not self.purged:
+            return 0
+        if not client:
+            logger.warn(f'No GCS Credentials detected. Not unpurging FV {self.id}')
+            return 0
+        backup_bucket = client.get_bucket('{}-backup'.format(self.location['bucket']))
+        bucket = client.get_bucket(self.location['bucket'])
+        blob = bucket.get_blob(self.location['object'])
+        backup_bucket.copy_blob(blob, bucket)
+        self.purged = None
+        if save:
+            self.save()
+        return self.size
 
     def is_duplicate(self, other):
         return self.location_hash == other.location_hash
