@@ -324,10 +324,11 @@ def is_qa_resource(resource):
 def update_share(resource, old_subjects=None):
     data = serialize_share_data(resource, old_subjects)
     resp = send_share_json(resource, data)
+    status_code = resp.status_code
     try:
         resp.raise_for_status()
     except requests.HTTPError:
-        if resp.status_code >= 500:
+        if status_code >= 500:
             async_update_resource_share.delay(resource._id, old_subjects)
         else:
             send_desk_share_error(resource, resp, 0)

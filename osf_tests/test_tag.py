@@ -1,4 +1,4 @@
-import json
+import mock
 import pytest
 
 from django.db import DataError
@@ -8,10 +8,7 @@ from osf.models import Tag
 from osf.exceptions import ValidationError, TagNotFoundError
 from osf_tests.factories import ProjectFactory, UserFactory
 
-from website import settings
-
 pytestmark = pytest.mark.django_db
-
 
 @pytest.mark.enable_implicit_clean
 class TestTag:
@@ -43,13 +40,9 @@ class TestTag:
         assert Tag.load(tag_name).pk == tag.pk
 
 
+# copied from tests/test_models.py
 @pytest.mark.enable_enqueue_task
-@pytest.mark.enable_implicit_clean
 class TestTags:
-
-    @pytest.fixture()
-    def user(self):
-        return UserFactory()
 
     @pytest.fixture()
     def project(self):
@@ -59,18 +52,13 @@ class TestTags:
     def auth(self, project):
         return Auth(project.creator)
 
-    def test_add_tag(self, mock_share, project, auth):
-        mock_share.assert_all_requests_are_fired = False
+    @mock.patch('osf.models.node.update_share')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    def test_add_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_added'
-
-        assert len(mock_share.calls) == 2
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-
-        assert mock_share.calls[0].request.headers['Authorization'] == 'Bearer mock-api-token'
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{project._id}/'
+        mock_update_share.assert_called_once_with(project)
 
     @pytest.mark.skip('TODO: 128 is no longer max length, consider shortening')
     def test_add_tag_too_long(self, project, auth):
@@ -81,17 +69,15 @@ class TestTags:
         with pytest.raises(DataError):
             project.add_tag('asdf' * 257, auth=auth)
 
-    def test_remove_tag(self, mock_share, project, auth):
-        mock_share.assert_all_requests_are_fired = False
-
+    @mock.patch('osf.models.node.update_share')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    def test_remove_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
+        mock_update_share.assert_called_once_with(project)
 
         project.remove_tag('scientific', auth=auth)
-        assert len(mock_share.calls) == 3
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        assert mock_share.calls[1].request.headers['Authorization'] == 'Bearer mock-api-token'
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{project._id}/'
+        assert mock_update_share.call_count == 2
+        assert mock_update_share.call_args_list[1][0][0] == project
 
         assert 'scientific' not in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_removed'
