@@ -91,7 +91,7 @@ def set_allowed(institution, provider_name, is_allowed):
     addon_option = get_rdm_addon_option(institution.id, provider_name)
     addon_option.is_allowed = is_allowed
     addon_option.save()
-    # TODO clear?
+    # NOTE: ExternalAccounts is not cleared even if other storage is selected.
     # if not is_allowed:
     #     addon_option.external_accounts.clear()
 
