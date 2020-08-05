@@ -24,6 +24,9 @@ logger = logging.getLogger(__name__)
 
 ENABLED_ADDONS_FOR_INSTITUTIONS = []
 
+# Keywords for RdmAddonOption.extended
+KEYNAME_BASE_FOLDER = 'base_folder'
+
 def register(node_settings_cls):
     name = node_settings_cls.SHORT_NAME
     ENABLED_ADDONS_FOR_INSTITUTIONS.append((name, node_settings_cls))
@@ -180,7 +183,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
     def base_folder(cls, addon_option):
         extended = addon_option.extended
         if extended:
-            base_folder = extended.get('base_folder')
+            base_folder = extended.get(KEYNAME_BASE_FOLDER)
             if base_folder:
                 return base_folder
         try:
@@ -188,7 +191,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
             if addon_settings.DEFAULT_BASE_FOLDER:
                 return addon_settings.DEFAULT_BASE_FOLDER
         except Exception:
-            pass
+            pass  # no DEFAULT_BASE_FOLDER
         return ''
 
     @classmethod

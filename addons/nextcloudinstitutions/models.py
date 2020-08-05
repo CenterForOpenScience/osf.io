@@ -53,6 +53,11 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
     @classmethod
     def get_debug_provider(cls):
+        if not (settings.DEBUG_URL
+                and settings.DEBUG_USER
+                and settings.DEBUG_PASSWORD):
+            return None
+
         class DebugProvider(object):
             host = settings.DEBUG_URL
             username = settings.DEBUG_USER

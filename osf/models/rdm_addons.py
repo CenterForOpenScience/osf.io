@@ -13,7 +13,7 @@ class CommonMixin(object):
     def get_one_external_account(self):
         if not self.external_accounts.exists():
             return None
-        return self.external_accounts.first().oauth_key
+        return self.external_accounts.first()
 
 
 class RdmAddonOption(BaseModel, CommonMixin):

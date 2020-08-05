@@ -115,6 +115,14 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('nextcloud_folder'),
                 provider_short_name,
             )
+        elif provider_short_name == 'nextcloudinstitutions':
+            result = utils.test_owncloud_connection(
+                data.get('nextcloudinstitutions_host'),
+                data.get('nextcloudinstitutions_username'),
+                data.get('nextcloudinstitutions_password'),
+                data.get('nextcloudinstitutions_folder'),
+                provider_short_name,
+            )
         elif provider_short_name == 'swift':
             result = utils.test_swift_connection(
                 data.get('swift_auth_version'),
@@ -129,6 +137,7 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
         elif provider_short_name == 'dropboxbusiness':
             institution = request.user.affiliated_institutions.first()
             result = utils.test_dropboxbusiness_connection(institution)
+
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
@@ -219,6 +228,15 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('nextcloud_folder'),
                 'nextcloud',
             )
+        elif provider_short_name == 'nextcloudinstitutions':
+            result = utils.save_nextcloudinstitutions_credentials(
+                institution,
+                data.get('nextcloudinstitutions_host'),
+                data.get('nextcloudinstitutions_username'),
+                data.get('nextcloudinstitutions_password'),
+                data.get('nextcloudinstitutions_folder'),  # base folder
+                provider_short_name,
+            )
         elif provider_short_name == 'box':
             result = utils.save_box_credentials(
                 request.user,
@@ -230,6 +248,36 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 institution, provider_short_name)
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
+        status = result[1]
+        if status == httplib.OK:
+            utils.change_allowed_for_institutions(
+                institution, provider_short_name)
+        return JsonResponse(result[0], status=status)
+
+
+class FetchCredentialsView(InstitutionalStorageBaseView, View):
+    def post(self, request):
+        institution = request.user.affiliated_institutions.first()
+        data = json.loads(request.body)
+
+        provider_short_name = data.get('provider_short_name')
+        if not provider_short_name:
+            response = {
+                'message': 'Provider is missing.'
+            }
+            return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+        storage_name = data.get('storage_name')
+        if not storage_name and utils.have_storage_name(provider_short_name):
+            return JsonResponse({
+                'message': 'Storage name is missing.'
+            }, status=httplib.BAD_REQUEST)
+
+        result = None
+        if provider_short_name == 'nextcloudinstitutions':
+            data = utils.get_nextcloudinstitutions_credentials(institution)
+            result = (data, httplib.OK)
+
         return JsonResponse(result[0], status=result[1])
 
 

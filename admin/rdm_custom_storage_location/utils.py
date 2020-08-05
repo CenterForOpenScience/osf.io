@@ -8,6 +8,7 @@ import requests
 from swiftclient import exceptions as swift_exceptions
 import os
 import owncloud
+from django.core.exceptions import ValidationError
 
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
@@ -20,6 +21,9 @@ from addons.s3compat import utils as s3compat_utils
 from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
+from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
+from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
+from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
@@ -28,13 +32,20 @@ import datetime
 
 
 providers = None
+
+enabled_providers_forinstitutions_list = [
+    'dropboxbusiness',
+    'nextcloudinstitutions',
+]
+
 enabled_providers_list = [
     's3', 'box', 'googledrive', 'osfstorage',
     'nextcloud', 'swift', 'owncloud', 's3compat',
-    'dropboxbusiness',
 ]
+enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
-no_storage_name_providers = ['osfstorage', 'dropboxbusiness']
+no_storage_name_providers = ['osfstorage']
+no_storage_name_providers.extend(enabled_providers_forinstitutions_list)
 
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
@@ -75,6 +86,25 @@ def get_oauth_info_notification(institution_id, provider_short_name):
             'provider_id': temp_external_account.provider_id,
             'provider_name': temp_external_account.provider_name,
         }
+
+def set_allowed(institution, provider_name, is_allowed):
+    addon_option = get_rdm_addon_option(institution.id, provider_name)
+    addon_option.is_allowed = is_allowed
+    addon_option.save()
+    # TODO clear?
+    # if not is_allowed:
+    #     addon_option.external_accounts.clear()
+
+def change_allowed_for_institutions(institution, provider_name):
+    if provider_name in enabled_providers_forinstitutions_list:
+        set_allowed(institution, provider_name, True)
+
+    # disable other storages for Institutions
+    for p in get_providers():
+        if p.short_name == provider_name:
+            continue  # skip this provider
+        if p.for_institutions:
+            set_allowed(institution, p.short_name, False)
 
 def set_default_storage(institution_id):
     default_region = Region.objects.first()
@@ -117,20 +147,6 @@ def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
         region.waterbutler_settings = wb_settings
         region.save()
     return region
-
-def enable_for_institutions(institution, provider_name):
-    addon_option = get_rdm_addon_option(institution.id, provider_name)
-    addon_option.is_allowed = True
-    addon_option.save()
-
-    # disable other storages for Institutions
-    for p in get_providers():
-        if p.short_name == provider_name:
-            continue  # skip this provider
-        if p.for_institutions:
-            o = get_rdm_addon_option(institution.id, p.short_name)
-            o.is_allowed = False
-            o.save()
 
 def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
@@ -305,11 +321,11 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     elif provider == 'nextcloud':
         provider_name = 'Nextcloud'
         provider_setting = nextcloud_settings
+    elif provider == 'nextcloudinstitutions':
+        provider_name = NextcloudInstitutionsProvider.name
+        provider_setting = nextcloudinstitutions_settings
 
-    # Ensure that ownCloud uses https
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
+    host = use_https(host_url)
 
     try:
         client = owncloud.Client(host.url, verify_certs=provider_setting.USE_SSL)
@@ -396,7 +412,8 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     }, httplib.OK)
 
 def test_dropboxbusiness_connection(institution):
-    fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id,
+                                                     allowed_check=False)
     if fm is None:
         return ({
             'message': u'Invalid Institution ID.: {}'.format(institution.id)
@@ -651,23 +668,32 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
-def save_dropboxbusiness_credentials(institution, provider):
-    test_connection_result = test_dropboxbusiness_connection(institution)
-    if test_connection_result[1] != httplib.OK:
-        return test_connection_result
-
+def wd_info_for_institutions(provider_name):
     wb_credentials = {
         'storage': {
         },
     }
     wb_settings = {
-        'disabled': True,  # used in rubeus
+        'disabled': True,  # used in rubeus.py
         'storage': {
-            'provider': provider
+            'provider': provider_name
         },
     }
+    return (wb_credentials, wb_settings)
 
-    enable_for_institutions(institution, provider)
+def use_https(url):
+    # Ensure that NextCloud uses https
+    host = furl()
+    host.host = url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+    return host
+
+def save_dropboxbusiness_credentials(institution, provider_name):
+    test_connection_result = test_dropboxbusiness_connection(institution)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
     region = update_storage(institution._id,  # not institution.id
                             'Dropbox Business',
                             wb_credentials, wb_settings)
@@ -676,3 +702,61 @@ def save_dropboxbusiness_credentials(institution, provider):
     return ({
         'message': 'Dropbox Business was set successfully!!'
     }, httplib.OK)
+
+def save_nextcloudinstitutions_credentials(institution, host_url, username, password, folder, provider_name):
+    test_connection_result = test_owncloud_connection(
+        host_url, username, password, folder, provider_name)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = use_https(host_url)
+    provider = NextcloudInstitutionsProvider(
+        account=None, host=host.url,
+        username=username, password=password)
+    try:
+        provider.account.save()
+    except ValidationError:
+        # ... or get the old one
+        provider.account = ExternalAccount.objects.get(
+            provider=provider_name,
+            provider_id='{}:{}'.format(host.url, username).lower()
+        )
+        if provider.account.oauth_key != password:
+            provider.account.oauth_key = password
+            provider.account.save()
+
+    # Storage Addons for Institutions must have only one ExternalAccont.
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    if rdm_addon_option.external_accounts.count() > 0:
+        rdm_addon_option.external_accounts.clear()
+    rdm_addon_option.external_accounts.add(provider.account)
+
+    rdm_addon_option.extended[KEYNAME_BASE_FOLDER] = folder
+    rdm_addon_option.save()
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    region = update_storage(institution._id,  # not institution.id
+                            provider.name,
+                            wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
+
+    return ({
+        'message': 'Saved credentials successfully!!'
+    }, httplib.OK)
+
+def get_nextcloudinstitutions_credentials(institution):
+    provider_name = 'nextcloudinstitutions'
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    exacc = rdm_addon_option.external_accounts.first()
+    provider = NextcloudInstitutionsProvider(exacc)
+    folder = rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)
+    if not folder:
+        folder = nextcloudinstitutions_settings.DEFAULT_BASE_FOLDER
+
+    data = {}
+    host = use_https(provider.host)
+    data[provider_name + '_host'] = host.host
+    data[provider_name + '_username'] = provider.username
+    data[provider_name + '_password'] = ''  # not fill
+    data[provider_name + '_folder'] = folder
+    return data

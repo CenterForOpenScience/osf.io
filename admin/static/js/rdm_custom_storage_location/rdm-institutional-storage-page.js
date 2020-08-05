@@ -7,17 +7,27 @@ var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
 
-var no_storage_name_providers = ['osfstorage', 'dropboxbusiness'];
+var no_storage_name_providers = ['osfstorage',
+				 'dropboxbusiness',
+				 'nextcloudinstitutions'];
+// type1: get from admin/rdm_addons/api_v1/views.py
+var preload_accounts_type1 = ['dropboxbusiness'];
+// type2: get from admin/rdm_custom_storage_location/views.py
+var preload_accounts_type2 = ['nextcloudinstitutions']
 
-var preload_accounts = ['dropboxbusiness'];
-function preload(provider) {
-    if (preload_accounts.indexOf(provider) >= 0) {
+function preload(provider, callback) {
+    if (preload_accounts_type1.indexOf(provider) >= 0) {
         var div = $('#' + provider + '_authorization_div');
         var institutionId = div.data('institution-id');
-        getAccounts(provider, institutionId);
+        getAccount(provider, institutionId);
         if (provider === 'dropboxbusiness') {
-            getAccounts('dropboxbusiness_manage', institutionId);
+            getAccount('dropboxbusiness_manage', institutionId);
         }
+	callback();
+    } else if (preload_accounts_type2.indexOf(provider) >= 0) {
+        getCredentials(provider, callback);
+    } else {
+	callback();
     }
 }
 
@@ -42,7 +52,7 @@ $('.modal').on('hidden.bs.modal', function (e) {
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
         var selectedProvider = $('input[name=\'options\']:checked').val();
-        preload(selectedProvider);
+        preload(selectedProvider, function() {
         var showModal = function () {
             $('#' + selectedProvider + '_modal').modal('show');
             $('body').css('overflow', 'hidden');
@@ -63,6 +73,7 @@ $('#institutional_storage_form').submit(function (e) {
                 }
             });
         }
+        });
     }
     e.preventDefault();
 });
@@ -105,6 +116,14 @@ $('#nextcloud_modal input').keyup(function () {
 
 $('#nextcloud_modal input').on('paste', function(e) {
     validateRequiredFields('nextcloud');
+});
+
+$('#nextcloudinstitutions_modal input').keyup(function () {
+    validateRequiredFields('nextcloudinstitutions');
+});
+
+$('#nextcloudinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('nextcloudinstitutions');
 });
 
 $('#googledrive_modal input').keyup(function () {
@@ -166,10 +185,10 @@ function buttonClicked(button, route) {
         'provider_short_name': providerShortName
     };
     getParameters(params);
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
 }
 
-function ajaxRequest(params, providerShortName, route) {
+function ajaxRequest(params, providerShortName, route, callback) {
     var csrftoken = Cookie.get('admin-csrf');
 
     function csrfSafeMethod(method) {
@@ -193,12 +212,18 @@ function ajaxRequest(params, providerShortName, route) {
         timeout: 30000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
+            if (callback) {
+                callback();
+            }
         },
         error: function (jqXHR) {
             if(jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)){
                 afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
             }else{
                 afterRequest[route].fail(this.custom, _('Some errors occurred'));
+            }
+            if (callback) {
+                callback();
             }
         }
     });
@@ -245,6 +270,14 @@ var afterRequest = {
                 $('#' + id + '_message').addClass('text-danger');
                 $('#' + id + '_message').removeClass('text-success');
             }
+        }
+    },
+    'credentials': {
+        'success': function (id, data) {
+            setParameters(id, data);
+        },
+        'fail': function (id, message) {
+            setParametersFailed(id, message);
         }
     },
     'fetch_temporary_token': {
@@ -335,10 +368,32 @@ function get_token(providerShortName, route) {
     var params = {
         'provider_short_name': providerShortName
     };
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
 }
 
-function getAccounts(providerShortName, institutionId) {
+function getCredentials(providerShortName, callback) {
+    var params = {
+        'provider_short_name': providerShortName
+    };
+    var route = 'credentials';
+    ajaxRequest(params, providerShortName, route, callback);
+}
+
+function setParameters(provider_short_name, data) {
+    var providerClass = provider_short_name + '-params';
+    $('.' + providerClass).each(function(i, e) {
+        var val = data[$(e).attr('id')];
+	if (val) {
+            $(e).val(val);
+        }
+    });
+}
+
+function setParametersFailed(provider_short_name, message) {
+}
+
+function getAccount(providerShortName, institutionId) {
+    // get an External Account for Institutions
     var url = '/addons/api/v1/settings/' + providerShortName + '/' + institutionId + '/accounts/';
     var request = $.get(url);
     request.done(function (data) {
@@ -387,7 +442,7 @@ function disconnectAccount(providerShortName, institutionId) {
         });
     }).then(
         function () {
-            getAccounts(providerShortName, institutionId);
+            getAccount(providerShortName, institutionId);
         }
     );
 }
@@ -405,7 +460,7 @@ function oauthOpener(url,providerShortName,institutionId){
             clearInterval(timer);
             if (providerShortName === 'dropboxbusiness' ||
                 providerShortName === 'dropboxbusiness_manage') {
-                getAccounts(providerShortName, institutionId);
+                getAccount(providerShortName, institutionId);
             } else {
                 get_token(providerShortName, route);
             }
@@ -460,5 +515,5 @@ function cancel_auth(providerShortName) {
         'provider_short_name': providerShortName
     };
     var route = 'remove_auth_data_temporary';
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
 }
