@@ -6,11 +6,13 @@
 from __future__ import unicode_literals
 import logging
 
+
 import django
 django.setup()
 
 from django.core.management.base import BaseCommand
 from framework.celery_tasks import app as celery_app
+from framework import sentry
 
 from website import mails
 
@@ -18,10 +20,19 @@ from osf.models import OSFUser
 
 logger = logging.getLogger(__name__)
 
-@celery_app.task(name='management.commands.email_all_users')
-def email_all_users(email_template, dry_run=False):
+OFFSET = 50000
 
-    active_users = OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None).exclude(date_disabled__isnull=False).exclude(is_active=False).order_by('id')
+@celery_app.task(name='management.commands.email_all_users')
+def email_all_users(email_template, dry_run=False, ids=[], run=0, offset=OFFSET):
+
+    if ids:
+        active_users = OSFUser.objects.filter(id__in=ids)
+    else:
+        lower_bound = run * offset
+        upper_bound = (run + 1) * offset
+        logging.info(f'lower {lower_bound} upper {upper_bound}')
+        base_query = OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None).exclude(date_disabled__isnull=False).exclude(is_active=False)
+        active_users = base_query.filter(id__gt=lower_bound, id__lte=upper_bound).order_by('id')
 
     if dry_run:
         active_users = active_users.exclude(is_superuser=False)
@@ -36,12 +47,18 @@ def email_all_users(email_template, dry_run=False):
 
     total_sent = 0
     for user in active_users.iterator():
-        mails.send_mail(
-            to_addr=user.email,
-            mail=template,
-            fullname=user.fullname,
-        )
-        total_sent += 1
+        try:
+            mails.send_mail(
+                to_addr=user.email,
+                mail=template,
+                fullname=user.fullname,
+            )
+        except Exception:
+            logger.error(f'Exception encountered sending email to {user.id}')
+            sentry.log_exception()
+            continue
+        else:
+            total_sent += 1
 
     logger.info(f'Emails sent to {total_sent}/{total_active_users} users')
 

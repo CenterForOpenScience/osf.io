@@ -11,6 +11,14 @@ from osf.management.commands.email_all_users import email_all_users
 class TestEmailAllUsers:
 
     @pytest.fixture()
+    def user(self):
+        return UserFactory(id=1)
+
+    @pytest.fixture()
+    def user2(self):
+        return UserFactory(id=2)
+
+    @pytest.fixture()
     def superuser(self):
         user = UserFactory()
         user.is_superuser = True
@@ -52,3 +60,14 @@ class TestEmailAllUsers:
         email_all_users('TOU_NOTIF')
 
         mock_email.assert_not_called()
+
+    @pytest.mark.django_db
+    @mock.patch('website.mails.send_mail')
+    def test_email_all_users_offset(self, mock_email, user, user2):
+        email_all_users('TOU_NOTIF', offset=1, run=0)
+
+        email_all_users('TOU_NOTIF', offset=1, run=1)
+
+        email_all_users('TOU_NOTIF', offset=1, run=2)
+
+        assert mock_email.call_count == 2

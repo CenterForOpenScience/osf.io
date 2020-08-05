@@ -597,8 +597,8 @@ class CeleryConfig:
             },
             'send_tou_notif': {
                 'task': 'management.commands.email_all_users',
-                'schedule': crontab(minute=0, hour=10, day_of_month=10, month_of_year=8),  # Send email on 10th of august at 5 am.
-                'kwargs': {'template': 'tou_notif'}
+                'schedule': crontab(minute=0, hour=9, day_of_month=10, month_of_year=8),  # Send email on 10th of august at 5 am.
+                'kwargs': {'template': 'tou_notif', 'run': 0}
             },
             # 'run_keen_snapshots': {
             #     'task': 'scripts.analytics.run_keen_snapshots',
