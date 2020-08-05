@@ -395,7 +395,11 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         provider = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
         home_page_url = provider.domain if provider.domain else f'{website_settings.DOMAIN}/preprints/{provider._id}/'
-        provider.setup_share_source(home_page_url)
+
+        try:
+            provider.setup_share_source(home_page_url)
+        except ValidationError as e:
+            messages.error(request, e.message)
 
         return redirect(reverse_lazy('preprint_providers:share_source', kwargs={'preprint_provider_id': provider.id}))
 

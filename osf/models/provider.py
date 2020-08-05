@@ -137,11 +137,11 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
     def setup_share_source(self, provider_home_page):
         if self.access_token:
-            raise ValueError('Cannot update access_token because one or the other already exists')
+            raise ValidationError('Cannot update access_token because one or the other already exists')
         if not settings.SHARE_ENABLED or not settings.SHARE_URL:
-            raise ValueError('SHARE_ENABLED is set to false')
+            raise ValidationError('SHARE_ENABLED is set to false')
         if not self.get_asset_url('square_color_no_transparent'):
-            raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
+            raise ValidationError('Unable to find "square_color_no_transparent" icon for provider')
 
         resp = requests.post(
             f'{settings.SHARE_URL}api/v2/sources/',
