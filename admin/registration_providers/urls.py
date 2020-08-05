@@ -14,4 +14,5 @@ urlpatterns = [
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/import/$', views.ImportRegistrationProvider.as_view(), name='import'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/schemas/$', views.ChangeSchema.as_view(), name='schemas'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/cannot_delete/$', views.CannotDeleteProvider.as_view(), name='cannot_delete'),
+    url(r'^(?P<registration_provider_id>[a-z0-9]+)/share_source/$', views.ShareSourceRegistrationProvider.as_view(), name='share_source'),
 ]

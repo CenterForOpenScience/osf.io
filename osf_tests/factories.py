@@ -335,6 +335,8 @@ class RegistrationProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    access_token = factory.Faker('bs')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.RegistrationProvider
@@ -617,6 +619,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.PreprintProvider

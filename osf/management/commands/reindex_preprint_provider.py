@@ -3,14 +3,14 @@ import logging
 
 from django.core.management.base import BaseCommand
 from osf.models import PreprintProvider
-from website.preprints.tasks import update_preprint_share
+from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
 def reindex_provider(provider):
     logger.info('Sending {} preprints to SHARE...'.format(provider.preprints.count()))
     for preprint in provider.preprints.all():
-        update_preprint_share(preprint, old_subjects=None, share_type=None)
+        update_share(preprint)
 
 class Command(BaseCommand):
     def add_arguments(self, parser):

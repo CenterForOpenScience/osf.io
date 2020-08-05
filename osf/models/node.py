@@ -81,6 +81,7 @@ from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
+from api.share.utils import update_share
 
 
 logger = logging.getLogger(__name__)
@@ -1025,7 +1026,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1048,7 +1050,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
-            node_tasks.update_node_share(self)
+            if settings.SHARE_ENABLED:
+                update_share(self)
 
             return True
 
@@ -1059,7 +1062,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         super(AbstractNode, self).remove_tags(tags, auth, save)
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
         return True
 

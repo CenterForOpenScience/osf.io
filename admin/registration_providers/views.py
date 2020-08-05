@@ -16,6 +16,7 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
+from website import settings as website_settings
 from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema
 
 
@@ -357,6 +358,18 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
         return JsonResponse(response_data)
+
+
+class ShareSourceRegistrationProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_registrationprovider'
+    view_category = 'registration_providers'
+
+    def get(self, request, *args, **kwargs):
+        provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        home_page_url = provider.domain if provider.domain else f'{website_settings.DOMAIN}/registries/{provider._id}/'
+        provider.setup_share_source(home_page_url)
+
+        return redirect(reverse_lazy('registration_providers:share_source', kwargs={'registration_provider_id': provider.id}))
 
 
 class ChangeSchema(TemplateView):
