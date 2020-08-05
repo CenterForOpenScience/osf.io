@@ -4028,16 +4028,15 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_twice(self):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        print(self.user.email_verifications)
         res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas logout')
+        assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
 
         self.user.refresh_from_db()
         assert_equal(self.user.email_verifications, {})
 
         res = self.app.get(url, auth=self.auth)
-        assert_equal(res.status_code, 302, 'redirects to cas logout')
+        assert_equal(res.status_code, 302, 'redirects to logged in dashboard')
         assert_in('/dashboard/', res.location)
 
     def test_external_login_confirm_email_get_without_destination(self):
