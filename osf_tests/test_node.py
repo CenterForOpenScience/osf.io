@@ -3,6 +3,7 @@ import datetime
 import mock
 import pytest
 import pytz
+import responses
 
 from django.utils import timezone
 from framework.celery_tasks import handlers
@@ -16,6 +17,7 @@ from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
+from website.project.tasks import on_node_updated
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
@@ -2519,7 +2521,6 @@ class TestManageContributors:
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
-        print(node.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
             node.set_visible(user=user, visible=False, auth=None)
@@ -3791,25 +3792,7 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
-    @pytest.fixture()
-    def registration(self, node):
-        return RegistrationFactory(is_public=True)
-
-    @pytest.fixture()
-    def component_registration(self, node):
-        NodeFactory(
-            creator=node.creator,
-            parent=node,
-            title='Title1',
-        )
-        registration = RegistrationFactory(project=node)
-        registration.refresh_from_db()
-        return registration.get_nodes()[0]
-
-    def teardown_method(self, method):
-        handlers.celery_before_request()
-
-    def test_on_node_updated_called(self, node, user, request_context):
+    def test_on_node_updated_called(self, node, user):
         node.title = 'A new title'
         node.save()
 
@@ -3849,6 +3832,16 @@ class TestOnNodeUpdate:
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
+
+    @responses.activate
+    @mock.patch('website.search.search.update_collected_metadata')
+    def test_update_collection_elasticsearch_make_private(self, mock_update_collected_metadata, node_in_collection, collection, user):
+        node_in_collection.is_public = False
+        node_in_collection.save()
+
+        on_node_updated(node_in_collection._id, user._id, False, {'is_public'})
+
+        mock_update_collected_metadata.assert_called_with(node_in_collection._id, op='delete')
 
 
 # copied from tests/test_models.py

@@ -914,6 +914,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if not provider:
             provider = RegistrationProvider.get_default()
 
+        if provider.is_default:
+            # If the default provider doesn't have schemas specified yet, allow all schemas
+            if provider.schemas.exists():
+                provider.validate_schema(schema)
+        else:
+            provider.validate_schema(schema)
+
         if not node:
             # If no node provided, a DraftNode is created for you
             node = DraftNode.objects.create(creator=user, title='Untitled')
