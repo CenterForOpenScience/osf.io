@@ -11,7 +11,6 @@ import django
 django.setup()
 
 from django.core.management.base import BaseCommand
-from framework.celery_tasks import app as celery_app
 from framework import sentry
 
 from website import mails
@@ -22,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 OFFSET = 500000
 
-@celery_app.task(name='management.commands.email_all_users')
 def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSET):
 
     if ids:

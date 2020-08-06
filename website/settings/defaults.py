@@ -410,8 +410,7 @@ class CeleryConfig:
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
-        'osf.management.commands.update_institution_project_counts',
-        'osf.management.commands.email_all_users'
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -594,11 +593,6 @@ class CeleryConfig:
                 'task': 'scripts.analytics.run_keen_summaries',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
-            },
-            'send_tou_notif': {
-                'task': 'management.commands.email_all_users',
-                'schedule': crontab(minute=0, hour=9, day_of_month=10, month_of_year=8),  # Send email on 10th of august at 5 am.
-                'kwargs': {'template': 'tou_notif', 'run': 0}
             },
             # 'run_keen_snapshots': {
             #     'task': 'scripts.analytics.run_keen_snapshots',
