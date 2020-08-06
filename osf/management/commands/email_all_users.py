@@ -70,43 +70,45 @@ class Command(BaseCommand):
             '--dry',
             action='store_true',
             dest='dry_run',
-            help='Test - Only send to superusers',
+            help='Test - Only send to superusers'
         )
 
         parser.add_argument(
             '--t',
-            action='store_true',
+            type=str,
             dest='template',
             required=True,
-            help='Specify which template to use',
+            help='Specify which template to use'
         )
 
         parser.add_argument(
             '--r',
-            action='store_true',
+            type=int,
             dest='run',
-            help='Specify which run this is',
+            default=0,
+            help='Specify which run this is'
         )
 
         parser.add_argument(
             '--ids',
-            action='store_true',
             dest='ids',
-            help='Specific IDs to email, otherwise will email all users',
+            nargs='+',
+            help='Specific IDs to email, otherwise will email all users'
         )
 
         parser.add_argument(
             '--o',
-            action='store_true',
+            type=int,
             dest='offset',
-            help=f'How many users to email in this run, default is {OFFSET}',
+            default=OFFSET,
+            help=f'How many users to email in this run, default is {OFFSET}'
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         template = options.get('template')
-        run = options.get('run', 0)
-        ids = options.get('ids', None)
+        run = options.get('run')
+        ids = options.get('ids')
         offset = options.get('offset', OFFSET)
         email_all_users(template, dry_run, run=run, ids=ids, offset=offset)
         if dry_run:
