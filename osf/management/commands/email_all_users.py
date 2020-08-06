@@ -20,17 +20,16 @@ from osf.models import OSFUser
 
 logger = logging.getLogger(__name__)
 
-OFFSET = 50000
+OFFSET = 500000
 
 @celery_app.task(name='management.commands.email_all_users')
-def email_all_users(email_template, dry_run=False, ids=[], run=0, offset=OFFSET):
+def email_all_users(email_template, dry_run=False, ids=None, run=0, offset=OFFSET):
 
     if ids:
         active_users = OSFUser.objects.filter(id__in=ids)
     else:
         lower_bound = run * offset
         upper_bound = (run + 1) * offset
-        logging.info(f'lower {lower_bound} upper {upper_bound}')
         base_query = OSFUser.objects.filter(date_confirmed__isnull=False, deleted=None).exclude(date_disabled__isnull=False).exclude(is_active=False)
         active_users = base_query.filter(id__gt=lower_bound, id__lte=upper_bound).order_by('id')
 
@@ -84,9 +83,33 @@ class Command(BaseCommand):
             help='Specify which template to use',
         )
 
+        parser.add_argument(
+            '--r',
+            action='store_true',
+            dest='run',
+            help='Specify which run this is',
+        )
+
+        parser.add_argument(
+            '--ids',
+            action='store_true',
+            dest='ids',
+            help='Specific IDs to email, otherwise will email all users',
+        )
+
+        parser.add_argument(
+            '--o',
+            action='store_true',
+            dest='offset',
+            help=f'How many users to email in this run, default is {OFFSET}',
+        )
+
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         template = options.get('template')
-        email_all_users(template, dry_run)
+        run = options.get('run', 0)
+        ids = options.get('ids', None)
+        offset = options.get('offset', OFFSET)
+        email_all_users(template, dry_run, run=run, ids=ids, offset=offset)
         if dry_run:
             raise RuntimeError('Dry run, only superusers emailed')
