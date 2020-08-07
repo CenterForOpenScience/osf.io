@@ -10,8 +10,9 @@ DEBUG_URL = None
 DEBUG_USER = None
 DEBUG_PASSWORD = None
 
-# ePPN to NextCloud User
-DEBUG_EPPN_TO_NCUSER_MAP = {
-    # e.g.
-    # 'john@idp.example.com': 'user01',
-}
+# OSFUser GUID to NextCloud User
+# DEBUG_USERMAP = {
+#  'abcde': 'user01',
+#  'fg123': 'user02',
+#}
+DEBUG_USERMAP = None

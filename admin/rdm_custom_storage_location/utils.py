@@ -23,7 +23,9 @@ from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
-from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
+from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
+                                            KEYNAME_USERMAP,
+                                            KEYNAME_USERMAP_TMP)
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
@@ -740,14 +742,22 @@ def save_nextcloudinstitutions_credentials(institution, host_url, username, pass
                             wb_credentials, wb_settings)
     external_util.remove_region_external_account(region)
 
+    save_usermap_from_tmp(provider_name, institution)
+
     return ({
         'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
 def get_nextcloudinstitutions_credentials(institution):
     provider_name = 'nextcloudinstitutions'
-    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    clear_usermap_tmp(provider_name, institution)
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return None
     exacc = rdm_addon_option.external_accounts.first()
+    if not exacc:
+        return None
     provider = NextcloudInstitutionsProvider(exacc)
     folder = rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)
     if not folder:
@@ -757,6 +767,57 @@ def get_nextcloudinstitutions_credentials(institution):
     host = use_https(provider.host)
     data[provider_name + '_host'] = host.host
     data[provider_name + '_username'] = provider.username
-    data[provider_name + '_password'] = ''  # not fill
+    data[provider_name + '_password'] = provider.password  # NOTICE
     data[provider_name + '_folder'] = folder
     return data
+
+def extuser_exists(provider_name, post_params, extuser):
+    # return "error reason", None means existence
+    if provider_name == 'nextcloudinstitutions':
+        provider_setting = nextcloudinstitutions_settings
+        host_url = post_params.get(provider_name + '_host')
+        username = post_params.get(provider_name + '_username')
+        password = post_params.get(provider_name + '_password')
+        # folder = post_params.get(provider_name + '_folder')
+        try:
+            host = use_https(host_url)
+            client = owncloud.Client(host.url,
+                                     verify_certs=provider_setting.USE_SSL)
+            client.login(username, password)
+            if client.user_exists(extuser):
+                return None  # exist
+            return 'not exist'
+        except Exception as e:
+            return str(e)
+    else:  # unsupported
+        return None  # ok
+
+def get_usermap(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return None
+    return rdm_addon_option.extended.get(KEYNAME_USERMAP)
+
+def save_usermap_to_tmp(provider_name, institution, usermap):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    rdm_addon_option.extended[KEYNAME_USERMAP_TMP] = usermap
+    rdm_addon_option.save()
+
+def clear_usermap_tmp(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return
+    new_usermap = rdm_addon_option.extended.get(KEYNAME_USERMAP_TMP)
+    if new_usermap:
+        del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
+        rdm_addon_option.save()
+
+def save_usermap_from_tmp(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    new_usermap = rdm_addon_option.extended.get(KEYNAME_USERMAP_TMP)
+    if new_usermap:
+        rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
+        del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
+        rdm_addon_option.save()

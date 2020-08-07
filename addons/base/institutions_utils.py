@@ -26,6 +26,8 @@ ENABLED_ADDONS_FOR_INSTITUTIONS = []
 
 # Keywords for RdmAddonOption.extended
 KEYNAME_BASE_FOLDER = 'base_folder'
+KEYNAME_USERMAP = 'usermap'
+KEYNAME_USERMAP_TMP = 'usermap_tmp'
 
 def register(node_settings_cls):
     name = node_settings_cls.SHORT_NAME
@@ -241,6 +243,23 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         if self._client is None:
             self._client = self.get_client(self.provider)
         return self._client
+
+    def osfuser_to_extuser(self, osfuser):
+        guid = osfuser._id
+        addon_settings = self.addon_settings()
+        if addon_settings.DEBUG_USERMAP is not None:
+            ncuser = addon_settings.DEBUG_USERMAP.get(guid)
+            if not ncuser:  # case insensitive
+                ncuser = addon_settings.DEBUG_USERMAP.get(guid.upper())
+            if ncuser:
+                return ncuser
+        extended = self.addon_option.extended
+        osfuser_to_extuser = extended.get(KEYNAME_USERMAP)
+        if osfuser_to_extuser:
+            extuser = osfuser_to_extuser.get(guid)
+            if extuser:
+                return extuser
+        return None
 
     ###
     ### required methods:

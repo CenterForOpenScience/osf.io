@@ -148,8 +148,8 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         # nc_user_id -> (contributor(OSFUser), nc_permissions)
         grdm_member_all_dict = {}
         for cont in node.contributors.iterator():
-            if not cont.is_disabled and cont.eppn:
-                nc_user_id = self.eppn_to_remote_user(cont.eppn)
+            if cont.is_active and cont.eppn:
+                nc_user_id = self.osfuser_to_extuser(cont)
                 if not nc_user_id:
                     continue
                 grdm_perms = node.get_permissions(cont)
@@ -181,6 +181,10 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         add_users_set = grdm_member_users_set - nc_member_users_set
         remove_users_set = nc_member_users_set - grdm_member_users_set
         update_users_set = grdm_member_users_set & nc_member_users_set
+
+        # logger.critical('DEBUG add_users_set: ' + str(add_users_set))
+        # logger.critical('DEBUG remove_users_set: ' + str(add_users_set))
+        # logger.critical('DEBUG update_users_set: ' + str(update_users_set))
 
         first_exception = None
         for user_id in add_users_set:
@@ -226,19 +230,6 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
         if first_exception:
             raise first_exception
-
-    def eppn_to_remote_user(self, eppn):
-        if settings.DEBUG_EPPN_TO_NCUSER_MAP is not None:
-            ncuser = settings.DEBUG_EPPN_TO_NCUSER_MAP.get(eppn)
-            if ncuser:
-                return ncuser
-        extended = self.addon_option.extended
-        eppn_to_remote_user_dict = extended.get('eppn_to_remote_user')
-        if eppn_to_remote_user_dict:
-            ncuser = eppn_to_remote_user_dict.get(eppn)
-            if ncuser:
-                return ncuser
-        return None
 
     def serialize_waterbutler_credentials_impl(self):
         provider = self.provider_switch(self.addon_option)

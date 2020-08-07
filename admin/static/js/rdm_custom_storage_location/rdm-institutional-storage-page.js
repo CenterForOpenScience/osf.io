@@ -23,11 +23,19 @@ function preload(provider, callback) {
         if (provider === 'dropboxbusiness') {
             getAccount('dropboxbusiness_manage', institutionId);
         }
-	callback();
+        if (callback) {
+            callback();
+        }
     } else if (preload_accounts_type2.indexOf(provider) >= 0) {
-        getCredentials(provider, callback);
+        // getCredentials(provider, callback);
+ 	getCredentials(provider, null);
+        if (callback) {
+            callback();
+        }
     } else {
-	callback();
+        if (callback) {
+            callback();
+        }
     }
 }
 
@@ -36,13 +44,20 @@ function disable_storage_name(provider) {
 			    no_storage_name_providers.indexOf(provider) >= 0);
 }
 
+function selectedProvider() {
+     return $('input[name=\'options\']:checked').val();
+}
+
 $(window).on('load', function () {
-     var selectedProvider = $('input[name=\'options\']:checked').val();
-     disable_storage_name(selectedProvider);
+    var provider = selectedProvider();
+    disable_storage_name(provider);
+    preload(provider, null);
 });
 
 $('[name=options]').change(function () {
-    disable_storage_name(this.value);
+    var provider = this.value;
+    disable_storage_name(provider);
+    preload(provider, null);
 });
 
 $('.modal').on('hidden.bs.modal', function (e) {
@@ -51,15 +66,15 @@ $('.modal').on('hidden.bs.modal', function (e) {
 
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
-        var selectedProvider = $('input[name=\'options\']:checked').val();
-        preload(selectedProvider, function() {
+        var provider = selectedProvider()
+        // preload(provider, null);
         var showModal = function () {
-            $('#' + selectedProvider + '_modal').modal('show');
+            $('#' + provider + '_modal').modal('show');
             $('body').css('overflow', 'hidden');
             $('.modal').css('overflow', 'auto');
-            validateRequiredFields(selectedProvider);
+            validateRequiredFields(provider);
         };
-        if (selectedProvider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
+        if (provider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
             showModal();
         } else {
             $osf.confirmDangerousAction({
@@ -73,7 +88,6 @@ $('#institutional_storage_form').submit(function (e) {
                 }
             });
         }
-        });
     }
     e.preventDefault();
 });
@@ -188,25 +202,29 @@ function buttonClicked(button, route) {
     ajaxRequest(params, providerShortName, route, null);
 }
 
-function ajaxRequest(params, providerShortName, route, callback) {
-    var csrftoken = Cookie.get('admin-csrf');
+var csrftoken = Cookie.get('admin-csrf');
 
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-    $.ajaxSetup({
-        crossDomain: false, // obviates need for sameOrigin test
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type)) {
-                xhr.setRequestHeader('X-CSRFToken', csrftoken);
-            }
+function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+
+$.ajaxSetup({
+    crossDomain: false,
+    beforeSend: function (xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
         }
-    });
+    }
+});
+
+function ajaxCommon(type, params, providerShortName, route, callback) {
+    if (type === 'POST') {
+      params = JSON.stringify(params);
+    }
     $.ajax({
         url: '../' + route + '/',
-        type: 'POST',
-        data: JSON.stringify(params),
+        type: type,
+        data: params,
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
         timeout: 30000,
@@ -227,6 +245,15 @@ function ajaxRequest(params, providerShortName, route, callback) {
             }
         }
     });
+}
+
+function ajaxGET(params, providerShortName, route, callback) {
+    ajaxCommon('GET', params, providerShortName, route, callback);
+}
+
+// ajaxPOST
+function ajaxRequest(params, providerShortName, route, callback) {
+    ajaxCommon('POST', params, providerShortName, route, callback);
 }
 
 var afterRequest = {
@@ -297,6 +324,14 @@ var afterRequest = {
             authPermissionFailed(id, message);
         }
     },
+    'usermap': {
+        'success': function (id, data) {
+            usermapDownload(id, data);
+        },
+        'fail': function (id, message) {
+            usermapDownloadFailed(id, message);
+        }
+    },
 };
 
 function getParameters(params) {
@@ -345,6 +380,8 @@ function disconnectOnClick(elm, properName, accountName) {
                 } else {
                     $osf.growl('Verification failed', 'Strings did not match');
                 }
+            } else {
+                $(elm).removeClass('disabled');
             }
         },
         buttons:{
@@ -376,7 +413,8 @@ function getCredentials(providerShortName, callback) {
         'provider_short_name': providerShortName
     };
     var route = 'credentials';
-    ajaxRequest(params, providerShortName, route, callback);
+    // ajaxRequest(params, providerShortName, route, callback);
+    ajaxGET(params, providerShortName, route, callback);
 }
 
 function setParameters(provider_short_name, data) {
@@ -402,6 +440,7 @@ function getAccount(providerShortName, institutionId) {
             $('#' + providerShortName + '_auth_hyperlink').addClass('disabled');
             var link = $('#' + providerShortName + '_disconnect_hyperlink');
             link.click(false);
+            link.off();
             link.click(function (e) {
                 $(this).click(false);
                 $(this).addClass('disabled');
@@ -412,6 +451,7 @@ function getAccount(providerShortName, institutionId) {
             $('.' + providerShortName + '-disconnect-callback').removeClass('hidden');
         } else {
             var link = $('#' + providerShortName + '_auth_hyperlink');
+            link.off();
             link.click(function (e) {
                 $(this).click(false);
                 $(this).addClass('disabled');
@@ -516,4 +556,82 @@ function cancel_auth(providerShortName) {
     };
     var route = 'remove_auth_data_temporary';
     ajaxRequest(params, providerShortName, route, null);
+}
+
+function reflect_csv_results(data) {
+    $('#csv_ok').html('OK=' + data.OK);
+    $('#csv_ng').html('NG=' + data.NG);
+    $('#csv_report').html(data.report.join('<br/>'));
+    $('#csv_usermap').html(JSON.stringify(data.user_to_extuser));
+}
+
+$('#csv_file').change(function () {
+    var provider = selectedProvider();
+    var file = $(this).prop('files')[0];
+
+    var fd = new FormData();
+    fd.append('provider', provider);
+    if (file === undefined) {  // unselected
+        fd.append('clear', true);
+    } else {
+        fd.append($(this).attr('name'), file);
+        var providerClass = provider + '-params';
+        $('.' + providerClass).each(function(i, e) {
+             fd.append($(e).attr('id'), $(e).val());
+        });
+        fd.append('check_extuser', $('#csv_check_extuser').is(':checked'));
+    }
+    $.ajax({
+        url: '../usermap/',
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        timeout: 30000
+    }).done(function (data) {
+	reflect_csv_results(data);
+    }).fail(function (jqXHR) {
+        if (jqXHR.responseJSON != null) {
+            reflect_csv_results(jqXHR.responseJSON);
+        } else {
+            $('#csv_ok').html('');
+            $('#csv_ng').html(_('Some errors occurred'));
+            $('#csv_report').html('');
+            $('#csv_usermap').html('');
+        }
+    });
+});
+
+$('.download-csv').click(function () {
+    var provider = selectedProvider()
+    var params = {
+        'provider': provider
+    };
+    $('#csv_download_ng').html('');
+    ajaxGET(params, provider, 'usermap', null)
+});
+
+function saveFile(filename, type, content) {
+    if (window.navigator.msSaveOrOpenBlob) {
+        var blob = new Blob([content], {type: type});
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    }
+    else {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:' + type + ',' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+}
+
+function usermapDownload(id, data) {
+    var name = 'usermap-' + selectedProvider() +'.csv';
+    saveFile(name, 'text/csv; charset=utf-8', data);
+}
+
+function usermapDownloadFailed(id, message) {
+    $('#csv_download_ng').html(message);
 }
