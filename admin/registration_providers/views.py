@@ -367,9 +367,13 @@ class ShareSourceRegistrationProvider(PermissionRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         home_page_url = provider.domain if provider.domain else f'{website_settings.DOMAIN}/registries/{provider._id}/'
-        provider.setup_share_source(home_page_url)
 
-        return redirect(reverse_lazy('registration_providers:share_source', kwargs={'registration_provider_id': provider.id}))
+        try:
+            provider.setup_share_source(home_page_url)
+        except ValidationError as e:
+            messages.error(request, e.message)
+
+        return redirect(reverse_lazy('registration_providers:detail', kwargs={'registration_provider_id': provider.id}))
 
 
 class ChangeSchema(TemplateView):
