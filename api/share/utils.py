@@ -1,10 +1,10 @@
 import uuid
 from django.apps import apps
-from website import mails
 from urllib.parse import urljoin
 import random
 import requests
 from framework.celery_tasks import app as celery_app
+from framework.sentry import log_exception
 
 from website import settings
 from celery.exceptions import Retry
@@ -282,30 +282,6 @@ def format_registration(registration, *args, **kwargs):
 
     return [node_.serialize() for node_ in visited]
 
-
-def send_desk_share_error(resource, resp, retries):
-    from osf.models import Preprint
-
-    is_preprint = isinstance(resource, Preprint)
-
-    if is_preprint:
-        kwargs = {
-            'logo': settings.OSF_PREPRINTS_LOGO,
-            'preprint': resource,
-        }
-    else:
-        kwargs = {'node': resource}
-
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.SHARE_PREPRINT_ERROR_DESK if is_preprint else mails.SHARE_ERROR_DESK,
-        resp=resp,
-        retries=retries,
-        can_change_preferences=False,
-        **kwargs
-    )
-
-
 def is_qa_resource(resource):
     """
     QA puts tags and special titles on their project to stop them from appearing in the search results. This function
@@ -331,7 +307,7 @@ def update_share(resource, old_subjects=None):
         if status_code >= 500:
             async_update_resource_share.delay(resource._id, old_subjects)
         else:
-            send_desk_share_error(resource, resp, 0)
+            log_exception()
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
 def async_update_resource_share(self, guid, old_subjects=None):
@@ -353,7 +329,7 @@ def async_update_resource_share(self, guid, old_subjects=None):
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
-            send_desk_share_error(resource, resp, self.request.retries)
+            log_exception()
         elif resp.status_code >= 500:
             try:
                 self.retry(
@@ -361,8 +337,8 @@ def async_update_resource_share(self, guid, old_subjects=None):
                     countdown=(random.random() + 1) * min(60 + settings.CELERY_RETRY_BACKOFF_BASE ** self.request.retries, 60 * 10),
                 )
             except Retry:  # Retry is only raise after > 5 retries
-                send_desk_share_error(resource, resp, self.request.retries)
+                log_exception()
         else:
-            send_desk_share_error(resource, resp, self.request.retries)
+            log_exception()
 
     return resp
