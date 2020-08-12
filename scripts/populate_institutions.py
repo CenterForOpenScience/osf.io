@@ -1505,13 +1505,13 @@ INSTITUTIONS = {
             {
                 '_id': 'thepolicylab',
                 'name': 'The Policy Lab at Brown University [Test]',
-                'description': 'The Policy Lab at Brown University conducts applied research to improve public policy in Rhode Island and beyond. Learn more at https://thepolicylab.brown.edu/ and tune into our podcast, 30,000 Leagues.',
+                'description': 'The Policy Lab at Brown University conducts applied research to improve public policy in Rhode Island and beyond.<br />Learn more at <a href="https://thepolicylab.brown.edu/">thepolicylab.brown.edu</a> and tune into our podcast, <a href="https://thirtythousandleagues.com/">30,000 Leagues</a>.',
                 'banner_name': 'thepolicylab-banner.png',
                 'logo_name': 'thepolicylab-shield.png',
                 'login_url': None,
                 'logout_url': None,
                 'domains': ['test-osf-thepolicylab.cos.io'],
-                'email_domains': ['brown.edu'],
+                'email_domains': ['policylab.io'],
                 'delegation_protocol': '',
             },
             {
