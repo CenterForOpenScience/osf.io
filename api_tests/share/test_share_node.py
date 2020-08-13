@@ -1,6 +1,7 @@
 import json
 import pytest
 import responses
+from mock import patch
 
 from api.share.utils import format_registration
 from osf.models import CollectionSubmission, SpamStatus
@@ -239,7 +240,8 @@ class TestNodeShare:
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
-    def test_call_async_update_on_500_failure(self, mock_share, node, user):
+    @patch('framework.sentry.log_exception')
+    def test_call_async_update_on_500_failure(self, mock_share, node, user, sentry_call):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
@@ -255,6 +257,8 @@ class TestNodeShare:
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+
+        assert sentry_call.called is True
 
     def test_no_call_async_update_on_400_failure(self, mock_share, node, user):
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=400)
