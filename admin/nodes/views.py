@@ -443,6 +443,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
         if isinstance(node, Node) or isinstance(node, Registration):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
+
 class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/reindex_node_share.html'
     permission_required = 'osf.mark_spam'
@@ -461,7 +462,7 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
             message='Node Reindexed (SHARE): {}'.format(node._id),
             action_flag=REINDEX_SHARE
         )
-        if isinstance(node, Node):
+        if isinstance(node, (Node, Registration)):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
