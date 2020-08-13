@@ -92,32 +92,35 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
     @responses.activate
     @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
-    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', 'testenv')
     def test_update_share_token_and_source_prefix(self):
-        token = 'tokennethbranagh'
-        source_name = 'sir'
-        responses.add(
-            responses.POST, 'https://share.osf.io/api/v2/sources/',
-            body=json.dumps({
-                'data': {
-                    'attributes': {
-                        'longTitle': f'testenv_{source_name}',
+        with mock.patch.object(settings, 'SHARE_PROVIDER_PREPEND', 'testenv'):
+            token = 'tokennethbranagh'
+            source_name = 'sir'
+            responses.add(
+                responses.POST, 'https://share.osf.io/api/v2/sources/',
+                body=json.dumps({
+                    'data': {
+                        'attributes': {
+                            'longTitle': f'testenv_{source_name}',
+                        },
                     },
-                },
-                'included': [{
-                    'attributes': {
-                        'token': token,
-                    },
-                    'type': 'ShareUser',
-                }]
-            })
-        )
+                    'included': [{
+                        'attributes': {
+                            'token': token,
+                        },
+                        'type': 'ShareUser',
+                    }]
+                })
+            )
 
-        self.view.get(self.request)
-        self.preprint_provider.refresh_from_db()
+            self.view.get(self.request)
+            self.preprint_provider.refresh_from_db()
 
-        assert self.preprint_provider.access_token == token
-        assert self.preprint_provider.share_source == f'testenv_{source_name}'
+            request_body = json.loads(responses.calls[-1].request.body)
+
+            assert request_body['data']['attributes']['longTitle'] == f'testenv_{source_name}'
+            assert self.preprint_provider.access_token == token
+            assert self.preprint_provider.share_source == f'testenv_{source_name}'
 
 
 class TestPreprintProviderChangeForm(AdminTestCase):

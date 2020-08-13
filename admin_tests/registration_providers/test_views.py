@@ -167,7 +167,7 @@ class TestShareSourceRegistrationProvider:
         assert provider.share_source == 'test source'
         assert provider.access_token == 'test access token'
 
-    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', 'testenv')
+    @mock.patch.object(settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
     def test_share_source_prefix(self, mock_share, view, provider, req):
         mock_share.reset()
         mock_share.add(
