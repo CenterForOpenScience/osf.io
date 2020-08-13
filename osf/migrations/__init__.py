@@ -33,9 +33,6 @@ def get_admin_read_permissions():
 def get_admin_write_permissions():
     from django.contrib.auth.models import Permission
     return Permission.objects.filter(codename__in=[
-        'add_brand',
-        'modify_brand',
-        'delete_brand',
         'change_node',
         'delete_node',
         'change_user',
