@@ -241,7 +241,7 @@ class TestNodeShare:
         assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
 
     @mock.patch('framework.sentry.log_exception')
-    def test_call_async_update_on_500_failure(self, mock_share, node, user, mock_sentry_call):
+    def test_call_async_update_on_500_failure(self, mock_sentry_call, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
