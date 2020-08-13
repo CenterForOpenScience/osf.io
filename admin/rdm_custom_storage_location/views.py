@@ -365,7 +365,7 @@ class UserMapView(InstitutionalStorageBaseView, View):
         csv_reader = csv.reader(usermap, delimiter=',', quotechar='"')
 
         result = {OK: 0, NG: 0}
-        user_to_extuser = dict()
+        user_to_extuser = dict()  # This is UserMap.  (guid -> extuser)
         extuser_set = set()
         report = []
         INVALID_FORMAT = 'INVALID_FORMAT'
@@ -406,8 +406,8 @@ class UserMapView(InstitutionalStorageBaseView, View):
                 add_report(NG, EMPTY_EXTUSER, line)
                 continue
 
-            # ePPN vs GUID ?
-            if '@' in user:
+            # ePPN or GUID ?
+            if '@' in user:  # ePPN
                 try:
                     u = OSFUser.objects.get(eppn=user)
                 except Exception:
@@ -430,7 +430,7 @@ class UserMapView(InstitutionalStorageBaseView, View):
             if extuser in extuser_set:
                 add_report(NG, DUPLICATED_EXTUSER, line)
                 continue
-            user_to_extuser[u._id] = extuser
+            user_to_extuser[u._id] = extuser   # guid.lower() -> extuser
             extuser_set.add(extuser)
             add_report(OK, None, line)
 
@@ -468,23 +468,27 @@ class UserMapView(InstitutionalStorageBaseView, View):
 
         header = ['#' + 'User_GUID(or ePPN)', 'External_UserID', 'Fullname(ignored)']
 
-        # guid to extuser
+        # GUID -> extuser
         usermap = utils.get_usermap(provider_name, institution)
-        count = 0
+
+        csv_writer.writerow(header)
         if usermap:
-            csv_writer.writerow(header)
             for guid, extuser in usermap.items():
+                guid = guid.lower()
                 u = OSFUser.load(guid)
                 if u:
                     csv_writer.writerow([guid.upper(), extuser, fullname(u)])
-                    count += 1
-        if count == 0:
-            name = name + '-template'
-            # create Template from current OSFUser in the Institutions.
-            csv_writer.writerow(['#' + 'Please edit this template file.'])
-            csv_writer.writerow(header)
-            for u in institution.osfuser_set.filter(is_active=True):
-                csv_writer.writerow([u._id, None, fullname(u)])
+
+        nomap_count = 0
+        # find osfusers in usermap who has no mapping.
+        for u in institution.osfuser_set.filter(is_active=True):
+            guid = u._id
+            if guid not in usermap:
+                nomap_count += 1
+                if nomap_count == 1:
+                    csv_writer.writerow([])
+                    csv_writer.writerow(['#' + 'Please input External users into the second column.'])
+                csv_writer.writerow([guid.upper(), None, fullname(u)])
 
         resp = HttpResponse(s.getvalue(), content_type='text/%s' % ext)
         resp['Content-Disposition'] = 'attachment; filename=%s.%s' % (name, ext)
