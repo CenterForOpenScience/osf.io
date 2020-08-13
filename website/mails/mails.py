@@ -396,16 +396,6 @@ WELCOME_OSF4I = Mail(
 
 EMPTY = Mail('empty', subject='${subject}')
 
-SHARE_ERROR_DESK = Mail(
-    'send_data_share_error_desk',
-    subject='Share Error'
-)
-
-SHARE_PREPRINT_ERROR_DESK = Mail(
-    'send_data_share_preprint_error_desk',
-    subject='Share Error'
-)
-
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
     subject='Confirmation of your submission to ${provider_name}'
