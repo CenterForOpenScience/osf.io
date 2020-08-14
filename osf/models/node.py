@@ -2524,6 +2524,10 @@ def send_osf_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
+        # update_default_storage cannot be imported in the head of this file.
+        from website.util.quota import update_default_storage
+        update_default_storage(instance.creator)
+
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)
