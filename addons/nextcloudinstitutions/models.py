@@ -74,7 +74,6 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
     def _list_count(cls, client, path):
         count = 0
         for item in client.list(path):  # may raise
-            # logger.critical(item.path)
             count += 1
         return count
 
@@ -244,5 +243,19 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             'folder': self.folder_id,
             'verify_ssl': settings.USE_SSL
         }
+
+    def copy_folders(self, dest_addon):
+        root_folder = '/' + self.folder_id.strip('/') + '/'
+        root_folder_len = len(root_folder)
+        c = self.client
+        destc = dest_addon.client
+        for item in c.list(root_folder, depth='infinity'):  # may raise
+            # print(item.path)
+            if item.is_dir() and item.path.startswith(root_folder):
+                basepath = item.path[root_folder_len:]
+                newpath = dest_addon.folder_id + '/' + basepath
+                logger.debug(u'copy_folders: mkdir({})'.format(newpath))
+                destc.mkdir(newpath)
+
 
 inst_utils.register(NodeSettings)

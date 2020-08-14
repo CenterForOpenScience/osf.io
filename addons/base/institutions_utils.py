@@ -106,6 +106,24 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
 
+    def after_fork(self, node, fork, user, save=True):
+        # Storage Addon for Insstitutions cannot use parent NodeSettings.
+        pass
+
+    def after_template(self, tmpl_node, new_node, user, save=True):
+        if not self.has_auth:
+            return
+        dest_addon = new_node.get_addon(self.SHORT_NAME)
+        if not dest_addon:
+            return
+        if not dest_addon.has_auth:
+            return
+        try:
+            self.copy_folders(dest_addon)
+        except Exception as e:
+            logger.exception(u'cannot copy folders: {}'.format(str(e)))
+            # Do not raise
+
     def on_delete(self):
         self.deauthorize(add_log=False)
 
@@ -128,6 +146,9 @@ class InstitutionsNodeSettings(BaseNodeSettings):
         raise NotImplementedError()
 
     def serialize_waterbutler_settings_impl(self):
+        raise NotImplementedError()
+
+    def copy_folders(self, dest_addon):
         raise NotImplementedError()
 
 
