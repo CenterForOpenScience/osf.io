@@ -115,6 +115,8 @@ class RegistrationProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'registration-providers'
 
+    branded_discovery_page = ser.BooleanField(read_only=True)
+
     brand = RelationshipField(
         related_view='brands:brand-detail',
         related_view_kwargs={'brand_id': '<brand.id>'},
