@@ -23,7 +23,6 @@ from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
-from website.settings import SHARE_PROVIDER_PREPEND
 from functools import reduce
 
 
@@ -144,8 +143,8 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         if not self.get_asset_url('square_color_no_transparent'):
             raise ValueError('Unable to find "square_color_no_transparent" icon for provider')
 
-        if SHARE_PROVIDER_PREPEND:
-            share_provider_name = f'{SHARE_PROVIDER_PREPEND}_{self.name}'
+        if settings.SHARE_PROVIDER_PREPEND:
+            share_provider_name = f'{settings.SHARE_PROVIDER_PREPEND}_{self.name}'
         else:
             share_provider_name = self.name
 
