@@ -143,6 +143,11 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         if not self.get_asset_url('square_color_no_transparent'):
             raise ValidationError('Unable to find "square_color_no_transparent" icon for provider')
 
+        if settings.SHARE_PROVIDER_PREPEND:
+            share_provider_name = f'{settings.SHARE_PROVIDER_PREPEND}_{self.name}'
+        else:
+            share_provider_name = self.name
+
         resp = requests.post(
             f'{settings.SHARE_URL}api/v2/sources/',
             json={
@@ -150,7 +155,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                     'type': 'Source',
                     'attributes': {
                         'homePage': provider_home_page,
-                        'longTitle': self.name,
+                        'longTitle': share_provider_name,
                         'iconUrl': self.get_asset_url('square_color_no_transparent')
                     }
                 }

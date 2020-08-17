@@ -31,6 +31,8 @@ from admin.preprint_providers import views
 from admin.preprint_providers.forms import PreprintProviderForm
 from admin.base.forms import ImportFileForm
 
+import website
+
 
 pytestmark = pytest.mark.django_db
 
@@ -60,6 +62,8 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         self.view = views.ShareSourcePreprintProvider()
         self.view = setup_user_view(self.view, self.request, user=self.user, preprint_provider_id=self.preprint_provider.id)
 
+        self.mock_prepend = mock.patch.object(website.settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
+
     @responses.activate
     @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
     def test_update_share_token_and_source(self):
@@ -87,6 +91,39 @@ class TestShareSourcePreprintProvider(AdminTestCase):
 
         assert self.preprint_provider.access_token == token
         assert self.preprint_provider.share_source == source_name
+
+    @responses.activate
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    def test_update_share_token_and_source_prefix(self):
+        with self.mock_prepend:
+            token = 'tokennethbranagh'
+            responses.add(
+                responses.POST, 'https://share.osf.io/api/v2/sources/',
+                body=json.dumps({
+                    'data': {
+                        'attributes': {
+                            'homePage': self.preprint_provider.external_url,
+                            'longTitle': f'testenv_{self.preprint_provider.name}',
+                            'iconUrl': self.preprint_provider.get_asset_url('square_color_no_transparent')
+                        }
+                    },
+                    'included': [{
+                        'attributes': {
+                            'token': token,
+                        },
+                        'type': 'ShareUser',
+                    }]
+                })
+            )
+
+            self.view.get(self.request)
+            self.preprint_provider.refresh_from_db()
+
+            request_body = json.loads(responses.calls[-1].request.body)
+
+            assert request_body['data']['attributes']['longTitle'] == f'testenv_{self.preprint_provider.name}'
+            assert self.preprint_provider.access_token == token
+            assert self.preprint_provider.share_source == f'testenv_{self.preprint_provider.name}'
 
 
 class TestPreprintProviderChangeForm(AdminTestCase):
