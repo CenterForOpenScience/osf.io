@@ -36,14 +36,14 @@ class TestReindexProvider:
         return AuthUserFactory()
 
     def test_reindex_provider_preprint(self, mock_share, preprint_provider, preprint):
-        call_command('reindex_provider', preprint_provider._id)
+        call_command('reindex_provider', f'--providers={preprint_provider._id}')
         data = json.loads(mock_share.calls[-1].request.body)
 
         assert any(graph for graph in data['data']['attributes']['data']['@graph']
                    if graph['@type'] == preprint_provider.share_publish_type.lower())
 
     def test_reindex_provider_registration(self, mock_share, registration_provider, registration):
-        call_command('reindex_provider', registration_provider._id)
+        call_command('reindex_provider', f'--providers={registration_provider._id}')
         data = json.loads(mock_share.calls[-1].request.body)
 
         assert any(graph for graph in data['data']['attributes']['data']['@graph']
