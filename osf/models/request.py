@@ -24,7 +24,7 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
         raise NotImplementedError()
 
 
-class NodeRequest(AbstractRequest, NodeRequestableMixin):
+class AbstractNodeRequest(AbstractRequest, NodeRequestableMixin):
     """ Request for Node Access
     """
     target = models.ForeignKey('AbstractNode', related_name='requests', on_delete=models.CASCADE)

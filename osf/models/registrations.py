@@ -42,13 +42,16 @@ from osf.models.mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
+    MachineableMixin
 )
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
+from osf.utils.machines import RegistrationMachine
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.workflows import RegistrationTriggers
 
 logger = logging.getLogger(__name__)
 
@@ -319,7 +322,7 @@ class Registration(AbstractNode):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def request_embargo_termination(self, auth):
+    def request_embargo_termination(self, user):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
         embargo early."""
         if not self.is_embargoed:
@@ -328,7 +331,7 @@ class Registration(AbstractNode):
             raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
-            initiated_by=auth.user,
+            initiated_by=user,
             embargoed_registration=self,
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
@@ -340,7 +343,7 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
-    def terminate_embargo(self, auth):
+    def terminate_embargo(self):
         """Handles the actual early termination of an Embargoed registration.
         Adds a log to the registered_from Node.
         """
@@ -563,7 +566,10 @@ def get_default_id():
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
-        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
+        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin, MachineableMixin):
+
+    TriggersClass = RegistrationTriggers
+
     # Fields that are writable by DraftRegistration.update
     WRITABLE_WHITELIST = [
         'title',
@@ -571,6 +577,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'category',
         'node_license',
     ]
+
+    @property
+    def MachineClass(self):
+        return RegistrationMachine
 
     URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
 
@@ -1136,6 +1146,39 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             self.save()
 
         return updated
+
+    def run_request_withdraw(self, user, comment):
+        """Run the 'request_withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.REQUEST_WITHDRAW.value, user=user, comment=comment)
+
+    def run_withdraw_registration(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
+
+    def run_accept(self, user, comment, embargo_end_date=None):
+        """ Run the 'accept/embargo' state transition and create a corresponding Action. """
+        if embargo_end_date:
+            return self._run_transition(self.TriggersClass.EMBARGO.value, user=user, end_date=embargo_end_date)
+        else:
+            return self._run_transition(self.TriggersClass.ACCEPT.value, user=user)
+
+    def run_request_embargo_termination(self, user, comment):
+        """Run the 'embargo_termination' state transition and create a corresponding Action. """
+        return self._run_transition(self.TriggersClass.REQUEST_EMBARGO_TERMINATION.value, user=user, comment=comment)
+
+    def run_terminate_embargo(self):
+        """Run the 'embargo_termination' state transition and create a corresponding Action. """
+        return self._run_transition(self.TriggersClass.TERMINATE_EMBARGO.value)
 
 
 class DraftRegistrationUserObjectPermission(UserObjectPermissionBase):

@@ -421,9 +421,9 @@ CROSSREF_DOIS_PENDING = Mail(
     subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
-    'preprint_withdrawal_request_granted',
-    subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
+WITHDRAWAL_REQUEST_GRANTED = Mail(
+    'withdrawal_request_granted',
+    subject='Your ${document_type} has been withdrawn',
 )
 
 GROUP_MEMBER_ADDED = Mail(
@@ -449,4 +449,9 @@ PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
 TOU_NOTIF = Mail(
     'tou_notif',
     subject='Updated Terms of Use for COS Websites and Services',
+)
+
+DRAFT_REGISTRATION_REJECTED = Mail(
+    'draft_registration_rejected',
+    subject='Your access request to submit a registration to ${provider} has been declined',
 )

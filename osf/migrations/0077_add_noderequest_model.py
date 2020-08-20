@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('machine_state', models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=15)),
+                ('machine_state', models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=30)),
                 ('date_last_transitioned', models.DateTimeField(blank=True, db_index=True, null=True)),
                 ('request_type', models.CharField(choices=[('access', 'Access')], max_length=31)),
                 ('comment', models.TextField(blank=True, null=True)),

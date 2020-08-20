@@ -1208,7 +1208,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
+                    self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
@@ -2424,6 +2424,10 @@ class Node(AbstractNode):
 
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
+
+    @property
+    def MachineClass(self):
+        raise NotImplementedError()
 
     @property
     def api_v2_url(self):

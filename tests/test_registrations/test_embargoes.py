@@ -425,7 +425,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         user = registration.contributors.first()
 
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
 
         rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
         with assert_raises(HTTPError) as e:
@@ -1144,7 +1144,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         with utils.mock_archive(node, embargo=True, autocomplete=True, autoapprove=True) as reg:
             with assert_raises(NodeStateError):
-                reg._nodes.first().request_embargo_termination(Auth(node.creator))
+                reg._nodes.first().request_embargo_termination(node.creator)
 
     @mock.patch('website.mails.send_mail')
     def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):

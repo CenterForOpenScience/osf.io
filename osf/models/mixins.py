@@ -781,7 +781,7 @@ class MachineableMixin(models.Model):
         abstract = True
 
     # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
-    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
+    machine_state = models.CharField(max_length=30, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
 
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
@@ -863,7 +863,7 @@ class ReviewableMixin(MachineableMixin):
     """
     TriggersClass = ReviewTriggers
 
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
+    machine_state = models.CharField(max_length=30, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -953,7 +953,7 @@ class ReviewProviderMixin(GuardianMixin):
     class Meta:
         abstract = True
 
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=Workflows.choices())
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 

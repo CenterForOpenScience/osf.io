@@ -28,7 +28,7 @@ from osf.models.spam import SpamStatus, SpamMixin  # noqa
 from osf.models.subject import Subject  # noqa
 from osf.models.provider import AbstractProvider, CollectionProvider, PreprintProvider, WhitelistedSHAREPreprintProvider, RegistrationProvider  # noqa
 from osf.models.preprint import Preprint  # noqa
-from osf.models.request import NodeRequest, PreprintRequest  # noqa
+from osf.models.request import AbstractNodeRequest, PreprintRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,

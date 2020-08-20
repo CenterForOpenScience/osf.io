@@ -13,8 +13,6 @@ from osf_tests import factories
 from osf_tests.utils import mock_archive
 from osf.utils import permissions
 
-from framework.auth import Auth
-
 
 @pytest.mark.django_db
 class TestRegistrationApprovalHooks:
@@ -53,21 +51,21 @@ class TestNodeEmbargoTerminations:
 
     def test_request_embargo_termination_not_embargoed(self, user, not_embargoed):
         with pytest.raises(NodeStateError):
-            not_embargoed.request_embargo_termination(Auth(user))
+            not_embargoed.request_embargo_termination(user)
 
     def test_terminate_embargo_makes_registrations_public(self, registration, user):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
         for node in registration.node_and_primary_descendants():
             assert node.is_public is True
             assert node.is_embargoed is False
 
     def test_terminate_embargo_adds_log_to_registered_from(self, node, registration, user):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
 
     def test_terminate_embargo_log_is_nouser(self, node, user, registration):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
