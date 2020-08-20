@@ -15,7 +15,7 @@ def registration_approval_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your registration approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
-    }[action], kind='success', trust=False)
+    }[action], id='registration_approval_outcome', kind='success', trust=False)
     # Allow decorated view function to return response
     return None
 
@@ -23,7 +23,7 @@ def embargo_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your embargo approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
-    }[action], kind='success', trust=False)
+    }[action], id='embargo_approval_outcome', kind='success', trust=False)
     # Allow decorated view function to return response
     return None
 
@@ -31,7 +31,7 @@ def embargo_termination_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your approval to make this embargo public has been accepted.',
         'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
-    }[action], kind='success', trust=False)
+    }[action], id='public_embargo_approval_outcome', kind='success', trust=False)
     # Allow decorated view function to return response
     return None
 
@@ -39,7 +39,7 @@ def retraction_handler(action, registration, registered_from):
     status.push_status_message({
         'approve': 'Your withdrawal approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.'
-    }[action], kind='success', trust=False)
+    }[action], id='withdrawal_approval_outcome', kind='success', trust=False)
     # Allow decorated view function to return response
     return None
 

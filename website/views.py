@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import itertools
+import json
 from rest_framework import status as http_status
 import logging
 import math
@@ -19,6 +20,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
+from framework.status import pop_status_messages
 from website import settings
 from website.institutions.views import serialize_institution
 
@@ -327,7 +329,19 @@ def resolve_guid(guid, suffix=None):
                 # Route only the base detail view to ember
                 if PROXY_EMBER_APPS:
                     resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
-                    return Response(stream_with_context(resp.iter_content()), resp.status_code)
+                    resp = Response(stream_with_context(resp.iter_content()), resp.status_code)
+
+                    messages = pop_status_messages()
+                    if messages:
+                        try:
+                            status = [{'id': stat[5] if stat[5] else stat[0], 'class': stat[2], 'jumbo': stat[1], 'dismiss': stat[3], 'extra': stat[6]} for stat in messages]
+                            resp.set_cookie(settings.COOKIE_NAME + '_status', json.dumps(status))
+                        except IndexError:
+                            # Ignoring the error as it will only occur when statuses were created prior to merging the changes that add
+                            # extra and id, (patch to prevent breaking the app meanwhile)
+                            pass
+
+                    return resp
 
                 return send_from_directory(ember_osf_web_dir, 'index.html')
 
