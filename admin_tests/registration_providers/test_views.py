@@ -1,6 +1,5 @@
 import json
 import pytest
-import mock
 
 from django.test import RequestFactory
 
@@ -165,34 +164,6 @@ class TestShareSourceRegistrationProvider:
         assert res.status_code == 302
         provider.refresh_from_db()
         assert provider.share_source == 'test source'
-        assert provider.access_token == 'test access token'
-
-    @mock.patch.object(settings, 'SHARE_PROVIDER_PREPEND', 'testenv')
-    def test_share_source_prefix(self, mock_share, view, provider, req):
-        mock_share.reset()
-        mock_share.add(
-            responses.POST,
-            f'{settings.SHARE_URL}api/v2/sources/',
-            json.dumps(
-                {
-                    'data': {
-                        'attributes': {
-                            'longTitle': 'testenv-test source'
-                        }
-                    },
-                    'included': [{
-                        'attributes': {
-                            'token': 'test access token',
-                        },
-                        'type': 'ShareUser',
-                    }]
-                }
-            )
-        )
-        res = view.get(req)
-        assert res.status_code == 302
-        provider.refresh_from_db()
-        assert provider.share_source == 'testenv-test source'
         assert provider.access_token == 'test access token'
 
 

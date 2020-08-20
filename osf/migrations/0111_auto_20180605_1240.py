@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='preprintservice',
             name='machine_state',
-            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], db_index=True, default='initial', max_length=15),
+            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], db_index=True, default='initial', max_length=30),
         ),
         migrations.AlterField(
             model_name='reviewaction',

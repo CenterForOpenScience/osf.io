@@ -4,6 +4,8 @@ from django.utils import timezone
 from website.mails import mails
 from website.notifications import utils
 from website.reviews import signals as reviews_signals
+from django.apps import apps
+
 
 # Handle email notifications including: update comment, accept, and reject of submission.
 @reviews_signals.reviews_email.connect
@@ -130,3 +132,61 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
                         timestamp,
                         abstract_provider=preprint.provider,
                         **context)
+
+
+@reviews_signals.email_withdrawal_requests.connect
+def reviews_withdrawal_requests_notification(self, timestamp, context):
+    # imports moved here to avoid AppRegistryNotReady error
+    from osf.models import NotificationSubscription
+    from website.profile.utils import get_profile_image_url
+    from website.notifications import emails
+    from website import settings
+    Preprint = apps.get_model('osf.Preprint')
+    DraftRegistration = apps.get_model('osf.DraftRegistration')
+
+    # Get NotificationSubscription instance, which contains reference to all subscribers
+    provider_subscription = NotificationSubscription.load(
+        f"{context['reviewable'].provider._id}_new_pending_submissions"
+    )
+
+    resource = context['reviewable']
+
+    if isinstance(resource, Preprint):
+        resource_type = resource.provider.preprint_word
+        # Set submission url MAKE REVERSE!!!!
+        context['reviews_submission_url'] = f'{settings.DOMAIN}reviews/preprints/{resource.provider._id}/{resource._id}'
+    elif isinstance(resource, DraftRegistration):
+        resource_type = 'registration'
+        # Set submission url MAKE REVERSE!!!!
+        context['reviews_submission_url'] = f'{settings.DOMAIN}reviews/registration/{resource.provider._id}/{resource._id}'
+    else:
+        raise NotImplementedError()
+
+    # Set message
+    context['message'] = f'has requested withdrawal of the {resource_type} "{resource.title}".'
+    # Set url for profile image of the submitter
+    context['profile_image_url'] = get_profile_image_url(context['requester'])
+
+    if provider_subscription:
+        # Store emails to be sent to subscribers instantly (at a 5 min interval)
+        emails.store_emails(
+            provider_subscription.email_transactional.all().values_list('guids___id', flat=True),
+            'email_transactional',
+            'new_pending_submissions',
+            context['requester'],
+            resource,
+            timestamp,
+            abstract_provider=resource.provider,
+            **context
+        )
+
+        # Store emails to be sent to subscribers daily
+        emails.store_emails(
+            provider_subscription.email_digest.all().values_list('guids___id', flat=True),
+            'new_pending_submissions',
+            context['requester'],
+            resource,
+            timestamp,
+            abstract_provider=resource.provider,
+            **context
+        )

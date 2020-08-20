@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintprovider',
             name='reviews_workflow',
-            field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True),
+            field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=30, null=True),
         ),
         migrations.AddField(
             model_name='preprintservice',
@@ -62,7 +62,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintservice',
             name='reviews_state',
-            field=models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=15),
+            field=models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=30),
         ),
         migrations.AddField(
             model_name='action',

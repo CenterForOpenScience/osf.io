@@ -41,7 +41,7 @@ class ReviewAction(BaseAction):
 
 
 class NodeRequestAction(BaseAction):
-    target = models.ForeignKey('NodeRequest', related_name='actions', on_delete=models.CASCADE)
+    target = models.ForeignKey('AbstractNodeRequest', related_name='actions', on_delete=models.CASCADE)
     permissions = models.CharField(
         max_length=5,
         choices=[(permission, permission.title()) for permission in permissions.API_CONTRIBUTOR_PERMISSIONS],
@@ -52,3 +52,8 @@ class NodeRequestAction(BaseAction):
 
 class PreprintRequestAction(BaseAction):
     target = models.ForeignKey('PreprintRequest', related_name='actions', on_delete=models.CASCADE)
+
+
+class RegistrationRequestAction(BaseAction):
+    creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE, null=True)
+    target = models.ForeignKey('DraftRegistration', related_name='registration_actions', on_delete=models.CASCADE)

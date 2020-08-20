@@ -5,7 +5,7 @@ from rest_framework import serializers as ser
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, LinksField, VersionedDateTimeField, RelationshipField
-from osf.models import NodeRequest, PreprintRequest
+from osf.models import AbstractNodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils import permissions as osf_permissions
 

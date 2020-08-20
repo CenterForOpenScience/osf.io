@@ -241,9 +241,8 @@ def format_registration(registration, *args, **kwargs):
             'description': registration.description or '',
             'is_deleted': not registration.is_public or registration.is_deleted or is_qa,
             'date_published': registration.registered_date.isoformat() if registration.registered_date else None,
-            'registration_type': registration.registered_schema.first().name if registration.registered_schema.exists() else None,
-            'justification': registration.retraction.justification if registration.retraction else None,
             'withdrawn': registration.is_retracted,
+            'justification': registration.retraction.justification if registration.retraction else None,
         }
     )
 

@@ -141,7 +141,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='preprints:preprint-bibliographic-contributors',
         related_view_kwargs={'preprint_id': '<_id>'},
     )
-    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
+    reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=30)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
 
     citation = NoneIfWithdrawal(RelationshipField(

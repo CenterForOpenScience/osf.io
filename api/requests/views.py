@@ -12,7 +12,7 @@ from api.base.utils import get_object_or_error
 from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
 from api.requests.serializers import NodeRequestSerializer, PreprintRequestSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Node, NodeRequest, PreprintRequest, Preprint
+from osf.models import Node, AbstractNodeRequest, PreprintRequest, Preprint
 
 
 class RequestMixin(object):
@@ -47,7 +47,7 @@ class RequestMixin(object):
 
 class NodeRequestMixin(RequestMixin):
     serializer_class = NodeRequestSerializer
-    request_class = NodeRequest
+    request_class = AbstractNodeRequest
     request_display_name = 'node request'
     target_class = Node
     target_display_name = 'node'

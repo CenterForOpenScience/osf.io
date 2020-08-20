@@ -47,7 +47,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         ('saml-shib', 'SAML by Shibboleth'),
         ('', 'No Delegation Protocol'),
     )
-    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+    delegation_protocol = models.CharField(max_length=30, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)

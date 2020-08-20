@@ -34,10 +34,30 @@ REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
     ('WITHDRAW', 'withdraw')
 ]
 
+REGISTRATION_TRIGGERS = DEFAULT_TRIGGERS + [
+    ('EMBARGO', 'embargo'),
+    ('WITHDRAW', 'withdraw'),
+    ('REQUEST_WITHDRAW', 'request_withdraw'),
+    ('REQUEST_EMBARGO', 'request_embargo'),
+    ('REQUEST_EMBARGO_TERMINATION', 'request_embargo_termination'),
+    ('TERMINATE_EMBARGO', 'terminate_embargo'),
+
+
+]
+
+REGISTRATION_STATES = REVIEW_STATES + [
+    ('PENDING_EMBARGO', 'pending_embargo'),
+    ('EMBARGO', 'embargo'),
+    ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
+    ('PENDING_WITHDRAW', 'pending_withdraw'),
+]
+
 DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
 ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
+RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
 ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
+RegistrationTriggers = ChoiceEnum('RegistrationTriggers', REGISTRATION_TRIGGERS)
 
 
 CHRONOS_STATUS_STATES = [
@@ -91,6 +111,57 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
         'source': [ReviewStates.PENDING.value, ReviewStates.ACCEPTED.value],
         'dest': ReviewStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'perform_withdraw', 'save_changes', 'notify_withdraw']
+    }
+]
+
+REGISTRATION_TRANSITIONS = [
+    {
+        'trigger': DefaultTriggers.SUBMIT.value,
+        'source': [DefaultStates.INITIAL.value],
+        'dest': DefaultStates.PENDING.value,
+        'after': ['save_action', 'update_last_transitioned', 'submit_draft_registration', 'notify_submit'],
+    },
+    {
+        'trigger': DefaultTriggers.ACCEPT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
+        'dest': DefaultStates.ACCEPTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
+    },
+    {
+        'trigger': DefaultTriggers.REJECT.value,
+        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
+        'dest': DefaultStates.REJECTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'reject_draft_registration', 'notify_accept_reject'],
+    },
+    {
+        'trigger': RegistrationTriggers.EMBARGO.value,
+        'source': [RegistrationStates.PENDING.value],
+        'dest': RegistrationStates.EMBARGO.value,
+        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'embargo_registration', 'notify_embargo']
+    },
+    {
+        'trigger': RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value,
+        'source': [RegistrationStates.EMBARGO.value],
+        'dest': RegistrationStates.PENDING_EMBARGO_TERMINATION.value,
+        'after': ['save_action', 'update_last_transitioned', 'request_embargo_termination', 'notify_embargo_termination']
+    },
+    {
+        'trigger': RegistrationTriggers.TERMINATE_EMBARGO.value,
+        'source': [RegistrationStates.PENDING_EMBARGO_TERMINATION.value],
+        'dest': RegistrationStates.ACCEPTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'terminate_embargo', 'notify_embargo_termination']
+    },
+    {
+        'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,
+        'source': [RegistrationStates.ACCEPTED.value],
+        'dest': RegistrationStates.PENDING_WITHDRAW.value,
+        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw']
+    },
+    {
+        'trigger': RegistrationTriggers.WITHDRAW.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW.value],
+        'dest': RegistrationStates.WITHDRAWN.value,
+        'after': ['save_action', 'update_last_transitioned', 'withdraw_registration']
     }
 ]
 

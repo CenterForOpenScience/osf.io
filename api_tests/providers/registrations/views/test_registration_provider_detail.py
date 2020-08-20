@@ -49,7 +49,7 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
         return '/{}providers/registrations/{}/'.format(
             API_BASE, provider_with_brand._id)
 
-    def test_registration_provider_with_special_fields(self, app, provider_with_brand, brand, provider_url_w_brand):
+    def test_registration_provider_with_brand(self, app, provider_with_brand, brand, provider_url_w_brand):
         # Ensures brand data is included for registration providers
         res = app.get(provider_url_w_brand)
 
@@ -57,4 +57,3 @@ class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
         data = res.json['data']
 
         assert data['relationships']['brand']['data']['id'] == str(brand.id)
-        assert data['attributes']['branded_discovery_page'] == provider_with_brand.branded_discovery_page

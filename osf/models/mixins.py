@@ -781,7 +781,7 @@ class MachineableMixin(models.Model):
         abstract = True
 
     # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
-    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
+    machine_state = models.CharField(max_length=30, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
 
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
@@ -815,18 +815,19 @@ class MachineableMixin(models.Model):
         """
         return self._run_transition(self.TriggersClass.REJECT.value, user=user, comment=comment)
 
-    def run_edit_comment(self, user, comment):
+    def run_edit_comment(self, comment):
         """Run the 'edit_comment' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
             comment: New comment text.
         """
-        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, user=user, comment=comment)
+        return self._run_transition(self.TriggersClass.EDIT_COMMENT.value, comment=comment)
 
     def _run_transition(self, trigger, **kwargs):
         machine = self.MachineClass(self, 'machine_state')
         trigger_fn = getattr(machine, trigger)
+
         with transaction.atomic():
             result = trigger_fn(**kwargs)
             action = machine.action
@@ -863,7 +864,7 @@ class ReviewableMixin(MachineableMixin):
     """
     TriggersClass = ReviewTriggers
 
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
+    machine_state = models.CharField(max_length=30, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -953,7 +954,7 @@ class ReviewProviderMixin(GuardianMixin):
     class Meta:
         abstract = True
 
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=Workflows.choices())
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 

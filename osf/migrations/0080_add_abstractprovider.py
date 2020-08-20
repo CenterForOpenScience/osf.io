@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('reviews_workflow', models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True)),
+                ('reviews_workflow', models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=30, null=True)),
                 ('reviews_comments_private', models.NullBooleanField()),
                 ('reviews_comments_anonymous', models.NullBooleanField()),
                 ('type', models.CharField(choices=[('osf.preprintprovider', 'preprint provider')], db_index=True, max_length=255)),

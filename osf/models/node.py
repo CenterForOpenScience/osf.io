@@ -51,6 +51,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
+from osf.models.mixins import MachineableMixin
 from osf.models.user import OSFUser
 from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
@@ -1208,7 +1209,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
+                    self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
@@ -2424,6 +2425,10 @@ class Node(AbstractNode):
 
     FYI: Behaviors common between Registration and Node should be on the parent class.
     """
+
+    @property
+    def MachineClass(self):
+        raise NotImplementedError()
 
     @property
     def api_v2_url(self):
