@@ -243,6 +243,8 @@ class InstitutionsStorageAddon(BaseStorageAddon):
 
     def sync_title(self):
         new_root_folder = self.root_folder(self.addon_option, self.owner)
+        if self.folder_id == new_root_folder:
+            return
         try:
             self.rename_folder(self.client, self.folder_id, new_root_folder)
         except Exception:
@@ -270,6 +272,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         guid = osfuser._id
         addon_settings = self.addon_settings()
         if addon_settings.DEBUG_USERMAP is not None:
+            logger.warning(u'{}: DEBUG_USERMAP is enabled, User mapping from CSV is not used.'.format(self.SHORT_NAME))
             ncuser = addon_settings.DEBUG_USERMAP.get(guid)
             if not ncuser:  # case insensitive
                 ncuser = addon_settings.DEBUG_USERMAP.get(guid.upper())
@@ -324,6 +327,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
 
     def sync_contributors(self):
         raise NotImplementedError()
+
 
 # store values in a short time to detect changed fields
 class SyncInfo(object):
@@ -382,8 +386,14 @@ def node_post_save(sender, instance, created, **kwargs):
     else:
         sync_title(node)
 
-def sync_title(node, target_addons=None):
-    syncinfo = SyncInfo.get(node.id)
+def sync_title(node, target_addons=None, force=False):
+    old_node_title = None
+    if force is False:
+        syncinfo = SyncInfo.get(node.id)
+        if node.title == syncinfo.old_node_title:
+            return  # skip
+        old_node_title = syncinfo.old_node_title
+
     for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
         if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
             continue  # skip
@@ -392,11 +402,10 @@ def sync_title(node, target_addons=None):
         ns = node.get_addon(addon_name)  # get NodeSetttings
         if ns is None or not ns.complete:  # disabled
             continue  # skip
-        if node.title != syncinfo.old_node_title:
-            try:
-                ns.sync_title()
-            except Exception:
-                logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, syncinfo.old_node_title, node.title, node._id))
+        try:
+            ns.sync_title()
+        except Exception:
+            logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, old_node_title, node.title, node._id))
 
 @project_signals.contributors_updated.connect
 def sync_contributors(node, target_addons=None):
@@ -417,3 +426,17 @@ def sync_contributors(node, target_addons=None):
         except Exception as e:
             logger.error(str(e))
             logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(addon_name, node.title, node._id))
+
+
+from celery.contrib.abortable import AbortableTask
+from framework.celery_tasks import app as celery_app
+
+@celery_app.task(bind=True, base=AbortableTask)
+def celery_sync_all(self, institution_id, target_addons=None):
+    for n in Node.objects.filter(affiliated_institutions___id=institution_id,
+                                 is_deleted=False):
+        sync_title(n, target_addons=target_addons, force=True)
+        sync_contributors(n, target_addons=target_addons)
+
+def sync_all(institution_id, target_addons=None):
+    celery_sync_all.delay(institution_id, target_addons=target_addons)

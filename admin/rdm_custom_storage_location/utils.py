@@ -25,7 +25,8 @@ from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
-                                            KEYNAME_USERMAP_TMP)
+                                            KEYNAME_USERMAP_TMP,
+                                            sync_all)
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
@@ -699,6 +700,8 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
                             storage_name,
                             wb_credentials, wb_settings)
     external_util.remove_region_external_account(region)
+    ### sync_all() is not supported by Dropbox Business Addon
+    # sync_all(institution._id, target_addons=[provider_name])
 
     return ({
         'message': 'Dropbox Business was set successfully!!'
@@ -742,6 +745,7 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
     external_util.remove_region_external_account(region)
 
     save_usermap_from_tmp(provider_name, institution)
+    sync_all(institution._id, target_addons=[provider_name])
 
     return ({
         'message': 'Saved credentials successfully!!'

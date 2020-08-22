@@ -58,15 +58,14 @@
                             </div>
                             <div class="form-group">
                                 <label>{% trans "Upload User Mapping file" %}</label></br>
-		                <input type="checkbox" class="selection" id="csv_check_extuser"> {% trans "Check existence of external users" %} {% trans "(Only Nextcloud Admin can check)" %}
+		                <input type="checkbox" class="selection" id="csv_check_extuser"> {% trans "Check existence of external users" %} ({% trans "Only Nextcloud Admin can check" %})
                                 <input type="file" class="btn btn-file" style="padding: 0;" name="usermap" id="csv_file">
                                 <div class="text-muted" style="text-align: left" id="csv_report">
                                     <em>
-{% blocktrans %}Example of User Mapping:<br/>
+{% blocktrans %}Example of User Mapping file{% endblocktrans %}:<br/>
 #User_GUID(or ePPN),External_UserID,Fullname(ignored)<br/>
 eppn_user1@idp.example.com,external_user1,User1<br/>
 ABCDE,external_user2,User2<br/>
-{% endblocktrans %}
                                     </em>
                                 </div>
                                 <div id="csv_usermap" hidden></div>

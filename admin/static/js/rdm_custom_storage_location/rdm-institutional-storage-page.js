@@ -65,7 +65,7 @@ $('.modal').on('hidden.bs.modal', function (e) {
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
         var provider = selectedProvider()
-        // preload(provider, null);
+        preload(provider, null);
         var showModal = function () {
             $('#' + provider + '_modal').modal('show');
             $('body').css('overflow', 'hidden');
@@ -178,6 +178,16 @@ $('#swift_auth_version').change(function () {
     validateRequiredFields('swift');
 });
 
+function disableButtons(providerShortName) {
+    $('#' + providerShortName + '_connect').attr('disabled', true);
+    $('#' + providerShortName + '_save').attr('disabled', true);
+}
+
+function have_csv_ng() {
+    var csv_ng = $('#csv_ng');
+    return csv_ng.length && csv_ng.text().length && csv_ng.text() !== 'NG=0';
+}
+
 $('.test-connection').click(function () {
     buttonClicked(this, 'test_connection');
 });
@@ -193,6 +203,11 @@ function buttonClicked(button, route) {
     };
 
     var providerShortName = $(button).attr('id').replace('_' + action[route], '');
+    if (have_csv_ng()) {
+        disableButtons(providerShortName);
+	return;
+    }
+
     var params = {
         'provider_short_name': providerShortName
     };
@@ -556,11 +571,17 @@ function cancel_auth(providerShortName) {
     ajaxRequest(params, providerShortName, route, null);
 }
 
-function reflect_csv_results(data) {
+function reflect_csv_results(data, providerShortName) {
     $('#csv_ok').html('OK=' + data.OK);
     $('#csv_ng').html('NG=' + data.NG);
     $('#csv_report').html(data.report.join('<br/>'));
     $('#csv_usermap').html(JSON.stringify(data.user_to_extuser));
+
+    if (have_csv_ng()) {
+        disableButtons(providerShortName);
+    } else {
+        validateRequiredFields(providerShortName);
+    }
 }
 
 $('#csv_file').change(function () {
@@ -587,10 +608,10 @@ $('#csv_file').change(function () {
         contentType: false,
         timeout: 30000
     }).done(function (data) {
-	reflect_csv_results(data);
+	reflect_csv_results(data, provider);
     }).fail(function (jqXHR) {
         if (jqXHR.responseJSON != null) {
-            reflect_csv_results(jqXHR.responseJSON);
+            reflect_csv_results(jqXHR.responseJSON, provider);
         } else {
             $('#csv_ok').html('');
             $('#csv_ng').html(_('Some errors occurred'));
