@@ -47,7 +47,6 @@ enabled_providers_list = [
 enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
 no_storage_name_providers = ['osfstorage']
-no_storage_name_providers.extend(enabled_providers_forinstitutions_list)
 
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
@@ -690,14 +689,14 @@ def use_https(url):
     host.scheme = 'https'
     return host
 
-def save_dropboxbusiness_credentials(institution, provider_name):
+def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     test_connection_result = test_dropboxbusiness_connection(institution)
     if test_connection_result[1] != httplib.OK:
         return test_connection_result
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
     region = update_storage(institution._id,  # not institution.id
-                            'Dropbox Business',
+                            storage_name,
                             wb_credentials, wb_settings)
     external_util.remove_region_external_account(region)
 
@@ -705,7 +704,7 @@ def save_dropboxbusiness_credentials(institution, provider_name):
         'message': 'Dropbox Business was set successfully!!'
     }, httplib.OK)
 
-def save_nextcloudinstitutions_credentials(institution, host_url, username, password, folder, provider_name):
+def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, provider_name):
     test_connection_result = test_owncloud_connection(
         host_url, username, password, folder, provider_name)
     if test_connection_result[1] != httplib.OK:
@@ -738,7 +737,7 @@ def save_nextcloudinstitutions_credentials(institution, host_url, username, pass
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
     region = update_storage(institution._id,  # not institution.id
-                            provider.name,
+                            storage_name,
                             wb_credentials, wb_settings)
     external_util.remove_region_external_account(region)
 

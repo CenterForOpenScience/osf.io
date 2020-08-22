@@ -7,9 +7,7 @@ var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
 
-var no_storage_name_providers = ['osfstorage',
-				 'dropboxbusiness',
-				 'nextcloudinstitutions'];
+var no_storage_name_providers = ['osfstorage'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py

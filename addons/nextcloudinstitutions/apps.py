@@ -15,7 +15,14 @@ TEMPLATE_PATH = os.path.join(
 
 
 def nextcloudinstitutions_root(addon_config, node_settings, auth, **kwargs):
+    from addons.osfstorage.models import Region
+
     node = node_settings.owner
+    institution = node_settings.addon_option.institution
+    if Region.objects.filter(_id=institution._id).exists():
+        region = Region.objects.get(_id=institution._id)
+        if region:
+            node_settings.region = region
     root = rubeus.build_addon_root(
         node_settings=node_settings,
         name='',

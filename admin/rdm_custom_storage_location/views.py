@@ -236,6 +236,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
         elif provider_short_name == 'nextcloudinstitutions':
             result = utils.save_nextcloudinstitutions_credentials(
                 institution,
+                storage_name,
                 data.get('nextcloudinstitutions_host'),
                 data.get('nextcloudinstitutions_username'),
                 data.get('nextcloudinstitutions_password'),
@@ -250,7 +251,9 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             )
         elif provider_short_name == 'dropboxbusiness':
             result = utils.save_dropboxbusiness_credentials(
-                institution, provider_short_name)
+                institution,
+                storage_name,
+                provider_short_name)
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
         status = result[1]
@@ -269,12 +272,6 @@ class FetchCredentialsView(InstitutionalStorageBaseView, View):
                 'message': 'Provider is missing.'
             }
             return JsonResponse(response, status=httplib.BAD_REQUEST)
-
-        storage_name = data.get('storage_name')
-        if not storage_name and utils.have_storage_name(provider_short_name):
-            return JsonResponse({
-                'message': 'Storage name is missing.'
-            }, status=httplib.BAD_REQUEST)
 
         result = None
         if provider_short_name == 'nextcloudinstitutions':
