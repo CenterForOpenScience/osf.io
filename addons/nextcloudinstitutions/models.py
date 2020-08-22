@@ -231,11 +231,10 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             raise first_exception
 
     def serialize_waterbutler_credentials_impl(self):
-        provider = self.provider_switch(self.addon_option)
         return {
-            'host': provider.host,
-            'username': provider.username,
-            'password': provider.password
+            'host': self.provider.host,
+            'username': self.provider.username,
+            'password': self.provider.password
         }
 
     def serialize_waterbutler_settings_impl(self):
