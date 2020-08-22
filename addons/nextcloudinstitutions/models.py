@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 FULL_NAME = apps.FULL_NAME
 SHORT_NAME = apps.SHORT_NAME
 
+ENABLE_DEBUG = False
+
+def DEBUG(msg):
+    if ENABLE_DEBUG:
+        logger.error(u'DEBUG_{}: {}'.format(SHORT_NAME, msg))
+    else:
+        logger.debug(msg)
+
 class NextcloudInstitutionsFileNode(BaseFileNode):
     _provider = SHORT_NAME
 
@@ -181,9 +189,9 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         remove_users_set = nc_member_users_set - grdm_member_users_set
         update_users_set = grdm_member_users_set & nc_member_users_set
 
-        # logger.critical('DEBUG add_users_set: ' + str(add_users_set))
-        # logger.critical('DEBUG remove_users_set: ' + str(add_users_set))
-        # logger.critical('DEBUG update_users_set: ' + str(update_users_set))
+        DEBUG('add_users_set: ' + str(add_users_set))
+        DEBUG('remove_users_set: ' + str(add_users_set))
+        DEBUG('update_users_set: ' + str(update_users_set))
 
         first_exception = None
         for user_id in add_users_set:

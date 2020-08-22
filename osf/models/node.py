@@ -2046,6 +2046,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     visible=True,
                 )
                 self.add_permission(self.creator, ADMIN)
+                project_signals.contributors_updated.send(self)
         return ret
 
     def clone(self, *args, **kwargs):

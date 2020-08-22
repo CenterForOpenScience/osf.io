@@ -183,7 +183,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         addon_option = cls.get_addon_option(institution_id, addon_name)
         if addon_option is None:
             logger.info('No addon option for institution_id={}'.format(institution_id))
-            return  # disabled
+            return None  # disabled
 
         provider = cls.provider_switch(addon_option)
         client = cls.get_client(provider)
@@ -195,6 +195,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
             addon.set_addon_option(addon_option)
             addon.set_folder(root_folder)
             addon.save()
+            return addon
         except Exception:
             try:
                 cls.remove_folder(provider, client, root_folder)
@@ -353,7 +354,6 @@ def node_pre_save(sender, instance, **kwargs):
         # may not exist
         pass
 
-
 @receiver(post_save, sender=Node)
 def node_post_save(sender, instance, created, **kwargs):
     node = instance
@@ -375,29 +375,39 @@ def node_post_save(sender, instance, created, **kwargs):
             if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
                 continue  # skip
             node_settings_cls.init_addon(node, institution_id, addon_name)
+            ### NOTE: This is no effect,
+            ###   because node.creator is not added to Contributor yet here.
+            # if ns:
+            #     ns.sync_contributors()
     else:
-        syncinfo = SyncInfo.get(node.id)
-        for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
-            if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
-                continue  # skip
-            ns = node.get_addon(addon_name)  # get NodeSetttings
-            if ns is None or not ns.complete:  # disabled
-                continue  # skip
-            if node.title != syncinfo.old_node_title:
-                try:
-                    ns.sync_title()
-                except Exception:
-                    logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, syncinfo.old_node_title, node.title, node._id))
+        sync_title(node)
 
+def sync_title(node, target_addons=None):
+    syncinfo = SyncInfo.get(node.id)
+    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
+        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+            continue  # skip
+        if target_addons and addon_name not in target_addons:
+            continue  # skip
+        ns = node.get_addon(addon_name)  # get NodeSetttings
+        if ns is None or not ns.complete:  # disabled
+            continue  # skip
+        if node.title != syncinfo.old_node_title:
+            try:
+                ns.sync_title()
+            except Exception:
+                logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, syncinfo.old_node_title, node.title, node._id))
 
 @project_signals.contributors_updated.connect
-def sync_contributors(node):
+def sync_contributors(node, target_addons=None):
     if node.is_deleted:
         return
     if not hasattr(node, 'get_addon'):
         return
     for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
         if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+            continue  # skip
+        if target_addons and addon_name not in target_addons:
             continue  # skip
         ns = node.get_addon(addon_name)  # get NodeSetttings
         if ns is None or not ns.complete:  # disabled
