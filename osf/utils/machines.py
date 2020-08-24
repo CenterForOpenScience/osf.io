@@ -347,6 +347,9 @@ class RegistrationMachine(BaseMachine):
         kwargs['states'] = kwargs.get('states', [s.value for s in RegistrationStates])
         super().__init__(*args, **kwargs)
 
+    def resubmission_allowed(self, ev):
+        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+
     def auto_approval_allowed(self):
         # Returns True if the provider is pre-moderated and the preprint is never public.
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value and not self.machineable.ever_public

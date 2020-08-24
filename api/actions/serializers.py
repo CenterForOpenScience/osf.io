@@ -15,7 +15,7 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import Preprint, AbstractNodeRequest, PreprintRequest
+from osf.models import Preprint, NodeRequest, PreprintRequest
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
 from osf.utils import permissions
 
@@ -215,7 +215,7 @@ class NodeRequestActionSerializer(BaseActionSerializer):
         type_ = 'node-request-actions'
 
     target = TargetRelationshipField(
-        target_class=AbstractNodeRequest,
+        target_class=NodeRequest,
         read_only=False,
         required=True,
         related_view='requests:request-detail',

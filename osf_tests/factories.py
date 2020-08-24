@@ -974,7 +974,7 @@ class SwitchFactory(DjangoModelFactory):
 
 class NodeRequestFactory(DjangoModelFactory):
     class Meta:
-        model = models.AbstractNodeRequest
+        model = models.NodeRequest
 
     comment = factory.Faker('text')
 
