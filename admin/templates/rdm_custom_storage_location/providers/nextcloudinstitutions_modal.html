@@ -59,7 +59,12 @@
                             <div class="form-group">
                                 <label>{% trans "Upload User Mapping file" %}</label></br>
                                 <input type="checkbox" class="selection" id="csv_check_extuser"> {% trans "Check existence of external users" %} ({% trans "Only Nextcloud Admin can check" %})
-                                <input type="file" class="btn btn-file" style="padding: 0;" name="usermap" id="csv_file" accept=".csv">
+                                <div class="csv-upload-button">
+                                    <label class="btn btn-default btn-file">
+                                        {% trans "Browse" %}<input type="file" name="usermap" id="csv_file" accept=".csv">
+                                    </label>
+                                    <div id="csv_file_name"></div>
+                                </div>
                                 <div class="text-muted" style="text-align: left" id="csv_report">
                                     <em>
 {% blocktrans %}Example of User Mapping file{% endblocktrans %}:<br/>

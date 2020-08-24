@@ -154,6 +154,15 @@ $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
 });
 
+$('#csv_file').on('change', function() {
+    var filename = '';
+    var fileLists = $(this).prop('files');
+    if (fileLists.length > 0) {
+        filename = $(this).prop('files')[0].name;
+    }
+    $('#csv_file_name').text(filename);
+});
+
 function validateRequiredFields(providerShortName) {
     // Check if all the inputs are filled, so we can enable the connect button
     var allFilled = $('#' + providerShortName + '_modal [required]').toArray().reduce(function (accumulator, current) {
