@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('machine_state', models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=30)),
+                ('machine_state', models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=15)),
                 ('date_last_transitioned', models.DateTimeField(blank=True, db_index=True, null=True)),
                 ('request_type', models.CharField(choices=[('access', 'Access'), ('withdrawal', 'Withdrawal')], max_length=31)),
                 ('comment', models.TextField(blank=True, null=True)),

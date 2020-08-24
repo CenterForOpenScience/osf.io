@@ -871,7 +871,6 @@ class DraftRegistrationApproval(Sanction):
         initiator = draft.initiator.merged_by or draft.initiator
         auth = Auth(initiator)
         registration = draft.register(auth=auth, save=True)
-        registration.save()
         registration_choice = self.meta['registration_choice']
 
         if registration_choice == 'immediate':
@@ -887,7 +886,6 @@ class DraftRegistrationApproval(Sanction):
             )
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
-
         sanction(notify_initiator_on_complete=True)
 
     def _on_reject(self, user, *args, **kwargs):

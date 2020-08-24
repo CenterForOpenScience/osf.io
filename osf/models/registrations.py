@@ -51,7 +51,7 @@ from osf.utils.machines import RegistrationMachine
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationTriggers
+from osf.utils.workflows import RegistrationTriggers, RegistrationStates
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +107,8 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
+
+    machine_state = models.CharField(max_length=30, db_index=True, choices=RegistrationStates.choices(), default=RegistrationStates.INITIAL.value)
 
     @staticmethod
     def find_failed_registrations():

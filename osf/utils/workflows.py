@@ -149,7 +149,7 @@ REGISTRATION_TRANSITIONS = [
         'trigger': RegistrationTriggers.TERMINATE_EMBARGO.value,
         'source': [RegistrationStates.PENDING_EMBARGO_TERMINATION.value],
         'dest': RegistrationStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'terminate_embargo', 'notify_embargo_termination']
+        'after': ['save_action', 'update_last_transitioned', 'terminate_embargo2', 'notify_embargo_termination']
     },
     {
         'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,

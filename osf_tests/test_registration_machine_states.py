@@ -10,7 +10,7 @@ from osf_tests.factories import (
     CommentFactory
 )
 
-from osf.models import Retraction
+from osf.models import Retraction, Sanction
 
 
 from django.utils import timezone
@@ -41,7 +41,6 @@ class TestRegistrationMachine:
 
     def test_run_accept(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
-        draft_registration.save()
 
         assert draft_registration.machine_state == RegistrationStates.PENDING.value
 
@@ -71,8 +70,6 @@ class TestRegistrationMachine:
 
         assert draft_registration.machine_state == RegistrationStates.EMBARGO.value
         assert draft_registration.registered_node
-        assert not draft_registration.registered_node.is_public
-        assert not draft_registration.registered_node.embargo.is_approved
 
     def test_run_reject(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
@@ -102,11 +99,11 @@ class TestRegistrationMachine:
     def test_run_withdraw_registration(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
         draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
+        draft_registration.save()
 
         draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
 
         assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW.value
-        draft_registration.save()
 
         draft_registration.run_withdraw_registration(draft_registration.creator, 'Double Doink')
 
@@ -117,7 +114,6 @@ class TestRegistrationMachine:
         draft_registration.run_submit(draft_registration.creator)
         end_date = timezone.now() + settings.EMBARGO_END_DATE_MIN + datetime.timedelta(days=1)
         draft_registration.run_accept(draft_registration.creator, 'yo', embargo_end_date=end_date)
-        draft_registration.save()
 
         approval_state = draft_registration.registered_node.embargo.approval_state
         approval_token = approval_state[draft_registration.registered_node.creator._id]['approval_token']
@@ -148,3 +144,4 @@ class TestRegistrationMachine:
 
         draft_registration.run_terminate_embargo()
         assert draft_registration.machine_state == RegistrationStates.ACCEPTED.value
+        assert draft_registration.registered_node.embargo.state == Sanction.COMPLETED

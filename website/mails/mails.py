@@ -450,8 +450,3 @@ TOU_NOTIF = Mail(
     'tou_notif',
     subject='Updated Terms of Use for COS Websites and Services',
 )
-
-DRAFT_REGISTRATION_REJECTED = Mail(
-    'draft_registration_rejected',
-    subject='Your access request to submit a registration to ${provider} has been declined',
-)
