@@ -373,10 +373,18 @@ class UserMapView(InstitutionalStorageBaseView, View):
         DUPLICATED_USER = 'DUPLICATED_USER'
         DUPLICATED_EXTUSER = 'DUPLICATED_EXTUSER'
 
+        MAX_NG = 20
+
         def add_report(status, reason, line, detail=None):
             result[status] += 1
-            joined = ','.join(line).decode('utf-8')
+            if status == NG and result[NG] >= MAX_NG:
+                return
+            try:
+                joined = ','.join(line).decode('utf-8')
+            except Exception:
+                joined = ''
             if status == OK:
+                # OK is not reported.
                 # report.append(u'{}: {}'.format(status, joined))
                 pass
             elif detail:
@@ -384,52 +392,55 @@ class UserMapView(InstitutionalStorageBaseView, View):
             else:
                 report.append(u'{}, {}: {}'.format(status, reason, joined))
 
-        for line in csv_reader:
-            if len(line) == 0:
-                continue
-            user = line[0].strip()
-            if user.startswith('#'):
-                continue
-            if len(line) != 3:
-                add_report(NG, INVALID_FORMAT, line)
-                continue
-            extuser = line[1].strip()
-            # optional_info = line[2].strip()
+        try:
+            for line in csv_reader:
+                if len(line) == 0:
+                    continue
+                user = line[0].strip()
+                if user.startswith('#'):
+                    continue
+                if len(line) != 3:
+                    add_report(NG, INVALID_FORMAT, line)
+                    continue
+                extuser = line[1].strip()
+                # optional_info = line[2].strip()
 
-            if not user:
-                add_report(NG, EMPTY_USER, line)
-                continue
-            if not extuser:
-                add_report(NG, EMPTY_EXTUSER, line)
-                continue
-
-            # ePPN or GUID ?
-            if '@' in user:  # ePPN
-                try:
-                    u = OSFUser.objects.get(eppn=user)
-                except Exception:
-                    u = None
-            elif user:  # GUID
-                u = OSFUser.load(user.lower())
-            if not u:
-                add_report(NG, UNKNOWN_USER, line)
-                continue
-            if check_extuser:
-                detail = utils.extuser_exists(provider_name, request.POST,
-                                              extuser)
-                if detail:
-                    add_report(NG, UNKNOWN_EXTUSER, line, detail)
+                if not user:
+                    add_report(NG, EMPTY_USER, line)
+                    continue
+                if not extuser:
+                    add_report(NG, EMPTY_EXTUSER, line)
                     continue
 
-            if u._id in user_to_extuser:
-                add_report(NG, DUPLICATED_USER, line)
-                continue
-            if extuser in extuser_set:
-                add_report(NG, DUPLICATED_EXTUSER, line)
-                continue
-            user_to_extuser[u._id] = extuser   # guid.lower() -> extuser
-            extuser_set.add(extuser)
-            add_report(OK, None, line)
+                # ePPN or GUID ?
+                if '@' in user:  # ePPN
+                    try:
+                        u = OSFUser.objects.get(eppn=user)
+                    except Exception:
+                        u = None
+                elif user:  # GUID
+                    u = OSFUser.load(user.lower())
+                if not u:
+                    add_report(NG, UNKNOWN_USER, line)
+                    continue
+                if check_extuser:
+                    detail = utils.extuser_exists(provider_name, request.POST,
+                                                  extuser)
+                    if detail:
+                        add_report(NG, UNKNOWN_EXTUSER, line, detail)
+                        continue
+
+                if u._id in user_to_extuser:
+                    add_report(NG, DUPLICATED_USER, line)
+                    continue
+                if extuser in extuser_set:
+                    add_report(NG, DUPLICATED_EXTUSER, line)
+                    continue
+                user_to_extuser[u._id] = extuser   # guid.lower() -> extuser
+                extuser_set.add(extuser)
+                add_report(OK, None, line)
+        except Exception as e:
+            add_report(NG, INVALID_FORMAT, [str(e)])
 
         if result[NG] > 0:
             status = httplib.BAD_REQUEST
