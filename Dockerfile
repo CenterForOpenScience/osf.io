@@ -69,6 +69,11 @@ RUN set -ex \
         postgresql-dev \
         # cryptography
         libffi-dev \
+        libpng-dev \
+        freetype-dev \
+        openblas-dev \
+        jpeg-dev \
+    && pip3 install Cython \
     && for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \

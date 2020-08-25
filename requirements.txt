@@ -89,7 +89,7 @@ pyfcm==1.4.3
 #facebook-sdk==3.0.0a0
 git+https://github.com/mobolic/facebook-sdk.git@09b281b97ff3192d8d78edca393c753d11b0eb99#egg=facebook-sdk
 tweepy==3.5.0
-pandas==0.22.0
+pandas==1.0.0
 matplotlib==2.1.1
 seaborn==0.8.1
 reportlab==3.4.0
@@ -128,4 +128,4 @@ djangorestframework-csv==2.1.0
 
 # I18n Support
 Babel==2.5.1
-Flask-Babel==0.12.2
+Flask-Babel==1.0.0
