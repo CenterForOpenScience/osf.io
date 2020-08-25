@@ -354,7 +354,7 @@ class RegistrationProviderFactory(DjangoModelFactory):
                 pass
             else:
                 raise e
-        if _id:
+        if _id and _id != 'osf':
             obj._id = _id
 
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection

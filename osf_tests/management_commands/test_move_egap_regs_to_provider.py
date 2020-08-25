@@ -15,8 +15,6 @@ from osf.management.commands.move_egap_regs_to_provider import (
     main as move_egap_regs
 )
 
-from django.conf import settings
-
 
 @pytest.mark.django_db
 class TestEGAPMoveToProvider:
