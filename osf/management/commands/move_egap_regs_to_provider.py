@@ -12,23 +12,19 @@ from osf.models import (
     RegistrationSchema,
     Registration
 )
-from django.conf import settings
+
 
 def main(dry_run):
-    epag_provider = RegistrationProvider.objects.get(name=settings.EGAP_PROVIDER_NAME)
+    egap_provider = RegistrationProvider.objects.get(_id='egap')
+    egap_schemas = RegistrationSchema.objects.filter(name='EGAP Registration').order_by('-schema_version')
 
-    egap_schema = RegistrationSchema.objects.filter(
-        name='EGAP Registration'
-    ).order_by(
-        '-schema_version'
-    )[0]
+    for egap_schema in egap_schemas:
+        egap_regs = Registration.objects.filter(registered_schema=egap_schema.id, provider___id='osf')
 
-    egap_regs = Registration.objects.filter(registered_schema=egap_schema.id, provider___id='osf')
-
-    if dry_run:
-        logger.info(f'[DRY RUN] {egap_regs.count()} updated to {epag_provider} with id {epag_provider.id}')
-    else:
-        egap_regs.update(provider_id=epag_provider.id)
+        if dry_run:
+            logger.info(f'[DRY RUN] {egap_regs.count()} updated to {egap_provider} with id {egap_provider.id}')
+        else:
+            egap_regs.update(provider_id=egap_provider.id)
 
 
 class Command(BaseCommand):
