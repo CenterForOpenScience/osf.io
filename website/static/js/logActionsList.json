@@ -100,7 +100,7 @@
     "has_prereg_links_updated": "${user} has updated their preregistration data link availability to ${value}",
     "prereg_links_updated": "${user} has updated their preregistration data links",
     "why_no_prereg_updated": "${user} has updated their preregistration data availability statement",
-    "prereg_links_info_updated": "${user} has updated their preregistration links to ${value}"
+    "prereg_links_info_updated": "${user} has updated their preregistration links to ${value}",
     "timestamp_all_verified": "${user} verified timestamp",
     "timestamp_all_added": "${user} requested trusted timestamp",
     "timestamp_added": "${user} requested trusted timestamp file ${path}",
