@@ -706,6 +706,44 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         # unclaimed record for the project has been deleted
         assert_not_in(self.project, self.user.unclaimed_records)
 
+    def test_claim_user_registered_registration_with_correct_password(self):
+        registration = RegistrationFactory(project=self.project)
+        self.user.reload()
+
+        name, email = fake.name(), fake_email()
+
+        assert_in(self.user, registration.contributors)
+
+        reg_user = AuthUserFactory()  # NOTE: AuthUserFactory sets password as 'queenfan86'
+        self.user.reload()
+        url = self.user.get_claim_url(registration._id)
+        # Follow to password re-enter page
+        res = self.app.get(url, auth=reg_user.auth).follow(auth=reg_user.auth)
+
+        # verify that the "Claim Account" form is returned
+        assert_in('Claim Contributor', res.body.decode())
+
+        form = res.forms['claimContributorForm']
+        form['password'] = 'queenfan86'
+        res = form.submit(auth=reg_user.auth)
+
+        registration.reload()
+        self.project.reload()
+        self.user.reload()
+
+        # user is now a contributor to the registration and project
+        assert_in(reg_user, registration.contributors)
+        assert_in(reg_user, self.project.contributors)
+
+        # the unregistered user (unreg_user) is removed as a contributor to the registration and project
+        assert_not_in(self.user, registration.contributors)
+        assert_not_in(self.user, self.project.contributors)
+
+        # unclaimed record for the registration and project has been deleted
+        assert_not_in(registration, self.user.unclaimed_records)
+        assert_not_in(self.project, self.user.unclaimed_records)
+
+
     def test_claim_user_registered_preprint_with_correct_password(self):
         preprint = PreprintFactory(creator=self.referrer)
         name, email = fake.name(), fake_email()

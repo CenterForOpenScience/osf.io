@@ -20,7 +20,7 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import Tag
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, Registration
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import mails, language, settings
@@ -733,6 +733,9 @@ def claim_user_registered(auth, node, **kwargs):
     if should_claim:
         node.replace_contributor(old=unreg_user, new=current_user)
         node.save()
+        if isinstance(node, Registration):
+            project = node.registered_from
+            project.replace_contributor(old=unreg_user, new=current_user)
         if isinstance(node, OSFGroup):
             status.push_status_message(
                 'You are now a member of this OSFGroup.',
