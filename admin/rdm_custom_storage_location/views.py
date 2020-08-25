@@ -491,10 +491,11 @@ class UserMapView(InstitutionalStorageBaseView, View):
         # find osfusers in usermap who has no mapping.
         for u in institution.osfuser_set.filter(is_active=True):
             guid = u._id
-            if guid not in usermap:
+            if usermap is None or guid not in usermap:
                 nomap_count += 1
                 if nomap_count == 1:
-                    csv_writer.writerow([])
+                    if usermap:
+                        csv_writer.writerow([])
                     csv_writer.writerow(['#' + 'Please input External users into the second column.'])
                 csv_writer.writerow([guid.upper(), None, fullname(u)])
 
