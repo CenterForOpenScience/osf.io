@@ -6,7 +6,12 @@ import unittest
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ExternalAccountFactory, ProjectFactory, UserFactory
+from osf_tests.factories import (
+    ExternalAccountFactory,
+    ProjectFactory,
+    UserFactory,
+    DraftRegistrationFactory,
+)
 
 from framework.auth import Auth
 
@@ -283,6 +288,6 @@ class TestCallbacks(OsfTestCase):
         registration = self.project.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.project.creator),
-            data='hodor',
+            draft_registration=DraftRegistrationFactory(branched_from=self.project),
         )
         assert_false(registration.has_addon('bitbucket'))

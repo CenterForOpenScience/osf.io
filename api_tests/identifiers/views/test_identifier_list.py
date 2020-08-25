@@ -1,7 +1,9 @@
 import mock
 import pytest
+
+from future.moves.urllib.parse import urlparse
+
 import responses
-from urlparse import urlparse
 from django.utils import timezone
 from framework.auth.core import Auth
 
@@ -17,7 +19,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from website.identifiers.clients import DataCiteClient
 from website import settings
 
@@ -92,13 +94,13 @@ class TestRegistrationIdentifierList:
         categories = [identifier.category for identifier in all_identifiers]
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_registration_identifiers]
-        assert_items_equal(categories_in_response, categories)
+        assert_equals(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_registration_identifiers]
-        assert_items_equal(values_in_response, values)
+        assert_equals(values_in_response, values)
 
     def test_identifier_filter_by_category(
             self, app, registration, identifier_registration,
@@ -107,7 +109,7 @@ class TestRegistrationIdentifierList:
         IdentifierFactory(referent=registration, category='nopeid')
         identifiers_for_registration = registration.identifiers
         assert identifiers_for_registration.count() == 2
-        assert_items_equal(
+        assert_equals(
             list(
                 identifiers_for_registration.values_list(
                     'category',
@@ -207,14 +209,14 @@ class TestNodeIdentifierList:
         categories = [identifier.category for identifier in all_identifiers]
         categories_in_response = [
             identifier['attributes']['category'] for identifier in data_node_identifiers]
-        assert_items_equal(categories_in_response, categories)
+        assert_equals(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
         values = [identifier.value for identifier in all_identifiers]
         values_in_response = [
             identifier['attributes']['value'] for identifier in data_node_identifiers
         ]
-        assert_items_equal(values_in_response, values)
+        assert_equals(values_in_response, values)
 
     def test_identifier_filter_by_category(
             self, app, node, identifier_node, url_node_identifiers):
@@ -222,7 +224,7 @@ class TestNodeIdentifierList:
         identifiers_for_node = Identifier.objects.filter(object_id=node.id)
 
         assert identifiers_for_node.count() == 2
-        assert_items_equal(
+        assert_equals(
             [identifier.category for identifier in identifiers_for_node],
             ['carpid', 'nopeid']
         )
@@ -309,13 +311,13 @@ class TestPreprintIdentifierList:
         categories = all_identifiers.values_list('category', flat=True)
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_preprint_identifier]
-        assert_items_equal(categories_in_response, list(categories))
+        assert_equals(categories_in_response, list(categories))
 
         # test_identifier_list_returns_correct_values
         values = all_identifiers.values_list('value', flat=True)
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_preprint_identifier]
-        assert_items_equal(values_in_response, list(values))
+        assert_equals(values_in_response, list(values))
 
     def test_preprint_identifier_list_permissions_unpublished(
             self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
@@ -404,30 +406,6 @@ class TestPreprintIdentifierList:
         # test_published_preprint_identifier_unauthenticated
         res = app.get(url_preprint_identifier, expect_errors=True)
         assert res.status_code == 404
-
-    def test_preprint_identifier_list_permissions_no_primary_file(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
-        preprint.primary_file = None
-        preprint.save()
-
-        # test_unpublished_preprint_identifier_unauthenticated
-        res = app.get(url_preprint_identifier, expect_errors=True)
-        assert res.status_code == 401
-
-        # test_unpublished_preprint_identifier_noncontrib_authenticated
-        non_contrib = AuthUserFactory()
-        res = app.get(url_preprint_identifier, auth=non_contrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test_unpublished_preprint_identifier_readcontrib_authenticated
-        read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, READ, save=True)
-        res = app.get(url_preprint_identifier, auth=read_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # test_unpublished_preprint_identifier_admin_authenticated
-        res = app.get(url_preprint_identifier, auth=user.auth)
-        assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_abandoned(
             self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):

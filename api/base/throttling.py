@@ -108,6 +108,7 @@ class SendEmailThrottle(BaseThrottle, UserRateThrottle):
 
         return super(SendEmailThrottle, self).allow_request(request, view)
 
+
 class SendEmailDeactivationThrottle(SendEmailThrottle):
 
     def allow_request(self, request, view):
@@ -118,3 +119,7 @@ class SendEmailDeactivationThrottle(SendEmailThrottle):
             return True
 
         return super(SendEmailDeactivationThrottle, self).allow_request(request, view)
+
+
+class BurstRateThrottle(UserRateThrottle):
+    scope = 'burst'

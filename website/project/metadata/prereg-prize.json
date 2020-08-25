@@ -35,16 +35,6 @@
             "help": "Effect of sugar on brownie tastiness. <br /><br />How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate.",
             "required": true
         }, {
-            "qid": "q2",
-            "nav": "Authors",
-            "type": "string",
-            "title": "Authors",
-            "description": "The author who submits the preregistration is the recipient of the award money and must also be an author of the published manuscript. Additional authors may be added or removed at any time.",
-            "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
-            "type": "osf-author-import",
-            "format": "textarea",
-            "required": true
-        }, {
             "qid": "q3",
             "nav": "Research Questions",
             "type": "string",

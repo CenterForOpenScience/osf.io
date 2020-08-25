@@ -1,12 +1,12 @@
 from datetime import datetime
 import flask
-import httplib as http
+import logging
+from rest_framework import status as http_status
 import json
 import logging
 import mock
 import time
-import urlparse
-import mock
+from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
 from nose.tools import *  # noqa
@@ -140,7 +140,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()
@@ -178,7 +178,7 @@ class TestExternalAccount(OsfTestCase):
         # Request succeeded
         assert_equal(
             response.status_code,
-            http.OK,
+            http_status.HTTP_200_OK,
         )
 
         self.user.reload()
@@ -375,8 +375,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
 
             # Check parameters
             expected_params = {
@@ -416,8 +416,8 @@ class TestExternalProviderOAuth2(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
 
             # Check parameters - the only difference from standard OAuth flow is no `redirect_uri`.
             expected_params = {

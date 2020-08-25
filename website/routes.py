@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 import os
-import httplib as http
+from rest_framework import status as http_status
 import requests
-import urlparse
+from future.moves.urllib.parse import urljoin
 import json
 
 import waffle
@@ -14,7 +14,6 @@ from flask import send_from_directory
 from flask import Response
 from flask import stream_with_context
 from flask import g
-from django.core.urlresolvers import reverse
 from django.conf import settings as api_settings
 from django.utils.encoding import smart_str
 from werkzeug.http import dump_cookie
@@ -74,6 +73,8 @@ from website.mapcore.views import mapcore_oauth_start, mapcore_oauth_complete
 from api.waffle.utils import flag_is_active
 
 from flask_babel import lazy_gettext as _
+
+from api.waffle.utils import flag_is_active
 
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
@@ -194,7 +195,6 @@ def get_globals():
         'custom_citations': settings.CUSTOM_CITATIONS,
         'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        'wafflejs_url': '{api_domain}{waffle_url}'.format(api_domain=settings.API_DOMAIN.rstrip('/'), waffle_url=waffle_url),
         'footer_links': settings.FOOTER_LINKS,
         'features': features,
         'waffle': waffle,
@@ -229,7 +229,6 @@ class OsfWebRenderer(WebRenderer):
         """
 
         resp = super(OsfWebRenderer, self).__call__(data, *args, **kwargs)
-        secure = get_setting('SECURE')
         max_age = get_setting('MAX_AGE')
 
         if hasattr(request, 'waffles'):
@@ -241,7 +240,7 @@ class OsfWebRenderer(WebRenderer):
                     age = None
                 else:
                     age = max_age
-                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), bytes(active), age, bytes(secure)))
+                resp.headers.add('Set-Cookie', dump_cookie(name.encode(), str(active), max_age=age, expires='True'))
         return resp
 
 #: Use if a view only redirects or raises error
@@ -279,7 +278,7 @@ def sitemap_file(path):
     elif path.endswith('.xml'):
         mime = 'text/xml'
     else:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return send_from_directory(
         settings.STATIC_FOLDER + '/sitemaps/',
         path,
@@ -310,11 +309,11 @@ def ember_app(path=None):
             break
 
     if not ember_app:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
         path = request.path[len(ember_app['path']):]
-        url = urlparse.urljoin(ember_app['server'], path)
+        url = urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
@@ -323,11 +322,11 @@ def ember_app(path=None):
     ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
 
     if not ember_app_folder:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
         # Prevent accessing files outside of the ember build dir
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if not os.path.isfile(os.path.join(ember_app_folder, fp)):
         fp = 'index.html'
@@ -353,13 +352,13 @@ def make_url_map(app):
         Rule(
             '/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             OsfWebRenderer('', render_mako_string, trust=False)
         ),
         Rule(
             '/api/v1/<path:_>',
             ['get', 'post'],
-            HTTPError(http.NOT_FOUND),
+            HTTPError(http_status.HTTP_404_NOT_FOUND),
             json_renderer
         ),
     ])
@@ -1210,6 +1209,15 @@ def make_url_map(app):
         Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
     ])
 
+    process_rules(app, [
+        Rule([
+            '/institutions/<inst_id>/dashboard/',
+        ],
+            'get',
+            institution_views.view_institution_dashboard,
+            notemplate)
+    ])
+
     # Project
 
     # Web
@@ -1602,10 +1610,6 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/drafts/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
-        Rule([
-            '/project/<pid>/drafts/<draft_id>/submit/',
-        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
-
         # Meta Schemas
         Rule([
             '/project/drafts/schemas/',

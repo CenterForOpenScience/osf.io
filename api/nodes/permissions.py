@@ -16,14 +16,13 @@ from osf.models import (
     PrivateLink,
 )
 from osf.utils import permissions as osf_permissions
-from website.project.metadata.utils import is_prereg_admin
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
 
 
 class ContributorOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, NodeRelation, Preprint,)
+    acceptable_models = (AbstractNode, NodeRelation, Preprint, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         from api.nodes.views import NodeStorageProvider
@@ -35,6 +34,10 @@ class ContributorOrPublic(permissions.BasePermission):
             obj = obj.get('self', None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+
+        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
+            obj = obj.branched_from
+
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
@@ -61,6 +64,7 @@ class IsAdminContributor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
+        # Old Registration workflow checks permissions on Node
         if isinstance(obj, DraftRegistration):
             obj = obj.branched_from
         auth = get_user_auth(request)
@@ -92,8 +96,8 @@ class IsAdmin(permissions.BasePermission):
         return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 
-class NodeDeletePermissions(permissions.BasePermission):
-    acceptable_models = (AbstractNode,)
+class AdminDeletePermissions(permissions.BasePermission):
+    acceptable_models = (AbstractNode, DraftRegistration)
 
     def has_object_permission(self, request, view, obj):
         """
@@ -116,22 +120,9 @@ class IsContributorOrGroupMember(permissions.BasePermission):
             return obj.has_permission(auth.user, osf_permissions.WRITE)
 
 
-class IsAdminContributorOrReviewer(IsAdminContributor):
-    """
-    Prereg admins can update draft registrations.
-    """
-    acceptable_models = (AbstractNode, DraftRegistration,)
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
-        if request.method != 'DELETE' and is_prereg_admin(auth.user):
-            return True
-        return super(IsAdminContributorOrReviewer, self).has_object_permission(request, view, obj)
-
-
 class AdminOrPublic(permissions.BasePermission):
 
-    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings,)
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration,)
 
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, dict) and 'self' in obj:
@@ -196,14 +187,14 @@ class ContributorDetailPermissions(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
-        node = self.load_resource(context, view)
+        resource = self.load_resource(context, view)
         user = OSFUser.load(context['user_id'])
         if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
+            return resource.is_public or resource.can_view(auth)
         elif request.method == 'DELETE':
-            return node.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
+            return resource.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
         else:
-            return node.has_permission(auth.user, osf_permissions.ADMIN)
+            return resource.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class NodeGroupDetailPermissions(permissions.BasePermission):

@@ -5,7 +5,7 @@ import mock
 import shutil
 import tempfile
 import xml
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
@@ -123,7 +123,7 @@ class TestGenerateSitemap:
             '/{}/download/?format=pdf'.format(preprint_osf._id),
             '/{}/download/?format=pdf'.format(preprint_other._id)
         ])
-        urls_to_include = [urlparse.urljoin(settings.DOMAIN, item) for item in urls_to_include]
+        urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
         return urls_to_include
 
@@ -146,32 +146,32 @@ class TestGenerateSitemap:
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, user_unconfirmed.url) not in urls
+        assert urljoin(settings.DOMAIN, user_unconfirmed.url) not in urls
 
     def test_collection_link_not_included(self, collection, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, collection.url) not in urls
+        assert urljoin(settings.DOMAIN, collection.url) not in urls
 
     def test_private_project_link_not_included(self, project_private, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, project_private.url) not in urls
+        assert urljoin(settings.DOMAIN, project_private.url) not in urls
 
     def test_embargoed_registration_link_not_included(self, registration_embargoed, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, registration_embargoed.url) not in urls
+        assert urljoin(settings.DOMAIN, registration_embargoed.url) not in urls
 
     def test_deleted_project_link_not_included(self, project_deleted, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urlparse.urljoin(settings.DOMAIN, project_deleted.url) not in urls
+        assert urljoin(settings.DOMAIN, project_deleted.url) not in urls

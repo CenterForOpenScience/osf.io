@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import collections
 
 # Function courtesy of @brianjgeiger and @abought

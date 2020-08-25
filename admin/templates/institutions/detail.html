@@ -51,6 +51,9 @@
                     <button id="show-modify-form" class="btn btn-link" type="button">
                         {% trans "Modify Institution" %}
                     </button>
+                    <div class="col-md-12">
+                        <a class="btn btn-link" href={% url 'institutions:register_metrics_admin' institution.id %}>Create Moderator/Admin</a>
+                    </div>
                 {% endif %}
             </div>
         </div>

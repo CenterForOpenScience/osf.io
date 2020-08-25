@@ -11,7 +11,7 @@ from nose.tools import assert_equal, assert_not_equal
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from framework.celery_tasks.handlers import celery_before_request
-from framework.postcommit_tasks.handlers import postcommit_after_request
+from osf_tests.factories import DraftRegistrationFactory
 from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
@@ -99,7 +99,7 @@ def assert_not_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
-def assert_items_equal(item_one, item_two):
+def assert_equals(item_one, item_two):
     item_one.sort()
     item_two.sort()
     assert item_one == item_two
@@ -125,7 +125,7 @@ def assert_latest_log_not(log_action, node_key, index=0):
     assert last_log._id == new_log._id
 
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, data=None, parent=None,
+def mock_archive(project, schema=None, auth=None, draft_registration=None, parent=None,
                  embargo=False, embargo_end_date=None,
                  retraction=False, justification=None, autoapprove_retraction=False,
                  autocomplete=True, autoapprove=False):
@@ -160,13 +160,13 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    data = data or ''
+    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project)
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
+            draft_registration=draft_registration,
             parent=parent,
         )
     if embargo:
@@ -186,11 +186,10 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
         root_job.done = True
         root_job.save()
         sanction = registration.root.sanction
-        with contextlib.nested(
-            mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)),
-            mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
-        ):
-            archiver_listeners.archive_callback(registration)
+        mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True))
+        mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
+        archiver_listeners.archive_callback(registration)
+
     if autoapprove:
         sanction = registration.root.sanction
         sanction.state = Sanction.APPROVED

@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 ('page_name', models.CharField(max_length=200, validators=[addons.wiki.models.validate_page_name])),
                 ('version', models.IntegerField(default=1)),
                 ('date', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
-                ('content', models.TextField(blank=True, default=b'')),
+                ('content', models.TextField(blank=True, default='')),
             ],
             options={
                 'abstract': False,

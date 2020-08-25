@@ -35,6 +35,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.exceptions import Conflict, InvalidModelValueError
 from api.base.schemas.utils import from_json
+from api.base.versioning import get_kebab_snake_case_field
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -183,6 +184,11 @@ class BaseFileSerializer(JSONAPISerializer):
     current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
+    parent_folder = RelationshipField(
+        related_view='files:file-detail',
+        related_view_kwargs={'file_id': '<parent._id>'},
+        help_text='The folder in which this file exists',
+    )
     files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
@@ -410,6 +416,7 @@ class FileVersionSerializer(JSONAPISerializer):
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
+    name = ser.SerializerMethodField()
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url',
@@ -417,8 +424,14 @@ class FileVersionSerializer(JSONAPISerializer):
         'render': 'get_render_link',
     })
 
+    def get_name(self, obj):
+        file = self.context['file']
+        return obj.get_basefilenode_version(file).version_name
+
     class Meta:
-        type_ = 'file_versions'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'file-versions')
 
     def self_url(self, obj):
         return absolute_reverse(
@@ -509,7 +522,9 @@ class FileMetadataRecordSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     class Meta:
-        type_ = 'metadata_records'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'metadata-records')
 
 
 def get_file_download_link(obj, version=None, view_only=None):
@@ -529,12 +544,12 @@ def get_file_download_link(obj, version=None, view_only=None):
 
 
 def get_file_render_link(mfr_url, download_url, version=None):
-    download_url_args = {
-        'direct': None,
-        'mode': 'render',
-    }
+    download_url_args = {}
     if version:
         download_url_args['revision'] = version
+
+    download_url_args['direct'] = None
+    download_url_args['mode'] = 'render'
 
     render_url = furl.furl(mfr_url).set(
         path=['render'],

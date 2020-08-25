@@ -96,7 +96,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
         try:
             results = search.search(query, doc_type=self.doc_type, raw=True, private=private)
         except MalformedQueryError as e:
-            raise ValidationError(e.message)
+            raise ValidationError(e)
         return results
 
 

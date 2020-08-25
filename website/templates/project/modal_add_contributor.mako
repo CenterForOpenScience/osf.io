@@ -347,13 +347,13 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:!hasChildren(), click:submit">${_("Add")}</a>
+                    <a class="btn btn-success" data-bind="visible:!hasChildren(), click:submit, css: {disabled: !canSubmit()}">${_("Add")}</a>
                     <a class="btn btn-primary" data-bind="visible: hasChildren(), click:selectWhich">${_("Next")}</a>
                 </span>
 
                 <span data-bind="if: page() == 'which'">
                     <a class="btn btn-primary" data-bind="click:selectWhom">${_("Back")}</a>
-                    <a class="btn btn-success" data-bind="click:submit">${_("Add")}</a>
+                    <a class="btn btn-success" data-bind="click:submit, css: {disabled: !canSubmit()}">${_("Add")}</a>
                 </span>
 
             </div><!-- end modal-footer -->

@@ -51,14 +51,14 @@ class TestChronosSubmissionDetail:
             }
         }
 
-    @mock.patch('api.chronos.serializers.ChronosClient.update_manuscript')
-    def test_update_success(self, mock_update, app, url, submission, submitter):
-        mock_update.return_value = submission
+    @mock.patch('api.chronos.serializers.ChronosClient.sync_manuscript')
+    def test_update_success(self, mock_sync, app, url, submission, submitter):
+        mock_sync.return_value = submission
         payload = self.update_payload(submission)
         res = app.patch_json_api(url, payload, auth=submitter.auth)
         assert res.status_code == 200
-        assert mock_update.called
-        mock_update.assert_called_once_with(submission)
+        assert mock_sync.called
+        mock_sync.assert_called_once_with(submission)
 
     @mock.patch('api.chronos.serializers.ChronosClient.update_manuscript')
     def test_update_failure(self, mock_update, app, url, submission, preprint_contributor, moderator, user):

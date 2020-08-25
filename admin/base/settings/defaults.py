@@ -2,9 +2,6 @@
 Django settings for the admin project.
 """
 
-import os
-from urlparse import urlparse
-from website import settings as osf_settings
 from django.contrib import messages
 from api.base.settings import *  # noqa
 # TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
@@ -39,7 +36,7 @@ SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 # csrf:
 CSRF_COOKIE_NAME = 'admin-csrf'
 CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
-# set to False: prereg uses a SPA and ajax and grab the token to use it in the requests
+# set to False for admin draft registration uses a SPA and ajax and grab the token to use it in the requests
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
@@ -104,7 +101,6 @@ INSTALLED_APPS = (
     # Internal apps
     'admin.common_auth',
     'admin.base',
-    'admin.pre_reg',
     'admin.spam',
     'admin.metrics',
     'admin.nodes',
@@ -288,9 +284,6 @@ if KEEN_CREDENTIALS['keen_ready']:
     })
 
 
-ENTRY_POINTS = {'osf4m': 'osf4m', 'prereg_challenge_campaign': 'prereg',
-                'institution_campaign': 'institution'}
-
 # Set in local.py
 DESK_KEY = ''
 DESK_KEY_SECRET = ''
@@ -304,7 +297,7 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
     MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware', 'nplusone.ext.django.NPlusOneMiddleware',)
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True,
+        'SHOW_TOOLBAR_CALLBACK': lambda _: True,
         'DISABLE_PANELS': {
             'debug_toolbar.panels.templates.TemplatesPanel',
             'debug_toolbar.panels.redirects.RedirectsPanel'

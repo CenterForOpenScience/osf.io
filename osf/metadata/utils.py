@@ -40,10 +40,10 @@ def datacite_format_contributors(contributors):
         ]
 
         if contributor.external_identity.get('ORCID'):
-            verified = contributor.external_identity['ORCID'].values()[0] == 'VERIFIED'
+            verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
             if verified:
                 name_identifiers.append({
-                    'nameIdentifier': contributor.external_identity['ORCID'].keys()[0],
+                    'nameIdentifier': list(contributor.external_identity['ORCID'].keys())[0],
                     'nameIdentifierScheme': 'ORCID',
                     'schemeURI': 'http://orcid.org/'
                 })

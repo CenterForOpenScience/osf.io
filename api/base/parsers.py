@@ -45,7 +45,7 @@ class JSONAPIParser(JSONParser):
             raise ParseError()
 
         # Can only create one type of relationship.
-        related_resource = relationships.keys()[0]
+        related_resource = list(relationships.keys())[0]
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
@@ -77,7 +77,7 @@ class JSONAPIParser(JSONParser):
         object_type = resource_object.get('type')
 
         type_required = not (
-            legacy_type_allowed and parser_context['request'].version < 2.7 and request_method == 'PATCH'
+            legacy_type_allowed and float(parser_context['request'].version) < 2.7 and request_method == 'PATCH'
         )
 
         # For validating type and id for bulk delete:
@@ -136,6 +136,20 @@ class JSONAPIParser(JSONParser):
 
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
+
+    def flatten_multiple_relationships(self, parser, relationships):
+        rel = {}
+        for resource in relationships:
+            ret = super(parser, self).flatten_relationships({resource: relationships[resource]})
+            if isinstance(ret, list):
+                rel[resource] = []
+                for item in ret:
+                    if item.get('target_type') and item.get('id'):
+                        rel[resource].append(item['id'])
+            else:
+                if ret.get('target_type') and ret.get('id'):
+                    rel[resource] = ret['id']
+        return rel
 
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):
@@ -196,7 +210,7 @@ class JSONAPIOnetoOneRelationshipParser(JSONParser):
         legacy_type_allowed = parser_context.get('legacy_type_allowed', True)
         type_required = not (
             legacy_type_allowed and
-            parser_context['request'].version < 2.7 and
+            float(parser_context['request'].version) < 2.7 and
             parser_context['request'].method == 'PATCH'
         )
         if data:
@@ -222,28 +236,20 @@ class JSONAPIOnetoOneRelationshipParserForRegularJSON(JSONAPIOnetoOneRelationshi
 
 
 class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
+    """
+    If edits are made to this class, be sure to check JSONAPIMultipleRelationshipsParserForRegularJSON to see if corresponding
+    edits should be made there.
+    """
     def flatten_relationships(self, relationships):
-        rel = {}
-        for resource in relationships:
-            ret = super(JSONAPIMultipleRelationshipsParser, self).flatten_relationships({resource: relationships[resource]})
-            if isinstance(ret, list):
-                rel[resource] = []
-                for item in ret:
-                    if item.get('target_type') and item.get('id'):
-                        rel[resource].append(item['id'])
-            else:
-                if ret.get('target_type') and ret.get('id'):
-                    rel[resource] = ret['id']
-        return rel
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships)
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
+    """
+    Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
+    """
     def flatten_relationships(self, relationships):
-        ret = super(JSONAPIMultipleRelationshipsParserForRegularJSON, self).flatten_relationships(relationships)
-        related_resource = relationships.keys()[0]
-        if ret.get('target_type') and ret.get('id'):
-            return {related_resource: ret['id']}
-        return ret
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships)
 
 
 class HMACSignedParser(JSONParser):

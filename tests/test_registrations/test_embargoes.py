@@ -1,6 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import json
 
 import pytz
@@ -26,7 +26,7 @@ from osf.exceptions import (
 )
 from osf.utils import tokens
 from osf.models import AbstractNode
-from osf.models.sanctions import PreregCallbackMixin, Embargo
+from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
 
@@ -402,7 +402,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             notify_initiator_on_complete=True
         )
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 1)
 
@@ -414,7 +414,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.spam_status = SpamStatus.FLAGGED
         self.registration.save()
-        with mock.patch.object(PreregCallbackMixin, '_notify_initiator') as mock_notify:
+        with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             with assert_raises(NodeStateError):
                 self.registration.embargo._on_complete(self.user)
         assert_equal(mock_notify.call_count, 0)
@@ -1095,7 +1095,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.valid_embargo_payload = json.dumps({
             'data': {
                 'attributes': {
-                    u'lift_embargo': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
+                    u'lift_embargo': str(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
                     u'registration_choice': 'embargo',
                 },
                 'type': 'registrations',
@@ -1115,7 +1115,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         })
 
 
-    @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
         # Initiate and approve embargo
         for i in range(3):
@@ -1173,7 +1173,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for admin in admin_contributors:
             assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
-    @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask')
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
         # Initiate and approve embargo
         node = NodeFactory(creator=self.user)
@@ -1211,7 +1211,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         self.registration.reload()
-        assert_equal(http.UNAUTHORIZED, res.status_code)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)
 
@@ -1228,6 +1228,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_url = self.registration.web_url_for('token_action', token=rejection_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(http.UNAUTHORIZED, res.status_code)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, res.status_code)
         assert_true(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.UNAPPROVED)

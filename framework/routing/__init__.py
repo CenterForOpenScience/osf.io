@@ -2,7 +2,7 @@
 
 import copy
 import functools
-import httplib as http
+from rest_framework import status as http_status
 import json
 import logging
 import os
@@ -62,8 +62,8 @@ _TPL_LOOKUP_SAFE = TemplateLookup(
 )
 
 REDIRECT_CODES = [
-    http.MOVED_PERMANENTLY,
-    http.FOUND,
+    http_status.HTTP_301_MOVED_PERMANENTLY,
+    http_status.HTTP_302_FOUND,
 ]
 
 class Rule(object):
@@ -133,7 +133,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
             if debug_mode:
                 raise
             data = HTTPError(
-                http.INTERNAL_SERVER_ERROR,
+                http_status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message=repr(error),
             )
         return renderer(data, **renderer_kwargs or {})
@@ -376,7 +376,7 @@ class JSONRenderer(Renderer):
                 try:
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
-                    return unicode(obj)
+                    return str(obj)
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
@@ -526,7 +526,7 @@ class WebRenderer(Renderer):
             except Exception as error:
                 logger.exception(error)
                 if error_msg:
-                    return '<div>{}</div>'.format(markupsafe.escape(unicode(error_msg))), is_replace
+                    return '<div>{}</div>'.format(markupsafe.escape(str(error_msg))), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(
                     uri,
                     repr(error)
@@ -618,6 +618,6 @@ class WebRenderer(Renderer):
 
         # Load extra data
         extra_data = self.data if isinstance(self.data, dict) else self.data()
-        data.update({key: val for key, val in extra_data.iteritems() if key not in data})
+        data.update({key: val for key, val in extra_data.items() if key not in data})
 
         return self._render(data, template_name)

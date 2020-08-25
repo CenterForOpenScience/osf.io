@@ -475,7 +475,7 @@ class TestCSRFValidation:
 
     @pytest.fixture
     def csrf_token(self):
-        return str(csrf._get_new_csrf_token())
+        return csrf._get_new_csrf_token()
 
     @pytest.fixture
     def payload(self):
@@ -493,7 +493,7 @@ class TestCSRFValidation:
     @pytest.fixture(autouse=True)
     def set_session_cookie(self, user, app):
         session_cookie = user.get_or_create_cookie()
-        app.set_cookie(COOKIE_NAME, str(session_cookie))
+        app.set_cookie(COOKIE_NAME, session_cookie.decode())
 
     def test_waffle_switch_inactive_does_not_enforce_csrf(self, app, url, payload):
         with override_switch('enforce_csrf', active=False):

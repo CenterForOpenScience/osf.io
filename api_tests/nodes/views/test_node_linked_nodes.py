@@ -6,6 +6,7 @@ from osf_tests.factories import (
     NodeFactory,
     OSFGroupFactory,
     AuthUserFactory,
+    NodeRelationFactory,
 )
 from osf.utils.permissions import WRITE, READ
 from website.project.signals import contributor_removed
@@ -359,7 +360,7 @@ class TestNodeRelationshipNodeLinks:
     def test_node_errors(
             self, app, user, node_private, node_contrib,
             node_public, node_other, make_payload,
-            url_private, url_public):
+            url_private, url_public, node_linking_private):
 
         #   test_node_doesnt_exist
         res = app.post_json_api(
@@ -453,6 +454,8 @@ class TestNodeRelationshipNodeLinks:
             auth=user.auth, expect_errors=True
         )
 
+    #   test_put_child_node
+
         assert res.status_code == 403
 
     #   test_delete_public_nodes_relationships_logged_out
@@ -470,6 +473,106 @@ class TestNodeRelationshipNodeLinks:
         )
 
         assert res.status_code == 403
+
+    #   test_node_child_cannot_be_linked_on_create
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.parent._id
+        )
+        res = app.post_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.child._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_linking_node_to_itself _on_create
+        node_self = NodeFactory(creator=user)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_self._id
+        )
+        res = app.post_json_api(
+            url_private, make_payload([node_linking_private._id]),
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_linking_child_node_to_parent_on_create
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.child._id
+        )
+        res = app.post_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.parent._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_node_child_cannot_be_linked_on_update
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.parent._id
+        )
+        res = app.put_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.child._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_linking_child_node_to_parent_on_update
+        node_child = NodeFactory(creator=user)
+        node_parent = NodeFactory(creator=user)
+        node_parent_child = NodeRelationFactory(child=node_child, parent=node_parent)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_parent_child.child._id
+        )
+        res = app.put_json_api(
+            url, {
+                'data': [{
+                    'type': 'linked_nodes',
+                    'id': node_parent_child.parent._id
+                }]
+            },
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
+
+    #   test_linking_node_to_itself _on_update
+        node_self = NodeFactory(creator=user)
+        url = '/{}nodes/{}/relationships/linked_nodes/'.format(
+            API_BASE, node_self._id
+        )
+        res = app.put_json_api(
+            url_private, make_payload([node_linking_private._id]),
+            auth=user.auth, expect_errors=True
+        )
+
+        assert res.status_code == 400
 
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user, node_admin, node_contrib, node_linking_private, url_private):

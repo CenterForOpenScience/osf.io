@@ -208,7 +208,7 @@ CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
-    subject='GakuNin RDM Account Verification, Preregistration Challenge'
+    subject='GakuNin RDM Account Verification, GakuNin RDM Preregistration'
 )
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
@@ -254,6 +254,10 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to a GakuNin RDM project.'
 )
+CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
+    'contributor_added_draft_registration',
+    subject='You have been added as a contributor to a draft registration.'
+)
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject='You have been added as a moderator for {}'.format(provider.name)
@@ -276,6 +280,8 @@ PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received r
 
 REQUEST_EXPORT = Mail('support_request', subject='[GakuNin RDM経由]出力リクエスト / [via GakuNin RDM] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[GakuNin RDM経由]認証解除リクエスト / Deactivation Request')
+
+REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via GakuNin RDM] GakuNin RDM account deactivated')
 
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[GakuNin RDM]アカウントにスパムの疑いがあります / [GakuNin RDM] Account flagged as spam')
 
@@ -414,21 +420,6 @@ WELCOME_OSF4I = Mail(
     engagement=True
 )
 
-PREREG_CHALLENGE_REJECTED = Mail(
-    'prereg_challenge_rejected',
-    subject='Revisions required, your submission for the Preregistration Challenge is not yet registered'
-)
-
-PREREG_CHALLENGE_ACCEPTED = Mail(
-    'prereg_challenge_accepted',
-    subject='Your research plan has been registered and accepted for the Preregistration Challenge'
-)
-
-PREREG_CSV = Mail(
-    'prereg_csv',
-    subject='[auto] Updated Prereg CSV'
-)
-
 EMPTY = Mail('empty', subject='${subject}')
 
 SHARE_ERROR_DESK = Mail(
@@ -459,6 +450,11 @@ ACCESS_REQUEST_DENIED = Mail(
 CROSSREF_ERROR = Mail(
     'crossref_doi_error',
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'
+)
+
+CROSSREF_DOIS_PENDING = Mail(
+    'crossref_doi_pending',
+    subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
 PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(

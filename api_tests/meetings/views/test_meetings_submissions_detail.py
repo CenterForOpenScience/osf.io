@@ -25,21 +25,21 @@ class TestMeetingSubmissionsDetail:
     @pytest.fixture()
     def meeting_one_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_submission_no_category(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         api_utils.create_test_file(submission, user, create_guid=False)
         return submission
 
     @pytest.fixture()
     def meeting_one_private_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=False, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
@@ -56,7 +56,15 @@ class TestMeetingSubmissionsDetail:
         return file
 
     def mock_download(self, project, file, download_count):
-        return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
+        pc, _ = PageCounter.objects.get_or_create(
+            _id='download:{}:{}'.format(project._id, file._id),
+            resource=project.guids.first(),
+            action='download',
+            file=file
+        )
+        pc.total = download_count
+        pc.save()
+        return pc
 
     def test_meeting_submission_detail(self, app, user, meeting, base_url, meeting_one_submission,
             meeting_one_private_submission, random_project, meeting_submission_no_category, file):

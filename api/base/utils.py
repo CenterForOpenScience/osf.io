@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import urllib
+from past.builtins import basestring
 import furl
-import urlparse
+from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
@@ -163,11 +163,11 @@ def default_node_list_permission_queryset(user, model_cls):
     return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
 
 def extend_querystring_params(url, params):
-    scheme, netloc, path, query, _ = urlparse.urlsplit(url)
-    orig_params = urlparse.parse_qs(query)
+    scheme, netloc, path, query, _ = urlsplit(url)
+    orig_params = parse_qs(query)
     orig_params.update(params)
-    query = urllib.urlencode(orig_params, True)
-    return urlparse.urlunsplit([scheme, netloc, path, query, ''])
+    query = urlencode(orig_params, True)
+    return urlunsplit([scheme, netloc, path, query, ''])
 
 def extend_querystring_if_key_exists(url, request, key):
     if key in request.query_params.keys():
@@ -225,3 +225,24 @@ def assert_resource_type(obj, resource_tuple):
 
     a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
     assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)
+
+
+class MockQueryset(list):
+    """
+    This class is meant to convert a simple list into a filterable queryset look-a-like.
+    """
+
+    def __init__(self, items, search, default_attrs=None, **kwargs):
+        self.search = search
+
+        for item in items:
+            if default_attrs:
+                item.update(default_attrs)
+            self.add_dict_as_item(item)
+
+    def __len__(self):
+        return self.search.count()
+
+    def add_dict_as_item(self, dict):
+        item = type('item', (object,), dict)
+        self.append(item)

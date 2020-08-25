@@ -159,7 +159,7 @@ class TestSearchViews(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['results']), 1)
-        assert_not_in('Joan', res.body)
+        assert_not_in('Joan', res.body.decode())
         assert_true(res.json['results'][0]['social'])
         assert_equal(res.json['results'][0]['names']['fullname'], user_one.fullname)
         assert_equal(res.json['results'][0]['social']['github'], 'http://github.com/{}'.format(user_one.given_name))

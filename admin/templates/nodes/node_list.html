@@ -94,25 +94,10 @@
     </tbody>
 </table>
 {% if form_action and perms.osf.mark_spam %}
-<button class="btn btn-warning" type="button" data-toggle="modal" data-target="#confirmSpamListModal">
-    {% trans "Confirm Spam" %}
-</button>
-<div id="confirmSpamListModal" class="modal fade well" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">x</button>
-                <h3>{% trans "Are you sure the selected node(s) are spam?" %}</h3>
-            </div>
-            <div class="modal-footer">
-                <input class="btn btn-danger" type="submit" value="{% trans 'Confirm' %}" />
-                <button type="button" class="btn btn-default" data-dismiss="modal">
-                    {% trans "Cancel" %}
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+    {% include 'nodes/ham_spam_modal.html' with target_type="spam" %}
+{% endif %}
+{% if form_action and perms.osf.mark_ham %}
+    {% include 'nodes/ham_spam_modal.html' with target_type="ham" %}
+{% endif %}
 {% csrf_token %}
 </form>
-{% endif %}

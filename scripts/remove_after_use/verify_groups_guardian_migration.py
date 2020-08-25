@@ -1,6 +1,6 @@
 """Script to verify permissions have transferred post groups/guardian.
 
-"docker-compose run --rm web python -m scripts.remove_after_use.verify_groups_guardian_migration"
+"docker-compose run --rm web python3 -m scripts.remove_after_use.verify_groups_guardian_migration"
 """
 import logging
 from random import randint

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-import urlparse
+from future.moves.urllib.parse import urljoin
 
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models import Tag, AbstractNode
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -55,7 +54,9 @@ class Conference(ObjectIDMixin, BaseModel):
     is_meeting = models.BooleanField(default=True)
     active = models.BooleanField()
     admins = models.ManyToManyField('OSFUser')
-    #: Whether to make submitted projects public
+    # Temporary field on conference model to link Conferences and AbstractNodes
+    submissions = models.ManyToManyField('AbstractNode', related_name='conferences')
+    # Whether to make submitted projects public
     public_projects = models.BooleanField(default=True)
     poster = models.BooleanField(default=True)
     talk = models.BooleanField(default=True)
@@ -63,8 +64,7 @@ class Conference(ObjectIDMixin, BaseModel):
     # of submissions, and the email adress to send material to.
     field_names = DateTimeAwareJSONField(default=get_default_field_names)
 
-    # Cached number of submissions
-    num_submissions = models.IntegerField(default=0)
+    auto_check_spam = models.BooleanField(default=True)
 
     objects = ConferenceManager()
 
@@ -79,15 +79,14 @@ class Conference(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
+        return urljoin(settings.DOMAIN, '/view/{}'.format(self.endpoint))
 
     @property
-    def submissions(self):
+    def valid_submissions(self):
         """
-        Returns valid conference submissions with at least one file attached
+        Returns valid conference submissions - nodes can't be public or deleted
         """
-        tags = Tag.objects.filter(system=False, name__iexact=self.endpoint).values_list('pk', flat=True)
-        return AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
+        return self.submissions.filter(is_public=True, is_deleted=False)
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

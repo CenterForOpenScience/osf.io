@@ -1,33 +1,52 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from framework.auth.oauth_scopes import public_scopes
 from osf.exceptions import ValidationError
-from osf.models import ApiOAuth2PersonalToken
+from osf.models import ApiOAuth2PersonalToken, ApiOAuth2Scope
 
 from api.base.exceptions import format_validation_error
-from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField, RelationshipField, StrictVersion
+from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
+
+
+class TokenScopesRelationshipField(RelationshipField):
+
+    def to_internal_value(self, data):
+        return {'scopes': data}
 
 
 class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     """Serialize data about a registered personal access token"""
+
+    def __init__(self, *args, **kwargs):
+        super(ApiOAuth2PersonalTokenSerializer, self).__init__(*args, **kwargs)
+
+        request = kwargs['context']['request']
+
+        # Dynamically adding scopes field here, depending on the version
+        if expect_scopes_as_relationships(request):
+            field = TokenScopesRelationshipField(
+                related_view='tokens:token-scopes-list',
+                related_view_kwargs={'_id': '<_id>'},
+                always_embed=True,
+                read_only=False,
+            )
+            self.fields['scopes'] = field
+            self.fields['owner'] = RelationshipField(
+                related_view='users:user-detail',
+                related_view_kwargs={'user_id': '<owner._id>'},
+            )
+            # Making scopes embeddable
+            self.context['embed']['scopes'] = self.context['view']._get_embed_partial('scopes', field)
+        else:
+            self.fields['scopes'] = ser.SerializerMethodField()
+            self.fields['owner'] = ser.SerializerMethodField()
 
     id = IDField(source='_id', read_only=True, help_text='The object ID for this token (automatically generated)')
     type = TypeField()
 
     name = ser.CharField(
         help_text='A short, descriptive name for this token',
-        required=True,
-    )
-
-    owner = ser.CharField(
-        help_text='The user who owns this token',
-        read_only=True,  # Don't let user register a token in someone else's name
-        source='owner._id',
-    )
-
-    scopes = ser.CharField(
-        help_text='Governs permissions associated with this token',
         required=True,
     )
 
@@ -39,6 +58,12 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'absolute_url',
     })
+
+    def get_owner(self, obj):
+        return obj.owner._id
+
+    def get_scopes(self, obj):
+        return ' '.join([scope.name for scope in obj.scopes.all()])
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -58,17 +83,21 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return data
 
     def create(self, validated_data):
-        validate_requested_scopes(validated_data)
+        scopes = validate_requested_scopes(validated_data.pop('scopes', None))
+        if not scopes:
+            raise exceptions.ValidationError('Cannot create a token without scopes.')
         instance = ApiOAuth2PersonalToken(**validated_data)
         try:
             instance.save()
         except ValidationError as e:
             detail = format_validation_error(e)
             raise exceptions.ValidationError(detail=detail)
+        for scope in scopes:
+            instance.scopes.add(scope)
         return instance
 
     def update(self, instance, validated_data):
-        validate_requested_scopes(validated_data)
+        scopes = validate_requested_scopes(validated_data.pop('scopes', None))
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
 
         instance.deactivate(save=False)  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
@@ -79,6 +108,8 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                 continue
             else:
                 setattr(instance, attr, value)
+        if scopes:
+            update_scopes(instance, scopes)
         try:
             instance.save()
         except ValidationError as e:
@@ -86,8 +117,57 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
             raise exceptions.ValidationError(detail=detail)
         return instance
 
-def validate_requested_scopes(validated_data):
-    scopes_set = set(validated_data.get('scopes', '').split(' '))
-    for scope in scopes_set:
-        if scope not in public_scopes or not public_scopes[scope].is_public:
-            raise exceptions.ValidationError('User requested invalid scope')
+
+class ApiOAuth2PersonalTokenWritableSerializer(ApiOAuth2PersonalTokenSerializer):
+    def __init__(self, *args, **kwargs):
+        super(ApiOAuth2PersonalTokenWritableSerializer, self).__init__(*args, **kwargs)
+        request = kwargs['context']['request']
+
+        # Dynamically overriding scopes field for early versions to make scopes writable via an attribute
+        if not expect_scopes_as_relationships(request):
+            self.fields['scopes'] = ser.CharField(write_only=True, required=False)
+
+    def to_representation(self, obj, envelope='data'):
+        """
+        Overriding to_representation allows using different serializers for the request and response.
+
+        This will allow scopes to be a serializer method field if an early version, or a relationship field for a later version
+        """
+        context = self.context
+        return ApiOAuth2PersonalTokenSerializer(instance=obj, context=context).data
+
+
+def expect_scopes_as_relationships(request):
+    """Whether serializer should expect scopes to be a relationship instead of an attribute
+
+    Scopes were previously an attribute on the serializer to mirror that they were a CharField on the model.
+    Now that scopes are an m2m field with tokens, later versions of the serializer represent scopes as relationships.
+    """
+    return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(SCOPES_RELATIONSHIP_VERSION)
+
+def update_scopes(token, scopes):
+    to_remove = token.scopes.difference(scopes)
+    to_add = scopes.difference(token.scopes.all())
+    for scope in to_remove:
+        token.scopes.remove(scope)
+    for scope in to_add:
+        token.scopes.add(scope)
+    return
+
+def validate_requested_scopes(data):
+    if not data:
+        return []
+
+    if type(data) != list:
+        data = data.split(' ')
+    scopes = ApiOAuth2Scope.objects.filter(name__in=data)
+
+    if len(scopes) != len(data):
+        raise exceptions.NotFound('Scope names must be one of: {}.'.format(
+            ', '.join(ApiOAuth2Scope.objects.values_list('name', flat=True)),
+        ))
+
+    if scopes.filter(is_public=False):
+        raise exceptions.ValidationError('User requested invalid scope.')
+
+    return scopes

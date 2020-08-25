@@ -5,21 +5,21 @@ USE WITH CARE.
 Usage:
 
     # Check if Registration abc12 and qwe34 are stuck
-    python manage.py force_archive --check --guids abc12 qwe34
+    python3 manage.py force_archive --check --guids abc12 qwe34
 
     # Dry-run a force-archive of abc12 and qwe34. Verifies that the force-archive can occur.
-    python manage.py force_archive --dry --guids abc12 qwe34
+    python3 manage.py force_archive --dry --guids abc12 qwe34
 
     # Force-archive abc12 and qwe34
-    python manage.py force_archive --guids abc12 qwe34
+    python3 manage.py force_archive --guids abc12 qwe34
 
     # Force archive OSFS and Dropbox on abc12
-    python manage.py force_archive --addons dropbox --guids abc12
+    python3 manage.py force_archive --addons dropbox --guids abc12
 """
 from __future__ import unicode_literals
 
 from copy import deepcopy
-import httplib as http
+from rest_framework import status as http_status
 import json
 import logging
 import requests
@@ -38,6 +38,7 @@ from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
+from website.files.utils import attach_versions
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,9 @@ PERMISSIBLE_ADDONS = {
 }
 
 def complete_archive_target(reg, addon_short_name):
+    # Cache registration files count
+    reg.update_files_count()
+
     archive_job = reg.archive_job
     target = archive_job.get_target(addon_short_name)
     target.status = ARCHIVER_SUCCESS
@@ -157,7 +161,7 @@ def perform_wb_copy(reg, node_settings):
     }
     url = waterbutler_api_url_for(src._id, node_settings.short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
     res = requests.post(url, data=json.dumps(data))
-    if res.status_code not in (http.OK, http.CREATED, http.ACCEPTED):
+    if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 
 def manually_archive(tree, reg, node_settings, parent=None):
@@ -194,7 +198,7 @@ def manually_archive(tree, reg, node_settings, parent=None):
 
         if file_obj.versions.exists() and filenode['version']:  # Min version identifier is 1
             if not cloned.versions.filter(identifier=filenode['version']).exists():
-                cloned.versions.add(*file_obj.versions.filter(identifier__lte=filenode['version']))
+                attach_versions(cloned, file_obj.versions.filter(identifier__lte=filenode['version']), file_obj)
 
         if filenode.get('children'):
             manually_archive(filenode['children'], reg, node_settings, parent=cloned)

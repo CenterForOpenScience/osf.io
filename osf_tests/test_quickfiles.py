@@ -4,9 +4,9 @@ import pytest
 from framework.auth.core import Auth
 from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
-from osf.exceptions import MaxRetriesError, NodeStateError
+from osf.exceptions import DraftRegistrationStateError, MaxRetriesError, NodeStateError
 from api_tests.utils import create_test_file
-from tests.utils import assert_items_equal
+from tests.utils import assert_equals
 from tests.base import get_default_metaschema
 
 from . import factories
@@ -66,8 +66,8 @@ class TestQuickFilesNode:
         assert not quickfiles.is_deleted
 
     def test_quickfiles_cannot_be_registered(self, quickfiles, auth):
-        with pytest.raises(NodeStateError):
-            quickfiles.register_node(get_default_metaschema(), auth, '', None)
+        with pytest.raises(DraftRegistrationStateError):
+            quickfiles.register_node(get_default_metaschema(), auth, factories.DraftRegistrationFactory(branched_from=quickfiles), None)
 
     def test_quickfiles_cannot_be_forked(self, quickfiles, auth):
         with pytest.raises(NodeStateError):
@@ -134,7 +134,7 @@ class TestQuickFilesNode:
         actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf']
 
-        assert_items_equal(actual_filenames, expected_filenames)
+        assert_equals(actual_filenames, expected_filenames)
 
     def test_quickfiles_moves_files_on_triple_merge_with_name_conflict_with_digit(self, user, quickfiles):
         name = 'Woo (1).pdf'
@@ -153,7 +153,7 @@ class TestQuickFilesNode:
 
         actual_filenames = list(OsfStorageFile.objects.all().values_list('name', flat=True))
         expected_filenames = ['Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
-        assert_items_equal(actual_filenames, expected_filenames)
+        assert_equals(actual_filenames, expected_filenames)
 
     def test_quickfiles_moves_destination_quickfiles_has_weird_numbers(self, user, quickfiles):
         other_user = factories.UserFactory()
@@ -174,7 +174,7 @@ class TestQuickFilesNode:
         actual_filenames = list(quickfiles.files.all().values_list('name', flat=True))
         expected_filenames = ['Woo.pdf', 'Woo (1).pdf', 'Woo (2).pdf', 'Woo (3).pdf']
 
-        assert_items_equal(actual_filenames, expected_filenames)
+        assert_equals(actual_filenames, expected_filenames)
 
     @mock.patch('osf.models.user.MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS', 1)
     def test_quickfiles_moves_errors_after_max_renames(self, user, quickfiles):

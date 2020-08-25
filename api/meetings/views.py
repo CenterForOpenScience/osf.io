@@ -1,14 +1,15 @@
 
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F, IntegerField
-from django.db.models.functions import Length, Substr, Coalesce
+from django.db.models import Q, Count, Subquery, OuterRef, Case, When, Value, CharField, F
+from django.db.models.functions import Coalesce
 from django.contrib.contenttypes.models import ContentType
 
 from addons.osfstorage.models import OsfStorageFile
 from api.base import permissions as base_permissions
 from api.base.exceptions import InvalidFilterOperator
 from api.base.filters import ListFilterMixin
+
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.versioning import PrivateVersioning
@@ -64,17 +65,12 @@ class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        tags = Tag.objects.filter(
-            abstractnode_tagged__is_public=True,
-            abstractnode_tagged__is_deleted=False,
+        conferences = Conference.objects.filter(
+            is_meeting=True,
+            submissions__is_public=True,
+            submissions__is_deleted=False,
         ).annotate(
-            num_nodes=Count(F('abstractnode_tagged')),
-        ).filter(name=OuterRef('endpoint'))
-
-        conferences = Conference.objects.filter(is_meeting=True).annotate(
-            submissions_count=Subquery(
-                tags.values('num_nodes')[:1], output_field=IntegerField(),
-            ),
+            submissions_count=Count(F('submissions')),
         )
         return conferences.filter(submissions_count__gte=settings.CONFERENCE_MIN_COUNT)
 
@@ -119,12 +115,12 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
     view_name = 'meeting-submissions'
 
     ordering = ('-created', )  # default ordering
-    ordering_fields = ('title', 'meeting_category', 'author_name', 'download_count', 'created', )
+    ordering_fields = ('title', 'meeting_category', 'author_name', 'created', 'download_count',)
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
         meeting = self.get_meeting()
-        return self.annotate_queryset_for_filtering_and_sorting(meeting, meeting.submissions)
+        return self.annotate_queryset_for_filtering_and_sorting(meeting, meeting.valid_submissions)
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -198,31 +194,20 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
     def annotate_queryset_with_download_count(self, queryset):
         """
         Annotates queryset with download count of first osfstorage file
-
-        NOTE: This is a brittle way to do this.  PageCounter _ids are of the form
-        <file_action>:<node__id>:<file__id>:<sometimes version>.
-        - Assumes the "download" file action is the only action with that many letters
-        - Assumes node and file guids are a consistent length
-        - ENG-122 would get rid of this string matching behavior
         """
-        pages = PageCounter.objects.annotate(
-            node_id=Substr('_id', 10, 5),
-            file_id=Substr('_id', 16),
-            _id_length=Length('_id'),
-        ).filter(
-            _id__icontains='download',
-            node_id=OuterRef('guids___id'),
+        pages = PageCounter.objects.filter(
+            action='download',
+            resource_id=OuterRef('guids__id'),
             file_id=OuterRef('file_id'),
-        ).exclude(_id_length__gt=39)
+            version=None,
+        )
 
         file_subqs = OsfStorageFile.objects.filter(
             target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
             target_object_id=OuterRef('pk'),
         ).order_by('created')
 
-        queryset = queryset.annotate(
-            file_id=Subquery(file_subqs.values('_id')[:1]),
-        ).annotate(
+        queryset = queryset.annotate(file_id=Subquery(file_subqs.values('id')[:1])).annotate(
             download_count=Coalesce(Subquery(pages.values('total')[:1]), Value(0)),
         )
         return queryset
@@ -238,6 +223,6 @@ class MeetingSubmissionDetail(BaseMeetingSubmission, generics.RetrieveAPIView, N
         meeting = self.get_meeting()
         node = self.get_node()
         # Submission must be associated with the Conference
-        if meeting.endpoint not in node.tags.values_list('name', flat=True):
+        if node.id not in meeting.submissions.values_list('id', flat=True):
             raise NotFound('This is not a submission to {}.'.format(meeting.name))
         return node

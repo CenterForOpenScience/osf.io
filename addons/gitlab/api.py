@@ -1,4 +1,4 @@
-import urllib
+from future.moves.urllib.parse import urlencode
 import requests
 
 import gitlab
@@ -55,7 +55,7 @@ class GitLabClient(object):
                 raise exc
 
     def repos(self):
-        return self.user().projects.list()
+        return self.gitlab.projects.list(membership=True)
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -132,7 +132,7 @@ class GitLabClient(object):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urlencode({
         key: value
         for key, value in {
             'branch': branch,

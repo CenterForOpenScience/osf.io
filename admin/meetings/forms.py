@@ -1,3 +1,4 @@
+from past.builtins import basestring
 from datetime import datetime
 
 from django import forms
@@ -132,6 +133,10 @@ class MeetingForm(forms.Form):
     mail_attachment = forms.CharField(
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
+    )
+    auto_check_spam = forms.BooleanField(
+        label='Automatically check spam?',
+        required=False,
     )
 
     def clean_start_date(self):

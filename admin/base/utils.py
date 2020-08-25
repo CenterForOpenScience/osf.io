@@ -1,11 +1,10 @@
 """
 Utility functions and classes
 """
-from osf.models import Subject, NodeLicense, DraftRegistration
-from website.prereg.utils import get_prereg_schema
+from osf.models import Subject, NodeLicense, Brand
 
 from django.core.exceptions import ValidationError, PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.validators import RegexValidator, _lazy_re_compile
 from django.utils.http import urlencode
 from django.utils.translation import ugettext_lazy as _
@@ -112,14 +111,14 @@ def get_defaultlicense_choices():
     licenses = NodeLicense.objects.exclude(license_id='OTHER')
     return [no_default] + [(lic.id, lic.__unicode__) for lic in licenses]
 
+def get_brand_choices():
+    no_default = ('', '---------')
+    brands = Brand.objects.all()
+    return [no_default] + [(brand.id, brand.name) for brand in brands]
+
 def get_toplevel_subjects():
     return Subject.objects.filter(parent__isnull=True, provider___id='osf').values_list('id', 'text')
 
-def get_submitted_preregistrations(order='-approval__initiation_date'):
-    return DraftRegistration.objects.filter(
-        registration_schema=get_prereg_schema(),
-        approval__isnull=False
-    ).order_by(order).select_related('initiator', 'registration_schema', 'approval')
 
 def validate_embargo_date(registration, user, end_date):
     if not user.has_perm('osf.change_node'):

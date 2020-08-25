@@ -42,7 +42,7 @@ def provision_node(conference, message, node, user):
     if not message.is_spam and conference.public_projects:
         node.set_privacy('public', meeting_creation=True, auth=auth)
 
-    node.add_tag(message.conference_name, auth=auth)
+    conference.submissions.add(node)
     node.add_tag(message.conference_category, auth=auth)
     for systag in ['emailed', message.conference_name, message.conference_category]:
         node.add_system_tag(systag, save=False)
@@ -67,12 +67,13 @@ def upload_attachment(user, node, attachment):
     attachment.seek(0)
     name = (attachment.filename or settings.MISSING_FILE_NAME)
     content = attachment.read()
-    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, base_url=node.osfstorage_region.waterbutler_url, cookie=user.get_or_create_cookie(), _internal=True)
+    upload_url = waterbutler_api_url_for(node._id, 'osfstorage', name=name, base_url=node.osfstorage_region.waterbutler_url, cookie=user.get_or_create_cookie().decode(), _internal=True)
 
-    requests.put(
+    resp = requests.put(
         upload_url,
         data=content,
     )
+    resp.raise_for_status()
 
 
 def upload_attachments(user, node, attachments):

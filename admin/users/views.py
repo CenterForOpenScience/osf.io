@@ -9,11 +9,12 @@ from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView, View
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
+from django.core.paginator import Paginator
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
@@ -38,11 +39,12 @@ from osf.models.admin_log_entry import (
     USER_RESTORED,
     USER_GDPR_DELETED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     REINDEX_ELASTIC,
 )
 
 from admin.rdm.utils import RdmPermissionMixin
-from admin.users.serializers import serialize_user, serialize_simple_node
+from admin.users.serializers import serialize_user, serialize_simple_preprint, serialize_simple_node
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -253,22 +255,33 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     def delete(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
-        user_ids = [
-            uid for uid in request.POST.keys()
-            if uid != 'csrfmiddlewaretoken'
-        ]
+
+        user_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_SPAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_HAM
+            elif key != 'csrfmiddlwaretoken':
+                user_ids.append(key)
+
         for uid in user_ids:
             user = OSFUser.load(uid)
-            if 'spam_flagged' in user.system_tags:
-                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
-            user.confirm_spam()
+
+            if action == 'SPAM':
+                user.confirm_spam()
+            elif action == 'HAM':
+                user.confirm_ham(save=True)
+
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=uid,
                 object_repr='User',
-                message='Confirmed SPAM: {}'.format(uid),
-                action_flag=CONFIRM_SPAM
+                message=f'Confirmed {action}: {uid}',
+                action_flag=action_flag
             )
         return redirect('users:flagged-spam')
 
@@ -353,10 +366,12 @@ class UserFormView(PermissionRequiredMixin, FormView):
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).get()
+                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id').get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
                     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+                except OSFUser.MultipleObjectsReturned:
+                    return page_not_found(self.request, AttributeError('Multiple users with email address {} found, please notify DevOps.'.format(email)))
             self.redirect_url = reverse('users:user', kwargs={'guid': guid})
         elif name:
             self.redirect_url = reverse('users:search_list', kwargs={'name': name})
@@ -426,12 +441,31 @@ class UserSearchList(PermissionRequiredMixin, ListView):
 class UserView(PermissionRequiredMixin, GuidView):
     template_name = 'users/user.html'
     context_object_name = 'user'
+    paginate_by = 10
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
         kwargs = super(UserView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
+        user = OSFUser.load(self.kwargs.get('guid'))  # Pull User for Node/Preprints
+
+        preprint_queryset = user.preprints.filter(deleted=None).order_by('title')
+        node_queryset = user.contributor_or_group_member_to.order_by('title')
+        kwargs = self.get_paginated_queryset(preprint_queryset, 'preprint', serialize_simple_preprint, **kwargs)
+        kwargs = self.get_paginated_queryset(node_queryset, 'node', serialize_simple_node, **kwargs)
+
+        return kwargs
+
+    def get_paginated_queryset(self, queryset, resource_type, serializer, **kwargs):
+        page_num = self.request.GET.get('{}_page'.format(resource_type), 1)
+        paginator = Paginator(queryset, self.paginate_by)
+        page_queryset = paginator.page(page_num)
+
+        kwargs.setdefault('{}s'.format(resource_type), list(map(serializer, page_queryset)))
+        kwargs.setdefault('{}_page'.format(resource_type), paginator.page(page_num))
+        kwargs.setdefault('current_{}'.format(resource_type), '&{}_page='.format(resource_type) + str(page_queryset.number))
+
         return kwargs
 
     def get_object(self, queryset=None):

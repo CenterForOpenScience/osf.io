@@ -1,8 +1,6 @@
 import os
 import json
 
-LATEST_SCHEMA_VERSION = 2
-
 def _id_to_name(id):
     return ' '.join(id.split('_'))
 
@@ -23,6 +21,7 @@ def from_json(fname):
 
 OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-open-ended-2.json')),
+    ensure_schema_structure(from_json('osf-open-ended-3.json')),
     ensure_schema_structure(from_json('osf-standard-2.json')),
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
@@ -33,9 +32,14 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('veer-1.json')),
     ensure_schema_structure(from_json('aspredicted.json')),
     ensure_schema_structure(from_json('registered-report.json')),
+    ensure_schema_structure(from_json('registered-report-3.json')),
+    ensure_schema_structure(from_json('registered-report-4.json')),
     ensure_schema_structure(from_json('ridie-initiation.json')),
     ensure_schema_structure(from_json('ridie-complete.json')),
-    ensure_schema_structure(from_json('osf-preregistration.json'))
+    ensure_schema_structure(from_json('osf-preregistration.json')),
+    ensure_schema_structure(from_json('osf-preregistration-3.json')),
+    ensure_schema_structure(from_json('egap-registration.json')),
+    ensure_schema_structure(from_json('egap-registration-3.json'))
 ]
 
 METASCHEMA_ORDERING = (
@@ -51,4 +55,5 @@ METASCHEMA_ORDERING = (
     'Election Research Preacceptance Competition',
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
+    'EGAP Registration',
 )

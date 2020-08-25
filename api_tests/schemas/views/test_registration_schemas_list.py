@@ -1,35 +1,49 @@
 import pytest
 
-from waffle.testutils import override_switch
-
 from api.base.settings.defaults import API_BASE
 from osf.models.metaschema import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
-)
-from osf.features import ENABLE_INACTIVE_SCHEMAS
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
 
+)
+from osf import features
+from django.contrib.auth.models import Group
+from waffle.models import Flag
 
 @pytest.mark.django_db
 class TestSchemaList:
 
-    def test_schemas_list_crud(self, app):
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
 
+    @pytest.fixture
+    def factory_request(self, rf, url, user):
+        return rf.get(url)
+
+    @pytest.fixture
+    def url(self):
+        return '/{}schemas/registrations/?version=2.11'.format(API_BASE)
+
+    @pytest.fixture
+    def egap_admin(self):
         user = AuthUserFactory()
-        url = '/{}schemas/registrations/?version=2.11'.format(API_BASE)
-        schemas = RegistrationSchema.objects.filter(schema_version=LATEST_SCHEMA_VERSION)
+        user.save()
+        flag = Flag.objects.get(name=features.EGAP_ADMINS)
+        group = Group.objects.create(name=features.EGAP_ADMINS)  # Just using the same name for convenience
+        flag.groups.add(group)
+        group.user_set.add(user)
+        group.save()
+        flag.save()
+        return user
+
+    def test_schemas_list_crud(self, app, url, user, egap_admin, factory_request):
+
         # test_pass_authenticated_user_can_view_schemas
 
-        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=False):
-            res = app.get(url, auth=user.auth)
+        res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(active=True, visible=True).count()
-
-        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
-            res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(visible=True).count()
+        assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions(factory_request).count()
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)
@@ -45,8 +59,19 @@ class TestSchemaList:
 
         # test_filter_on_active
         url = '/{}schemas/registrations/?version=2.11&filter[active]=True'.format(API_BASE)
-        with override_switch(ENABLE_INACTIVE_SCHEMAS, active=True):
-            res = app.get(url)
+        res = app.get(url)
 
         assert res.status_code == 200
-        assert res.json['meta']['total'] == schemas.filter(active=True).count()
+        active_schemas = RegistrationSchema.objects.get_latest_versions(factory_request).filter(active=True)
+        assert res.json['meta']['total'] == active_schemas.count()
+
+        url = '/{}schemas/registrations/'.format(API_BASE)
+        # test_make_sure_egap_admins_can_view_registrations
+
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert not [data for data in res.json['data'] if data['attributes']['name'] == 'EGAP Registration']
+
+        res = app.get(url, auth=egap_admin.auth)
+        assert res.status_code == 200
+        assert [data for data in res.json['data'] if data['attributes']['name'] == 'EGAP Registration']

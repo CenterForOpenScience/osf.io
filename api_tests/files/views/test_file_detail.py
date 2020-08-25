@@ -153,7 +153,7 @@ class TestFileView:
         cookie = itsdangerous.Signer(
             website_settings.SECRET_KEY
         ).sign(session._id)
-        app.set_cookie(website_settings.COOKIE_NAME, str(cookie))
+        app.set_cookie(website_settings.COOKIE_NAME, cookie.decode())
 
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)
 
@@ -171,7 +171,7 @@ class TestFileView:
         res = app.get(file_url, auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
-        assert res.json.keys() == ['meta', 'data']
+        assert set(res.json.keys()) == {'meta', 'data'}
         attributes = res.json['data']['attributes']
         assert attributes['path'] == file.path
         assert attributes['kind'] == file.kind
@@ -575,7 +575,7 @@ class TestFileView:
         url = '/{}files/{}/'.format(API_BASE, guid._id)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert res.json.keys() == ['meta', 'data']
+        assert set(res.json.keys()) == {'meta', 'data'}
         assert res.json['data']['attributes']['path'] == file.path
 
         # test_get_file_invalid_guid_gives_404
@@ -674,7 +674,9 @@ class TestFileVersionView:
         assert res.status_code == 200
         assert len(res.json['data']) == 2
         assert res.json['data'][0]['id'] == '2'
+        assert res.json['data'][0]['attributes']['name'] == file.name
         assert res.json['data'][1]['id'] == '1'
+        assert res.json['data'][1]['attributes']['name'] == file.name
 
     def test_load_and_property(self, app, user, file):
         # test_by_id
@@ -915,27 +917,6 @@ class TestPreprintFileView:
         preprint.add_contributor(other_user, WRITE, save=True)
         res = app.get(file_url, auth=other_user.auth, expect_errors=True)
         assert res.status_code == 403
-
-        # Admin contrib
-        res = app.get(file_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-    def test_orphaned_preprint_file(self, app, file_url, preprint, user, other_user):
-        preprint.primary_file = None
-        preprint.save()
-
-        # Unauthenticated
-        res = app.get(file_url, expect_errors=True)
-        assert res.status_code == 200
-
-        # Non contrib
-        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # Write contrib
-        preprint.add_contributor(other_user, WRITE, save=True)
-        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 200
 
         # Admin contrib
         res = app.get(file_url, auth=user.auth, expect_errors=True)

@@ -1,16 +1,22 @@
+import json
+
 from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
+from rest_framework.generics import GenericAPIView
 from elasticsearch.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
 from osf.metrics import PreprintDownload, PreprintView
-from api.metrics.permissions import IsPreprintMetricsUser
-from api.metrics.serializers import PreprintMetricSerializer
+from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser
+from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializer
+from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
+from api.base.waffle_decorators import require_switch
+from elasticsearch_dsl.connections import get_connection
 
-from .utils import parse_datetimes
+from osf.features import ENABLE_RAW_METRICS
 
 
 class PreprintMetricMixin(JSONAPIBaseView):
@@ -52,11 +58,11 @@ class PreprintMetricMixin(JSONAPIBaseView):
     def format_response(self, response, query_params):
         data = []
         if getattr(response, 'aggregations') and response.aggregations:
-            for result in response.aggregations.preprints_per_day.buckets:
+            for result in response.aggregations.dates.buckets:
                 guid_results = {}
-                for preprint_result in result.per_preprint.buckets:
-                    guid_results[preprint_result['key']] = preprint_result['doc_count']
-                # return 0 for the guids with no results for consistent payloads
+                for preprint_result in result.preprints.buckets:
+                    guid_results[preprint_result['key']] = preprint_result['total']['value']
+                    # return 0 for the guids with no results for consistent payloads
                 guids = query_params['guids'].split(',')
                 if guid_results.keys() != guids:
                     for guid in guids:
@@ -70,10 +76,21 @@ class PreprintMetricMixin(JSONAPIBaseView):
             'data': data,
         }
 
-    def execute_search(self, search):
-        # TODO - this is copied from get_count_for_preprint in metrics.py - abstract this out in the future
+    def execute_search(self, search, query=None):
         try:
-            response = search.execute()
+            # There's a bug in the ES python library the prevents us from updating the search object, so lets just make
+            # the raw query. If we have it.
+            if query:
+                es = get_connection(search._using)
+                response = search._response_class(
+                    search,
+                    es.search(
+                        index=search._index,
+                        body=query,
+                    ),
+                )
+            else:
+                response = search.execute()
         except NotFoundError:
             # _get_relevant_indices returned 1 or more indices
             # that doesn't exist. Fall back to unoptimized query
@@ -90,8 +107,9 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
         search = self.metric.search(after=start_datetime)
         search = search.filter('range', timestamp={'gte': start_datetime, 'lt': end_datetime})
-        search.aggs.bucket('preprints_per_day', 'date_histogram', field='timestamp', interval=interval)
-        search.aggs['preprints_per_day'].metric('per_preprint', 'terms', field='preprint_id')
+        search.aggs.bucket('dates', 'date_histogram', field='timestamp', interval=interval) \
+            .bucket('preprints', 'terms', field='preprint_id') \
+            .metric('total', 'sum', field='count')
         search = self.add_search(search, query_params, **kwargs)
         response = self.execute_search(search)
         resp_dict = self.format_response(response, query_params)
@@ -105,11 +123,14 @@ class PreprintMetricMixin(JSONAPIBaseView):
         """
         search = self.metric.search()
         query = request.data.get('query')
-        search = search.update_from_dict(query)
+
         try:
-            results = self.execute_search(search)
-        except RequestError:
-            raise ValidationError('Misformed elasticsearch query.')
+            results = self.execute_search(search, query)
+        except RequestError as e:
+            if e.args:
+                raise ValidationError(e.info['error']['root_cause'][0]['reason'])
+            raise ValidationError('Malformed elasticsearch query.')
+
         return JsonResponse(results.to_dict())
 
 
@@ -139,3 +160,43 @@ class PreprintDownloadMetrics(PreprintMetricMixin):
     @property
     def metric(self):
         return PreprintDownload
+
+class RawMetricsView(GenericAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsRawMetricsUser,
+        TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.METRICS_BASIC]
+    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
+
+    view_category = 'raw-metrics'
+    view_name = 'raw-metrics-view'
+
+    serializer_class = RawMetricsSerializer
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def delete(self, request, *args, **kwargs):
+        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def get(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def post(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def put(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))

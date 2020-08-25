@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Migration script for Search-enabled Models."""
 from __future__ import absolute_import
@@ -385,7 +385,7 @@ def set_up_index(idx):
         es_client().indices.put_alias(index=index, name=idx)
     else:
         # Increment version
-        version = int(alias.keys()[0].split('_v')[1]) + 1
+        version = int(list(alias.keys())[0].split('_v')[1]) + 1
         logger.info('Incrementing index version to {}'.format(version))
         index = '{0}_v{1}'.format(idx, version)
         es_client().indices.delete(index=index, ignore=404)

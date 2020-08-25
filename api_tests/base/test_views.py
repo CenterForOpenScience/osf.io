@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import pkgutil
 
 import mock
@@ -38,6 +38,8 @@ VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
+        if hasattr(patt, 'name') and patt.name == 'raw-metrics-view':
+            continue
         if hasattr(patt, 'url_patterns'):
             # Namespaced list of patterns
             for subpatt in patt.url_patterns:
@@ -131,7 +133,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch(
         'osf.models.OSFUser.is_disabled',
@@ -146,7 +148,7 @@ class TestApiBaseViews(ApiTestCase):
             auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
 
 class TestStatusView(ApiTestCase):

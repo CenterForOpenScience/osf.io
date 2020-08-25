@@ -9,6 +9,7 @@ from waffle.testutils import override_switch
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as test_utils
+from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsPublishedListMixin,
@@ -350,6 +351,20 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
         res = app.get(url, auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
         assert set(expected) == set(actual)
+
+
+class TestPreprintSubjectFiltering(SubjectsFilterMixin):
+    @pytest.fixture()
+    def resource(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def resource_two(self, user):
+        return PreprintFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self):
+        return '/{}preprints/'.format(API_BASE)
 
 
 class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):

@@ -72,7 +72,7 @@ class MetricsViewMixin(object):
         }
         """
         query = {}
-        for key, value in query_params.iteritems():
+        for key, value in query_params.items():
             match = self.METRICS_QUERY_PATTERN.match(key)
             if match:
                 match_dict = match.groupdict()

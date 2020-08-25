@@ -7,7 +7,7 @@ from django.db import migrations
 EMBER_WAFFLE_PAGES = [
     'create_draft_registration',
     'dashboard',
-    'edit_draft_registration'
+    'edit_draft_registration',
     'file_detail',
     'home',
     'meeting_detail',

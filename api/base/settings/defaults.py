@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -59,6 +59,7 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
+SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -171,6 +172,12 @@ REST_FRAMEWORK = {
         '2.12',
         '2.13',
         '2.14',
+        '2.15',
+        '2.16',
+        '2.17',
+        '2.18',
+        '2.19',
+        '2.20',
     ),
     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.OSFOrderingFilter',),
     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
@@ -184,6 +191,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
         'api.base.throttling.NonCookieAuthThrottle',
+        'api.base.throttling.BurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '10000/day',
@@ -194,6 +202,7 @@ REST_FRAMEWORK = {
         'test-user': '2/hour',
         'test-anon': '1/hour',
         'send-email': '2/minute',
+        'burst': '10/second',
     },
 }
 
@@ -227,7 +236,8 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'waffle.middleware.WaffleMiddleware',
+    # 'waffle.middleware.WaffleMiddleware',
+    'api.base.middleware.SloanOverrideWaffleMiddleware',  # Delete this and uncomment WaffleMiddleware to revert Sloan
 )
 
 TEMPLATES = [
@@ -274,8 +284,8 @@ NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
 
-JWT_SECRET = 'osf_api_cas_login_jwt_secret_32b'
-JWE_SECRET = 'osf_api_cas_login_jwe_secret_32b'
+JWT_SECRET = b'osf_api_cas_login_jwt_secret_32b'
+JWE_SECRET = b'osf_api_cas_login_jwe_secret_32b'
 
 ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI
@@ -332,6 +342,15 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
 }
+
+SLOAN_ID_COOKIE_NAME = 'sloan_id'
+
+EGAP_PROVIDER_NAME = 'EGAP'
+
+MAX_SIZE_OF_ES_QUERY = 10000
+DEFAULT_ES_NULL_VALUE = 'N/A'
+
+TRAVIS_ENV = False
 
 ### NII extensions
 LOGIN_BY_EPPN = osf_settings.to_bool('LOGIN_BY_EPPN', False)

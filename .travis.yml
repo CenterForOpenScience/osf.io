@@ -3,7 +3,7 @@
 language: python
 
 python:
-    - "2.7"
+    - "3.6"
 
 sudo: false
 dist: trusty
@@ -11,6 +11,8 @@ dist: trusty
 # TODO: uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
 # addons:
 #   chrome: stable
+
+os: linux
 
 cache:
   yarn: true
@@ -26,6 +28,7 @@ env:
     - LIBXML2_DEB="libxml2-dbg_2.9.1+dfsg1-3ubuntu4.9_amd64.deb"
     - POSTGRES_DEB="postgresql-9.6_9.6.3-1.pgdg12.4+1_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-2.4.5.tar.gz"
+    - ELASTICSEARCH6_ARCHIVE="elasticsearch-6.3.1.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
     - LIBPCRE_DEB="libpcre3_8.31-2ubuntu2.3_amd64.deb"
     # - VARNISH_DEB="varnish_4.1.0-1~trusty_amd64.deb"
@@ -35,7 +38,7 @@ env:
     # Workaround for travis
     - ES_GC_OPTS="-XX:+UseG1GC"
     - ES_HEAP_SIZE="1024m"
-  matrix:
+  jobs:
     - TEST_BUILD="addons"
     - TEST_BUILD="website"
     - TEST_BUILD="api1_and_js"
@@ -49,6 +52,7 @@ before_install:
       mkdir -p $HOME/.cache/downloads
       mkdir -p $HOME/.cache/pip
       mkdir -p $HOME/.cache/wheelhouse
+      mkdir -p $HOME/.cache/testmon
       rm -rf node_modules  ## TODO remove this later
     # postgres
     - |
@@ -100,6 +104,33 @@ before_install:
           fi
       done
 
+    # elasticsearch6
+    - |
+
+      if [ ! -f "$ELASTICSEARCH6_ARCHIVE" ]; then
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/$ELASTICSEARCH6_ARCHIVE
+      fi
+
+      if [ ! -f "$ELASTICSEARCH6_ARCHIVE.sha1.txt" ]; then
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/$ELASTICSEARCH6_ARCHIVE.sha1.txt
+      fi
+
+      sha1sum --check $ELASTICSEARCH6_ARCHIVE.sha1.txt
+
+      mkdir -p /tmp/elasticsearch6
+      tar xzf $ELASTICSEARCH6_ARCHIVE -C /tmp/elasticsearch6 --strip-components=1
+    - /tmp/elasticsearch6/bin/elasticsearch > /dev/null & export ELASTICSEARCH6_PID=$!
+    # Wait for elasticsearch to come online
+    - |-
+      while true; do
+          sleep 5
+          curl -sf http://localhost:9201/_cluster/health?wait_for_status=yellow
+          if [ $? -eq 0 ]; then
+              break
+          fi
+      done
+
+
 install:
     - cd $TRAVIS_BUILD_DIR
     - cp website/settings/local-travis.py website/settings/local.py
@@ -132,9 +163,17 @@ install:
     - netstat -an|grep tcp.*LISTEN
 
 # Run Python tests (core and addon) and JS tests
+
+after_script:
+    # This ensures failed tests are removed from the cache so they can be re-tried.
+    - inv remove_failures_from_testmon --db-path=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
+
 script:
     - export COVERAGE=`if [ $(echo "$TRAVIS_BRANCH"|grep -e "feature/") ]; then echo "--coverage"; else echo ""; fi`
-    - invoke test_travis_$TEST_BUILD -n 4 $COVERAGE
+    # Testmon will run for PRs, but will be disabled when merging into master or develop
+    - export TESTMON=`if [[ "$TRAVIS_PULL_REQUEST_BRANCH" == "" && "$TRAVIS_BRANCH" == "develop" || "$TRAVIS_PULL_REQUEST_BRANCH" == "" && "$TRAVIS_BRANCH" == "master" ]]; then echo ""; else  echo "--testmon"; fi`
+    - export TESTMON_DATAFILE=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
+    - invoke test_travis_$TEST_BUILD -n 1 $COVERAGE $TESTMON
 
 after_success:
     - if [[ $(echo "$TRAVIS_BRANCH"|grep -e "feature/") ]]; then coveralls; fi
@@ -151,6 +190,7 @@ before_cache:
   # kill any running processes
   - kill -9 $POSTGRES_PID
   - kill -9 $ELASTICSEARCH_PID
+  - kill -9 $ELASTICSEARCH6_PID
 
 branches:
   except:

@@ -1,6 +1,6 @@
 import pytz
 import functools
-import httplib as http
+from rest_framework import status as http_status
 
 from dateutil.parser import parse as parse_date
 from django.apps import apps
@@ -9,7 +9,6 @@ from django.conf import settings
 from django.db import models
 
 from osf.utils.fields import NonNaiveDateTimeField
-from website.prereg import utils as prereg_utils
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -22,7 +21,6 @@ from osf.exceptions import (
 )
 from website.project import tasks as project_tasks
 
-from osf.models import RegistrationSchema
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
@@ -239,15 +237,7 @@ class TokenApprovableSanction(Sanction):
         pass
 
     def ask(self, group):
-        """
-        :param list group: List of (user, node) tuples containing contributors to notify about the
-        sanction.
-        """
-        for contrib, node in group:
-            if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib, node)
-            else:
-                self._notify_non_authorizer(contrib, node)
+        pass
 
     class Meta:
         abstract = True
@@ -273,6 +263,10 @@ class EmailApprovableSanction(TokenApprovableSanction):
     #   }
     # }
     stashed_urls = DateTimeAwareJSONField(default=dict, blank=True)
+
+    @property
+    def should_suppress_emails(self):
+        return self._get_registration().external_registration
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -309,8 +303,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
     def _notify_authorizer(self, authorizer, node):
         context = self._email_template_context(authorizer,
-                                               node,
-                                               is_authorizer=True)
+                                            node,
+                                            is_authorizer=True)
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
                 authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
@@ -324,6 +318,19 @@ class EmailApprovableSanction(TokenApprovableSanction):
                 user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
+
+    def ask(self, group):
+        """
+        :param list group: List of (user, node) tuples containing contributors to notify about the
+        sanction.
+        """
+        if self.should_suppress_emails:
+            return
+        for contrib, node in group:
+            if contrib._id in self.approval_state:
+                self._notify_authorizer(contrib, node)
+            else:
+                self._notify_non_authorizer(contrib, node)
 
     def add_authorizer(self, user, node, **kwargs):
         super(EmailApprovableSanction, self).add_authorizer(user, node,
@@ -339,37 +346,22 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, *args):
-        if self.notify_initiator_on_complete:
+        if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
     class Meta:
         abstract = True
 
 
-class PreregCallbackMixin(object):
+class SanctionCallbackMixin(object):
     def _notify_initiator(self):
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
+        raise NotImplementedError()
 
-        registration = self._get_registration()
-        prereg_schema = RegistrationSchema.get_prereg_schema()
-        draft = DraftRegistration.objects.get(registered_node=registration)
-
-        if registration.registered_schema.filter(id=prereg_schema.id).exists():
-            mails.send_mail(draft.initiator.username,
-                            mails.PREREG_CHALLENGE_ACCEPTED,
-                            user=draft.initiator,
-                            registration_url=registration.absolute_url,
-                            mimetype='html')
-
-    def _email_template_context(self,  # TODO: remove after prereg challenge
-                                user,
-                                node,
-                                is_authorizer=False,
-                                urls=None):
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         return {}
 
 
-class Embargo(PreregCallbackMixin, EmailApprovableSanction):
+class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
@@ -495,7 +487,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         reg = self._get_registration()
         if reg.is_public:
             raise HTTPError(
-                http.BAD_REQUEST,
+                http_status.HTTP_400_BAD_REQUEST,
                 data={
                     'message_short': 'Registrations cannot be modified',
                     'message_long': 'This project has already been registered and cannot be deleted',
@@ -522,6 +514,7 @@ class Embargo(PreregCallbackMixin, EmailApprovableSanction):
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
+            parent_registration.deleted = timezone.now()
             parent_registration.save()
 
     def disapprove_embargo(self, user, token):
@@ -574,6 +567,9 @@ class Retraction(EmailApprovableSanction):
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     justification = models.CharField(max_length=2048, null=True, blank=True)
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
+
+    def _get_registration(self):
+        return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first()
@@ -696,7 +692,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(PreregCallbackMixin, EmailApprovableSanction):
+class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
@@ -846,22 +842,7 @@ class DraftRegistrationApproval(Sanction):
     meta = DateTimeAwareJSONField(default=dict, blank=True)
 
     def _send_rejection_email(self, user, draft):
-        schema = draft.registration_schema
-        prereg_schema = prereg_utils.get_prereg_schema()
-
-        if schema._id == prereg_schema._id:
-            mails.send_mail(
-                user.username,
-                mails.PREREG_CHALLENGE_REJECTED,
-                user=user,
-                draft_url=draft.absolute_url,
-                can_change_preferences=False,
-                logo=osf_settings.OSF_PREREG_LOGO
-            )
-        else:
-            raise NotImplementedError(
-                'TODO: add a generic email template for registration approvals'
-            )
+        raise NotImplementedError('TODO: add a generic email template for registration approvals')
 
     def approve(self, user):
         if not user.has_perm('osf.administer_prereg'):

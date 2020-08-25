@@ -10,9 +10,10 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
+from osf.models import BaseFileNode
 from osf.exceptions import ValidationError
 from osf.utils.permissions import WRITE, ADMIN
-from osf.utils.fields import EncryptedJSONField
+
 from osf_tests.factories import ProjectFactory, UserFactory, PreprintFactory, RegionFactory, NodeFactory
 
 from addons.osfstorage.tests import factories
@@ -99,7 +100,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             u'modified': version.created.isoformat(),
             u'contentType': u'text/plain',
             u'checkout': None,
@@ -120,7 +121,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'kind': u'file',
             u'version': 1,
             u'downloads': 0,
-            u'size': 1234L,
+            u'size': 1234,
             # modified date is the creation date of latest version
             # see https://github.com/CenterForOpenScience/osf.io/pull/7155
             u'modified': version.created.isoformat(),
@@ -184,9 +185,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         mock_session.data = {}
         child = self.node_settings.get_root().append_file('Test')
 
-        utils.update_analytics(self.project, child._id, 0)
-        utils.update_analytics(self.project, child._id, 1)
-        utils.update_analytics(self.project, child._id, 2)
+        utils.update_analytics(self.project, child, 0)
+        utils.update_analytics(self.project, child, 1)
+        utils.update_analytics(self.project, child, 2)
 
         assert_equals(child.get_download_count(), 3)
         assert_equals(child.get_download_count(0), 1)
@@ -223,6 +224,18 @@ class TestOsfstorageFileNode(StorageTestCase):
                 None
             )
 
+    def test_delete_root_node(self):
+        root = self.node_settings.get_root()
+        folder = root.append_folder('Test')
+        file = folder.append_file('test_file')
+
+        # If the top-level item is a root, it is not deleted
+        root.delete()
+        root.reload()
+        assert root.type == 'osf.osfstoragefolder'
+        assert BaseFileNode.objects.get(_id=folder._id).type == 'osf.trashedfolder'
+        assert BaseFileNode.objects.get(_id=file._id).type == 'osf.trashedfile'
+
     def test_delete_file(self):
         child = self.node_settings.get_root().append_file('Test')
         field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and f.name not in ['id', 'content_type_pk']]
@@ -237,7 +250,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         child_storage['materialized_path'] = child.materialized_path
         assert_equal(trashed.path, '/' + child._id)
         trashed_field_names = [f.name for f in child._meta.get_fields() if not f.is_relation and
-                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted_on', 'deleted_by', 'type', 'modified']]
+                               f.name not in ['id', '_materialized_path', 'content_type_pk', '_path', 'deleted', 'deleted_on', 'deleted_by', 'type', 'modified']]
         for f, value in child_data.items():
             if f in trashed_field_names:
                 assert_equal(getattr(trashed, f), value)
@@ -299,11 +312,24 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_copy(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().get_basefilenode_version(to_copy).version_name, 'Carp')
 
         copied = to_copy.copy_under(copy_to)
 
         assert_not_equal(copied, to_copy)
         assert_equal(copied.parent, copy_to)
+        assert_equal(copied.versions.first().get_basefilenode_version(copied).version_name, 'Carp')
         assert_equal(to_copy.parent, self.node_settings.get_root())
 
     def test_copy_node_file_to_preprint(self):
@@ -334,11 +360,48 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(new_project, move_to.target)
         assert_equal(new_project, child.target)
 
+    def test_move_nested_between_regions(self):
+        canada = RegionFactory()
+        new_component = NodeFactory(parent=self.project)
+        component_node_settings = new_component.get_addon('osfstorage')
+        component_node_settings.region = canada
+        component_node_settings.save()
+
+        move_to = component_node_settings.get_root()
+        to_move = self.node_settings.get_root().append_folder('Aaah').append_folder('Woop')
+        child = to_move.append_file('There it is')
+
+        for _ in range(2):
+            version = factories.FileVersionFactory(region=self.node_settings.region)
+            child.add_version(version)
+        child.save()
+
+        moved = to_move.move_under(move_to)
+        child.reload()
+
+        assert new_component == child.target
+        versions = child.versions.order_by('-created')
+        assert versions.first().region == component_node_settings.region
+        assert versions.last().region == self.node_settings.region
+
     def test_copy_rename(self):
         to_copy = self.node_settings.get_root().append_file('Carp')
         copy_to = self.node_settings.get_root().append_folder('Cloud')
+        version = to_copy.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
+        assert_equal(to_copy.versions.first().get_basefilenode_version(to_copy).version_name, 'Carp')
 
         copied = to_copy.copy_under(copy_to, name='But')
+        assert_equal(copied.versions.first().get_basefilenode_version(copied).version_name, 'But')
 
         assert_equal(copied.name, 'But')
         assert_not_equal(copied, to_copy)
@@ -357,12 +420,25 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_move_and_rename(self):
         to_move = self.node_settings.get_root().append_file('Carp')
+        version = to_move.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'sha256': 'existing',
+                'vault': 'the cloud',
+                'archive': 'erchiv'
+            })
         move_to = self.node_settings.get_root().append_folder('Cloud')
+        assert_equal(to_move.versions.first().get_basefilenode_version(to_move).version_name, 'Carp')
 
         moved = to_move.move_under(move_to, name='Tuna')
 
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
+        assert_equal(moved.versions.first().get_basefilenode_version(moved).version_name, 'Tuna')
         assert_equal(moved.parent, move_to)
 
     def test_move_preprint_primary_file_to_node(self):
@@ -611,82 +687,106 @@ class TestOsfstorageFileNode(StorageTestCase):
 
 
 @pytest.mark.django_db
-class TestNodeSettingsModel(StorageTestCase):
-    def test_fields(self):
-        assert_true(self.node_settings._id)
-        assert_is(self.node_settings.has_auth, True)
-        assert_is(self.node_settings.complete, True)
+class TestNodeSettingsModel:
 
-    def test_after_fork_copies_versions(self):
+    @pytest.fixture()
+    def region(self):
+        return RegionFactory()
+
+    @pytest.fixture()
+    def region2(self):
+        return RegionFactory()
+
+    @pytest.fixture()
+    def user(self, region):
+        user = UserFactory()
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = region
+        user_settings.save()
+        return user
+
+    @pytest.fixture()
+    def user2(self, region2):
+        user = UserFactory()
+        user_settings = user.get_addon('osfstorage')
+        user_settings.default_region = region2
+        user_settings.save()
+        return user
+
+    @pytest.fixture()
+    def node(self, user):
+        return ProjectFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
+    def child_node_with_different_region(self, user, node, region2):
+        child = NodeFactory(parent=node, creator=user, is_public=True)
+        child_settings = child.get_addon('osfstorage')
+        child_settings.region_id = region2.id
+        child_settings.save()
+        return child
+
+    @pytest.fixture()
+    def node_settings(sel, node):
+        return node.get_addon('osfstorage')
+
+    @pytest.fixture()
+    def user_settings(sel, user):
+        return user.get_addon('osfstorage')
+
+    @pytest.fixture()
+    def auth_obj(self, node):
+        return Auth(user=node.creator)
+
+    def test_fields(self, node_settings):
+        assert node_settings._id
+        assert node_settings.has_auth is True
+        assert node_settings.complete is True
+
+    def test_after_fork_copies_versions(self, node, node_settings, auth_obj):
         num_versions = 5
         path = 'jazz/dreamers-ball.mp3'
 
-        record = self.node_settings.get_root().append_file(path)
+        record = node_settings.get_root().append_file(path)
 
         for _ in range(num_versions):
             version = factories.FileVersionFactory()
-            record.versions.add(version)
+            record.add_version(version)
 
-        fork = self.project.fork_node(self.auth_obj)
+        fork = node.fork_node(auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
 
         cloned_record = fork_node_settings.get_root().find_child_by_name(path)
-        assert_equal(list(cloned_record.versions.all()), list(record.versions.all()))
-        assert_true(fork_node_settings.root_node)
+        assert list(cloned_record.versions.all()) == list(record.versions.all())
+        assert fork_node_settings.root_node
 
-    def test_fork_reverts_to_using_user_storage_default(self):
-        user = UserFactory()
-        user2 = UserFactory()
-        us = RegionFactory()
-        canada = RegionFactory()
+    def test_fork_reverts_to_node_storage_region(self, user2, region, region2, node, child_node_with_different_region):
+        """
+        Despite different user regions defaults, the forked node always stay in the same region as it's orginal node.
+        """
+        fork = node.fork_node(Auth(user2))
+        assert fork.get_addon('osfstorage').region_id == region.id
 
-        user_settings = user.get_addon('osfstorage')
-        user_settings.default_region = us
-        user_settings.save()
-        user2_settings = user2.get_addon('osfstorage')
-        user2_settings.default_region = canada
-        user2_settings.save()
-
-        project = ProjectFactory(creator=user, is_public=True)
-        child = NodeFactory(parent=project, creator=user, is_public=True)
-        child_settings = child.get_addon('osfstorage')
-        child_settings.region_id = canada.id
-        child_settings.save()
-
-        fork = project.fork_node(Auth(user))
+        # don't inherit or override region
         child_fork = models.Node.objects.get_children(fork).first()
-        assert fork.get_addon('osfstorage').region_id == us.id
-        assert fork.get_addon('osfstorage').user_settings == user.get_addon('osfstorage')
-        assert child_fork.get_addon('osfstorage').region_id == us.id
+        assert child_fork.forked_from == child_node_with_different_region
+        assert child_fork.get_addon('osfstorage').region_id == region2.id
 
-        fork = project.fork_node(Auth(user2))
-        child_fork = models.Node.objects.get_children(fork).first()
-        assert fork.get_addon('osfstorage').region_id == canada.id
-        assert fork.get_addon('osfstorage').user_settings == user2.get_addon('osfstorage')
-        assert child_fork.get_addon('osfstorage').region_id == canada.id
-
-    def test_region_wb_url_from_creators_defaults(self):
-        user = UserFactory()
-        region = RegionFactory()
-
-        user_settings = user.get_addon('osfstorage')
+    def test_region_wb_url_from_creators_defaults(self, user, region, user_settings, node):
         user_settings.default_region = region
         user_settings.save()
 
-        project = ProjectFactory(creator=user)
-        node_settings = project.get_addon('osfstorage')
+        node_settings = node.get_addon('osfstorage')
 
         assert node_settings.region_id == region.id
 
-    def test_encrypted_json_field(self):
+    def test_encrypted_json_field(self, region):
         new_test_creds = {
             'storage': {
                 'go': 'science',
                 'hey': ['woo', 'yeah', 'great']
             }
         }
-        region = RegionFactory()
         region.waterbutler_credentials = new_test_creds
         region.save()
 

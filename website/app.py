@@ -6,7 +6,6 @@ import importlib
 import json
 import logging
 import os
-import thread
 from collections import OrderedDict
 
 import django
@@ -28,7 +27,7 @@ from website.mails import listeners  # noqa
 from website.notifications import listeners  # noqa
 from website.identifiers import listeners  # noqa
 from website.reviews import listeners  # noqa
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 logger = logging.getLogger(__name__)
 
@@ -95,16 +94,13 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     if app.config.get('IS_INITIALIZED', False) is True:
         return app
 
-    logger.info('Initializing the application from process {}, thread {}.'.format(
-        os.getpid(), thread.get_ident()
-    ))
     setup_django()
 
     # The settings module
     settings = importlib.import_module(settings_module)
 
     init_addons(settings, routes)
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
 
     app.debug = settings.DEBUG_MODE
@@ -112,6 +108,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
     # default config for flask app, however, this does not affect setting cookie using set_cookie()
     app.config['SESSION_COOKIE_SECURE'] = settings.SESSION_COOKIE_SECURE
     app.config['SESSION_COOKIE_HTTPONLY'] = settings.SESSION_COOKIE_HTTPONLY
+    app.config['SESSION_COOKIE_SAMESITE'] = settings.SESSION_COOKIE_SAMESITE
 
     if routes:
         try:

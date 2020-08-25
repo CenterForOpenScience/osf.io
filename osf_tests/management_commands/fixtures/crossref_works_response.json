@@ -1,0 +1,117 @@
+{
+	"status": "ok",
+	"message-type": "work-list",
+	"message-version": "1.0.0",
+	"message": {
+		"facets": {},
+		"total-results": 1,
+		"items": [{
+			"indexed": {
+				"date-parts": [
+					[
+						2019,
+						2,
+						18
+					]
+				],
+				"date-time": "2019-02-18T11:25:35Z",
+				"timestamp": 1550489135657
+			},
+			"posted": {
+				"date-parts": [
+					[
+						2018,
+						7,
+						20
+					]
+				]
+			},
+			"group-title": "MockRxiv",
+			"reference-count": 0,
+			"publisher": "Center for Open Science",
+			"license": [{
+				"URL": "https://creativecommons.org/licenses/by/4.0/legalcode",
+				"start": {
+					"date-parts": [
+						[
+							2018,
+							7,
+							20
+						]
+					],
+					"date-time": "2018-07-20T00:00:00Z",
+					"timestamp": 1532044800000
+				},
+				"delay-in-days": 0,
+				"content-version": "unspecified"
+			}],
+			"content-domain": {
+				"domain": [],
+				"crossmark-restriction": false
+			},
+			"abstract": "<p>Mock Abstract</p>",
+			"DOI": "10.31236/FK2osf.io/guid0",
+			"type": "posted-content",
+			"created": {
+				"date-parts": [
+					[
+						2018,
+						7,
+						20
+					]
+				],
+				"date-time": "2018-07-20T08:04:28Z",
+				"timestamp": 1532073868000
+			},
+			"source": "Crossref",
+			"is-referenced-by-count": 0,
+			"title": [
+				"A Mock Preprint Title."
+			],
+			"prefix": "10.31236",
+			"author": [{
+					"given": "Mock given name",
+					"family": "Mock family name",
+					"sequence": "first",
+					"affiliation": []
+				},
+				{
+					"given": "Mock given name 2",
+					"family": "Mock family name 2",
+					"sequence": "additional",
+					"affiliation": []
+				}
+			],
+			"member": "15934",
+			"deposited": {
+				"date-parts": [
+					[
+						2018,
+						11,
+						29
+					]
+				],
+				"date-time": "2018-11-29T13:30:25Z",
+				"timestamp": 1543498225000
+			},
+			"score": 1.0,
+			"issued": {
+				"date-parts": [
+					[
+						2018,
+						7,
+						20
+					]
+				]
+			},
+			"references-count": 0,
+			"URL": "http://dx.doi.org/10.31236/osf.io/guid0",
+			"subtype": "preprint"
+		}],
+		"items-per-page": 20,
+		"query": {
+			"start-index": 0,
+			"search-terms": null
+		}
+	}
+}

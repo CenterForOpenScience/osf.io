@@ -7,12 +7,14 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
+from django.db import connections, models
 from django.db.models import ForeignKey
+from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from include import IncludeQuerySet
+from past.builtins import basestring
 
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
@@ -44,7 +46,20 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class BaseModel(TimeStampedModel):
+class QuerySetExplainMixin:
+    def explain(self, *args):
+        extra_arguments = ''
+        for item in args:
+            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, basestring) else extra_arguments
+        cursor = connections[self.db].cursor()
+        query, params = self.query.sql_with_params()
+        cursor.execute('explain analyze verbose %s' % query, params)
+        return '\n'.join(r[0] for r in cursor.fetchall())
+
+QuerySet = type('QuerySet', (QuerySetExplainMixin, QuerySet), dict(QuerySet.__dict__))
+
+
+class BaseModel(TimeStampedModel, QuerySetExplainMixin):
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import mock
 import pytest
-import urlparse
+from future.moves.urllib.parse import urlparse, urljoin
 
 from addons.base.tests import views
 from addons.base.tests.utils import MockFolder
@@ -24,8 +24,8 @@ class TestConfigViews(MendeleyTestCase, views.OAuthCitationAddonConfigViewsTestC
     Serializer = MendeleySerializer
     client = Mendeley
     citationsProvider = MendeleyCitationsProvider
-    foldersApiUrl = urlparse.urljoin(API_URL, 'folders')
-    documentsApiUrl = urlparse.urljoin(API_URL, 'documents')
+    foldersApiUrl = urljoin(API_URL, 'folders')
+    documentsApiUrl = urljoin(API_URL, 'documents')
     mockResponses = mock_responses
 
     @mock.patch('addons.mendeley.models.NodeSettings._fetch_folder_name', mock.PropertyMock(return_value='Fake Name'))

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import functools
-import urlparse
+from future.moves.urllib.parse import urljoin
 import logging
 import re
 
@@ -13,9 +13,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from guardian.shortcuts import get_objects_for_user, get_group_perms
+from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth.models import AnonymousUser
 from django.db.models.signals import post_save
 
 from framework.auth import Auth
@@ -26,7 +25,7 @@ from osf.models import Subject, Tag, OSFUser, PreprintProvider
 from osf.models.preprintlog import PreprintLog
 from osf.models.contributor import PreprintContributor
 from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
-from osf.models.validators import validate_subject_hierarchy, validate_title, validate_doi
+from osf.models.validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
@@ -37,20 +36,23 @@ from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
+from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
-from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin
+from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
-
 
 from framework.sentry import log_exception
 from osf.exceptions import (
-    PreprintStateError, InvalidTagError, TagNotFoundError
+    PreprintStateError,
+    InvalidTagError,
+    TagNotFoundError
 )
+from django.contrib.postgres.fields import ArrayField
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +105,8 @@ class PreprintManager(IncludeManager):
         return ret.distinct('id', 'created') if include_non_public else ret
 
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel,
-        Loggable, Taggable, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, ContributorMixin):
+class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
+        Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin):
 
     objects = PreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
@@ -127,6 +129,16 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         'tags',
     }
 
+    PREREG_LINK_INFO_CHOICES = [('prereg_designs', 'Pre-registration of study designs'),
+                                ('prereg_analysis', 'Pre-registration of study analysis'),
+                                ('prereg_both', 'Pre-registration of study designs and study analysis')
+                                ]
+
+    HAS_LINKS_CHOICES = [('available', 'Available'),
+                         ('no', 'No'),
+                         ('not_applicable', 'Not applicable')
+                         ]
+
     provider = models.ForeignKey('osf.PreprintProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
@@ -145,10 +157,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     date_withdrawn = NonNaiveDateTimeField(default=None, null=True, blank=True)
     withdrawal_justification = models.TextField(default='', blank=True)
     ever_public = models.BooleanField(default=False, blank=True)
-    title = models.TextField(
-        validators=[validate_title]
-    )  # this should be a charfield but data from mongo didn't fit in 255
-    description = models.TextField(blank=True, default='')
     creator = models.ForeignKey(OSFUser,
                                 db_index=True,
                                 related_name='preprints_created',
@@ -161,7 +169,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                                             validators=[validate_doi],
                                             null=True, blank=True)
     files = GenericRelation('osf.OsfStorageFile', object_id_field='target_object_id', content_type_field='target_content_type')
-    primary_file = models.ForeignKey('osf.OsfStorageFile', null=True, blank=True, related_name='preprint')
+    primary_file = models.ForeignKey(
+        'osf.OsfStorageFile',
+        null=True,
+        blank=True,
+        related_name='preprint',
+        on_delete=models.CASCADE
+    )
     # (for legacy preprints), pull off of node
     is_public = models.BooleanField(default=True, db_index=True)
     # Datetime when old node was deleted (for legacy preprints)
@@ -169,12 +183,73 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     # For legacy preprints
     migrated = NonNaiveDateTimeField(null=True, blank=True)
     region = models.ForeignKey(Region, null=True, blank=True, on_delete=models.CASCADE)
+
+    # For ContributorMixin
+    guardian_object_type = 'preprint'
+
+    READ_PREPRINT = 'read_{}'.format(guardian_object_type)
+    WRITE_PREPRINT = 'write_{}'.format(guardian_object_type)
+    ADMIN_PREPRINT = 'admin_{}'.format(guardian_object_type)
+
+    # For ContributorMixin
+    base_perms = [READ_PREPRINT, WRITE_PREPRINT, ADMIN_PREPRINT]
+
+    # For GuardianMixin
     groups = {
-        'read': ('read_preprint',),
-        'write': ('read_preprint', 'write_preprint',),
-        'admin': ('read_preprint', 'write_preprint', 'admin_preprint',)
+        'read': (READ_PREPRINT,),
+        'write': (READ_PREPRINT, WRITE_PREPRINT,),
+        'admin': (READ_PREPRINT, WRITE_PREPRINT, ADMIN_PREPRINT,)
     }
+    # For GuardianMixin
     group_format = 'preprint_{self.id}_{group}'
+
+    conflict_of_interest_statement = models.TextField(
+        blank=True,
+        null=True,
+    )
+    has_coi = models.NullBooleanField(
+        blank=True,
+        null=True
+    )
+    has_prereg_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
+        null=True,
+        blank=True
+    )
+    why_no_prereg = models.TextField(
+        null=True,
+        blank=True
+    )
+    prereg_links = ArrayField(
+        models.URLField(
+            null=True,
+            blank=True
+        ),
+        blank=True,
+        null=True
+    )
+    prereg_link_info = models.TextField(
+        choices=PREREG_LINK_INFO_CHOICES,
+        null=True,
+        blank=True
+    )
+    has_data_links = models.TextField(
+        choices=HAS_LINKS_CHOICES,
+        null=True,
+        blank=True
+    )
+    why_no_data = models.TextField(
+        null=True,
+        blank=True
+    )
+    data_links = ArrayField(
+        models.URLField(
+            null=True,
+            blank=True
+        ),
+        blank=True,
+        null=True
+    )
 
     class Meta:
         permissions = (
@@ -190,6 +265,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     @property
     def is_deleted(self):
         return bool(self.deleted)
+
+    @is_deleted.setter
+    def is_deleted(self, val):
+        """Set whether or not this preprint has been deleted."""
+        if val and not self.deleted:
+            self.deleted = timezone.now()
+        elif val is False:
+            self.deleted = None
 
     @property
     def root_folder(self):
@@ -248,7 +331,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def log_params(self):
         # Property needed for ContributorMixin
         return {
-            'preprint': self._id
+            'preprint': self._id,
         }
 
     @property
@@ -323,7 +406,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(
+        return urljoin(
             self.provider.domain if self.provider.domain_redirect_enabled else settings.DOMAIN,
             self.url
         )
@@ -346,7 +429,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     @property
     def admin_contributor_or_group_member_ids(self):
         # Overrides ContributorMixin
-        # Preprints don't have parents or group members at the moment, so we override here.
+        # Preprints don't have parents or group members at the moment, so this is just admin group member ids
         # Called when removing project subscriptions
         return self.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
@@ -424,45 +507,19 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         # Override for ContributorMixin, Preprints don't have addons
         return []
 
-    def get_subjects(self):
-        ret = []
-        for subj_list in self.subject_hierarchy:
-            subj_hierarchy = []
-            for subj in subj_list:
-                if subj:
-                    subj_hierarchy += ({'id': subj._id, 'text': subj.text}, )
-            if subj_hierarchy:
-                ret.append(subj_hierarchy)
-        return ret
-
-    def set_subjects(self, preprint_subjects, auth, log=True):
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-
-        old_subjects = list(self.subjects.values_list('id', flat=True))
-        self.subjects.clear()
-        for subj_list in preprint_subjects:
-            subj_hierarchy = []
-            for s in subj_list:
-                subj_hierarchy.append(s)
-            if subj_hierarchy:
-                validate_subject_hierarchy(subj_hierarchy)
-                for s_id in subj_hierarchy:
-                    self.subjects.add(Subject.load(s_id))
-
-        if log:
-            self.add_log(
-                action=PreprintLog.SUBJECTS_UPDATED,
-                params={
-                    'subjects': list(self.subjects.values('_id', 'text')),
-                    'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
-                    'preprint': self._id
-                },
-                auth=auth,
-                save=False,
-            )
-
-        self.save(old_subjects=old_subjects)
+    def add_subjects_log(self, old_subjects, auth):
+        # Overrides TaxonomizableMixin
+        self.add_log(
+            action=PreprintLog.SUBJECTS_UPDATED,
+            params={
+                'subjects': list(self.subjects.values('_id', 'text')),
+                'old_subjects': list(Subject.objects.filter(id__in=old_subjects).values('_id', 'text')),
+                'preprint': self._id
+            },
+            auth=auth,
+            save=False,
+        )
+        return
 
     def set_primary_file(self, preprint_file, auth, save=False):
         if not self.root_folder:
@@ -574,7 +631,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields:
+        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.is_public):
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
@@ -583,6 +640,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
+        if self.has_submitted_preprint and not self.primary_file:
+            raise ValidationError('Cannot save non-initial preprint without primary file.')
 
         ret = super(Preprint, self).save(*args, **kwargs)
 
@@ -740,7 +799,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self.save()
 
     def set_title(self, title, auth, save=False):
-        """Set the title of this Node and log it.
+        """Set the title of this Preprint and log it.
 
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
@@ -748,28 +807,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        # Called so validation does not have to wait until save.
-        validate_title(title)
-
-        original_title = self.title
-        new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
-        if original_title == new_title:
-            return False
-        self.title = new_title
-        self.add_log(
-            action=PreprintLog.EDITED_TITLE,
-            params={
-                'preprint': self._id,
-                'title_new': self.title,
-                'title_original': original_title,
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        return None
+        return super(Preprint, self).set_title(title, auth, save)
 
     def set_description(self, description, auth, save=False):
         """Set the description and log the event.
@@ -781,37 +819,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        original = self.description
-        new_description = sanitize.strip_html(description)
-        if original == new_description:
-            return False
-        self.description = new_description
-        self.add_log(
-            action=PreprintLog.EDITED_DESCRIPTION,
-            params={
-                'preprint': self._id,
-                'description_new': self.description,
-                'description_original': original
-            },
-            auth=auth,
-            save=False,
-        )
-        if save:
-            self.save()
-        return None
+        return super(Preprint, self).set_description(description, auth, save)
 
     def get_spam_fields(self, saved_fields):
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
-
-    def get_permissions(self, user):
-        # Overrides guardian mixin - doesn't return view_preprint perms, and
-        # returns readable perms instead of literal perms
-        if isinstance(user, AnonymousUser):
-            return []
-        perms = ['read_preprint', 'write_preprint', 'admin_preprint']
-        user_perms = sorted(set(get_group_perms(user, self)).intersection(perms), key=perms.index)
-        return [perm.split('_')[0] for perm in user_perms]
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
         """Set the permissions for this preprint - mainly for spam purposes.
@@ -951,6 +963,302 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params=params
         )
 
+    # Overrides ContributorMixin
+    def _add_related_source_tags(self, contributor):
+        system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
+        contributor.add_system_tag(system_tag_to_add)
+
+    def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
+        """
+        This method sets the field `has_coi` to indicate if there's a conflict interest statement for this preprint
+        and logs that change.
+
+        :param auth: Auth object
+        :param has_coi: Boolean represents if a user has a conflict of interest statement available.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.has_coi == has_coi:
+            return
+
+        self.has_coi = has_coi
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_COI,
+                params={
+                    'user': auth.user._id,
+                    'value': self.has_coi
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def update_conflict_of_interest_statement(self, auth: Auth, coi_statement: str, log: bool = True, save: bool = True):
+        """
+        This method sets the `conflict_of_interest_statement` field for this preprint and logs that change.
+
+        :param auth: Auth object
+        :param coi_statement: String represents a user's conflict of interest statement for their preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.conflict_of_interest_statement == coi_statement:
+            return
+
+        if not self.has_coi:
+            raise PreprintStateError('You do not have the ability to edit a conflict of interest while the has_coi field is '
+                                  'set to false or unanswered')
+
+        self.conflict_of_interest_statement = coi_statement
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_COI_STATEMENT,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True):
+        """
+        This method sets the `has_data_links` field that respresent the availability of links to supplementary data
+        for this preprint and logs that change.
+
+        :param auth: Auth object
+        :param has_data_links: Boolean represents the availability of links to supplementary data for this preprint
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.has_data_links == has_data_links:
+            return
+
+        self.has_data_links = has_data_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_DATA_LINKS,
+                params={
+                    'user': auth.user._id,
+                    'value': has_data_links
+                },
+                auth=auth
+            )
+        if has_data_links != 'available':
+            self.update_data_links(auth, data_links=[], log=False)
+        if save:
+            self.save()
+
+    def update_data_links(self, auth: Auth, data_links: list, log: bool = True, save: bool = True):
+        """
+        This method sets the field `data_links` which is a validated list of links to supplementary data for a
+        preprint and logs that change.
+
+        :param auth: Auth object
+        :param data_links: List urls that should link to supplementary data for a preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.data_links == data_links:
+            return
+
+        if not self.has_data_links == 'available' and data_links:
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to false'
+                                     ' or is unanswered.')
+
+        self.data_links = data_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_DATA_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_why_no_data(self, auth: Auth, why_no_data: str, log: bool = True, save: bool = True):
+        """
+        This method sets the field `why_no_data` a string that represents a user provided explanation for the
+        unavailability of supplementary data for their preprint.
+
+        :param auth: Auth object
+        :param why_no_data: String a user provided explanation for the unavailability of data links for their preprint.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.why_no_data == why_no_data:
+            return
+
+        if not self.has_data_links == 'no':
+            raise PreprintStateError('You cannot edit this statement while your data links availability is set to true or'
+                                  ' is unanswered.')
+        else:
+            self.why_no_data = why_no_data
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_WHY_NO_DATA,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_has_prereg_links(self, auth: Auth, has_prereg_links: bool, log: bool = True, save: bool = True):
+        """
+        This method updates the `has_prereg_links` field, that indicates availability of links to prereg data and logs
+        changes to it.
+
+        :param auth: Auth object
+        :param has_prereg_links: Boolean indicates whether the user has links to preregistration materials
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if has_prereg_links == self.has_prereg_links:
+            return
+
+        self.has_prereg_links = has_prereg_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_HAS_PREREG_LINKS,
+                params={
+                    'user': auth.user._id,
+                    'value': has_prereg_links
+                },
+                auth=auth
+            )
+        if has_prereg_links != 'available':
+            self.update_prereg_links(auth, prereg_links=[], log=False)
+            self.update_prereg_link_info(auth, prereg_link_info=None, log=False)
+        if save:
+            self.save()
+
+    def update_why_no_prereg(self, auth: Auth, why_no_prereg: str, log: bool = True, save: bool = True):
+        """
+        This method updates the field `why_no_prereg` that contains a user provided explanation of prereg data
+        unavailability and logs changes to it.
+
+        :param auth: Auth object
+        :param why_no_prereg: String explanation of prereg data unavailability
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if why_no_prereg == self.why_no_prereg:
+            return
+
+        if self.has_prereg_links == 'available' or self.has_prereg_links is None:
+            raise PreprintStateError('You cannot edit this statement while your prereg links '
+                                  'availability is set to true or is unanswered.')
+
+        self.why_no_prereg = why_no_prereg
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_WHY_NO_PREREG,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_prereg_links(self, auth: Auth, prereg_links: list, log: bool = True, save: bool = True):
+        """
+        This method updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
+        and logs changes to it.
+
+        :param auth: Auth object
+        :param prereg_links: List list of validated urls with schemes to links to prereg data
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if prereg_links == self.prereg_links:
+            return
+
+        if not self.has_prereg_links == 'available' and prereg_links:
+            raise PreprintStateError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.')
+
+        self.prereg_links = prereg_links
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_PREREG_LINKS,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
+
+    def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
+        """
+        This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
+        contained in the list in the static member `PREREG_LINK_INFO_CHOICES` that describe the nature of the preprint's
+        prereg links.
+
+        :param auth: Auth object
+        :param prereg_link_info: String a string describing the nature of the preprint's prereg links.
+        :param log: Boolean should this be logged?
+        :param save: Boolean should this be saved immediately?
+        :return:
+
+        This method brought to you via a grant from the Alfred P Sloan Foundation.
+        """
+        if self.prereg_link_info == prereg_link_info:
+            return
+
+        if not self.has_prereg_links == 'available' and prereg_link_info:
+            raise PreprintStateError('You cannot edit this field while your prereg links'
+                                  ' availability is set to false or is unanswered.')
+
+        self.prereg_link_info = prereg_link_info
+
+        if log:
+            self.add_log(
+                action=PreprintLog.UPDATE_PREREG_LINKS_INFO,
+                params={
+                    'user': auth.user._id,
+                },
+                auth=auth
+            )
+        if save:
+            self.save()
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):

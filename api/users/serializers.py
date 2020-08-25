@@ -21,13 +21,13 @@ from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEma
 from osf.models import OSFUser, QuickFilesNode, Preprint
 from osf.utils.requests import string_type_request_headers
 from addons.osfstorage.models import Region
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL, OSF_SUPPORT_EMAIL
+from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
-from website import mails
 from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
+from api.base.versioning import get_kebab_snake_case_field
 
 
 class QuickFilesRelationshipField(RelationshipField):
@@ -214,7 +214,7 @@ class UserSerializer(JSONAPISerializer):
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')
-        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions')
+        return group_qs.exists() or obj.abstractprovideruserobjectpermission_set.filter(permission__codename='view_submissions') or []
 
     def get_default_region_id(self, obj):
         region_id = Region.objects.first()._id
@@ -295,7 +295,9 @@ class UserAddonSettingsSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'user_addons'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-addons')
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -435,6 +437,7 @@ class UserSettingsSerializer(JSONAPISerializer):
     subscribe_osf_general_email = ser.SerializerMethodField()
     subscribe_osf_help_email = ser.SerializerMethodField()
     deactivation_requested = ser.BooleanField(source='requested_deactivation', required=False)
+    contacted_deactivation = ser.BooleanField(required=False, read_only=True)
     secret = ser.SerializerMethodField(read_only=True)
 
     def to_representation(self, instance):
@@ -489,7 +492,9 @@ class UserSettingsSerializer(JSONAPISerializer):
         )
 
     class Meta:
-        type_ = 'user_settings'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-settings')
 
 
 class UserSettingsUpdateSerializer(UserSettingsSerializer):
@@ -533,18 +538,12 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         two_factor_addon.save()
 
     def request_deactivation(self, instance, requested_deactivation):
+
         if instance.requested_deactivation != requested_deactivation:
-            if requested_deactivation:
-                mails.send_mail(
-                    to_addr=OSF_SUPPORT_EMAIL,
-                    mail=mails.REQUEST_DEACTIVATION,
-                    user=instance,
-                    can_change_preferences=False,
-                )
-                instance.email_last_sent = timezone.now()
             instance.requested_deactivation = requested_deactivation
+            if not requested_deactivation:
+                instance.contacted_deactivation = False
             instance.save()
-        return
 
     def to_representation(self, instance):
         """
@@ -617,7 +616,9 @@ class UserEmailsSerializer(JSONAPISerializer):
             return '{}?resend_confirmation=true'.format(url)
 
     class Meta:
-        type_ = 'user_emails'
+        @staticmethod
+        def get_type(request):
+            return get_kebab_snake_case_field(request.version, 'user-emails')
 
     def create(self, validated_data):
         user = self.context['request'].user

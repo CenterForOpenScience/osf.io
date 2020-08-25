@@ -31,9 +31,9 @@ class Migration(migrations.Migration):
                 ('end_date', osf.utils.fields.NonNaiveDateTimeField()),
                 ('color', models.CharField(max_length=7)),
                 ('license', models.CharField(blank=True, max_length=256, null=True)),
-                ('default_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to=b'')),
+                ('default_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to='')),
                 ('default_alt_text', models.TextField()),
-                ('mobile_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to=b'')),
+                ('mobile_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to='')),
                 ('mobile_alt_text', models.TextField(blank=True, null=True)),
             ],
             options={

@@ -166,16 +166,16 @@ class OsfStorageFileNode(BaseFileNode):
         self._materialized_path = self.materialized_path
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
 
+    def update_region_from_latest_version(self, destination_parent):
+        raise NotImplementedError
+
     def move_under(self, destination_parent, name=None):
         if self.is_preprint_primary:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
         if self.is_checked_out:
             raise exceptions.FileNodeCheckedOutError()
-        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
-        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
-            most_recent_fileversion.region = destination_parent.target.osfstorage_region
-            most_recent_fileversion.save()
+        self.update_region_from_latest_version(destination_parent)
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def check_in_or_out(self, user, checkout, save=False):
@@ -194,12 +194,7 @@ class OsfStorageFileNode(BaseFileNode):
         target = self.target
         if isinstance(target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if target.has_permission(user, permissions.ADMIN):
-                # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
-                        registration_schema__name='Prereg Challenge').exists():
-                    raise exceptions.FileNodeCheckedOutError()
-            else:
+            if not target.has_permission(user, permissions.ADMIN):
                 raise exceptions.FileNodeCheckedOutError()
 
         if not target.has_permission(user, permissions.WRITE):
@@ -293,6 +288,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
         })
         return ret
 
+    def update_region_from_latest_version(self, destination_parent):
+        most_recent_fileversion = self.versions.select_related('region').order_by('-created').first()
+        if most_recent_fileversion and most_recent_fileversion.region != destination_parent.target.osfstorage_region:
+            most_recent_fileversion.region = destination_parent.target.osfstorage_region
+            most_recent_fileversion.save()
+
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
         version = FileVersion(identifier=self.versions.count() + 1, creator=creator, location=location)
@@ -307,7 +308,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
         version._find_matching_archive(save=False)
 
         version.save()
-        self.versions.add(version)
+        # Adds version to the list of file versions - using custom through table
+        self.add_version(version)
         self.save()
 
         return version
@@ -451,6 +453,9 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
             ret['fullPath'] = self.materialized_path
         return ret
 
+    def update_region_from_latest_version(self, destination_parent):
+        for child in self.children.all().prefetch_related('versions'):
+            child.update_region_from_latest_version(destination_parent)
 
 class Region(models.Model):
     _id = models.CharField(max_length=255, db_index=True)
@@ -540,7 +545,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         clone.owner = fork
         user_settings = user.get_addon('osfstorage')
         clone.user_settings = user_settings
-        clone.region_id = user_settings.default_region_id
+        clone.region_id = self.region_id
 
         clone.save()
         if not self.root_node:

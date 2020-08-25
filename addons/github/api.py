@@ -1,4 +1,4 @@
-import urllib
+from future.moves.urllib.parse import urlencode
 
 import github3
 import cachecontrol
@@ -156,7 +156,7 @@ class GitHubClient(object):
 
 def ref_to_params(branch=None, sha=None):
 
-    params = urllib.urlencode({
+    params = urlencode({
         key: value
         for key, value in {
             'branch': branch,

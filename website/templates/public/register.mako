@@ -6,7 +6,7 @@
 
     %if campaign == "prereg":
         <div class="text-center m-t-lg">
-            <h3>Preregistration Challenge</h3><hr>
+            <h3>GRDM Preregistration</h3><hr>
             <p>Please login to the GakuNin RDM or create a free account to continue.</p>
         </div>
     %endif

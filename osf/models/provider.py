@@ -50,12 +50,19 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                                         null=True, blank=True, on_delete=models.CASCADE)
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
+    access_token = EncryptedTextField(null=True, blank=True)
+
+    brand = models.ForeignKey('Brand', related_name='providers', null=True, blank=True, on_delete=models.SET_NULL)
+
+    branded_discovery_page = models.BooleanField(default=True)
+    advertises_on_discovery = models.BooleanField(default=True)
+    has_landing_page = models.BooleanField(default=False)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
                 'allow_submissions={self.allow_submissions!r}) with id {self.id!r}').format(self=self)
 
-    def __unicode__(self):
+    def __str__(self):
         return '[{}] {} - {}'.format(self.readable_type, self.name, self.id)
 
     @property
@@ -158,8 +165,9 @@ class PreprintProvider(AbstractProvider):
     share_source = models.CharField(blank=True, max_length=200)
     share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    access_token = EncryptedTextField(null=True, blank=True)
+
     doi_prefix = models.CharField(blank=True, max_length=32)
+    in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

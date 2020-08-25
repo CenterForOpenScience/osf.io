@@ -1,11 +1,13 @@
 import mock
 import pytest
 import datetime
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from rest_framework import exceptions
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.models import Registration, NodeLog, NodeLicense
 from framework.auth import Auth
@@ -28,6 +30,7 @@ from osf_tests.factories import (
 
 from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()
@@ -47,7 +50,12 @@ class TestRegistrationDetail:
 
     @pytest.fixture()
     def private_project(self, user):
-        return ProjectFactory(title='Private Project', creator=user)
+        private_project = ProjectFactory(title='Private Project', creator=user)
+        create_test_file(private_project, user, filename='sake recipe')
+        create_test_file(private_project, user, filename='sake rice wine recipe')
+        deleted_file = create_test_file(private_project, user, filename='No sake')
+        deleted_file.delete()
+        return private_project
 
     @pytest.fixture()
     def public_registration(self, user, public_project):
@@ -188,6 +196,8 @@ class TestRegistrationDetail:
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['comments']['links']['related']['meta']['count'] == 2
         assert res.json['data']['relationships']['wikis']['links']['related']['meta']['count'] == 1
+        assert res.json['data']['relationships']['files']['links']['related']['meta']['count'] == 2
+
         registration_comment_reply.is_deleted = True
         registration_comment_reply.save()
         res = app.get(url, auth=user.auth)
@@ -212,6 +222,15 @@ class TestRegistrationDetail:
         res = app.get(private_url, auth=user.auth)
         assert res.status_code == 200
         assert 'registrations' not in res.json['data']['relationships']
+
+    #   test_registration_has_subjects_links_for_later_versions
+        res = app.get(public_url + '?version={}'.format(subjects_as_relationships_version))
+        related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
+        expected_url = '{}subjects/'.format(public_url)
+        assert urlparse(related_url).path == expected_url
+        self_url = res.json['data']['relationships']['subjects']['links']['self']['href']
+        expected_url = '{}relationships/subjects/'.format(public_url)
+        assert urlparse(self_url).path == expected_url
 
 
 class TestRegistrationUpdateTestCase:
@@ -396,7 +415,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             private_registration, public_url, institution_one,
             private_url, make_payload, license_cc0):
 
-        #   test_public_field_has_invalid_value
+        #   test_field_has_invalid_value
         invalid_public_payload = make_payload(
             id=public_registration._id,
             attributes={'public': 'Dr.Strange'})
@@ -405,9 +424,22 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             public_url,
             invalid_public_payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
+
+        invalid_public_payload = make_payload(
+            id=public_registration._id,
+            attributes={'category': 'data visualization'})
+
+        res = app.put_json_api(
+            public_url,
+            invalid_public_payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == '"data visualization" is not a valid choice.'
 
     #   test_some_registration_fields_are_editable
         user.affiliated_institutions.add(institution_one)
@@ -451,7 +483,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['category'] == 'instrumentation'
         assert res.json['data']['attributes']['description'] == description
         assert res.json['data']['attributes']['tags'] == tags
         assert res.json['data']['attributes']['title'] == private_registration.title
@@ -469,7 +501,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     #   test_can_unset_certain_registration_fields
         attribute_list = {
             'public': True,
-            'category': 'instrumentation',
+            'category': '',
             'title': 'New title',
             'description': '',
             'tags': [],
@@ -487,7 +519,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
-        assert res.json['data']['attributes']['category'] == 'project'
+        assert res.json['data']['attributes']['category'] == ''
         assert res.json['data']['attributes']['description'] == ''
         assert res.json['data']['attributes']['tags'] == []
         assert res.json['data']['attributes']['title'] == private_registration.title
@@ -552,7 +584,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'license',
             'affiliated_institutions',
             'article_doi',
-            'custom_citation']
+            'custom_citation',
+            'category']
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
@@ -574,7 +607,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'license',
             'affiliated_institutions',
             'article_doi',
-            'custom_citation']
+            'custom_citation',
+            'category']
 
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -604,8 +638,11 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'An unapproved registration cannot be made public.'
 
-    def test_read_write_contributor_cannot_update_custom_citation(
-            self, app, read_write_contributor, private_registration, private_url, make_payload):
+    def test_read_write_contributor_can_edit_writeable_fields(
+            self, app, read_write_contributor, private_registration,
+            private_url, make_payload, institution_one):
+
+        #  test_read_write_contributor_cannot_update_custom_citation
         payload = make_payload(
             id=private_registration._id,
             attributes={'custom_citation': 'This is a custom citation yay'}
@@ -613,26 +650,38 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_read_write_contributor_cannot_update_description(
-            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        #  test_read_write_contributor_cannot_update_description
         payload = make_payload(
             id=private_registration._id,
             attributes={'description': 'Updated description'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
-    def test_read_write_contributor_cannot_update_article_doi(
-            self, app, read_write_contributor, private_registration, private_url, make_payload):
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'title': 'Updated title'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
+
+        #  test_read_write_contributor_cannot_update_category
+        payload = make_payload(
+            id=private_registration._id,
+            attributes={'category': 'instrumentation'}
+        )
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
+
+        #  test_read_write_contributor_cannot_update_article_doi
         payload = make_payload(
             id=private_registration._id,
             attributes={'article_doi': '10.123/456/789'}
         )
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
-    def test_read_write_contributor_cannot_update_affiliated_institution(
-            self, app, read_write_contributor, private_registration, private_url, institution_one, make_payload):
+        #  test_read_write_contributor_cannot_update_affiliated_institution
         payload = make_payload(
             id=private_registration._id,
         )
@@ -643,8 +692,9 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
                 ]
             }
         }
-        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
+        del payload['data']['attributes']  # just check permissions on institutions relationship
+        res = app.put_json_api(private_url, payload, auth=read_write_contributor.auth)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
@@ -1095,3 +1145,17 @@ class TestUpdateRegistrationLicense(TestNodeUpdateLicense):
                 }
             }
         return payload
+
+
+@pytest.mark.django_db
+class TestUpdateRegistrationSubjects(UpdateSubjectsMixin):
+    @pytest.fixture()
+    def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
+        registration = RegistrationFactory(creator=user_admin_contrib, is_public=False)
+        registration.add_contributor(user_write_contrib, auth=Auth(user_admin_contrib))
+        registration.add_contributor(
+            user_read_contrib,
+            auth=Auth(user_admin_contrib),
+            permissions=permissions.READ)
+        registration.save()
+        return registration

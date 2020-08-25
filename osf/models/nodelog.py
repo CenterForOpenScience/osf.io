@@ -25,6 +25,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
     CREATED_FROM = 'created_from'
 
     PROJECT_CREATED = 'project_created'
+    # Nodes created as part of the registration process
+    PROJECT_CREATED_FROM_DRAFT_REG = 'project_created_from_draft_reg'
     PROJECT_REGISTERED = 'project_registered'
     PROJECT_DELETED = 'project_deleted'
 
@@ -82,6 +84,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
 
+    CATEGORY_UPDATED = 'category_updated'
+    ARTICLE_DOI_UPDATED = 'article_doi_updated'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -112,6 +117,9 @@ class NodeLog(ObjectIDMixin, BaseModel):
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
 
+    EXTERNAL_REGISTRATION_CREATED = 'external_registration_created'
+    EXTERNAL_REGISTRATION_IMPORTED = 'external_registration_imported'
+
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
@@ -128,6 +136,10 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     VIEW_ONLY_LINK_ADDED = 'view_only_link_added'
     VIEW_ONLY_LINK_REMOVED = 'view_only_link_removed'
+
+    CONFIRM_HAM = 'confirm_ham'
+    FLAG_SPAM = 'flag_spam'
+    CONFIRM_SPAM = 'confirm_spam'
 
     MAPCORE_MAP_GROUP_NOT_CREATED = 'mapcore_map_group_not_created'
     MAPCORE_MAP_GROUP_NOT_UPDATED = 'mapcore_map_group_not_updated'
@@ -149,12 +161,12 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 EDITED_DESCRIPTION, UPDATED_FIELDS, FILE_MOVED, FILE_COPIED, FILE_METADATA_UPDATED,
                 FOLDER_CREATED, FILE_ADDED, FILE_UPDATED, FILE_REMOVED, FILE_RESTORED, ADDON_ADDED,
                 ADDON_REMOVED, COMMENT_ADDED, COMMENT_REMOVED, COMMENT_UPDATED, COMMENT_RESTORED,
-                MADE_CONTRIBUTOR_VISIBLE,
+                MADE_CONTRIBUTOR_VISIBLE, CONFIRM_HAM, FLAG_SPAM, CONFIRM_SPAM,
                 MADE_CONTRIBUTOR_INVISIBLE, EXTERNAL_IDS_ADDED, EMBARGO_APPROVED, EMBARGO_TERMINATED,
                 EMBARGO_CANCELLED, EMBARGO_COMPLETED, EMBARGO_INITIATED, RETRACTION_APPROVED,
-                RETRACTION_CANCELLED, RETRACTION_INITIATED, REGISTRATION_APPROVAL_CANCELLED,
-                REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
-                PREREG_REGISTRATION_INITIATED,
+                RETRACTION_CANCELLED, RETRACTION_INITIATED, EXTERNAL_REGISTRATION_CREATED, EXTERNAL_REGISTRATION_IMPORTED,
+                REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
+                PREREG_REGISTRATION_INITIATED, PROJECT_CREATED_FROM_DRAFT_REG,
                 GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
@@ -176,7 +188,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     original_node = models.ForeignKey('AbstractNode', db_index=True,
                                       null=True, blank=True, on_delete=models.CASCADE)
 
-    def __unicode__(self):
+    def __repr__(self):
         return ('({self.action!r}, user={self.user!r},, node={self.node!r}, params={self.params!r}) '
                 'with id {self.id!r}').format(self=self)
 

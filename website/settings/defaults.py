@@ -56,6 +56,7 @@ INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
 
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+DATE_LAST_LOGIN_THROTTLE_DELTA = datetime.timedelta(seconds=DATE_LAST_LOGIN_THROTTLE)
 
 # Seconds that must elapse before change password attempts are reset(currently 1 hour)
 TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
@@ -125,6 +126,7 @@ OSF_SESSION_TIMEOUT = 30 * 24 * 60 * 60  # 30 days in seconds
 # TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
+SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_HTTPONLY = True
 
 # local path to private key and cert for local development using https, overwrite in local.py
@@ -331,10 +333,6 @@ DOI_URL_PREFIX = 'https://doi.org/'
 # General Format for DOIs
 DOI_FORMAT = '{prefix}/osf.io/{guid}'
 
-# ezid
-EZID_DOI_NAMESPACE = 'doi:10.5072'
-EZID_ARK_NAMESPACE = 'ark:99999'
-
 # datacite
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
@@ -352,6 +350,13 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
+
+# if our DOIs cannot be confirmed after X amount of days email the admin
+DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
+
+# Crossref has a second metadata api that uses JSON with different features
+CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
+
 
 # Leave as `None` for production, test/staging/local envs must set
 SHARE_PREPRINT_PROVIDER_PREPEND = None
@@ -409,12 +414,16 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
-        'scripts.remove_after_use.end_prereg_challenge',
+        'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.migrate_pagecounter_data',
+        'osf.management.commands.migrate_deleted_date',
+        'osf.management.commands.addon_deleted_date',
+        'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -423,6 +432,10 @@ class CeleryConfig:
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
+        'website.collections.tasks',
+        'website.identifier.tasks',
+        'website.preprints.tasks',
+        'website.project.tasks',
     }
 
     high_pri_modules = {
@@ -471,6 +484,8 @@ class CeleryConfig:
         'framework.celery_tasks',
         'framework.email.tasks',
         'osf.external.tasks',
+        'osf.management.commands.data_storage_usage',
+        'osf.management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
         'website.notifications.tasks',
         'website.archiver.tasks',
@@ -492,6 +507,9 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
+        'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.update_institution_project_counts',
         'nii.mapcore_refresh_tokens',
     )
 
@@ -582,23 +600,58 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
+            'registration_schema_metrics': {
+                'task': 'management.commands.registration_schema_metrics',
+                'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
+                'kwargs': {'dry_run': False}
+            },
             'run_keen_summaries': {
                 'task': 'scripts.analytics.run_keen_summaries',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            'run_keen_snapshots': {
-                'task': 'scripts.analytics.run_keen_snapshots',
-                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            },
+            # 'run_keen_snapshots': {
+            #     'task': 'scripts.analytics.run_keen_snapshots',
+            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            # },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
                 'kwargs': {'yesterday': True}
             },
+            # 'data_storage_usage': {
+            #   'task': 'management.commands.data_storage_usage',
+            #   'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
+            # },
+            # 'migrate_pagecounter_data': {
+            #   'task': 'management.commands.migrate_pagecounter_data',
+            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
+            # },
+            # 'migrate_registration_responses': {
+            #   'task': 'management.commands.migrate_registration_responses',
+            #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
+            # 'migrate_deleted_date': {
+            #   'task': 'management.commands.migrate_deleted_date',
+            #   'schedule': crontab(minute=0, hour=3),
+            # 'addon_deleted_date': {
+            #   'task': 'management.commands.addon_deleted_date',
+            #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
+            # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'deactivate_requested_accounts': {
+                'task': 'management.commands.deactivate_requested_accounts',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+            },
+            'check_crossref_doi': {
+                'task': 'management.commands.check_crossref_dois',
+                'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
+            },
+            'update_institution_project_counts': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
             'mapcore_refresh_token': {
                 'task': 'nii.mapcore_refresh_tokens',
@@ -638,6 +691,8 @@ assert (DRAFT_REGISTRATION_APPROVAL_PERIOD > EMBARGO_END_DATE_MIN), 'The draft r
 
 # TODO: Remove references to this flag
 ENABLE_INSTITUTIONS = True
+
+ENABLE_STORAGE_USAGE_CACHE = True
 
 ENABLE_VARNISH = False
 ENABLE_ESI = False
@@ -1919,6 +1974,11 @@ CHRONOS_HOST = os_env.get('CHRONOS_HOST', 'https://sandbox.api.chronos-oa.com')
 VERIFY_CHRONOS_SSL_CERT = not DEV_MODE
 # Maximum minutes we allow ChronosSubmission status to be stale (only update when user is requesting it)
 CHRONOS_SUBMISSION_UPDATE_TIME = timedelta(minutes=5)
+
+DS_METRICS_OSF_TOKEN = None
+DS_METRICS_BASE_FOLDER = None
+REG_METRICS_OSF_TOKEN = None
+REG_METRICS_BASE_FOLDER = None
 
 ### NII extensions
 

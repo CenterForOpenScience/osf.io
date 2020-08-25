@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import copy
-import json
 import random
 import unittest
 import uuid
@@ -171,7 +170,6 @@ class TestVarnish(DbTestCase):
             embed_keys = list()
 
         if 'errors' in data.keys():
-            print json.dumps(data, indent=4)
             return
         for item in data['data']:  # all these should be lists.
             if 'embeds' in item.keys():

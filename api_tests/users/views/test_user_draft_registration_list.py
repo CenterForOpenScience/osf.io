@@ -12,7 +12,8 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from website.project.metadata.schemas import LATEST_SCHEMA_VERSION
+
+SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
@@ -28,7 +29,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=LATEST_SCHEMA_VERSION)
+            schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -65,13 +66,13 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-        #   test_read_only_contributor_cannot_view_draft_list
+        #   test_read_only_contributor_can_view_draft_list
         res = app.get(
             url_draft_registrations,
             auth=user_read_contrib.auth)
         assert len(res.json['data']) == 0
 
-        #   test_read_write_contributor_cannot_view_draft_list
+        #   test_read_write_contributor_can_view_draft_list
         res = app.get(
             url_draft_registrations,
             auth=user_write_contrib.auth)
@@ -98,7 +99,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(
             self, app, user, project_public, draft_registration, url_draft_registrations):
-        reg = RegistrationFactory(project=project_public)
+        reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
         draft_registration.registered_node = reg
         draft_registration.save()
         res = app.get(url_draft_registrations, auth=user.auth)
@@ -110,7 +111,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             self, app, user, project_public,
             draft_registration, schema,
             url_draft_registrations):
-        reg = RegistrationFactory(project=project_public)
+        reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
         draft_registration.registered_node = reg
         draft_registration.save()
         reg.is_deleted = True

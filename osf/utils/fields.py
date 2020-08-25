@@ -18,31 +18,40 @@ def ensure_bytes(value):
     return value.encode('utf-8')
 
 
+def ensure_str(value):
+    if isinstance(value, bytes):
+        return value.decode()
+    return value
+
 def encrypt_string(value, prefix='jwe:::'):
-    if value and not value.startswith(prefix):
+    prefix = ensure_bytes(prefix)
+    if value:
         value = ensure_bytes(value)
-        try:
-            value = prefix + jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
-        except InvalidTag:
-            # Allow use of an encrypted DB locally without encrypting fields
-            if settings.DEBUG_MODE:
-                pass
-            else:
-                raise
+        if value and not value.startswith(prefix):
+            try:
+                value = (prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
+            except InvalidTag:
+                # Allow use of an encrypted DB locally without encrypting fields
+                if settings.DEBUG_MODE:
+                    pass
+                else:
+                    raise
     return value
 
 
 def decrypt_string(value, prefix='jwe:::'):
-    if value and value.startswith(prefix):
+    prefix = ensure_bytes(prefix)
+    if value:
         value = ensure_bytes(value)
-        try:
-            value = jwe.decrypt(bytes(value[len(prefix):]), SENSITIVE_DATA_KEY)
-        except InvalidTag:
-            # Allow use of an encrypted DB locally without decrypting fields
-            if settings.DEBUG_MODE:
-                pass
-            else:
-                raise
+        if value.startswith(prefix):
+            try:
+                value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
+            except InvalidTag:
+                # Allow use of an encrypted DB locally without decrypting fields
+                if settings.DEBUG_MODE:
+                    pass
+                else:
+                    raise
     return value
 
 class LowercaseCharField(models.CharField):

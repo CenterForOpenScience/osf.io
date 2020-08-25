@@ -129,10 +129,6 @@ class PreprintsListFilteringMixin(object):
     def node_is_public_url(self, url):
         return '{}filter[node_is_public]='.format(url)
 
-    @pytest.fixture()
-    def has_subject(self, url):
-        return '{}filter[subjects]='.format(url)
-
     def test_provider_filter_null(self, app, user, provider_url):
         expected = []
         res = app.get('{}null'.format(provider_url), auth=user.auth)
@@ -302,34 +298,6 @@ class PreprintsListFilteringMixin(object):
         )
         actual = set([preprint['id'] for preprint in res.json['data']])
         assert expected == actual
-
-    def test_subject_filter_using_id(
-            self, app, user, subject_one, preprint_one, preprint_three,
-            has_subject):
-        expected = set([preprint_one._id, preprint_three._id])
-        res = app.get(
-            '{}{}'.format(has_subject, subject_one._id),
-            auth=user.auth
-        )
-        actual = set([preprint['id'] for preprint in res.json['data']])
-        assert expected == actual
-
-    def test_subject_filter_using_text(
-            self, app, user, subject_one, preprint_one,
-            preprint_three, has_subject):
-        expected = set([preprint_one._id, preprint_three._id])
-        res = app.get(
-            '{}{}'.format(has_subject, subject_one.text),
-            auth=user.auth
-        )
-        actual = set([preprint['id'] for preprint in res.json['data']])
-        assert expected == actual
-
-    def test_unknows_subject_filter(self, app, user, has_subject):
-        res = app.get(
-            '{}notActuallyASubjectIdOrTestMostLikely'.format(has_subject),
-            auth=user.auth)
-        assert len(res.json['data']) == 0
 
     def test_node_is_public_filter(
             self, app, user, preprint_one, preprint_two,

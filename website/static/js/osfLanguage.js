@@ -13,9 +13,8 @@ module.exports = {
         registerConfirm: 'Before you continue...',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
         registerFail: 'There was a problem completing your registration. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
-        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
+        submitDraftFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + $osf.osfSupportLink() + '.',
         beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
-        beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.',
     },
     Addons: {
         dataverse: {

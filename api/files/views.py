@@ -1,5 +1,6 @@
+import io
+
 from django.http import FileResponse
-from django.core.files.base import ContentFile
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -16,7 +17,7 @@ from osf.models import (
 
 from api.base.exceptions import Gone
 from api.base.permissions import PermissionWithGetter
-from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle
+from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle
 from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
@@ -79,7 +80,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = FileDetailSerializer
-    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, )
+    throttle_classes = (CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle, )
     view_category = 'files'
     view_name = 'file-detail'
 
@@ -246,7 +247,8 @@ class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, File
         file_type = self.request.query_params.get('export', 'json')
         record = self.get_object()
         try:
-            response = FileResponse(ContentFile(record.serialize(format=file_type)))
+            content = io.BytesIO(record.serialize(format=file_type).encode())
+            response = FileResponse(content)
         except ValueError as e:
             detail = str(e).replace('.', '')
             raise ValidationError(detail='{} for metadata file export.'.format(detail))

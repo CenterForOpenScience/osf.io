@@ -42,35 +42,35 @@ class TestMeetingSubmissionsList:
     @pytest.fixture()
     def meeting_one_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=True, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_one_private_submission(self, meeting, user):
         submission = ProjectFactory(title='Submission One', is_public=False, creator=user)
-        submission.add_tag(meeting.endpoint, Auth(user))
+        meeting.submissions.add(submission)
         submission.add_tag('poster', Auth(user))
         return submission
 
     @pytest.fixture()
     def meeting_two_submission(self, meeting_two, user):
         submission = ProjectFactory(title='Apple Juice', is_public=True, creator=user)
-        submission.add_tag(meeting_two.endpoint, Auth(user))
+        meeting_two.submissions.add(submission)
         # Submission doesn't have poster/talk tag added - will get talk tag by default (second submission type)
         return submission
 
     @pytest.fixture()
     def meeting_two_second_submission(self, meeting_two, user_two):
         submission = ProjectFactory(title='Bananas', is_public=True, creator=user_two)
-        submission.add_tag(meeting_two.endpoint, Auth(user_two))
+        meeting_two.submissions.add(submission)
         submission.add_tag('poster', Auth(user_two))
         return submission
 
     @pytest.fixture()
     def meeting_two_third_submission(self, meeting_two, user_three):
         submission = ProjectFactory(title='Cantaloupe', is_public=True, creator=user_three)
-        submission.add_tag(meeting_two.endpoint, Auth(user_three))
+        meeting_two.submissions.add(submission)
         submission.add_tag('poster', Auth(user_three))
         return submission
 
@@ -92,7 +92,15 @@ class TestMeetingSubmissionsList:
         return file
 
     def mock_download(self, project, file, download_count):
-        return PageCounter.objects.create(_id='download:{}:{}'.format(project._id, file._id), total=download_count)
+        pc, _ = PageCounter.objects.get_or_create(
+            _id='download:{}:{}'.format(project._id, file._id),
+            resource=project.guids.first(),
+            action='download',
+            file=file
+        )
+        pc.total = download_count
+        pc.save()
+        return pc
 
     def test_meeting_submissions_list(self, app, user, meeting, url, meeting_one_submission, meeting_one_private_submission):
         api_utils.create_test_file(meeting_one_submission, user, create_guid=False)

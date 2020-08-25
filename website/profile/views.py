@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-import httplib
-import httplib as http  # TODO: Inconsistent usage of aliased import
-from dateutil.parser import parse as parse_date
+from rest_framework import status as http_status
 
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -43,25 +41,19 @@ from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from api.waffle.utils import storage_i18n_flag_active
 
+from api.waffle.utils import storage_i18n_flag_active
+
 logger = logging.getLogger(__name__)
-
-
-def date_or_none(date):
-    try:
-        return parse_date(date)
-    except Exception as error:
-        logger.exception(error)
-        return None
 
 
 def validate_user(data, user):
     """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': '"id" is required'})
 
 @must_be_logged_in_without_checking_email
 def resend_confirmation(auth):
@@ -70,7 +62,7 @@ def resend_confirmation(auth):
 
     validate_user(data, user)
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST,
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another confirmation email.'})
 
     try:
@@ -78,10 +70,10 @@ def resend_confirmation(auth):
         confirmed = data['email']['confirmed']
         address = data['email']['address'].strip().lower()
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if primary or confirmed:
-        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
 
     user.add_unconfirmed_email(address)
 
@@ -129,7 +121,7 @@ def update_user(auth):
         emails_list = [x['address'].strip().lower() for x in data['emails']]
 
         if user.username.strip().lower() not in emails_list:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         available_emails = [
             each.strip().lower() for each in
@@ -143,14 +135,14 @@ def update_user(auth):
         ]
 
         if user.username.strip().lower() in removed_emails:
-            raise HTTPError(httplib.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         for address in removed_emails:
             if user.emails.filter(address=address):
                 try:
                     user.remove_email(address)
                 except PermissionsError as e:
-                    raise HTTPError(httplib.FORBIDDEN, str(e))
+                    raise HTTPError(http_status.HTTP_403_FORBIDDEN, str(e))
             user.remove_unconfirmed_email(address)
 
         # additions
@@ -164,7 +156,7 @@ def update_user(auth):
             try:
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
-                raise HTTPError(http.BAD_REQUEST, data=dict(
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
             except BlacklistedEmailError:
@@ -175,7 +167,7 @@ def update_user(auth):
                         'address': address,
                     }
                 )
-                raise HTTPError(http.BAD_REQUEST, data=dict(
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                     message_long=language.BLACKLISTED_EMAIL)
                 )
 
@@ -189,7 +181,7 @@ def update_user(auth):
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                    raise HTTPError(httplib.BAD_REQUEST,
+                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
                                     data={'message_long': 'Too many requests. Please wait a while before adding an email to your account.'})
                 send_confirm_email(user, email=address)
 
@@ -211,7 +203,7 @@ def update_user(auth):
         if primary_email:
             primary_email_address = primary_email['address'].strip().lower()
             if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
-                raise HTTPError(httplib.FORBIDDEN)
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
@@ -259,7 +251,7 @@ def update_user(auth):
 
 def _profile_view(profile, is_profile=False, include_node_counts=False):
     if profile and profile.is_disabled:
-        raise HTTPError(http.GONE)
+        raise HTTPError(http_status.HTTP_410_GONE)
 
     if profile:
         profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
@@ -275,7 +267,7 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
             },
         }
         return ret
-    raise HTTPError(http.NOT_FOUND)
+    raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @must_be_logged_in_without_checking_email
 def profile_view_json(auth):
@@ -419,7 +411,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
+        'mailing_lists': dict(list(auth.user.mailchimp_mailing_lists.items()) + list(auth.user.osf_mailing_lists.items()))
     }
 
 @must_be_logged_in
@@ -449,13 +441,13 @@ def oauth_application_detail(auth, **kwargs):
     try:
         record = ApiOAuth2Application.objects.get(client_id=client_id)
     except ApiOAuth2Application.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     except ValueError:  # Invalid client ID -- ApiOAuth2Application will not exist
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     if record.owner != auth.user:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     if record.is_active is False:
-        raise HTTPError(http.GONE)
+        raise HTTPError(http_status.HTTP_410_GONE)
 
     app_detail_url = api_v2_url('applications/{}/'.format(client_id))  # Send request to this URL
     return {'app_list_url': '',
@@ -489,11 +481,11 @@ def personal_access_token_detail(auth, **kwargs):
     try:
         record = ApiOAuth2PersonalToken.objects.get(_id=_id)
     except ApiOAuth2PersonalToken.DoesNotExist:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     if record.owner != auth.user:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     if record.is_active is False:
-        raise HTTPError(http.GONE)
+        raise HTTPError(http_status.HTTP_410_GONE)
 
     token_detail_url = api_v2_url('tokens/{}/'.format(_id))  # Send request to this URL
     return {'token_list_url': '',
@@ -506,7 +498,7 @@ def delete_external_identity(auth, **kwargs):
     data = request.get_json()
     identity = data.get('identity')
     if not identity:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     for service in auth.user.external_identity:
         if identity in auth.user.external_identity[service]:
@@ -516,7 +508,7 @@ def delete_external_identity(auth, **kwargs):
             auth.user.save()
             return
 
-    raise HTTPError(http.NOT_FOUND, 'Unable to find requested identity')
+    raise HTTPError(http_status.HTTP_404_NOT_FOUND, 'Unable to find requested identity')
 
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
@@ -569,7 +561,7 @@ def user_choose_mailing_lists(auth, **kwargs):
             else:
                 update_mailchimp_subscription(user, list_name, subscribe)
     else:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
         )
 
@@ -603,7 +595,7 @@ def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=Tr
 
 def mailchimp_get_endpoint(**kwargs):
     """Endpoint that the mailchimp webhook hits to check that the GakuNin RDM is responding"""
-    return {}, http.OK
+    return {}, http_status.HTTP_200_OK
 
 
 def sync_data_from_mailchimp(**kwargs):
@@ -635,7 +627,7 @@ def sync_data_from_mailchimp(**kwargs):
         # TODO: get tests to pass with sentry logging
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the GakuNin RDM.")
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
 
 @must_be_logged_in
@@ -663,20 +655,8 @@ def serialize_names(**kwargs):
 def get_target_user(auth, uid=None):
     target = OSFUser.load(uid) if uid else auth.user
     if target is None:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return target
-
-
-def fmt_date_or_none(date, fmt='%Y-%m-%d'):
-    if date:
-        try:
-            return date.strftime(fmt)
-        except ValueError:
-            raise HTTPError(
-                http.BAD_REQUEST,
-                data=dict(message_long='Year entered must be after 1900')
-            )
-    return None
 
 
 def append_editable(data, auth, uid=None):
@@ -786,7 +766,7 @@ def unserialize_names(**kwargs):
 def verify_user_match(auth, **kwargs):
     uid = kwargs.get('uid')
     if uid and uid != auth.user._id:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
 
 @must_be_logged_in
@@ -803,7 +783,7 @@ def unserialize_social(auth, **kwargs):
     try:
         user.save()
     except ValidationError as exc:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long=exc.messages[0]
         ))
 
@@ -871,7 +851,7 @@ def unserialize_schools(auth, **kwargs):
 def request_export(auth):
     user = auth.user
     if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(httplib.BAD_REQUEST,
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
@@ -885,30 +865,19 @@ def request_export(auth):
     user.save()
     return {'message': 'Sent account export request'}
 
+
 @must_be_logged_in
 def request_deactivation(auth):
     user = auth.user
-    if not throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-        raise HTTPError(http.BAD_REQUEST,
-                        data={
-                            'message_long': 'Too many requests. Please wait a while before sending another account deactivation request.',
-                            'error_type': 'throttle_error'
-                        })
-
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.REQUEST_DEACTIVATION,
-        user=auth.user,
-        can_change_preferences=False,
-    )
-    user.email_last_sent = timezone.now()
     user.requested_deactivation = True
     user.save()
     return {'message': 'Sent account deactivation request'}
+
 
 @must_be_logged_in
 def cancel_request_deactivation(auth):
     user = auth.user
     user.requested_deactivation = False
+    user.contacted_deactivation = False  # In case we've already contacted them once.
     user.save()
     return {'message': 'You have canceled your deactivation request'}

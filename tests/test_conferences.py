@@ -5,9 +5,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
 import hashlib
-from StringIO import StringIO
+from io import BytesIO
 
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 import furl
 
@@ -40,20 +39,20 @@ def assert_equal_urls(first, second):
     assert_equal(parsed_first, parsed_second)
 
 
-def create_fake_conference_nodes(n, endpoint):
+def create_fake_conference_nodes(n, conference):
     nodes = []
     for i in range(n):
         node = ProjectFactory(is_public=True)
-        node.add_tag(endpoint, Auth(node.creator))
+        conference.submissions.add(node)
         node.save()
         nodes.append(node)
     return nodes
 
-def create_fake_conference_nodes_bad_data(n, bad_n, endpoint):
+def create_fake_conference_nodes_bad_data(conference, n, bad_n, endpoint):
     nodes = []
     for i in range(n):
         node = ProjectFactory(is_public=True)
-        node.add_tag(endpoint, Auth(node.creator))
+        conference.submissions.add(node)
         # inject bad data
         if i < bad_n:
             # Delete only contributor
@@ -96,7 +95,7 @@ class TestConferenceUtils(OsfTestCase):
         username = 'kanye@mailinator.com'
         with assert_raises(BlacklistedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
-        assert_equal(e.exception.message, 'Invalid Email')
+        assert_equal(str(e.exception), 'Invalid Email')
 
 
 class ContextTestCase(OsfTestCase):
@@ -119,8 +118,8 @@ class ContextTestCase(OsfTestCase):
             'timestamp': '123',
             'token': 'secret',
             'signature': hmac.new(
-                key=settings.MAILGUN_API_KEY,
-                msg='{}{}'.format('123', 'secret'),
+                key=settings.MAILGUN_API_KEY.encode(),
+                msg='{}{}'.format('123', 'secret').encode(),
                 digestmod=hashlib.sha256,
             ).hexdigest(),
         }
@@ -141,8 +140,8 @@ class TestProvisionNode(ContextTestCase):
         self.user = self.node.creator
         self.conference = ConferenceFactory()
         self.body = 'dragon on my back'
-        self.content = 'dragon attack'
-        self.attachment = StringIO(self.content)
+        self.content = b'dragon attack'
+        self.attachment = BytesIO(self.content)
         self.recipient = '{0}{1}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
@@ -167,7 +166,7 @@ class TestProvisionNode(ContextTestCase):
         assert_in(self.conference.admins.first(), self.node.contributors)
         assert_in('emailed', self.node.system_tags)
         assert_in(self.conference.endpoint, self.node.system_tags)
-        assert_true(self.node.tags.filter(name=self.conference.endpoint).exists())
+        assert self.node in self.conference.submissions.all()
         assert_not_in('spam', self.node.system_tags)
 
     def test_provision_private(self):
@@ -203,7 +202,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=file_name
         )
         mock_put.assert_called_with(
@@ -223,7 +222,7 @@ class TestProvisionNode(ContextTestCase):
             'osfstorage',
             _internal=True,
             base_url=self.node.osfstorage_region.waterbutler_url,
-            cookie=self.user.get_or_create_cookie(),
+            cookie=self.user.get_or_create_cookie().decode(),
             name=settings.MISSING_FILE_NAME,
         )
         mock_put.assert_called_with(
@@ -411,8 +410,8 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.attachments, [])
 
     def test_attachments_count_one(self):
-        content = 'slightly mad'
-        sio = StringIO(content)
+        content = b'slightly mad'
+        sio = BytesIO(content)
         ctx = self.make_context(
             method='POST',
             data={
@@ -442,11 +441,11 @@ class TestConferenceEmailViews(OsfTestCase):
         # Create conference nodes
         create_fake_conference_nodes(
             3,
-            conference1.endpoint,
+            conference1,
         )
         create_fake_conference_nodes(
             2,
-            conference2.endpoint,
+            conference2,
         )
 
         url = api_url_for('conference_submissions')
@@ -466,7 +465,7 @@ class TestConferenceEmailViews(OsfTestCase):
         n_conference_nodes = 3
         create_fake_conference_nodes(
             n_conference_nodes,
-            conference.endpoint,
+            conference,
         )
         # Create a non-conference node
         ProjectFactory()
@@ -484,9 +483,10 @@ class TestConferenceEmailViews(OsfTestCase):
         n_conference_nodes = 3
         n_conference_nodes_bad = 1
         create_fake_conference_nodes_bad_data(
+            conference,
             n_conference_nodes,
             n_conference_nodes_bad,
-            conference.endpoint,
+            conference,
         )
         # Create a non-conference node
         ProjectFactory()
@@ -503,7 +503,7 @@ class TestConferenceEmailViews(OsfTestCase):
         n_conference_nodes = 3
         create_fake_conference_nodes(
             n_conference_nodes,
-            conference.endpoint,
+            conference,
         )
         # Create a non-conference node
         ProjectFactory()
@@ -520,7 +520,7 @@ class TestConferenceEmailViews(OsfTestCase):
         n_conference_nodes = 3
         create_fake_conference_nodes(
             n_conference_nodes,
-            conference.endpoint.upper(),
+            conference,
         )
         # Create a non-conference node
         ProjectFactory()
@@ -560,6 +560,26 @@ class TestConferenceModel(OsfTestCase):
         assert_equal(conf.field_names['submission1'], 'poster')
         assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
+    def test_conference_valid_submissions(self):
+        conf = ConferenceFactory(endpoint='Hamburgers', name='Hamburger conference')
+        conf.save()
+
+        # 3 good nodes added
+        create_fake_conference_nodes(3, conf)
+
+        # Deleted node added
+        deleted_node = ProjectFactory(is_public=True)
+        deleted_node.is_deleted = True
+        deleted_node.save()
+        conf.submissions.add(deleted_node)
+
+        # Private node added
+        private_node = ProjectFactory(is_public=False)
+        conf.submissions.add(private_node)
+
+        assert_equal(conf.submissions.count(), 5)
+        assert_equal(conf.valid_submissions.count(), 3)
+
 
 class TestConferenceIntegration(ContextTestCase):
 
@@ -583,8 +603,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -595,7 +615,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
         assert_true(mock_upload.called)
@@ -631,8 +651,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -672,8 +692,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -684,7 +704,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
         assert_true(mock_upload.called)
@@ -723,8 +743,8 @@ class TestConferenceIntegration(ContextTestCase):
                 'timestamp': '123',
                 'token': 'secret',
                 'signature': hmac.new(
-                    key=settings.MAILGUN_API_KEY,
-                    msg='{}{}'.format('123', 'secret'),
+                    key=settings.MAILGUN_API_KEY.encode(),
+                    msg='{}{}'.format('123', 'secret').encode(),
                     digestmod=hashlib.sha256,
                 ).hexdigest(),
                 'attachment-count': '1',
@@ -735,7 +755,7 @@ class TestConferenceIntegration(ContextTestCase):
                 'stripped-text': body,
             },
             upload_files=[
-                ('attachment-1', 'attachment-1', content),
+                ('attachment-1', 'attachment-1', content.encode()),
             ],
         )
 

@@ -1,6 +1,9 @@
 {
 	"name": "EGAP Registration",
 	"version": 2,
+	"config": {
+        "hasFiles": true
+    },
 	"description": "The EGAP registry focuses on designs for experiments and observational studies in governance and politics.",
 	"pages": [{
 			"id": "page1",
@@ -10,16 +13,8 @@
 					"nav": "Title",
 					"type": "string",
 					"format": "text",
-					"title": "B1 Title of Study",
+					"title": "Title of Study",
 					"description": "Provide the working title of your study.",
-					"required": true
-				},
-				{
-					"qid": "q2",
-					"nav": "Authors",
-					"title": "B2 Authors",
-					"help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo",
-					"format": "textarea",
 					"required": true
 				},
 				{
@@ -39,14 +34,14 @@
 				{
 					"qid": "q5",
 					"nav": "Acknowledgements",
-					"title": "B3 Acknowledgements",
+					"title": "Acknowledgements",
 					"type": "string",
 					"format": "textarea",
 					"required": false
 				},
 				{
 					"qid": "q6",
-					"title": "B4 Is one of the study authors a university faculty member?",
+					"title": "Is one of the study authors a university faculty member?",
 					"nav": "University Faculty Member?",
 					"type": "choose",
 					"format": "singleselect",
@@ -62,11 +57,13 @@
 					"qid": "q7",
 					"title": "Other",
 					"format": "textarea",
-					"required": false
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
+
 				},
 				{
 					"qid": "q8",
-					"title": "B5 Is this Registration Prospective or Retrospective?",
+					"title": "Is this Registration Prospective or Retrospective?",
 					"nav": "Prospective or Retrospective?",
 					"type": "choose",
 					"format": "singleselect",
@@ -90,7 +87,7 @@
 				},
 				{
 					"qid": "q10",
-					"title": "B6 Is this an experimental study?",
+					"title": "Is this an experimental study?",
 					"nav": "Experimental study?",
 					"type": "choose",
 					"format": "singleselect",
@@ -103,7 +100,7 @@
 				},
 				{
 					"qid": "q11",
-					"title": "B7 Date of start of study",
+					"title": "Date of start of study",
 					"nav": "Date of start of study",
 					"type": "string",
 					"format": "text",
@@ -112,7 +109,7 @@
 				},
 				{
 					"qid": "q12",
-					"title": "B8 Gate Date",
+					"title": "Gate Date",
 					"nav": "Gate Date?",
 					"type": "string",
 					"format": "text",
@@ -121,7 +118,7 @@
 				},
 				{
 					"qid": "q13",
-					"title": "B9 Was this design presented at an EGAP meeting?",
+					"title": "Was this design presented at an EGAP meeting?",
 					"nav": "Presented at an EGAP meeting?",
 					"type": "choose",
 					"format": "singleselect",
@@ -134,7 +131,7 @@
 				},
 				{
 					"qid": "q14",
-					"title": "B10 Is there a pre-analysis plan associated with this registration?",
+					"title": "Is there a pre-analysis plan associated with this registration?",
 					"nav": "Pre-analysis plan associated with this registration?",
 					"type": "choose",
 					"format": "singleselect",
@@ -153,7 +150,7 @@
 			"questions": [{
 					"qid": "q15",
 					"nav": "Background and explanation of rationale.",
-					"title": "C1 Background and explanation of rationale.",
+					"title": "Background and explanation of rationale.",
 					"format": "textarea",
 					"required": true,
 					"description": "Brief description of goals of project. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of the project background."
@@ -161,7 +158,7 @@
 				{
 					"qid": "q16",
 					"nav": "Background and explanation of rationale.",
-					"title": "C2 What are the hypotheses to be tested/quantities of interest to be estimated?",
+					"title": "What are the hypotheses to be tested/quantities of interest to be estimated?",
 					"format": "textarea",
 					"required": true,
 					"description": "Please list the hypotheses including hypotheses on heterogeneous effects. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project hypotheses."
@@ -169,14 +166,14 @@
 				{
 					"qid": "q17",
 					"nav": "How will these hypotheses be tested?",
-					"title": "C3 How will these hypotheses be tested?",
+					"title": "How will these hypotheses be tested?",
 					"format": "textarea",
 					"required": true,
 					"description": "Brief description of your methodology. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project methodology."
 				},
 				{
 					"qid": "q18",
-					"title": "C4 Country",
+					"title": "Country",
 					"nav": "Country",
 					"type": "string",
 					"format": "text",
@@ -184,14 +181,14 @@
 				},
 				{
 					"qid": "q19",
-					"title": "C5 Sample Size (# of Units)",
+					"title": "Sample Size (# of Units)",
 					"nav": "Sample Size",
 					"type": "string",
 					"format": "text"
 				},
 				{
 					"qid": "q20",
-					"title": "C6 Was a power analysis conducted prior to data collection?",
+					"title": "Was a power analysis conducted prior to data collection?",
 					"nav": "Power analysis conducted prior to data collection?",
 					"type": "choose",
 					"format": "singleselect",
@@ -210,7 +207,7 @@
 				},
 				{
 					"qid": "q22",
-					"title": "C7 Has this research received Institutional Review Board (IRB) or ethics committee approval?",
+					"title": "Has this research received Institutional Review Board (IRB) or ethics committee approval?",
 					"nav": "Review Board (IRB) or ethics committee approval?",
 					"type": "choose",
 					"format": "singleselect",
@@ -229,21 +226,21 @@
 				},
 				{
 					"qid": "q24",
-					"title": "C8 IRB Number",
+					"title": "IRB Number",
 					"nav": "IRB Number",
 					"type": "string",
 					"format": "text"
 				},
 				{
 					"qid": "q25",
-					"title": "C9 Date of IRB Approval",
+					"title": "Date of IRB Approval",
 					"nav": "IRB Number",
 					"type": "string",
 					"format": "text"
 				},
 				{
 					"qid": "q26",
-					"title": "C10 Will the intervention be implemented by the researcher or a third party? If a third party, please provide the name.",
+					"title": "Will the intervention be implemented by the researcher or a third party? If a third party, please provide the name.",
 					"nav": "Review Board (IRB) or ethics committee approval?",
 					"type": "choose",
 					"format": "singleselect",
@@ -260,7 +257,7 @@
 				},
 				{
 					"qid": "q28",
-					"title": "C11 Did any of the research team receive remuneration from the implementing agency for taking part in this research?",
+					"title": "Did any of the research team receive remuneration from the implementing agency for taking part in this research?",
 					"nav": "Remuneration?",
 					"type": "choose",
 					"format": "singleselect",
@@ -279,7 +276,7 @@
 				},
 				{
 					"qid": "q30",
-					"title": "C12 If relevant, is there an advance agreement with the implementation group that all results can be published?",
+					"title": "If relevant, is there an advance agreement with the implementation group that all results can be published?",
 					"nav": "is there an advance agreement with the implementation group that all results can be published?",
 					"type": "choose",
 					"format": "singleselect",
@@ -298,7 +295,7 @@
 				},
 				{
 					"qid": "q32",
-					"title": "C13 JEL classification(s)",
+					"title": "JEL classification(s)",
 					"nav": "JEL classification(s)",
 					"type": "string",
 					"format": "text",

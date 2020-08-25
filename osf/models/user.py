@@ -1,8 +1,7 @@
 import datetime as dt
 import logging
 import re
-import urllib
-import urlparse
+from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
 from os.path import splitext
@@ -10,6 +9,7 @@ from os.path import splitext
 from flask import Request as FlaskRequest
 from framework import analytics
 from guardian.shortcuts import get_perms
+from past.builtins import basestring
 
 # OSF imports
 import itsdangerous
@@ -43,6 +43,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
+from osf.models.nodelog import NodeLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -56,6 +57,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +262,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
-    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger')
+    merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
 
     # verification key v1: only the token string, no expiration time
     # used for cas login with username and verification key
@@ -381,7 +383,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     # date the user last sent a request
-    date_last_login = NonNaiveDateTimeField(null=True, blank=True)
+    date_last_login = NonNaiveDateTimeField(null=True, blank=True, db_index=True)
 
     # date the user first successfully confirmed an email address
     date_confirmed = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
@@ -408,6 +410,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # whether the user has requested to deactivate their account
     requested_deactivation = models.BooleanField(default=False)
 
+    # whether the user has who requested deactivation has been contacted about their pending request. This is reset when
+    # requests are canceled
+    contacted_deactivation = models.BooleanField(default=False)
+
     affiliated_institutions = models.ManyToManyField('Institution', blank=True)
 
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
@@ -416,6 +422,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
+
+    # The primary department to which the institution user belongs,
+    # in case we support multiple departments in the future.
+    department = models.TextField(null=True, blank=True)
 
     objects = OSFUserManager()
 
@@ -455,7 +465,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def absolute_url(self):
-        return urlparse.urljoin(website_settings.DOMAIN, self.url)
+        return urljoin(website_settings.DOMAIN, self.url)
 
     @property
     def absolute_api_v2_url(self):
@@ -504,13 +514,31 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def social_links(self):
+        """
+        Returns a dictionary of formatted social links for a user.
+
+        Social account values which are stored as account names are
+        formatted into appropriate social links. The 'type' of each
+        respective social field value is dictated by self.SOCIAL_FIELDS.
+
+        I.e. If a string is expected for a specific social field that
+        permits multiple accounts, a single account url will be provided for
+        the social field to ensure adherence with self.SOCIAL_FIELDS.
+        """
         social_user_fields = {}
         for key, val in self.social.items():
             if val and key in self.SOCIAL_FIELDS:
-                if not isinstance(val, basestring):
-                    social_user_fields[key] = val
+                if isinstance(self.SOCIAL_FIELDS[key], basestring):
+                    if isinstance(val, basestring):
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    else:
+                        # Only provide the first url for services where multiple accounts are allowed
+                        social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val[0])
                 else:
-                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+                    if isinstance(val, basestring):
+                        social_user_fields[key] = [val]
+                    else:
+                        social_user_fields[key] = val
         return social_user_fields
 
     @property
@@ -585,8 +613,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        default_region_subquery = osfs_settings.objects.filter(owner=self.id).values('default_region_id')
-        return Region.objects.get(id=default_region_subquery)
+        region_subquery = osfs_settings.objects.get(owner=self.id).default_region_id
+        return Region.objects.get(id=region_subquery)
 
     @property
     def contributor_to(self):
@@ -888,6 +916,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Transfer user's preprints
         self._merge_users_preprints(user)
 
+        # Transfer user's draft registrations
+        self._merge_user_draft_registrations(user)
+
         # transfer group membership
         for group in user.osf_groups:
             if not group.is_manager(self):
@@ -951,6 +982,57 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             preprint.remove_permission(user, user_perms)
             preprint.save()
 
+    @property
+    def draft_registrations_active(self):
+        """
+        Active draft registrations attached to a user (user is a contributor)
+        """
+        return self.draft_registrations.filter(
+            models.Q(registered_node__isnull=True) |
+            models.Q(registered_node__is_deleted=True),
+            deleted__isnull=True,
+        )
+
+    def _merge_user_draft_registrations(self, user):
+        """
+        Draft Registrations have contributors, and this model uses guardian.
+        The DraftRegistrationContributor table stores order and bibliographic information.
+        Permissions are stored on guardian tables.  DraftRegistration information needs to be transferred
+        from user -> self, and draft registration permissions need to be transferred from user -> self.
+        """
+        from osf.models import DraftRegistrationContributor
+        # Loop through `user`'s draft registrations
+        for draft_reg in user.draft_registrations.all():
+            user_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=user)
+            user_perms = user_contributor.permission
+
+            # Both `self` and `user` are contributors on the draft reg
+            if draft_reg.is_contributor(self) and draft_reg.is_contributor(user):
+                self_contributor = DraftRegistrationContributor.objects.get(draft_registration=draft_reg, user=self)
+                self_perms = self_contributor.permission
+
+                max_perms_index = max(API_CONTRIBUTOR_PERMISSIONS.index(self_perms), API_CONTRIBUTOR_PERMISSIONS.index(user_perms))
+                # Add the highest of `self` perms or `user` perms to `self`
+                draft_reg.set_permissions(user=self, permissions=API_CONTRIBUTOR_PERMISSIONS[max_perms_index])
+
+                if not self_contributor.visible and user_contributor.visible:
+                    # if `self` is not visible, but `user` is visible, make `self` visible.
+                    draft_reg.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+                # Now that perms and bibliographic info have been transferred to `self` contributor,
+                # delete `user` contributor
+                user_contributor.delete()
+            else:
+                # `self` is not a contributor, but `user` is.  Transfer `user` permissions and
+                # contributor information to `self`.  Remove permissions from `user`.
+                draft_reg.contributor_set.filter(user=user).update(user=self)
+                draft_reg.add_permission(self, user_perms)
+
+            if draft_reg.initiator == user:
+                draft_reg.initiator = self
+
+            draft_reg.remove_permission(user, user_perms)
+            draft_reg.save()
+
     def disable_account(self, logout_session=True):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
@@ -995,7 +1077,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # The user can log in if they have set a password OR
         # have a verified external ID, e.g an ORCID
         can_login = self.has_usable_password() or (
-            'VERIFIED' in sum([each.values() for each in self.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in self.external_identity.values()], [])
         )
         self.is_active = (
             self.is_registered and
@@ -1081,6 +1163,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
             user.add_system_tag(system_tag_for_campaign(campaign))
+        else:
+            user.save()
+            user.add_system_tag(OsfSourceTags.Osf.value)
         return user
 
     @classmethod
@@ -1318,7 +1403,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base = website_settings.DOMAIN if external else '/'
         token = self.get_confirmation_token(email, force=force, renew=renew)
         external = 'external/' if external_id_provider else ''
-        destination = '?{}'.format(urllib.urlencode({'destination': destination})) if destination else ''
+        destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return '{0}confirm/{1}{2}/{3}/{4}'.format(base, external, self._primary_key, token, destination)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
@@ -1403,6 +1488,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.update_search_nodes()
 
         return True
+
+    def confirm_spam(self, save=True):
+        super().confirm_spam(save=save)
+        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+            node.confirm_spam()
+
+    def confirm_ham(self, save=False):
+        super().confirm_ham(save=save)
+        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+            node.confirm_ham(save=save)
 
     def update_search(self):
         from website.search.search import update_user
@@ -1747,7 +1842,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 for item in contents:
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
-                            content.append(value.encode('utf-8'))
+                            content.append(value)
         return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
@@ -1795,7 +1890,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes.exclude(type='osf.quickfilesnode'):
+        for node in shared_nodes.exclude(type__in=['osf.quickfilesnode', 'osf.draftnode']):
             alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
@@ -1852,7 +1947,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.suffix = ''
         self.jobs = []
         self.schools = []
-        self.social = []
+        self.social = {}
         self.unclaimed_records = {}
         self.notifications_configured = {}
         # Scrub all external accounts
@@ -1900,6 +1995,26 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 ongoing_school = school
                 break
         return (ongoing_job, ongoing_school)
+
+    @property
+    def has_resources(self):
+        """
+        This is meant to determine if a user has any resources, nodes, preprints etc that might impede their deactivation.
+        If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
+        otherwise they must delete or transfer their outstanding resources.
+
+        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        """
+        from osf.models import Preprint
+
+        # TODO: Update once quickfolders in merged
+
+        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
+        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        groups = self.osf_groups.exists()
+        preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
+
+        return groups or nodes or quickfiles or preprints
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

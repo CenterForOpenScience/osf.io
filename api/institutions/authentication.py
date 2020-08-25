@@ -1,4 +1,6 @@
 import json
+import uuid
+import logging
 
 import jwe
 import jwt
@@ -8,7 +10,8 @@ import waffle
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
-from api.base import settings
+from api.base.authentication import drf
+from api.base import exceptions, settings
 
 from framework import sentry
 from framework.auth import get_or_create_user
@@ -20,6 +23,8 @@ from osf.exceptions import BlacklistedEmailError
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN, to_bool
 from website.util.quota import update_default_storage
+
+logger = logging.getLogger(__name__)
 
 
 import logging
@@ -43,6 +48,13 @@ def send_welcome(user, request):
     )
 
 class InstitutionAuthentication(BaseAuthentication):
+    """A dedicated authentication class for view ``InstitutionAuth``.
+
+    The ``InstitutionAuth`` view and the ``InstitutionAuthentication`` class are only and should
+    only be used by OSF CAS for institution login. Changing this class and related tests may break
+    the institution login feature. Please check with @longzeC / @mattF / @brianG before making any
+    changes.
+    """
 
     media_type = 'text/plain'
 
@@ -77,6 +89,7 @@ class InstitutionAuthentication(BaseAuthentication):
         :raises: AuthenticationFailed if authentication fails
         """
 
+        # Verify / decrypt / decode the payload
         try:
             payload = jwt.decode(
                 jwe.decrypt(request.body, settings.JWE_SECRET),
@@ -84,15 +97,15 @@ class InstitutionAuthentication(BaseAuthentication):
                 options={'verify_exp': False},
                 algorithm='HS256',
             )
-        except (jwt.InvalidTokenError, TypeError):
+        except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
             raise AuthenticationFailed
 
+        # Load institution and user data
         data = json.loads(payload['data'])
         provider = data['provider']
-
         institution = Institution.load(provider['id'])
         if not institution:
-            raise AuthenticationFailed('Invalid institution id specified "{}"'.format(provider['id']))
+            raise AuthenticationFailed('Invalid institution id: "{}"'.format(provider['id']))
 
         USE_EPPN = login_by_eppn()
 
@@ -104,22 +117,23 @@ class InstitutionAuthentication(BaseAuthentication):
         family_name = provider['user'].get('familyName')
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
+        department = provider['user'].get('department')
         entitlement = provider['user'].get('entitlement')
         email = provider['user'].get('email')
         organization_name = provider['user'].get('organizationName')
         organizational_unit = provider['user'].get('organizationalUnit')
 
-        # use given name and family name to build full name if not provided
+        # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME
 
-        # institution must provide `fullname`, otherwise we fail the authentication and inform sentry
+        # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
-            message = 'Institution login failed: fullname required' \
-                      ' for user {} from institution {}'.format(username, provider['id'])
+            message = 'Institution login failed: fullname required for ' \
+                      'user "{}" from institution "{}"'.format(username, provider['id'])
             sentry.log_message(message)
             raise AuthenticationFailed(message)
 
@@ -167,10 +181,78 @@ class InstitutionAuthentication(BaseAuthentication):
                     )
         else:
             user, created = get_or_create_user(fullname, username, reset_password=False)
-        # `get_or_create_user()` guesses names from fullname
-        # replace the guessed ones if the names are provided from the authentication
+        # Get an existing user or create a new one. If a new user is created, the user object is
+        # confirmed but not registered,which is temporarily of an inactive status. If an existing
+        # user is found, it is also possible that the user is inactive (e.g. unclaimed, disabled,
+        # unconfirmed, etc.).
 
-        if created:
+        # Existing but inactive users need to be either "activated" or failed the auth
+        activation_required = False
+        new_password_required = False
+        if not created:
+            try:
+                drf.check_user(user)
+                logger.info('Institution SSO: active user "{}"'.format(username))
+            except exceptions.UnclaimedAccountError:
+                # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
+                user.unclaimed_records = {}
+                activation_required = True
+                # Unclaimed users have an unusable password when being added as an unregistered
+                # contributor. Thus a random usable password must be assigned during activation.
+                new_password_required = True
+                logger.info('Institution SSO: unclaimed contributor "{}"'.format(username))
+            except exceptions.UnconfirmedAccountError:
+                if user.has_usable_password():
+                    # Unconfirmed user from default username / password signup
+                    user.email_verifications = {}
+                    activation_required = True
+                    # Unconfirmed users already have a usable password set by the creator during
+                    # sign-up. However, it must be overwritten by a new random one so the creator
+                    # (if he is not the real person) can not access the account after activation.
+                    new_password_required = True
+                    logger.info('Institution SSO: unconfirmed user "{}"'.format(username))
+                else:
+                    # Login take-over has not been implemented for unconfirmed user created via
+                    # external IdP login (ORCiD).
+                    message = 'Institution SSO is not eligible for an unconfirmed account ' \
+                              'created via external IdP login: username = "{}"'.format(username)
+                    sentry.log_message(message)
+                    logger.error(message)
+                    return None, None
+            except exceptions.DeactivatedAccountError:
+                # Deactivated user: login is not allowed for deactivated users
+                message = 'Institution SSO is not eligible for a deactivated account: ' \
+                          'username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
+                return None, None
+            except exceptions.MergedAccountError:
+                # Merged user: this shouldn't happen since merged users do not have an email
+                message = 'Institution SSO is not eligible for a merged account: ' \
+                          'username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
+                return None, None
+            except exceptions.InvalidAccountError:
+                # Other invalid status: this shouldn't happen unless the user happens to be in a
+                # temporary state. Such state requires more updates before the user can be saved
+                # to the database. (e.g. `get_or_create_user()` creates a temporary-state user.)
+                message = 'Institution SSO is not eligible for an inactive account with ' \
+                          'an unknown or invalid status: username = "{}"'.format(username)
+                sentry.log_message(message)
+                logger.error(message)
+                return None, None
+        else:
+            logger.info('Institution SSO: new user "{}"'.format(username))
+
+        # The `department` field is updated each login when it was changed.
+        if department and user.department != department:
+            user.department = department
+            user.save()
+
+        # Both created and activated accounts need to be updated and registered
+        if created or activation_required:
+
             if given_name:
                 user.given_name = given_name
             if family_name:
@@ -179,6 +261,11 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.middle_names = middle_names
             if suffix:
                 user.suffix = suffix
+
+            # Users claimed or confirmed via institution SSO should have their full name updated
+            if activation_required:
+                user.fullname = fullname
+
             user.update_date_last_login()
 
             ## Relying on front-end validation until `accepted_tos` is added to the JWT payload
@@ -225,9 +312,10 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.have_email = True
                 ### username is email address
 
-            # save and register user
+            # Register and save user
+            password = str(uuid.uuid4()) if new_password_required else None
+            user.register(username, password=password)
             user.save()
-            user.register(username)
 
             # send confirmation email
             if user.have_email:
@@ -252,6 +340,8 @@ class InstitutionAuthentication(BaseAuthentication):
         if USE_EPPN:
             for other in user.affiliated_institutions.exclude(id=institution.id):
                 user.affiliated_institutions.remove(other)
+
+        # Affiliate the user if not previously affiliated
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
             user.save()

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound
 
-from api.base.utils import get_user_auth
+from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
 
@@ -45,8 +45,14 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
         return auth.user and (accepting_submissions or auth.user.has_perm('write_collection', obj))
 
 class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
+
+    acceptable_models = (CollectionSubmission, )
+
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, CollectionSubmission), 'obj must be a CollectionSubmission, got {}'.format(obj)
+        if isinstance(obj, dict):
+            obj = obj.get('self', None)
+
+        assert_resource_type(obj, self.acceptable_models)
         collection = obj.collection
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:

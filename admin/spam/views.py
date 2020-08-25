@@ -106,30 +106,31 @@ class SpamDetail(PermissionRequiredMixin, FormView):
         return kwargs
 
     def form_valid(self, form):
-        spam_id = self.kwargs.get('spam_id')
-        item = Comment.load(spam_id)
-        try:
-            if int(form.cleaned_data.get('confirm')) == SpamStatus.SPAM:
-                item.confirm_spam()
-                item.is_deleted = True
-                log_message = 'Confirmed SPAM: {}'.format(spam_id)
-                log_action = CONFIRM_SPAM
-            else:
-                item.confirm_ham()
-                item.is_deleted = False
-                log_message = 'Confirmed HAM: {}'.format(spam_id)
-                log_action = CONFIRM_HAM
-            item.save()
-        except AttributeError:
-            raise Http404('Spam with id "{}" not found.'.format(spam_id))
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=spam_id,
-            object_repr='Comment',
-            message=log_message,
-            action_flag=log_action
-        )
-        return super(SpamDetail, self).form_valid(form)
+        item = Comment.load(self.kwargs.get('spam_id'))
+        confirm = int(getattr(form, 'cleaned_data', {}).get('confirm', 0))
+        if not item:
+            raise Http404(f'Spam with id "{self.kwargs.get("spam_id")}" not found.')
+
+        if confirm == SpamStatus.SPAM:
+            item.confirm_spam()
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=self.kwargs.get('spam_id'),
+                object_repr='Comment',
+                message=f'Confirmed SPAM: {self.kwargs.get("spam_id")}',
+                action_flag=CONFIRM_SPAM
+            )
+        else:
+            item.confirm_ham()
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=self.kwargs.get('spam_id'),
+                object_repr='Comment',
+                message=f'Confirmed HAM: {self.kwargs.get("spam_id")}',
+                action_flag=CONFIRM_HAM
+            )
+
+        return super().form_valid(form)
 
     @property
     def success_url(self):

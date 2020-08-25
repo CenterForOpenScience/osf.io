@@ -1,10 +1,10 @@
 from blinker import ANY
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 
 
-def create_test_file(target, user, filename='test_file', create_guid=True):
+def create_test_file(target, user, filename='test_file', create_guid=True, size=1337):
     osfstorage = target.get_addon('osfstorage')
     root_node = osfstorage.get_root()
     test_file = root_node.append_file(filename)
@@ -15,15 +15,16 @@ def create_test_file(target, user, filename='test_file', create_guid=True):
     test_file.create_version(user, {
         'object': '06d80e',
         'service': 'cloud',
+        'bucket': 'us-bucket',
         osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
     }, {
-        'size': 1337,
+        'size': size,
         'contentType': 'img/png'
     }).save()
     return test_file
 
 
-def create_test_preprint_file(target, user, filename='test_file', create_guid=True):
+def create_test_preprint_file(target, user, filename='test_file', create_guid=True, size=1337):
     root_folder = target.root_folder
     test_file = root_folder.append_file(filename)
 
@@ -35,7 +36,7 @@ def create_test_preprint_file(target, user, filename='test_file', create_guid=Tr
         'service': 'cloud',
         osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
     }, {
-        'size': 1337,
+        'size': size,
         'contentType': 'img/png'
     }).save()
     return test_file

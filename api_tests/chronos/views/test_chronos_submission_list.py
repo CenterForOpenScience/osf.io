@@ -123,6 +123,9 @@ class TestChronosSubmissionList:
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
         assert res.json['data'][2]['id'] in submission_ids
+        assert res.json['data'][0]['attributes']['submission_url'] is not None
+        assert res.json['data'][1]['attributes']['submission_url'] is not None
+        assert res.json['data'][2]['attributes']['submission_url'] is not None
 
     # Preprint contributors can view all submissions, regardless of states
     def test_list_contributor(self, app, url, submission_submitted, submission_accepted, submission_published, other_submission, preprint_contributor):
@@ -134,6 +137,9 @@ class TestChronosSubmissionList:
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
         assert res.json['data'][2]['id'] in submission_ids
+        assert res.json['data'][0]['attributes'].get('submission_url') is None
+        assert res.json['data'][1]['attributes'].get('submission_url') is None
+        assert res.json['data'][2]['attributes'].get('submission_url') is None
 
     # Moderators can only see accepted and published submissions
     def test_list_moderator(self, app, url, submission_submitted, submission_accepted, submission_published, other_submission, moderator):
@@ -143,6 +149,8 @@ class TestChronosSubmissionList:
         submission_ids = [submission_accepted.publication_id, submission_published.publication_id]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
+        assert res.json['data'][0]['attributes'].get('submission_url') is None
+        assert res.json['data'][1]['attributes'].get('submission_url') is None
 
     # Logged in users can only see accepted and published submissions
     def test_list_user(self, app, url, submission_submitted, submission_accepted, submission_published, other_submission, user):
@@ -152,6 +160,8 @@ class TestChronosSubmissionList:
         submission_ids = [submission_accepted.publication_id, submission_published.publication_id]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
+        assert res.json['data'][0]['attributes'].get('submission_url') is None
+        assert res.json['data'][1]['attributes'].get('submission_url') is None
 
     # Users with no auth can only see accepted and published submissions
     def test_list_no_auth(self, app, url, submission_submitted, submission_accepted, submission_published, other_submission):
@@ -161,6 +171,8 @@ class TestChronosSubmissionList:
         submission_ids = [submission_accepted.publication_id, submission_published.publication_id]
         assert res.json['data'][0]['id'] in submission_ids
         assert res.json['data'][1]['id'] in submission_ids
+        assert res.json['data'][0]['attributes'].get('submission_url') is None
+        assert res.json['data'][1]['attributes'].get('submission_url') is None
 
 
 @pytest.mark.django_db

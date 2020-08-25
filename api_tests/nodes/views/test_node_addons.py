@@ -417,7 +417,7 @@ class NodeAddonDetailMixin(object):
             expect_errors=True)
         if not wrong_type:
             assert_equal(res.status_code, 400)
-            assert_in('already enabled', res.body)
+            assert_in('already enabled', res.body.decode())
         else:
             assert_equal(res.status_code, 404)
 

@@ -9,7 +9,7 @@ from nose import tools as nt
 from django.test import RequestFactory
 from django.http import Http404
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -623,8 +623,10 @@ class TestUserWorkshopFormView(AdminTestCase):
             ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
             [None, '9/1/16', None, None, None, self.user.username, None],
         ]
+        data = csv.reader(data)
+        data = bytes(str(data), 'utf-8')
 
-        uploaded = SimpleUploadedFile('test_name', bytes(csv.reader(data)), content_type='text/csv')
+        uploaded = SimpleUploadedFile('test_name', data, content_type='text/csv')
 
         form = WorkshopForm(data={'document': uploaded})
         form.is_valid()
@@ -729,7 +731,7 @@ class TestGetLinkView(AdminTestCase):
         view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
-        user_token = user.email_verifications.keys()[0]
+        user_token = list(user.email_verifications.keys())[0]
         ideal_link_path = '/confirm/{}/{}/'.format(user._id, user_token)
         link = view.get_link(user)
         link_path = str(furl.furl(link).path)
@@ -742,12 +744,12 @@ class TestGetLinkView(AdminTestCase):
         view = views.GetUserConfirmationLink()
         view = setup_view(view, request, guid=user._id)
 
-        old_user_token = user.email_verifications.keys()[0]
+        old_user_token = list(user.email_verifications.keys())[0]
         user.email_verifications[old_user_token]['expiration'] = datetime.utcnow().replace(tzinfo=pytz.utc) - timedelta(hours=24)
         user.save()
 
         link = view.get_link(user)
-        new_user_token = user.email_verifications.keys()[0]
+        new_user_token = list(user.email_verifications.keys())[0]
 
         link_path = str(furl.furl(link).path)
         ideal_link_path = '/confirm/{}/{}/'.format(user._id, new_user_token)

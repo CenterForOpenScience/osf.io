@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
@@ -9,6 +9,7 @@ import json
 import platform
 import subprocess
 import logging
+import sqlite3
 
 import invoke
 from invoke import Collection
@@ -16,14 +17,27 @@ from invoke import Collection
 from website import settings
 from .utils import pip_install, bin_prefix
 
+
+try:
+    from tasks import local  # noqa
+except ImportError:
+    print('No tasks/local.py file found. '
+          'Did you remember to copy local-dist.py to local.py?')
+
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
 CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
-
+NO_TESTS_COLLECTED = 5
 ns = Collection()
+
+try:
+    from tasks import local as local_tasks
+    ns.add_collection(Collection.from_module(local_tasks), name='local')
+except ImportError:
+    pass
 
 try:
     from admin import tasks as admin_tasks
@@ -157,7 +171,7 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    cmd = '{} python manage.py runserver {}:{} --nothreading'.format(env, host, port)
+    cmd = '{} python3 manage.py runserver {}:{} --nothreading'.format(env, host, port)
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
         cmd += ' --certificate {} --key {}'.format(settings.OSF_SERVER_CERT, settings.OSF_SERVER_KEY)
@@ -165,7 +179,7 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
-    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py osf_shell'
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
     if print_sql:
         cmd += ' --print-sql'
     if notebook:
@@ -252,7 +266,7 @@ def rebuild_search(ctx):
 @task
 def mailserver(ctx, host='localhost', port=1025):
     """Run a SMTP test server."""
-    cmd = 'python -m smtpd -n -c DebuggingServer {host}:{port}'.format(host=host, port=port)
+    cmd = 'python3 -m smtpd -n -c DebuggingServer {host}:{port}'.format(host=host, port=port)
     ctx.run(bin_prefix(cmd), pty=True)
 
 
@@ -307,14 +321,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
                 echo=True
             )
     # fix URITemplate name conflict h/t @github
-    ctx.run('pip uninstall uritemplate.py --yes || true')
-    ctx.run('pip install --no-cache-dir uritemplate.py==0.3.0')
+    ctx.run('pip3 uninstall uritemplate.py --yes || true')
+    ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
 
 
 @task
-def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False):
+def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=None, coverage=False, testmon=False):
     """Helper for running tests.
     """
+    from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
     if not numprocesses:
@@ -340,12 +355,17 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
         args += ['-n {}'.format(numprocesses), '--max-slave-restart=0']
     modules = [module] if isinstance(module, basestring) else module
     args.extend(modules)
+    if testmon:
+        args.extend(['--testmon'])
+
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
 
     retcode = pytest.main(args)
-    sys.exit(retcode)
+
+    # exit code 5 is all tests skipped which is the same as passing with testmon
+    sys.exit(0 if retcode == NO_TESTS_COLLECTED else retcode)
 
 
 OSF_TESTS = [
@@ -357,6 +377,8 @@ WEBSITE_TESTS = [
 ]
 
 API_TESTS1 = [
+    'api_tests/draft_registrations',
+    'api_tests/draft_nodes',
     'api_tests/identifiers',
     'api_tests/institutions',
     'api_tests/licenses',
@@ -394,6 +416,8 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
+    'api_tests/sloan',
+    'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
@@ -409,52 +433,52 @@ ADMIN_TESTS = [
 
 
 @task
-def test_osf(ctx, numprocesses=None, coverage=False):
+def test_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the GakuNin RDM test suite."""
     print('Testing modules "{}"'.format(OSF_TESTS))
-    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_website(ctx, numprocesses=None, coverage=False):
+def test_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the old test suite."""
     print('Testing modules "{}"'.format(WEBSITE_TESTS))
-    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_api1(ctx, numprocesses=None, coverage=False):
+def test_api1(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS1 + ADMIN_TESTS))
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_api2(ctx, numprocesses=None, coverage=False):
+def test_api2(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS2))
-    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS2, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_api3(ctx, numprocesses=None, coverage=False):
+def test_api3(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the API test suite."""
     print('Testing modules "{}"'.format(API_TESTS3 + OSF_TESTS))
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_admin(ctx, numprocesses=None, coverage=False):
+def test_admin(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
-    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_addons(ctx, numprocesses=None, coverage=False):
+def test_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """Run all the tests in the addons directory.
     """
     print('Testing modules "{}"'.format(ADDON_TESTS))
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage)
+    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
@@ -477,6 +501,13 @@ def test(ctx, all=False, lint=False):
         karma(ctx)
 
 @task
+def remove_failures_from_testmon(ctx, db_path=None):
+
+    conn = sqlite3.connect(db_path)
+    tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
+    ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
+
+@task
 def travis_setup(ctx):
     ctx.run('npm install -g bower', echo=True)
 
@@ -489,41 +520,41 @@ def travis_setup(ctx):
         ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False):
+def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run half of the tests to help travis go faster.
     """
     travis_setup(ctx)
     syntax(ctx)
-    test_addons(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False):
+def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run other half of the tests to help travis go faster.
     """
     travis_setup(ctx)
-    test_website(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False):
+def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
     travis_setup(ctx)
-    test_api1(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False):
+def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
     travis_setup(ctx)
-    test_api2(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False):
+def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     travis_setup(ctx)
-    test_api3(ctx, numprocesses=numprocesses, coverage=coverage)
+    test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
 def karma(ctx, travis=False):
@@ -549,7 +580,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+                    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
                         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
                     )
                     ctx.run(cmd, pty=pty)
@@ -559,7 +590,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
         WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
     )
     ctx.run(cmd, pty=pty)
@@ -829,7 +860,7 @@ def webpack(ctx, clean=False, watch=False, dev=False, colors=False):
 def build_js_config_files(ctx):
     from website import settings
     print('Building JS config files...')
-    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
+    with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'w') as fp:
         json.dump(settings.NODE_CATEGORY_MAP, fp)
     print('...Done.')
 

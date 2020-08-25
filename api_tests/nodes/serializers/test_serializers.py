@@ -1,9 +1,10 @@
 from dateutil.parser import parse as parse_date
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeSerializer
+from api.sparse.serializers import SparseNodeSerializer, SparseRegistrationSerializer
 from api.registrations.serializers import RegistrationSerializer
 from framework.auth import Auth
 from osf.models import ProjectStorageType, UserQuota
@@ -160,6 +161,50 @@ class TestNodeSerializer:
 
 
 @pytest.mark.django_db
+class TestSparseNodeSerializer:
+
+    def test_sparse_node_serializer(self, user):
+
+        #   test_node_serialization
+        parent = ProjectFactory(creator=user)
+        node = NodeFactory(creator=user, parent=parent)
+        req = make_drf_request_with_version(version='2.15')
+        result = SparseNodeSerializer(node, context={'request': req}).data
+        data = result['data']
+        assert data['id'] == node._id
+        assert data['type'] == 'sparse-nodes'
+
+        # Attributes
+        attributes = data['attributes']
+        assert attributes['title'] == node.title
+        assert attributes['description'] == node.description
+        assert attributes['public'] == node.is_public
+        assert set(attributes['tags']) == set(node.tags.values_list('name', flat=True))
+        assert 'current_user_can_comment' not in attributes
+        assert 'license' not in attributes
+        assert attributes['category'] == node.category
+        assert 'registration' not in attributes
+        assert attributes['fork'] == node.is_fork
+
+        # Relationships
+        relationships = data['relationships']
+        assert 'region' not in relationships
+        assert 'children' in relationships
+        assert 'detail' in relationships
+        assert 'contributors' in relationships
+        assert 'files' not in relationships
+        assert 'parent' in relationships
+        assert 'affiliated_institutions' not in relationships
+        assert 'registrations' not in relationships
+        assert 'forked_from' not in relationships
+        parent_link = relationships['parent']['links']['related']['href']
+        assert urlparse(parent_link).path == '/{}sparse/nodes/{}/'.format(API_BASE, parent._id)
+        assert 'sparse' not in relationships['detail']['links']['related']['href']
+        sparse_children_path = urlparse(relationships['children']['links']['related']['href']).path
+        assert sparse_children_path == '/{}sparse/nodes/{}/children/'.format(API_BASE, node._id)
+
+
+@pytest.mark.django_db
 class TestNodeRegistrationSerializer:
 
     def test_serialization(self):
@@ -213,3 +258,45 @@ class TestNodeRegistrationSerializer:
             else:
                 assert api_registrations_url in relationship_urls[relationship], 'For key {}'.format(
                     relationship)
+
+
+@pytest.mark.django_db
+class TestSparseRegistrationSerializer:
+
+    def test_sparse_registration_serializer(self, user):
+        user = UserFactory()
+        versioned_request = make_drf_request_with_version(version='2.2')
+        registration = RegistrationFactory(creator=user)
+        result = SparseRegistrationSerializer(
+            registration, context={
+                'request': versioned_request}).data
+        data = result['data']
+        assert data['id'] == registration._id
+        assert data['type'] == 'sparse-registrations'
+
+        # Attributes
+        attributes = data['attributes']
+        assert attributes['withdrawn'] == registration.is_retracted
+        assert attributes['title'] == registration.title
+        assert attributes['description'] == registration.description
+        assert attributes['public'] == registration.is_public
+        assert set(attributes['tags']) == set(registration.tags.values_list('name', flat=True))
+        assert 'current_user_can_comment' not in attributes
+        assert 'license' not in attributes
+        assert attributes['category'] == registration.category
+        assert attributes['fork'] == registration.is_fork
+
+        # Relationships
+        relationships = data['relationships']
+        assert 'registered_by' not in relationships
+        assert 'registered_from' not in relationships
+        assert 'region' not in relationships
+        assert 'children' in relationships
+        assert 'detail' in relationships
+        assert 'contributors' in relationships
+        assert 'files' not in relationships
+        assert 'affiliated_institutions' not in relationships
+        assert 'registrations' not in relationships
+        assert 'forked_from' not in relationships
+        assert 'sparse' not in relationships['detail']['links']['related']['href']
+        assert 'sparse' in relationships['children']['links']['related']['href']

@@ -18,7 +18,7 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         with mock.patch('framework.celery_tasks.handlers.queue', mock.Mock(return_value=None)):
             super(TestApproveEmbargoTerminations, self).tearDown()
 
-    @mock.patch('osf.models.sanctions.TokenApprovableSanction.ask', mock.Mock())
+    @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock())
     def setUp(self):
         super(TestApproveEmbargoTerminations, self).setUp()
         self.user = AuthUserFactory()
@@ -66,4 +66,5 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         for node in self.registration2.node_and_primary_descendants():
             node.reload()
             assert_true(node.is_public)
+            assert_equal(node.embargo_termination_approval.state, Sanction.APPROVED)
             assert_false(node.is_embargoed)

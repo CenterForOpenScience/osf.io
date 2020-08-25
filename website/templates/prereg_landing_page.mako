@@ -1,11 +1,7 @@
 <%inherit file="base.mako"/>
 
 <%def name="title()">
-    %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        ${_("GakuNin RDM Preregistration")}
-    %else:
-        ${_("GakuNin RDM Prereg Challenge")}
-    %endif
+    ${_("GakuNin RDM Preregistration")}
 </%def>
 <%def name="stylesheets()">
     ${ parent.stylesheets() }
@@ -45,19 +41,10 @@
 <%def name="content()">
 <div class="prereg-container">
     <h1 class="m-t-xl m-b-lg text-center">
-        %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-            <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-red.png" alt="preregistration_logo">
-        %else:
-            <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-challenge-black.png" alt="preregistration_logo">
-        %endif
+        <img class="reg-landing-page-logo" src="/static/img/registries/osf-prereg-red.png" alt="preregistration_logo">
     </h1>
-    %if waffle.switch_is_active(features.OSF_PREREGISTRATION):
-        ${_("<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By writing out specific details such as data collection methods, analysis plans, and rules for data exclusion, you can make important decisions early on and have a clear record of these choices. This can help reduce biases that occur once the data are in front of you.</p>") % dict(cosPreregUrl="target='_blank' href='http://www.cos.io/prereg/'") | n}
-        ${_("<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously registered work.</p>") % dict(osfRegistriesUrl="target='_blank' href='https://osf.io/registries/'") | n}
-    %else:
-        ${_("<p><strong> Articles must be published by an <a %(preregMoreInfoUrl)s>approved</a> journal by December 31, 2018, to be eligible for a prize. Please use this this helpful workflow to preregister, even if you are not seeking a prize. </strong></p>") % dict(preregMoreInfoUrl="target='_blank' href='http://cos.io/our-services/prereg-more-information/'") | n}
-        ${_("<p> Improve your research with preregistration. The process of creating a <a %(cosPreregUrl)s> preregistration</a> is beneficial to both the scientific field and to you, the scientist. By writing out detailed data collection methods, analysis plans, and rules for excluding or missing data, you can make important decisions that affect your workflow earlier, without the biases that occur once the data are in front of you.</p>") % dict(cosPreregUrl="href='http://www.cos.io/prereg'")}
-    %endif
+    ${_("<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By writing out specific details such as data collection methods, analysis plans, and rules for data exclusion, you can make important decisions early on and have a clear record of these choices. This can help reduce biases that occur once the data are in front of you.</p>") % dict(cosPreregUrl="target='_blank' href='http://www.cos.io/prereg/'") | n}
+    ${_("<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously registered work.</p>") % dict(osfRegistriesUrl="target='_blank' href='https://osf.io/registries/'") | n}
     <div class="col-md-12 visible-xs">
       %if is_logged_in:
       <div class="row">

@@ -2,7 +2,7 @@ import mock
 import furl
 import datetime
 import pytz
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from nose.tools import *  # noqa:
 
 from api.base.settings.defaults import API_BASE
@@ -124,7 +124,7 @@ class TestWikiVersionDetailView(ApiWikiTestCase):
         # TODO: Remove mocking when StoredFileNode is implemented
         with mock.patch('osf.models.AbstractNode.update_search'):
             withdrawal = self.public_registration.retract_registration(user=self.user, save=True)
-            token = withdrawal.approval_state.values()[0]['approval_token']
+            token = list(withdrawal.approval_state.values())[0]['approval_token']
             withdrawal.approve_retraction(self.user, token)
             withdrawal.save()
         res = self.app.get(self.public_registration_url, auth=self.user.auth, expect_errors=True)

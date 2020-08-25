@@ -1,8 +1,5 @@
 from rest_framework import serializers as ser
 
-from django.contrib.contenttypes.models import ContentType
-from django.db import connection
-
 from addons.osfstorage.models import OsfStorageFile
 from api.base.serializers import (
     IDField,
@@ -15,7 +12,6 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse
 from api.files.serializers import get_file_download_link
 from api.nodes.serializers import NodeSerializer
-from osf.models import AbstractNode
 
 
 class MeetingSerializer(JSONAPISerializer):
@@ -70,7 +66,7 @@ class MeetingSerializer(JSONAPISerializer):
         if getattr(obj, 'submissions_count', None):
             return obj.submissions_count
         else:
-            return obj.submissions.count()
+            return obj.valid_submissions.count()
 
     class Meta:
         type_ = 'meetings'
@@ -149,25 +145,8 @@ class MeetingSubmissionSerializer(NodeSerializer):
         if getattr(obj, 'download_count', None):
             return obj.download_count or 0
         else:
-            node_ct = ContentType.objects.get_for_model(AbstractNode).id
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT P.total
-                    FROM osf_basefilenode F, osf_pagecounter P
-                    WHERE (F.type = 'osf.osfstoragefile'
-                         AND F.provider = 'osfstorage'
-                         AND F.target_content_type_id = %s
-                         AND F.target_object_id = %s
-                         AND P._id = 'download:' || %s || ':' || F._id)
-                    ORDER BY F.id ASC
-                    LIMIT 1;
-                """, [node_ct, obj.id, obj._id],
-                )
-                result = cursor.fetchone()
-                if result:
-                    return int(result[0])
-                return 0
+            submission_file = self.get_submission_file(obj)
+            return submission_file.get_download_count() if submission_file else None
 
     def get_download_link(self, obj):
         """
@@ -175,14 +154,16 @@ class MeetingSubmissionSerializer(NodeSerializer):
         assuming its first file is the meeting submission.
         """
         if getattr(obj, 'file_id', None):
-            submission_file = OsfStorageFile.objects.get(_id=obj.file_id)
+            submission_file = OsfStorageFile.objects.get(id=obj.file_id)
         else:
-            files = obj.files.order_by('created')
-            submission_file = files.first()
+            submission_file = self.get_submission_file(obj)
 
         if submission_file:
             return get_file_download_link(submission_file)
         return None
+
+    def get_submission_file(self, obj):
+        return obj.files.order_by('created').first()
 
     def get_absolute_url(self, obj):
         meeting_endpoint = self.context['meeting'].endpoint

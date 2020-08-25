@@ -2,7 +2,7 @@ import re
 from distutils.version import StrictVersion
 
 from rest_framework import generics
-from rest_framework.exceptions import NotFound, PermissionDenied, NotAuthenticated
+from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -57,6 +57,7 @@ from api.nodes.permissions import (
 from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
+from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import MetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
@@ -415,6 +416,46 @@ class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
         return context
 
 
+class PreprintBibliographicContributorsList(PreprintContributorsList):
+    permission_classes = (
+        AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    pagination_class = PreprintContributorPagination
+    serializer_class = PreprintContributorsSerializer
+
+    view_category = 'preprints'
+    view_name = 'preprint-bibliographic-contributors'
+
+    def get_default_queryset(self):
+        contributors = super().get_default_queryset()
+        return contributors.filter(visible=True)
+
+    def post(self, request, *args, **kwargs):
+        raise MethodNotAllowed(method=request.method)
+
+
+class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ModeratorIfNeverPublicWithdrawn,
+        ContributorOrPublic,
+        PreprintPublishedOrWrite,
+    )
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+
+    view_category = 'preprints'
+    view_name = 'preprint-subjects'
+
+    def get_resource(self):
+        return self.get_preprint()
+
 class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
@@ -512,8 +553,8 @@ class PreprintStorageProvidersList(NodeStorageProvidersList, PreprintMixin):
     view_category = 'preprints'
     view_name = 'preprint-storage-providers'
 
-    def get_provider_item(self, provider):
-        return NodeStorageProvider(provider, self.get_preprint())
+    def get_provider_item(self, provider_name):
+        return NodeStorageProvider(self.get_preprint(), provider_name)
 
     def get_queryset(self):
         # Preprints Providers restricted so only osfstorage is allowed

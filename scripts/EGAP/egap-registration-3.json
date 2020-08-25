@@ -1,0 +1,385 @@
+{
+	"name": "EGAP Registration",
+	"version": 3,
+	"config": {
+        "hasFiles": true
+    },
+	"description": "The EGAP registry focuses on designs for experiments and observational studies in governance and politics.",
+	"pages": [{
+			"id": "page1",
+			"title": "General Information About the Study",
+			"questions": [{
+					"qid": "q1",
+					"nav": "Title",
+					"type": "string",
+					"format": "text",
+					"title": "Title of Study",
+					"description": "Provide the working title of your study.",
+					"required": true
+				},
+				{
+					"qid": "q3",
+					"nav": "EGAP Registration ID",
+					"title": "EGAP Registration ID",
+					"format": "textarea",
+					"required": true
+				},
+				{
+					"qid": "q4",
+					"nav": "Timestamp",
+					"title": "Timestamp of original registration",
+					"format": "textarea",
+					"required": true
+				},
+				{
+					"qid": "q5",
+					"nav": "Acknowledgements",
+					"title": "Acknowledgements",
+					"type": "string",
+					"format": "textarea",
+					"required": false
+				},
+				{
+					"qid": "q6",
+					"title": "Is one of the study authors a university faculty member?",
+					"nav": "University Faculty Member?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
+					],
+					"description": "Please choose one"
+				},
+				{
+					"qid": "q7",
+					"title": "Other author affiliation",
+					"format": "textarea",
+					"required": false,
+					"description": "Other author affiliation (additional information if 'other' was selected above)"
+
+				},
+				{
+					"qid": "q8",
+					"title": "Is this Registration Prospective or Retrospective?",
+					"nav": "Prospective or Retrospective?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Registration prior to any research activities",
+						"Registration prior to assignment of treatment",
+						"Registration prior to realization of outcomes",
+						"Registration prior to researcher access to outcome data",
+						"Registration prior to researcher analysis of outcome data",
+						"Registration after researcher analysis of outcome data",
+						"N/A",
+						"Other (describe in text box below)"
+					],
+					"description": "Please choose one"
+				},
+				{
+					"qid": "q9",
+					"title": "Other description of registration timing",
+					"format": "textarea",
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
+				},
+				{
+					"qid": "q10",
+					"title": "Is this an experimental study?",
+					"description": "With “experimental” defined as random assignment of units to treatment and control conditions.",
+					"nav": "Experimental study?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A"
+					]
+				},
+				{
+					"qid": "q11",
+					"title": "Date of start of study",
+					"nav": "Date of start of study",
+					"type": "string",
+					"format": "text",
+					"description": "Understood as first date of treatment assignment or equivalent for observational study",
+					"help": "E.g., 06/02/2018"
+				},
+				{
+					"qid": "q12",
+					"title": "B8 Gate Date",
+					"nav": "Gate Date?",
+					"type": "string",
+					"format": "text",
+					"description": "Gating is discouraged, but if necessary, EGAP policy limits the gate range to 18 months maximum.",
+					"help": "E.g., 06/02/2018"
+				},
+				{
+					"qid": "q13",
+					"title": "Was this design presented at an EGAP meeting?",
+					"nav": "Presented at an EGAP meeting?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A"
+
+					]
+				},
+				{
+					"qid": "q14",
+					"title": "Is there a pre-analysis plan associated with this registration?",
+					"nav": "Pre-analysis plan associated with this registration?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A"
+					],
+					"description": "If so, please attach it in the Additional Documentation section on the final screen."
+				}
+			]
+		},
+		{
+			"id": "page2",
+			"title": "Registration Data",
+			"questions": [{
+					"qid": "q15",
+					"nav": "Background and explanation of rationale.",
+					"title": "Background and explanation of rationale.",
+					"format": "textarea",
+					"required": true,
+					"description": "Brief description of goals of project. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of the project background."
+				},
+				{
+					"qid": "q16",
+					"nav": "Background and explanation of rationale.",
+					"title": "What are the hypotheses to be tested/quantities of interest to be estimated?",
+					"format": "textarea",
+					"required": true,
+					"description": "Please list the hypotheses including hypotheses on heterogeneous effects. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project hypotheses."
+				},
+				{
+					"qid": "q17",
+					"nav": "How will these hypotheses be tested?",
+					"title": "How will these hypotheses be tested?",
+					"format": "textarea",
+					"required": true,
+					"description": "Brief description of your methodology. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project methodology."
+				},
+				{
+					"qid": "q18",
+					"title": "Country",
+					"nav": "Country",
+					"type": "string",
+					"format": "text",
+					"help": "Comma separated names of countries (e.g. Canada, United States, Mexico)"
+				},
+				{
+					"qid": "q19",
+					"title": "Sample Size (# of Units)",
+					"nav": "Sample Size",
+					"type": "string",
+					"format": "text"
+				},
+				{
+					"qid": "q20",
+					"title": "Was a power analysis conducted prior to data collection?",
+					"nav": "Power analysis conducted prior to data collection?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
+					]
+				},
+				{
+					"qid": "q21",
+					"title": "Other power analysis information",
+					"format": "textarea",
+					"description": "Other (additional information if 'other' was selected above)",
+					"required": false
+				},
+				{
+					"qid": "q22",
+					"title": "Has this research received Institutional Review Board (IRB) or ethics committee approval?",
+					"nav": "Review Board (IRB) or ethics committee approval?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
+					]
+				},
+				{
+					"qid": "q23",
+					"title": "Other IRB information",
+					"description": "Other (additional information if 'other' was selected above)",
+					"format": "textarea",
+					"required": false
+				},
+				{
+					"qid": "q24",
+					"title": "IRB Number",
+					"nav": "IRB Number",
+					"type": "string",
+					"format": "text"
+				},
+				{
+					"qid": "q25",
+					"title": "Date of IRB Approval",
+					"nav": "IRB Number",
+					"type": "string",
+					"format": "text"
+				},
+				{
+					"qid": "q26",
+					"title": "Will the intervention be implemented by the researcher or a third party? If a third party, please provide the name.",
+					"nav": "Review Board (IRB) or ethics committee approval?",
+					"type": "choose",
+					"format": "multiselect",
+					"options": [
+						"Researchers",
+						"Third party (describe in text box below)"
+					]
+				},
+				{
+					"qid": "q27",
+					"title": "Third party implementer information",
+					"format": "textarea",
+					"required": false,
+					"description": "List any third party implementer(s), if third party was selected above"
+				},
+				{
+					"qid": "q28",
+					"title": "Did any of the research team receive remuneration from the implementing agency for taking part in this research?",
+					"nav": "Remuneration?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
+					]
+				},
+				{
+					"qid": "q29",
+					"title": "Other renumeration information",
+					"format": "textarea",
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
+				},
+				{
+					"qid": "q30",
+					"title": "If relevant, is there an advance agreement with the implementation group that all results can be published?",
+					"nav": "is there an advance agreement with the implementation group that all results can be published?",
+					"type": "choose",
+					"format": "singleselect",
+					"options": [
+						"Yes",
+						"No",
+						"N/A",
+						"Other (describe in text box below)"
+					]
+				},
+				{
+					"qid": "q31",
+					"title": "Other publication agreement information",
+					"format": "textarea",
+					"required": false,
+					"description": "Other (additional information if 'other' was selected above)"
+				},
+				{
+					"qid": "q32",
+					"title": "JEL classification(s)",
+					"nav": "JEL classification(s)",
+					"type": "string",
+					"format": "text",
+					"description": "Please provide alphanumeric code(s). If multiple classifications, separate by commas (e.g. D31, C19, F22). For more information, see https://www.aeaweb.org/jel/guide/jel.php"
+				}
+			]
+		},
+		{
+			"id": "page3",
+			"title": "Keywords and Data",
+			"questions": [{
+				"qid": "q33",
+				"nav": "Keywords",
+				"type": "choose",
+				"format": "multiselect",
+				"title": "Keywords for Methodology",
+				"description": "Choose one or more categories that describe your study methodology.",
+				"options": [
+					"Experimental Design",
+					"Field Experiments",
+					"Lab Experiments",
+					"Mixed Method",
+					"Statistics",
+					"Survey Methodology"
+				]
+			}, {
+				"qid": "q34",
+				"nav": "Keywords",
+				"type": "choose",
+				"format": "multiselect",
+				"title": "Keywords for Policy",
+				"description": "Choose one or more policy categories.",
+				"options": [
+					"Conflict and Violence",
+					"Corruption",
+					"Development",
+					"Elections",
+					"Ethnic Politics",
+					"Gender",
+					"Governance"
+				]
+			}, {
+				"qid": "q35",
+				"title": "Certification",
+				"nav": "Certification",
+				"type": "choose",
+				"format": "singleselect",
+				"description": "By submitting this form and accompanying documents with EGAP, I confirm that I have rights to put this information in the public domain and I understand that this information will remain on the EGAP registry in perpetuity, regardless of whether the research is subsequently implemented or not.",
+				"options": [
+					"Agree"
+				],
+				"required": true
+			}, {
+				"qid": "q36",
+				"title": "Confirmation",
+				"nav": "Confirmation",
+				"type": "choose",
+				"format": "singleselect",
+				"description": "You should receive a confirmation of your registration within three business days. Your registration is considered complete only when confirmation is received. If you do not receive confirmation within five business days please contact paps@egap.org.",
+				"options": [
+					"Agree"
+				],
+				"required": true
+			}, {
+				"qid": "q37",
+				"nav": "Additional documentation",
+				"title": "Additional documentation",
+				"type": "osf-upload",
+				"format": "osf-upload-open",
+				"description": "Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>"
+			}, {
+				"qid": "q38",
+				"nav": "DeclareDesign",
+				"title": "DeclareDesign",
+				"type": "osf-upload",
+				"format": "osf-upload-open",
+				"description": "If you have used DeclareDesign to simulate your study, attach the output here. DeclareDesign is a system for describing research designs in code and simulating them in order to understand their properties. Learn more at https://declaredesign.org/."
+			}]
+		}
+	]
+}

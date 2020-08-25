@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib as http
+from rest_framework import status as http_status
 
 from flask import request
 from django.core.exceptions import ValidationError
@@ -18,8 +18,9 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
+from osf.models import Tag
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, NodeLog
+from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor, NodeLog
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from osf.utils.requests import get_current_request
@@ -32,9 +33,12 @@ from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
+from website.util.metrics import provider_claimed_tag
+from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 from api.base.settings import LOGIN_BY_EPPN
 from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 from nii.mapcore import mapcore_sync_is_enabled, mapcore_sync_map_group
+
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -51,7 +55,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
         users = node.visible_contributors
 
     if anonymous or not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     contributors = []
 
@@ -90,7 +94,7 @@ def get_contributors(auth, node, **kwargs):
         try:
             limit = int(request.args['limit'])
         except ValueError:
-            raise HTTPError(http.BAD_REQUEST, data=dict(
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='Invalid value for "limit": {}'.format(request.args['limit'])
             ))
     else:
@@ -99,7 +103,7 @@ def get_contributors(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
 
     if anonymous or not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
@@ -126,10 +130,10 @@ def get_contributors_from_parent(auth, node, **kwargs):
     parent = node.parent_node
 
     if not parent:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     contribs = [
         profile_utils.add_contributor_json(contrib, node=node)
@@ -223,7 +227,7 @@ def project_contributors_post(auth, node, **kwargs):
         node_ids.remove(node._id)
 
     if user_dicts is None or node_ids is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     # Prepare input data for `Node::add_contributors`
     try:
@@ -291,7 +295,7 @@ def project_manage_contributors(auth, node, **kwargs):
     try:
         node.manage_contributors(contributors, auth=auth, save=True)
     except (ValueError, NodeStateError) as error:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': error.args[0]})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': error.args[0]})
 
     if mapcore_sync_is_enabled():
         mapcore_sync_map_group(auth.user, node)
@@ -334,7 +338,7 @@ def project_remove_contributor(auth, **kwargs):
     node_ids = request.get_json()['nodeIDs']
     contributor = OSFUser.load(contributor_id)
     if contributor is None:
-        raise HTTPError(http.BAD_REQUEST, data={'message_long': 'Contributor not found.'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Contributor not found.'})
     redirect_url = {}
     parent_id = node_ids[0]
     for node_id in node_ids:
@@ -344,18 +348,18 @@ def project_remove_contributor(auth, **kwargs):
         # Forbidden unless user is removing herself
         if not node.has_permission(auth.user, ADMIN):
             if auth.user != contributor:
-                raise HTTPError(http.FORBIDDEN)
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         if node.visible_contributors.count() == 1 \
                 and node.visible_contributors[0] == contributor:
-            raise HTTPError(http.FORBIDDEN, data={
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
                 'message_long': 'Must have at least one bibliographic contributor'
             })
 
         nodes_removed = node.remove_contributor(contributor, auth=auth)
         # remove_contributor returns false if there is not one admin or visible contributor left after the move.
         if not nodes_removed:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_long': 'Could not remove contributor.'})
 
         if mapcore_sync_is_enabled():
@@ -388,7 +392,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     :param node: the project node where the user account is claimed
     :param throttle: the time period in seconds before another claim for the account can be made
     :return:
-    :raise: http.BAD_REQUEST
+    :raise: http_status.HTTP_400_BAD_REQUEST
     """
 
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
@@ -396,7 +400,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     # check throttle
     timestamp = unclaimed_record.get('last_sent')
     if not throttle_period_expired(timestamp, throttle):
-        raise HTTPError(http.BAD_REQUEST, data=dict(
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
 
@@ -458,7 +462,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         emailed during which the referrer will not be emailed again.
     :param str email_template: the email template to use
     :return
-    :raise http.BAD_REQUEST
+    :raise http_status.HTTP_400_BAD_REQUEST
 
     """
 
@@ -498,7 +502,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check throttle
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise HTTPError(http.BAD_REQUEST, data=dict(
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                 message_long='User account can only be claimed with an existing user once every 24 hours'
             ))
         # roll the valid token for each email, thus user cannot change email and approve a different email address
@@ -556,7 +560,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and (isinstance(node, Preprint) or
+    if contributor.is_registered and ((isinstance(node, (Preprint, DraftRegistration))) or
             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         mimetype = 'html'
         preprint_provider = None
@@ -570,6 +574,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 logo = preprint_provider._id
+        elif email_template == 'draft_registration':
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
         elif email_template == 'access_request':
             mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
@@ -578,7 +584,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT')
 
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
@@ -601,7 +607,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             can_change_preferences=False,
             logo=logo if logo else settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, Preprint) else serialize_preprints(node, user=None)
+            published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
@@ -612,7 +618,7 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
-    if isinstance(node, Preprint):
+    if isinstance(node, (Preprint, DraftRegistration)):
         return
     MAX_RECENT_LENGTH = 15
     # Add contributor to recently added list for user
@@ -630,6 +636,8 @@ def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs
             for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                 each.delete()
 
+    if isinstance(node, DraftRegistration):
+        return
     # If there are pending access requests for this user, mark them as accepted
     pending_access_requests_for_user = node.requests.filter(creator=contributor, machine_state='pending')
     if pending_access_requests_for_user.exists():
@@ -673,7 +681,7 @@ def verify_claim_token(user, token, pid):
 def check_external_auth(user):
     if user:
         return not user.has_usable_password() and (
-            'VERIFIED' in sum([each.values() for each in user.external_identity.values()], [])
+            'VERIFIED' in sum([list(each.values()) for each in user.external_identity.values()], [])
         )
     return False
 
@@ -700,7 +708,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
-        raise HTTPError(http.BAD_REQUEST, data=data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
     # Logged in user is already a member of the OSF Group
     if hasattr(node, 'is_member') and node.is_member(current_user):
@@ -709,7 +717,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_long': ('The logged-in user is already a member of this OSF Group. '
                 'Would you like to <a href="{}">log out</a>?').format(sign_out_url)
         }
-        raise HTTPError(http.BAD_REQUEST, data=data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = OSFUser.load(uid)
@@ -718,7 +726,7 @@ def claim_user_registered(auth, node, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'The token in the URL is invalid or has expired.'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
@@ -920,7 +928,7 @@ def claim_user_form(auth, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     if LOGIN_BY_EPPN:
         return redirect(web_url_for('claim_user_login_by_eppn',
@@ -953,7 +961,7 @@ def claim_user_form(auth, **kwargs):
         else:
             username, password = claimer_email, form.password.data
             if not username:
-                raise HTTPError(http.BAD_REQUEST, data=dict(
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                     message_long='No email associated with this account. Please claim this '
                     'account on the project to which you were invited.'
                 ))
@@ -971,6 +979,8 @@ def claim_user_form(auth, **kwargs):
             if provider:
                 redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
             else:
+                # Add related claimed tags to user
+                _add_related_claimed_tag_to_user(pid, user)
                 redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
 
             return redirect(cas.get_login_url(
@@ -986,6 +996,31 @@ def claim_user_form(auth, **kwargs):
         'form': forms.utils.jsonify(form) if is_json_request() else form,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
+
+
+def _add_related_claimed_tag_to_user(pid, user):
+    """
+    Adds claimed tag to incoming users, depending on whether the resource has related source tags
+    :param pid: guid of either the node or the preprint
+    :param user: the claiming user
+    """
+    node = AbstractNode.load(pid)
+    preprint = Preprint.load(pid)
+    osf_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('osf'), system=True)
+    if node:
+        node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
+        if node_source_tags.exists():
+            for tag in node_source_tags:
+                claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
+                                                                  system=True)
+                user.add_system_tag(claimed_tag)
+        else:
+            user.add_system_tag(osf_claimed_tag)
+    elif preprint:
+        provider_id = preprint.provider._id
+        preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),
+                                                                   system=True)
+        user.add_system_tag(preprint_claimed_tag)
 
 
 @must_be_valid_project
@@ -1061,7 +1096,7 @@ def claim_user_post(node, **kwargs):
         send_claim_registered_email(claimer, unclaimed_user, node)
         email = claimer.username
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
         'status': 'success',

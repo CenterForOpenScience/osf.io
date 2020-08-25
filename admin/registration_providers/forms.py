@@ -7,6 +7,7 @@ from admin.base.utils import (
     get_nodelicense_choices,
     get_defaultlicense_choices,
     validate_slug,
+    get_brand_choices,
 )
 
 
@@ -29,9 +30,11 @@ class RegistrationProviderForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         nodelicense_choices = get_nodelicense_choices()
         defaultlicense_choices = get_defaultlicense_choices()
+        brand_choices = get_brand_choices()
         super(RegistrationProviderForm, self).__init__(*args, **kwargs)
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
+        self.fields['brand'].choices = brand_choices
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):

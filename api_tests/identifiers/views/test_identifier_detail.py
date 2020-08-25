@@ -1,5 +1,5 @@
 import pytest
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
@@ -238,32 +238,6 @@ class TestIdentifierDetail:
         assert res.status_code == 403
 
         # test_abandoned_preprint_identifier_admin_authenticated
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-    def test_identifier_preprint_detail_orphaned(
-            self, app, preprint, user, identifier_preprint, noncontrib
-    ):
-        url = '/{}identifiers/{}/'.format(API_BASE, identifier_preprint._id)
-        preprint.primary_file = None
-        preprint.save()
-
-        # test_orphaned_preprint_identifier_unauthenticated
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 401
-
-        # test_orphaned_preprint_identifier_noncontrib_authenticated
-        read_user = AuthUserFactory()
-        res = app.get(url, auth=noncontrib.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test_orphaned_preprint_identifier_readcontrib_authenticated
-        read_user = AuthUserFactory()
-        preprint.add_contributor(read_user, READ, save=True)
-        res = app.get(url, auth=read_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # test_orphaned_preprint_identifier_admin_authenticated
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 

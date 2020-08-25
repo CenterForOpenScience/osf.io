@@ -1,6 +1,6 @@
 from django.utils import six
 from collections import OrderedDict
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
 from django.db.models import QuerySet
 
@@ -14,7 +14,7 @@ from api.base.serializers import is_anonymized
 from api.base.settings import MAX_PAGE_SIZE
 from api.base.utils import absolute_reverse
 
-from osf.models import AbstractNode, Comment, Preprint, Guid
+from osf.models import AbstractNode, Comment, Preprint, Guid, DraftRegistration
 from website.search.elastic_search import DOC_TYPE_TO_MODEL
 
 
@@ -234,6 +234,13 @@ class PreprintContributorPagination(NodeContributorPagination):
     def get_resource(self, kwargs):
         resource_id = kwargs.get('preprint_id')
         return Preprint.load(resource_id)
+
+
+class DraftRegistrationContributorPagination(NodeContributorPagination):
+
+    def get_resource(self, kwargs):
+        resource_id = kwargs.get('draft_id')
+        return DraftRegistration.load(resource_id)
 
 
 class SearchPaginator(DjangoPaginator):

@@ -1,0 +1,67 @@
+{
+    "name": "Registered Report Protocol Preregistration",
+    "version": 4,
+    "config": {
+      "hasFiles": true
+    },
+    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal offering the Registered Reports format. See https://cos.io/rr for more information.",
+    "pages": [{
+        "id": "page2",
+        "title": "Publication Information",
+        "questions": [{
+            "qid": "q2",
+            "title": "In-principle acceptance",
+            "format": "singleselect",
+            "type": "choose",
+            "options": ["I confirm this study has been granted in-principle acceptance."],
+            "nav": "In-principle acceptance?",
+            "required": true,
+            "description": "In order to complete this registration your study must be granted an \"in-principle acceptance\" from a journal that offers Registered Reports. Completed papers with results may not use this form."
+        }, {
+            "qid": "q3",
+            "title": "Journal title",
+            "type": "string",
+            "format": "text",
+            "nav": "Journal title",
+            "required": true
+        }, {
+            "qid": "q4",
+            "title": "Date of in-principle acceptance",
+            "description": "Format: (YYYY-MM-DD)",
+            "type": "string",
+            "format": "text",
+            "nav": "Date of acceptance",
+            "required": true
+        }]
+    }, {
+        "id": "page3",
+        "title": "Manuscript",
+        "questions": [{
+            "qid": "q5",
+            "title": "Attach manuscript",
+            "nav": "Manuscript",
+            "type": "osf-upload",
+            "format": "osf-upload-open",
+            "description":"Please attach the protocol that has been accepted for publication as a Registered Report. Completed studies with final results may not use this form.",
+            "required":true
+        }]
+    }, {
+        "id": "page4",
+        "title": "Other",
+        "questions": [{
+            "qid": "q6",
+            "title": "Attach any supporting documents",
+            "nav": "Supporting documents",
+            "type": "osf-upload",
+            "format": "osf-upload-open",
+            "description":"Please attach any other files that were included in your submission. These may include analysis scripts, questionnaires, or other digital materials."
+        }, {
+            "qid": "q7",
+            "title": "Other information",
+            "description":"Please include any other relevant information such as the anticipated date of study completion or any notable changes if this is a revision of a study that was already granted in-principle acceptance.",
+            "type": "string",
+            "format": "textarea",
+            "nav": "Other information"
+        }]
+    }]
+}

@@ -53,6 +53,8 @@ var STATE_MAP = {
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
+var MOVE_INTERVAL;
+var MILLSECOND_PER_MOVE_REQUEST = 500;
 
 var CONFLICT_INFO = {
     skip: {
@@ -106,6 +108,13 @@ function findByTempID(parent, tmpID) {
     }
     return item;
 }
+
+// Replace is the "default" conflict, when a user resolves a conflict by explicitly replacing it simply
+// executes a normal move and adds the conflicted file to the ready queue, because of this
+var replace = function(tb, cb, item) {
+    tb.pendingReadyFiles.push(item);
+    return cb.bind(tb, 'replace');
+};
 
 var WIKI_IMAGES_FOLDER_PATH = '/Wiki images/';
 
@@ -506,7 +515,7 @@ function displayConflict(tb, item, folder, cb) {
     ]);
     var mithrilButtons = [
         m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'keep')}, gettext('Keep Both')),
-        m('span.btn.btn-primary.btn-sm', {onclick: cb.bind(tb, 'replace')}, gettext('Replace')),
+        m('span.btn.btn-primary.btn-sm', {onclick: replace(tb, cb, item)}, gettext('Replace')),
         m('span.btn.btn-default.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'skip', item);}}, gettext('Skip')),
         m('span.btn.btn-danger.btn-sm', {onclick: function() {handleCancel(tb, folder.data.provider, 'stop');}}, gettext('Stop'))
     ];
@@ -541,7 +550,7 @@ function checkConflictsRename(tb, item, name, cb) {
                 m('', messageArray), [
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, gettext('Cancel')), //jshint ignore:line
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')}, 'Replace')
+                    m('span.btn.btn-primary', {onclick: replace(tb, cb, item)}, 'Replace')
                 ],
                 m('h3.break-word.modal-title', sprintf(gettext('Replace "%1$s"?'),child.data.name))
             );
@@ -651,16 +660,8 @@ function doItemOp(operation, to, from, rename, conflict) {
             tb.pendingFileOps.pop();
         }
         if (xhr.status === 202) {
-            var mithrilContent = m('div', [
-                m('h3.break-word', sprintf(gettext('%1$s "%2$s" to "%3$s" is taking a bit longer than expected.'),operation.action,(from.data.materialized || '/'),(to.data.materialized || '/'))),
-                m('p', gettext('We\'ll send you an email when it has finished.')),
-                m('p', sprintf(gettext('In the mean time you can leave this page; your %1$s will still be completed.'),operation.status))
-            ]);
-            var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
-            ]);
-            var header =  m('h3.modal-title.break-word', gettext('Operation Information'));
-            tb.modal.update(mithrilContent, mithrilButtons, header);
+            var message =  'We\'ll send you an email when it has finished. <br> You can leave this page; your ' + operation.status + ' will still be completed.';
+            $osf.growl(operation.action + ' "' + (from.data.materialized || '/') + '" to "' + (to.data.materialized || '/') + '" is pending', message, 'info');
             return;
         }
         from.data = tb.options.lazyLoadPreprocess.call(this, resp).data;
@@ -728,8 +729,10 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         orderFolder.call(tb, from.parent());
     }).always(function(){
+
+        tb.pendingReadyFiles = (tb.pendingReadyFiles || []).filter(function (file) { return file.data.id !== from.data.id; });
         from.inProgress = false;
-        if (notRenameOp && (inConflictsQueue || syncMoves)) {
+        if (notRenameOp && !tb.pendingReadyFiles.length){
             doSyncMove(tb, to.data.provider);
         }
     });
@@ -1710,7 +1713,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw'];
+var NO_AUTO_EXPAND_PROJECTS = ['ezcuj', 'ecmz4', 'w4wvg', 'sn64d', 'pfdyw', '4jbx4'];
 function expandStateLoad(item) {
     var tb = this,
         icon = $('.tb-row[data-id="' + item.id + '"]').find('.tb-toggle-icon'),
@@ -2547,6 +2550,12 @@ function _dropLogic(event, items, folder) {
     tb.syncFileMoveCache[folder.data.provider] = tb.syncFileMoveCache[folder.data.provider] || {};
     tb.moveStates = [];
 
+
+    // pendingReadyFiles is popped/pushed after a ready request's response is received, syncFileMoveCache is
+    // popped when a request is sent.
+    tb.pendingReadyFiles = toMove.ready;
+
+
     if (toMove.ready.length > 0) {
         tb.syncFileMoveCache[folder.data.provider].ready = tb.syncFileMoveCache[folder.data.provider].ready || [];
         if (SYNC_UPLOAD_ADDONS.indexOf(folder.data.provider) !== -1) {
@@ -2554,9 +2563,13 @@ function _dropLogic(event, items, folder) {
                 tb.syncFileMoveCache[folder.data.provider].ready.push({'item' : item, 'folder' : folder});
             });
         } else {
-            toMove.ready.forEach(function(item) {
-                doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, item, undefined, 'replace');
-            });
+            MOVE_INTERVAL = setInterval(function() {
+                if(toMove.ready.length > 0) {
+                    doItemOp.call(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, folder, toMove.ready.pop(), undefined, undefined);
+                } else {
+                    MOVE_INTERVAL = clearInterval(MOVE_INTERVAL);
+                }
+            }, MILLSECOND_PER_MOVE_REQUEST);
         }
     }
 
@@ -2565,11 +2578,11 @@ function _dropLogic(event, items, folder) {
         toMove.conflicts.forEach(function(item) {
             tb.syncFileMoveCache[folder.data.provider].conflicts.push({'item' : item, 'folder' : folder});
         });
-    }
-
-    if (tb.syncFileMoveCache[folder.data.provider].conflicts ||
-        tb.syncFileMoveCache[folder.data.provider].ready) {
-        doSyncMove(tb, folder.data.provider);
+        // Conflicts are usually handled after ready requests are made, but here we have only conflicts so we start handling
+        // them immediately.
+        if (toMove.ready.length === 0) {
+            doSyncMove(tb, folder.data.provider);
+        }
     }
 }
 
@@ -2619,7 +2632,7 @@ function displayMoveStats(tb) {
 function doSyncMove(tb, provider){
     var cache = tb.syncFileMoveCache && tb.syncFileMoveCache[provider];
     var itemData;
-    if (cache.conflicts && cache.conflicts.length > 0) {
+    if (cache.conflicts && cache.conflicts.length > 0 && cache.ready && cache.ready.length === 0) {
         itemData = cache.conflicts.pop();
         displayConflict(tb, itemData.item, itemData.folder, doItemOp.bind(tb, copyMode === 'move' ? OPERATIONS.MOVE : OPERATIONS.COPY, itemData.folder, itemData.item, undefined));
     } else if (cache.ready && cache.ready.length > 0) {

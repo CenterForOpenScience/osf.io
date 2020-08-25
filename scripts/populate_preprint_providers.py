@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Populate development database with Preprint Provider elements"""
 
@@ -52,7 +52,7 @@ def update_or_create(provider_data):
     if provider:
         provider_data['subjects_acceptable'] = [(list(map(get_subject_id, rule[0])), rule[1]) for rule in provider_data['subjects_acceptable']]
         if licenses:
-            provider.licenses_acceptable.add(*licenses)
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = get_license(default_license)
         for key, val in provider_data.items():
@@ -65,7 +65,7 @@ def update_or_create(provider_data):
         new_provider = PreprintProvider(**provider_data)
         new_provider.save()
         if licenses:
-            new_provider.licenses_acceptable.add(*licenses)
+            new_provider.licenses_acceptable.set(licenses)
         if default_license:
             new_provider.default_license = get_license(default_license)
             new_provider.save()

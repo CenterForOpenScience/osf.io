@@ -43,6 +43,10 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         return api_v2_url('taxonomies/{}/'.format(self._id))
 
     @property
+    def absolute_api_v2_subject_url(self):
+        return api_v2_url('subjects/{}/'.format(self._id))
+
+    @property
     def child_count(self):
         """For v1 compat."""
         return self.children.count()

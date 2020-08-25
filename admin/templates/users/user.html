@@ -284,62 +284,14 @@
                 <tr>
                     <td>{% trans "Nodes" %}</td>
                     <td>
-                        <table class="table table-hover table-bordered">
-                        <thead>
-                            <tr>
-                                <th>{% trans "GUID" %}</th>
-                                <th>{% trans "Name" %}</th>
-                                <th>{% trans "Public" %}</th>
-                                <th>{% trans "Registration" %}</th>
-                                <th># of Contributors</th>
-                                <th>{% trans "SPAM Status" %}</th>
-                                <th>{% trans "Actions" %}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for node in user.nodes %}
-                            <tr>
-                                <td>
-                                    <a href="{{ node.id | reverse_node }}">
-                                        {{ node.id }}
-                                    </a>
-                                </td>
-                                <td>{{ node.title | truncatechars:20 }}</td>
-                                <td>{{ node.public }}</td>
-                                <td>{{ node.is_registration }}</td>
-                                <td>{{ node.number_contributors }}</td>
-                                <td>{% include "nodes/spam_status.html" with resource=node %}</td>
-                                {%  if perms.osf.delete_node %}
-                                <td>
-                                    {% if node.number_contributors < 2 and not node.is_registration %}
-                                        {% if node.deleted %}
-                                            <form method="post"
-                                                  action="{% url 'nodes:restore' guid=node.id %}">
-                                                {% csrf_token %}
-                                                <input class="btn btn-success"
-                                                       type="submit"
-                                                       value="{% trans 'Restore Node' %}" />
-                                            </form>
-                                        {% else %}
-                                        <a href="{% url 'nodes:remove' guid=node.id %}"
-                                           data-toggle="modal" data-target="#deleteModal{{ node.id }}"
-                                           class="btn btn-danger">
-                                            {% trans "Delete Node" %}
-                                        </a>
-                                        <div class="modal" id="deleteModal{{ node.id }}">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    {% endif %}
-                                    </td>
-                                {% endif %}
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                        </table>
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Preprints</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
+                        * In Preprints, public means Verified Publishable.
                     </td>
                 </tr>
                 <tr>

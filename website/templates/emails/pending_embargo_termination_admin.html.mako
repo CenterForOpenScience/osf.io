@@ -15,6 +15,8 @@
     <br>
     To cancel this change, click the following link: ${disapproval_link}.<br>
     <br>
+    Note: Clicking the disapproval link will immediately cancel the embargo termination request. If you neither approve nor cancel the request within ${approval_time_span} hours from midnight tonight (EDT) the embargo will be lifted and the registration will be made public. This operation is irreversible.<br>
+    <br>
     Sincerely yours,<br>
     <br>
     The GRDM Robots<br>

@@ -4,7 +4,7 @@
     "config": {
       "hasFiles": true
     },
-    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal the offers the Registered Reports format. See https://nii.ac.jp/rr for more information.",
+    "description": "You will be asked a few simple questions about your study and given the chance to attach your accepted manuscript to the form. Use this form after receiving an \"in-principle acceptance\" from a journal offering the Registered Reports format. See https://nii.ac.jp/rr for more information.",
     "pages": [{
         "id": "page1",
         "title": "Study Information",

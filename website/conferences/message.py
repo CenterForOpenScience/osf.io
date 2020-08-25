@@ -23,7 +23,7 @@ SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
 BASE_REGEX = r"""
-        (?P<test>test-|stage-)?
+        (?P<test>(test|stage)(\d*)-)?
         (?P<meeting>\w*?)
         -
         (?P<category>{allowed_types})
@@ -44,11 +44,11 @@ class ConferenceMessage(object):
         http://documentation.mailgun.com/user_manual.html#webhooks
         """
         signature = hmac.new(
-            key=settings.MAILGUN_API_KEY,
+            key=settings.MAILGUN_API_KEY.encode(),
             msg='{}{}'.format(
                 self.form['timestamp'],
                 self.form['token'],
-            ),
+            ).encode(),
             digestmod=hashlib.sha256,
         ).hexdigest()
         if signature != self.form['signature']:
@@ -117,7 +117,7 @@ class ConferenceMessage(object):
         else:
             # sender format: email@domain.tld
             name = self.sender
-        return unicode(HumanName(name))
+        return str(HumanName(name))
 
     @cached_property
     def sender_email(self):

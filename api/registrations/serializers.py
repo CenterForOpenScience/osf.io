@@ -1,20 +1,29 @@
 import pytz
 import json
+from unicodedata import normalize
 
-
+from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict, InvalidModelValueError
+from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
+from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
-from api.nodes.serializers import NodeSerializer, NodeStorageProviderSerializer
-from api.nodes.serializers import NodeLinksSerializer, NodeLicenseSerializer, update_institutions
-from api.nodes.serializers import NodeContributorsSerializer, NodeLicenseRelationshipField, RegistrationProviderRelationshipField, get_license_details
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeStorageProviderSerializer,
+    NodeLicenseRelationshipField,
+    NodeLinksSerializer,
+    update_institutions,
+    NodeLicenseSerializer,
+    NodeContributorsSerializer,
+    RegistrationProviderRelationshipField,
+    get_license_details,
+)
 from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
@@ -22,16 +31,13 @@ from api.base.serializers import (
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node, RegistrationSchema
-from website.settings import ANONYMIZED_TITLES
+from osf.models import Node, AbstractNode
+from osf.utils.registrations import strip_registered_meta_comments
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
-        'affiliated_institutions',
-        'article_doi',
         'custom_citation',
-        'description',
         'is_pending_retraction',
         'is_public',
         'license',
@@ -56,6 +62,7 @@ class RegistrationSerializer(NodeSerializer):
         'registered_by',
         'registered_from',
         'registered_meta',
+        'registration_responses',
         'registration_schema',
         'registration_supplement',
         'withdrawal_justification',
@@ -66,7 +73,7 @@ class RegistrationSerializer(NodeSerializer):
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
-    category = ser.ChoiceField(read_only=True, choices=category_choices, help_text='Choices: ' + category_choices_string)
+    category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
@@ -126,10 +133,13 @@ class RegistrationSerializer(NodeSerializer):
         'be cleared and the project will be made private.',
     ))
     registration_supplement = ser.SerializerMethodField()
+    # Will be deprecated in favor of registration_responses
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
         help_text='A dictionary with supplemental registration questions and responses.',
     ))
-
+    registration_responses = HideIfWithdrawal(ser.SerializerMethodField(
+        help_text='A dictionary with supplemental registration questions and responses.',
+    ))
     registered_by = HideIfWithdrawal(RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<registered_user._id>'},
@@ -176,6 +186,7 @@ class RegistrationSerializer(NodeSerializer):
     files = HideIfWithdrawal(RelationshipField(
         related_view='registrations:registration-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_files_count'},
     ))
 
     wikis = HideIfWithdrawal(RelationshipField(
@@ -327,6 +338,16 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-subjects'
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'registrations:registration-relationships-subjects'
+
     links = LinksField({'html': 'get_absolute_html_url'})
 
     def get_absolute_url(self, obj):
@@ -341,6 +362,11 @@ class RegistrationSerializer(NodeSerializer):
                 return meta_values
             except ValueError:
                 return meta_values
+        return None
+
+    def get_registration_responses(self, obj):
+        if obj.registration_responses:
+            return self.anonymize_registration_responses(obj)
         return None
 
     def get_embargo_end_date(self, obj):
@@ -365,20 +391,41 @@ class RegistrationSerializer(NodeSerializer):
     def get_total_comments_count(self, obj):
         return obj.comment_set.filter(page='node', is_deleted=False).count()
 
+    def get_files_count(self, obj):
+        return obj.files_count or 0
+
     def anonymize_registered_meta(self, obj):
         """
         Looks at every question on every page of the schema, for any titles
-        matching ANONYMIZED_TITLES.  If present, deletes that question's response
+        that have a contributor-input block type.  If present, deletes that question's response
         from meta_values.
         """
-        meta_values = obj.registered_meta.values()[0]
+        cleaned_registered_meta = strip_registered_meta_comments(list(obj.registered_meta.values())[0])
+        return self.anonymize_fields(obj, cleaned_registered_meta)
+
+    def anonymize_registration_responses(self, obj):
+        """
+        For any questions that have a `contributor-input` block type, delete
+        that question's response from registration_responses.
+
+        We want to make sure author's names that need to be anonymized
+        aren't surfaced when viewed through an anonymous VOL
+        """
+        return self.anonymize_fields(obj, obj.registration_responses)
+
+    def anonymize_fields(self, obj, data):
+        """
+        Consolidates logic to anonymize fields with contributor information
+        on both registered_meta and registration_responses
+        """
         if is_anonymized(self.context['request']):
-            registration_schema = RegistrationSchema.objects.get(_id=obj.registered_schema_id)
-            for page in registration_schema.schema['pages']:
-                for question in page['questions']:
-                    if question['title'] in ANONYMIZED_TITLES and meta_values.get(question.get('qid')):
-                        del meta_values[question['qid']]
-        return meta_values
+            anonymous_registration_response_keys = obj.get_contributor_registration_response_keys()
+
+            for key in anonymous_registration_response_keys:
+                if key in data:
+                    del data[key]
+
+        return data
 
     def check_admin_perms(self, registration, user, validated_data):
         """
@@ -439,6 +486,9 @@ class RegistrationSerializer(NodeSerializer):
             new_institutions = [{'_id': institution} for institution in institutions_list]
             update_institutions(registration, new_institutions, user)
             registration.save()
+        if 'subjects' in validated_data:
+            subjects = validated_data.pop('subjects', None)
+            self.update_subjects(registration, subjects, auth)
         if 'withdrawal_justification' in validated_data or 'is_pending_retraction' in validated_data:
             self.retract_registration(registration, validated_data, user)
         if 'is_public' in validated_data:
@@ -462,20 +512,80 @@ class RegistrationSerializer(NodeSerializer):
 
 class RegistrationCreateSerializer(RegistrationSerializer):
     """
-    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields
+    Overrides RegistrationSerializer to add draft_registration, registration_choice, and lift_embargo fields -
     """
-    draft_registration = ser.CharField(write_only=True)
-    registration_choice = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
+
+    def expect_cleaner_attributes(self, request):
+        return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+
+    def __init__(self, *args, **kwargs):
+        super(RegistrationCreateSerializer, self).__init__(*args, **kwargs)
+        request = kwargs['context']['request']
+        # required fields defined here for the different versions
+        if self.expect_cleaner_attributes(request):
+            self.fields['draft_registration_id'] = ser.CharField(write_only=True)
+        else:
+            self.fields['draft_registration'] = ser.CharField(write_only=True)
+
+    # For newer versions
+    embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
+    included_node_ids = ser.ListField(write_only=True, required=False)
+    # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
     children = ser.ListField(write_only=True, required=False)
+    registration_choice = ser.ChoiceField(write_only=True, required=False, choices=['immediate', 'embargo'])
+
+    users = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+        always_embed=True,
+        required=False,
+    )
+
+    def get_registration_choice_by_version(self, validated_data):
+        """
+        Old API versions should pass in "immediate" or "embargo" under `registration_choice`.
+        New API versions should pass in an "embargo_end_date" if it should be embargoed, else it will be None
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('registration_choice'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/registration_choice'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
+            return 'embargo' if validated_data.get('embargo_end_date', None) else 'immediate'
+        return validated_data.get('registration_choice', 'immediate')
+
+    def get_embargo_end_date_by_version(self, validated_data):
+        """
+        Old API versions should pass in "lift_embargo".
+        New API versions should pass in "embargo_end_date"
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('lift_embargo'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/lift_embargo'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
+            return validated_data.get('embargo_end_date', None)
+        return validated_data.get('lift_embargo')
+
+    def get_children_by_version(self, validated_data):
+        """
+        Old API versions should pass in 'children'
+        New API versions should pass in 'included_node_ids'.
+        """
+        if self.expect_cleaner_attributes(self.context['request']):
+            return validated_data.get('included_node_ids', [])
+        return validated_data.get('children', [])
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
-        draft = validated_data.pop('draft')
-        registration_choice = validated_data.pop('registration_choice', 'immediate')
-        embargo_lifted = validated_data.pop('lift_embargo', None)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
-        children = validated_data.pop('children', [])
+        draft = validated_data.pop('draft', None)
+        registration_choice = self.get_registration_choice_by_version(validated_data)
+        embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
+
+        children = self.get_children_by_version(validated_data)
         if children:
             # First check that all children are valid
             child_nodes = Node.objects.filter(guids___id__in=children)
@@ -492,7 +602,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
                                              ' registered: {}'.format(', '.join(orphan_files_names)))
 
         try:
-            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+            # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
+            # on the draft, the other field was built and populated as well.  Both should exist.
+            draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
         except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
             # TODO: Raise an error once our JSON schemas are updated
@@ -523,12 +635,56 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         from website.archiver.utils import find_selected_files
         files = find_selected_files(draft.registration_schema, draft.registration_metadata)
         orphan_files = []
-        for _, value in files.items():
+        for key, value in files.items():
             if 'extra' in value:
                 for file_metadata in value['extra']:
-                    if file_metadata['nodeId'] not in registering:
+                    if not self._is_attached_file_valid(file_metadata, registering):
                         orphan_files.append(file_metadata)
+
         return orphan_files
+
+    def _is_attached_file_valid(self, file_metadata, registering):
+        """
+        Validation of file information on registration_metadata.  Theoretically, the file information
+        on registration_responses does not have to be valid, so we enforce their accuracy here,
+        to ensure file links load properly.
+
+        Verifying that nodeId in the file_metadata is one of the files we're registering. Verify
+        that selectedFileName is the name of a file on the node.  Verify that the sha256 matches
+        a version on that file.
+
+        :param file_metadata - under "registration_metadata"
+        :param registering - node ids you are registering
+        :return boolean
+        """
+
+        node_id = file_metadata.get('nodeId')
+        if node_id not in registering:
+            return False
+
+        node = AbstractNode.load(node_id)
+        if not node:
+            # node in registration_metadata doesn't exist
+            return False
+
+        specified_sha = file_metadata.get('sha256', '')
+
+        file = node.files.filter(name=normalize('NFD', file_metadata.get('selectedFileName', ''))).first() or \
+               node.files.filter(name=normalize('NFC', file_metadata.get('selectedFileName', ''))).first()
+        if not file:
+            # file with this name does not exist on the node
+            return False
+
+        match = False
+        for version in file.versions.all():
+            if specified_sha == version.metadata.get('sha256'):
+                match = True
+
+        if not match:
+            # Specified sha256 does not match a version on the specified file
+            return False
+
+        return True
 
 
 class RegistrationDetailSerializer(RegistrationSerializer):

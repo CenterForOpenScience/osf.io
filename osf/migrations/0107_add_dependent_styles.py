@@ -5,7 +5,7 @@ from django.db import migrations
 from lxml import etree
 
 from website import settings
-from urlparse import urlparse
+from future.moves.urllib.parse import urlparse
 
 logger = logging.getLogger(__file__)
 

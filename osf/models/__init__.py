@@ -1,10 +1,11 @@
-from osf.models.metaschema import RegistrationSchema, FileMetadataSchema  # noqa
+from osf.models.metaschema import RegistrationSchemaBlock, RegistrationSchema, FileMetadataSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email, UserExtendedData  # noqa
-from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor  # noqa
+from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor, DraftRegistrationContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
 from osf.models.collection import CollectionSubmission, Collection  # noqa
+from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
@@ -32,6 +33,7 @@ from osf.models.request import NodeRequest, PreprintRequest  # noqa
 from osf.models.identifiers import Identifier  # noqa
 from osf.models.files import (  # noqa
     BaseFileNode,
+    BaseFileVersionsThrough,
     File, Folder,  # noqa
     FileVersion, TrashedFile, TrashedFileNode, TrashedFolder, FileVersionUserMetadata,  # noqa
 )  # noqa
@@ -49,6 +51,7 @@ from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAc
 from osf.models.storage import ProviderAssetFile  # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa
+from osf.models.brand import Brand  # noqa
 from osf.models.rdm_announcement import RdmAnnouncement, RdmAnnouncementOption  # noqa
 from osf.models.rdm_addons import RdmAddonOption, RdmAddonNoInstitutionOption  # noqa
 from osf.models.rdm_statistics import RdmStatistics  # noqa

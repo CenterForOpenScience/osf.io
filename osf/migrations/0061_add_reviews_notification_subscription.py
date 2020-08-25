@@ -3,11 +3,11 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.core.management import call_command
+from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
 
 
 def add_reviews_notification_subscription(state, schema_editor):
-    call_command('add_notification_subscription', '--notification=global_reviews', state=state)
+    add_reviews_notification_setting('global_reviews', state=state)
 
 class Migration(migrations.Migration):
 

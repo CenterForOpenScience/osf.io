@@ -31,7 +31,7 @@ def before_request():
 
 
 def after_request(resp):
-    """Set a cookie specified by api_settings.CSRF_COOKI_NAME so that
+    """Set a cookie specified by api_settings.CSRF_COOKIE_NAME so that
     session-authenticated requests from the legacy frontend can pass
     CSRF verification.
     """

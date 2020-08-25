@@ -78,17 +78,35 @@ class ChronosSerializer(object):
                 }
             ],
             'UNDERLYING_DATASET_URL': preprint.node.absolute_url if preprint.node else '',
+            'LICENSE': preprint.license.node_license.name.upper() if preprint.license and preprint.license.node_license.name != 'No license' else 'NL',
         }
 
     @classmethod
     def serialize_user(cls, user):
+
+        username = user.given_name if user.given_name and user.family_name else user.fullname
+        if not bool(user.given_name) and not bool(user.family_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a given and family name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.given_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a given name be set in your OSF profile.'.format(username)
+            )
+        if not bool(user.family_name):
+            raise ValueError(
+                'Cannot submit because user {} requires a family name be set in your OSF profile.'.format(username)
+            )
+
         return {
             'CHRONOS_USER_ID': user.chronos_user_id,
             'EMAIL': user.username,
-            'GIVEN_NAME': user.given_name if str(user.given_name) and str(user.family_name) else user.fullname,
+            'GIVEN_NAME': user.given_name,
+            'FULLNAME': user.fullname,
+            'MIDDLE_NAME': user.middle_names,
             'ORCID_ID': user.social.get('orcid', None),
             'PARTNER_USER_ID': user._id,
-            'SURNAME': user.family_name if str(user.given_name) and str(user.family_name) else None,
+            'SURNAME': user.family_name,
         }
 
     @classmethod
@@ -97,7 +115,7 @@ class ChronosSerializer(object):
         if contributor._order == 0:
             contribution = 'firstAuthor'
         else:
-            contribution = 'submittingAuthor'
+            contribution = 'Author'
         ret.update({
             'CONTRIBUTION': contribution,
             'ORGANIZATION': '',
@@ -181,7 +199,7 @@ class ChronosClient(object):
     def submit_manuscript(self, journal, preprint, submitter):
         submission_qs = ChronosSubmission.objects.filter(preprint=preprint)
         if submission_qs.filter(journal=journal).exists():
-            raise ValueError('{!r} already has an existing submission to {!r}.'.format(preprint, journal))
+            raise ValueError('This preprint already has an existing submission to {!r}.'.format(str(journal.title)))
 
         # 1 = draft, 2 = submitted, 3 = accepted, 4 = published
         # Disallow submission if the current preprint has submissions that are submitted, accepted or publishes

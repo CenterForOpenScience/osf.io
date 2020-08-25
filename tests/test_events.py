@@ -622,9 +622,9 @@ class TestSubscriptionManipulations(OsfTestCase):
             'none': []
         }
         self.diff_1_3 = {email_transactional: ['d1234'], 'none': ['g1234'], email_digest: ['a1234']}
-        self.union_1_2 = {'email_transactional': ['e1234', 'd1234', 'k1234', 'f1234'],
+        self.union_1_2 = {'email_transactional': ['e1234', 'f1234', 'd1234', 'k1234'],
                           'none': ['h1234', 'g1234', 'i1234', 'l1234'],
-                          'email_digest': ['j1234', 'b1234', 'a1234', 'c1234']}
+                          'email_digest': ['j1234', 'a1234', 'c1234', 'b1234']}
         self.dup_1_3 = {email_transactional: ['e1234', 'f1234'], 'none': ['h1234', 'g1234'],
                         'email_digest': ['a1234', 'c1234']}
 
@@ -634,19 +634,26 @@ class TestSubscriptionManipulations(OsfTestCase):
 
     def test_subscription_user_union(self):
         result = utils.subscriptions_users_union(self.emails_1, self.emails_2)
-        assert_equal(self.union_1_2, result)
+        assert set(self.union_1_2['email_transactional']) == set(result['email_transactional'])
+        assert set(self.union_1_2['none']) == set(result['none'])
+        assert set(self.union_1_2['email_digest']) == set(result['email_digest'])
 
     def test_remove_duplicates(self):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_4, remove_same=False
         )
-        assert_equal(self.dup_1_3, result)
+        assert set(self.dup_1_3['email_transactional']) == set(result['email_transactional'])
+        assert set(self.dup_1_3['none']) == set(result['none'])
+        assert set(self.dup_1_3['email_digest']) == set(result['email_digest'])
 
     def test_remove_duplicates_true(self):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_1, remove_same=True
         )
-        assert_equal({email_digest: [], email_transactional: [], 'none': ['h1234', 'g1234', 'i1234']}, result)
+
+        assert set(result['none']) == set(['h1234', 'g1234', 'i1234'])
+        assert result['email_digest'] == []
+        assert result['email_transactional'] == []
 
 
 wb_path = u'5581cb50a24f710b0f4623f9'

@@ -144,7 +144,7 @@
       </table>
     </div>
     <div class="text-center">
-        You can learn more about Registered Reports <a href="https://nii.ac.jp/rr"> here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://nii.ac.jp/prereg"> here</a>.
+        You can learn more about Registered Reports <a href="https://nii.ac.jp/rr">here</a> and search the GakuNin RDM Registry of submitted studies <a href="https://nii.ac.jp/registries/discover?provider=OSF&type=Registered%20Report%20Protocol%20Preregistration">here</a>. If you do not have IPA from a journal, you can still preregister your research. Learn more <a href="https://nii.ac.jp/prereg"> here</a>.
     </div>
 
 </div>

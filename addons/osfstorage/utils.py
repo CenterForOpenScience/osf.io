@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 import os
-import httplib
+from rest_framework import status as http_status
 import logging
 import functools
 
@@ -16,24 +16,28 @@ logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 
-def update_analytics(node, file_id, version_idx, action='download'):
+def update_analytics(node, file, version_idx, action='download'):
     """
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
     :param int version_idx: Zero-based version index
     :param str action: is this logged as download or a view
     """
-    # Pass in contributors to check that contributors' downloads
+    # Pass in contributors and group members to check that their downloads
     # do not count towards total download count
     contributors = []
-    if node.contributors:
+    if getattr(node, 'contributors_and_group_members', None):
+        contributors = node.contributors_and_group_members
+    elif getattr(node, 'contributors', None):
         contributors = node.contributors
+
     node_info = {
         'contributors': contributors
     }
+    resource = node.guids.first()
 
-    update_counter('{0}:{1}:{2}'.format(action, node._id, file_id), node_info=node_info)
-    update_counter('{0}:{1}:{2}:{3}'.format(action, node._id, file_id, version_idx), node_info=node_info)
+    update_counter(resource, file, version=None, action=action, node_info=node_info)
+    update_counter(resource, file, version_idx, action, node_info=node_info)
 
 
 def serialize_revision(node, record, version, index, anon=False):
@@ -44,7 +48,6 @@ def serialize_revision(node, record, version, index, anon=False):
     :param FileVersion version: The version to serialize
     :param int index: One-based index of version
     """
-
     if anon:
         user = None
     else:
@@ -64,7 +67,7 @@ def serialize_revision(node, record, version, index, anon=False):
 
 
 SIGNED_REQUEST_ERROR = HTTPError(
-    httplib.SERVICE_UNAVAILABLE,
+    http_status.HTTP_503_SERVICE_UNAVAILABLE,
     data={
         'message_short': 'Upload service unavailable',
         'message_long': (

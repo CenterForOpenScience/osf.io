@@ -2,11 +2,12 @@ from __future__ import unicode_literals
 
 from django.views.generic import UpdateView, DeleteView, ListView
 from django.utils import timezone
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.core.exceptions import PermissionDenied
+from django.contrib import messages
 
 from osf.models import SpamStatus, PreprintRequest
 from osf.models.preprint import Preprint, PreprintLog, OSFUser
@@ -17,6 +18,7 @@ from osf.models.admin_log_entry import (
     PREPRINT_REMOVED,
     PREPRINT_RESTORED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     APPROVE_WITHDRAWAL,
     REJECT_WITHDRAWAL
 )
@@ -68,9 +70,14 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs.get('guid')})
 
     def post(self, request, *args, **kwargs):
+        old_provider = self.get_object().provider
         if not request.user.has_perm('osf.change_preprint'):
             raise PermissionsError("This user does not have permission to update this preprint's provider.")
-        return super(PreprintView, self).post(request, *args, **kwargs)
+        response = super(PreprintView, self).post(request, *args, **kwargs)
+        new_provider = self.get_object().provider
+        if new_provider and old_provider.id != new_provider.id:
+            self.update_subjects_for_provider(request, old_provider, new_provider)
+        return response
 
     def get_context_data(self, **kwargs):
         preprint = Preprint.load(self.kwargs.get('guid'))
@@ -80,6 +87,13 @@ class PreprintView(PreprintMixin, UpdateView, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})
         return super(PreprintView, self).get_context_data(**kwargs)
+
+    def update_subjects_for_provider(self, request, old_provider, new_provider):
+        subject_problems = self.object.map_subjects_between_providers(old_provider, new_provider, auth=None)
+        if subject_problems:
+            messages.warning(request, 'Unable to find subjects in new provider for the following subject(s):')
+            for problem in subject_problems:
+                messages.warning(request, problem)
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):
@@ -363,22 +377,34 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
     template_name = 'preprints/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.has_perm('auth.mark_spam'):
+        if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
-        preprint_ids = [
-            pid for pid in request.POST.keys()
-            if pid != 'csrfmiddlewaretoken'
-        ]
+        preprint_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_HAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_SPAM
+            elif key != 'csrfmiddlwaretoken':
+                preprint_ids.append(key)
+
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
             osf_admin_change_status_identifier(preprint)
-            preprint.confirm_spam(save=True)
+
+            if action == 'SPAM':
+                preprint.confirm_spam(save=True)
+            elif action == 'HAM':
+                preprint.confirm_ham(save=True)
+
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=pid,
                 object_repr='Preprint',
-                message='Confirmed SPAM: {}'.format(pid),
-                action_flag=CONFIRM_SPAM
+                message=f'Confirmed {action}: {pid}',
+                action_flag=action_flag
             )
         return redirect('preprints:flagged-spam')
 

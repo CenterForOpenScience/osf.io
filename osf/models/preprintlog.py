@@ -47,12 +47,54 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     PUBLISHED = 'published'
 
-    actions = ([DELETED, CONTRIB_ADDED, CONTRIB_REMOVED, CONTRIB_REORDERED,
-                PERMISSIONS_UPDATED, TAG_ADDED, TAG_REMOVED, EDITED_TITLE, CHANGED_LICENSE,
-                EDITED_DESCRIPTION, FILE_UPDATED, FILE_METADATA_UPDATED, MADE_CONTRIBUTOR_VISIBLE, SUPPLEMENTAL_NODE_ADDED,
-                MADE_CONTRIBUTOR_INVISIBLE, SUBJECTS_UPDATED, MADE_PRIVATE, MADE_PUBLIC, PUBLISHED] + list(sum([
-                    config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
-                ], tuple())))
+    UPDATE_HAS_COI = 'has_coi_updated'
+    UPDATE_COI_STATEMENT = 'coi_statement_updated'
+    UPDATE_HAS_DATA_LINKS = 'has_data_links_updated'
+    UPDATE_WHY_NO_DATA = 'why_no_data_updated'
+    UPDATE_DATA_LINKS = 'data_links_updated'
+    UPDATE_HAS_PREREG_LINKS = 'has_prereg_links_updated'
+    UPDATE_WHY_NO_PREREG = 'why_no_prereg_updated'
+    UPDATE_PREREG_LINKS = 'prereg_links_updated'
+    UPDATE_PREREG_LINKS_INFO = 'prereg_links_info_updated'
+
+    CONFIRM_HAM = 'confirm_ham'
+    FLAG_SPAM = 'flag_spam'
+    CONFIRM_SPAM = 'confirm_spam'
+
+    actions = ([
+        DELETED,
+        CONTRIB_ADDED,
+        CONTRIB_REMOVED,
+        CONTRIB_REORDERED,
+        PERMISSIONS_UPDATED,
+        TAG_ADDED,
+        TAG_REMOVED,
+        EDITED_TITLE,
+        CHANGED_LICENSE,
+        EDITED_DESCRIPTION,
+        FILE_UPDATED,
+        FILE_METADATA_UPDATED,
+        MADE_CONTRIBUTOR_VISIBLE,
+        SUPPLEMENTAL_NODE_ADDED,
+        MADE_CONTRIBUTOR_INVISIBLE,
+        SUBJECTS_UPDATED,
+        MADE_PRIVATE,
+        MADE_PUBLIC,
+        PUBLISHED,
+        UPDATE_HAS_COI,
+        UPDATE_COI_STATEMENT,
+        UPDATE_HAS_DATA_LINKS,
+        UPDATE_WHY_NO_DATA,
+        UPDATE_DATA_LINKS,
+        UPDATE_HAS_PREREG_LINKS,
+        UPDATE_WHY_NO_PREREG,
+        UPDATE_PREREG_LINKS,
+        UPDATE_PREREG_LINKS_INFO,
+        CONFIRM_HAM,
+        FLAG_SPAM,
+        CONFIRM_SPAM,
+    ] + list(sum([config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')], tuple())))
+
     action_choices = [(action, action.upper()) for action in actions]
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)

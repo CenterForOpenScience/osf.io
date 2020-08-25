@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 import logging
 
 from django.db import transaction, connection
-from django_bulk_update.helper import bulk_update
 from django.contrib.contenttypes.models import ContentType
 
 from framework.auth import get_or_create_user
@@ -12,7 +11,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 from osf import features
-from osf.models import AbstractNode, Node, Conference, Tag, OSFUser
+from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
@@ -20,6 +19,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 from website.mails import send_mail
 from website.util import web_url_for
+from website.util.metrics import CampaignSourceTags
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +34,13 @@ def meeting_hook():
         message.verify()
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     try:
         conference = Conference.get_by_endpoint(message.conference_name, active=False)
     except ConferenceError as error:
         logger.error(error)
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     if not conference.active:
         send_mail(
@@ -51,7 +51,7 @@ def meeting_hook():
             can_change_preferences=False,
             logo=settings.OSF_MEETINGS_LOGO,
         )
-        raise HTTPError(httplib.NOT_ACCEPTABLE)
+        raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
 
@@ -82,7 +82,7 @@ def add_poster_by_email(conference, message):
                 user.fullname = user._id  # Users cannot use an email as their full name
 
             user.save()  # need to save in order to access m2m fields (e.g. tags)
-            user.add_system_tag('osf4m')
+            user.add_system_tag(CampaignSourceTags.Osf4m.value)
             user.update_date_last_login()
             user.save()
 
@@ -101,7 +101,7 @@ def add_poster_by_email(conference, message):
             title=message.subject,
             creator=user
         )
-        node.add_system_tag('osf4m')
+        node.add_system_tag(CampaignSourceTags.Osf4m.value)
         node.save()
 
         utils.provision_node(conference, message, node, user)
@@ -150,16 +150,14 @@ def conference_data(meeting):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     return conference_submissions_sql(conf)
 
 def conference_submissions_sql(conf):
     """
     Serializes all meeting submissions to a conference (returns array of dictionaries)
-
     :param obj conf: Conference object.
-
     """
     submission1_name = conf.field_names['submission1']
     submission2_name = conf.field_names['submission2']
@@ -185,7 +183,7 @@ def conference_submissions_sql(conf):
                     'tags', array_to_string(TAGS_LIST.tag_list, ' ')
                 )
             FROM osf_abstractnode
-              INNER JOIN osf_abstractnode_tags ON (osf_abstractnode.id = osf_abstractnode_tags.abstractnode_id)
+              INNER JOIN osf_conference_submissions ON (osf_conference_submissions.abstractnode_id = osf_abstractnode.id)
               LEFT JOIN LATERAL(
                 SELECT array_agg(osf_tag.name) AS tag_list
                   FROM osf_tag
@@ -201,7 +199,7 @@ def conference_submissions_sql(conf):
                         LIMIT 1
                         ) AUTHOR ON TRUE  -- Returns first visible contributor
               LEFT JOIN LATERAL (
-                SELECT osf_guid._id
+                SELECT osf_guid._id, osf_guid.id
                 FROM osf_guid
                 WHERE (osf_guid.object_id = osf_abstractnode.id AND osf_guid.content_type_id = %s) -- Content type for AbstractNode
                 ORDER BY osf_guid.created DESC
@@ -226,21 +224,17 @@ def conference_submissions_sql(conf):
               LEFT JOIN LATERAL (
                 SELECT P.total AS DOWNLOAD_COUNT
                 FROM osf_pagecounter AS P
-                WHERE P._id = 'download:' || GUID._id || ':' || FILE._id
+                WHERE P.action = 'download'
+                AND P.resource_id = GUID.id
+                AND P.file_id = FILE.id
                 LIMIT 1
               ) DOWNLOAD_COUNT ON TRUE
             -- Get all the nodes for a specific meeting
-            WHERE (osf_abstractnode_tags.tag_id IN
-                   (SELECT U0.id AS Col1
-                    FROM osf_tag U0
-                    WHERE (U0.system = FALSE
-                           AND UPPER(U0.name :: TEXT) = UPPER(%s)
-                           AND U0.system = FALSE))
+            WHERE (osf_conference_submissions.conference_id = %s
                    AND osf_abstractnode.is_deleted = FALSE
                    AND osf_abstractnode.is_public = TRUE
                    AND AUTHOR_GUID IS NOT NULL)
             ORDER BY osf_abstractnode.created DESC;
-
             """, [
                 submission1_name,
                 submission1_name,
@@ -250,7 +244,7 @@ def conference_submissions_sql(conf):
                 abstract_node_content_type_id,
                 osf_user_content_type_id,
                 abstract_node_content_type_id,
-                conf.endpoint
+                conf.id,
             ]
         )
         rows = cursor.fetchall()
@@ -272,7 +266,7 @@ def serialize_conference(conf):
         'location': conf.location,
         'logo_url': conf.logo_url,
         'name': conf.name,
-        'num_submissions': conf.num_submissions,
+        'num_submissions': conf.valid_submissions.count(),
         'poster': conf.poster,
         'public_projects': conf.public_projects,
         'start_date': conf.start_date,
@@ -282,13 +276,12 @@ def serialize_conference(conf):
 @ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
-
     :param str meeting: Endpoint name for a conference.
     """
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)
     except Conference.DoesNotExist:
-        raise HTTPError(httplib.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     data = conference_data(meeting)
 
@@ -306,28 +299,16 @@ def redirect_to_conference_results(meeting):
 
 
 def conference_submissions(**kwargs):
-    """Return data for all OSF4M submissions.
-
-    The total number of submissions for each meeting is calculated and cached
-    in the Conference.num_submissions field.
     """
-    conferences = Conference.objects.filter(is_meeting=True)
-    #  TODO: Revisit this loop, there has to be a way to optimize it
-    for conf in conferences:
-        # For efficiency, we filter by tag first, then node
-        # instead of doing a single Node query
-        tags = Tag.objects.filter(system=False, name__iexact=conf.endpoint).values_list('pk', flat=True)
-        nodes = AbstractNode.objects.filter(tags__in=tags, is_public=True, is_deleted=False)
-        # Cache the number of submissions
-        conf.num_submissions = nodes.count()
-    bulk_update(conferences, update_fields=['num_submissions'])
+    This view previously cached submissions count on num_submissions field.
+    """
     return {'success': True}
 
 @ember_flag_is_active(features.EMBER_MEETINGS)
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():
-        if conf.num_submissions < settings.CONFERENCE_MIN_COUNT:
+        if len(conf.valid_submissions) < settings.CONFERENCE_MIN_COUNT:
             continue
         if (hasattr(conf, 'is_meeting') and (conf.is_meeting is False)):
             continue
@@ -337,7 +318,7 @@ def conference_view(**kwargs):
             'end_date': conf.end_date.strftime('%b %d, %Y') if conf.end_date else None,
             'start_date': conf.start_date.strftime('%b %d, %Y') if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
-            'count': conf.num_submissions,
+            'count': conf.valid_submissions.count(),
         })
 
     meetings.sort(key=lambda meeting: meeting['count'], reverse=True)

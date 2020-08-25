@@ -15,7 +15,7 @@ def serialize_meeting(meeting):
         'public_projects': meeting.public_projects,
         'poster': meeting.poster,
         'talk': meeting.talk,
-        'num_submissions': meeting.num_submissions,
+        'num_submissions': meeting.valid_submissions.count(),
         'location': meeting.location,
         'start_date': meeting.start_date,
         'end_date': meeting.end_date,
@@ -29,4 +29,5 @@ def serialize_meeting(meeting):
         'mail_message_body': meeting.field_names.get('mail_message_body', DEFAULT_FIELD_NAMES.get('mail_message_body', '')),
         'mail_attachment': meeting.field_names.get('mail_attachment', DEFAULT_FIELD_NAMES.get('mail_attachment', '')),
         'is_meeting': is_meeting,
+        'auto_check_spam': meeting.auto_check_spam,
     }

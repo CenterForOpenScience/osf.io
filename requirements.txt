@@ -5,8 +5,9 @@
 # To install dev requirements: inv requirements --dev
 # To install release requirements: inv requirements --release
 
+future==0.18.2
 invoke==0.15.0
-Werkzeug==0.10.4  # pyup: ignore # newer versions break local development
+Werkzeug==1.0.0
 Flask==0.12.4
 gevent==1.2.2
 Mako==1.0.7
@@ -21,8 +22,7 @@ git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
-httplib2==0.10.3
-itsdangerous==0.24
+itsdangerous==1.1.0
 lxml==3.4.1
 mailchimp==2.0.9
 nameparser==0.5.3
@@ -62,10 +62,10 @@ requests==2.20.0
 urllib3==1.22
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
-raven==5.32.0
+raven==6.4.0
 
 # API requirements
-Django==1.11.15  # pyup: <2.0 # Remove this when we're on Py3
+Django==1.11.28
 djangorestframework==3.8.2
 django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
@@ -122,6 +122,9 @@ datacite==1.0.1
 
 # Metrics
 django-elasticsearch-metrics==5.0.0
+
+# Impact Metrics CSV Export
+djangorestframework-csv==2.1.0
 
 # I18n Support
 Babel==2.5.1
