@@ -99,30 +99,30 @@ def reset_user(ctx, username=None):
     from osf.models import OSFUser
 
     if username is None:
-        print 'usage: invoke reset_user -u <username>'
-        print 'OSF users (username):'
+        print('usage: invoke reset_user -u <username>')
+        print('OSF users (username):')
         for user in OSFUser.objects.all():
-            print user.username
+            print(user.username)
         return
 
     try:
         user = OSFUser.objects.get(username=username)
     except Exception as ex:
-        print ex
+        print(ex)
         user = None
     if user is None:
-        print 'no such user: ' + username
+        print('no such user: ' + username)
         return
 
     try:
         nodes = user.nodes.filter()
     except Exception as ex:
-        print ex
+        print(ex)
         nodes = None
 
     if nodes is not None:
         for node in nodes:
-            print 'Node Contributor: GUID={}, title={}'.format(node._id, node.title)
+            print('Node Contributor: GUID={}, title={}'.format(node._id, node.title))
 
     user.emails.filter(address=user.username).delete()
 
@@ -139,7 +139,7 @@ def reset_user(ctx, username=None):
     if not user.emails.filter(address=user.username):
         user.emails.create(address=user.username)
     user.save()
-    print 'reset_user OK: ' + username
+    print('reset_user OK: ' + username)
 
 
 @task
@@ -1014,7 +1014,7 @@ def mapcore_remove_token(ctx, username=None, eppn=None):
         try:
             user = OSFUser.objects.get(username=username)
         except Exception as e:
-            print e
+            print(e)
             print('Error: no such username: ' + username)
             print('--- existing username list ---')
             for user in OSFUser.objects.all():
@@ -1024,7 +1024,7 @@ def mapcore_remove_token(ctx, username=None, eppn=None):
         try:
             user = OSFUser.objects.get(eppn=eppn)
         except Exception as e:
-            print e
+            print(e)
             print('Error: no such ePPN: ' + eppn)
             print('--- existing ePPN list ---')
             for user in OSFUser.objects.all():

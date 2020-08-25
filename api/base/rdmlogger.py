@@ -16,7 +16,7 @@ class RdmLogger(logging.LoggerAdapter):
 
 class RdmLoggerFormatter:
     def __init__(self, formatter=None):
-        print formatter
+        print(formatter)
         self.formatter = formatter or logging.Formatter(logging.BASIC_FORMAT)
 
     def format(self, record):
