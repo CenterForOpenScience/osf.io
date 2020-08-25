@@ -23,7 +23,7 @@ class TestEGAPMoveToProvider:
 
     @pytest.fixture()
     def egap_provider(self):
-        return RegistrationProviderFactory(name=settings.EGAP_PROVIDER_NAME, _id='egap')
+        return RegistrationProviderFactory(_id='egap')
 
     @pytest.fixture()
     def non_egap_provider(self):

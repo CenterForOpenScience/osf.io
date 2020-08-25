@@ -331,6 +331,7 @@ class CollectionProviderFactory(DjangoModelFactory):
         obj.save()
         return obj
 
+
 class RegistrationProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
@@ -353,6 +354,8 @@ class RegistrationProviderFactory(DjangoModelFactory):
                 pass
             else:
                 raise e
+        if _id:
+            obj._id = _id
 
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
