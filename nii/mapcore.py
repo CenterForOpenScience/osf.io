@@ -534,7 +534,7 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
                 first_tb = sys.exc_info()
     if first_e is None:
         raise Exception('No user have mAP access token')
-    raise first_e.__class__, first_e, first_tb[2]
+    raise first_e.__class__(first_e, first_tb[2])
 
 def _get_group_by_key(mapcore, node, group_key, **kwargs):
     return mapcore.get_group_by_key(group_key)
