@@ -122,7 +122,7 @@ def mapcore_check_token(auth, node, use_mapcore=True):
             if MAPCORE_SYNC_IGNORE_ERROR:
                 return None
 
-            raise HTTPError(httplib.SERVICE_UNAVAILABLE, data={
+            raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE, data={
                 'message_short': 'mAP core API Error',
                 'message_long': emsg
             })

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 import mock
 from nose.tools import *  # noqa
@@ -46,7 +46,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
         assert_in('You are prohibited from using this add-on.', rv.body)
 
     def test_weko_set_index_no_settings(self):
@@ -57,7 +57,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
             url, {'index': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_weko_set_index_no_auth(self):
         user = AuthUserFactory()
@@ -68,7 +68,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
             url, {'index': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_weko_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('weko_deauthorize_node')
@@ -104,7 +104,7 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
     def test_get_config(self):
         url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)
         serialized = self.Serializer().serialize_settings(
             self.node_settings,

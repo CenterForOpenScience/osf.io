@@ -1,4 +1,4 @@
-import httplib
+from rest_framework import status as http_status
 
 from swiftclient import exceptions as swift_exceptions
 from flask import request
@@ -77,20 +77,20 @@ def swift_add_user_account(auth, **kwargs):
             user_domain_name = None
             project_domain_name = None
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not (auth_version and auth_url and access_key and secret_key and tenant_name):
         return {
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     if auth_version == '3' and not user_domain_name:
         return {
             'message': 'The field `user_domain_name` is required when you choose identity V3.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     if auth_version == '3' and not project_domain_name:
         return {
             'message': 'The field `project_domain_name` is required when you choose identity V3.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     user_info = utils.get_user_info(auth_version, auth_url, access_key,
                                     user_domain_name, secret_key, tenant_name,
@@ -100,14 +100,14 @@ def swift_add_user_account(auth, **kwargs):
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list containers.')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not utils.can_list(auth_version, auth_url, access_key, user_domain_name,
                           secret_key, tenant_name, project_domain_name):
         return {
             'message': ('Unable to list containers.\n'
                 'Listing containers is required permission.')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     provider = SwiftProvider(account=None, auth_version=auth_version,
                              auth_url=auth_url, tenant_name=tenant_name,
@@ -152,7 +152,7 @@ def swift_create_container(auth, node_addon, **kwargs):
         return {
             'message': 'That container name is not valid.',
             'title': 'Invalid container name',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     try:
         utils.create_container(node_addon, container_name)
@@ -160,6 +160,6 @@ def swift_create_container(auth, node_addon, **kwargs):
         return {
             'message': e.message,
             'title': "Problem creating container '{0}'".format(container_name),
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     return {}

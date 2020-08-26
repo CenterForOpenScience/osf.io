@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -37,7 +37,7 @@ def import_admin_account(auth, addon_name=None):
     rdm_addon_option = rdm_addons_utils.get_rdm_addon_option(institution_id, addon_name)
 
     if not rdm_addon_option.external_accounts.exists():
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     for account in rdm_addon_option.external_accounts.all():
         user.external_accounts.add(account)

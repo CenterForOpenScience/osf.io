@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-import httplib
+from rest_framework import status as http_status
 
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
@@ -184,7 +184,7 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
         if 'guid' not in json_request:
             return JsonResponse({
                 'message': 'Require "guid" parameter.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
         guid = json_request['guid']
 
         guid_obj = Guid.objects.get(_id=guid)
@@ -192,20 +192,20 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
         if not isinstance(node, AbstractNode):
             return JsonResponse({
                 'message': 'Invalid GUID of management project.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
 
         if not node.has_permission(request.user, permissions.WRITE):
-            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+            return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if rdm_addon_option.management_node is not None and \
                 not rdm_addon_option.management_node.has_permission(request.user, permissions.WRITE):
-            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+            return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
         rdm_addon_option.management_node = node
         rdm_addon_option.save()
 
-        return JsonResponse({}, status=httplib.OK)
+        return JsonResponse({}, status=http_status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
@@ -214,12 +214,12 @@ class ManageView(RdmPermissionMixin, UserPassesTestMixin, View):
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if rdm_addon_option.management_node is not None:
             if not rdm_addon_option.management_node.has_permission(request.user, permissions.WRITE):
-                return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+                return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
             rdm_addon_option.management_node = None
             rdm_addon_option.save()
 
-        return JsonResponse({}, status=httplib.OK)
+        return JsonResponse({}, status=http_status.HTTP_200_OK)
 
 class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
     """View for organizational project of add-on"""
@@ -252,7 +252,7 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
         if 'guid' not in json_request:
             return JsonResponse({
                 'message': 'Require "guid" parameter.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
         guid = json_request['guid']
 
         guid_obj = Guid.objects.get(_id=guid)
@@ -260,20 +260,20 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
         if not isinstance(node, AbstractNode):
             return JsonResponse({
                 'message': 'Invalid GUID of organizational project.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
 
         if not node.has_permission(request.user, permissions.WRITE):
-            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+            return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if rdm_addon_option.organizational_node is not None and \
                 not rdm_addon_option.organizational_node.has_permission(request.user, permissions.WRITE):
-            return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+            return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
         rdm_addon_option.organizational_node = node
         rdm_addon_option.save()
 
-        return JsonResponse({}, status=httplib.OK)
+        return JsonResponse({}, status=http_status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
@@ -282,12 +282,12 @@ class OrganizationView(RdmPermissionMixin, UserPassesTestMixin, View):
         rdm_addon_option = utils.get_rdm_addon_option(institution_id, addon_name)
         if rdm_addon_option.organizational_node is not None:
             if not rdm_addon_option.organizational_node.has_permission(request.user, permissions.WRITE):
-                return JsonResponse({'message': 'Forbidden'}, status=httplib.FORBIDDEN)
+                return JsonResponse({'message': 'Forbidden'}, status=http_status.HTTP_403_FORBIDDEN)
 
             rdm_addon_option.organizational_node = None
             rdm_addon_option.save()
 
-        return JsonResponse({}, status=httplib.OK)
+        return JsonResponse({}, status=http_status.HTTP_200_OK)
 
 def add_addon_extra_info(ret, external_account, addon_name):
     """add each add-on's account information"""
@@ -317,4 +317,4 @@ def add_account(json_request, institution_id, addon_name):
     elif addon_name == 'owncloud':
         from admin.rdm_addons.api_v1.add.owncloud import add_account
         return add_account(json_request, institution_id, addon_name)
-    return {'message': 'unknown addon "{}"'.format(addon_name)}, httplib.BAD_REQUEST
+    return {'message': 'unknown addon "{}"'.format(addon_name)}, http_status.HTTP_400_BAD_REQUEST

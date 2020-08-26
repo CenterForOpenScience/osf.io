@@ -1,5 +1,5 @@
 from django.test import RequestFactory
-import httplib
+from rest_framework import status as http_status
 import json
 import mock
 from nose import tools as nt
@@ -37,7 +37,7 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+        mock_testconnection.return_value = {'message': 'NG'}, http_status.HTTP_400_BAD_REQUEST
 
         response = self.view_post({
             'storage_name': 'My storage',
@@ -48,13 +48,13 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('NG', response.content)
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
 
         response = self.view_post({
             'storage_name': 'My storage',
@@ -65,7 +65,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Saved credentials successfully!!', response.content)
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()

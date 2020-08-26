@@ -5,7 +5,7 @@ from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View
 import json
 import hashlib
-import httplib
+from rest_framework import status as http_status
 from mimetypes import MimeTypes
 import os
 
@@ -82,7 +82,7 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
             response = {
                 'message': 'Provider is missing.'
             }
-            return JsonResponse(response, status=httplib.BAD_REQUEST)
+            return JsonResponse(response, status=http_status.HTTP_400_BAD_REQUEST)
 
         result = None
 
@@ -127,7 +127,7 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('swift_container'),
             )
         else:
-            result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
+            result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
 
         return JsonResponse(result[0], status=result[1])
 
@@ -145,13 +145,13 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             response = {
                 'message': 'Provider is missing.'
             }
-            return JsonResponse(response, status=httplib.BAD_REQUEST)
+            return JsonResponse(response, status=http_status.HTTP_400_BAD_REQUEST)
 
         storage_name = data.get('storage_name')
         if not storage_name and provider_short_name != 'osfstorage':
             return JsonResponse({
                 'message': 'Storage name is missing.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
 
         result = None
 
@@ -222,7 +222,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('box_folder'),
             )
         else:
-            result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
+            result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
         return JsonResponse(result[0], status=result[1])
 
 
@@ -234,7 +234,7 @@ class FetchTemporaryTokenView(InstitutionalStorageBaseView, View):
         if not provider_short_name:
             return JsonResponse({
                 'message': 'Provider is missing.'
-            }, status=httplib.BAD_REQUEST)
+            }, status=http_status.HTTP_400_BAD_REQUEST)
 
         institution_id = request.user.affiliated_institutions.first()._id
         data = utils.get_oauth_info_notification(institution_id, provider_short_name)
@@ -242,11 +242,11 @@ class FetchTemporaryTokenView(InstitutionalStorageBaseView, View):
             data['fullname'] = request.user.fullname
             return JsonResponse({
                 'response_data': data
-            }, status=httplib.OK)
+            }, status=http_status.HTTP_200_OK)
 
         return JsonResponse({
             'message': 'Oauth permission procedure was canceled'
-        }, status=httplib.BAD_REQUEST)
+        }, status=http_status.HTTP_400_BAD_REQUEST)
 
 
 class RemoveTemporaryAuthData(InstitutionalStorageBaseView, View):
@@ -255,7 +255,7 @@ class RemoveTemporaryAuthData(InstitutionalStorageBaseView, View):
         ExternalAccountTemporary.objects.filter(_id=institution_id).delete()
         return JsonResponse({
             'message': 'Garbage data removed!!'
-        }, status=httplib.OK)
+        }, status=http_status.HTTP_200_OK)
 
 def external_acc_update(request, access_token):
     if hashlib.sha512(SITE_KEY).hexdigest() != access_token.lower():

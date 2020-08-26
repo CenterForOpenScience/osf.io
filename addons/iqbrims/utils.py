@@ -3,7 +3,7 @@
 """
 import functools
 import hashlib
-import httplib as http
+from rest_framework import status as http_status
 import logging
 import os
 import re
@@ -152,7 +152,7 @@ def must_have_valid_hash():
             owner = kwargs['node']
             addon = owner.get_addon(IQBRIMSAddonConfig.short_name)
             if addon is None:
-                raise HTTPError(http.BAD_REQUEST)
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
             secret = addon.get_secret()
             process_def_id = addon.get_process_definition_id()
             valid_hash = hashlib.sha256((secret + process_def_id + owner._id).encode('utf8')).hexdigest()
@@ -161,7 +161,7 @@ def must_have_valid_hash():
             logger.debug('must_have_valid_hash: valid_hash={}'.format(valid_hash))
             if request_hash != valid_hash:
                 raise HTTPError(
-                    http.FORBIDDEN,
+                    http_status.HTTP_403_FORBIDDEN,
                     data={'message_long': ('User has restricted access to this page.')}
                 )
             return func(*args, **kwargs)

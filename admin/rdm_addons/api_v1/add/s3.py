@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
 
@@ -16,12 +16,12 @@ def add_account(json_request, institution_id, addon_name):
         access_key = json_request['access_key']
         secret_key = json_request['secret_key']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not (access_key and secret_key):
         return {
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     user_info = get_user_info(access_key, secret_key)
     if not user_info:
@@ -29,13 +29,13 @@ def add_account(json_request, institution_id, addon_name):
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list buckets.')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not can_list(access_key, secret_key):
         return {
             'message': ('Unable to list buckets.\n'
                 'Listing buckets is required permission that can be changed via IAM')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     account = None
     try:
@@ -64,4 +64,4 @@ def add_account(json_request, institution_id, addon_name):
     if not rdm_addon_option.external_accounts.filter(id=account.id).exists():
         rdm_addon_option.external_accounts.add(account)
 
-    return {}, httplib.OK
+    return {}, http_status.HTTP_200_OK

@@ -1,7 +1,7 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
 import datetime
-import httplib as http
+from rest_framework import status as http_status
 import os
 import re
 from lxml import etree
@@ -103,7 +103,7 @@ def weko_user_config_get(auth, **kwargs):
             },
             'repositories': weko_settings.REPOSITORY_IDS
         },
-    }, http.OK
+    }, http_status.HTTP_200_OK
 
 
 ## Config ##
@@ -120,19 +120,19 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
     user = auth.user
 
     if user_settings and user_settings.owner != user:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     index_id = request.json.get('index', {}).get('id')
 
     if index_id is None:
-        return HTTPError(http.BAD_REQUEST)
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     connection = client.connect_from_settings(weko_settings, node_addon)
     index = client.get_index_by_id(connection, index_id)
 
     node_addon.set_folder(index, auth)
 
-    return {'index': index.title}, http.OK
+    return {'index': index.title}, http_status.HTTP_200_OK
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
@@ -143,12 +143,12 @@ def weko_add_user_account(auth, **kwargs):
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
     except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not (sword_url and access_key and secret_key):
         return {
             'message': 'All the fields above are required.'
-        }, http.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     try:
         user_info = client.connect_or_error(sword_url,
@@ -162,7 +162,7 @@ def weko_add_user_account(auth, **kwargs):
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list indices.')
-        }, http.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     provider = WEKOProvider(account=None, host=sword_url,
                             username=access_key, password=secret_key)
@@ -203,7 +203,7 @@ def weko_get_item_view(itemid, node_addon, **kwargs):
     connection = client.connect_from_settings_or_401(weko_settings, node_addon)
     index_url = client.get_all_indices(connection)[0].about
     base_url = re.compile(r'^(.+)\?action=.*$').match(index_url).group(1)
-    return {'url': '{}?action=repository_uri&item_id={}'.format(base_url, itemid)}, http.OK
+    return {'url': '{}?action=repository_uri&item_id={}'.format(base_url, itemid)}, http_status.HTTP_200_OK
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -223,7 +223,7 @@ def weko_add_item_created(node_addon, auth, **kwargs):
         auth=auth,
         log_date=datetime.datetime.utcnow(),
     )
-    return {'status': 'added'}, http.OK
+    return {'status': 'added'}, http_status.HTTP_200_OK
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -261,7 +261,7 @@ def weko_create_index(node_addon, auth, **kwargs):
             'name': title_ja,
             'kind': 'folder',
             'path': _get_path(indices, index_id),
-            'provider': SHORT_NAME}, http.OK
+            'provider': SHORT_NAME}, http_status.HTTP_200_OK
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -270,7 +270,7 @@ def weko_generate_metadata(node_addon, auth, **kwargs):
     uploaded_filename = request.args.get('filename', None)
     uploaded_filenames = request.args.get('filenames', None)
     if uploaded_filename is None or uploaded_filenames is None:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     uploaded_filenames = uploaded_filenames.split('\n')
 
     service_item_type = int(request.args.get('serviceItemType', None))
@@ -293,7 +293,7 @@ def weko_generate_metadata(node_addon, auth, **kwargs):
                                         title, title_en,
                                         contributors)
     res = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
-    return res, http.OK
+    return res, http_status.HTTP_200_OK
 
 ## HGRID ##
 

@@ -1,5 +1,5 @@
 from django.test import RequestFactory
-import httplib
+from rest_framework import status as http_status
 import json
 import mock
 from nose import tools as nt
@@ -42,7 +42,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
     def test_empty_access_key(self):
@@ -54,7 +54,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
     def test_empty_secret_key(self):
@@ -66,7 +66,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('All the fields above are required.', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.can_list', return_value=False)
@@ -80,7 +80,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Unable to list buckets.', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=False)
@@ -95,7 +95,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid bucket.', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.bucket_exists', return_value=True)
@@ -113,7 +113,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.OK)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Credentials are valid', request_post_response.content)
 
     @mock.patch('addons.s3compat.views.utils.get_user_info', return_value=None)
@@ -126,7 +126,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 's3compat',
         }
         request_post_response = self.view_post(params)
-        nt.assert_equals(request_post_response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list buckets.', request_post_response.content)
@@ -161,7 +161,7 @@ class TestSaveCredentials(AdminTestCase):
             's3compat_bucket': 'Cute bucket',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Provider is missing.', response.content)
 
     def test_invalid_provider(self):
@@ -174,12 +174,12 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'invalidprovider',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid provider.', response.content)
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3compat_connection')
     def test_success(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
         response = self.view_post({
             'storage_name': 'My storage',
             's3compat_endpoint_url': 's3.compat.co.jp',
@@ -189,7 +189,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 's3compat',
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Saved credentials successfully!!', response.content)
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
@@ -206,7 +206,7 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3compat_connection')
     def test_invalid_credentials(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+        mock_testconnection.return_value = {'message': 'NG'}, http_status.HTTP_400_BAD_REQUEST
 
         response = self.view_post({
             'storage_name': 'My storage',
@@ -217,6 +217,6 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 's3compat',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('NG', response.content)
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())

@@ -1,6 +1,6 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
 from furl import furl
@@ -65,11 +65,11 @@ def nextcloud_add_user_account(auth, **kwargs):
     except requests.exceptions.ConnectionError:
         return {
             'message': 'Invalid Nextcloud server.'
-        }, http.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
     except owncloud.owncloud.HTTPResponseError:
         return {
             'message': 'Nextcloud Login failed.'
-        }, http.UNAUTHORIZED
+        }, http_status.HTTP_401_UNAUTHORIZED
 
     provider = NextcloudProvider(account=None, host=host.url,
                             username=username, password=password)

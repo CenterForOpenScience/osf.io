@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import httplib as http
+from rest_framework import status as http_status
 import hmac
 from hashlib import sha256
 import json
@@ -44,12 +44,12 @@ def webhook_post():
     # Make sure this is a valid request from Dropbox
     signature = request.headers.get('X-Dropbox-Signature')
     if not signature:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     if not hmac.compare_digest(
             signature.encode('utf-8'),
             hmac.new(APP_SECRET, request.data, sha256).hexdigest()):
         logger.error('invalid signature')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     data = json.loads(request.data)
     if ENABLE_DEBUG:
         s = pf(data)

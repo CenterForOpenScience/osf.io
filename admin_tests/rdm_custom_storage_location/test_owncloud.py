@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.test import RequestFactory
-import httplib
+from rest_framework import status as http_status
 import json
 import mock
 import owncloud
@@ -45,7 +45,7 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Credentials are valid', response.content)
 
     @mock.patch('owncloud.Client')
@@ -57,7 +57,7 @@ class TestConnection(AdminTestCase):
             'nextcloud_folder': 'my-valid-folder',
             'provider_short_name': 'nextcloud',
         })
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Credentials are valid', response.content)
 
     @mock.patch('owncloud.Client')
@@ -71,12 +71,12 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid ownCloud server.', response.content)
 
     @mock.patch('owncloud.Client')
     def test_unauthorized(self, mock_client):
-        res = HttpResponse(status=httplib.UNAUTHORIZED)
+        res = HttpResponse(status=http_status.HTTP_401_UNAUTHORIZED)
         mock_client.side_effect = owncloud.owncloud.HTTPResponseError(res)
 
         response = self.view_post({
@@ -86,12 +86,12 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, httplib.UNAUTHORIZED)
+        nt.assert_equals(response.status_code, http_status.HTTP_401_UNAUTHORIZED)
         nt.assert_in('ownCloud Login failed.', response.content)
 
     @mock.patch('owncloud.Client')
     def test_invalid_folder_id(self, mock_client):
-        res = HttpResponse(status=httplib.BAD_REQUEST)
+        res = HttpResponse(status=http_status.HTTP_400_BAD_REQUEST)
         mock_client.return_value.list.side_effect = owncloud.owncloud.HTTPResponseError(res)
 
         response = self.view_post({
@@ -101,7 +101,7 @@ class TestConnection(AdminTestCase):
             'owncloud_folder': 'my-valid-folder',
             'provider_short_name': 'owncloud',
         })
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid folder.', response.content)
 
 
@@ -126,7 +126,7 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_connection_fail(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'NG'}, httplib.BAD_REQUEST
+        mock_testconnection.return_value = {'message': 'NG'}, http_status.HTTP_400_BAD_REQUEST
 
         response = self.view_post({
             'storage_name': 'My storage',
@@ -137,13 +137,13 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('NG', response.content)
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
     def test_success(self, mock_testconnection):
-        mock_testconnection.return_value = {'message': 'Nice'}, httplib.OK
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
 
         response = self.view_post({
             'storage_name': 'My storage',
@@ -154,7 +154,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('Saved credentials successfully!!', response.content)
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()

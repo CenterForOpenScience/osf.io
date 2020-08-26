@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib
+from rest_framework import status as http_status
 from flask import request
 import logging
 
@@ -47,7 +47,7 @@ def jupyterhub_set_config(**kwargs):
     try:
         service_list = request.json['service_list']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     logger.info('Service: {}'.format(service_list))
     jupyterhub.set_services([(s['name'], s['base_url']) for s in service_list])
     return {}

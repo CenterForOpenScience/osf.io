@@ -3,7 +3,7 @@
 from boxsdk import Client as BoxClient, OAuth2
 from boxsdk.exception import BoxAPIException
 from furl import furl
-import httplib
+from rest_framework import status as http_status
 import requests
 from swiftclient import exceptions as swift_exceptions
 import os
@@ -125,12 +125,12 @@ def oauth_validation(provider, institution_id, folder_id):
     if not folder_id:
         return ({
             'message': 'Folder ID is missing.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     if not ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider).exists():
         return ({
             'message': 'Oauth data was not found. Please reload the page and try again.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     return True
 
@@ -139,25 +139,25 @@ def test_s3_connection(access_key, secret_key, bucket):
     if not (access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
     user_info = s3_utils.get_user_info(access_key, secret_key)
     if not user_info:
         return ({
             'message': 'Unable to access account.\n'
             'Check to make sure that the above credentials are valid,'
             'and that they have permission to list buckets.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     if not s3_utils.can_list(access_key, secret_key):
         return ({
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     if not s3_utils.bucket_exists(access_key, secret_key, bucket):
         return ({
             'message': 'Invalid bucket.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     s3_response = {
         'id': user_info.id,
@@ -168,14 +168,14 @@ def test_s3_connection(access_key, secret_key, bucket):
     return ({
         'message': 'Credentials are valid',
         'data': s3_response
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_s3compat_connection(host_url, access_key, secret_key, bucket):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     if not (host and access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     user_info = s3compat_utils.get_user_info(host, access_key, secret_key)
     if not user_info:
@@ -183,18 +183,18 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
             'message': 'Unable to access account.\n'
             'Check to make sure that the above credentials are valid, '
             'and that they have permission to list buckets.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not s3compat_utils.can_list(host, access_key, secret_key):
         return {
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not s3compat_utils.bucket_exists(host, access_key, secret_key, bucket):
         return ({
             'message': 'Invalid bucket.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     return ({
         'message': 'Credentials are valid',
@@ -202,7 +202,7 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
             'id': user_info.id,
             'display_name': user_info.display_name,
         }
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_box_connection(institution_id, folder_id):
     validation_result = oauth_validation('box', institution_id, folder_id)
@@ -224,11 +224,11 @@ def test_box_connection(institution_id, folder_id):
     except BoxAPIException:
         return ({
             'message': 'Invalid folder ID.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     return ({
         'message': 'Credentials are valid'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_googledrive_connection(institution_id, folder_id):
     validation_result = oauth_validation('googledrive', institution_id, folder_id)
@@ -245,11 +245,11 @@ def test_googledrive_connection(institution_id, folder_id):
     except HTTPError:
         return ({
             'message': 'Invalid folder ID.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     return ({
         'message': 'Credentials are valid'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
@@ -273,11 +273,11 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     except requests.exceptions.ConnectionError:
         return ({
             'message': 'Invalid {} server.'.format(provider_name) + host.url
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
     except owncloud.owncloud.HTTPResponseError:
         return ({
             'message': '{} Login failed.'.format(provider_name)
-        }, httplib.UNAUTHORIZED)
+        }, http_status.HTTP_401_UNAUTHORIZED)
 
     try:
         client.list(folder)
@@ -285,13 +285,13 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
         client.logout()
         return ({
             'message': 'Invalid folder.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     client.logout()
 
     return ({
         'message': 'Credentials are valid'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant_name,
                           user_domain_name, project_domain_name, container):
@@ -299,15 +299,15 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     if not (auth_version and auth_url and access_key and secret_key and tenant_name and container):
         return ({
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
     if auth_version == '3' and not user_domain_name:
         return ({
             'message': 'The field `user_domain_name` is required when you choose identity V3.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
     if auth_version == '3' and not project_domain_name:
         return ({
             'message': 'The field `project_domain_name` is required when you choose identity V3.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     user_info = swift_utils.get_user_info(auth_version, auth_url, access_key,
                                     user_domain_name, secret_key, tenant_name,
@@ -318,7 +318,7 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
             'message': 'Unable to access account.\n'
             'Check to make sure that the above credentials are valid, '
             'and that they have permission to list containers.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         _, containers = swift_utils.connect_swift(
@@ -329,12 +329,12 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         return ({
             'message': 'Unable to list containers.\n'
             'Listing containers is required permission.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     if container not in map(lambda c: c['name'], containers):
         return ({
             'message': 'Invalid container name.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     provider = SwiftProvider(account=None, auth_version=auth_version,
                              auth_url=auth_url, tenant_name=tenant_name,
@@ -349,11 +349,11 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
     return ({
         'message': 'Credentials are valid',
         'data': swift_response
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     wb_credentials = {
@@ -377,13 +377,13 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
                               bucket):
 
     test_connection_result = test_s3compat_connection(host_url, access_key, secret_key, bucket)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
@@ -410,13 +410,13 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_box_credentials(user, storage_name, folder_id):
     institution_id = user.affiliated_institutions.first()._id
 
     test_connection_result = test_box_connection(institution_id, folder_id)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     account = transfer_to_external_account(user, institution_id, 'box')
@@ -437,13 +437,13 @@ def save_box_credentials(user, storage_name, folder_id):
 
     return ({
         'message': 'OAuth was set successfully'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_googledrive_credentials(user, storage_name, folder_id):
     institution_id = user.affiliated_institutions.first()._id
 
     test_connection_result = test_googledrive_connection(institution_id, folder_id)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     account = transfer_to_external_account(user, institution_id, 'googledrive')
@@ -466,13 +466,13 @@ def save_googledrive_credentials(user, storage_name, folder_id):
 
     return ({
         'message': 'OAuth was set successfully'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_nextcloud_credentials(institution_id, storage_name, host_url, username, password,
                               folder, provider):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder,
                                                       provider)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     # Ensure that NextCloud uses https
@@ -501,7 +501,7 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_osfstorage_credentials(institution_id):
     try:
@@ -513,7 +513,7 @@ def save_osfstorage_credentials(institution_id):
         region.delete()
     return ({
         'message': 'NII storage was set successfully'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_swift_credentials(institution_id, storage_name, auth_version, access_key, secret_key,
                            tenant_name, user_domain_name, project_domain_name, auth_url,
@@ -521,7 +521,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
 
     test_connection_result = test_swift_connection(auth_version, auth_url, access_key, secret_key,
         tenant_name, user_domain_name, project_domain_name, container)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     wb_credentials = {
@@ -550,13 +550,13 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_owncloud_credentials(institution_id, storage_name, host_url, username, password,
                               folder, provider):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder,
                                                       provider)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     # Ensure that ownCloud uses https
@@ -585,4 +585,4 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)

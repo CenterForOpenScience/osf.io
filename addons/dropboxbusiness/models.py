@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 import six
 
 from django.db import models
@@ -104,7 +104,7 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
             pass
         elif user.external_accounts.count() > 0:
             logger.info('Do not add multiple ExternalAccount for dropboxbusiness.')
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         # else: create ExternalAccount and set it to the RdmAddonOption
 
         result = self._set_external_account(

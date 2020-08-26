@@ -1,5 +1,5 @@
 from django.test import RequestFactory
-import httplib
+from rest_framework import status as http_status
 import json
 from nose import tools as nt
 
@@ -37,7 +37,7 @@ class TestSaveCredentials(AdminTestCase):
             'no_pro': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Provider is missing.', response.content)
 
     def test_success(self):
@@ -45,7 +45,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('NII storage was set successfully', response.content)
 
     def test_success_cleanup_account(self):
@@ -60,7 +60,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'osfstorage',
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('NII storage was set successfully', response.content)
 
         nt.assert_false(RegionExternalAccount.objects.filter(region=region).exists())

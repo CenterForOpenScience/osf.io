@@ -852,7 +852,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         if file_info is not None:
             timestamp.add_token(auth.user.id, target, file_info)
         else:
-            raise HTTPError(httplib.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Add TimestampError',
                 'message_long': 'AddTimestamp setting error.'
             })

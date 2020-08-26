@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import httplib
+from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
 
@@ -37,4 +37,4 @@ def add_account(json_request, institution_id, addon_name):
     if not rdm_addon_option.external_accounts.filter(id=provider.account.id).exists():
         rdm_addon_option.external_accounts.add(provider.account)
 
-    return {}, httplib.OK
+    return {}, http_status.HTTP_200_OK

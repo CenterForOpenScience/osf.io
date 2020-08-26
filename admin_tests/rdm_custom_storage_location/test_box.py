@@ -1,7 +1,7 @@
 from boxsdk.exception import BoxAPIException
 from django.test import RequestFactory
 from django.utils import timezone
-import httplib
+from rest_framework import status as http_status
 import json
 from nose import tools as nt
 import mock
@@ -52,7 +52,7 @@ class TestFetchToken(AdminTestCase):
             'no_pro': 'box',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Provider is missing.', response.content)
 
     def test_fail_oauth_procedure_canceled(self):
@@ -60,7 +60,7 @@ class TestFetchToken(AdminTestCase):
             'provider_short_name': 'box',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Oauth permission procedure was canceled', response.content)
 
     def test_success(self):
@@ -80,7 +80,7 @@ class TestFetchToken(AdminTestCase):
         response = self.view_post({
             'provider_short_name': 'box',
         })
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         data = json.loads(response.content)
         response_temp_account = data['response_data']
         nt.assert_equals(response_temp_account['display_name'], temp_account.display_name)
@@ -127,7 +127,7 @@ class TestSaveCredentials(AdminTestCase):
             'no_pro': 'box',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Provider is missing.', response.content)
 
     def test_storage_name_missing(self):
@@ -135,7 +135,7 @@ class TestSaveCredentials(AdminTestCase):
             'provider_short_name': 'box',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Storage name is missing.', response.content)
 
     def test_folder_missing(self):
@@ -144,7 +144,7 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Folder ID is missing.', response.content)
 
     @mock.patch('boxsdk.Client.folder')
@@ -167,7 +167,7 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'storage_name',
             'box_folder': '0',
         })
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content)
 
         external_account = ExternalAccount.objects.get(
@@ -194,7 +194,7 @@ class TestSaveCredentials(AdminTestCase):
             'storage_name': 'Cardboard Box',
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Folder ID is missing.', response.content)
 
     def test_temporary_external_account_missing(self):
@@ -204,7 +204,7 @@ class TestSaveCredentials(AdminTestCase):
             'box_folder': '0'
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Oauth data was not found. Please reload the page and try again.', response.content)
 
     @mock.patch('boxsdk.Client.folder')
@@ -230,7 +230,7 @@ class TestSaveCredentials(AdminTestCase):
             'box_folder': 'invalid_folder_id'
         })
 
-        nt.assert_equals(response.status_code, httplib.BAD_REQUEST)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Invalid folder ID.', response.content)
 
     @mock.patch('boxsdk.Client.folder')
@@ -254,7 +254,7 @@ class TestSaveCredentials(AdminTestCase):
             'box_folder': 'Valid folder'
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content)
 
     @mock.patch('boxsdk.Client.folder')
@@ -285,7 +285,7 @@ class TestSaveCredentials(AdminTestCase):
             'box_folder': 'Valid folder'
         })
 
-        nt.assert_equals(response.status_code, httplib.OK)
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         nt.assert_in('OAuth was set successfully', response.content)
 
         new_external_account = RegionExternalAccount.objects.get(region=region).external_account

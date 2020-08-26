@@ -1,4 +1,4 @@
-import httplib
+from rest_framework import status as http_status
 
 from azure.common import AzureHttpError
 from flask import request
@@ -67,12 +67,12 @@ def azureblobstorage_add_user_account(auth, **kwargs):
         access_key = request.json['access_key']
         secret_key = request.json['secret_key']
     except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if not (access_key and secret_key):
         return {
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     user_info = utils.get_user_info(access_key, secret_key)
     if not user_info:
@@ -80,13 +80,13 @@ def azureblobstorage_add_user_account(auth, **kwargs):
             'message': ('Unable to access account.\n'
                 'Check to make sure that the above credentials are valid, '
                 'and that they have permission to list containers.')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
             'message': ('Unable to list containers.\n'
                 'Listing containers is required permission that can be changed via IAM')
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     try:
         account = ExternalAccount(
@@ -129,7 +129,7 @@ def azureblobstorage_create_container(auth, node_addon, **kwargs):
         return {
             'message': 'That container name is not valid.',
             'title': 'Invalid container name',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     try:
         utils.create_container(node_addon, container_name)
@@ -137,6 +137,6 @@ def azureblobstorage_create_container(auth, node_addon, **kwargs):
         return {
             'message': e.message,
             'title': 'Problem connecting to Azure Blob Storage',
-        }, httplib.BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST
 
     return {}

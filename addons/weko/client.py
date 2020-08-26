@@ -5,7 +5,7 @@ from lxml import etree
 import os
 import datetime
 import mimetypes
-import httplib as http
+from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 from requests.exceptions import ConnectionError
 
@@ -141,7 +141,7 @@ def connect_or_error(sword_url, token=None, username=None, password=None):
         return Connection(sword_url, token=token,
                           username=username, password=password)
     except UnauthorizedError:
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
 
 def connect_from_settings_or_401(weko_settings, node_settings):

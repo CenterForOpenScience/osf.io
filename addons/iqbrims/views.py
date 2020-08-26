@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
 from functools import reduce
-import httplib as http
+from rest_framework import status as http_status
 import json
 import logging
 import urllib
@@ -110,7 +110,7 @@ def iqbrims_get_status(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     try:
         access_token = management_node_addon.fetch_access_token()
     except exceptions.InvalidAuthError:
@@ -135,7 +135,7 @@ def iqbrims_set_status(**kwargs):
     try:
         status = request.json['data']['attributes']
     except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     auth = kwargs['auth']
     rstatus = _iqbrims_set_status(node, status, auth)
@@ -290,7 +290,7 @@ def iqbrims_get_storage(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
 
     logger.debug(u'Result files: {}'.format([f['title'] for f in files]))
@@ -363,7 +363,7 @@ def iqbrims_reject_storage(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
 
     client = IQBRIMSClient(access_token)
@@ -448,7 +448,7 @@ def iqbrims_create_index(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
 
     client = IQBRIMSClient(access_token)
@@ -576,7 +576,7 @@ def iqbrims_get_message(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     try:
         access_token = management_node_addon.fetch_access_token()
     except exceptions.InvalidAuthError:
@@ -600,13 +600,13 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
     """
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     management_user_addon = management_node_addon.user_settings
     if management_user_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
     management_external_account = management_node_addon.external_account
     if management_external_account is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon is not authorized in management node')
 
     management_user_addon.grant_oauth_access(
         node=node,
@@ -628,9 +628,9 @@ def _get_management_node(node):
             is_allowed=True
         ).first()
         if opt is None:
-            raise HTTPError(http.FORBIDDEN)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except RdmAddonOption.DoesNotExist:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     return opt.management_node
 
 def _iqbrims_set_status(node, status, auth=None):
@@ -647,7 +647,7 @@ def _iqbrims_set_status(node, status, auth=None):
             management_node = _get_management_node(node)
             management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
             if management_node_addon is None:
-                raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
             if last_status['state'] != register_type:
                 try:
                     access_token = management_node_addon.fetch_access_token()
@@ -678,7 +678,7 @@ def _iqbrims_set_status(node, status, auth=None):
 def _iqbrims_init_folders(node, management_node, register_type, labo_name):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     folder_id = management_node_addon.folder_id
 
     try:
@@ -711,7 +711,7 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
 def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
-        raise HTTPError(http.BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
     folder_id = management_node_addon.folder_id
     try:
         access_token = management_node_addon.fetch_access_token()
