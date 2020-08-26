@@ -12,7 +12,7 @@ import urllib
 import re
 from operator import attrgetter
 from pprint import pformat as pp
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.utils import timezone
 from django.db import transaction
