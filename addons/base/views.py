@@ -989,7 +989,7 @@ def addon_view_file(auth, node, file_node, version):
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
-        'version_names': list(version_names)
+        'version_names': list(version_names),
         'timestamp_verify_result': verify_result['verify_result'],
         'timestamp_verify_result_title': verify_result['verify_result_title']
     })
