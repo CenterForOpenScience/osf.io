@@ -92,6 +92,8 @@ class TestRegistrationProviderSchemas:
             app,
             url,
             schema,
+            egap_schema,
+            invisible_schema,
             user,
             url_with_v2_prereg_only,
             url_with_egap_only
@@ -100,9 +102,10 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 1
-        assert data[0]['id'] == schema._id
-        assert data[0]['attributes']['name'] == schema.name
+        assert len(data) == 2
+        assert schema._id in [item['id'] for item in data]
+        assert invisible_schema._id in [item['id'] for item in data]
+        assert schema.name in [item['attributes']['name'] for item in data]
 
         res = app.get(url_with_v2_prereg_only, auth=user.auth)
         assert res.status_code == 200
@@ -116,7 +119,8 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 0
+        assert len(data) == 1
+        assert data[0]['id'] == egap_schema._id
 
     def test_egap_registration_schema(
             self,
