@@ -52,14 +52,17 @@ class AbstractSchemaManager(models.Manager):
         """
         return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, request=None):
+    def get_latest_versions(self, request=None, invisible=False):
         """
         Return the latest version of the given schema
 
         :param request: the request object needed for waffling
         :return: queryset
         """
-        queryset = self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
+        queryset = self.order_by('name', '-schema_version').distinct('name')
+
+        if not invisible:
+            queryset = queryset.filter(visible=True)
 
         if request:
             return allow_egap_admins(queryset, request)
