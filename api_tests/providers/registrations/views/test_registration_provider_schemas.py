@@ -119,8 +119,7 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 1
-        assert data[0]['id'] == egap_schema._id
+        assert len(data) == 0
 
     def test_egap_registration_schema(
             self,
