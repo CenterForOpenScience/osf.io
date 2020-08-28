@@ -1,5 +1,6 @@
 from future.moves.urllib.parse import urlparse
 from django.db import connection
+from django.db.models import Sum
 
 import requests
 import logging
@@ -131,7 +132,7 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
             offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
+    storage_usage_cache.set(key, storage_usage_total, cache_settings.ONE_DAY_TIMEOUT)
 
 
 def update_storage_usage(target):
@@ -139,3 +140,19 @@ def update_storage_usage(target):
 
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
         enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
+
+def update_storage_usage_with_size(target_node, target_file_id, action, size=0,):
+    BaseFileNode = apps.get_model('osf.basefilenode')
+
+    current_usage = target_node.storage_usage or 0
+    target_file = BaseFileNode.load(target_file_id)
+
+    if action in ['create', 'update']:
+        current_usage += size
+    elif action == 'delete':
+        current_usage -= target_file.versions.aggregate(Sum('size'))['size__sum']
+    else:
+        return
+
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_node._id)
+    storage_usage_cache.set(key, current_usage, cache_settings.ONE_DAY_TIMEOUT)

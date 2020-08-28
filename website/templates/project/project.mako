@@ -37,7 +37,7 @@
                 <div class="btn-toolbar node-control pull-right">
                     % if node.get('storage_usage'):
                     <div class="btn-group">
-                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project.">${node['storage_usage']}</button>
+                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project, including all versions of files.">${node['storage_usage']}</button>
                     </div>
                     % endif
                     <div class="btn-group">
