@@ -36,12 +36,9 @@ def allow_egap_admins(queryset, request):
     Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
     live.
     """
-    queryset = queryset.exclude(name='EGAP Registration')
-    if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
-        return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
-    else:
-        return queryset
-
+    if hasattr(request, 'user') and not waffle.flag_is_active(request, EGAP_ADMINS):
+        return queryset.exclude(name='EGAP Registration')
+    return queryset
 
 class AbstractSchemaManager(models.Manager):
 
