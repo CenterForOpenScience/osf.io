@@ -142,11 +142,17 @@ class TestRegistrationProviderSchemas:
             self,
             app,
             user,
-            egap_flag,
+            egap_admin,
             egap_schema,
             url_with_egap_only
     ):
         res = app.get(url_with_egap_only, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        assert len(data) == 0
+
+        res = app.get(url_with_egap_only, auth=egap_admin.auth)
         assert res.status_code == 200
         data = res.json['data']
 
