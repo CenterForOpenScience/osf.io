@@ -15,15 +15,13 @@ from osf.management.commands.move_egap_regs_to_provider import (
     main as move_egap_regs
 )
 
-from django.conf import settings
-
 
 @pytest.mark.django_db
 class TestEGAPMoveToProvider:
 
     @pytest.fixture()
     def egap_provider(self):
-        return RegistrationProviderFactory(name=settings.EGAP_PROVIDER_NAME)
+        return RegistrationProviderFactory(_id='egap')
 
     @pytest.fixture()
     def non_egap_provider(self):
