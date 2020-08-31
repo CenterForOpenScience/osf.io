@@ -137,11 +137,13 @@ class TestRegistrationMachine:
         draft_registration.run_accept(draft_registration.creator, 'yo', embargo_end_date=end_date)
 
         assert draft_registration.machine_state == RegistrationStates.EMBARGO.value
+        draft_registration.refresh_from_db()
+        assert draft_registration.machine_state == RegistrationStates.EMBARGO.value
 
         draft_registration.run_request_embargo_termination(draft_registration.creator, 'Yo')
 
         assert draft_registration.machine_state == RegistrationStates.PENDING_EMBARGO_TERMINATION.value
 
-        draft_registration.run_terminate_embargo()
+        draft_registration.run_terminate_embargo(draft_registration.creator, 'Yo')
         assert draft_registration.machine_state == RegistrationStates.ACCEPTED.value
         assert draft_registration.registered_node.embargo.state == Sanction.COMPLETED

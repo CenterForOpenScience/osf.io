@@ -1183,9 +1183,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         """Run the 'embargo_termination' state transition and create a corresponding Action. """
         return self._run_transition(self.TriggersClass.REQUEST_EMBARGO_TERMINATION.value, user=user, comment=comment)
 
-    def run_terminate_embargo(self):
+    def run_terminate_embargo(self, user, comment):
         """Run the 'embargo_termination' state transition and create a corresponding Action. """
-        return self._run_transition(self.TriggersClass.TERMINATE_EMBARGO.value)
+        return self._run_transition(self.TriggersClass.TERMINATE_EMBARGO.value, user=user, comment=comment)
 
 
 class DraftRegistrationUserObjectPermission(UserObjectPermissionBase):

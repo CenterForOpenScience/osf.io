@@ -4,7 +4,7 @@ from transitions import Machine
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.exceptions import ValidationError, NodeStateError
+from osf.exceptions import ValidationError
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
@@ -361,9 +361,6 @@ class RegistrationMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
-    def is_public(self, ev):
-        return self.machineable.is_public
-
     def request_withdrawal(self, ev):
         registration = self.machineable.registered_node
         retraction = Retraction.objects.create(
@@ -385,15 +382,7 @@ class RegistrationMachine(BaseMachine):
 
         registration.retraction.ask(admins)
 
-    def request_embargo_termination(self, ev):
-        """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
-        embargo early."""
-
-        if not self.machineable.registered_node.is_embargoed:
-            raise NodeStateError('This node is not under active embargo')
-        if not self.machineable.registered_node.root == self.machineable.registered_node:
-            raise NodeStateError('Only the root of an embargoed registration can request termination')
-
+    def request_terminate_embargo(self, ev):
         approval = EmbargoTerminationApproval(
             initiated_by=self.action.creator,
             embargoed_registration=self.machineable.registered_node,
