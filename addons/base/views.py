@@ -517,9 +517,10 @@ def create_waterbutler_log(payload, **kwargs):
         else:
             node.create_waterbutler_log(auth, action, payload)
 
-    target_node = AbstractNode.load(payload['metadata']['nid'])
+    metadata = payload.get('metadata') or payload.get('destination')
+    target_node = AbstractNode.load(metadata['nid'])
     if target_node and payload['action'] != 'download_file':
-        update_storage_usage_with_size(target_node, payload['metadata']['path'], payload['action'], payload['metadata'].get('size', 0))
+        update_storage_usage_with_size(payload)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)

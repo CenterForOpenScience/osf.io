@@ -141,8 +141,15 @@ def update_storage_usage(target):
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
         enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
 
-def update_storage_usage_with_size(target_node, target_file_id, action, size=0,):
+def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')
+    AbstractNode = apps.get_model('osf.abstractnode')
+
+    metadata = payload.get('metadata') or payload.get('destination')
+    target_node = AbstractNode.load(metadata['nid'])
+    action = payload['action']
+    target_file_id = metadata['path'].replace('/', '')
+    size = metadata.get('size', 0)
 
     current_usage = target_node.storage_usage or 0
     target_file = BaseFileNode.load(target_file_id)
@@ -150,7 +157,26 @@ def update_storage_usage_with_size(target_node, target_file_id, action, size=0,)
     if action in ['create', 'update']:
         current_usage += size
     elif action == 'delete':
-        current_usage -= target_file.versions.aggregate(Sum('size'))['size__sum']
+        size = target_file.versions.aggregate(Sum('size'))['size__sum']
+        if current_usage < size:
+            current_usage = 0
+        else:
+            current_usage -= target_file.versions.aggregate(Sum('size'))['size__sum']
+    elif action == 'move':
+        source_node = AbstractNode.load(payload['source']['nid'])  # Getting the 'from' node
+
+        if source_node == target_node:
+            # This is a rename. WB treats rename ops as moves.
+            # Just check to see if dest and source are the same, and its a rename!
+            # We don't wanna do anything here, so we just return.
+            return
+        source_node_usage = source_node.storage_usage
+        source_node_usage -= size
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
+        storage_usage_cache.set(key, source_node_usage, cache_settings.ONE_DAY_TIMEOUT)
+
+        current_usage += size
     else:
         return
 
