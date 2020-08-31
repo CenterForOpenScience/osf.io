@@ -365,22 +365,25 @@ class RegistrationMachine(BaseMachine):
         return self.machineable.is_public
 
     def request_withdrawal(self, ev):
-        self.machineable.registered_node.retraction = Retraction.objects.create(
+        registration = self.machineable.registered_node
+        retraction = Retraction.objects.create(
             initiated_by=self.action.creator,
             justification=self.action.comment,
             state=Retraction.UNAPPROVED
         )
-        self.machineable.registered_node.save()
+        retraction.save()
+        registration.retraction = retraction
+        registration.save()
 
-        admins = self.machineable.registered_node.get_admin_contributors_recursive(unique_users=True)
+        admins = registration.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            self.machineable.registered_node.retraction.add_authorizer(admin, node)
+            registration.retraction.add_authorizer(admin, node)
 
-        self.machineable.registered_node.retraction.save()  # Save retraction approval state
+        registration.retraction.save()  # Save retraction approval state
 
-        admins = self.machineable.registered_node.get_active_contributors_recursive(unique_users=True)
+        admins = registration.get_active_contributors_recursive(unique_users=True)
 
-        self.machineable.registered_node.retraction.ask(admins)
+        registration.retraction.ask(admins)
 
     def request_embargo_termination(self, ev):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's

@@ -108,8 +108,6 @@ class Registration(AbstractNode):
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
 
-    machine_state = models.CharField(max_length=30, db_index=True, choices=RegistrationStates.choices(), default=RegistrationStates.INITIAL.value)
-
     @staticmethod
     def find_failed_registrations():
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
@@ -657,6 +655,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'admin': (READ_DRAFT_REGISTRATION, WRITE_DRAFT_REGISTRATION, ADMIN_DRAFT_REGISTRATION,)
     }
     group_format = 'draft_registration_{self.id}_{group}'
+
+    machine_state = models.CharField(
+        max_length=30,
+        db_index=True,
+        choices=RegistrationStates.choices(),
+        default=RegistrationStates.INITIAL.value
+    )
 
     class Meta:
         permissions = (

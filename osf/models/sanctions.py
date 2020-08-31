@@ -282,11 +282,11 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _view_url_context(self, user_id, node):
         return None
 
-    def _approval_url(self, user_id, node=None):
+    def _approval_url(self, user_id):
         return self._format_or_empty(self.APPROVE_URL_TEMPLATE,
-                                     self._approval_url_context(user_id, node))
+                                     self._approval_url_context(user_id))
 
-    def _approval_url_context(self, user_id, node=None):
+    def _approval_url_context(self, user_id):
         return None
 
     def _rejection_url(self, user_id):
@@ -338,7 +338,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
                                                             **kwargs)
         self.stashed_urls[user._id] = {
             'view': self._view_url(user._id, node),
-            'approve': self._approval_url(user._id, node),
+            'approve': self._approval_url(user._id),
             'reject': self._rejection_url(user._id)
         }
         self.save()
@@ -427,7 +427,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         registration = node or self._get_registration()
         return {'node_id': registration._id}
 
-    def _approval_url_context(self, user_id, node=None):
+    def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:
@@ -578,11 +578,11 @@ class Retraction(EmailApprovableSanction):
             'node_id': registration._id
         }
 
-    def _approval_url_context(self, user_id, node=None):
+    def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:
-            root_registration = self.registrations.first() or node
+            root_registration = self.registrations.first()
             node_id = user_approval_state.get('node_id', root_registration._id)
             return {
                 'node_id': node_id,
@@ -718,7 +718,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             'node_id': node_id
         }
 
-    def _approval_url_context(self, user_id, node=None):
+    def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:
@@ -923,7 +923,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             'node_id': registration._id
         }
 
-    def _approval_url_context(self, user_id, node=None):
+    def _approval_url_context(self, user_id):
         user_approval_state = self.approval_state.get(user_id, {})
         approval_token = user_approval_state.get('approval_token')
         if approval_token:

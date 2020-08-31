@@ -55,5 +55,5 @@ class PreprintRequestAction(BaseAction):
 
 
 class RegistrationRequestAction(BaseAction):
-    creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE, null=True)
+    creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
     target = models.ForeignKey('DraftRegistration', related_name='registration_actions', on_delete=models.CASCADE)
