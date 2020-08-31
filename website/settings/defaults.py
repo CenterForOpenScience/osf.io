@@ -11,6 +11,7 @@ import hashlib
 import logging
 from datetime import timedelta
 from collections import OrderedDict
+import enum
 
 os_env = os.environ
 
@@ -1958,3 +1959,32 @@ DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
+
+
+@enum.unique
+class StorageLimits(enum.IntEnum):
+    OVER_CUSTOM = -1
+    DEFAULT = 0
+    APPROACHING_PRIVATE = 4.5 * 10 ** 9
+    OVER_PRIVATE = 5 * 10 ** 9
+
+    APPROACHING_PUBLIC = 45 * 10 ** 9
+    OVER_PUBLIC = 50 * 10 ** 9
+
+    @classmethod
+    def choices(cls):
+        return [(key.value, key.name) for key in cls if key.value >= 0]
+
+    @classmethod
+    def public_choices(cls):
+        return [cls.DEFAULT, cls.APPROACHING_PUBLIC, cls.OVER_PUBLIC]
+
+    @classmethod
+    def private_choices(cls):
+        return [cls.DEFAULT, cls.APPROACHING_PRIVATE, cls.OVER_PRIVATE]
+
+    @classmethod
+    def status(cls, storage_usage: int, public: bool):
+        choices = cls.public_choices() if public else cls.private_choices()
+        return max(limit for limit in choices if limit.value <= storage_usage)
+

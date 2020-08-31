@@ -367,6 +367,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                         validators=[validate_doi],
                                         null=True, blank=True)
 
+    custom_storage_usage_limit_public = models.PositiveIntegerField(null=True, blank=True)
+    custom_storage_usage_limit_private = models.PositiveIntegerField(null=True, blank=True)
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
@@ -390,6 +393,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def storage_limit_status(self):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
+
+        if self.storage_usage is None:
+            raise NotImplementedError('Storage usage not calculated')
+
+        custom_limit = self.custom_storage_usage_limit_public if self.is_public else self.custom_storage_usage_limit_private
+        if custom_limit:
+            if custom_limit <= self.storage_usage:
+                return settings.StorageLimits.OVER_CUSTOM
+            return settings.StorageLimits.DEFAULT
+
+        return settings.StorageLimits.status(self.storage_usage, self.is_public)
 
     @property
     def nodes(self):
