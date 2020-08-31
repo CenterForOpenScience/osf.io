@@ -2426,10 +2426,6 @@ class Node(AbstractNode):
     """
 
     @property
-    def MachineClass(self):
-        raise NotImplementedError()
-
-    @property
     def api_v2_url(self):
         return reverse('nodes:node-detail', kwargs={'node_id': self._id, 'version': 'v2'})
 
