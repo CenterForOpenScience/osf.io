@@ -99,6 +99,8 @@ var OAuthAddonSettingsViewModel = oop.defclass({
                         self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of dropbox.com before attempting to connect to a second Dropbox account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
                     } else if (self.name === 'bitbucket') {
                         self.setMessage('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.', 'text-success');
+                    } else if (self.name === 'nextcloudinstitutions') {
+                        self.setMessage('Add-on successfully authorized.', 'text-success');
                     } else {
                         self.setMessage('Add-on successfully authorized. To link this add-on to an OSF project, go to the settings page of the project, enable ' + self.properName + ', and choose content to connect.', 'text-success');
                     }

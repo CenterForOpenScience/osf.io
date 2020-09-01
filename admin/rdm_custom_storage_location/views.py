@@ -8,16 +8,20 @@ import hashlib
 import httplib
 from mimetypes import MimeTypes
 import os
+import csv
+import StringIO
+import logging
 
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
-from osf.models import Institution
+from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
 
-SITE_KEY = 'rdm_custom_storage_location'
+logger = logging.getLogger(__name__)
 
+SITE_KEY = 'rdm_custom_storage_location'
 
 class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
     """ Base class for all the Institutional Storage Views """
@@ -49,6 +53,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         kwargs['region'] = region
         kwargs['providers'] = utils.get_providers()
         kwargs['selected_provider_short_name'] = provider_name
+        kwargs['have_storage_name'] = utils.have_storage_name(provider_name)
         return kwargs
 
 
@@ -115,6 +120,14 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('nextcloud_folder'),
                 provider_short_name,
             )
+        elif provider_short_name == 'nextcloudinstitutions':
+            result = utils.test_owncloud_connection(
+                data.get('nextcloudinstitutions_host'),
+                data.get('nextcloudinstitutions_username'),
+                data.get('nextcloudinstitutions_password'),
+                data.get('nextcloudinstitutions_folder'),
+                provider_short_name,
+            )
         elif provider_short_name == 'swift':
             result = utils.test_swift_connection(
                 data.get('swift_auth_version'),
@@ -126,6 +139,10 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('swift_project_domain_name'),
                 data.get('swift_container'),
             )
+        elif provider_short_name == 'dropboxbusiness':
+            institution = request.user.affiliated_institutions.first()
+            result = utils.test_dropboxbusiness_connection(institution)
+
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
 
@@ -137,7 +154,8 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
     Called when clicking the 'Save' Button.
     """
     def post(self, request):
-        institution_id = request.user.affiliated_institutions.first()._id
+        institution = request.user.affiliated_institutions.first()
+        institution_id = institution._id
         data = json.loads(request.body)
 
         provider_short_name = data.get('provider_short_name')
@@ -148,7 +166,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             return JsonResponse(response, status=httplib.BAD_REQUEST)
 
         storage_name = data.get('storage_name')
-        if not storage_name and provider_short_name != 'osfstorage':
+        if not storage_name and utils.have_storage_name(provider_short_name):
             return JsonResponse({
                 'message': 'Storage name is missing.'
             }, status=httplib.BAD_REQUEST)
@@ -215,15 +233,62 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('nextcloud_folder'),
                 'nextcloud',
             )
+        elif provider_short_name == 'nextcloudinstitutions':
+            result = utils.save_nextcloudinstitutions_credentials(
+                institution,
+                storage_name,
+                data.get('nextcloudinstitutions_host'),
+                data.get('nextcloudinstitutions_username'),
+                data.get('nextcloudinstitutions_password'),
+                data.get('nextcloudinstitutions_folder'),  # base folder
+                provider_short_name,
+            )
         elif provider_short_name == 'box':
             result = utils.save_box_credentials(
                 request.user,
                 storage_name,
                 data.get('box_folder'),
             )
+        elif provider_short_name == 'dropboxbusiness':
+            result = utils.save_dropboxbusiness_credentials(
+                institution,
+                storage_name,
+                provider_short_name)
         else:
             result = ({'message': 'Invalid provider.'}, httplib.BAD_REQUEST)
+        status = result[1]
+        if status == httplib.OK:
+            utils.change_allowed_for_institutions(
+                institution, provider_short_name)
+        return JsonResponse(result[0], status=status)
+
+
+class FetchCredentialsView(InstitutionalStorageBaseView, View):
+    def _common(self, request, data):
+        institution = request.user.affiliated_institutions.first()
+        provider_short_name = data.get('provider_short_name')
+        if not provider_short_name:
+            response = {
+                'message': 'Provider is missing.'
+            }
+            return JsonResponse(response, status=httplib.BAD_REQUEST)
+
+        result = None
+        if provider_short_name == 'nextcloudinstitutions':
+            data = utils.get_nextcloudinstitutions_credentials(institution)
+            if data:
+                result = (data, httplib.OK)
+            else:
+                result = ({'message': 'no credentials'}, httplib.BAD_REQUEST)
+
         return JsonResponse(result[0], status=result[1])
+
+    def post(self, request):
+        data = json.loads(request.body)
+        return self._common(request, data)
+
+    def get(self, request):
+        return self._common(request, request.GET)
 
 
 class FetchTemporaryTokenView(InstitutionalStorageBaseView, View):
@@ -269,3 +334,171 @@ def external_acc_update(request, access_token):
         dry_run=False
     )
     return HttpResponse('Done')
+
+
+def to_bool(val):
+    return val.lower() in ['true']
+
+class UserMapView(InstitutionalStorageBaseView, View):
+    def post(self, request, *args, **kwargs):
+        provider_name = request.POST.get('provider', None)
+        institution = request.user.affiliated_institutions.first()
+
+        OK = 'OK'
+        NG = 'NG'
+        clear = to_bool(request.POST.get('clear', 'false'))
+        if clear:
+            utils.clear_usermap_tmp(provider_name, institution)
+            return JsonResponse({
+                OK: 0,
+                NG: 0,
+                'provider_name': provider_name,
+                'report': [],
+                'user_to_extuser': {},
+            }, status=httplib.OK)
+
+        check_extuser = to_bool(request.POST.get('check_extuser', 'false'))
+        usermap = request.FILES['usermap']
+        csv_reader = csv.reader(usermap, delimiter=',', quotechar='"')
+
+        result = {OK: 0, NG: 0}
+        user_to_extuser = dict()  # This is UserMap.  (guid -> extuser)
+        extuser_set = set()
+        report = []
+        INVALID_FORMAT = 'INVALID_FORMAT'
+        EMPTY_USER = 'EMPTY_USER'
+        EMPTY_EXTUSER = 'EMPTY_EXTUSER'
+        UNKNOWN_USER = 'UNKNOWN_USER'
+        UNKNOWN_EXTUSER = 'UNKNOWN_EXTUSER'
+        DUPLICATED_USER = 'DUPLICATED_USER'
+        DUPLICATED_EXTUSER = 'DUPLICATED_EXTUSER'
+
+        MAX_NG = 20
+
+        def add_report(status, reason, line, detail=None):
+            result[status] += 1
+            if status == NG and result[NG] >= MAX_NG:
+                return
+            try:
+                joined = ','.join(line).decode('utf-8')
+            except Exception:
+                joined = ''
+            if status == OK:
+                # OK is not reported.
+                # report.append(u'{}: {}'.format(status, joined))
+                pass
+            elif detail:
+                report.append(u'{}, {} ({}): {}'.format(status, reason, detail, joined))
+            else:
+                report.append(u'{}, {}: {}'.format(status, reason, joined))
+
+        try:
+            for line in csv_reader:
+                if len(line) == 0:
+                    continue
+                user = line[0].strip()
+                if user.startswith('#'):
+                    continue
+                if len(line) != 3:
+                    add_report(NG, INVALID_FORMAT, line)
+                    continue
+                extuser = line[1].strip()
+                # optional_info = line[2].strip()
+
+                if not user:
+                    add_report(NG, EMPTY_USER, line)
+                    continue
+                if not extuser:
+                    add_report(NG, EMPTY_EXTUSER, line)
+                    continue
+
+                # ePPN or GUID ?
+                if '@' in user:  # ePPN
+                    try:
+                        u = OSFUser.objects.get(eppn=user)
+                    except Exception:
+                        u = None
+                elif user:  # GUID
+                    u = OSFUser.load(user.lower())
+                if not u:
+                    add_report(NG, UNKNOWN_USER, line)
+                    continue
+                if check_extuser:
+                    detail = utils.extuser_exists(provider_name, request.POST,
+                                                  extuser)
+                    if detail:
+                        add_report(NG, UNKNOWN_EXTUSER, line, detail)
+                        continue
+
+                if u._id in user_to_extuser:
+                    add_report(NG, DUPLICATED_USER, line)
+                    continue
+                if extuser in extuser_set:
+                    add_report(NG, DUPLICATED_EXTUSER, line)
+                    continue
+                user_to_extuser[u._id] = extuser   # guid.lower() -> extuser
+                extuser_set.add(extuser)
+                add_report(OK, None, line)
+        except Exception as e:
+            add_report(NG, INVALID_FORMAT, [str(e)])
+
+        if result[NG] > 0:
+            status = httplib.BAD_REQUEST
+            utils.clear_usermap_tmp(provider_name, institution)
+        else:
+            status = httplib.OK
+            utils.save_usermap_to_tmp(provider_name, institution,
+                                      user_to_extuser)
+
+        return JsonResponse({
+            OK: result[OK],
+            NG: result[NG],
+            'provider_name': provider_name,
+            'report': report,
+            'user_to_extuser': user_to_extuser,
+        }, status=status)
+
+    def get(self, request, *args, **kwargs):
+        # download CSV (or Templates when User mapping file is not set)
+        provider_name = request.GET['provider']
+        institution = request.user.affiliated_institutions.first()
+        ext = 'csv'
+        name = 'usermap-' + provider_name
+
+        s = StringIO.StringIO()
+        csv_writer = csv.writer(s, delimiter=',')
+
+        def fullname(osfuser):
+            fullname = osfuser.fullname
+            if fullname:
+                return fullname.encode('utf-8')
+            return None
+
+        header = ['#' + 'User_GUID(or ePPN)', 'External_UserID', 'Fullname(ignored)']
+
+        # GUID -> extuser
+        usermap = utils.get_usermap(provider_name, institution)
+
+        csv_writer.writerow(header)
+        if usermap:
+            for guid, extuser in usermap.items():
+                guid = guid.lower()
+                u = OSFUser.load(guid)
+                if u:
+                    csv_writer.writerow([guid.upper(), extuser, fullname(u)])
+
+        nomap_count = 0
+        # find osfusers in usermap who has no mapping.
+        for u in institution.osfuser_set.filter(is_active=True):
+            guid = u._id
+            if usermap is None or guid not in usermap:
+                nomap_count += 1
+                if nomap_count == 1:
+                    if usermap:
+                        csv_writer.writerow([])
+                    csv_writer.writerow(['#' + 'Please input External users into the second column.'])
+                csv_writer.writerow([guid.upper(), None, fullname(u)])
+
+        resp = HttpResponse(s.getvalue(), content_type='text/%s' % ext)
+        resp['Content-Disposition'] = 'attachment; filename=%s.%s' % (name, ext)
+        return resp

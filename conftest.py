@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
     'addons.dropboxbusiness.models',
+    'addons.base.institutions_utils',
     'osf.models.user',
     'api.base.rdmlogger',
     'api.caching.tasks',
@@ -27,6 +28,7 @@ SILENT_LOGGERS = [
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
+    'website.util.quota',
     'requests_oauthlib.oauth2_session',
     'raven.base.Client',
     'raven.contrib.django.client.DjangoClient',

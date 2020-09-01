@@ -1,8 +1,11 @@
 import os
 
 from addons.base.apps import BaseAddonAppConfig
-from addons.dropboxbusiness.settings import MAX_UPLOAD_SIZE
 from website.util import rubeus
+
+FULL_NAME = 'Nextcloud for Institutions'
+SHORT_NAME = 'nextcloudinstitutions'
+LONG_NAME = 'addons.{}'.format(SHORT_NAME)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -10,11 +13,12 @@ TEMPLATE_PATH = os.path.join(
     'templates'
 )
 
-def dropboxbusiness_root(addon_config, node_settings, auth, **kwargs):
+
+def nextcloudinstitutions_root(addon_config, node_settings, auth, **kwargs):
     from addons.osfstorage.models import Region
 
     node = node_settings.owner
-    institution = node_settings.fileaccess_option.institution
+    institution = node_settings.addon_option.institution
     if Region.objects.filter(_id=institution._id).exists():
         region = Region.objects.get(_id=institution._id)
         if region:
@@ -30,32 +34,33 @@ def dropboxbusiness_root(addon_config, node_settings, auth, **kwargs):
     return [root]
 
 
-class DropboxBusinessAddonAppConfig(BaseAddonAppConfig):
-
-    name = 'addons.dropboxbusiness'
-    label = 'addons_dropboxbusiness'
-    full_name = 'Dropbox Business'
-    short_name = 'dropboxbusiness'
-    configs = ['accounts', 'node']
-    has_hgrid_files = True
-    max_file_size = MAX_UPLOAD_SIZE
+class NextcloudInstitutionsAddonAppConfig(BaseAddonAppConfig):
+    name = 'addons.{}'.format(SHORT_NAME)
+    label = 'addons_{}'.format(SHORT_NAME)
+    full_name = FULL_NAME
+    short_name = SHORT_NAME
     owners = ['user', 'node']
+    configs = ['accounts', 'node']
     categories = ['storage']
+    has_hgrid_files = True
 
-    user_settings_template = os.path.join(TEMPLATE_PATH, 'dropboxbusiness_user_settings.mako')
+    user_settings_template = os.path.join(
+        TEMPLATE_PATH, 'nextcloudinstitutions_user_settings.mako')
     # node_settings_template is not used.
 
-    get_hgrid_data = dropboxbusiness_root
+    get_hgrid_data = nextcloudinstitutions_root
+
+    actions = ()
 
     # default value for RdmAddonOption.is_allowed for GRDM Admin
     is_allowed_default = False
     for_institutions = True
 
     @property
-    def node_settings(self):
-        return self.get_model('NodeSettings')
+    def routes(self):
+        from .routes import api_routes
+        return [api_routes]
 
     @property
-    def routes(self):
-        from . import routes
-        return [routes.auth_routes, routes.api_routes]
+    def node_settings(self):
+        return self.get_model('NodeSettings')

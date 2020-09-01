@@ -124,6 +124,7 @@ COPY ./addons/azureblobstorage/requirements.txt ./addons/azureblobstorage/
 COPY ./addons/weko/requirements.txt ./addons/weko/
 COPY ./addons/s3compat/requirements.txt ./addons/s3compat/
 COPY ./addons/nextcloud/requirements.txt ./addons/nextcloud/
+COPY ./addons/nextcloudinstitutions/requirements.txt ./addons/nextcloudinstitutions/
 
 RUN for reqs_file in \
         /code/requirements.txt \
@@ -189,6 +190,7 @@ COPY ./addons/weko/static/ ./addons/weko/static/
 COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
 COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
+COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
 RUN mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \

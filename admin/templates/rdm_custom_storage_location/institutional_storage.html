@@ -25,7 +25,7 @@
             <div class="row form-inline storage-name">
                 <div class="form-group">
                     <label for="storage_name" class="label-large">{% trans "Name:" %}</label>
-                    <input type="text" required class="form-control" id="storage_name" name="storage_name" value="{{ region.name }}" oninvalid="this.setCustomValidity('This field is required.') " oninput="setCustomValidity('')" {% if selected_provider_short_name == 'osfstorage' %}disabled{% endif %}>
+                    <input type="text" required class="form-control" id="storage_name" name="storage_name" value="{% if have_storage_name %}{{ region.name }}{% endif %}" oninvalid="this.setCustomValidity('This field is required.') " oninput="setCustomValidity('')" {% if not have_storage_name %}disabled{% endif %}>
                 </div>
             </div>
             <div class="row">

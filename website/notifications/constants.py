@@ -43,6 +43,7 @@ PROVIDERS = {
     'azureblobstorage': 'Azure Blob Storage',
     'weko': 'WEKO',
     'dropboxbusiness': 'Dropbox Business',
+    'nextcloudinstitutions': 'Nextcloud for Institutions',
 }
 # install-addons.py
 PROVIDERS['s3compat'] = 'S3 Compatible Storage'

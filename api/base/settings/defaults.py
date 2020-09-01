@@ -119,6 +119,7 @@ INSTALLED_APPS = (
     'addons.jupyterhub',
     'addons.iqbrims',
     'addons.dropboxbusiness',
+    'addons.nextcloudinstitutions',
 )
 
 # local development using https

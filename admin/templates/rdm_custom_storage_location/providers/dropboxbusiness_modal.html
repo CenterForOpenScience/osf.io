@@ -1,0 +1,89 @@
+{% load i18n %}
+<div class="modal fade" id="dropboxbusiness_modal" tabindex="-1" role="dialog" aria-labelledby="dropboxbusiness_modal_label">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span></button>
+                <h3 id="dropboxbusiness_modal_label">{% trans "Connect a Dropbox Business Account" %}</h3>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h4>
+                            <b class="dropboxbusiness-modal-message">{% trans 'Please click "Get OAuth Permission" button to connect Dropbox.' %}</b>
+                            <br />
+                            <b class="dropboxbusiness-modal-message">{% trans "Then you will be redirected to Dropbox authentication page." %}</b>
+                        </h4>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="col-sm-12">
+                            <h4>
+                                <span>{{ provider_item.full_name }} / {% trans 'Team member file access' %}</span>
+                            </h4>
+                        </div>
+                        <div class="col-sm-3 form-group text-center">
+                            <a href="{% url 'oauth:connect' 'dropboxbusiness' institution.id 'true' %}"
+                                class="btn btn-primary auth-permission-button" role="button"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_auth_hyperlink" target="_blank">{% trans "Get OAuth permission" %}</a>
+                        </div>
+                        <div class="col-sm-3 hidden form-group text-center dropboxbusiness-disconnect-callback">
+                            <a href="javascript:void(0)"
+                                class="btn btn-primary auth-disconnect-button" role="button"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_disconnect_hyperlink" target="_blank">{% trans "Disconnect Account" %}</a>
+                        </div>
+                        <div class="col-sm-6 hidden dropboxbusiness-auth-callback"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_authorization_div">
+                            <label>
+                                {% trans "Authorized by:" %}
+                            </label>
+                            <span id="dropboxbusiness_authorized_by"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="col-sm-12">
+                            <h4>
+                                <span>{{ provider_item.full_name }} / {% trans 'Team member management' %}</span>
+                            </h4>
+                        </div>
+                        <div class="col-sm-3 form-group text-center">
+                            <a href="{% url 'oauth:connect' 'dropboxbusiness_manage' institution.id 'true' %}"
+                                class="btn btn-primary auth-permission-button" role="button"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_manage_auth_hyperlink" target="_blank">{% trans "Get OAuth permission" %}</a>
+                        </div>
+                        <div class="col-sm-3 hidden form-group text-center dropboxbusiness_manage-disconnect-callback">
+                            <a href="javascript:void(0)"
+                                class="btn btn-primary auth-disconnect-button" role="button"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_manage_disconnect_hyperlink" target="_blank">{% trans "Disconnect Account" %}</a>
+                        </div>
+                        <div class="col-sm-6 hidden dropboxbusiness_manage-auth-callback"
+                                data-institution-id="{{ institution.id }}"
+                                id="dropboxbusiness_manage_authorization_div">
+                            <label>
+                                {% trans "Authorized by:" %}
+                            </label>
+                            <span id="dropboxbusiness_manage_authorized_by"></span>
+                        </div>
+                        <div class="col-sm-12 help-block">
+                            <p id="dropboxbusiness_message" class="text-danger"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success test-connection" id="dropboxbusiness_connect">{% trans "Connect" %}</button>
+                <button type="button" class="btn btn-default save-credentials" id="dropboxbusiness_save" disabled>{% trans "Save" %}</button>
+            </div>
+        </div>
+    </div>
+</div>

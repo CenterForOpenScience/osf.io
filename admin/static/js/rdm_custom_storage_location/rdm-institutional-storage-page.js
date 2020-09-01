@@ -3,11 +3,59 @@
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var Cookie = require('js-cookie');
+var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
 
+var no_storage_name_providers = ['osfstorage'];
+// type1: get from admin/rdm_addons/api_v1/views.py
+var preload_accounts_type1 = ['dropboxbusiness'];
+// type2: get from admin/rdm_custom_storage_location/views.py
+var preload_accounts_type2 = ['nextcloudinstitutions']
+
+function preload(provider, callback) {
+    if (preload_accounts_type1.indexOf(provider) >= 0) {
+        var div = $('#' + provider + '_authorization_div');
+        var institutionId = div.data('institution-id');
+        getAccount(provider, institutionId);
+        if (provider === 'dropboxbusiness') {
+            getAccount('dropboxbusiness_manage', institutionId);
+        }
+        if (callback) {
+            callback();
+        }
+    } else if (preload_accounts_type2.indexOf(provider) >= 0) {
+        // getCredentials(provider, callback);
+ 	getCredentials(provider, null);
+        if (callback) {
+            callback();
+        }
+    } else {
+        if (callback) {
+            callback();
+        }
+    }
+}
+
+function disable_storage_name(provider) {
+    $('#storage_name').attr('disabled',
+			    no_storage_name_providers.indexOf(provider) >= 0);
+}
+
+function selectedProvider() {
+     return $('input[name=\'options\']:checked').val();
+}
+
+$(window).on('load', function () {
+    var provider = selectedProvider();
+    disable_storage_name(provider);
+    preload(provider, null);
+});
+
 $('[name=options]').change(function () {
-    $('#storage_name').attr('disabled', this.value === 'osfstorage');
+    var provider = this.value;
+    disable_storage_name(provider);
+    preload(provider, null);
 });
 
 $('.modal').on('hidden.bs.modal', function (e) {
@@ -16,14 +64,15 @@ $('.modal').on('hidden.bs.modal', function (e) {
 
 $('#institutional_storage_form').submit(function (e) {
     if ($('#institutional_storage_form')[0].checkValidity()) {
-        var selectedProvider = $('input[name=\'options\']:checked').val();
+        var provider = selectedProvider()
+        preload(provider, null);
         var showModal = function () {
-            $('#' + selectedProvider + '_modal').modal('show');
+            $('#' + provider + '_modal').modal('show');
             $('body').css('overflow', 'hidden');
             $('.modal').css('overflow', 'auto');
-            validateRequiredFields(selectedProvider);
+            validateRequiredFields(provider);
         };
-        if (selectedProvider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
+        if (provider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
             showModal();
         } else {
             $osf.confirmDangerousAction({
@@ -81,6 +130,14 @@ $('#nextcloud_modal input').on('paste', function(e) {
     validateRequiredFields('nextcloud');
 });
 
+$('#nextcloudinstitutions_modal input').keyup(function () {
+    validateRequiredFields('nextcloudinstitutions');
+});
+
+$('#nextcloudinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('nextcloudinstitutions');
+});
+
 $('#googledrive_modal input').keyup(function () {
     authSaveButtonState('googledrive');
 });
@@ -95,6 +152,15 @@ $('#box_modal input').keyup(function () {
 
 $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
+});
+
+$('#csv_file').on('change', function() {
+    var filename = '';
+    var fileLists = $(this).prop('files');
+    if (fileLists.length > 0) {
+        filename = $(this).prop('files')[0].name;
+    }
+    $('#csv_file_name').text(filename);
 });
 
 function validateRequiredFields(providerShortName) {
@@ -121,6 +187,16 @@ $('#swift_auth_version').change(function () {
     validateRequiredFields('swift');
 });
 
+function disableButtons(providerShortName) {
+    $('#' + providerShortName + '_connect').attr('disabled', true);
+    $('#' + providerShortName + '_save').attr('disabled', true);
+}
+
+function have_csv_ng() {
+    var csv_ng = $('#csv_ng');
+    return csv_ng.length && csv_ng.text().length && csv_ng.text() !== 'NG=0';
+}
+
 $('.test-connection').click(function () {
     buttonClicked(this, 'test_connection');
 });
@@ -136,37 +212,49 @@ function buttonClicked(button, route) {
     };
 
     var providerShortName = $(button).attr('id').replace('_' + action[route], '');
+    if (have_csv_ng()) {
+        disableButtons(providerShortName);
+	return;
+    }
+
     var params = {
         'provider_short_name': providerShortName
     };
     getParameters(params);
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
 }
 
-function ajaxRequest(params, providerShortName, route) {
-    var csrftoken = Cookie.get('admin-csrf');
+var csrftoken = Cookie.get('admin-csrf');
 
-    function csrfSafeMethod(method) {
-        // these HTTP methods do not require CSRF protection
-        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-    }
-    $.ajaxSetup({
-        crossDomain: false, // obviates need for sameOrigin test
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type)) {
-                xhr.setRequestHeader('X-CSRFToken', csrftoken);
-            }
+function csrfSafeMethod(method) {
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+
+$.ajaxSetup({
+    crossDomain: false,
+    beforeSend: function (xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader('X-CSRFToken', csrftoken);
         }
-    });
+    }
+});
+
+function ajaxCommon(type, params, providerShortName, route, callback) {
+    if (type === 'POST') {
+      params = JSON.stringify(params);
+    }
     $.ajax({
         url: '../' + route + '/',
-        type: 'POST',
-        data: JSON.stringify(params),
+        type: type,
+        data: params,
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
         timeout: 30000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
+            if (callback) {
+                callback();
+            }
         },
         error: function (jqXHR) {
             if(jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)){
@@ -174,8 +262,20 @@ function ajaxRequest(params, providerShortName, route) {
             }else{
                 afterRequest[route].fail(this.custom, _('Some errors occurred'));
             }
+            if (callback) {
+                callback();
+            }
         }
     });
+}
+
+function ajaxGET(params, providerShortName, route, callback) {
+    ajaxCommon('GET', params, providerShortName, route, callback);
+}
+
+// ajaxPOST
+function ajaxRequest(params, providerShortName, route, callback) {
+    ajaxCommon('POST', params, providerShortName, route, callback);
 }
 
 var afterRequest = {
@@ -221,6 +321,14 @@ var afterRequest = {
             }
         }
     },
+    'credentials': {
+        'success': function (id, data) {
+            setParameters(id, data);
+        },
+        'fail': function (id, message) {
+            setParametersFailed(id, message);
+        }
+    },
     'fetch_temporary_token': {
         'success': function (id, data) {
             var response_data = data.response_data;
@@ -238,6 +346,14 @@ var afterRequest = {
             authPermissionFailed(id, message);
         }
     },
+    'usermap': {
+        'success': function (id, data) {
+            usermapDownload(id, data);
+        },
+        'fail': function (id, message) {
+            usermapDownloadFailed(id, message);
+        }
+    },
 };
 
 function getParameters(params) {
@@ -251,13 +367,53 @@ function getParameters(params) {
     });
 }
 
+function authoriseOnClick(elm) {
+    var providerShortName = elm.id.replace('_auth_hyperlink', '');
+    var institutionId = $(elm).data('institution-id');
+    oauthOpener(elm.href, providerShortName, institutionId);
+}
+
 $('.auth-permission-button').click(function(e) {
     $(this).click(false);
     $(this).addClass('disabled');
-    var providerShortName = this.id.replace('_auth_hyperlink', '');
-    oauthOpener(this.href, providerShortName);
+    authoriseOnClick(this);
     e.preventDefault();
 });
+
+function disconnectOnClick(elm, properName, accountName) {
+    var providerShortName = elm.id.replace('_disconnect_hyperlink', '');
+    var institutionId = $(elm).data('institution-id');
+
+    var deletionKey = Math.random().toString(36).slice(-8);
+    var id = providerShortName + "DeleteKey";
+    bootbox.confirm({
+        title: 'Disconnect Account?',
+        message: '<p class="overflow">' +
+            'Are you sure you want to disconnect the ' + $osf.htmlEscape(properName) + ' account <strong>' +
+            $osf.htmlEscape(accountName) + '</strong>?<br>' +
+            'This will revoke access to ' + $osf.htmlEscape(properName) + ' for all projects using this account.<br><br>' +
+            "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
+            "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>" +
+            '</p>',
+        callback: function(confirm) {
+            if (confirm) {
+                if ($('#'+id).val() == deletionKey) {
+                    disconnectAccount(providerShortName, institutionId);
+                } else {
+                    $osf.growl('Verification failed', 'Strings did not match');
+                }
+            } else {
+                $(elm).removeClass('disabled');
+            }
+        },
+        buttons:{
+            confirm:{
+                label:'Disconnect',
+                className:'btn-danger'
+            }
+        }
+    });
+}
 
 $('.auth-cancel').click(function(e) {
     var providerShortName = this.id.replace('_cancel', '');
@@ -271,10 +427,89 @@ function get_token(providerShortName, route) {
     var params = {
         'provider_short_name': providerShortName
     };
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
 }
 
-function oauthOpener(url,providerShortName){
+function getCredentials(providerShortName, callback) {
+    var params = {
+        'provider_short_name': providerShortName
+    };
+    var route = 'credentials';
+    // ajaxRequest(params, providerShortName, route, callback);
+    ajaxGET(params, providerShortName, route, callback);
+}
+
+function setParameters(provider_short_name, data) {
+    var providerClass = provider_short_name + '-params';
+    $('.' + providerClass).each(function(i, e) {
+        var val = data[$(e).attr('id')];
+	if (val) {
+            $(e).val(val);
+        }
+    });
+}
+
+function setParametersFailed(provider_short_name, message) {
+}
+
+function getAccount(providerShortName, institutionId) {
+    // get an External Account for Institutions
+    var url = '/addons/api/v1/settings/' + providerShortName + '/' + institutionId + '/accounts/';
+    var request = $.get(url);
+    request.done(function (data) {
+        if (data.accounts.length > 0) {
+            authPermissionSucceedWithoutToken(providerShortName, data.accounts[0].display_name);
+            $('#' + providerShortName + '_auth_hyperlink').addClass('disabled');
+            var link = $('#' + providerShortName + '_disconnect_hyperlink');
+            link.click(false);
+            link.off();
+            link.click(function (e) {
+                $(this).click(false);
+                $(this).addClass('disabled');
+                disconnectOnClick(this, data.accounts[0].provider_name, data.accounts[0].display_name);
+                e.preventDefault();
+            });
+            link.removeClass('disabled');
+            $('.' + providerShortName + '-disconnect-callback').removeClass('hidden');
+        } else {
+            var link = $('#' + providerShortName + '_auth_hyperlink');
+            link.off();
+            link.click(function (e) {
+                $(this).click(false);
+                $(this).addClass('disabled');
+                authoriseOnClick(this);
+                e.preventDefault();
+            });
+            link.removeClass('disabled');
+            $('#' + providerShortName + '_authorization_div').addClass('hidden');
+            $('.' + providerShortName + '-disconnect-callback').addClass('hidden');
+        }
+    }).fail(function (data) {
+        if ('message' in data) {
+            authPermissionFailedWithoutToken(providerShortName, data.message);
+        } else {
+            authPermissionFailedWithoutToken(providerShortName, _('Some errors occurred'));
+        }
+    });
+}
+
+function disconnectAccount(providerShortName, institutionId) {
+    var url = '/addons/api/v1/settings/' + providerShortName + '/' + institutionId + '/accounts/';
+    var request = $.get(url);
+    request.then(function (data) {
+        url = '/addons/api/v1/oauth/accounts/' + data.accounts[0].id + '/' + institutionId + '/';
+        var request2 = $.ajax({
+            url: url,
+            type: 'DELETE'
+        });
+    }).then(
+        function () {
+            getAccount(providerShortName, institutionId);
+        }
+    );
+}
+
+function oauthOpener(url,providerShortName,institutionId){
     var win = window.open(
         url,
         'OAuth');
@@ -285,7 +520,12 @@ function oauthOpener(url,providerShortName){
     var timer = setInterval(function() {
         if (win.closed) {
             clearInterval(timer);
-            get_token(providerShortName, route);
+            if (providerShortName === 'dropboxbusiness' ||
+                providerShortName === 'dropboxbusiness_manage') {
+                getAccount(providerShortName, institutionId);
+            } else {
+                get_token(providerShortName, route);
+            }
         }
     }, 1000, [providerShortName, route]);
 }
@@ -299,6 +539,13 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     authSaveButtonState(providerShortName);
 }
 
+function authPermissionSucceedWithoutToken(providerShortName, authorizedBy){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.removeClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text(authorizedBy);
+}
+
 function authPermissionFailed(providerShortName, message){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
@@ -308,6 +555,15 @@ function authPermissionFailed(providerShortName, message){
     $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false);
     $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled');
     authSaveButtonState(providerShortName);
+}
+
+function authPermissionFailedWithoutToken(providerShortName, message){
+    var providerClass = providerShortName + '-auth-callback';
+    var allFeedbackFields = $('.' + providerClass);
+    allFeedbackFields.addClass('hidden');
+    $('#' + providerShortName + '_authorized_by').text('');
+    $('#' + providerShortName + '_auth_hyperlink').attr('disabled', false);
+    $('#' + providerShortName + '_auth_hyperlink').removeClass('disabled');
 }
 
 function authSaveButtonState(providerShortName) {
@@ -321,5 +577,89 @@ function cancel_auth(providerShortName) {
         'provider_short_name': providerShortName
     };
     var route = 'remove_auth_data_temporary';
-    ajaxRequest(params, providerShortName, route);
+    ajaxRequest(params, providerShortName, route, null);
+}
+
+function reflect_csv_results(data, providerShortName) {
+    $('#csv_ok').html('OK=' + data.OK);
+    $('#csv_ng').html('NG=' + data.NG);
+    $('#csv_report').html(data.report.join('<br/>'));
+    $('#csv_usermap').html(JSON.stringify(data.user_to_extuser));
+
+    if (have_csv_ng()) {
+        disableButtons(providerShortName);
+    } else {
+        validateRequiredFields(providerShortName);
+    }
+}
+
+$('#csv_file').change(function () {
+    var provider = selectedProvider();
+    var file = $(this).prop('files')[0];
+
+    var fd = new FormData();
+    fd.append('provider', provider);
+    if (file === undefined) {  // unselected
+        fd.append('clear', true);
+    } else {
+        fd.append($(this).attr('name'), file);
+        var providerClass = provider + '-params';
+        $('.' + providerClass).each(function(i, e) {
+             fd.append($(e).attr('id'), $(e).val());
+        });
+        fd.append('check_extuser', $('#csv_check_extuser').is(':checked'));
+    }
+    $.ajax({
+        url: '../usermap/',
+        type: 'POST',
+        data: fd,
+        processData: false,
+        contentType: false,
+        timeout: 30000
+    }).done(function (data) {
+	reflect_csv_results(data, provider);
+    }).fail(function (jqXHR) {
+        if (jqXHR.responseJSON != null) {
+            reflect_csv_results(jqXHR.responseJSON, provider);
+        } else {
+            $('#csv_ok').html('');
+            $('#csv_ng').html(_('Some errors occurred'));
+            $('#csv_report').html('');
+            $('#csv_usermap').html('');
+        }
+    });
+});
+
+$('.download-csv').click(function () {
+    var provider = selectedProvider()
+    var params = {
+        'provider': provider
+    };
+    $('#csv_download_ng').html('');
+    ajaxGET(params, provider, 'usermap', null)
+});
+
+function saveFile(filename, type, content) {
+    if (window.navigator.msSaveOrOpenBlob) {
+        var blob = new Blob([content], {type: type});
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    }
+    else {
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:' + type + ',' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+}
+
+function usermapDownload(id, data) {
+    var name = 'usermap-' + selectedProvider() +'.csv';
+    saveFile(name, 'text/csv; charset=utf-8', data);
+}
+
+function usermapDownloadFailed(id, message) {
+    $('#csv_download_ng').html(message);
 }

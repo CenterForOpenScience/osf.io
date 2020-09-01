@@ -263,7 +263,7 @@ def create_team_folder(
     return (team_folder.team_folder_id, group.get_group_id())
 
 
-def get_two_addon_options(institution_id):
+def get_two_addon_options(institution_id, allowed_check=True):
     # avoid "ImportError: cannot import name"
     from addons.dropboxbusiness.models import \
         (DropboxBusinessFileaccessProvider,
@@ -277,7 +277,7 @@ def get_two_addon_options(institution_id):
     if fileaccess_addon_option is None or \
        management_addon_option is None:
         return None
-    if not fileaccess_addon_option.is_allowed:
+    if allowed_check and not fileaccess_addon_option.is_allowed:
         return None
     # NOTE: management_addon_option.is_allowed is ignored.
     return (fileaccess_addon_option, management_addon_option)
@@ -571,6 +571,7 @@ class TeamInfo(object):
 
     def __init__(self, fileaccess_token, management_token,
                  max_connections=8,
+                 connecttest=False,
                  team_info=False, members=False,
                  admin=False, admin_dbmid=None,
                  groups=False,
@@ -587,6 +588,10 @@ class TeamInfo(object):
             file_properties = True
         if admin:
             members = True
+
+        if connecttest:
+            members = True
+            self._update_team_folders()
 
         if team_info:
             self._setup_team_info()

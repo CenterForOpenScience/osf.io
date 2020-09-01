@@ -1065,7 +1065,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
         region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
-        return Region.objects.get(id=region_subquery)
+        try:
+            return Region.objects.get(id=region_subquery)
+        except Exception:
+            return Region.objects.first()
 
     @property
     def parent_id(self):
@@ -2043,6 +2046,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     visible=True,
                 )
                 self.add_permission(self.creator, ADMIN)
+                project_signals.contributors_updated.send(self)
         return ret
 
     def clone(self, *args, **kwargs):
@@ -2521,6 +2525,10 @@ def send_osf_signal(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Node)
 def add_default_node_addons(sender, instance, created, **kwargs):
     if (created or instance._is_templated_clone) and instance.is_original and not instance._suppress_log:
+        # update_default_storage cannot be imported in the head of this file.
+        from website.util.quota import update_default_storage
+        update_default_storage(instance.creator)
+
         for addon in settings.ADDONS_AVAILABLE:
             if 'node' in addon.added_default:
                 instance.add_addon(addon.short_name, auth=None, log=False)

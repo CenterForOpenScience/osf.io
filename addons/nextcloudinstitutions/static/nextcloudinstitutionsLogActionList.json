@@ -1,0 +1,10 @@
+{
+    "nextcloudinstitutions_file_added" : "${user} added file ${path} to Nextcloud (for Institutions) in ${node}",
+    "nextcloudinstitutions_file_removed" : "${user} removed ${path_type} ${path} from Nextcloud (for Institutions) in ${node}",
+    "nextcloudinstitutions_file_updated" : "${user} updated file ${path} in Nextcloud (for Institutions) in ${node}",
+    "nextcloudinstitutions_folder_created" : "${user} created folder ${path} in Nextcloud (for Institutions) in ${node}",
+    "nextcloudinstitutions_folder_selected" : "${user} linked Nextcloud (for Institutions) folder ${folder} to ${node}",
+    "nextcloudinstitutions_node_authorized" : "${user} authorized the Nextcloud (for Institutions) addon for ${node}",
+    "nextcloudinstitutions_node_deauthorized" : "${user} deauthorized the Nextcloud (for Institutions) addon for ${node}",
+    "nextcloudinstitutions_node_deauthorized_no_user" : "Nextcloud (for Institutions) addon for ${node} deauthorized"
+}
