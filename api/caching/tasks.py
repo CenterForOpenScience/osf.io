@@ -144,9 +144,17 @@ def update_storage_usage(target):
 def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')
     AbstractNode = apps.get_model('osf.abstractnode')
+    Preprint = apps.get_model('osf.preprint')
 
     metadata = payload.get('metadata') or payload.get('destination')
+
+    if not metadata.get('nid'):
+        return
     target_node = AbstractNode.load(metadata['nid'])
+
+    if isinstance(target_node, Preprint) or target_node.is_quickfiles:
+        return
+
     action = payload['action']
     target_file_id = metadata['path'].replace('/', '')
     size = metadata.get('size', 0)
