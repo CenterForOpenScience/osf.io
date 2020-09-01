@@ -33,17 +33,30 @@ class BaseMachine(Machine):
 
     action = None
     from_state = None
+    States = DefaultStates
+    Transitions = DEFAULT_TRANSITIONS
 
-    def __init__(self, machineable, state_attr, **kwargs):
+    def __init__(self, machineable, state_attr='machine_state'):
+        """
+        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, prerprints etc,
+        but sometimes applies to sanctions, it may be to applied to anything that wants to have states and transitions.
+
+        The general idea behind this is that we are instantiating the machine object as part of the model and it will
+        validate different state changes and transitions ensuring a model will be easy to identify at a certain state.
+
+        Here we are using the pytransitions state machine in conjunction with an "action object" which is used to store
+        pre-transition info, mainly the instigator of the transition or a comment about the transition.
+
+        :param machineable: The thing (should probably a be model) that is hold the state info.
+        :param state_attr: The name of the state attribute, usually `machine_state`
+        """
         self.machineable = machineable
         self.__state_attr = state_attr
-        states = kwargs.get('states', [s.value for s in DefaultStates])
-        transitions = kwargs.get('transitions', DEFAULT_TRANSITIONS)
-        self._validate_transitions(transitions)
+        self._validate_transitions(self.Transitions)
 
         super(BaseMachine, self).__init__(
-            states=states,
-            transitions=transitions,
+            states=[s.value for s in self.States],
+            transitions=self.Transitions,
             initial=self.state,
             send_event=True,
             prepare_event=['initialize_machine'],
@@ -90,11 +103,8 @@ class BaseMachine(Machine):
 
 class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
-
-    def __init__(self, *args, **kwargs):
-        kwargs['transitions'] = kwargs.get('transitions', REVIEWABLE_TRANSITIONS)
-        kwargs['states'] = kwargs.get('states', [s.value for s in ReviewStates])
-        super(ReviewsMachine, self).__init__(*args, **kwargs)
+    States = ReviewStates
+    Transitions = REVIEWABLE_TRANSITIONS
 
     def save_changes(self, ev):
         now = self.action.created if self.action is not None else timezone.now()
@@ -340,11 +350,8 @@ class PreprintRequestMachine(BaseMachine):
 
 class RegistrationMachine(BaseMachine):
     ActionClass = RegistrationRequestAction
-
-    def __init__(self, *args, **kwargs):
-        kwargs['transitions'] = kwargs.get('transitions', REGISTRATION_TRANSITIONS)
-        kwargs['states'] = kwargs.get('states', [s.value for s in RegistrationStates])
-        super().__init__(*args, **kwargs)
+    States = RegistrationStates
+    Transitions = REGISTRATION_TRANSITIONS
 
     def save_action(self, ev):
         user = ev.kwargs.get('user')
