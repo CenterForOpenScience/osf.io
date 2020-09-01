@@ -571,13 +571,19 @@ class ModeratorMixin(ProviderMixin):
     provider_class = PreprintProvider
     model_class = OSFUser
 
+<<<<<<< HEAD
+=======
+    def get_provider(self):
+        return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
+>>>>>>> Adds registration provider moderator list and detail endpoints
     def get_serializer_context(self, *args, **kwargs):
         ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
         ctx.update({'provider': self.get_provider()})
         return ctx
 
 
-class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -605,7 +611,7 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -625,7 +631,7 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         provider = self.get_provider()
         user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
         try:
-            perm_group = user.groups.filter(name__contains=PreprintProvider.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
+            perm_group = user.groups.filter(name__contains=self.provider_type.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound
@@ -637,6 +643,22 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
             raise ValidationError(str(e))
+
+
+class PreprintProviderModeratorsList(ProviderModeratorsList):
+    provider_type = PreprintProvider
+
+
+class PreprintProviderModeratorsDetail(ProviderModeratorsDetail):
+    provider_type = PreprintProvider
+
+
+class RegistrationProviderModeratorsList(ProviderModeratorsList):
+    provider_type = RegistrationProvider
+
+
+class RegistrationProviderModeratorsDetail(ProviderModeratorsDetail):
+    provider_type = RegistrationProvider
 
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
