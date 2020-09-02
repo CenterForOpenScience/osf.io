@@ -2429,7 +2429,7 @@ msgstr "[OAuthのアクセス許可を取得]ボタンをクリックして、Dr
 
 #: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:16
 msgid "Then you will be redirected to Dropbox authentication page."
-msgstr "次に、Dropbox認証ページにリダイレクトされます。"
+msgstr "その後、Dropbox認証ページにリダイレクトされます。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:8
 msgid "Connect a Google Drive Account"
@@ -2519,7 +2519,7 @@ msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:55
 msgid "Download User Mapping file"
-msgstr "ユーザマッピングファイルをダウンロード"
+msgstr "ユーザ対応表ファイルをダウンロード"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:56
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:228
@@ -2528,7 +2528,7 @@ msgstr "ダウンロード"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:60
 msgid "Upload User Mapping file"
-msgstr "ユーザマッピングファイルをアップロード"
+msgstr "ユーザ対応表ファイルをアップロード"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:61
 msgid "Check existence of external users"
@@ -2536,15 +2536,15 @@ msgstr "外部ユーザの存在を確認する"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:61
 msgid "Only Nextcloud Admin can check"
-msgstr "確認できるのはNextcloud管理者のみです"
+msgstr "Nextcloud管理者だけが確認可能です。"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:64
 msgid "Browse"
-msgstr "ブラウザ"
+msgstr "ファイルを選択"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:70
 msgid "Example of User Mapping file"
-msgstr "ユーザマッピングファイルの例"
+msgstr "ユーザ対応表ファイルの例"
 
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
 msgid "Connect NII Storage"
