@@ -173,6 +173,7 @@ def update_storage_usage_with_size(payload):
     elif action == 'move':
         source_node = AbstractNode.load(payload['source']['nid'])  # Getting the 'from' node
 
+        size = target_file.versions.aggregate(Sum('size'))['size__sum']
         if source_node == target_node:
             # This is a rename. WB treats rename ops as moves.
             # Just check to see if dest and source are the same, and its a rename!
