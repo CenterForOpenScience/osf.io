@@ -360,9 +360,6 @@ class RegistrationMachine(BaseMachine):
         )
         self.machineable.save()
 
-    def resubmission_allowed(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
-
     def request_withdrawal(self, ev):
         user = ev.kwargs.get('user')
         self.machineable.refresh_from_db()
