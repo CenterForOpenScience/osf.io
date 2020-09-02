@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-06-22 10:23+0900\n"
-"PO-Revision-Date: 2020-06-22 10:23+0900\n"
+"POT-Creation-Date: 2020-09-02 11:10+0900\n"
+"PO-Revision-Date: 2020-09-02 11:10+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -42,12 +42,10 @@ msgstr ""
 #: .\admin\templates\nodes\confirm_spam.html:9
 #: .\admin\templates\nodes\node.html:395
 #: .\admin\templates\nodes\node_list.html:108
-#: .\admin\templates\nodes\reindex_node_elastic.html:8
-#: .\admin\templates\nodes\reindex_node_share.html:8
+#: .\admin\templates\nodes\reindex_node_elastic.html:9
+#: .\admin\templates\nodes\reindex_node_share.html:9
 #: .\admin\templates\nodes\remove_contributor.html:15
 #: .\admin\templates\nodes\remove_node.html:12
-#: .\admin\templates\nodes\remove_registrations_modal.html:8
-#: .\admin\templates\nodes\restart_registrations_modal.html:8
 #: .\admin\templates\rdm_timestampadd\node_list.html:122
 #: .\admin\templates\users\GDPR_delete_user.html:12
 #: .\admin\templates\users\add_system_tag.html:12
@@ -78,8 +76,10 @@ msgstr ""
 #: .\admin\templates\rdm_announcement\settings.html:94
 #: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:63
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:85
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:55
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:59
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:90
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:22
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:55
 #: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:38
@@ -753,6 +753,7 @@ msgstr ""
 #: .\admin\templates\institutions\user_list_by_institute.html:11
 #: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:42
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:35
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:36
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:32
 #: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:34
 #: .\admin\templates\rdm_keymanagement\user_list.html:10
@@ -1722,8 +1723,8 @@ msgstr ""
 #: .\admin\templates\nodes\confirm_spam.html:11
 #: .\admin\templates\nodes\node.html:397
 #: .\admin\templates\nodes\node_list.html:110
-#: .\admin\templates\nodes\reindex_node_elastic.html:10
-#: .\admin\templates\nodes\reindex_node_share.html:10
+#: .\admin\templates\nodes\reindex_node_elastic.html:11
+#: .\admin\templates\nodes\reindex_node_share.html:11
 #: .\admin\templates\nodes\remove_contributor.html:18
 #: .\admin\templates\nodes\remove_node.html:15
 #: .\admin\templates\rdm_addons\addons\dataverse_credentials_modal.html:55
@@ -1733,8 +1734,10 @@ msgstr ""
 #: .\admin\templates\rdm_announcement\settings.html:95
 #: .\admin\templates\rdm_custom_storage_location\institutional_storage.html:62
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:57
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:83
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:53
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:57
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:88
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:21
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:53
 #: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:36
@@ -1982,12 +1985,12 @@ msgstr ""
 msgid "Parameters"
 msgstr ""
 
-#: .\admin\templates\nodes\reindex_node_elastic.html:4
+#: .\admin\templates\nodes\reindex_node_elastic.html:5
 #, python-format
 msgid "Are you sure you want to reindex this %(resource_type)s (Elastic)?"
 msgstr ""
 
-#: .\admin\templates\nodes\reindex_node_share.html:4
+#: .\admin\templates\nodes\reindex_node_share.html:5
 #, python-format
 msgid "Are you sure you want to reindex this %(resource_type)s (SHARE)?"
 msgstr ""
@@ -2179,6 +2182,8 @@ msgstr ""
 #: .\admin\templates\rdm_addons\addons\institution_settings_default.html:19
 #: .\admin\templates\rdm_addons\addons\owncloud_institution_settings.html:23
 #: .\admin\templates\rdm_addons\addons\s3_institution_settings.html:23
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:37
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:66
 msgid "Disconnect Account"
 msgstr ""
 
@@ -2187,6 +2192,7 @@ msgid "Authorized on "
 msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:5
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:24
 msgid "Team member file access"
 msgstr ""
 
@@ -2206,6 +2212,7 @@ msgid "Authorized by"
 msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\dropboxbusiness_institution_settings.html:47
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:53
 msgid "Team member management"
 msgstr ""
 
@@ -2242,6 +2249,7 @@ msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:26
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:15
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:15
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:13
 msgid "Host URL"
 msgstr ""
@@ -2257,6 +2265,7 @@ msgstr ""
 
 #: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:46
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:39
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:40
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:36
 #: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:42
 msgid "Password"
@@ -2351,11 +2360,15 @@ msgid "Then you will be redirected to Box authentication page."
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:28
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:31
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:60
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:27
 msgid "Get OAuth permission"
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:32
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:43
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:72
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:31
 msgid "Authorized by:"
 msgstr ""
@@ -2368,6 +2381,7 @@ msgstr ""
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:46
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:42
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:28
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:31
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:26
 msgid "Folder"
 msgstr ""
@@ -2377,13 +2391,27 @@ msgid "Folder ID (Ex: 0 for root)"
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\box_modal.html:58
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:84
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:54
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:58
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:89
 #: .\admin\templates\rdm_custom_storage_location\providers\owncloud_modal.html:54
 #: .\admin\templates\rdm_custom_storage_location\providers\s3_modal.html:37
 #: .\admin\templates\rdm_custom_storage_location\providers\s3compat_modal.html:41
 #: .\admin\templates\rdm_custom_storage_location\providers\swift_modal.html:58
 msgid "Connect"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:8
+msgid "Connect a Dropbox Business Account"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connect Dropbox."
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\dropboxbusiness_modal.html:16
+msgid "Then you will be redirected to Dropbox authentication page."
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\googledrive_modal.html:8
@@ -2403,6 +2431,7 @@ msgid "Folder ID (Ex: root)"
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:8
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:8
 msgid "Connect a Nextcloud Account"
 msgstr ""
 
@@ -2428,6 +2457,58 @@ msgid ""
 "However, we <strong>strongly encourage</strong> using a <a "
 "%(openWithNewWindow)s> Device (or App) Password</a>.\n"
 "                                    "
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:21
+msgid ""
+"Only Nextcloud instances supporting <a\n"
+"                                            href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/files/access_webdav.html\"\n"
+"                                            target=\"_blank\">WebDAV</a> and "
+"<a\n"
+"                                            href=\"https://www.freedesktop."
+"org/wiki/Specifications/open-collaboration-services-1.7/\"\n"
+"                                            target=\"_blank\">\n"
+"                                            OCS v1.7</a> are supported."
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:45
+msgid ""
+" These credentials will be encrypted. However, we <strong>strongly\n"
+"                                        encourage</strong> using a <a\n"
+"                                        href=\"https://doc.nextcloud.org/"
+"server/9.1/user_manual/session_management.html#managing-devices\"\n"
+"                                        target=\"_blank\"> Device (or App) "
+"Password</a>."
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:55
+msgid "Download User Mapping file"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:56
+#: .\admin\templates\rdm_timestampadd\timestampadd.html:228
+msgid "Download"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:60
+msgid "Upload User Mapping file"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:61
+msgid "Check existence of external users"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:61
+msgid "Only Nextcloud Admin can check"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:64
+msgid "Browse"
+msgstr ""
+
+#: .\admin\templates\rdm_custom_storage_location\providers\nextcloudinstitutions_modal.html:70
+msgid "Example of User Mapping file"
 msgstr ""
 
 #: .\admin\templates\rdm_custom_storage_location\providers\osfstorage_modal.html:8
@@ -2612,10 +2693,6 @@ msgstr ""
 
 #: .\admin\templates\rdm_timestampadd\timestampadd.html:164
 msgid "Timestamp Verification"
-msgstr ""
-
-#: .\admin\templates\rdm_timestampadd\timestampadd.html:228
-msgid "Download"
 msgstr ""
 
 #: .\admin\templates\rdm_timestampsettings\list.html:22
