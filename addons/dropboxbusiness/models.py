@@ -144,7 +144,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         related_name='dropboxbusiness_management_option',
         on_delete=models.CASCADE)
     _admin_dbmid = models.CharField(null=True, blank=True, max_length=255)
-    list_cursor = models.TextField(null=True, blank=True)
+    list_cursor = models.TextField(null=True, blank=True)  # unused
     team_folder_id = models.CharField(null=True, blank=True, max_length=255)
     group_id = models.CharField(null=True, blank=True, max_length=255)
 

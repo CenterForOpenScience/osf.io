@@ -1110,6 +1110,7 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info):
             _check_and_add(addon)
         except Exception:
             logger.exception('project guid={}'.format(addon.owner._id))
+    # Unknown team_folder_id is ignored.
 
 def team_id_to_instituion(team_id):
     try:
@@ -1123,24 +1124,41 @@ def team_id_to_instituion(team_id):
 
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_check_and_add_timestamp(self, team_ids):
-    from addons.dropboxbusiness.models import NodeSettings
+    # avoid "ImportError: cannot import name"
+    from addons.dropboxbusiness.models import DropboxBusinessManagementProvider
 
     def _update_team_files(dbtid):
         ea = ExternalAccount.objects.get(
             provider=PROVIDER_NAME, provider_id=dbtid)
         opt = RdmAddonOption.objects.get(
             provider=PROVIDER_NAME, external_accounts=ea)
-        node_settings = NodeSettings.objects.filter(fileaccess_option=opt)
-        first = node_settings.order_by('id').first()
-        team_info = TeamInfo(first.fileaccess_token, first.management_token,
-                             admin_dbmid=first.admin_dbmid)
-        files, cursor = team_info.list_updated_files(first.list_cursor)
+        if opt.extended is None:
+            opt.extended = {}
+
+        management_opt = get_rdm_addon_option(
+            opt.institution._id, DropboxBusinessManagementProvider.short_name,
+            create=False)
+        fileaccess_token = addon_option_to_token(opt)
+        management_token = addon_option_to_token(management_opt)
+
+        KEY_ADMIN_ID = 'admin_dbmid'
+        KEY_LIST_CURSOR = 'list_cursor'
+        admin_dbmid = opt.extended.get(KEY_ADMIN_ID, None)
+        list_cursor = opt.extended.get(KEY_LIST_CURSOR, None)
+
+        team_info = TeamInfo(fileaccess_token, management_token, admin=True)
+        # Dropbox Team Admin is changed
+        if admin_dbmid != team_info.admin_dbmid:
+            admin_dbmid = team_info.admin_dbmid
+            opt.extended[KEY_ADMIN_ID] = admin_dbmid
+            list_cursor = None
+        files, cursor = team_info.list_updated_files(list_cursor)
         for f in files:
             i, n, p = f
             DEBUG(u'team_folder_id={}, name={}, path={}'.format(i, n, p))
             _add_timestamp_for_celery(i, p, team_info)
-        first.list_cursor = cursor
-        first.save()
+        opt.extended[KEY_LIST_CURSOR] = cursor
+        opt.save()
 
     if not lock.LOCK_RUN.trylock():
         lock.add_plan(team_ids)
