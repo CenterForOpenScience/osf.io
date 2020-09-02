@@ -54,8 +54,8 @@ class GitLabClient(object):
             else:
                 raise exc
 
-    def repos(self):
-        return self.gitlab.projects.list(membership=True)
+    def repos(self, all=False):
+        return self.gitlab.projects.list(membership=True, all=all)
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
