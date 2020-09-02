@@ -3,15 +3,11 @@ from transitions import Machine
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
-from osf.exceptions import ValidationError
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
-from osf.models.nodelog import NodeLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationRequestAction
 
-from osf.models.sanctions import Retraction, EmbargoTerminationApproval
 
 from osf.utils import permissions
 from osf.utils.workflows import (
@@ -26,7 +22,6 @@ from osf.utils.workflows import (
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
-from website import settings
 
 
 class BaseMachine(Machine):
@@ -369,97 +364,30 @@ class RegistrationMachine(BaseMachine):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
     def request_withdrawal(self, ev):
-        registration = self.machineable.registered_node
-        retraction = Retraction.objects.create(
-            initiated_by=self.action.creator,
-            justification=self.action.comment,
-            state=Retraction.UNAPPROVED
-        )
-        retraction.save()
-        registration.retraction = retraction
-        registration.save()
-
-        admins = registration.get_admin_contributors_recursive(unique_users=True)
-        for (admin, node) in admins:
-            registration.retraction.add_authorizer(admin, node)
-
-        registration.retraction.save()  # Save retraction approval state
-
-        admins = registration.get_active_contributors_recursive(unique_users=True)
-
-        registration.retraction.ask(admins)
+        user = ev.kwargs.get('user')
+        self.machineable.refresh_from_db()
+        self.machineable.registered_node.retract_registration(user)
 
     def request_terminate_embargo(self, ev):
-        approval = EmbargoTerminationApproval(
-            initiated_by=self.action.creator,
-            embargoed_registration=self.machineable.registered_node,
-        )
+        user = ev.kwargs.get('user')
+        self.machineable.refresh_from_db()
 
-        admins = self.machineable.registered_node.root.get_admin_contributors_recursive(unique_users=True)
-
-        for (admin, node) in admins:
-            approval.add_authorizer(admin, node=node)
+        approval = self.machineable.registered_node.request_embargo_termination(user)
         approval.save()
-        approval.ask(admins)
-
-        self.machineable.registered_node.embargo_termination_approval = approval
-        self.machineable.registered_node.save()
 
     def withdraw_registration(self, ev):
-        self.machineable.registered_node.retraction.state = Retraction.APPROVED
-        self.machineable.registered_node.add_log(
-            action=NodeLog.RETRACTION_APPROVED,
-            params={
-                'node': self.machineable.registered_node._id,
-                'registration': self.machineable.registered_node._id,
-                'retraction_id': self.machineable.registered_node.retraction._id,
-            },
-            auth=Auth(self.action.creator),
-        )
-        self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
-        self.machineable.save()
-        self.machineable.update_search()
-        for node in self.machineable.registered_node.get_descendants_recursive():
-            node.update_search()
+        user = ev.kwargs.get('user')
+        self.machineable.registered_node.retraction._on_complete(user)
 
     def embargo_registration(self, ev):
+        user = ev.kwargs.get('user')
         end_date = ev.kwargs.get('end_date')
+        self.machineable.refresh_from_db()
+        self.machineable.registered_node.embargo_registration(user, end_date)
+        self.machineable.registered_node.refresh_from_db()
 
-        if not self.machineable.registered_node.is_admin_contributor(self.action.creator):
-            raise PermissionsError('Only admins may embargo a registration')
-        if not self.machineable.registered_node._is_embargo_date_valid(end_date):
-            if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
-                raise ValidationError('Registrations can only be embargoed for up to four years.')
-            raise ValidationError('Embargo end date must be at least three days in the future.')
-
-        embargo = self.machineable.registered_node._initiate_embargo(self.action.creator, end_date)
-
-        self.machineable.registered_node.registered_from.add_log(
-            action=NodeLog.EMBARGO_INITIATED,
-            params={
-                'node': self.machineable.registered_node.registered_from._id,
-                'registration': self.machineable.registered_node._id,
-                'embargo_id': embargo._id,
-            },
-            auth=Auth(self.action.creator),
-        )
-
-        if self.machineable.registered_node.is_public:
-            self.machineable.registered_node.set_privacy('private', Auth(self.action.creator))
-
-    def terminate_embargo2(self, ev):
-        self.machineable.registered_node.registered_from.add_log(
-            action=NodeLog.EMBARGO_TERMINATED,
-            params={
-                'project': self.machineable.registered_node._id,
-                'node': self.machineable.registered_node.registered_from._id,
-                'registration': self.machineable.registered_node._id,
-            },
-            auth=None,
-            save=True
-        )
-        self.machineable.registered_node.embargo.mark_as_completed()
-        self.machineable.registered_node.save()
+    def terminate_embargo(self, ev):
+        self.machineable.registered_node.terminate_embargo()
 
     def edit_comment(self, ev):
         self.machineable.comment = self.action.comment
@@ -467,10 +395,8 @@ class RegistrationMachine(BaseMachine):
 
     def accept_draft_registration(self, ev):
         approval = self.machineable.approval
-        approval._on_complete(self.action.creator)
-        self.machineable.refresh_from_db()
-        self.machineable.registered_node.is_public = True
-        self.machineable.registered_node.save()
+        approval.approve(self.action.creator)
+        approval.save()
 
     def reject_draft_registration(self, ev):
         self.machineable.meta = {}
@@ -490,7 +416,8 @@ class RegistrationMachine(BaseMachine):
             {
                 'registration_choice': submission,
                 'embargo_end_date': embargo_date
-            }
+            },
+            save=True
         )
 
     def notify_embargo_termination(self, ev):
