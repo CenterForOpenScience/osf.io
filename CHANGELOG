@@ -2,6 +2,24 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.15.0 (2020-09-01)
+====================
+- Fix OSF Provider not sending data to SHARE
+- Allow osf_admin to create Brand in admin app
+- Move SHARE fields from PreprintProvider to AbstractProvider
+- Models and API to associate a registration provider with schemas
+- Allow admin app to associate registration forms with providers
+- Enable API to create registration that belongs to a registration provider
+- Admin app permissions for branding
+- Allow EGAP schema in /v2/providers/registrations/<id>/schemas.
+- Handle 502s on admin app setup SHARE source
+- Prepend provider names in SHARE on staging/test
+- Send SHARE errors to sentry instead of desk
+- Management command to reindex OSF registrations in SHARE
+- Serialize branded_discovery_page boolean on Registration Provider
+- Prevent API from accepting registration form for a provider that doesn't support that form
+- Branded Registries admin app fixes
+
 20.14.0 (2020-07-13)
 ====================
 - Add brands to registration providers

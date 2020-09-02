@@ -51,6 +51,7 @@ urlpatterns = [
                     url(r'^$', views.RegistrationProviderList.as_view(), name=views.RegistrationProviderList.view_name),
                     url(r'^(?P<provider_id>\w+)/$', views.RegistrationProviderDetail.as_view(), name=views.RegistrationProviderDetail.view_name),
                     url(r'^(?P<provider_id>\w+)/licenses/$', views.RegistrationProviderLicenseList.as_view(), name=views.RegistrationProviderLicenseList.view_name),
+                    url(r'^(?P<provider_id>\w+)/schemas/$', views.RegistrationProviderSchemaList.as_view(), name=views.RegistrationProviderSchemaList.view_name),
                     url(r'^(?P<provider_id>\w+)/submissions/$', views.RegistrationProviderSubmissionList.as_view(), name=views.RegistrationProviderSubmissionList.view_name),
                     url(r'^(?P<provider_id>\w+)/subjects/$', views.RegistrationProviderSubjects.as_view(), name=views.RegistrationProviderSubjects.view_name),
                     url(r'^(?P<provider_id>\w+)/subjects/highlighted/$', views.RegistrationProviderHighlightedSubjectList.as_view(), name=views.RegistrationProviderHighlightedSubjectList.view_name),

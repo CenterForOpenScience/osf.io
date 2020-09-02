@@ -346,10 +346,11 @@ CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 
 
 # Leave as `None` for production, test/staging/local envs must set
-SHARE_PREPRINT_PROVIDER_PREPEND = None
+SHARE_PROVIDER_PREPEND = None
 
+SHARE_ENABLED = True  # This should be False for most local development
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = None
+SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'

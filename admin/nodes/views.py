@@ -33,7 +33,7 @@ from osf.models.admin_log_entry import (
 )
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
-from website.project.tasks import update_node_share
+from api.share.utils import update_share
 from website.project.views.register import osf_admin_change_status_identifier
 
 
@@ -443,6 +443,7 @@ class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
         if isinstance(node, Node) or isinstance(node, Registration):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
+
 class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
     template_name = 'nodes/reindex_node_share.html'
     permission_required = 'osf.mark_spam'
@@ -453,7 +454,7 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
-        update_node_share(node)
+        update_share(node)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -461,7 +462,7 @@ class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
             message='Node Reindexed (SHARE): {}'.format(node._id),
             action_flag=REINDEX_SHARE
         )
-        if isinstance(node, Node):
+        if isinstance(node, (Node, Registration)):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
