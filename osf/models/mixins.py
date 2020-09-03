@@ -2279,6 +2279,24 @@ class RegistriesModerationMixin(MachineableMixin):
         """
         return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
 
+    def run_reject_withdraw(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.REJECT_WITHDRAW.value, user=user, comment=comment)
+
+    def run_force_withdraw(self, user, comment):
+        """Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.FORCE_WITHDRAW.value, user=user, comment=comment)
+
     def run_accept(self, user, comment, embargo_end_date=None):
         """ Run the 'accept/embargo' state transition and create a corresponding Action.
 

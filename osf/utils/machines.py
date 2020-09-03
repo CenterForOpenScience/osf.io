@@ -376,6 +376,10 @@ class RegistrationMachine(BaseMachine):
         user = ev.kwargs.get('user')
         self.machineable.registered_node.retraction._on_complete(user)
 
+    def reject_withdrawal(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.registered_node.retraction._on_reject(user)
+
     def embargo_registration(self, ev):
         user = ev.kwargs.get('user')
         end_date = ev.kwargs.get('end_date')
@@ -416,6 +420,9 @@ class RegistrationMachine(BaseMachine):
             },
             save=True
         )
+
+    def force_withdrawal(self, ev):
+        pass
 
     def notify_embargo_termination(self, ev):
         pass

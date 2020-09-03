@@ -99,6 +99,33 @@ class TestRegistrationMachine:
 
         assert draft_registration.machine_state == RegistrationStates.WITHDRAWN.value
 
+    def test_run_force_withdraw(self, draft_registration):
+        draft_registration.run_submit(draft_registration.creator)
+        draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
+        draft_registration.refresh_from_db()
+
+        draft_registration.registered_node.is_public = True
+
+        draft_registration.run_force_withdraw(draft_registration.creator, 'Double Doink')
+
+        assert draft_registration.machine_state == RegistrationStates.REJECTED.value
+
+    def test_run_reject_withdraw(self, draft_registration):
+        draft_registration.run_submit(draft_registration.creator)
+        draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
+        draft_registration.refresh_from_db()
+
+        draft_registration.registered_node.is_public = True
+
+        draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+
+        assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW.value
+
+        draft_registration.run_reject_withdraw(draft_registration.creator, 'Double Doink')
+        draft_registration.refresh_from_db()
+
+        assert draft_registration.machine_state == RegistrationStates.ACCEPTED.value
+
     def test_run_request_embargo_termination(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
         end_date = timezone.now() + settings.EMBARGO_END_DATE_MIN + datetime.timedelta(days=1)

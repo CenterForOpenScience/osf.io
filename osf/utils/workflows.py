@@ -38,6 +38,8 @@ REGISTRATION_TRIGGERS = DEFAULT_TRIGGERS + [
     ('EMBARGO', 'embargo'),
     ('WITHDRAW', 'withdraw'),
     ('REQUEST_WITHDRAW', 'request_withdraw'),
+    ('REJECT_WITHDRAW', 'reject_withdraw'),
+    ('FORCE_WITHDRAW', 'force_withdraw'),
     ('REQUEST_EMBARGO', 'request_embargo'),
     ('REQUEST_EMBARGO_TERMINATION', 'request_embargo_termination'),
     ('TERMINATE_EMBARGO', 'terminate_embargo'),
@@ -116,22 +118,28 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
 
 REGISTRATION_TRANSITIONS = [
     {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.INITIAL.value],
-        'dest': DefaultStates.PENDING.value,
+        'trigger': RegistrationTriggers.SUBMIT.value,
+        'source': [RegistrationStates.INITIAL.value],
+        'dest': RegistrationStates.PENDING.value,
         'after': ['save_action', 'update_last_transitioned', 'submit_draft_registration', 'notify_submit'],
     },
     {
-        'trigger': DefaultTriggers.ACCEPT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.REJECTED.value],
-        'dest': DefaultStates.ACCEPTED.value,
+        'trigger': RegistrationTriggers.ACCEPT.value,
+        'source': [RegistrationStates.PENDING.value, RegistrationStates.REJECTED.value],
+        'dest': RegistrationStates.ACCEPTED.value,
         'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
     },
     {
-        'trigger': DefaultTriggers.REJECT.value,
-        'source': [DefaultStates.PENDING.value, DefaultStates.ACCEPTED.value],
-        'dest': DefaultStates.REJECTED.value,
+        'trigger': RegistrationTriggers.REJECT.value,
+        'source': [RegistrationStates.PENDING.value],
+        'dest': RegistrationStates.REJECTED.value,
         'after': ['save_action', 'update_last_transitioned', 'reject_draft_registration', 'notify_accept_reject'],
+    },
+    {
+        'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
+        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value],
+        'dest': RegistrationStates.REJECTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
     },
     {
         'trigger': RegistrationTriggers.EMBARGO.value,
@@ -162,6 +170,12 @@ REGISTRATION_TRANSITIONS = [
         'source': [RegistrationStates.PENDING_WITHDRAW.value],
         'dest': RegistrationStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'withdraw_registration']
+    },
+    {
+        'trigger': RegistrationTriggers.REJECT_WITHDRAW.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW.value],
+        'dest': RegistrationStates.ACCEPTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'reject_withdrawal', 'notify_withdraw']
     }
 ]
 
