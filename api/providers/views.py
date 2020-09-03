@@ -22,7 +22,13 @@ from api.requests.serializers import PreprintRequestSerializer, RegistrationRequ
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
-from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
+from api.providers.serializers import (
+    CollectionProviderSerializer,
+    PreprintProviderSerializer,
+    PreprintModeratorSerializer,
+    RegistrationProviderSerializer,
+    RegistrationModeratorSerializer,
+)
 from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
@@ -590,13 +596,10 @@ class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreat
         MustBeModerator,
         CanAddModerator,
     )
-    view_category = 'moderators'
     view_name = 'provider-moderator-list'
 
     required_read_scopes = [CoreScopes.MODERATORS_READ]
     required_write_scopes = [CoreScopes.MODERATORS_WRITE]
-
-    serializer_class = ModeratorSerializer
 
     def get_default_queryset(self):
         provider = self.get_provider()
@@ -619,13 +622,10 @@ class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.Retriev
         CanUpdateModerator,
         CanDeleteModerator,
     )
-    view_category = 'moderators'
     view_name = 'provider-moderator-detail'
 
     required_read_scopes = [CoreScopes.MODERATORS_READ]
     required_write_scopes = [CoreScopes.MODERATORS_WRITE]
-
-    serializer_class = ModeratorSerializer
 
     def get_object(self):
         provider = self.get_provider()
@@ -647,18 +647,30 @@ class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.Retriev
 
 class PreprintProviderModeratorsList(ProviderModeratorsList):
     provider_type = PreprintProvider
+    serializer_class = PreprintModeratorSerializer
 
+    view_category = 'preprint-providers'
+1
 
 class PreprintProviderModeratorsDetail(ProviderModeratorsDetail):
     provider_type = PreprintProvider
+    serializer_class = PreprintModeratorSerializer
+
+    view_category = 'preprint-providers'
 
 
 class RegistrationProviderModeratorsList(ProviderModeratorsList):
     provider_type = RegistrationProvider
+    serializer_class = RegistrationModeratorSerializer
+
+    view_category = 'registration-providers'
 
 
 class RegistrationProviderModeratorsDetail(ProviderModeratorsDetail):
     provider_type = RegistrationProvider
+    serializer_class = RegistrationModeratorSerializer
+
+    view_category = 'registration-providers'
 
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):

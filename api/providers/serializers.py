@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
+from api.nodes.serializers import RegistrationProviderRelationshipField
+from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
@@ -122,6 +124,11 @@ class RegistrationProviderSerializer(ProviderSerializer):
         related_view_kwargs={'brand_id': '<brand.id>'},
     )
 
+    moderators = RelationshipField(
+        related_view='providers:registration-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     primary_collection = RelationshipField(
         related_view='collections:collection-detail',
         related_view_kwargs={'collection_id': '<primary_collection._id>'},
@@ -180,6 +187,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    moderators = RelationshipField(
+        related_view='providers:preprint-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     def get_preprints_url(self, obj):
         return absolute_reverse(
             'providers:preprint-providers:preprints-list', kwargs={
@@ -222,17 +234,18 @@ class ModeratorSerializer(JSONAPISerializer):
     permission_group = ser.CharField(required=True)
     email = ser.EmailField(required=False, write_only=True, validators=[validate_email])
 
-    class Meta:
-        type_ = 'moderators'
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_provider(self, obj):
+        return self.context['provider']._id
 
     def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'moderators:provider-moderator-detail', kwargs={
-                'provider_id': self.context['request'].parser_context['kwargs']['version'],
-                'moderator_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+        return obj.absolute_api_v2_url
+
+    class Meta:
+        type_ = 'moderators'
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
@@ -311,3 +324,21 @@ class ModeratorSerializer(JSONAPISerializer):
         provider.add_to_group(instance, perm_group)
         setattr(instance, 'permission_group', perm_group)
         return instance
+
+
+class PreprintModeratorSerializer(ModeratorSerializer):
+
+    provider = PreprintProviderRelationshipField(
+        related_view='providers:preprint-providers:preprint-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=False,
+    )
+
+
+class RegistrationModeratorSerializer(ModeratorSerializer):
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=True,
+    )
