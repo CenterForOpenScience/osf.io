@@ -406,7 +406,6 @@ class TestAddonLogs(OsfTestCase):
 
     def test_action_file_rename(self):
         url = self.node.api_url_for('create_waterbutler_log')
-        current_usage = self.node.storage_usage
         payload = self.build_payload(
             action='rename',
             metadata={
@@ -435,13 +434,81 @@ class TestAddonLogs(OsfTestCase):
         )
         self.node.reload()
 
-        assert self.node.storage_usage == current_usage
-
-
         assert_equal(
             self.node.logs.latest().action,
             'github_addon_file_renamed',
         )
+
+    def test_action_file_rename_storage(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        current_usage = self.node.storage_usage
+        payload = self.build_payload(
+            action='rename',
+            metadata={
+                'path': 'foo',
+            },
+            source={
+                'materialized': 'foo',
+                'provider': 'osfstorage',
+                'node': {'_id': self.node._id},
+                'name': 'new.txt',
+                'kind': 'file',
+            },
+            destination={
+                'path': 'foo',
+                'materialized': 'foo',
+                'provider': 'osf_storage',
+                'node': {'_id': self.node._id},
+                'name': 'old.txt',
+                'kind': 'file',
+            },
+        )
+        self.app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'}
+        )
+        self.node.reload()
+
+        assert self.node.storage_usage == current_usage
+
+    def test_add_log_updates_cache_rename_via_move(self):
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        assert self.node.storage_usage == 250
+
+        payload = self.build_payload_with_dest(
+            action='move',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'old.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 250
 
     def test_action_downloads_contrib(self):
         url = self.node.api_url_for('create_waterbutler_log')
@@ -508,7 +575,6 @@ class TestAddonLogs(OsfTestCase):
         assert self.node.storage_usage == 120
 
     def test_add_log_updates_cache_move(self):
-        ''' Renames are actually just move functions with the same nid for src and dest '''
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         self.file2.create_version(self.user, {
@@ -549,34 +615,155 @@ class TestAddonLogs(OsfTestCase):
         self.node2.reload()
         assert self.node2.storage_usage == 250
 
-    def test_add_log_updates_cache_delete(self):
-        from addons.osfstorage import settings as osfstorage_settings
-
-        url = self.node.api_url_for('create_waterbutler_log')
-
+    def test_add_log_updates_cache_move_outside_osf(self):
+        ''' Renames are actually just move functions with the same nid for src and dest '''
         self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
         self.file2.create_version(self.user, {
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
-            'size': 200,
+            'size': 250,
             'contentType': 'img/png'
         }).save()
 
-        self.node.reload()
-        assert self.node.storage_usage == 200
+        assert self.node.storage_usage == 250
 
-        payload = self.build_payload(metadata={
-            'materialized': '/lollipop',
-            'kind': 'file',
-            'path': '/lollipop',
-            'nid': self.node._id,
-        }, action='delete')
+        payload = self.build_payload_with_dest(
+            action='move',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'github',
+                'nid': self.node._id,
+                'name': 'new.txt',
+            },
+        )
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
+
+    def test_add_log_updates_cache_move_into_osf(self):
+        ''' Renames are actually just move functions with the same nid for src and dest '''
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+
+        payload = self.build_payload_with_dest(
+            action='move',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'github',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node._id,
+                'name': 'new.txt',
+                'size': 220
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 220
+
+    def test_add_log_updates_cache_copy(self):
+        ''' Renames are actually just move functions with the same nid for src and dest '''
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        assert self.node.storage_usage == 250
+
+        payload = self.build_payload_with_dest(
+            action='copy',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node2._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 250
+
+        self.node2.reload()
+        assert self.node2.storage_usage == 250
+
+    def test_add_log_updates_cache_copy_same_node(self):
+        ''' Renames are actually just move functions with the same nid for src and dest '''
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        assert self.node.storage_usage == 250
+
+        payload = self.build_payload_with_dest(
+            action='copy',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 500
 
     def test_add_log_updates_cache_delete(self):
         from addons.osfstorage import settings as osfstorage_settings

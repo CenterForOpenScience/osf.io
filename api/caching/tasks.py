@@ -156,36 +156,41 @@ def update_storage_usage_with_size(payload):
         return
 
     action = payload['action']
+    provider = metadata.get('provider', 'osfstorage')
+
     target_file_id = metadata['path'].replace('/', '')
-    size = metadata.get('size', 0)
+    target_file_size = metadata.get('size', 0)
 
     current_usage = target_node.storage_usage or 0
     target_file = BaseFileNode.load(target_file_id)
 
-    if action in ['create', 'update']:
-        current_usage += size
-    elif action == 'delete':
-        size = target_file.versions.aggregate(Sum('size'))['size__sum']
-        if current_usage < size:
-            current_usage = 0
-        else:
-            current_usage -= target_file.versions.aggregate(Sum('size'))['size__sum']
-    elif action == 'move':
+    if target_file:
+
+        target_file_size = target_file.versions.aggregate(Sum('size'))['size__sum'] or target_file_size
+
+    if action in ['create', 'update', 'copy'] and provider == 'osfstorage':
+        current_usage += target_file_size
+
+    elif action == 'delete' and provider == 'osfstorage':
+        current_usage = max(current_usage - target_file_size, 0)
+
+    elif action in 'move':
         source_node = AbstractNode.load(payload['source']['nid'])  # Getting the 'from' node
 
-        size = target_file.versions.aggregate(Sum('size'))['size__sum']
-        if source_node == target_node:
-            # This is a rename. WB treats rename ops as moves.
-            # Just check to see if dest and source are the same, and its a rename!
-            # We don't wanna do anything here, so we just return.
-            return
-        source_node_usage = source_node.storage_usage
-        source_node_usage -= size
+        source_provider = payload['source']['provider']
+        if target_node == source_node and source_provider == provider:
+            return  # Its not going anywhere.
+        if source_provider == 'osfstorage':
+            source_node_usage = source_node.storage_usage
+            source_node_usage = max(source_node_usage - target_file_size, 0)
 
-        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
-        storage_usage_cache.set(key, source_node_usage, cache_settings.ONE_DAY_TIMEOUT)
+            key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
+            storage_usage_cache.set(key, source_node_usage, cache_settings.ONE_DAY_TIMEOUT)
 
-        current_usage += size
+        current_usage += target_file_size
+
+        if provider != 'osfstorage':
+            return  # We don't want to update the destination node if the provider isn't osfstorage
     else:
         return
 

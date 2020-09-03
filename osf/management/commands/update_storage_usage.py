@@ -20,7 +20,7 @@ def update_storage_usage(dry_run=False, days=DAYS):
         recently_modified = AbstractNode.objects.filter(modified__gt=modified_limit)
         for modified_node in recently_modified:
             if not isinstance(modified_node, Preprint) and not modified_node.is_quickfiles:
-                update_storage_usage_cache(modified_node._id, modified_node.id)
+                update_storage_usage_cache(modified_node.id, modified_node._id)
 
         if dry_run:
             raise RuntimeError('Dry run -- Transaction rolled back')
