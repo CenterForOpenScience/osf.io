@@ -138,7 +138,7 @@ REGISTRATION_TRANSITIONS = [
     {
         'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
         'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value],
-        'dest': RegistrationStates.REJECTED.value,
+        'dest': RegistrationStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
     },
     {
