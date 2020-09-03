@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-09-03 11:59+0900\n"
-"PO-Revision-Date: 2020-09-03 11:59+0900\n"
+"POT-Creation-Date: 2020-09-03 12:45+0900\n"
+"PO-Revision-Date: 2020-09-03 12:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -3668,6 +3668,18 @@ msgstr ""
 
 #: website/static/js/js_messages.js:33
 msgid "No tokens."
+msgstr ""
+
+#: website/static/js/js_messages.js:33
+msgid "Invalid tokens."
+msgstr ""
+
+#: website/static/js/js_messages.js:35
+msgid "Invalid folder."
+msgstr ""
+
+#: website/static/js/js_messages.js:35
+msgid "Credentials are valid"
 msgstr ""
 
 #: website/static/js/keen.js:114

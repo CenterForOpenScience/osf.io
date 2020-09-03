@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-09-03 11:59+0900\n"
-"PO-Revision-Date: 2020-09-03 10:54+0900\n"
+"POT-Creation-Date: 2020-09-03 12:45+0900\n"
+"PO-Revision-Date: 2020-09-03 12:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -4777,6 +4777,18 @@ msgstr "ホーム"
 #: website/static/js/js_messages.js:33
 msgid "No tokens."
 msgstr "トークンがありません。"
+
+#: website/static/js/js_messages.js:33
+msgid "Invalid tokens."
+msgstr "無効なトークンです。"
+
+#: website/static/js/js_messages.js:35
+msgid "Invalid folder."
+msgstr "無効なフォルダです。"
+
+#: website/static/js/js_messages.js:35
+msgid "Credentials are valid"
+msgstr "資格情報は有効です。"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
