@@ -489,7 +489,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="component">
-      <div data-bind="template: {name: 'node', data: $data}"></div>
+      <div data-bind="template: {name: 'project', data: $data}"></div>
     </script>
     <script type="text/html" id="preprint">
         <h4><a data-bind="attr: {href: url}, text: title"></a> ${_("(Preprint)")}</h4>
