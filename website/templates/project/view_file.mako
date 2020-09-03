@@ -30,9 +30,7 @@
   <div class="col-sm-5">
 % if timestamp_verify_result_title:
     <h4 class="break-word">
-    % if timestamp_verify_result_title == 'OK':
-      <font color="green"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
-    % else:
+    % if timestamp_verify_result_title != 'OK':
       <font color="red"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
     % endif
     </h4>
