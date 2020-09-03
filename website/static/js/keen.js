@@ -228,8 +228,6 @@ var KeenTracker = (function() {
                         var partitioned_collection = 'pageviews-' + guid.charAt(0);
                         self.trackPublicEvent(partitioned_collection, {});
                     }
-
-                    self.trackPublicEvent('pageviews', {});
                 }
                 self.trackPrivateEvent('pageviews', {});
             };
