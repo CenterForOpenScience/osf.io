@@ -285,7 +285,7 @@ var afterRequest = {
             $('#' + id + '_save').attr('disabled', false);
             $('#' + id + '_save').removeClass('btn-default').addClass('btn-success');
             $('#' + id + '_connect').removeClass('btn-success').addClass('btn-default');
-            $('#' + id + '_message').html(data.message);
+            $('#' + id + '_message').html(_(data.message));
             if (!$('#' + id + '_message').hasClass('text-success')) {
                 $('#' + id + '_message').addClass('text-success');
                 $('#' + id + '_message').removeClass('text-danger');
