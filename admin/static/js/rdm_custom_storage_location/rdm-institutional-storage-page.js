@@ -6,6 +6,7 @@ var Cookie = require('js-cookie');
 var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
 
 var no_storage_name_providers = ['osfstorage'];
 // type1: get from admin/rdm_addons/api_v1/views.py
@@ -387,12 +388,11 @@ function disconnectOnClick(elm, properName, accountName) {
     var deletionKey = Math.random().toString(36).slice(-8);
     var id = providerShortName + "DeleteKey";
     bootbox.confirm({
-        title: 'Disconnect Account?',
+        title: _('Disconnect Account?'),
         message: '<p class="overflow">' +
-            'Are you sure you want to disconnect the ' + $osf.htmlEscape(properName) + ' account <strong>' +
-            $osf.htmlEscape(accountName) + '</strong>?<br>' +
-            'This will revoke access to ' + $osf.htmlEscape(properName) + ' for all projects using this account.<br><br>' +
-            "Type the following to continue: <strong>" + $osf.htmlEscape(deletionKey) + "</strong><br><br>" +
+            sprintf(_('Are you sure you want to disconnect the %1$s account <strong>%2$s</strong>?<br>'), $osf.htmlEscape(properName), $osf.htmlEscape(accountName)) +
+            sprintf(_('This will revoke access to %1$s for all projects using this account.<br><br>'), $osf.htmlEscape(properName)) +
+            sprintf(_("Type the following to continue: <strong>%1$s</strong><br><br>"), $osf.htmlEscape(deletionKey)) +
             "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>" +
             '</p>',
         callback: function(confirm) {
@@ -408,7 +408,7 @@ function disconnectOnClick(elm, properName, accountName) {
         },
         buttons:{
             confirm:{
-                label:'Disconnect',
+                label:_('Disconnect'),
                 className:'btn-danger'
             }
         }
