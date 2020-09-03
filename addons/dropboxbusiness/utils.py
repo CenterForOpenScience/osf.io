@@ -37,6 +37,8 @@ def DEBUG(msg):
     else:
         logger.debug(msg)
 
+if not ENABLE_DEBUG:
+    logging.getLogger('dropbox').setLevel(logging.CRITICAL)
 
 def eppn_to_email(eppn):
     return settings.EPPN_TO_EMAIL_MAP.get(eppn, eppn)
@@ -1096,12 +1098,12 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info):
         }
         verify_result = timestamp.check_file_timestamp(
             user.id, node, file_info, verify_external_only=True)
-        DEBUG('BEFORE: ' + str(verify_result.get('verify_result_title')))
+        DEBUG('check timestamp: verify_result={}'.format(verify_result.get('verify_result_title')))
         if verify_result['verify_result'] == \
            api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
             return
         verify_result = timestamp.add_token(user.id, node, file_info)
-        DEBUG('AFTER: ' + str(verify_result.get('verify_result_title')))
+        logger.info(u'update timestamp by Webhook for Dropbox Business: node_guid={}, path={}, verify_result={}'.format(node._id, path, verify_result.get('verify_result_title')))
 
     # team_folder_id of NodeSettings is not UNIQUE,
     # but two or more NodeSettings do not exist.
@@ -1168,13 +1170,14 @@ def celery_check_and_add_timestamp(self, team_ids):
         team_ids = lock.get_plan(team_ids)
         if len(team_ids) == 0:
             break
+        # to wait for updating timestamp in create_waterbutler_log()
+        time.sleep(5)
         for dbtid in team_ids:
             institution = team_id_to_instituion(dbtid)
-            name = u'Institution={}, Dropbox Team ID={}'.format(
+            name = u'Institution={}, Dropbox Business Team ID={}'.format(
                 institution, dbtid)
             try:
-                DEBUG(u'update timestamp: {}'.format(name))
-                logger.info(u'update timestamp: {}'.format(name))
+                logger.info(u'check and update timestamp: {}'.format(name))
                 _update_team_files(dbtid)
             except Exception:
                 logger.exception(name)
