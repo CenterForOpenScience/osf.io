@@ -241,9 +241,6 @@ class ModeratorSerializer(JSONAPISerializer):
     def get_provider(self, obj):
         return self.context['provider']._id
 
-    def get_absolute_url(self, obj):
-        return obj.absolute_api_v2_url
-
     class Meta:
         type_ = 'moderators'
 
@@ -334,6 +331,14 @@ class PreprintModeratorSerializer(ModeratorSerializer):
         read_only=False,
     )
 
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:preprint-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
 class RegistrationModeratorSerializer(ModeratorSerializer):
 
@@ -342,3 +347,12 @@ class RegistrationModeratorSerializer(ModeratorSerializer):
         related_view_kwargs={'provider_id': 'get_provider'},
         read_only=True,
     )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:registration-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
