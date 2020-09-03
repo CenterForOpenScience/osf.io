@@ -20,6 +20,7 @@ from celery.contrib.abortable import AbortableTask
 
 from osf.models import BaseFileNode
 from osf.models.external import ExternalAccount
+from osf.models.nodelog import NodeLog
 from osf.models.rdm_addons import RdmAddonOption
 from addons.dropboxbusiness import settings, lock
 from admin.rdm_addons.utils import get_rdm_addon_option
@@ -1104,6 +1105,7 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info):
             return
         verify_result = timestamp.add_token(user.id, node, file_info)
         logger.info(u'update timestamp by Webhook for Dropbox Business: node_guid={}, path={}, verify_result={}'.format(node._id, path, verify_result.get('verify_result_title')))
+        timestamp.add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, user.id, PROVIDER_NAME, file_node._id)
 
     # team_folder_id of NodeSettings is not UNIQUE,
     # but two or more NodeSettings do not exist.
