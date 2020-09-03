@@ -29,3 +29,5 @@ var conflictInfo = [_('Skipped'),_('Moved or replaced old version'),_('Kept both
 var permissions = [_('admin'),_('write'),_('read')];
 
 var pageTitleWikiComment = _('home');
+
+var dropbusinessConnectionMsg = _('No tokens.');

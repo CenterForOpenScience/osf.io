@@ -292,7 +292,7 @@ var afterRequest = {
             }
         },
         'fail': function (id, message) {
-            $('#' + id + '_message').html(message);
+            $('#' + id + '_message').html(_(message));
             $('#' + id + '_save').attr('disabled', true);
             $('#' + id + '_save').removeClass('btn-success').addClass('btn-default');
             $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success');
