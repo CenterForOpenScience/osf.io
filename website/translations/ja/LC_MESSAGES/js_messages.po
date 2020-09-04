@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-03 13:12+0900\n"
-"PO-Revision-Date: 2020-07-03 18:52+0900\n"
+"POT-Creation-Date: 2020-09-03 12:45+0900\n"
+"PO-Revision-Date: 2020-09-03 12:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -228,6 +228,7 @@ msgid ""
 msgstr "これにより、アカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:395
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 
@@ -282,6 +283,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:411
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -438,30 +440,49 @@ msgstr ""
 "S3アカウント<strong>%1$s</ "
 "strong>を切断してもよろしいですか？これにより、このアカウントに関連付けられているすべてのプロジェクトのS3へのアクセスが取り消されます。"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:30
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:80
 msgid "Are you sure you want to change institutional storage?"
 msgstr "機関のストレージを変更してもよろしいですか？"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:31
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr "<p>以前のストレージは、プロジェクトのすべてのメンバーが利用できなくなります。</p>"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:35
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:85
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr "変更"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:175
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:264
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:491
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:626
 msgid "Some errors occurred"
 msgstr "いくつかのエラーが発生しました"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:210
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:311
 msgid "Institutional Storage set successfully"
 msgstr "機関ストレージが正常に設定されました"
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:391
+#: website/static/js/addonSettings.js:118
+msgid "Disconnect Account?"
+msgstr "アカウントを切断しますか？"
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:393
+msgid ""
+"Are you sure you want to disconnect the %1$s account "
+"<strong>%2$s</strong>?<br>"
+msgstr "1$sアカウント<strong>%2$s</ strong>を切断してもよろしいですか？"
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:394
+msgid ""
+"This will revoke access to %1$s for all projects using this "
+"account.<br><br>"
+msgstr "これにより、このアカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。"
 
 #: scripts/translations/messages_addonsJson.js:3
 msgid ""
@@ -3299,10 +3320,6 @@ msgstr ""
 "アドオンの認証中にエラーが発生しました。 このアドオンを有効にするには、%1$sアカウントにログインし、GakuNin "
 "RDMへのアクセスを許可してください。"
 
-#: website/static/js/addonSettings.js:118
-msgid "Disconnect Account?"
-msgstr "アカウントを切断しますか？"
-
 #: website/static/js/addonSettings.js:120
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
@@ -4757,6 +4774,22 @@ msgstr "読込み"
 msgid "home"
 msgstr "ホーム"
 
+#: website/static/js/js_messages.js:33
+msgid "No tokens."
+msgstr "トークンがありません。"
+
+#: website/static/js/js_messages.js:33
+msgid "Invalid tokens."
+msgstr "無効なトークンです。"
+
+#: website/static/js/js_messages.js:35
+msgid "Invalid folder."
+msgstr "無効なフォルダです。"
+
+#: website/static/js/js_messages.js:35
+msgid "Credentials are valid"
+msgstr "資格情報は有効です。"
+
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr "Keenデータの%1$sへの送信エラー：<%2$s>"
@@ -5247,7 +5280,9 @@ msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_er
 msgid ""
 "[MAPCORE_SYNC:ERROR] ${user} cannot create a new mAP group for GRDM "
 "project <${node}> (See logs for details)"
-msgstr "[MAPCORE_SYNC:ERROR] ${user}はGRDMプロジェクト<${node}>の新しいmAPグループを作成できません(詳細はログを参照してください)"
+msgstr ""
+"[MAPCORE_SYNC:ERROR] "
+"${user}はGRDMプロジェクト<${node}>の新しいmAPグループを作成できません(詳細はログを参照してください)"
 
 #: website/static/js/logActionsList_extract.js:95
 msgid ""
@@ -7119,7 +7154,7 @@ msgstr "これにより多くのオプションが提供されますが、非常
 msgid "Examples of valid searches include:"
 msgstr "有効な検索の例は次のとおりです。"
 
-#: website/static/js/search-grdm.js:769 website/static/js/search-grdm.js:1035
+#: website/static/js/search-grdm.js:769 website/static/js/search-grdm.js:1067
 #: website/static/js/search.js:578 website/static/js/search.js:605
 msgid "GakuNin RDM | Search"
 msgstr "GakuNin RDM | 検索"
