@@ -616,7 +616,7 @@ class TestAddonLogs(OsfTestCase):
         assert self.node2.storage_usage == 250
 
     def test_add_log_updates_cache_move_outside_osf(self):
-        ''' Renames are actually just move functions with the same nid for src and dest '''
+        ''' Moving a file object out of osfstorage '''
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         self.file2.create_version(self.user, {
@@ -655,7 +655,7 @@ class TestAddonLogs(OsfTestCase):
         assert storage_usage_cache.get(key) == 0
 
     def test_add_log_updates_cache_move_into_osf(self):
-        ''' Renames are actually just move functions with the same nid for src and dest '''
+        ''' Moving file from outside osf into osf storage '''
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
 
@@ -685,7 +685,7 @@ class TestAddonLogs(OsfTestCase):
         assert storage_usage_cache.get(key) == 220
 
     def test_add_log_updates_cache_copy(self):
-        ''' Renames are actually just move functions with the same nid for src and dest '''
+        ''' Testing that file copies retain sizes on both source and destination nodes '''
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         self.file2.create_version(self.user, {
@@ -727,7 +727,7 @@ class TestAddonLogs(OsfTestCase):
         assert self.node2.storage_usage == 250
 
     def test_add_log_updates_cache_copy_same_node(self):
-        ''' Renames are actually just move functions with the same nid for src and dest '''
+        ''' Testing that a new copy is created and the size is added to the node '''
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
         self.file2.create_version(self.user, {

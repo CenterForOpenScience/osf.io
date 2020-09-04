@@ -164,7 +164,7 @@ def update_storage_usage_with_size(payload):
     current_usage = target_node.storage_usage or 0
     target_file = BaseFileNode.load(target_file_id)
 
-    if target_file:
+    if target_file and action in ['copy', 'delete', 'move']:
 
         target_file_size = target_file.versions.aggregate(Sum('size'))['size__sum'] or target_file_size
 
