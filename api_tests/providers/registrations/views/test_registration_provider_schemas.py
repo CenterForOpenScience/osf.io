@@ -5,11 +5,15 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     AuthUserFactory
 )
+from django.contrib.auth.models import Group
+
 
 from osf.models import RegistrationSchema
 from waffle.models import Flag
 
 from osf.migrations import update_provider_auth_groups
+from osf.features import EGAP_ADMINS
+
 
 @pytest.mark.django_db
 class TestRegistrationProviderSchemas:
@@ -75,6 +79,18 @@ class TestRegistrationProviderSchemas:
         provider.save()
         return provider
 
+    @pytest.fixture
+    def egap_admin(self):
+        user = AuthUserFactory()
+        user.save()
+        flag = Flag.objects.get(name=EGAP_ADMINS)
+        group = Group.objects.create(name=EGAP_ADMINS)  # Just using the same name for convenience
+        flag.groups.add(group)
+        group.user_set.add(user)
+        group.save()
+        flag.save()
+        return user
+
     @pytest.fixture()
     def url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/schemas/'
@@ -92,6 +108,9 @@ class TestRegistrationProviderSchemas:
             app,
             url,
             schema,
+            egap_schema,
+            egap_admin,
+            invisible_schema,
             user,
             url_with_v2_prereg_only,
             url_with_egap_only
@@ -100,11 +119,12 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 1
-        assert data[0]['id'] == schema._id
-        assert data[0]['attributes']['name'] == schema.name
+        assert len(data) == 2
+        assert schema._id in [item['id'] for item in data]
+        assert invisible_schema._id in [item['id'] for item in data]
+        assert schema.name in [item['attributes']['name'] for item in data]
 
-        res = app.get(url_with_v2_prereg_only, auth=user.auth)
+        res = app.get(url_with_v2_prereg_only, auth=egap_admin.auth)
         assert res.status_code == 200
         data = res.json['data']
 
@@ -122,11 +142,17 @@ class TestRegistrationProviderSchemas:
             self,
             app,
             user,
-            egap_flag,
+            egap_admin,
             egap_schema,
             url_with_egap_only
     ):
         res = app.get(url_with_egap_only, auth=user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+
+        assert len(data) == 0
+
+        res = app.get(url_with_egap_only, auth=egap_admin.auth)
         assert res.status_code == 200
         data = res.json['data']
 
