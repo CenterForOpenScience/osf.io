@@ -234,6 +234,13 @@ class ModeratorSerializer(JSONAPISerializer):
     permission_group = ser.CharField(required=True)
     email = ser.EmailField(required=False, write_only=True, validators=[validate_email])
 
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<_id>'},
+        always_embed=True,
+        required=False,
+    )
+
     links = LinksField({
         'self': 'get_absolute_url',
     })
