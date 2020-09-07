@@ -294,7 +294,7 @@ msgid ""
 "deauthorizing and reauthorizing %(addonName)s on your                <a "
 "href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 <a "
 "href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
@@ -305,7 +305,7 @@ msgid ""
 " addon credentials                may no longer be valid. Contact "
 "%(authOsfName)s to verify."
 msgstr ""
-"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
+"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 "
 "%(authOsfName)sに連絡して確認してください。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
@@ -437,7 +437,7 @@ msgid ""
 "deauthorizing and reauthorizing %(addonName)s on your                    "
 "<a href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 <a "
 "href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
@@ -446,7 +446,7 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Contact "
 "%(authOsfName)s to verify."
-msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
+msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
 #: addons/wiki/templates/edit.mako:34
@@ -530,7 +530,7 @@ msgid ""
 "encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
-"これらの資格情報は暗号化されます。 ただし、<a "
+"これらの認証情報は暗号化されます。 ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
@@ -580,7 +580,7 @@ msgid ""
 "encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
-"これらの資格情報は暗号化されます。 ただし、<a "
+"これらの認証情報は暗号化されます。 ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
@@ -1167,7 +1167,7 @@ msgstr "続ける"
 
 #: website/templates/claim_account_registered.mako:9
 msgid "Please enter your credentials to continue."
-msgstr "続行するには資格情報を入力してください。"
+msgstr "続行するには認証情報を入力してください。"
 
 #: website/templates/claim_account_registered.mako:23
 #, python-format

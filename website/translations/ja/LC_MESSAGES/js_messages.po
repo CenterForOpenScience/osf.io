@@ -405,7 +405,7 @@ msgstr "ユーザー名とパスワードを入力してください。"
 
 #: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:86
 msgid "Please enter an ownCloud host and credentials."
-msgstr "ownCloudホストと資格情報を入力してください。"
+msgstr "ownCloudホストと認証情報を入力してください。"
 
 #: admin/static/js/rdm_addons/owncloud/owncloudRdmConfig.js:104
 msgid "Could not authenticate with ownCloud"
@@ -3279,7 +3279,7 @@ msgid ""
 msgstr ""
 "アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
 "RDMの2番目のDropboxアカウントに接続する前に、dropbox.comからログアウトしてください。 "
-"これにより、ブラウザに保存されている資格情報がクリアされます。"
+"これにより、ブラウザに保存されている認証情報がクリアされます。"
 
 #: website/static/js/addonSettings.js:102
 msgid ""
@@ -3290,7 +3290,7 @@ msgid ""
 msgstr ""
 "アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
 "RDMの2つ目のBitbucketアカウントに接続する前に、bitbucket.orgからログアウトしてください。 "
-"これにより、ブラウザに保存されている資格情報がクリアされます"
+"これにより、ブラウザに保存されている認証情報がクリアされます"
 
 #: website/static/js/addonSettings.js:104
 msgid ""
@@ -3301,7 +3301,7 @@ msgid ""
 msgstr ""
 "アドオンが正常に認証されました。 別のアカウントをリンクする場合は、GakuNin "
 "RDMの2つ目のOneDriveアカウントに接続する前にonedrive.live.comからログアウトします。 "
-"これにより、ブラウザに保存されている資格情報がクリアされます。"
+"これにより、ブラウザに保存されている認証情報がクリアされます。"
 
 #: website/static/js/addonSettings.js:106
 msgid ""
@@ -4292,7 +4292,7 @@ msgstr "背景メッセージ本文。"
 msgid ""
 "Could not retrieve %1$s settings at this time. The credentials associated"
 " with this %1$s account may no longer be valid."
-msgstr "現在、%1$sの設定を取得できませんでした。 この%1$sアカウントに関連付けられている資格情報は無効になっている可能性があります。"
+msgstr "現在、%1$sの設定を取得できませんでした。 この%1$sアカウントに関連付けられている認証情報は無効になっている可能性があります。"
 
 #: website/static/js/folderPickerNodeConfig.js:109
 msgid ""
@@ -4304,7 +4304,7 @@ msgstr "<a href=\"%2$s\">アカウント設定ページ</a>で%1$sアカウン�
 msgid ""
 "Could not retrieve %1$s settings at this time. The %1$s addon credentials"
 " may no longer be valid."
-msgstr "現在、%1$sの設定を取得できませんでした。%1$sアドオンの資格情報は無効になっている可能性があります。"
+msgstr "現在、%1$sの設定を取得できませんでした。%1$sアドオンの認証情報は無効になっている可能性があります。"
 
 #: website/static/js/folderPickerNodeConfig.js:113
 msgid " Contact %1$s to verify."
@@ -4788,7 +4788,7 @@ msgstr "無効なフォルダです。"
 
 #: website/static/js/js_messages.js:35
 msgid "Credentials are valid"
-msgstr "資格情報は有効です。"
+msgstr "有効な認証情報が設定されています。"
 
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
