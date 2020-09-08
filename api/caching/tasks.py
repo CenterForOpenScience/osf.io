@@ -132,7 +132,7 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
             offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, cache_settings.ONE_DAY_TIMEOUT)
+    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
 
 def update_storage_usage(target):
@@ -144,7 +144,6 @@ def update_storage_usage(target):
 def update_storage_usage_with_size(payload):
     BaseFileNode = apps.get_model('osf.basefilenode')
     AbstractNode = apps.get_model('osf.abstractnode')
-    Preprint = apps.get_model('osf.preprint')
 
     metadata = payload.get('metadata') or payload.get('destination')
 
@@ -152,7 +151,7 @@ def update_storage_usage_with_size(payload):
         return
     target_node = AbstractNode.load(metadata['nid'])
 
-    if isinstance(target_node, Preprint) or target_node.is_quickfiles:
+    if target_node.is_quickfiles:
         return
 
     action = payload['action']
@@ -185,7 +184,7 @@ def update_storage_usage_with_size(payload):
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
             key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
-            storage_usage_cache.set(key, source_node_usage, cache_settings.ONE_DAY_TIMEOUT)
+            storage_usage_cache.set(key, source_node_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
         current_usage += target_file_size
 
@@ -195,4 +194,4 @@ def update_storage_usage_with_size(payload):
         return
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_node._id)
-    storage_usage_cache.set(key, current_usage, cache_settings.ONE_DAY_TIMEOUT)
+    storage_usage_cache.set(key, current_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)

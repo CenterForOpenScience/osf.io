@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from osf.models import AbstractNode, Preprint
+from osf.models import AbstractNode
 from api.caching.tasks import update_storage_usage_cache
 
 from django.core.management.base import BaseCommand
@@ -19,7 +19,8 @@ def update_storage_usage(dry_run=False, days=DAYS):
         modified_limit = timezone.now() - timezone.timedelta(days=days)
         recently_modified = AbstractNode.objects.filter(modified__gt=modified_limit)
         for modified_node in recently_modified:
-            if not isinstance(modified_node, Preprint) and not modified_node.is_quickfiles:
+            file_op_occurred = modified_node.logs.filter(action__contains='file', created__gt=modified_limit).exists()
+            if not modified_node.is_quickfiles and file_op_occurred:
                 update_storage_usage_cache(modified_node.id, modified_node._id)
 
         if dry_run:
