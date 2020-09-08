@@ -574,6 +574,18 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert self.node.storage_usage == 120
 
+        payload = self.build_payload(metadata={
+            'materialized': path,
+            'kind': 'file',
+            'path': path,
+            'size': 140,
+            'nid': self.node._id,
+        }, action='update')
+
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.node.reload()
+        assert self.node.storage_usage == 260
+
     def test_add_log_updates_cache_move(self):
         self.configure_osf_addon()
         url = self.node.api_url_for('create_waterbutler_log')
@@ -614,6 +626,56 @@ class TestAddonLogs(OsfTestCase):
 
         self.node2.reload()
         assert self.node2.storage_usage == 250
+
+    def test_add_log_updates_cache_move_multiversion(self):
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        self.file2.create_version(self.user, {
+            'object': '06d80f',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 275,
+            'contentType': 'img/png'
+        }).save()
+
+        assert self.node.storage_usage == 525
+
+        payload = self.build_payload_with_dest(
+            action='move',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node2._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 0
+
+        self.node2.reload()
+        assert self.node2.storage_usage == 525
 
     def test_add_log_updates_cache_move_outside_osf(self):
         ''' Moving a file object out of osfstorage '''
@@ -726,6 +788,57 @@ class TestAddonLogs(OsfTestCase):
         self.node2.reload()
         assert self.node2.storage_usage == 250
 
+    def test_add_log_updates_cache_copy_multiversion(self):
+        ''' Testing that file copies retain sizes on both source and destination nodes '''
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        self.file2.create_version(self.user, {
+            'object': '06d80f',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 275,
+            'contentType': 'img/png'
+        }).save()
+
+        assert self.node.storage_usage == 525
+
+        payload = self.build_payload_with_dest(
+            action='copy',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node2._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 525
+
+        self.node2.reload()
+        assert self.node2.storage_usage == 525
+
     def test_add_log_updates_cache_copy_same_node(self):
         ''' Testing that a new copy is created and the size is added to the node '''
         self.configure_osf_addon()
@@ -765,6 +878,55 @@ class TestAddonLogs(OsfTestCase):
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 500
 
+    def test_add_log_updates_cache_copy_same_node_multiversion(self):
+        ''' Testing that a new copy is created and the size is added to the node '''
+        self.configure_osf_addon()
+        url = self.node.api_url_for('create_waterbutler_log')
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        self.file2.create_version(self.user, {
+            'object': '06d80f',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 275,
+            'contentType': 'img/png'
+        }).save()
+
+
+        assert self.node.storage_usage == 525
+
+        payload = self.build_payload_with_dest(
+            action='copy',
+            source={
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'nid': self.node._id,
+                'provider': 'osfstorage',
+                'name': 'new.txt',
+                'path': '/lollipop'
+            },
+            destination={
+                'path': '/lollipop',
+                'materialized': 'lollipop',
+                'kind': 'file',
+                'provider': 'osfstorage',
+                'nid': self.node._id,
+                'name': 'new.txt',
+            },
+        )
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 1050
+
     def test_add_log_updates_cache_delete(self):
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -782,6 +944,44 @@ class TestAddonLogs(OsfTestCase):
 
         self.node.reload()
         assert self.node.storage_usage == 200
+
+        payload = self.build_payload(metadata={
+            'materialized': '/lollipop',
+            'kind': 'file',
+            'path': '/lollipop',
+            'nid': self.node._id,
+        }, action='delete')
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        assert storage_usage_cache.get(key) == 0
+
+    def test_add_log_updates_cache_delete_multiversion(self):
+        from addons.osfstorage import settings as osfstorage_settings
+
+        url = self.node.api_url_for('create_waterbutler_log')
+
+        self.configure_osf_addon()
+        self.file2.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 200,
+            'contentType': 'img/png'
+        }).save()
+
+        self.file2.create_version(self.user, {
+            'object': '06d80f',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 250,
+            'contentType': 'img/png'
+        }).save()
+
+        self.node.reload()
+        assert self.node.storage_usage == 450
 
         payload = self.build_payload(metadata={
             'materialized': '/lollipop',
