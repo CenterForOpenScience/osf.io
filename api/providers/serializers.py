@@ -234,12 +234,12 @@ class ModeratorSerializer(JSONAPISerializer):
     permission_group = ser.CharField(required=True)
     email = ser.EmailField(required=False, write_only=True, validators=[validate_email])
 
-    # user = RelationshipField(
-    #     related_view='users:user-detail',
-    #     related_view_kwargs={'user_id': '<_id>'},
-    #     always_embed=True,
-    #     required=False,
-    # )
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<_id>'},
+        always_embed=True,
+        required=False,
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -247,6 +247,9 @@ class ModeratorSerializer(JSONAPISerializer):
 
     def get_provider(self, obj):
         return self.context['provider']._id
+
+    def get_absolute_url(self, obj):
+        raise NotImplementedError
 
     class Meta:
         type_ = 'moderators'
