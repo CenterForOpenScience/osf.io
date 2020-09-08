@@ -8,7 +8,9 @@ import requests
 from swiftclient import exceptions as swift_exceptions
 import os
 import owncloud
+from django.core.exceptions import ValidationError
 
+from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
 from addons.box import settings as box_settings
@@ -18,6 +20,13 @@ from addons.s3 import utils as s3_utils
 from addons.s3compat import utils as s3compat_utils
 from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
+from addons.dropboxbusiness import utils as dropboxbusiness_utils
+from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
+from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
+from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
+                                            KEYNAME_USERMAP,
+                                            KEYNAME_USERMAP_TMP,
+                                            sync_all)
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
@@ -26,10 +35,22 @@ import datetime
 
 
 providers = None
+
+enabled_providers_forinstitutions_list = [
+    'dropboxbusiness',
+    'nextcloudinstitutions',
+]
+
 enabled_providers_list = [
     's3', 'box', 'googledrive', 'osfstorage',
-    'nextcloud', 'swift', 'owncloud', 's3compat'
+    'nextcloud', 'swift', 'owncloud', 's3compat',
 ]
+enabled_providers_list.extend(enabled_providers_forinstitutions_list)
+
+no_storage_name_providers = ['osfstorage']
+
+def have_storage_name(provider_name):
+    return provider_name not in no_storage_name_providers
 
 def get_providers():
     provider_list = []
@@ -67,6 +88,47 @@ def get_oauth_info_notification(institution_id, provider_short_name):
             'provider_id': temp_external_account.provider_id,
             'provider_name': temp_external_account.provider_name,
         }
+
+def set_allowed(institution, provider_name, is_allowed):
+    addon_option = get_rdm_addon_option(institution.id, provider_name)
+    addon_option.is_allowed = is_allowed
+    addon_option.save()
+    # NOTE: ExternalAccounts is not cleared even if other storage is selected.
+    # if not is_allowed:
+    #     addon_option.external_accounts.clear()
+
+def change_allowed_for_institutions(institution, provider_name):
+    if provider_name in enabled_providers_forinstitutions_list:
+        set_allowed(institution, provider_name, True)
+
+    # disable other storages for Institutions
+    for p in get_providers():
+        if p.short_name == provider_name:
+            continue  # skip this provider
+        if p.for_institutions:
+            set_allowed(institution, p.short_name, False)
+
+def set_default_storage(institution_id):
+    default_region = Region.objects.first()
+    try:
+        region = Region.objects.get(_id=institution_id)
+        # copy
+        region.name = default_region.name
+        region.waterbutler_credentials = default_region.waterbutler_credentials
+        region.waterbutler_settings = default_region.waterbutler_settings
+        region.waterbutler_url = default_region.waterbutler_url
+        region.mfr_url = default_region.mfr_url
+        region.save()
+    except Region.DoesNotExist:
+        region = Region.objects.create(
+            _id=institution_id,
+            name=default_region.name,
+            waterbutler_credentials=default_region.waterbutler_credentials,
+            waterbutler_settings=default_region.waterbutler_settings,
+            waterbutler_url=default_region.waterbutler_url,
+            mfr_url=default_region.mfr_url,
+        )
+    return region
 
 def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
     try:
@@ -261,11 +323,11 @@ def test_owncloud_connection(host_url, username, password, folder, provider):
     elif provider == 'nextcloud':
         provider_name = 'Nextcloud'
         provider_setting = nextcloud_settings
+    elif provider == 'nextcloudinstitutions':
+        provider_name = NextcloudInstitutionsProvider.name
+        provider_setting = nextcloudinstitutions_settings
 
-    # Ensure that ownCloud uses https
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
+    host = use_https(host_url)
 
     try:
         client = owncloud.Client(host.url, verify_certs=provider_setting.USE_SSL)
@@ -350,6 +412,32 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
         'message': 'Credentials are valid',
         'data': swift_response
     }, http_status.HTTP_200_OK)
+
+def test_dropboxbusiness_connection(institution):
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id,
+                                                     allowed_check=False)
+    if fm is None:
+        return ({
+            'message': u'Invalid Institution ID.: {}'.format(institution.id)
+        }, http_status.HTTP_400_BAD_REQUEST)
+
+    f_option, m_option = fm
+    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
+    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
+        return ({
+            'message': 'No tokens.'
+        }, http_status.HTTP_400_BAD_REQUEST)
+    try:
+        # use two tokens and connect
+        dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
+        return ({
+            'message': 'Credentials are valid',
+        }, http_status.HTTP_200_OK)
+    except Exception:
+        return ({
+            'message': 'Invalid tokens.'
+        }, http_status.HTTP_400_BAD_REQUEST)
 
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
@@ -504,13 +592,8 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
     }, http_status.HTTP_200_OK)
 
 def save_osfstorage_credentials(institution_id):
-    try:
-        region = Region.objects.get(_id=institution_id)
-    except Region.DoesNotExist:
-        pass
-    else:
-        external_util.remove_region_external_account(region)
-        region.delete()
+    region = set_default_storage(institution_id)
+    external_util.remove_region_external_account(region)
     return ({
         'message': 'NII storage was set successfully'
     }, http_status.HTTP_200_OK)
@@ -586,3 +669,158 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
     return ({
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
+
+def wd_info_for_institutions(provider_name):
+    wb_credentials = {
+        'storage': {
+        },
+    }
+    wb_settings = {
+        'disabled': True,  # used in rubeus.py
+        'storage': {
+            'provider': provider_name
+        },
+    }
+    return (wb_credentials, wb_settings)
+
+def use_https(url):
+    # Ensure that NextCloud uses https
+    host = furl()
+    host.host = url.rstrip('/').replace('https://', '').replace('http://', '')
+    host.scheme = 'https'
+    return host
+
+def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
+    test_connection_result = test_dropboxbusiness_connection(institution)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    region = update_storage(institution._id,  # not institution.id
+                            storage_name,
+                            wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
+    ### sync_all() is not supported by Dropbox Business Addon
+    # sync_all(institution._id, target_addons=[provider_name])
+
+    return ({
+        'message': 'Dropbox Business was set successfully!!'
+    }, http_status.HTTP_200_OK)
+
+def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, provider_name):
+    test_connection_result = test_owncloud_connection(
+        host_url, username, password, folder, provider_name)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    host = use_https(host_url)
+    provider = NextcloudInstitutionsProvider(
+        account=None, host=host.url,
+        username=username, password=password)
+    try:
+        provider.account.save()
+    except ValidationError:
+        # ... or get the old one
+        provider.account = ExternalAccount.objects.get(
+            provider=provider_name,
+            provider_id='{}:{}'.format(host.url, username).lower()
+        )
+        if provider.account.oauth_key != password:
+            provider.account.oauth_key = password
+            provider.account.save()
+
+    # Storage Addons for Institutions must have only one ExternalAccont.
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    if rdm_addon_option.external_accounts.count() > 0:
+        rdm_addon_option.external_accounts.clear()
+    rdm_addon_option.external_accounts.add(provider.account)
+
+    rdm_addon_option.extended[KEYNAME_BASE_FOLDER] = folder
+    rdm_addon_option.save()
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    region = update_storage(institution._id,  # not institution.id
+                            storage_name,
+                            wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
+
+    save_usermap_from_tmp(provider_name, institution)
+    sync_all(institution._id, target_addons=[provider_name])
+
+    return ({
+        'message': 'Saved credentials successfully!!'
+    }, http_status.HTTP_200_OK)
+
+def get_nextcloudinstitutions_credentials(institution):
+    provider_name = 'nextcloudinstitutions'
+    clear_usermap_tmp(provider_name, institution)
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return None
+    exacc = rdm_addon_option.external_accounts.first()
+    if not exacc:
+        return None
+    provider = NextcloudInstitutionsProvider(exacc)
+    folder = rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)
+    if not folder:
+        folder = nextcloudinstitutions_settings.DEFAULT_BASE_FOLDER
+
+    data = {}
+    host = use_https(provider.host)
+    data[provider_name + '_host'] = host.host
+    data[provider_name + '_username'] = provider.username
+    data[provider_name + '_password'] = provider.password  # NOTICE
+    data[provider_name + '_folder'] = folder
+    return data
+
+def extuser_exists(provider_name, post_params, extuser):
+    # return "error reason", None means existence
+    if provider_name == 'nextcloudinstitutions':
+        provider_setting = nextcloudinstitutions_settings
+        host_url = post_params.get(provider_name + '_host')
+        username = post_params.get(provider_name + '_username')
+        password = post_params.get(provider_name + '_password')
+        # folder = post_params.get(provider_name + '_folder')
+        try:
+            host = use_https(host_url)
+            client = owncloud.Client(host.url,
+                                     verify_certs=provider_setting.USE_SSL)
+            client.login(username, password)
+            if client.user_exists(extuser):
+                return None  # exist
+            return 'not exist'
+        except Exception as e:
+            return str(e)
+    else:  # unsupported
+        return None  # ok
+
+def get_usermap(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return None
+    return rdm_addon_option.extended.get(KEYNAME_USERMAP)
+
+def save_usermap_to_tmp(provider_name, institution, usermap):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    rdm_addon_option.extended[KEYNAME_USERMAP_TMP] = usermap
+    rdm_addon_option.save()
+
+def clear_usermap_tmp(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
+                                            create=False)
+    if not rdm_addon_option:
+        return
+    new_usermap = rdm_addon_option.extended.get(KEYNAME_USERMAP_TMP)
+    if new_usermap:
+        del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
+        rdm_addon_option.save()
+
+def save_usermap_from_tmp(provider_name, institution):
+    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
+    new_usermap = rdm_addon_option.extended.get(KEYNAME_USERMAP_TMP)
+    if new_usermap:
+        rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
+        del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
+        rdm_addon_option.save()

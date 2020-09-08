@@ -110,8 +110,11 @@ if USE_NGRAM_FIELD:
         },
     })
 
+def is_japanese_analyzer():
+    return settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE
+
 def node_includes_wiki():
-    return settings.SEARCH_ANALYZER != settings.SEARCH_ANALYZER_JAPANESE
+    return not is_japanese_analyzer()
 
 # INDEX is modified by tests. (TODO: INDEX is unnecessary for GRDM ver.)
 INDEX = settings.ELASTIC_INDEX
@@ -1584,7 +1587,7 @@ def create_index(index=None):
         }
     }
 
-    if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
+    if is_japanese_analyzer():
         analyzer = GRDM_JA_ANALYZER_PROPERTY
         index_settings = index_settings_ja
     else:
@@ -1770,8 +1773,13 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     def item_format_normal(item):
         return u'{}*~'.format(es_escape(item))
 
-    item_format = item_format_normal
-    if settings.ENABLE_MULTILINGUAL_SEARCH:
+    def item_format_japanese_analyzer(item):
+        return u'{}'.format(es_escape(item))
+
+    item_format = item_format_normal  # COS ver.
+    if is_japanese_analyzer():  # GRDM ver.
+        item_format = item_format_japanese_analyzer
+    elif settings.ENABLE_MULTILINGUAL_SEARCH:  # old GRDM ver.
         item_format = item_format_quote
 
     query = u'  AND '.join(item_format(item) for item in items) + \

@@ -8,6 +8,7 @@ project_created = signals.signal('project-created')
 contributor_removed = signals.signal('contributor-removed')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
 write_permissions_revoked = signals.signal('write-permissions-revoked')
+contributors_updated = signals.signal('contributors-updated')  # GRDM ver.
 node_deleted = signals.signal('node-deleted')
 
 after_create_registration = signals.signal('post-create-registration')

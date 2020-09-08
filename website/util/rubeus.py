@@ -249,8 +249,26 @@ class NodeFileCollector(object):
 
     def _collect_addons(self, node):
         rv = []
+        region_disabled = False
+        region_provider = None
+        osfstorage = node.get_addon('osfstorage')
+        if osfstorage:
+            region = osfstorage.region
+            if region and region.waterbutler_settings:
+                region_disabled = region.waterbutler_settings.get(
+                    'disabled', False)
+                storage = region.waterbutler_settings.get('storage', None)
+                if storage:
+                    region_provider = storage.get('provider', None)
+
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
+                if addon == osfstorage and region_disabled:
+                    continue  # skip (hide osfstorage)
+                if addon.config.for_institutions:
+                    if region_provider != addon.config.short_name:
+                        continue  # skip (hide this *institutions)
+
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)

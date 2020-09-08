@@ -251,7 +251,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
                 team_name
             )
         except DropboxException:
-            logger.exception('Failed to auto mount of Dropbox Business.: team_folder_id={}'.format(team_folder_id))
+            logger.exception(u'Failed to auto mount of Dropbox Business.: team_folder_name={}'.format(self.team_folder_name))
             raise
 
         self.team_folder_id = team_folder_id

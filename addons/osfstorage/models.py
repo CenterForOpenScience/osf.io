@@ -458,6 +458,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
             child.update_region_from_latest_version(destination_parent)
 
 class Region(models.Model):
+    # GRDM ver.: Region._id may be Institution._id
     _id = models.CharField(max_length=255, db_index=True)
     name = models.CharField(max_length=200)
     waterbutler_credentials = EncryptedJSONField(default=dict)

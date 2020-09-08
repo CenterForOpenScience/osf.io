@@ -16,3 +16,18 @@
 .next-btn {
     margin-left: 12px;
 }
+
+.csv-upload-button {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.csv-upload-button input[type=file] {
+    display: none;
+}
+
+.csv-upload-button div {
+    margin-left: 10px;
+}

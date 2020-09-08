@@ -1,0 +1,94 @@
+{% load i18n %}
+<div class="modal fade" id="nextcloudinstitutions_modal" tabindex="-1" role="dialog" aria-labelledby="nextcloudinstitutions_modal_label">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title" id="nextcloudinstitutions_modal_label">{% trans "Connect a Nextcloud Account" %} (Nextcloud for Institutions)</h3>
+                </div>
+                <div class="modal-body">
+                    <div class='row'>
+                        <div class="col-sm-6">
+                            <!-- Custom input -->
+                            <div id="nextcloudinstitutions_custom_host_div">
+                                <label>{% trans "Host URL" %}</label>
+                                <div class="input-group form-group">
+                                    <div class="input-group-addon">https://</div>
+                                    <input type="text" class="form-control nextcloudinstitutions-params" id='nextcloudinstitutions_host'  placeholder="nextcloud.example.org" required>
+                                </div>
+                                <div class="text-muted" style="text-align: center">
+                                    <em>{% blocktrans %}Only Nextcloud instances supporting <a
+                                            href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html"
+                                            target="_blank">WebDAV</a> and <a
+                                            href="https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/"
+                                            target="_blank">
+                                            OCS v1.7</a> are supported.{% endblocktrans %}
+                                    </em>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_folder">{% trans "Folder" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_folder"
+                                    placeholder="/GRDM" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_username">{% trans "Username" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_username" placeholder="username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_password">{% trans "Password" %}</label>
+                                <input type="password" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_password"
+                                    placeholder="********" required>
+                            </div>
+                            <div class="text-muted" style="text-align: center">
+                                <em>{% blocktrans %} These credentials will be encrypted. However, we <strong>strongly
+                                        encourage</strong> using a <a
+                                        href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices"
+                                        target="_blank"> Device (or App) Password</a>.{% endblocktrans %}
+                                </em>
+                            </div>
+                        </div>
+
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label>{% trans "Download User Mapping file" %}</label><br/>
+                                <button type="button" class="btn btn-default download-csv" id="csv_download">{% trans "Download" %}</button>
+                                <div id="csv_download_ng" class="text-danger"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>{% trans "Upload User Mapping file" %}</label></br>
+                                <input type="checkbox" class="selection" id="csv_check_extuser"> {% trans "Check existence of external users" %} ({% trans "Only Nextcloud Admin can check" %})
+                                <div class="csv-upload-button">
+                                    <label class="btn btn-default btn-file">
+                                        {% trans "Browse" %}<input type="file" name="usermap" id="csv_file" accept=".csv">
+                                    </label>
+                                    <div id="csv_file_name"></div>
+                                </div>
+                                <div class="text-muted" style="text-align: left" id="csv_report">
+                                    <em>
+{% blocktrans %}Example of User Mapping file{% endblocktrans %}:<br/>
+#User_GUID(or ePPN),External_UserID,Fullname(ignored)<br/>
+eppn_user1@idp.example.com,external_user1,User1<br/>
+ABCDE,external_user2,User2<br/>
+                                    </em>
+                                </div>
+                                <div id="csv_usermap" hidden></div>
+                                <div id="csv_ok" class="text-success"></div>
+                                <div id="csv_ng" class="text-danger"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-block">
+                        <p id="nextcloudinstitutions_message" class="text-danger"></p>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                    <button type="button" class="btn btn-success test-connection" id="nextcloudinstitutions_connect" disabled>{% trans "Connect" %}</button>
+                    <button type="button" class="btn btn-default save-credentials" id="nextcloudinstitutions_save" disabled>{% trans "Save" %}</button>
+                </div>
+            </div>
+        </div>
+</div>

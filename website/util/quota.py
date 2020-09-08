@@ -11,7 +11,7 @@ from osf.models import (
     AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
     ProjectStorageType
 )
-import inspect
+# import inspect
 logger = logging.getLogger(__name__)
 
 
@@ -150,8 +150,8 @@ def file_modified(target, user, payload, file_node, storage_type):
     file_info.save()
 
 def update_default_storage(user):
-    logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
-    logger.info(user)
+    # logger.info('----{}::{}({})from:{}::{}({})'.format(inspect.getframeinfo(inspect.currentframe())[0], inspect.getframeinfo(inspect.currentframe())[2], inspect.getframeinfo(inspect.currentframe())[1], inspect.stack()[1][1], inspect.stack()[1][3], inspect.stack()[1][2]))
+    # logger.info(user)
     if user is not None:
         user_settings = user.get_addon('osfstorage')
         if user_settings is None:
@@ -159,14 +159,15 @@ def update_default_storage(user):
         institution = user.affiliated_institutions.first()
         if institution is not None:
             try:
-                logger.info(u'Institution: {}'.format(institution.name))
+                # logger.info(u'Institution: {}'.format(institution.name))
                 region = Region.objects.get(_id=institution._id)
             except Region.DoesNotExist:
-                logger.info('Inside update_default_storage: region does not exist.')
+                # logger.info('Inside update_default_storage: region does not exist.')
                 pass
             else:
-                user_settings.set_region(region._id)
-                logger.info(u'user_settings.set_region({})'.format(region.name))
+                if user_settings.default_region._id != region._id:
+                    user_settings.set_region(region._id)
+                    logger.info(u'user={}, institution={}, user_settings.set_region({})'.format(user, institution.name, region.name))
 
 def get_node_file_list(file_node):
     if 'file' in file_node.type:

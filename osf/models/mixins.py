@@ -1406,6 +1406,7 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
+            project_signals.contributors_updated.send(self)
             if self._id and contrib_to_add:
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
@@ -1630,6 +1631,7 @@ class ContributorMixin(models.Model):
 
         if save:
             self.save()
+        project_signals.contributors_updated.send(self)
 
     def remove_contributor(self, contributor, auth, log=True):
         """Remove a contributor from this node.
@@ -1674,6 +1676,7 @@ class ContributorMixin(models.Model):
         self.save()
         # send signal to remove this user from project subscriptions
         project_signals.contributor_removed.send(self, user=contributor)
+        project_signals.contributors_updated.send(self)
 
         # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is removed
         if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
@@ -1825,6 +1828,7 @@ class ContributorMixin(models.Model):
                 )
             if save:
                 self.save()
+            project_signals.contributors_updated.send(self)
 
             with transaction.atomic():
                 if to_remove or permissions_changed and [READ] in permissions_changed.values():
