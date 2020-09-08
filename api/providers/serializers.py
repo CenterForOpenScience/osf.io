@@ -249,7 +249,7 @@ class ModeratorSerializer(JSONAPISerializer):
         return self.context['provider']._id
 
     def get_absolute_url(self, obj):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     class Meta:
         type_ = 'moderators'
