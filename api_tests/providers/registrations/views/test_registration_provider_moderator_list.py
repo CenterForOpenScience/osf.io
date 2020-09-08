@@ -4,11 +4,11 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     RegistrationProviderFactory,
 )
-from api_tests.providers.preprints.views.test_preprint_provider_moderator_list import TestPreprintProviderModeratorList
+from api_tests.providers.preprints.views.test_preprint_provider_moderator_list import ProviderModeratorListTestClass
 
 
 @pytest.mark.django_db
-class TestRegistrationProviderModeratorList(TestPreprintProviderModeratorList):
+class TestRegistrationProviderModeratorList(ProviderModeratorListTestClass):
 
     @pytest.fixture()
     def provider(self):
