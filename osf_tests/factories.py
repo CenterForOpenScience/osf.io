@@ -406,7 +406,13 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
+        if not draft_registration:
+            draft_registration = DraftRegistrationFactory(
+                branched_from=project,
+                initator=user,
+                registration_schema=schema,
+                provider=provider
+            )
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
@@ -441,6 +447,8 @@ class RegistrationFactory(BaseNodeFactory):
         if is_public:
             reg.is_public = True
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
+        draft_registration.registered_node = reg
+        draft_registration.save()
         reg.save()
         return reg
 
@@ -978,6 +986,9 @@ class SwitchFactory(DjangoModelFactory):
 class NodeRequestFactory(DjangoModelFactory):
     class Meta:
         model = models.NodeRequest
+
+    creator = factory.SubFactory(AuthUserFactory)
+    target = factory.SubFactory(NodeFactory)
 
     comment = factory.Faker('text')
 

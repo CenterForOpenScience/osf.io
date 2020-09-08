@@ -148,10 +148,14 @@ class CoreScopes(object):
     PREPRINT_REQUESTS_READ = 'preprint_requests_read'
     PREPRINT_REQUESTS_WRITE = 'preprint_requests_write'
 
+    REGISTRATION_REQUESTS_READ = 'registration_request_read'
+
     PROVIDERS_WRITE = 'providers_write'
 
     CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
     CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
+    NODE_REGISTRATIONS_READ = 'node.registrations_read'
 
     WAFFLE_READ = 'waffle_read'
 

@@ -5,7 +5,9 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
 
+from api.actions.serializers import NodeRequestActionSerializer
 from api.base import permissions as base_permissions
+from osf.models.action import RegistrationRequestAction
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView, DeprecatedView
@@ -15,7 +17,8 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
-from api.requests.serializers import PreprintRequestSerializer
+from api.draft_registrations.serializers import DraftRegistrationSerializer
+from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -26,7 +29,22 @@ from api.subjects.serializers import SubjectSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import AbstractNode, CollectionProvider, CollectionSubmission, NodeLicense, OSFUser, RegistrationProvider, Subject, PreprintRequest, PreprintProvider, WhitelistedSHAREPreprintProvider
+
+from osf.models import (
+    AbstractNode,
+    CollectionProvider,
+    CollectionSubmission,
+    NodeLicense,
+    OSFUser,
+    RegistrationProvider,
+    Subject,
+    PreprintRequest,
+    PreprintProvider,
+    WhitelistedSHAREPreprintProvider,
+    NodeRequest,
+    DraftRegistration,
+    RegistrationApproval,
+)
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
@@ -616,6 +634,111 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
 
     def get_default_queryset(self):
         return self.get_provider().schemas.get_latest_versions(request=self.request).filter(active=True)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+
+    ordering = ('-created')
+
+    serializer_class = DraftRegistrationSerializer
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'registration-providers'
+    view_name = 'registrations-list'
+
+    def get_provider(self):
+        # used in perms class
+        return get_object_or_error(
+            RegistrationProvider,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name='RegistrationProvider',
+        )
+
+    def get_default_queryset(self):
+        return DraftRegistration.objects.filter(
+            provider=self.get_provider(),
+            registered_node__registration_approval__state=RegistrationApproval.APPROVED,
+        )
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationProviderRequestList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+    view_category = 'requests'
+    view_name = 'registration-provider-withdrawal-request-list'
+
+    required_read_scopes = [CoreScopes.REGISTRATION_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = RegistrationRequestSerializer
+
+    def get_provider(self):
+        # used in perms class
+        return get_object_or_error(
+            RegistrationProvider,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name='RegistrationProvider',
+        )
+
+    def get_default_queryset(self):
+        return NodeRequest.objects.filter(
+            target__provider_id=self.get_provider().id,
+            target__deleted__isnull=True,
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+    view_category = 'actions'
+    view_name = 'registration-provider-action-list'
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = NodeRequestActionSerializer
+
+    def get_provider(self):
+        # used in perms class
+        return get_object_or_error(
+            RegistrationProvider,
+            self.kwargs['provider_id'],
+            self.request,
+            display_name='RegistrationProvider',
+        )
+
+    def get_default_queryset(self):
+        return RegistrationRequestAction.objects.filter(
+            target__provider_id=self.get_provider().id,
+            target__deleted__isnull=True,
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()

@@ -57,6 +57,10 @@ urlpatterns = [
                     url(r'^(?P<provider_id>\w+)/subjects/highlighted/$', views.RegistrationProviderHighlightedSubjectList.as_view(), name=views.RegistrationProviderHighlightedSubjectList.view_name),
                     url(r'^(?P<provider_id>\w+)/taxonomies/$', views.RegistrationProviderTaxonomies.as_view(), name=views.RegistrationProviderTaxonomies.view_name),
                     url(r'^(?P<provider_id>\w+)/taxonomies/highlighted/$', views.RegistrationProviderHighlightedTaxonomyList.as_view(), name=views.RegistrationProviderHighlightedTaxonomyList.view_name),
+                    url(r'^(?P<provider_id>\w+)/requests/$', views.RegistrationProviderRequestList.as_view(), name=views.RegistrationProviderRequestList.view_name),
+                    url(r'^(?P<provider_id>\w+)/registrations/$', views.RegistrationProviderRegistrationList.as_view(), name=views.RegistrationProviderRegistrationList.view_name),
+                    url(r'^(?P<provider_id>\w+)/actions/$', views.RegistrationProviderActionList.as_view(), name=views.RegistrationProviderActionList.view_name),
+
                 ], 'registrations',
             ),
             namespace='registration-providers',

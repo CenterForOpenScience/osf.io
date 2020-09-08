@@ -19,6 +19,7 @@ from api.nodes.serializers import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
 from website import settings
+from osf.utils.workflows import RegistrationStates
 
 
 class NodeRelationshipField(RelationshipField):
@@ -35,10 +36,16 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
 
     DraftRegistrations have several fields that can be edited that are persisted to the final registration.
     """
+
+    filterable_fields = frozenset([
+        'machine_state',
+    ])
+
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
     title = ser.CharField(required=False, allow_blank=True)
+    machine_state = ser.ChoiceField(read_only=True, required=False, choices=RegistrationStates.choices())
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
 
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)

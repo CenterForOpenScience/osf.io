@@ -25,7 +25,7 @@ class TestEGAPMoveToProvider:
 
     @pytest.fixture()
     def non_egap_provider(self):
-        return RegistrationProviderFactory()
+        return RegistrationProvider.get_default()
 
     @pytest.fixture()
     def egap_reg(self):
