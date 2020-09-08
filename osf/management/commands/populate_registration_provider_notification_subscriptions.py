@@ -18,9 +18,15 @@ def populate_registration_provider_notification_subscriptions():
         instance, created = NotificationSubscription.objects.get_or_create(_id=f'{provider._id}_new_pending_submissions',
                                                                         event_name='new_pending_submissions',
                                                                         provider=provider)
+        if created:
+            logger.info(f'{provider._id}_new_pending_submissions NotificationSubscription object has been created')
+        else:
+            logger.info(f'{provider._id}_new_pending_submissions NotificationSubscription object exists')
+
         for user in provider_admins | provider_moderators:
             # add user to subscription list but set their notification to none by default
             instance.add_user_to_subscription(user, 'email_transactional', save=True)
+            logger.info(f'User {user._id} is subscribed to {provider._id}_new_pending_submissions')
 
 
 class Command(BaseCommand):
