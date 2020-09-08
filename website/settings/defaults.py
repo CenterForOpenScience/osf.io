@@ -1963,13 +1963,13 @@ REG_METRICS_BASE_FOLDER = None
 
 @enum.unique
 class StorageLimits(enum.IntEnum):
+    """
+    Values here are in GBs
+    """
     OVER_CUSTOM = -1
     DEFAULT = 0
-    APPROACHING_PRIVATE = 4.5 * 10 ** 9
-    OVER_PRIVATE = 5 * 10 ** 9
-
-    APPROACHING_PUBLIC = 45 * 10 ** 9
-    OVER_PUBLIC = 50 * 10 ** 9
+    OVER_PRIVATE = 5
+    OVER_PUBLIC = 50
 
     @classmethod
     def choices(cls):
@@ -1984,7 +1984,6 @@ class StorageLimits(enum.IntEnum):
         return [cls.DEFAULT, cls.APPROACHING_PRIVATE, cls.OVER_PRIVATE]
 
     @classmethod
-    def status(cls, storage_usage: int, public: bool):
-        choices = cls.public_choices() if public else cls.private_choices()
-        return max(limit for limit in choices if limit.value <= storage_usage)
+    def status(cls, storage_usage: int):
+        return max(limit for limit in cls if limit.value <= storage_usage)
 

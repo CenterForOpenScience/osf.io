@@ -16,32 +16,20 @@ class TestStorageUsageLimits:
     def test_limit_default(self, node):
         assert node.storage_usage is None
 
-        with pytest.raises(NotImplementedError) as e:
-            node.storage_limit_status
-
-        assert str(e.value) == 'Storage usage not calculated'
-
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, 0)
 
         assert node.storage_limit_status == StorageLimits.DEFAULT
 
     def test_limit_private_public(self, node):
-        assert node.is_public is False
-
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
-        storage_usage_cache.set(key, StorageLimits.APPROACHING_PUBLIC)
+        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC * .9))
 
         assert node.storage_limit_status == StorageLimits.OVER_PRIVATE
 
-        node.is_public = True
-        node.save()
-
-        assert node.storage_limit_status == StorageLimits.APPROACHING_PUBLIC
-
     def test_limit_custom(self, node):
-        node.custom_storage_usage_limit_private = 20
-        node.custom_storage_usage_limit_public = 21
+        node.custom_storage_usage_limit_private = 20.0
+        node.custom_storage_usage_limit_public = 21.0
         node.save()
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
