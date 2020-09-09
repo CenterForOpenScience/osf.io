@@ -1,5 +1,4 @@
 from past.builtins import basestring
-import enum
 import functools
 import itertools
 import logging
