@@ -1,6 +1,10 @@
 import pytest
 
+<<<<<<< HEAD
 from website.settings import StorageLimits, STORAGE_WARNING_THRESHOLD, STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, GBs
+=======
+from website.settings import StorageLimits, STORAGE_WARNING_THRESHOLD
+>>>>>>> add more custom logic for storage limits
 from osf_tests.factories import ProjectFactory
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
