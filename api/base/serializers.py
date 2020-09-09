@@ -879,7 +879,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 try:
                     related_type = resolved_url.namespace.split(':')[-1]
                     # TODO: change kwargs to preprint_provider_id and registration_id
-                    if related_type in ('preprint-providers', 'registration-providers'):
+                    if related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
