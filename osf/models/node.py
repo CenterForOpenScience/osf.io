@@ -411,7 +411,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             limits['APPROACHING_PRIVATE'] = warning_limit
 
         limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in limits.items()])
-        return max(limit for limit in limits if limit.value <= self.storage_usage)
+        GBs = 10 ** 9
+        return max(limit for limit in limits if limit.value * GBs <= self.storage_usage)
 
     @property
     def nodes(self):
