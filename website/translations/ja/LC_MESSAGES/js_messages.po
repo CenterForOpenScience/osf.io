@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-09-03 12:45+0900\n"
+"POT-Creation-Date: 2020-09-09 18:18+0900\n"
 "PO-Revision-Date: 2020-09-03 12:45+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -5983,6 +5983,40 @@ msgstr "${user}が${node}のZoteroアドオンを承認しました"
 #: website/static/js/logActionsList_extract.js:262
 msgid "${user} deauthorized the Zotero addon for ${node}"
 msgstr "${user}が${node}のZoteroアドオンの認証を解除しました"
+
+#: website/static/js/logActionsList_extract.js:263
+msgid "${user} added file ${path} to Nextcloud (for Institutions) in ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)にファイル(${path})を追加しました"
+
+#: website/static/js/logActionsList_extract.js:264
+msgid ""
+"${user} removed ${path_type} ${path} from Nextcloud (for Institutions) in"
+" ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)から${path_type}(${path})を削除しました"
+
+#: website/static/js/logActionsList_extract.js:265
+msgid "${user} updated file ${path} in Nextcloud (for Institutions) in ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)のファイル(${path})を更新しました"
+
+#: website/static/js/logActionsList_extract.js:266
+msgid "${user} created folder ${path} in Nextcloud (for Institutions) in ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)にフォルダ(${path})を作成しました"
+
+#: website/static/js/logActionsList_extract.js:267
+msgid "${user} linked Nextcloud (for Institutions) folder ${folder} to ${node}"
+msgstr "${user}がNextcloud(for Institutions)フォルダ(${folder})を${node}にリンクしました"
+
+#: website/static/js/logActionsList_extract.js:268
+msgid "${user} authorized the Nextcloud (for Institutions) addon for ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)アドオンを承認しました"
+
+#: website/static/js/logActionsList_extract.js:269
+msgid "${user} deauthorized the Nextcloud (for Institutions) addon for ${node}"
+msgstr "${user}が${node}のNextcloud(for Institutions)アドオンの認証を解除しました"
+
+#: website/static/js/logActionsList_extract.js:270
+msgid "Nextcloud (for Institutions) addon for ${node} deauthorized"
+msgstr "${node}のNextcloud(for Institutions)アドオンの認証が解除されました"
 
 #: website/static/js/logTextParser.js:824
 msgid "unknown format"
