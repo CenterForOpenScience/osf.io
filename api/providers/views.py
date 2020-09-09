@@ -650,7 +650,7 @@ class PreprintProviderModeratorsList(ProviderModeratorsList):
     serializer_class = PreprintModeratorSerializer
 
     view_category = 'preprint-providers'
-1
+
 
 class PreprintProviderModeratorsDetail(ProviderModeratorsDetail):
     provider_type = PreprintProvider
