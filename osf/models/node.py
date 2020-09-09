@@ -1,4 +1,5 @@
 from past.builtins import basestring
+import enum
 import functools
 import itertools
 import logging
@@ -396,15 +397,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def storage_limit_status(self):
-        """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
+        a custom limit this should indicate that."""
 
-        custom_limit = self.custom_storage_usage_limit_public if self.is_public else self.custom_storage_usage_limit_private
-        if custom_limit:
-            if custom_limit <= self.storage_usage:
-                return settings.StorageLimits.OVER_CUSTOM
-            return settings.StorageLimits.DEFAULT
+        limits = dict([(item.name, item.value) for item in settings.StorageLimits])
+        if self.custom_storage_usage_limit_public:
+            limits['OVER_PUBLIC'] = self.custom_storage_usage_limit_public
+            warning_limit = self.custom_storage_usage_limit_public * settings.STORAGE_WARNING_THRESHOLD
+            limits['APPROACHING_PUBLIC'] = warning_limit
+        if self.custom_storage_usage_limit_private:
+            limits['OVER_PRIVATE'] = self.custom_storage_usage_limit_private
+            warning_limit = self.custom_storage_usage_limit_private * settings.STORAGE_WARNING_THRESHOLD
+            limits['APPROACHING_PRIVATE'] = warning_limit
 
-        return settings.StorageLimits.status(self.storage_usage)
+        limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in limits.items()])
+        return max(limit for limit in limits if limit.value <= self.storage_usage)
 
     @property
     def nodes(self):

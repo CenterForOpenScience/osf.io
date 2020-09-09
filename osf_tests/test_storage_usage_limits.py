@@ -1,6 +1,6 @@
 import pytest
 
-from website.settings import StorageLimits
+from website.settings import StorageLimits, STORAGE_WARNING_THRESHOLD
 from osf_tests.factories import ProjectFactory
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
@@ -21,39 +21,40 @@ class TestStorageUsageLimits:
 
         assert node.storage_limit_status == StorageLimits.DEFAULT
 
-    def test_limit_private_public(self, node):
+    def test_storage_limits(self, node):
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
-        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC * .9))
+        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC * STORAGE_WARNING_THRESHOLD))
 
-        assert node.storage_limit_status == StorageLimits.OVER_PRIVATE
+        assert node.storage_limit_status == StorageLimits.APPROACHING_PUBLIC
+
+        storage_usage_cache.set(key, int(StorageLimits.OVER_PRIVATE * STORAGE_WARNING_THRESHOLD))
+
+        assert node.storage_limit_status == StorageLimits.APPROACHING_PRIVATE
+
+        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC))
+
+        assert node.storage_limit_status == StorageLimits.OVER_PUBLIC
 
     def test_limit_custom(self, node):
-        node.custom_storage_usage_limit_private = 20.0
-        node.custom_storage_usage_limit_public = 21.0
+        node.custom_storage_usage_limit_private = 7
+        node.custom_storage_usage_limit_public = 142
         node.save()
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
-        storage_usage_cache.set(key, 0)
-
-        assert node.storage_limit_status == StorageLimits.DEFAULT
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private)
 
-        assert node.storage_limit_status == StorageLimits.OVER_CUSTOM
+        # Compare by name because values are custom and != to StorageLimits members
+        assert node.storage_limit_status.name == StorageLimits.OVER_PRIVATE.name
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private - 1)
 
-        assert node.storage_limit_status == StorageLimits.DEFAULT
-
-        node.is_public = True
-        node.save()
-
-        assert node.storage_limit_status == StorageLimits.DEFAULT
+        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PRIVATE.name
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_public)
 
-        assert node.storage_limit_status == StorageLimits.OVER_CUSTOM
+        assert node.storage_limit_status.name == StorageLimits.OVER_PUBLIC.name
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_public - 1)
 
-        assert node.storage_limit_status == StorageLimits.DEFAULT
+        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PUBLIC.name

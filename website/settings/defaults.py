@@ -1960,30 +1960,17 @@ DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
 
+STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
 
 @enum.unique
 class StorageLimits(enum.IntEnum):
     """
     Values here are in GBs
     """
-    OVER_CUSTOM = -1
     DEFAULT = 0
     OVER_PRIVATE = 5
+    APPROACHING_PRIVATE = OVER_PRIVATE * STORAGE_WARNING_THRESHOLD
+
     OVER_PUBLIC = 50
-
-    @classmethod
-    def choices(cls):
-        return [(key.value, key.name) for key in cls if key.value >= 0]
-
-    @classmethod
-    def public_choices(cls):
-        return [cls.DEFAULT, cls.APPROACHING_PUBLIC, cls.OVER_PUBLIC]
-
-    @classmethod
-    def private_choices(cls):
-        return [cls.DEFAULT, cls.APPROACHING_PRIVATE, cls.OVER_PRIVATE]
-
-    @classmethod
-    def status(cls, storage_usage: int):
-        return max(limit for limit in cls if limit.value <= storage_usage)
+    APPROACHING_PUBLIC = OVER_PUBLIC * STORAGE_WARNING_THRESHOLD
 
