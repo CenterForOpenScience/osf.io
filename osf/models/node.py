@@ -1,5 +1,4 @@
 from past.builtins import basestring
-import enum
 import functools
 import itertools
 import logging
@@ -400,19 +399,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
         a custom limit this should indicate that."""
 
-        limits = dict([(item.name, item.value) for item in settings.StorageLimits])
-        if self.custom_storage_usage_limit_public:
-            limits['OVER_PUBLIC'] = self.custom_storage_usage_limit_public
-            warning_limit = self.custom_storage_usage_limit_public * settings.STORAGE_WARNING_THRESHOLD
-            limits['APPROACHING_PUBLIC'] = warning_limit
-        if self.custom_storage_usage_limit_private:
-            limits['OVER_PRIVATE'] = self.custom_storage_usage_limit_private
-            warning_limit = self.custom_storage_usage_limit_private * settings.STORAGE_WARNING_THRESHOLD
-            limits['APPROACHING_PRIVATE'] = warning_limit
-
-        limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in limits.items()])
-        GBs = 10 ** 9
-        return max(limit for limit in limits if limit.value * GBs <= self.storage_usage)
+        return settings.StorageLimits.from_node_usage(
+            self.storage_usage,
+            self.custom_storage_usage_limit_private,
+            self.custom_storage_usage_limit_public
+        )
 
     @property
     def nodes(self):

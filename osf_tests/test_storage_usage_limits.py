@@ -1,6 +1,6 @@
 import pytest
 
-from website.settings import StorageLimits, STORAGE_WARNING_THRESHOLD
+from website.settings import StorageLimits, STORAGE_WARNING_THRESHOLD, STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE
 from osf_tests.factories import ProjectFactory
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
@@ -25,17 +25,18 @@ class TestStorageUsageLimits:
         GBs = 10 ** 9
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
-        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs))
+        storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs))
 
-        assert node.storage_limit_status == StorageLimits.APPROACHING_PUBLIC
+        # Compare by name because values are different
+        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PUBLIC.name
 
-        storage_usage_cache.set(key, int(StorageLimits.OVER_PRIVATE * STORAGE_WARNING_THRESHOLD * GBs))
+        storage_usage_cache.set(key, int(STORAGE_LIMIT_PRIVATE * STORAGE_WARNING_THRESHOLD * GBs))
 
-        assert node.storage_limit_status == StorageLimits.APPROACHING_PRIVATE
+        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PRIVATE.name
 
-        storage_usage_cache.set(key, int(StorageLimits.OVER_PUBLIC * GBs))
+        storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * GBs))
 
-        assert node.storage_limit_status == StorageLimits.OVER_PUBLIC
+        assert node.storage_limit_status.name == StorageLimits.OVER_PUBLIC.name
 
     def test_limit_custom(self, node):
         node.custom_storage_usage_limit_private = 7
@@ -47,7 +48,7 @@ class TestStorageUsageLimits:
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private * GBs)
 
-        # Compare by name because values are custom and != to StorageLimits members
+        # Compare by name because values are different
         assert node.storage_limit_status.name == StorageLimits.OVER_PRIVATE.name
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private * GBs - 1)

@@ -1971,9 +1971,32 @@ class StorageLimits(enum.IntEnum):
     Values here are in GBs
     """
     DEFAULT = 0
-    OVER_PRIVATE = STORAGE_LIMIT_PRIVATE
-    APPROACHING_PRIVATE = OVER_PRIVATE * STORAGE_WARNING_THRESHOLD
+    APPROACHING_PRIVATE = 1
+    OVER_PRIVATE = 2
+    OVER_PUBLIC = 3
+    APPROACHING_PUBLIC = 4
 
-    OVER_PUBLIC = STORAGE_LIMIT_PUBLIC
-    APPROACHING_PUBLIC = OVER_PUBLIC * STORAGE_WARNING_THRESHOLD
+    @classmethod
+    def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
+        a custom limit this should indicate that."""
+        custom_limits = dict([(item.name, item.value) for item in cls])
 
+        custom_limits[cls.OVER_PRIVATE.name] = STORAGE_LIMIT_PRIVATE
+        custom_limits[cls.APPROACHING_PRIVATE.name] = STORAGE_LIMIT_PRIVATE * STORAGE_WARNING_THRESHOLD
+
+        custom_limits[cls.OVER_PUBLIC.name] = STORAGE_LIMIT_PUBLIC
+        custom_limits[cls.APPROACHING_PUBLIC.name] = STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD
+
+        if public_limit:
+            custom_limits[cls.OVER_PUBLIC.name] = public_limit
+            warning_limit = public_limit * STORAGE_WARNING_THRESHOLD
+            custom_limits['APPROACHING_PUBLIC'] = warning_limit
+        if private_limit:
+            custom_limits['OVER_PRIVATE'] = private_limit
+            warning_limit = private_limit * STORAGE_WARNING_THRESHOLD
+            custom_limits['APPROACHING_PRIVATE'] = warning_limit
+
+        limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in custom_limits.items()])
+        GBs = 10 ** 9
+        return max(limit for limit in limits if limit.value * GBs <= usage_bytes)
