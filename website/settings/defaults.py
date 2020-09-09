@@ -1961,6 +1961,9 @@ REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
 
 STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
+STORAGE_LIMIT_PUBLIC = 50
+STORAGE_LIMIT_PRIVATE = 5
+
 
 @enum.unique
 class StorageLimits(enum.IntEnum):
@@ -1968,9 +1971,9 @@ class StorageLimits(enum.IntEnum):
     Values here are in GBs
     """
     DEFAULT = 0
-    OVER_PRIVATE = 5
+    OVER_PRIVATE = STORAGE_LIMIT_PRIVATE
     APPROACHING_PRIVATE = OVER_PRIVATE * STORAGE_WARNING_THRESHOLD
 
-    OVER_PUBLIC = 50
+    OVER_PUBLIC = STORAGE_LIMIT_PUBLIC
     APPROACHING_PUBLIC = OVER_PUBLIC * STORAGE_WARNING_THRESHOLD
 
