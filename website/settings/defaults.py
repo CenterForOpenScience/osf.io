@@ -1998,5 +1998,5 @@ class StorageLimits(enum.IntEnum):
             custom_limits['APPROACHING_PRIVATE'] = warning_limit
 
         limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in custom_limits.items()])
-        GBs = 10 ** 9
+        GBs = 1024 ** 3.0
         return max(limit for limit in limits if limit.value * GBs <= usage_bytes)
