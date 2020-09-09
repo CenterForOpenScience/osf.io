@@ -27,20 +27,18 @@ class TestStorageUsageLimits:
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs))
 
-        # Compare by name because values are different
-        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PUBLIC.name
+        assert node.storage_limit_status is StorageLimits.APPROACHING_PUBLIC
 
         storage_usage_cache.set(key, int(STORAGE_LIMIT_PRIVATE * STORAGE_WARNING_THRESHOLD * GBs))
 
-        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PRIVATE.name
+        assert node.storage_limit_status is StorageLimits.APPROACHING_PRIVATE
 
         storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * GBs))
 
-        assert node.storage_limit_status.name == StorageLimits.OVER_PUBLIC.name
+        assert node.storage_limit_status is StorageLimits.OVER_PUBLIC
 
     def test_limit_custom(self, node):
         node.custom_storage_usage_limit_private = 7
-        node.custom_storage_usage_limit_public = 142
         node.save()
         GBs = 1024 ** 3.0
 
@@ -48,17 +46,19 @@ class TestStorageUsageLimits:
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private * GBs)
 
-        # Compare by name because values are different
-        assert node.storage_limit_status.name == StorageLimits.OVER_PRIVATE.name
+        assert node.storage_limit_status is StorageLimits.OVER_PRIVATE
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_private * GBs - 1)
 
-        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PRIVATE.name
+        assert node.storage_limit_status is StorageLimits.APPROACHING_PRIVATE
+
+        node.custom_storage_usage_limit_public = 142
+        node.save()
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_public * GBs)
 
-        assert node.storage_limit_status.name == StorageLimits.OVER_PUBLIC.name
+        assert node.storage_limit_status is StorageLimits.OVER_PUBLIC
 
         storage_usage_cache.set(key, node.custom_storage_usage_limit_public * GBs - 1)
 
-        assert node.storage_limit_status.name == StorageLimits.APPROACHING_PUBLIC.name
+        assert node.storage_limit_status is StorageLimits.APPROACHING_PUBLIC

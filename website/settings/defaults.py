@@ -1980,23 +1980,28 @@ class StorageLimits(enum.IntEnum):
     def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
         a custom limit this should indicate that."""
-        custom_limits = dict([(item.name, item.value) for item in cls])
-
-        custom_limits[cls.OVER_PRIVATE.name] = STORAGE_LIMIT_PRIVATE
-        custom_limits[cls.APPROACHING_PRIVATE.name] = STORAGE_LIMIT_PRIVATE * STORAGE_WARNING_THRESHOLD
-
-        custom_limits[cls.OVER_PUBLIC.name] = STORAGE_LIMIT_PUBLIC
-        custom_limits[cls.APPROACHING_PUBLIC.name] = STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD
+        GBs = 1024 ** 3.0
 
         if public_limit:
-            custom_limits[cls.OVER_PUBLIC.name] = public_limit
-            warning_limit = public_limit * STORAGE_WARNING_THRESHOLD
-            custom_limits['APPROACHING_PUBLIC'] = warning_limit
-        if private_limit:
-            custom_limits['OVER_PRIVATE'] = private_limit
-            warning_limit = private_limit * STORAGE_WARNING_THRESHOLD
-            custom_limits['APPROACHING_PRIVATE'] = warning_limit
+            if usage_bytes >= public_limit * GBs:
+                return cls.OVER_PUBLIC
+            elif usage_bytes >= public_limit * STORAGE_WARNING_THRESHOLD * GBs:
+                return cls.APPROACHING_PUBLIC
 
-        limits = enum.IntEnum('StorageLimitsWithCustomValues', [(key, value) for key, value in custom_limits.items()])
-        GBs = 1024 ** 3.0
-        return max(limit for limit in limits if limit.value * GBs <= usage_bytes)
+        if private_limit:
+            if usage_bytes >= private_limit * GBs:
+                return cls.OVER_PRIVATE
+            elif usage_bytes >= private_limit * STORAGE_WARNING_THRESHOLD * GBs:
+                return cls.APPROACHING_PRIVATE
+
+        elif usage_bytes >= STORAGE_LIMIT_PUBLIC * GBs:
+            return cls.OVER_PUBLIC
+        elif usage_bytes >= STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PUBLIC
+        elif usage_bytes >= STORAGE_LIMIT_PRIVATE * GBs:
+            return cls.OVER_PRIVATE
+        elif usage_bytes >= STORAGE_LIMIT_PRIVATE * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PRIVATE
+        else:
+            return cls.DEFAULT
+
