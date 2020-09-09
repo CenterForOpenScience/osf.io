@@ -249,8 +249,6 @@ class ModeratorSerializer(JSONAPISerializer):
         return self.context['provider']._id
 
     def get_absolute_url(self, obj):
-        # Placeholder value for testing - overridden in child classes
-        # return obj.absolute_api_v2_url
         raise NotImplementedError()
 
     class Meta:
