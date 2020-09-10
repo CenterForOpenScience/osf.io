@@ -103,7 +103,7 @@ def main(send_email=False):
 
     for model, collection, limit in ((OSFUser, users, USER_LIMIT), (AbstractNode, projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
-            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(model.load(item), limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
+            line = '{!r} has exceeded the limit {:.2f}GiBs ({}b) with {:.2f}GiBs ({}b) used and {:.2f}GiBs ({}b) deleted.'.format(model.load(item), limit / GiBs, limit, used / GiBs, used, deleted / GiBs, deleted)
             logger.info(line)
             lines.append(line)
 
