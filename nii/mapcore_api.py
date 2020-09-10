@@ -514,7 +514,7 @@ def encode_recursive(o, encoding='utf-8'):
         return {encode_recursive(key): encode_recursive(val) for key, val in o.iteritems()}
     elif isinstance(o, list):
         return [encode_recursive(elem) for elem in o]
-    elif isinstance(o, unicode):
+    elif isinstance(o, str):
         return o.encode(encoding)
     else:
         return o

@@ -112,8 +112,8 @@ def send_mail(
 
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
-    subject = unicode(mail.subject(**context), 'utf-8')
-    message = unicode(mail.html(**context), 'utf-8')
+    subject = mail.subject(**context)
+    message = mail.html(**context)
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
 

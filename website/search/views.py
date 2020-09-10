@@ -79,7 +79,7 @@ def search_search(**kwargs):
     raw = kwargs.get('raw', False)
 
     if raw and not settings.DEBUG_MODE:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     tick = time.time()
 
@@ -114,7 +114,7 @@ def _private_search(doc_type, auth, raw=False):
     results = {}
 
     if not auth or not auth.logged_in:
-        raise HTTPError(http.UNAUTHORIZED)
+        raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
     user = auth.user
 
     qs = None
@@ -133,7 +133,7 @@ def _private_search(doc_type, auth, raw=False):
             vendor = None
 
         if not IS_SUPPORTED(version, vendor):
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'api_version field is invalid',
                 'message_long': 'api_version field is invalid'
             })
@@ -147,7 +147,7 @@ def _private_search(doc_type, auth, raw=False):
         version = toint(request.args.get('version', None))
         vendor = request.args.get('vendor', None)
         if not IS_SUPPORTED(version, vendor):
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'version or vendor parameter is invalid',
                 'message_long': 'version or vendor parameter is invalid'
             })
@@ -165,7 +165,7 @@ def _private_search(doc_type, auth, raw=False):
         try:
             es_dsl = build_private_search_query(user, qs, start, size, sort, highlight)
         except Exception as e:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message,
                 'message_long': e.message
             })

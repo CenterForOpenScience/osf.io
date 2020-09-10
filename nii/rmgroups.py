@@ -144,7 +144,7 @@ def get_user_response(flag, options):
     # input
     while True:
         try:
-            res = raw_input(prompt_str)
+            res = input(prompt_str)
         except EOFError:
             pass  # simply ignore
             continue

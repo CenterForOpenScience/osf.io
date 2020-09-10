@@ -266,7 +266,7 @@ def get_query_string(query):
 
     for key, val in query.items():
         if key == 'query' and \
-           (isinstance(val, str) or isinstance(val, unicode)):
+           isinstance(val, str):
             return val  # found
         rv = get_query_string(val)
         if rv:

@@ -41,8 +41,6 @@ from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from api.waffle.utils import storage_i18n_flag_active
 
-from api.waffle.utils import storage_i18n_flag_active
-
 logger = logging.getLogger(__name__)
 
 
@@ -174,7 +172,7 @@ def update_user(auth):
             if settings.ENABLE_USER_MERGE is False:
                 if Email.objects.filter(address=address).exists() \
                    or OSFUser.objects.filter(username=address).exists():
-                    raise HTTPError(http.BAD_REQUEST, data=dict(
+                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                         message_long='Existing email address')
                     )
 
@@ -534,7 +532,7 @@ def user_choose_addons(**kwargs):
                 validate_rdm_addons_allowed(auth, addon_name)
     except PermissionsError as e:
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data=dict(message_long=e.message)
         )
 

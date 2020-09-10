@@ -56,7 +56,7 @@ def mapcore_disable_log(level=logging.CRITICAL):
 
 # unicode to utf-8
 def utf8(u):
-    if isinstance(u, unicode):
+    if isinstance(u, str):
         return u.encode('utf-8')
     return u
 
@@ -395,7 +395,7 @@ def remove_node(node):
         except Exception as e:
             last_e = e
     if last_e:
-        logger.error('GRDM project[{}] cannot be deleted: {}'.format(node._id, utf8(str(e))))
+        logger.error('GRDM project[{}] cannot be deleted: {}'.format(node._id, utf8(str(last_e))))
 
 # OSFuser essential feild keeper for comparing member
 class RDMmember(object):
@@ -1048,7 +1048,7 @@ def mapcore_sync_rdm_my_projects0(user):
                 node = Node.objects.get(map_group_key=group_key)
                 project_exists = True
                 # exists in RDM and mAP
-            except ObjectDoesNotExist as e:
+            except ObjectDoesNotExist:
                 # exists only in mAP -> create new Node in RDM
                 try:
                     node = mapcore_create_new_node_from_mapgroup(mapcore, grp)

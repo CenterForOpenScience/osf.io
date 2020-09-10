@@ -789,7 +789,7 @@ def claim_user_login_by_eppn(auth, node, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'This URL does not support LOGIN_BY_EPPN=False'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     current_user = auth.user
 
@@ -800,7 +800,7 @@ def claim_user_login_by_eppn(auth, node, **kwargs):
             'message_short': 'Invalid url.',
             'message_long': 'The token in the URL is invalid or has expired.'
         }
-        raise HTTPError(http.BAD_REQUEST, data=error_data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
     logout_url = web_url_for('auth_logout', redirect_url=request.url)
 
@@ -811,7 +811,7 @@ def claim_user_login_by_eppn(auth, node, **kwargs):
             'message_long': ('The logged-in user is already a contributor to this '
                 'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
         }
-        raise HTTPError(http.BAD_REQUEST, data=data)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=data)
 
     if request.method == 'POST':
         node.replace_contributor(old=unreg_user, new=current_user)

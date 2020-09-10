@@ -74,8 +74,6 @@ from api.waffle.utils import flag_is_active
 
 from flask_babel import lazy_gettext as _
 
-from api.waffle.utils import flag_is_active
-
 def set_status_message(user):
     if user and not user.accepted_terms_of_service:
         status.push_status_message(
@@ -108,11 +106,6 @@ def get_globals():
     else:
         request_login_url = request.url
 
-    try:
-        waffle_url = reverse('wafflejs')  # TODO: fix bug only effects Travis
-    except (KeyError, SyntaxError):
-        waffle_url = '/_/wafflejs'
-
     return {
         'user_merge': settings.ENABLE_USER_MERGE,
         'embedded_ds': settings.to_bool('USE_EMBEDDED_DS', False),
@@ -128,7 +121,7 @@ def get_globals():
         'project_analytics': settings.to_bool('PROJECT_ANALYTICS', True),
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
         'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
-        'osf_page_name': unicode(settings.OSF_PAGE_NAME, 'utf-8'),
+        'osf_page_name': settings.OSF_PAGE_NAME,
         'use_tfa': settings.to_bool('USE_TFA', True),
         'global_support_url': getattr(settings, 'GLOBAL_SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
         'global_support_target': '_blank' if hasattr(settings, 'GLOBAL_SUPPORT_URL') else '_self',
@@ -289,7 +282,7 @@ def firebase():
                                    'js/firebase-messaging-sw.js')):
         firebase_file = 'js/firebase-messaging-sw.js'
     else:
-        raise HTTPError(http.NOT_FOUND)
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return send_from_directory(
         settings.STATIC_FOLDER,
         firebase_file,

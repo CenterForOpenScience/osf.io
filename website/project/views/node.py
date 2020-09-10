@@ -456,7 +456,7 @@ def node_choose_addons(auth, node, **kwargs):
                 validate_rdm_addons_allowed(auth, addon_name)
     except PermissionsError as e:
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data=dict(message_long=e.message)
         )
 
@@ -769,7 +769,7 @@ def _view_project(node, auth, primary=False,
     """
     node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
     if node.is_deleted:
-        raise HTTPError(http.GONE)
+        raise HTTPError(http_status.HTTP_410_GONE)
 
     user = auth.user
 
@@ -786,7 +786,7 @@ def _view_project(node, auth, primary=False,
                 emsg = str(e)
                 mapcore_log_error('{}: {}'.format(
                     e.__class__.__name__, emsg))
-                raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE, data={
                     'message_short': 'mAP Core API Error',
                     'message_long': emsg
                 })

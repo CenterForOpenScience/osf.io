@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 from django.db.models import OuterRef, Subquery
-from osf.models import NodeLog
 from django_bulk_update.helper import bulk_update
 
 

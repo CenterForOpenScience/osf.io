@@ -18,7 +18,7 @@ from .defaults import *  # noqa
 
 try:
     from .local import *  # noqa
-except ImportError as error:
+except ImportError:
     warnings.warn('No admin/base/settings/local.py settings file found. Did you remember to '
                   'copy local-dist.py to local.py?', ImportWarning)
 """
@@ -284,7 +284,7 @@ if DEBUG:
     INSTALLED_APPS += ('debug_toolbar', )
     MIDDLEWARE_CLASSES += ('debug_toolbar.middleware.DebugToolbarMiddleware', )
     DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda(_): True
+        'SHOW_TOOLBAR_CALLBACK': lambda _: True
     }
 
 FCM_SETTINGS = {

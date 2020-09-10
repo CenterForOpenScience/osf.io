@@ -1,6 +1,7 @@
 import datetime as dt
 import logging
 import re
+from urllib.parse import urlparse, parse_qs
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
@@ -1972,8 +1973,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 if not inst.login_url:
                     continue
                 try:
-                    login_url_parsed = urlparse.urlparse(inst.login_url)
-                    q = urlparse.parse_qs(login_url_parsed.query)
+                    login_url_parsed = urlparse(inst.login_url)
+                    q = parse_qs(login_url_parsed.query)
                     entity_id = q.get('entityID')[0]
                     if entity_id:
                         entity_ids.append(entity_id)

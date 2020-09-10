@@ -236,8 +236,8 @@ def forgot_password_form():
 # GUID ###
 
 def _build_guid_url(base, suffix=None):
-    if not isinstance(base, unicode):
-        base = unicode(base, 'utf-8')
+    if not isinstance(base, str):
+        base = str(base)
     url = '/'.join([
         each.strip('/') for each in [base, suffix]
         if each
@@ -323,7 +323,7 @@ def resolve_guid(guid, suffix=None):
                     # admins should be able to know it exists.
                     auth = Auth.from_kwargs(request.args.to_dict(), {})
                     if not referent.node.has_permission(auth.user, permissions.ADMIN):
-                        raise HTTPError(http.NOT_FOUND)
+                        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
                 file_referent = referent.primary_file
             elif isinstance(referent, BaseFileNode) and referent.is_file:
                 file_referent = referent
@@ -334,7 +334,7 @@ def resolve_guid(guid, suffix=None):
                 request.args.update({'action': 'addtimestamp'})
                 # Do not include the `addtimestamp` suffix in the url rebuild.
                 # Do not include the `addtimestamp` suffix in the url rebuild.
-                url = _build_guid_url(urllib.unquote(file_referent.deep_url))
+                url = _build_guid_url(unquote(file_referent.deep_url))
                 return proxy_url(url)
         elif suffix and suffix.rstrip('/').split('/')[-1].lower() == 'addtimestamp':
             # Extend `request.args` adding `action=addtimestamp`.
@@ -342,7 +342,7 @@ def resolve_guid(guid, suffix=None):
             request.args.update({'action': 'addtimestamp'})
             # Do not include the `addtimestamp` suffix in the url rebuild.
             # Do not include the `addtimestamp` suffix in the url rebuild.
-            url = _build_guid_url(urllib.unquote(referent.deep_url), suffix.split('/')[0])
+            url = _build_guid_url(unquote(referent.deep_url), suffix.split('/')[0])
             return proxy_url(url)
 
         # Handle Ember Applications

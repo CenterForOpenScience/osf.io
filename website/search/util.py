@@ -203,7 +203,7 @@ def quote_query_string(chars):
          "神保町"-> 神保町
     """
 
-    if not isinstance(chars, unicode):
+    if not isinstance(chars, str):
         chars = chars.decode('utf-8')
 
     token = u''
@@ -582,7 +582,7 @@ def unicode_normalize(text):
         return None
     if settings.SEARCH_ANALYZER == settings.SEARCH_ANALYZER_JAPANESE:
         return text
-    if not isinstance(text, unicode):
+    if not isinstance(text, str):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:

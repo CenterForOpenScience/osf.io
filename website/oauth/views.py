@@ -41,7 +41,7 @@ def oauth_connect(service_name, auth):
         validate_rdm_addons_allowed(auth, service_name)
     except PermissionsError as e:
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data=dict(message_long=e.message)
         )
 
@@ -56,7 +56,7 @@ def osf_oauth_callback(service_name, auth):
         validate_rdm_addons_allowed(auth, service_name)
     except PermissionsError as e:
         raise HTTPError(
-            http.FORBIDDEN,
+            http_status.HTTP_403_FORBIDDEN,
             data=dict(message_long=e.message)
         )
 
