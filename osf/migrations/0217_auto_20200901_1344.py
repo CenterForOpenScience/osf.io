@@ -12,7 +12,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0214_auto_20200701_1658'),
+        ('osf', '0216_auto_20200910_1259'),
     ]
 
     operations = [
