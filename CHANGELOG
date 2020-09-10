@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.16.0 (2020-09-09)
+====================
+- Fix bug in EGAP schema display on branded registries
+- Add script to purge deleted files
+
 20.15.0 (2020-09-01)
 ====================
 - Fix OSF Provider not sending data to SHARE
