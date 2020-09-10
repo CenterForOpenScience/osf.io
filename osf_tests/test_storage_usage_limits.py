@@ -22,7 +22,7 @@ class TestStorageUsageLimits:
         assert node.storage_limit_status == StorageLimits.DEFAULT
 
     def test_storage_limits(self, node):
-        GBs = 1024 ** 3.0
+        GBs = 10 ** 9
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs))
@@ -40,7 +40,7 @@ class TestStorageUsageLimits:
     def test_limit_custom(self, node):
         node.custom_storage_usage_limit_private = 7
         node.save()
-        GBs = 1024 ** 3.0
+        GBs = 10 ** 9
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
 
