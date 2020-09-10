@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Populate development database with Institution fixtures."""
 
+import os
 import argparse
 import logging
 import sys
@@ -91,6 +92,7 @@ def main(default_args=False):
             logger.warn('Extra Institution : {} - {}'.format(extra_inst._id, extra_inst.name))
 
 
+url = os.environ.get('OSF_SERVICE_URL', 'https://localhost:5000')
 INSTITUTIONS = {
     'prod': [
             {
@@ -1757,11 +1759,7 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
         ],
-    elif env == 'nii':
-        import os
-        url = os.environ.get('OSF_SERVICE_URL', 'https://localhost:5000')
-
-        INSTITUTIONS = [
+    'nii': [
             {
                 '_id': 'gakunin',
                 'name': 'GakuNin',
