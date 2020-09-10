@@ -184,6 +184,9 @@ MAILGUN_API_KEY = None
 # Use Celery for file rendering
 USE_CELERY = True
 
+# Trashed File Retention
+PURGE_DELTA = timedelta(days=30)
+
 # TODO: Override in local.py in production
 DB_HOST = 'localhost'
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
