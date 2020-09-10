@@ -1222,7 +1222,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
+                    self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
