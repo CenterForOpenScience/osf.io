@@ -723,6 +723,8 @@ def _view_project(node, auth, primary=False,
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
 
+    storage_limit_status_class, storage_limit_status_text = storage_limits_tooltip_text(node)
+
     is_registration = node.is_registration
     data = {
         'node': {
