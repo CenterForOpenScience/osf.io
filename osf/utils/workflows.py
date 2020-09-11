@@ -125,7 +125,7 @@ REGISTRATION_TRANSITIONS = [
     },
     {
         'trigger': RegistrationTriggers.ACCEPT.value,
-        'source': [RegistrationStates.PENDING.value, RegistrationStates.REJECTED.value],
+        'source': [RegistrationStates.PENDING.value],
         'dest': RegistrationStates.ACCEPTED.value,
         'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
     },
