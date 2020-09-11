@@ -1997,5 +1997,4 @@ class StorageLimits(enum.IntEnum):
         else:
             return cls.DEFAULT
 
-from api.caching import settings as cache_settings
-STORAGE_USAGE_CACHE_TIMEOUT = cache_settings.ONE_DAY_TIMEOUT
+STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
