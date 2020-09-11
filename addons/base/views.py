@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
+from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -515,6 +516,10 @@ def create_waterbutler_log(payload, **kwargs):
 
         else:
             node.create_waterbutler_log(auth, action, payload)
+
+    metadata = payload.get('metadata') or payload.get('destination')
+    if metadata.get('nid') and AbstractNode.load(metadata['nid']) and payload['action'] != 'download_file':
+        update_storage_usage_with_size(payload)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)

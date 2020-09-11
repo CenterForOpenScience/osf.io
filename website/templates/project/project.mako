@@ -58,7 +58,8 @@
                     % else:
                         % if permissions.ADMIN in user['permissions'] and not node['is_registration'] and not node['over_private_limit']:
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
-                        % elif permissions.ADMIN in user['permissions'] and not node['is_registration'] and node['over_private_limit']:
+                        % endif
+                        % if permissions.ADMIN in user['permissions'] and not node['is_registration'] and node['over_private_limit']:
                             <button class="btn btn-default storage-disabled" data-toggle="tooltip" data-placement="bottom" title="You cannot make your project private because you are above the storage limit for a private project.">Make Private</button>
                         % endif
                         <button class="btn btn-default disabled">Public</button>

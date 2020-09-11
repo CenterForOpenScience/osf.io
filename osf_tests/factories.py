@@ -512,7 +512,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
         with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
-            approval = registration.request_embargo_termination(Auth(user))
+            approval = registration.request_embargo_termination(user)
             return approval
 
 

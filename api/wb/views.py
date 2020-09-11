@@ -10,8 +10,6 @@ from api.wb.serializers import (
     WaterbutlerMetadataSerializer,
 )
 
-from api.caching.tasks import update_storage_usage
-
 
 class FileMetadataView(APIView):
     """
@@ -80,13 +78,7 @@ class MoveFileMetadataView(FileMetadataView):
         return response
 
     def perform_file_action(self, source, destination, name):
-        dest_target = destination.target
-        source_target = source.target
         ret = source.move_under(destination, name)
-
-        if dest_target != source_target:
-            update_storage_usage(source.target)
-            update_storage_usage(destination.target)
 
         return ret
 
@@ -101,5 +93,4 @@ class CopyFileMetadataView(FileMetadataView):
 
     def perform_file_action(self, source, destination, name):
         ret = source.copy_under(destination, name)
-        update_storage_usage(destination.target)
         return ret

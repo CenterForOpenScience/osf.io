@@ -42,6 +42,7 @@ from osf.models.mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
+    RegistriesModerationMixin
 )
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
@@ -302,7 +303,7 @@ class Registration(AbstractNode):
                 raise ValidationError('Registrations can only be embargoed for up to four years.')
             raise ValidationError('Embargo end date must be at least three days in the future.')
 
-        embargo = self._initiate_embargo(user, end_date,
+        self.embargo = self._initiate_embargo(user, end_date,
                                          for_existing_registration=for_existing_registration,
                                          notify_initiator_on_complete=notify_initiator_on_complete)
 
@@ -311,7 +312,7 @@ class Registration(AbstractNode):
             params={
                 'node': self.registered_from._id,
                 'registration': self._id,
-                'embargo_id': embargo._id,
+                'embargo_id': self.embargo._id,
             },
             auth=Auth(user),
             save=True,
@@ -319,7 +320,7 @@ class Registration(AbstractNode):
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def request_embargo_termination(self, auth):
+    def request_embargo_termination(self, user):
         """Initiates an EmbargoTerminationApproval to lift this Embargoed Registration's
         embargo early."""
         if not self.is_embargoed:
@@ -328,7 +329,7 @@ class Registration(AbstractNode):
             raise NodeStateError('Only the root of an embargoed registration can request termination')
 
         approval = EmbargoTerminationApproval(
-            initiated_by=auth.user,
+            initiated_by=user,
             embargoed_registration=self,
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
@@ -340,7 +341,7 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
-    def terminate_embargo(self, auth):
+    def terminate_embargo(self):
         """Handles the actual early termination of an Embargoed registration.
         Adds a log to the registered_from Node.
         """
@@ -563,7 +564,8 @@ def get_default_id():
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
-        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
+        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin, RegistriesModerationMixin):
+
     # Fields that are writable by DraftRegistration.update
     WRITABLE_WHITELIST = [
         'title',
@@ -1032,21 +1034,23 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             raise NodeStateError('Draft Registration must have title to be registered')
 
         # Create the registration
-        register = node.register_node(
+        registration = node.register_node(
             schema=self.registration_schema,
             auth=auth,
             draft_registration=self,
             child_ids=child_ids,
             provider=self.provider
         )
-        self.registered_node = register
+        self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
 
         self.copy_contributors_from(node)
 
         if save:
             self.save()
-        return register
+            registration.save()
+
+        return registration
 
     def approve(self, user):
         self.approval.approve(user)
