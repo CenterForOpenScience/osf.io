@@ -208,7 +208,10 @@
             childExists: ${ node['child_exists'] | sjson, n},
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
-            contributors: ${ node['contributors'] | sjson, n }
+            contributors: ${ node['contributors'] | sjson, n },
+            storageLimitsStatusText: ${ node['storage_limit_status_text'] | sjson, n },
+            storageLimitsStatusClass: ${ node['storage_limit_status_class'] | sjson, n }
+
         }
     });
 </script>

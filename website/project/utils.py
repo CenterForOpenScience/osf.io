@@ -118,3 +118,28 @@ def sizeof_fmt(num, suffix='B'):
             return '%3.1f%s%s' % (num, unit, suffix)
         num /= 1000.0
     return '%.1f%s%s' % (num, 'Y', suffix)
+
+
+def storage_limits_tooltip_text(node):
+    status = node.storage_limit_status
+    GBs = 10 ** 9
+
+    over_public_size = sizeof_fmt(int(settings.STORAGE_LIMIT_PUBLIC * GBs))
+    over_private_size = sizeof_fmt(int(settings.STORAGE_LIMIT_PRIVATE * GBs))
+    if not node.is_public:
+        helpful_message = f'Make this project public to extend the storage limit to {over_public_size}.'
+    else:
+        helpful_message = ''
+
+    if status is settings.StorageLimits.APPROACHING_PRIVATE:
+        return 'btn-warning storage-warning', f'This node is approaching it\'s limit of {over_private_size}. ' + helpful_message
+    elif status is settings.StorageLimits.OVER_PRIVATE:
+        return 'btn-danger  storage-warning', f'This node has exceeded it\'s limit of {over_private_size}. ' + helpful_message
+    elif status is settings.StorageLimits.APPROACHING_PUBLIC:
+        return 'btn-warning  storage-warning', f'This node is approaching it\'s limit of {over_public_size}.'
+    elif status is settings.StorageLimits.OVER_PUBLIC:
+        return 'btn-danger  storage-warning', f'This node has exceeded it\'s limit of {over_public_size}.'
+    elif status is settings.StorageLimits.DEFAULT:
+        return None, None
+    else:
+        raise NotImplementedError()

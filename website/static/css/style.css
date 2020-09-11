@@ -924,3 +924,12 @@ table.add-links {
 .alert-link {
     font-weight: 700;
 }
+
+.storage-warning {
+    color: white;
+}
+
+.storage-disabled {
+    box-shadow: none;
+    opacity: .65;
+}

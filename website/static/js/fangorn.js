@@ -1010,7 +1010,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
-    } else if (xhr && xhr.status === 507) {
+    } else if (xhr && xhr.status === 507 || xhr.status === 409) { // This is a placeholder until we get more info.
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
@@ -1936,17 +1936,32 @@ var FGItemButtons = {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) {_uploadEvent.call(tb, event, item); },
-                        icon: 'fa fa-upload',
-                        className : 'text-success'
-                    }, 'Upload'),
-                    m.component(FGButton, {
                         onclick: function () {
                             mode(toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
-                    }, 'Create Folder'));
+                    }, 'Create Folder')
+                );
+                if(window.contextVars.node.storageLimitsStatusText) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            icon: 'fa fa-upload',
+                            className : 'text-success disabled storage-disabled',
+                            tooltip: window.contextVars.node.storageLimitsStatusText,
+                        }, 'Upload')
+                    );
+                } else {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {_uploadEvent.call(tb, event, item); },
+                            icon: 'fa fa-upload',
+                            className : 'text-success',
+                        }, 'Upload')
+                    );
+
+                }
+
                 if (item.data.path) {
                     rowButtons.push(
                         m.component(FGButton, {
@@ -2196,6 +2211,15 @@ var FGToolbar = {
                     icon: 'fa fa-time-circle',
                     className : 'text-danger'
                 }, 'Cancel Pending Uploads')
+            );
+        }
+        if(window.contextVars.node.storageLimitsStatusText) {
+            generalButtons.push(
+                m.component(FGButton, {
+                    icon: 'fa fa-exclamation-triangle',
+                    className : window.contextVars.node.storageLimitsStatusClass,
+                    tooltip: window.contextVars.node.storageLimitsStatusText,
+                })
             );
         }
         // multiple selection icons

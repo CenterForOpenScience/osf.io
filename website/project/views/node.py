@@ -42,7 +42,7 @@ from osf.utils.tokens import process_token_or_pass
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
-from website.project.utils import sizeof_fmt
+from website.project.utils import sizeof_fmt, storage_limits_tooltip_text
 from website.project.metadata.utils import serialize_meta_schemas
 from addons.wiki.models import WikiPage
 from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink, Node, NodeRelation, Preprint
@@ -723,6 +723,8 @@ def _view_project(node, auth, primary=False,
                 status.push_status_message(message, kind='info', dismissible=False, trust=True)
     NodeRelation = apps.get_model('osf.NodeRelation')
 
+    storage_limit_status_class, storage_limit_status_text = storage_limits_tooltip_text(node)
+
     is_registration = node.is_registration
     data = {
         'node': {
@@ -790,6 +792,10 @@ def _view_project(node, auth, primary=False,
             'waterbutler_url': node.osfstorage_region.waterbutler_url,
             'mfr_url': node.osfstorage_region.mfr_url,
             'groups': list(node.osf_groups.values_list('name', flat=True)),
+            'storage_limit_status_class': storage_limit_status_class,
+            'storage_limit_status_text': storage_limit_status_text,
+            'over_private_limit': node.storage_limit_status >= settings.StorageLimits.OVER_PRIVATE,
+
         },
         'parent_node': {
             'exists': parent is not None,
