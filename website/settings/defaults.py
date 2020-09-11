@@ -1997,3 +1997,4 @@ class StorageLimits(enum.IntEnum):
         else:
             return cls.DEFAULT
 
+STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)

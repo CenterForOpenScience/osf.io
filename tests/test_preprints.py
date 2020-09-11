@@ -2419,7 +2419,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
@@ -2428,7 +2428,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_missing_args(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth=None)
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, auth=None)
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2443,7 +2443,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_no_user(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2458,7 +2458,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_bad_action(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, action='dance')
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, action='dance')
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2533,7 +2533,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_file_osfstorage_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
@@ -2543,7 +2543,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_folder_osfstorage_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
