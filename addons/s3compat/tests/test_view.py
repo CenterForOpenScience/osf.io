@@ -9,7 +9,7 @@ import pytest
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -49,7 +49,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_s3compat_settings_input_empty_host(self):
         url = self.project.api_url_for('s3compat_add_user_account')
@@ -59,7 +59,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_s3compat_settings_input_empty_access_key(self):
         url = self.project.api_url_for('s3compat_add_user_account')
@@ -69,7 +69,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_s3compat_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('s3compat_add_user_account')
@@ -79,7 +79,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_s3compat_settings_input_unknown_host(self):
         url = self.project.api_url_for('s3compat_add_user_account')
@@ -89,7 +89,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('The host is not available.', rv.body)
+        assert_in('The host is not available.', rv.body.decode())
 
     def test_s3compat_settings_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -104,7 +104,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', rv.body)
+        assert_in('You are prohibited from using this add-on.', rv.body.decode())
 
     def test_s3compat_set_bucket_no_settings(self):
         user = AuthUserFactory()
@@ -130,7 +130,8 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
 
     def test_s3compat_set_bucket_registered(self):
         registration = self.project.register_node(
-            get_default_metaschema(), Auth(self.user), '', ''
+            get_default_metaschema(), Auth(self.user),
+            DraftRegistrationFactory(branched_from=self.project), ''
         )
 
         url = registration.api_url_for('s3compat_set_config')
@@ -149,8 +150,9 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
+
+        assert_in('Unable to list buckets.', rv.body.decode())
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('Unable to list buckets.', rv.body)
 
     def test_s3compat_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('s3compat_deauthorize_node')
@@ -301,4 +303,4 @@ class TestCreateBucket(S3CompatAddonTestCase, OsfTestCase):
         url = '/api/v1/project/{0}/s3compat/newbucket/'.format(self.project._id)
         ret = self.app.post_json(url, {'bucket_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to S3 Compatible Storage"}')
+        assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem connecting to S3 Compatible Storage"}')

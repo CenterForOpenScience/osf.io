@@ -7,7 +7,7 @@ from azure.common import AzureHttpError
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -44,7 +44,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_azureblobstorage_settings_input_empty_access_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
@@ -53,7 +53,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_azureblobstorage_settings_input_empty_secret_key(self):
         url = self.project.api_url_for('azureblobstorage_add_user_account')
@@ -62,7 +62,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_azureblobstorage_settings_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -77,7 +77,7 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', rv.body)
+        assert_in('You are prohibited from using this add-on.', rv.body.decode())
 
     def test_azureblobstorage_set_container_no_settings(self):
         user = AuthUserFactory()
@@ -103,7 +103,8 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
 
     def test_azureblobstorage_set_container_registered(self):
         registration = self.project.register_node(
-            get_default_metaschema(), Auth(self.user), '', ''
+            get_default_metaschema(), Auth(self.user),
+            DraftRegistrationFactory(branched_from=self.project), ''
         )
 
         url = registration.api_url_for('azureblobstorage_set_config')
@@ -121,8 +122,9 @@ class TestAzureBlobStorageViews(AzureBlobStorageAddonTestCase, OAuthAddonConfigV
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
+
+        assert_in('Unable to list containers.', rv.body.decode())
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('Unable to list containers.', rv.body)
 
     def test_azureblobstorage_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('azureblobstorage_deauthorize_node')
@@ -266,4 +268,4 @@ class TestCreateContainer(AzureBlobStorageAddonTestCase, OsfTestCase):
         url = '/api/v1/project/{0}/azureblobstorage/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body, '{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')
+        assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem connecting to Azure Blob Storage"}')
