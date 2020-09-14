@@ -542,6 +542,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
+        provider.schemas.add(registration_schema)
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
             user=initiator,
