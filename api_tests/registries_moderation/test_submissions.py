@@ -17,7 +17,7 @@ from osf.migrations import update_provider_auth_groups
 
 
 @pytest.mark.django_db
-class TestRegistresModerationSubmissions:
+class TestRegistriesModerationSubmissions:
 
     @pytest.fixture()
     def moderator(self):
