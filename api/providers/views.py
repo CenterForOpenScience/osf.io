@@ -630,6 +630,7 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
 
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
+    provider_class = RegistrationProvider
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
