@@ -1984,8 +1984,8 @@ class StorageLimits(enum.IntEnum):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
         GBs = 10 ** 9
         usage_bytes = usage_bytes or 0
-        public_limit = public_limit or STORAGE_LIMIT_PUBLIC
-        private_limit = private_limit or STORAGE_LIMIT_PRIVATE
+        public_limit = float(public_limit) if public_limit else STORAGE_LIMIT_PUBLIC
+        private_limit = float(private_limit) if private_limit else STORAGE_LIMIT_PRIVATE
 
         if usage_bytes >= public_limit * GBs:
             return cls.OVER_PUBLIC

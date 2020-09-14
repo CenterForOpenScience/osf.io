@@ -209,9 +209,7 @@
             registrationMetaSchemas: ${ node['registered_schemas'] | sjson, n },
             registrationMetaData: ${ node['registered_meta'] | sjson, n },
             contributors: ${ node['contributors'] | sjson, n },
-            storageLimitsStatusText: ${ node['storage_limit_status_text'] | sjson, n },
-            storageLimitsStatusClass: ${ node['storage_limit_status_class'] | sjson, n }
-
+            storageLimitsStatus: ${ node['storage_limit_status'] | sjson, n },
         }
     });
 </script>

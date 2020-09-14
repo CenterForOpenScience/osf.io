@@ -1943,12 +1943,12 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder')
                 );
-                if(window.contextVars.node.storageLimitsStatusText) {
+                if(window.contextVars.node.storageLimitsStatus) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
                             className : 'text-success disabled storage-disabled',
-                            tooltip: window.contextVars.node.storageLimitsStatusText,
+                            tooltip: window.contextVars.node.storageLimitsStatus.text,
                         }, 'Upload')
                     );
                 } else {
@@ -2213,12 +2213,12 @@ var FGToolbar = {
                 }, 'Cancel Pending Uploads')
             );
         }
-        if(window.contextVars.node.storageLimitsStatusText) {
+        if(window.contextVars.node.storageLimitsStatus) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
-                    className : window.contextVars.node.storageLimitsStatusClass,
-                    tooltip: window.contextVars.node.storageLimitsStatusText,
+                    className : window.contextVars.node.storageLimitsStatus.class,
+                    tooltip: window.contextVars.node.storageLimitsStatus.text,
                 })
             );
         }

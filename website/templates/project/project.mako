@@ -36,8 +36,8 @@
             <div class="col-lg-6">
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
-                        % if node.get('storage_limit_status_text'):
-                            <button class="btn ${node['storage_limit_status_class']}"  data-toggle="tooltip" data-placement="bottom" title="${node['storage_limit_status_text']}"><i class="fa fa-exclamation-triangle"></i></button>
+                        % if node.get('storage_limit_status'):
+                            <button class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="${node['storage_limit_status']['text']}"><i class="fa fa-exclamation-triangle"></i></button>
                         % endif
 
                         % if node.get('storage_usage'):
