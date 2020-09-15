@@ -911,6 +911,9 @@ function _fangornDragOver(treebeard, event) {
 function _fangornDropzoneDrop(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover';
     treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+    if (window.contextVars.node.storageLimitsStatus.disableUploads) {
+        $osf.growl('This file cannot be added to this project because it would exceed the storage limit for OSF Storage');
+     }
 }
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
