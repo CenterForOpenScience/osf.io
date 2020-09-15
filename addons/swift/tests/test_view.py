@@ -7,7 +7,7 @@ from swiftclient import exceptions as swift_exceptions
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -47,7 +47,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_access_key_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -59,7 +59,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': 'Non-empty-tenant-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_secret_key_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -71,7 +71,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': 'Non-empty-tenant-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_tenant_name_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -83,7 +83,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_auth_url_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -95,7 +95,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': 'Non-empty-tenant-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_auth_version_v2(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -107,7 +107,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': 'Non-empty-tenant-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_access_key_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -121,7 +121,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Non-empty-project-domain-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_secret_key_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -135,7 +135,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Non-empty-project-domain-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_tenant_name_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -149,7 +149,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Non-empty-project-domain-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_auth_url_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -163,7 +163,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Non-empty-project-domain-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('All the fields above are required.', rv.body)
+        assert_in('All the fields above are required.', rv.body.decode())
 
     def test_swift_settings_input_empty_user_domain_name_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -177,7 +177,8 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Non-empty-project-domain-name'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('The field `user_domain_name` is required when you choose identity V3.', rv.body)
+        assert_in('The field `user_domain_name` is required when you choose identity V3.',
+                  rv.body.decode())
 
     def test_swift_settings_input_empty_project_domain_name_v3(self):
         url = self.project.api_url_for('swift_add_user_account')
@@ -191,7 +192,8 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': ''
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('The field `project_domain_name` is required when you choose identity V3.', rv.body)
+        assert_in('The field `project_domain_name` is required when you choose identity V3.',
+                  rv.body.decode())
 
     def test_swift_settings_rdm_addons_denied(self):
         institution = InstitutionFactory()
@@ -211,7 +213,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Default'
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', rv.body)
+        assert_in('You are prohibited from using this add-on.', rv.body.decode())
 
     def test_swift_set_bucket_no_settings(self):
         user = AuthUserFactory()
@@ -237,7 +239,8 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
 
     def test_swift_set_bucket_registered(self):
         registration = self.project.register_node(
-            get_default_metaschema(), Auth(self.user), '', ''
+            get_default_metaschema(), Auth(self.user),
+            DraftRegistrationFactory(branched_from=self.project), ''
         )
 
         url = registration.api_url_for('swift_set_config')
@@ -259,7 +262,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'tenant_name': 'ten'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('Unable to list containers.', rv.body)
+        assert_in('Unable to list containers.', rv.body.decode())
 
     @mock.patch('addons.swift.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list_v3(self, mock_can_list):
@@ -274,7 +277,7 @@ class TestSwiftViews(SwiftAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, Osf
             'project_domain_name': 'Default'
         }, auth=self.user.auth, expect_errors=True)
         assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
-        assert_in('Unable to list containers.', rv.body)
+        assert_in('Unable to list containers.', rv.body.decode())
 
     def test_swift_remove_node_settings_owner(self):
         url = self.node_settings.owner.api_url_for('swift_deauthorize_node')
@@ -409,4 +412,4 @@ class TestCreateContainer(SwiftAddonTestCase, OsfTestCase):
         url = '/api/v1/project/{0}/swift/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body, '{"message": "This should work", "title": "Problem creating container \'doesntevenmatter\'"}')
+        assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem creating container \'doesntevenmatter\'"}')

@@ -4,7 +4,7 @@ import pytest
 import unittest
 
 from tests.base import get_default_metaschema
-from osf_tests.factories import ProjectFactory
+from osf_tests.factories import ProjectFactory, DraftRegistrationFactory
 
 from framework.auth import Auth
 from addons.base.tests.models import (
@@ -62,7 +62,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         registration = self.node.register_node(
             schema=get_default_metaschema(),
             auth=Auth(user=self.user),
-            data='hodor',
+            draft_registration=DraftRegistrationFactory(branched_from=self.node),
         )
         assert_false(registration.has_addon('weko'))
 
