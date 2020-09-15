@@ -873,6 +873,11 @@ function _fangornCanDrop(treebeard, item) {
     if (canDrop === null) {
         canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
     }
+    var status = window.contextVars.node.storageLimitsStatus;
+    if (status && status.disableUploads) {
+        return false;
+    }
+
     return canDrop;
 }
 
@@ -906,6 +911,9 @@ function _fangornDragOver(treebeard, event) {
 function _fangornDropzoneDrop(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover';
     treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+    if (window.contextVars.node.storageLimitsStatus.disableUploads) {
+        $osf.growl('This file cannot be added to this project because it would exceed the storage limit for OSF Storage');
+     }
 }
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
@@ -1010,7 +1018,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
-    } else if (xhr && xhr.status === 507 || xhr.status === 409) { // This is a placeholder until we get more info.
+    } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
@@ -1943,7 +1951,7 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder')
                 );
-                if(window.contextVars.node.storageLimitsStatus) {
+                if(window.contextVars.node.disableUploadsd) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',

@@ -144,7 +144,7 @@ def get_storage_limits_css(node):
     elif status is settings.StorageLimits.APPROACHING_PUBLIC:
         return {
             'class': 'btn-warning  storage-warning',
-            'text': f'This project is over the storage limit of {over_public_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
+            'text': f'This project is approaching the storage limit of {over_public_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
             'disableUploads': False
         }
     elif status is settings.StorageLimits.OVER_PUBLIC:
