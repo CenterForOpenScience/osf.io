@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Q, Value, When
+from django.db.models import Case, CharField, Q, Value, When, F
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -17,7 +17,7 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
-from api.draft_registrations.serializers import DraftRegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer
 from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
@@ -42,7 +42,7 @@ from osf.models import (
     PreprintProvider,
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
-    DraftRegistration,
+    Registration,
     RegistrationApproval,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
@@ -662,7 +662,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
     ordering = ('-created')
 
-    serializer_class = DraftRegistrationSerializer
+    serializer_class = RegistrationSerializer
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
@@ -671,10 +671,10 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
     view_name = 'registrations-list'
 
     def get_default_queryset(self):
-        return DraftRegistration.objects.filter(
+        return Registration.objects.filter(
             provider=self.get_provider(),
-            registered_node__registration_approval__state=RegistrationApproval.APPROVED,
-        )
+            registration_approval__state=RegistrationApproval.APPROVED,
+        ).annotate(machine_state=F('draft_registration__machine_state'))
 
     # overrides ListAPIView
     def get_queryset(self):

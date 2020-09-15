@@ -122,11 +122,9 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.get(registrations_url, auth=moderator.auth)
 
-        draft_registration = registration.draft_registration.last()
-
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['id'] == draft_registration._id
+        assert resp.json['data'][0]['id'] == registration._id
         assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.INITIAL.value
 
     def test_get_registrations_machine_state_filter(self, app, registrations_url, registration, moderator):
@@ -135,21 +133,21 @@ class TestRegistriesModerationSubmissions:
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
-        draft_registration = registration.draft_registration.last()
-        assert resp.json['data'][0]['id'] == draft_registration._id
+        assert resp.json['data'][0]['id'] == registration._id
 
         resp = app.get(f'{registrations_url}?filter[machine_state]=pending', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
+        draft_registration = registration.draft_registration.last()
         draft_registration.run_submit(registration.creator)
 
         resp = app.get(f'{registrations_url}?filter[machine_state]=pending', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['id'] == draft_registration._id
+        assert resp.json['data'][0]['id'] == registration._id
         assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.PENDING.value
 
     @pytest.mark.enable_quickfiles_creation
