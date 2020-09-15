@@ -909,10 +909,8 @@ function _fangornDragOver(treebeard, event) {
  * @private
  */
 function _fangornDropzoneDrop(treebeard, event) {
-    var dropzoneHoverClass = 'fangorn-dz-hover';
-    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
     if (window.contextVars.node.storageLimitsStatus.disableUploads) {
-        $osf.growl('This file cannot be added to this project because it would exceed the storage limit for OSF Storage');
+        $osf.growl('dadsds');
      }
 }
 /**
