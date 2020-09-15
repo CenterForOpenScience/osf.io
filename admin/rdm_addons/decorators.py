@@ -18,7 +18,7 @@ def must_be_rdm_addons_allowed(addon_short_name=None):
             try:
                 validate_rdm_addons_allowed(auth, addon_short_name)
             except PermissionsError as e:
-                return {'message_long': e.message}, http_status.HTTP_403_FORBIDDEN
+                return {'message_long': str(e)}, http_status.HTTP_403_FORBIDDEN
 
             return func(*args, **kwargs)
 

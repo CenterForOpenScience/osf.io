@@ -457,7 +457,7 @@ def node_choose_addons(auth, node, **kwargs):
     except PermissionsError as e:
         raise HTTPError(
             http_status.HTTP_403_FORBIDDEN,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     node.config_addons(request.json, auth)

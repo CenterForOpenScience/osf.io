@@ -42,7 +42,7 @@ def oauth_connect(service_name, auth):
     except PermissionsError as e:
         raise HTTPError(
             http_status.HTTP_403_FORBIDDEN,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     service = get_service(service_name)
@@ -57,7 +57,7 @@ def osf_oauth_callback(service_name, auth):
     except PermissionsError as e:
         raise HTTPError(
             http_status.HTTP_403_FORBIDDEN,
-            data=dict(message_long=e.message)
+            data=dict(message_long=str(e))
         )
 
     user = auth.user
