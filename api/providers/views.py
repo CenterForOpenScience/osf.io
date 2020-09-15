@@ -689,7 +689,7 @@ class RegistrationProviderRequestList(JSONAPIBaseView, generics.ListAPIView, Lis
         MustBeModerator,
     )
     view_category = 'requests'
-    view_name = 'registration-provider-withdrawal-request-list'
+    view_name = 'registration-provider-request-list'
 
     required_read_scopes = [CoreScopes.REGISTRATION_REQUESTS_READ]
     required_write_scopes = [CoreScopes.NULL]
