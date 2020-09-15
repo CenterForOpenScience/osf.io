@@ -2829,9 +2829,9 @@ class TestQueryString(OsfTestCase):
         バックスラッシュでコロンをエスケープして、フィールドの区切り文
         字として扱わないことの確認
         """
-        self.assertEqual(quote_query_string(ur'\:'), ur'"\:"')
-        self.assertEqual(quote_query_string(ur'k*e!y\:v'), ur'"k*e!y\:v"')
-        self.assertEqual(quote_query_string(ur'k*e!y\\\:v'), ur'"k*e!y\\\:v"')
+        self.assertEqual(quote_query_string(r'\:'), r'"\:"')
+        self.assertEqual(quote_query_string(r'k*e!y\:v'), r'"k*e!y\:v"')
+        self.assertEqual(quote_query_string(r'k*e!y\\\:v'), r'"k*e!y\\\:v"')
 
     def test_multiple_colon(self):
         """
@@ -2911,7 +2911,7 @@ class TestQueryString(OsfTestCase):
         # バックスラッシュでひとつ後ろの文字の効用を無効にしてひとつな
         # がりの文字列(token)とみなす。バックスラッシュで次のバックスラッ
         # シュを無効にすることもできる1
-        self.assertEqual(quote_query_string(ur'k*e!y\\:あ'), ur'k*e!y\\:"あ"')
+        self.assertEqual(quote_query_string(r'k*e!y\\:あ'), r'k*e!y\\:"あ"')
         # 検索式としては壊れている丸括弧と二項中置き演算子の組み合わせ
         self.assertEqual(
             quote_query_string(u'あ AND () い) OR ('),
@@ -2922,31 +2922,31 @@ class TestQueryString(OsfTestCase):
         # バックスラッシュでひとつ後ろの文字の効用を無効にしてひとつな
         # がりの文字列(token)とみなす。バックスラッシュで次のバックスラッ
         # シュを無効にすることもできる2
-        self.assertEqual(quote_query_string(ur'f\(o\"o'), ur'"f\(o\"o"')
+        self.assertEqual(quote_query_string(r'f\(o\"o'), r'"f\(o\"o"')
         # バックスラッシュで無効にできる3
-        self.assertEqual(quote_query_string(ur'あ\~'), ur'"あ\~"')
+        self.assertEqual(quote_query_string(r'あ\~'), r'"あ\~"')
         # 後置き演算子は整数を伴うことができる
         self.assertEqual(quote_query_string(u'あ~1'), u'"あ"~1')
         # 後置き演算子は小数を伴うことができる
         self.assertEqual(quote_query_string(u'あ^2.4'), u'"あ"^2.4')
         # これまでの要素の合わせ技(バックスラッシュエスケープと後置き演算子)
-        self.assertEqual(quote_query_string(ur'あ\\~'), ur'"あ\\"~')
+        self.assertEqual(quote_query_string(r'あ\\~'), r'"あ\\"~')
         # ASCII英数字か*か?だけの区切りはダブルクオートで囲まない
-        self.assertEqual(quote_query_string(ur'ab*d'), ur'ab*d')
-        self.assertEqual(quote_query_string(ur'a?c'), ur'a?c')
-        self.assertEqual(quote_query_string(ur'a?c *'), ur'a?c *')
-        self.assertEqual(quote_query_string(ur'a?c あ'), ur'a?c "あ"')
-        self.assertEqual(quote_query_string(ur'?'), ur'?')
-        self.assertEqual(quote_query_string(ur'123re*'), ur'123re*')
+        self.assertEqual(quote_query_string(r'ab*d'), r'ab*d')
+        self.assertEqual(quote_query_string(r'a?c'), r'a?c')
+        self.assertEqual(quote_query_string(r'a?c *'), r'a?c *')
+        self.assertEqual(quote_query_string(r'a?c あ'), r'a?c "あ"')
+        self.assertEqual(quote_query_string(r'?'), r'?')
+        self.assertEqual(quote_query_string(r'123re*'), r'123re*')
         # バックスラッシュで無効にできる4 前置き演算子と後置き演算子
-        self.assertEqual(quote_query_string(ur'\+あ\~1'), ur'"\+あ\~1"')
+        self.assertEqual(quote_query_string(r'\+あ\~1'), r'"\+あ\~1"')
         # 全角空白でも区切ることができる
-        self.assertEqual(quote_query_string(ur'い ろ　は'), ur'"い" "ろ"　"は"')
+        self.assertEqual(quote_query_string(r'い ろ　は'), r'"い" "ろ"　"は"')
         # ワイルドカードが英数字以外を伴うときはダブルクオートで囲う
-        self.assertEqual(quote_query_string(ur'aあ!'), ur'"aあ!"')
-        self.assertEqual(quote_query_string(ur'あ*う'), ur'"あ*う"')
-        self.assertEqual(quote_query_string(ur'あい*'), ur'"あい*"')
-        self.assertEqual(quote_query_string(ur'あい*~'), ur'"あい*"~')
+        self.assertEqual(quote_query_string(r'aあ!'), r'"aあ!"')
+        self.assertEqual(quote_query_string(r'あ*う'), r'"あ*う"')
+        self.assertEqual(quote_query_string(r'あい*'), r'"あい*"')
+        self.assertEqual(quote_query_string(r'あい*~'), r'"あい*"~')
 
     def test_replace_normalized_field(self):
         """
