@@ -926,7 +926,7 @@ table.add-links {
 }
 
 .storage-warning {
-    color: white;
+    color: white !important;
 }
 
 .storage-disabled {
