@@ -35,7 +35,6 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
 
     DraftRegistrations have several fields that can be edited that are persisted to the final registration.
     """
-
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
