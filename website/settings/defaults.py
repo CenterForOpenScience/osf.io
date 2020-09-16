@@ -1968,6 +1968,10 @@ STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
 GBs = 10 ** 9
+<<<<<<< HEAD
+=======
+GiBs = 1024 ** 3
+>>>>>>> move gbs and gibs to settings
 
 
 #  Needs to be here so the enum can be used in the admin template
