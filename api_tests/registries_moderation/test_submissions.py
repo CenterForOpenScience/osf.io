@@ -143,12 +143,13 @@ class TestRegistriesModerationSubmissions:
         draft_registration = registration.draft_registration.last()
         draft_registration.run_submit(registration.creator)
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=pending', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[machine_state]=pending&meta[reviews_state_counts]=true', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
         assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.PENDING.value
+        assert resp.json['meta']['reviews_state_counts']['pending'] == 1
 
     @pytest.mark.enable_quickfiles_creation
     def test_get_action(self, app, actions_url, registration, moderator):

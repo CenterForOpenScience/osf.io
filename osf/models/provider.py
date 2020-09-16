@@ -19,6 +19,7 @@ from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.workflows import RegistrationStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
@@ -198,6 +199,9 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
+    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEW_STATES = RegistrationStates
+    MODERATION_MACHINE_STATE_RELATION = 'draft_registration__machine_state'
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'

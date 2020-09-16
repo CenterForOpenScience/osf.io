@@ -669,14 +669,26 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
     view_name = 'registrations-list'
 
     def get_default_queryset(self):
+        provider = self.get_provider()
+
         return Registration.objects.filter(
-            provider=self.get_provider(),
+            provider=provider,
             registration_approval__state=RegistrationApproval.APPROVED,
-        ).annotate(machine_state=F('draft_registration__machine_state'))
+        ).annotate(machine_state=F(provider.MODERATION_MACHINE_STATE_RELATION))
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    # overrides APIView
+    def get_renderer_context(self):
+        context = super().get_renderer_context()
+        if is_truthy(self.request.query_params.get('meta[reviews_state_counts]', False)):
+            provider = self.get_provider()
+            context['meta'] = {
+                'reviews_state_counts': provider.get_reviewable_state_counts(),
+            }
+        return context
 
 
 class RegistrationProviderRequestList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
