@@ -909,10 +909,8 @@ function _fangornDragOver(treebeard, event) {
  * @private
  */
 function _fangornDropzoneDrop(treebeard, event) {
-    if (window.contextVars.node.storageLimitsStatus.disableUploads) {
-        $osf.growl('dadsds');
-     }
-}
+    var dropzoneHoverClass = 'fangorn-dz-hover';
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);}
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
