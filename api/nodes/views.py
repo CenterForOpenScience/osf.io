@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -104,6 +104,7 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
     NodeSettingsUpdateSerializer,
+    NodeStorageSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
     NodeGroupsSerializer,
@@ -138,6 +139,10 @@ from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -1723,6 +1728,34 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
+
+
+class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """The documentation for this endpoint should be found [here](https://developer.osf.io/#operation/node_storage)
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    view_category = 'nodes'
+    view_name = 'node-storage'
+
+    serializer_class = NodeStorageSerializer
+
+    def get_object(self):
+        return self.get_node()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        if instance.storage_usage is None:
+            return Response(serializer.data, status=HTTP_202_ACCEPTED)
+        else:
+            return Response(serializer.data)
 
 
 class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):

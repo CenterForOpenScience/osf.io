@@ -1982,8 +1982,9 @@ class StorageLimits(enum.IntEnum):
     DEFAULT = 0
     APPROACHING_PRIVATE = 1
     OVER_PRIVATE = 2
-    OVER_PUBLIC = 3
-    APPROACHING_PUBLIC = 4
+    APPROACHING_PUBLIC = 3
+    OVER_PUBLIC = 4
+
 
     @classmethod
     def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):

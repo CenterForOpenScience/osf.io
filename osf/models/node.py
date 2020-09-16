@@ -63,6 +63,7 @@ from website.citations.utils import datetime_to_csl
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
+from website.project.utils import sizeof_fmt
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.permissions import (
@@ -398,12 +399,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def storage_limit_status(self):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
         a custom limit this should indicate that."""
-
-        return settings.StorageLimits.from_node_usage(
-            self.storage_usage,
-            self.custom_storage_usage_limit_private,
-            self.custom_storage_usage_limit_public
-        )
+        if self.storage_usage is not None:
+            return settings.StorageLimits.from_node_usage(
+                self.storage_usage,
+                self.custom_storage_usage_limit_private,
+                self.custom_storage_usage_limit_public
+            )
 
     @property
     def nodes(self):
@@ -2381,11 +2382,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
 
         storage_usage_total = storage_usage_cache.get(key)
-        if storage_usage_total:
+        if storage_usage_total is not None:
             return storage_usage_total
         else:
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key) or 0
+
+    @property
+    def formatted_storage_usage(self):
+        if self.storage_usage is not None:
+            return sizeof_fmt(self.storage_usage)
+        return None
 
     # Overrides ContributorMixin
     # TODO: Deprecate this when we emberize contributors management for nodes

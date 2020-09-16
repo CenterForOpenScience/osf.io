@@ -525,6 +525,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    storage = RelationshipField(
+        related_view='nodes:node-storage',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -1353,6 +1358,28 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
+
+class NodeStorageSerializer(JSONAPISerializer):
+    id = IDField(source='_id', required=True)
+    storage_limit_status = ser.CharField(source='storage_limit_status.name', read_only=True, allow_null=True)
+    storage_usage = ser.CharField(source='formatted_storage_usage', read_only=True, allow_null=True)
+
+    class Meta:
+        type_ = 'node-storage'
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-storage',
+            kwargs={
+                'node_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
 
 
 class NodeStorageProviderSerializer(JSONAPISerializer):

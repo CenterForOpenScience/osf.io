@@ -68,6 +68,9 @@ SLOAN_FLAGS = (
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
 
+import logging
+logger = logging.getLogger(__name__)
+
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
 #toggleBar{{display: none;}}
@@ -218,6 +221,26 @@ def check_access(node, auth, action, cas_resp):
 
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
+def check_storage_availability(node, provider, action):
+    """Verify that the requested action may be performed on the resource based
+    upon the resource's storage usage status
+    """
+    if provider == 'osfstorage':
+        if permission_map.get(action, None) == permissions.READ:
+            return True
+        #if write
+        if node.is_public:
+            if node.storage_limit_status.value < 4:
+                return True
+            else:
+                raise HTTPError(http_status.HTTP_507_INSUFFICIENT_STORAGE)
+        else:
+            if node.storage_limit_status.value < 2:
+                return True
+            else:
+                raise HTTPError(http_status.HTTP_507_INSUFFICIENT_STORAGE)
+    return True
+
 def make_auth(user):
     if user is not None:
         return {
@@ -279,6 +302,8 @@ def get_auth(auth, **kwargs):
         sentry.log_message(str(err))
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
+    logger.info(data)
+
     if not auth.user:
         auth.user = OSFUser.from_cookie(data.get('cookie', ''))
 
@@ -296,6 +321,7 @@ def get_auth(auth, **kwargs):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
+    check_storage_availability(node, provider_name, action)
     provider_settings = None
     if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
