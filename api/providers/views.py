@@ -651,8 +651,6 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
 
 
 class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
-    """
     provider_class = RegistrationProvider
     permission_classes = (
         drf_permissions.IsAuthenticated,
