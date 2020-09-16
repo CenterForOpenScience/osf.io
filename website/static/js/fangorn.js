@@ -1014,7 +1014,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
-    } else if (xhr && xhr.status === 409) {
+    } else if (xhr && xhr.status === 507) {
         msgText = 'This file cannot be added to this project because it would exceed the storage limit for OSF Storage';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
