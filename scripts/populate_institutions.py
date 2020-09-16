@@ -621,6 +621,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'thepolicylab',
+                'name': 'The Policy Lab at Brown University',
+                'description': 'The Policy Lab at Brown University conducts applied research to improve public policy in Rhode Island and beyond.<br />Learn more at <a href="https://thepolicylab.brown.edu/">thepolicylab.brown.edu</a> and tune into our podcast, <a href="https://thirtythousandleagues.com/">30,000 Leagues</a>.',
+                'banner_name': 'thepolicylab-banner.png',
+                'logo_name': 'thepolicylab-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sso.brown.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'thelabatdc',
                 'name': 'The Lab @ DC',
                 'description': 'The Lab @ DC is an entity of the <a href="https://mayor.dc.gov/">Executive Office of the Mayor of the District of Columbia Government</a>. We work in the <a href="https://oca.dc.gov/">Office of the City Administrator</a> and in partnership with a network of universities and research centers to apply the scientific method into day-to-day governance.',
