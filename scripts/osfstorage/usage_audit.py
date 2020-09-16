@@ -23,6 +23,7 @@ from osf.models import TrashedFile, Node
 
 from website import mails
 from website.app import init_app
+from api.base.settings.defaults import GiBs
 
 from scripts import utils as scripts_utils
 
@@ -33,8 +34,6 @@ from osf.models import BaseFileNode, FileVersion, OSFUser, AbstractNode
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-GiBs = 1024 ** 3.0
 
 USER_LIMIT = 5 * GiBs
 PROJECT_LIMIT = 5 * GiBs

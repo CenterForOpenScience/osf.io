@@ -122,12 +122,11 @@ def sizeof_fmt(num, suffix='B'):
 
 def get_storage_limits_css(node):
     status = node.storage_limit_status
-    GBs = 10 ** 9
     public_limit = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
     private_limit = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
 
-    over_public_size = sizeof_fmt(int(public_limit * GBs))
-    over_private_size = sizeof_fmt(int(private_limit * GBs))
+    over_public_size = sizeof_fmt(int(public_limit * settings.GBs))
+    over_private_size = sizeof_fmt(int(private_limit * settings.GBs))
 
     if status is settings.StorageLimits.APPROACHING_PRIVATE:
         return {

@@ -1967,6 +1967,8 @@ STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users g
 STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
+GBs = 10 ** 9
+GiBs = 1024 ** 3
 
 @enum.unique
 class StorageLimits(enum.IntEnum):
@@ -1982,7 +1984,7 @@ class StorageLimits(enum.IntEnum):
     @classmethod
     def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
-        GBs = 10 ** 9
+
         usage_bytes = usage_bytes or 0
         public_limit = float(public_limit) if public_limit else STORAGE_LIMIT_PUBLIC
         private_limit = float(private_limit) if private_limit else STORAGE_LIMIT_PRIVATE
