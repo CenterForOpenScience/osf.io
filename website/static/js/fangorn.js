@@ -1015,7 +1015,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
-        msgText = 'This file cannot be added to this project because it would exceed the storage limit for OSF Storage';
+        msgText = 'This file cannot be added to this project/component because it would exceed the storage limit for OSF Storage';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
          msgText = '';
@@ -1952,7 +1952,7 @@ var FGItemButtons = {
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
                             className : 'text-success disabled storage-disabled',
-                            tooltip: window.contextVars.node.storageLimitsStatus.text,
+                            tooltip: 'This project/component is approaching the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
                         }, 'Upload')
                     );
                 } else {

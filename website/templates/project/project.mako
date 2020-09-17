@@ -37,7 +37,7 @@
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                         % if node.get('storage_limit_status'):
-                            <button class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="${node['storage_limit_status']['text']}"><i class="fa fa-exclamation-triangle"></i></button>
+                            <button class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is approaching the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/."><i class="fa fa-exclamation-triangle"></i></button>
                         % endif
 
                         % if node.get('storage_usage'):

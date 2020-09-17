@@ -122,34 +122,25 @@ def sizeof_fmt(num, suffix='B'):
 
 def get_storage_limits_css(node):
     status = node.storage_limit_status
-    public_limit = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
-    private_limit = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
-
-    over_public_size = sizeof_fmt(int(public_limit * settings.GBs))
-    over_private_size = sizeof_fmt(int(private_limit * settings.GBs))
 
     if status is settings.StorageLimits.APPROACHING_PRIVATE:
         return {
             'class': 'btn-warning storage-warning',
-            'text': f'This project is approaching the storage limit of {over_private_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
             'disableUploads': False
         }
     elif status is settings.StorageLimits.OVER_PRIVATE:
         return {
             'class': 'btn-danger  storage-warning',
-            'text': f'This project is over the storage limit of {over_private_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
             'disableUploads': True
         }
     elif status is settings.StorageLimits.APPROACHING_PUBLIC:
         return {
             'class': 'btn-warning  storage-warning',
-            'text': f'This project is approaching the storage limit of {over_public_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
             'disableUploads': False
         }
     elif status is settings.StorageLimits.OVER_PUBLIC:
         return {
             'class': 'btn-danger  storage-warning',
-            'text': f'This project is over the storage limit of {over_public_size}. To learn more about limits and alternative storage options visit https://help.osf.io/.',
             'disableUploads': True
         }
     elif status is settings.StorageLimits.DEFAULT:
