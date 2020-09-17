@@ -11,6 +11,7 @@ import hashlib
 import logging
 from datetime import timedelta
 from collections import OrderedDict
+import enum
 
 os_env = os.environ
 
@@ -1961,3 +1962,39 @@ DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
+
+STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
+STORAGE_LIMIT_PUBLIC = 50
+STORAGE_LIMIT_PRIVATE = 5
+
+
+@enum.unique
+class StorageLimits(enum.IntEnum):
+    """
+    Values here are in GBs
+    """
+    DEFAULT = 0
+    APPROACHING_PRIVATE = 1
+    OVER_PRIVATE = 2
+    OVER_PUBLIC = 3
+    APPROACHING_PUBLIC = 4
+
+    @classmethod
+    def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
+        GBs = 1024 ** 3.0
+        public_limit = public_limit or STORAGE_LIMIT_PUBLIC
+        private_limit = private_limit or STORAGE_LIMIT_PRIVATE
+
+        if usage_bytes >= public_limit * GBs:
+            return cls.OVER_PUBLIC
+        elif usage_bytes >= public_limit * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PUBLIC
+        elif usage_bytes >= private_limit * GBs:
+            return cls.OVER_PRIVATE
+        elif usage_bytes >= private_limit * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PRIVATE
+        else:
+            return cls.DEFAULT
+
+STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)

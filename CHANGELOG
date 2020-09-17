@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.17.0 (2020-09-16)
+====================
+- Re-enable calculation of storage cache with more efficient updates
+- Add node storage limits to node model
+- Add registration moderation state machine
+- Update zotero requirements
+- Update QA notes in PR template
+
 20.16.0 (2020-09-09)
 ====================
 - Fix bug in EGAP schema display on branded registries

@@ -15,7 +15,6 @@ from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
-from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
 from osf.models import FileVersion, OSFUser
 from osf.utils.permissions import WRITE
@@ -124,12 +123,10 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
     ret = source.copy_under(destination, name=name).serialize(), http_status.HTTP_201_CREATED
-    update_storage_usage(destination.target)
     return ret
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    source_target = source.target
 
     try:
         ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
@@ -141,11 +138,6 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'Cannot move file as it is the primary file of preprint.'
         })
-
-    # once the move is complete recalculate storage for both targets if it's a inter-target move.
-    if source_target != destination.target:
-        update_storage_usage(destination.target)
-        update_storage_usage(source_target)
 
     return ret
 
@@ -339,11 +331,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-        current_version = file_node.get_version()
         new_version = file_node.create_version(user, location, metadata)
-
-        if not current_version or not current_version.is_duplicate(new_version):
-            update_storage_usage(file_node.target)
 
         version_id = new_version._id
         archive_exists = new_version.archive is not None
@@ -382,7 +370,6 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
             'message_long': 'Cannot delete file as it is the primary file of preprint.'
         })
 
-    update_storage_usage(file_node.target)
     return {'status': 'success'}
 
 

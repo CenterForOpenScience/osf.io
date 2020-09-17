@@ -3,11 +3,22 @@ from transitions import Machine
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
+
 from osf.exceptions import InvalidTransitionError
-from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.models.preprintlog import PreprintLog
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationRequestAction
+
+
 from osf.utils import permissions
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, DEFAULT_TRANSITIONS, REVIEWABLE_TRANSITIONS
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    RegistrationStates,
+    ReviewStates,
+    DEFAULT_TRANSITIONS,
+    REVIEWABLE_TRANSITIONS,
+    REGISTRATION_TRANSITIONS
+)
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
@@ -17,17 +28,30 @@ class BaseMachine(Machine):
 
     action = None
     from_state = None
+    States = DefaultStates
+    Transitions = DEFAULT_TRANSITIONS
 
-    def __init__(self, machineable, state_attr, **kwargs):
+    def __init__(self, machineable, state_attr='machine_state'):
+        """
+        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, prerprints etc,
+        but sometimes applies to sanctions, it may be to applied to anything that wants to have states and transitions.
+
+        The general idea behind this is that we are instantiating the machine object as part of the model and it will
+        validate different state changes and transitions ensuring a model will be easy to identify at a certain state.
+
+        Here we are using the pytransitions state machine in conjunction with an "action object" which is used to store
+        pre-transition info, mainly the instigator of the transition or a comment about the transition.
+
+        :param machineable: The thing (should probably a be model) that is hold the state info.
+        :param state_attr: The name of the state attribute, usually `machine_state`
+        """
         self.machineable = machineable
         self.__state_attr = state_attr
-        states = kwargs.get('states', [s.value for s in DefaultStates])
-        transitions = kwargs.get('transitions', DEFAULT_TRANSITIONS)
-        self._validate_transitions(transitions)
+        self._validate_transitions(self.Transitions)
 
         super(BaseMachine, self).__init__(
-            states=states,
-            transitions=transitions,
+            states=[s.value for s in self.States],
+            transitions=self.Transitions,
             initial=self.state,
             send_event=True,
             prepare_event=['initialize_machine'],
@@ -71,13 +95,11 @@ class BaseMachine(Machine):
         now = self.action.created if self.action is not None else timezone.now()
         self.machineable.date_last_transitioned = now
 
+
 class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
-
-    def __init__(self, *args, **kwargs):
-        kwargs['transitions'] = kwargs.get('transitions', REVIEWABLE_TRANSITIONS)
-        kwargs['states'] = kwargs.get('states', [s.value for s in ReviewStates])
-        super(ReviewsMachine, self).__init__(*args, **kwargs)
+    States = ReviewStates
+    Transitions = REVIEWABLE_TRANSITIONS
 
     def save_changes(self, ev):
         now = self.action.created if self.action is not None else timezone.now()
@@ -171,8 +193,9 @@ class ReviewsMachine(BaseMachine):
                 context['is_requester'] = context['requester'].username == contributor.username
             mails.send_mail(
                 contributor.username,
-                mails.PREPRINT_WITHDRAWAL_REQUEST_GRANTED,
+                mails.WITHDRAWAL_REQUEST_GRANTED,
                 mimetype='html',
+                document_type=self.machineable.provider.preprint_word,
                 **context
             )
 
@@ -185,6 +208,7 @@ class ReviewsMachine(BaseMachine):
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
         }
+
 
 class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
@@ -285,7 +309,7 @@ class PreprintRequestMachine(BaseMachine):
     def notify_submit(self, ev):
         context = self.get_context()
         if not self.auto_approval_allowed():
-            reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
+            reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:
@@ -317,3 +341,106 @@ class PreprintRequestMachine(BaseMachine):
             'requester': self.machineable.creator,
             'is_request_email': True,
         }
+
+
+class RegistrationMachine(BaseMachine):
+    ActionClass = RegistrationRequestAction
+    States = RegistrationStates
+    Transitions = REGISTRATION_TRANSITIONS
+
+    def save_action(self, ev):
+        user = ev.kwargs.get('user')
+        self.action = self.ActionClass.objects.create(
+            target=self.machineable,
+            creator=user,
+            trigger=ev.event.name,
+            from_state=self.from_state.name,
+            to_state=ev.state.name,
+            comment=ev.kwargs.get('comment', ''),
+        )
+        self.machineable.save()
+
+    def request_withdrawal(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.refresh_from_db()
+        self.machineable.registered_node.retract_registration(user)
+
+    def request_terminate_embargo(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.refresh_from_db()
+
+        approval = self.machineable.registered_node.request_embargo_termination(user)
+        approval.save()
+
+    def withdraw_registration(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.registered_node.retraction._on_complete(user)
+
+    def reject_withdrawal(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.registered_node.retraction._on_reject(user)
+
+    def embargo_registration(self, ev):
+        user = ev.kwargs.get('user')
+        end_date = ev.kwargs.get('end_date')
+        self.machineable.refresh_from_db()
+        self.machineable.registered_node.embargo_registration(user, end_date)
+        self.machineable.registered_node.refresh_from_db()
+
+    def terminate_embargo(self, ev):
+        self.machineable.registered_node.terminate_embargo()
+
+    def edit_comment(self, ev):
+        self.machineable.comment = self.action.comment
+        self.machineable.save()
+
+    def accept_draft_registration(self, ev):
+        approval = self.machineable.approval
+        approval.approve(self.action.creator)
+        approval.save()
+
+    def reject_draft_registration(self, ev):
+        self.machineable.meta = {}
+        self.machineable.save()
+
+    def submit_draft_registration(self, ev):
+        embargo_date = ev.kwargs.get('embargo_date', None)
+
+        if embargo_date:
+            submission = 'embargo'
+            assert embargo_date, 'must include embargo date'
+        else:
+            submission = 'immediate'
+
+        self.machineable.submit_for_review(
+            self.action.creator,
+            {
+                'registration_choice': submission,
+                'embargo_end_date': embargo_date
+            },
+            save=True
+        )
+
+    def force_withdrawal(self, ev):
+        pass
+
+    def notify_embargo_termination(self, ev):
+        pass
+
+    def notify_embargo(self, ev):
+        pass
+
+    def notify_withdraw(self, ev):
+        pass
+
+    def notify_accept_reject(self, ev):
+        pass
+
+    def notify_edit_comment(self, ev):
+        pass
+
+    def notify_resubmit(self, ev):
+        pass
+
+    def notify_submit(self, ev):
+        pass

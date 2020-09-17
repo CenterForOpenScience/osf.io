@@ -310,7 +310,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
             self._send_approval_request_email(
                 authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
-            raise NotImplementedError
+            raise NotImplementedError()
 
     def _notify_non_authorizer(self, user, node):
         context = self._email_template_context(user, node)
@@ -573,7 +573,7 @@ class Retraction(EmailApprovableSanction):
         return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
-        registration = self.registrations.first()
+        registration = self.registrations.first() or node
         return {
             'node_id': registration._id
         }
@@ -845,17 +845,21 @@ class DraftRegistrationApproval(Sanction):
     meta = DateTimeAwareJSONField(default=dict, blank=True)
 
     def _send_rejection_email(self, user, draft):
-        raise NotImplementedError('TODO: add a generic email template for registration approvals')
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.DRAFT_REGISTRATION_REJECTED,
+            user=user,
+            osf_url=osf_settings.DOMAIN,
+            provider=draft.provider,
+            can_change_preferences=False,
+            mimetype='html',
+        )
 
     def approve(self, user):
-        if not user.has_perm('osf.administer_prereg'):
-            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.APPROVED
         self._on_complete(user)
 
     def reject(self, user):
-        if not user.has_perm('osf.administer_prereg'):
-            raise PermissionsError('This user does not have permission to approve this draft.')
         self.state = Sanction.REJECTED
         self._on_reject(user)
 
@@ -866,10 +870,7 @@ class DraftRegistrationApproval(Sanction):
 
         initiator = draft.initiator.merged_by or draft.initiator
         auth = Auth(initiator)
-        registration = draft.register(
-            auth=auth,
-            save=True
-        )
+        registration = draft.register(auth=auth, save=True)
         registration_choice = self.meta['registration_choice']
 
         if registration_choice == 'immediate':
@@ -980,7 +981,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     def _on_complete(self, user=None):
         super(EmbargoTerminationApproval, self)._on_complete(user)
         registration = self._get_registration()
-        registration.terminate_embargo(Auth(user) if user else None)
+        registration.terminate_embargo()
 
     def _on_reject(self, user=None):
         # Just forget this ever happened.

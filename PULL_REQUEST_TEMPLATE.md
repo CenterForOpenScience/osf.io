@@ -15,15 +15,13 @@
 
 ## QA Notes
 
-  - Does this change require a data migration? If so, what data will we migrate?
-  - What is the level of risk?
-    - Any permissions code touched?
-    - Is this an additive or subtractive change, other?
-  - How can QA verify? (Through UI, API, AdminApp or AdminAdminApp?)
-    - If verifying through API, what's the new version? Please include the endpoints in PR notes or Dev docs.
-  - What features or workflows might this change impact?
-  - How will this impact performance?
--->
+Please make verification statements inspired by your code and what your code touches.
+- Verify
+- Verify
+
+What are the areas of risk?
+
+Any concerns/considerations/questions that development raised?
 
 ## Documentation
 

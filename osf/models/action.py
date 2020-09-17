@@ -52,3 +52,7 @@ class NodeRequestAction(BaseAction):
 
 class PreprintRequestAction(BaseAction):
     target = models.ForeignKey('PreprintRequest', related_name='actions', on_delete=models.CASCADE)
+
+
+class RegistrationRequestAction(BaseAction):
+    target = models.ForeignKey('DraftRegistration', related_name='registration_actions', on_delete=models.CASCADE)

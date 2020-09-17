@@ -367,6 +367,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                         validators=[validate_doi],
                                         null=True, blank=True)
 
+    custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+    custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
@@ -390,6 +393,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def storage_limit_status(self):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
+        a custom limit this should indicate that."""
+
+        return settings.StorageLimits.from_node_usage(
+            self.storage_usage,
+            self.custom_storage_usage_limit_private,
+            self.custom_storage_usage_limit_public
+        )
 
     @property
     def nodes(self):
@@ -1208,7 +1222,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
+                    self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
