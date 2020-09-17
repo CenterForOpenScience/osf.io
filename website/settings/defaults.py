@@ -1968,7 +1968,7 @@ STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
 GBs = 10 ** 9
-GiBs = 1024 ** 3
+
 
 @enum.unique
 class StorageLimits(enum.IntEnum):

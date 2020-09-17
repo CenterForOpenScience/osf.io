@@ -29,7 +29,7 @@ from osf.models import (
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
 from api.base.utils import waterbutler_api_url_for
-from api.base.settings.defaults import GiBs
+from api.base.settings.defaults import GBs
 
 ERRORS = []
 TMP_PATH = tempfile.mkdtemp()
@@ -171,7 +171,7 @@ def get_usage(user):
     preprint_files = get_resource_files(get_preprints_to_export(user), preprint_ctype)
 
     versions = FileVersion.objects.filter(Q(basefilenode__in=node_files) | Q(basefilenode__in=preprint_files))
-    return sum([v.size or 0 for v in versions]) / GiBs
+    return sum([v.size or 0 for v in versions]) / GBs
 
 def get_resource_files(resource_list, resource_ctype):
     return OsfStorageFile.objects.filter(target_object_id__in=resource_list, target_content_type=resource_ctype).values_list('id', flat=True)
