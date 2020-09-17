@@ -14,7 +14,7 @@ class Brand(BaseModel):
             ('modify_brand', 'Can modify brands')
         )
 
-    name = models.CharField(max_length=30, blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
 
     hero_logo_image = models.URLField()
     topnav_logo_image = models.URLField()
