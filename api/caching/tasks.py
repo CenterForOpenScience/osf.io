@@ -160,7 +160,7 @@ def update_storage_usage_with_size(payload):
     target_file_id = metadata['path'].replace('/', '')
     target_file_size = metadata.get('size', 0)
 
-    current_usage = target_node.storage_usage or 0
+    current_usage = target_node.storage_usage
     target_file = BaseFileNode.load(target_file_id)
 
     if target_file and action in ['copy', 'delete', 'move']:
@@ -180,7 +180,7 @@ def update_storage_usage_with_size(payload):
         if target_node == source_node and source_provider == provider:
             return  # Its not going anywhere.
         if source_provider == 'osfstorage' and not source_node.is_quickfiles:
-            source_node_usage = source_node.storage_usage or 0
+            source_node_usage = source_node.storage_usage
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
             key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
