@@ -37,7 +37,7 @@
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                         % if node.get('storage_limit_status'):
-                            <button class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is approaching the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/."><i class="fa fa-exclamation-triangle"></i></button>
+                            <button class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/."><i class="fa fa-exclamation-triangle"></i></button>
                         % endif
 
                         % if node.get('storage_usage'):
@@ -56,11 +56,10 @@
                         </a>
                         % endif
                     % else:
-                        % if permissions.ADMIN in user['permissions'] and not node['is_registration'] and not node['over_private_limit']:
+                        % if node.get('storage_limit_status') and permissions.ADMIN in user['permissions'] and not node['is_registration'] and not node['storage_limit_status']['canMakePrivate']:
+                            <a class="storage-disabled btn btn-default" data-toggle="tooltip" style="opacity: .65;" data-placement="bottom" title="You cannot make your project private because you are above the storage limit for a private project.">Make Private</a>
+                        % elif permissions.ADMIN in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
-                        % endif
-                        % if permissions.ADMIN in user['permissions'] and not node['is_registration'] and node['over_private_limit']:
-                            <button class="btn btn-default storage-disabled" data-toggle="tooltip" data-placement="bottom" title="You cannot make your project private because you are above the storage limit for a private project.">Make Private</button>
                         % endif
                         <button class="btn btn-default disabled">Public</button>
                     % endif

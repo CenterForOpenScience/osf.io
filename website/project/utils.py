@@ -125,23 +125,32 @@ def get_storage_limits_css(node):
 
     if status is settings.StorageLimits.APPROACHING_PRIVATE:
         return {
+            'text': 'approaching',
             'class': 'btn-warning storage-warning',
-            'disableUploads': False
+            'disableUploads': False,
+            'canMakePrivate': True
         }
     elif status is settings.StorageLimits.OVER_PRIVATE:
         return {
+            'text': 'over',
             'class': 'btn-danger  storage-warning',
-            'disableUploads': True
+            'disableUploads': True,
+            'canMakePrivate': False
         }
     elif status is settings.StorageLimits.APPROACHING_PUBLIC:
         return {
+            'text': 'approaching',
             'class': 'btn-warning  storage-warning',
-            'disableUploads': False
+            'disableUploads': False,
+            'canMakePrivate': False
+
         }
     elif status is settings.StorageLimits.OVER_PUBLIC:
         return {
+            'text': 'over',
             'class': 'btn-danger  storage-warning',
-            'disableUploads': True
+            'disableUploads': True,
+            'canMakePrivate': False
         }
     elif status is settings.StorageLimits.DEFAULT:
         return None

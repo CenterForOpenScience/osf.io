@@ -791,8 +791,6 @@ def _view_project(node, auth, primary=False,
             'mfr_url': node.osfstorage_region.mfr_url,
             'groups': list(node.osf_groups.values_list('name', flat=True)),
             'storage_limit_status': get_storage_limits_css(node),
-            'over_private_limit': node.storage_limit_status >= settings.StorageLimits.OVER_PRIVATE,
-
         },
         'parent_node': {
             'exists': parent is not None,

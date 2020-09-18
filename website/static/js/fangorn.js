@@ -910,7 +910,8 @@ function _fangornDragOver(treebeard, event) {
  */
 function _fangornDropzoneDrop(treebeard, event) {
     var dropzoneHoverClass = 'fangorn-dz-hover';
-    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);}
+    treebeard.select('.tb-row').removeClass(dropzoneHoverClass);
+}
 /**
  * Runs when Dropzone's complete hook is run after upload is completed.
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
@@ -1947,12 +1948,12 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder')
                 );
-                if(window.contextVars.node.disableUploads) {
+                if(window.contextVars.node.storageLimitsStatus.disableUploads) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
                             className : 'text-success disabled storage-disabled',
-                            tooltip: 'This project/component is approaching the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
+                            tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
                         }, 'Upload')
                     );
                 } else {
@@ -2222,7 +2223,7 @@ var FGToolbar = {
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
                     className : window.contextVars.node.storageLimitsStatus.class,
-                    tooltip: window.contextVars.node.storageLimitsStatus.text,
+                    tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
                 })
             );
         }
