@@ -519,8 +519,8 @@ def create_waterbutler_log(payload, **kwargs):
 
     metadata = payload.get('metadata') or payload.get('destination')
 
-    node = AbstractNode.load(metadata.get('nid'))
-    if node and not node.is_quickfiles and payload['action'] != 'download_file':
+    target_node = AbstractNode.load(metadata.get('nid'))
+    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
