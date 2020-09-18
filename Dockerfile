@@ -22,6 +22,7 @@ RUN apk add --no-cache --virtual .run-deps \
     # gevent
     libev \
     libevent \
+    openblas-dev \
     && yarn global add bower
 
 WORKDIR /code
@@ -72,7 +73,6 @@ RUN set -ex \
         libffi-dev \
         libpng-dev \
         freetype-dev \
-        openblas-dev \
         jpeg-dev \
     && pip3 install Cython \
     && for reqs_file in \
