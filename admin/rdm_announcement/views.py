@@ -17,7 +17,7 @@ from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_H
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
-from urlparse import urlparse
+from urllib.parse import urlparse
 import tweepy
 
 class RdmAnnouncementPermissionMixin(RdmPermissionMixin):

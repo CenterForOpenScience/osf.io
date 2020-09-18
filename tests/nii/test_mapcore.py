@@ -6,7 +6,7 @@ import requests
 import string
 import random
 import urllib
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from django.utils import timezone
 

@@ -7,7 +7,7 @@
     'admin/'
 """
 import os
-from urlparse import urlparse
+from urllib.parse import urlparse
 from website import settings as osf_settings
 from django.contrib import messages
 from api.base.settings import *  # noqa
