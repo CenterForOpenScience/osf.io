@@ -2218,7 +2218,7 @@ var FGToolbar = {
                 }, 'Cancel Pending Uploads')
             );
         }
-        if(window.contextVars.node.storageLimitsStatus) {
+        if(window.contextVars.node.storageLimitsStatus.text) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
