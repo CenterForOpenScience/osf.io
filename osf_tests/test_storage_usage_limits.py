@@ -14,7 +14,7 @@ class TestStorageUsageLimits:
         return ProjectFactory()
 
     def test_limit_default(self, node):
-        assert node.storage_usage is None
+        assert node.storage_usage is 0
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, 0)
