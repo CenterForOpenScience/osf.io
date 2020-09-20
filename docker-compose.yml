@@ -456,7 +456,7 @@ services:
       - osf_requirements_vol:/usr/lib/python3.6
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
-      - /host_server/user_key_info:/user_key_info
+#      - /host_server/user_key_info:/user_key_info
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
 #      - ./ssl/celery-client.cert.pem:/etc/ssl/certs/worker.pem:ro
 #      - ./ssl/celery-client.key.pem:/etc/ssl/private/worker.key:ro
@@ -491,7 +491,7 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
       - osf_admin_node_modules_vol:/code/admin/node_modules
-      - /host_server/user_key_info:/user_key_info
+#      - /host_server/user_key_info:/user_key_info
 
   api:
     image: quay.io/centerforopenscience/osf:develop
@@ -538,5 +538,5 @@ services:
       - preprints_dist_vol:/preprints
       - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
-      - /host_server/user_key_info:/user_key_info
+#      - /host_server/user_key_info:/user_key_info
     stdin_open: true
