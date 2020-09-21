@@ -16,7 +16,7 @@ from django.db.models import Q
 from website import search
 from osf.models import NodeLog
 from osf.models.user import OSFUser
-from osf.models.node import Node
+from osf.models.node import Node, AbstractNode
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
 from admin.base.utils import change_embargo_date, validate_embargo_date
@@ -551,7 +551,7 @@ class NodeMakePrivate(NodeDeleteBase):
     template_name = 'nodes/make_private.html'
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        return AbstractNode.load(self.kwargs.get('guid'))
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -561,7 +561,7 @@ class NodeMakePrivate(NodeDeleteBase):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
-        context = super(NodeMakePrivate, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['link'] = 'nodes:make-node-private'
         context['resource_type'] = 'node'
         return context

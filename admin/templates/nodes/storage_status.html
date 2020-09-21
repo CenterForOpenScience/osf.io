@@ -1,11 +1,11 @@
-{% if resource.storage_limit_status == StorageLimits.DEFAULT %}
-    <span class="label label-default">No storage concern</span>
-{% elif not node.is_public and resource.storage_limit_status == StorageLimits.APPROACHING_PRIVATE %}
+{% if not resource.is_public and resource.storage_limit_status == 1 %}
     <span class="label label-warning">Approaching storage limit for private nodes</span>
-{% elif node.is_public and resource.storage_limit_status == StorageLimits.APPROACHING_PUBLIC %}
+{% elif resource.is_public and resource.storage_limit_status == 4 %}
     <span class="label label-warning">Approaching storage limit for public nodes</span>
-{% elif node.is_public and resource.storage_limit_status == StorageLimits.OVER_PUBLIC %}
+{% elif resource.is_public and resource.storage_limit_status == 3 %}
     <span class="label label-danger">Node is over storage limit for public nodes</span>
-{% elif not node.is_public and resource.storage_limit_status == StorageLimits.OVER_PRIVATE %}
+{% elif not resource.is_public and resource.storage_limit_status == 2 %}
     <span class="label label-danger">Node is over storage limit for private nodes</span>
+{% else %}
+	<span class="label label-default">No storage concern</span>
 {% endif %}

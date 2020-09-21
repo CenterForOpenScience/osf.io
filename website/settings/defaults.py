@@ -1986,13 +1986,13 @@ class StorageLimits(enum.IntEnum):
         public_limit = public_limit or STORAGE_LIMIT_PUBLIC
         private_limit = private_limit or STORAGE_LIMIT_PRIVATE
 
-        if usage_bytes >= public_limit * GBs:
+        if usage_bytes >= float(public_limit) * GBs:
             return cls.OVER_PUBLIC
-        elif usage_bytes >= public_limit * STORAGE_WARNING_THRESHOLD * GBs:
+        elif usage_bytes >= float(public_limit) * STORAGE_WARNING_THRESHOLD * GBs:
             return cls.APPROACHING_PUBLIC
-        elif usage_bytes >= private_limit * GBs:
+        elif usage_bytes >= float(private_limit) * GBs:
             return cls.OVER_PRIVATE
-        elif usage_bytes >= private_limit * STORAGE_WARNING_THRESHOLD * GBs:
+        elif usage_bytes >= float(private_limit) * STORAGE_WARNING_THRESHOLD * GBs:
             return cls.APPROACHING_PRIVATE
         else:
             return cls.DEFAULT

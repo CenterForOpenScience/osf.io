@@ -435,7 +435,7 @@
                     <b>Current usage:</b> {{ node.storage_usage }}<br>
                     <b>Public cap:</b> {{ node.public_storage_cap }} GB<br>
                     <b>Private cap:</b> {{ node.private_storage_cap}} GB<br>
-                    <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}
+                    <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}<br>
                 </td>
                 <td>
                     <a href="{% url 'nodes:adjust-storage-usage' guid=node.id %}"
