@@ -20,7 +20,7 @@
             {% endfor %}
         </ul>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12" table-responsive>
                 <div class="btn-group" role="group">
                     <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
                     <a href="{% url 'nodes:node-logs' node.id %}" class="btn btn-primary">View Logs</a>
@@ -426,7 +426,7 @@
             <tr>
                 <td>SPAM Data</td>
                 <td>
-                    <pre>{{ node.spam_data }}</pre>
+                    <pre style="white-space:pre-wrap;">{{ node.spam_data }}</pre>
                 </td>
             </tr>
             <tr>
@@ -435,9 +435,7 @@
                     <b>Current usage:</b> {{ node.storage_usage }}<br>
                     <b>Public cap:</b> {{ node.public_storage_cap }} GB<br>
                     <b>Private cap:</b> {{ node.private_storage_cap}} GB<br>
-                    <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}<br>
-                </td>
-                <td>
+                    <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}<br><br>
                     <a href="{% url 'nodes:adjust-storage-usage' guid=node.id %}"
                        data-toggle="modal" data-target="#modifyStorageCaps"
                        class="btn btn-warning">
@@ -449,8 +447,6 @@
                             {# Data from above link #}
                         </div>
                     </div>
-                </td>
-                <td>
                     <a href="{% url 'nodes:recalculate-node-storage' guid=node.id %}"
                        data-toggle="modal" data-target="#confirmRecalculateStorage"
                        class="btn btn-warning">

@@ -504,17 +504,17 @@ class NodeModifyStorageUsage(TemplateView):
     template_name = 'nodes/modify_storage_caps.html'
 
     def get_object(self, queryset=None):
-        node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        node = AbstractNode.load(self.kwargs.get('guid'))
         return {
             'id': node.id,
         }
 
     def get_context_data(self, **kwargs):
-        context = super(NodeModifyStorageUsage, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
         context['id'] = node._id
-        context['public_cap'] = node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC
-        context['private_cap'] = node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE
+        context['public_cap'] = round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1)
+        context['private_cap'] = round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -534,7 +534,7 @@ class NodeRecalculateStorage(NodeDeleteBase):
     template_name = 'nodes/recalculate_node_storage.html'
 
     def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        return AbstractNode.load(self.kwargs.get('guid'))
 
     def delete(self, request, *args, **kwargs):
         node = self.get_object()
@@ -543,7 +543,7 @@ class NodeRecalculateStorage(NodeDeleteBase):
             return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
-        context = super(NodeRecalculateStorage, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['link'] = 'nodes:recalculate-node-storage'
         context['resource_type'] = 'node'
         return context
