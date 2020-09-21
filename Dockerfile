@@ -151,24 +151,6 @@ COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
-RUN \
-    # OSF
-    yarn install --frozen-lockfile \
-    && mkdir -p ./website/static/built/ \
-    && invoke build_js_config_files \
-    && yarn run webpack-prod \
-    && yarn upgrade \
-    && yarn add gettext-parser \
-    && node ./scripts/translations/rdmPoToJson.js \
-    # Admin
-    && cd ./admin \
-    && yarn install --frozen-lockfile \
-    && yarn run webpack-prod \
-    && cd ../ \
-    # Cleanup
-    && yarn cache clean \
-    && npm cache clean --force \
-    && yarn remove gettext-parser
 
 # Copy the rest of the code over
 COPY ./ ./

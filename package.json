@@ -28,6 +28,7 @@
     "file-loader": "^0.8.1",
     "font-awesome": "^4.4.0",
     "font-awesome-webpack": "0.0.5-beta.2",
+    "gettext-parser": "^4.0.4",
     "gsap": "1.18.0",
     "highlight.js": "~8.4.0",
     "historyjs": "^1.8.0-b2",
