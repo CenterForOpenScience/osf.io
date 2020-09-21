@@ -36,7 +36,7 @@ from admin.nodes.serializers import serialize_node, serialize_simple_user_and_no
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 from website.project.views.register import osf_admin_change_status_identifier
-from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE
+from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, StorageLimits
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
@@ -218,6 +218,7 @@ class NodeView(PermissionRequiredMixin, GuidView):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
+        kwargs.update({'STORAGE_LIMITS': StorageLimits})
         return kwargs
 
     def get_object(self, queryset=None):

@@ -1968,6 +1968,12 @@ STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
 
+#  Needs to be here so the enum can be used in the admin template
+def forDjango(cls):
+    cls.do_not_call_in_templates = True
+    return cls
+
+@forDjango
 @enum.unique
 class StorageLimits(enum.IntEnum):
     """
