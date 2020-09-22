@@ -155,11 +155,6 @@ COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
 # Copy the rest of the code over
 COPY ./ ./
 
-RUN invoke requirements --all
-RUN invoke assets --dev
-
-RUN invoke admin.assets --dev
-
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
