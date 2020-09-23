@@ -280,6 +280,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'registration',
         'root',
         'settings',
+        'storage',
         'subjects',
         'tags',
         'template_from',

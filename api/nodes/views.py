@@ -1736,6 +1736,7 @@ class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
 
     view_category = 'nodes'
     view_name = 'node-storage'
