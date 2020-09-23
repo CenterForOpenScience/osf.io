@@ -141,10 +141,6 @@ from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
-import logging
-logger = logging.getLogger(__name__)
-
-
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
     400: ValidationError(detail='This add-on has made a bad request.'),
