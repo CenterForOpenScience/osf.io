@@ -65,17 +65,8 @@ SLOAN_FLAGS = (
     SLOAN_PREREG_DISPLAY
 )
 
-STORAGE_LIMIT_RESTRICTED_FILE_OPS = [
-    'upload',
-    'moveto',
-    'copyto'
-]
-
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
-
-import logging
-logger = logging.getLogger(__name__)
 
 ERROR_MESSAGES = {'FILE_GONE': u"""
 <style>
@@ -227,33 +218,6 @@ def check_access(node, auth, action, cas_resp):
 
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
-def check_storage_availability(node, provider, action, intent):
-    """Verify that the requested action may be performed on the resource based
-    upon the resource's storage usage status
-    """
-    # Storage limits are only on OSF Storage
-    if provider == 'osfstorage':
-        if permission_map.get(action, None) == permissions.READ:
-            return True
-
-        if node.is_public:
-            if node.storage_limit_status.value < 4:
-                return True
-            # Node has restricted file operations because it has exceeded public storage limits
-            else:
-                if intent in STORAGE_LIMIT_RESTRICTED_FILE_OPS:
-                    raise HTTPError(http_status.HTTP_507_INSUFFICIENT_STORAGE)
-                return True
-        else:
-            if node.storage_limit_status.value < 2:
-                return True
-            # Node has restricted file operations because it has exceeded private storage limits
-            else:
-                if intent in STORAGE_LIMIT_RESTRICTED_FILE_OPS:
-                    raise HTTPError(http_status.HTTP_507_INSUFFICIENT_STORAGE)
-                return True
-    return True
-
 def make_auth(user):
     if user is not None:
         return {
@@ -315,14 +279,11 @@ def get_auth(auth, **kwargs):
         sentry.log_message(str(err))
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
-    logger.info(data)
-
     if not auth.user:
         auth.user = OSFUser.from_cookie(data.get('cookie', ''))
 
     try:
         action = data['action']
-        intent = data['intent']
         node_id = data['nid']
         provider_name = data['provider']
     except KeyError:
@@ -335,7 +296,6 @@ def get_auth(auth, **kwargs):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     check_access(node, auth, action, cas_resp)
-    check_storage_availability(node, provider_name, action, intent)
     provider_settings = None
     if hasattr(node, 'get_addon'):
         provider_settings = node.get_addon(provider_name)
