@@ -73,6 +73,7 @@ from api.nodes.permissions import (
     IsAdminContributor,
     IsPublic,
     AdminOrPublic,
+    WriteAdmin,
     ContributorOrPublic,
     AdminContributorOrPublic,
     RegistrationAndPermissionCheckForPointers,
@@ -1732,7 +1733,7 @@ class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ContributorOrPublic,
+        WriteAdmin,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
