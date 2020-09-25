@@ -52,8 +52,6 @@ class TestNodeStorage:
     def test_node_storage(self, app, url, embed_url, project, admin_contributor,
             write_contributor, read_contributor, non_contributor):
 
-        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
-
         # Test GET unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
@@ -65,16 +63,6 @@ class TestNodeStorage:
         # Test GET read contrib
         res = app.get(url, auth=read_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-
-        # Test GET write contrib
-        # Initial request results in a 202 response, intitiating calculation of storage usage
-        storage_usage_cache.delete(key)
-
-        res = app.get(url, auth=write_contributor.auth, expect_errors=True)
-        assert res.status_code == 202
-        data = res.json['data']
-        assert data['attributes']['storage_limit_status'] is None
-        assert data['attributes']['storage_usage'] is None
 
         # Test POST not allowed
         res = app.post_json_api(url, auth=write_contributor.auth, expect_errors=True)
@@ -89,6 +77,7 @@ class TestNodeStorage:
 
         storage_usage = (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs
         formatted_storage_usage = sizeof_fmt(storage_usage)
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
         storage_usage_cache.set(key, storage_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
         # Tests Node Storage for Nodes with Storage Usage
