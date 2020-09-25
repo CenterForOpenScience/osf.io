@@ -2102,7 +2102,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             elif key == 'is_public':
                 if value is False:
                     if self.storage_limit_status is not None:
-                        if self.is_public and self.storage_limit_status.value >= 2:
+                        if self.is_public and self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
                             raise NodeUpdateError(reason='This project exceeds private project storage limits and thus cannot be converted into a private project.', key=key)
                     else:
                         raise NodeUpdateError(reason='This project\'s node storage usage could not be calculated. Please try again.', key=key)
