@@ -855,6 +855,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'This project exceeds private project storage limits and thus cannot be converted into a private project.'
 
+        # If the public node does not exceed the private storage limit
         storage_usage_cache.set(key, 4900000000, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         res = app.patch_json_api(url_public, {
             'data': {
