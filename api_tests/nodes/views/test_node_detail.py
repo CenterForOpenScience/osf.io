@@ -829,7 +829,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     ):
         # If the public node exceeds the the private storage limit
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
-        storage_usage_cache.set(key, 7500000000, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         res = app.patch_json_api(url_public, {
             'data': {
                 'type': 'nodes',
@@ -843,7 +843,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.json['errors'][0]['detail'] == 'This project exceeds private project storage limits and thus cannot be converted into a private project.'
 
         # If the public node does not exceed the private storage limit
-        storage_usage_cache.set(key, 4900000000, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE - 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         res = app.patch_json_api(url_public, {
             'data': {
                 'type': 'nodes',

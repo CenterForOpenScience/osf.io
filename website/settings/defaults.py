@@ -1967,6 +1967,8 @@ STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users g
 STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
+GBs = 10 ** 9
+
 
 #  Needs to be here so the enum can be used in the admin template
 def forDjango(cls):
