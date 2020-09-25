@@ -827,19 +827,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_make_project_private(
         self, app, url_public, project_public, user
     ):
-        # If the node's storage hasn't been calculated yet
-        res = app.patch_json_api(url_public, {
-            'data': {
-                'type': 'nodes',
-                'id': project_public._id,
-                'attributes': {
-                    'public': False
-                }
-            }
-        }, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This project\'s node storage usage could not be calculated. Please try again.'
-
         # If the public node exceeds the the private storage limit
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
         storage_usage_cache.set(key, 7500000000, settings.STORAGE_USAGE_CACHE_TIMEOUT)
