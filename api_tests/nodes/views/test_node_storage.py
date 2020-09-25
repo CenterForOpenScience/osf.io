@@ -51,6 +51,8 @@ class TestNodeStorage:
     def test_node_storage_permissions(self, app, url, project,
             write_contributor, read_contributor, non_contributor):
 
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+
         # Test GET unauthenticated
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
