@@ -283,10 +283,14 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     # Required
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-            path=metadata['path'].strip('/'),
-            provider='dropboxbusiness'
-        )
+        ### url_for() of flask cannot be used in celery.
+        # url = self.owner.web_url_for('addon_view_or_download_file',
+        #     path=metadata['path'].strip('/'),
+        #     provider='dropboxbusiness'
+        # )
+        url = u'/project/{}/files/{}{}/'.format(self._id,
+                                                'dropboxbusiness',
+                                                metadata['path'].strip('/'))
         self.owner.add_log(
             'dropboxbusiness_{0}'.format(action),
             auth=auth,
