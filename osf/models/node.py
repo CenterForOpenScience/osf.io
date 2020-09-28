@@ -1234,9 +1234,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if auth:
                 if self.storage_limit_status is not None:
                     if self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
-                        raise NodeStateError(reason='This project exceeds private project storage limits and thus cannot be converted into a private project.')
+                        raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
                 else:
-                    raise NodeStateError(reason='This project\'s node storage usage could not be calculated. Please try again.')
+                    raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
 
             self.is_public = False
             self.keenio_read_key = ''
