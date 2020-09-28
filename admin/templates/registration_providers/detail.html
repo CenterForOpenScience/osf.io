@@ -31,6 +31,7 @@
                 <a class="btn btn-primary" href={% url 'registration_providers:share_source' registration_provider.id %}>Setup Share Source</a>
                 <a class="btn btn-primary" href={% url 'registration_providers:schemas' registration_provider.id %}>Change allowed schemas</a>
                 <a class="btn btn-danger" href={% url 'registration_providers:delete' registration_provider.id %}>Delete registration provider</a>
+                <a class="btn btn-danger" href={% url 'registration_providers:add_moderators' registration_provider.id %}>Add/Remove Moderators</a>
             </div>
         </div>
         <div class="row">
