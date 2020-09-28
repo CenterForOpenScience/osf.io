@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-03 13:12+0900\n"
-"PO-Revision-Date: 2020-07-03 13:12+0900\n"
+"POT-Creation-Date: 2020-09-09 18:18+0900\n"
+"PO-Revision-Date: 2020-09-09 18:18+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -225,6 +225,7 @@ msgid ""
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:395
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
@@ -277,6 +278,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:411
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -431,29 +433,48 @@ msgid ""
 "account."
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:30
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:80
 msgid "Are you sure you want to change institutional storage?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:31
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:35
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:85
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:175
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:264
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:491
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:626
 msgid "Some errors occurred"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:210
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:311
 msgid "Institutional Storage set successfully"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:391
+#: website/static/js/addonSettings.js:118
+msgid "Disconnect Account?"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:393
+msgid ""
+"Are you sure you want to disconnect the %1$s account "
+"<strong>%2$s</strong>?<br>"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:394
+msgid ""
+"This will revoke access to %1$s for all projects using this "
+"account.<br><br>"
 msgstr ""
 
 #: scripts/translations/messages_addonsJson.js:3
@@ -2196,10 +2217,6 @@ msgid ""
 "grant access to the GakuNin RDM to enable this add-on."
 msgstr ""
 
-#: website/static/js/addonSettings.js:118
-msgid "Disconnect Account?"
-msgstr ""
-
 #: website/static/js/addonSettings.js:120
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
@@ -3649,6 +3666,22 @@ msgstr ""
 msgid "home"
 msgstr ""
 
+#: website/static/js/js_messages.js:33
+msgid "No tokens."
+msgstr ""
+
+#: website/static/js/js_messages.js:33
+msgid "Invalid tokens."
+msgstr ""
+
+#: website/static/js/js_messages.js:35
+msgid "Invalid folder."
+msgstr ""
+
+#: website/static/js/js_messages.js:35
+msgid "Credentials are valid"
+msgstr ""
+
 #: website/static/js/keen.js:114
 msgid "Error sending Keen data to %1$s:<%2$s>"
 msgstr ""
@@ -4330,7 +4363,7 @@ msgid "${user} removed ${path_type} ${path} from Dropbox in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:137
-msgid "${user}updated file ${path} in Dropbox in ${node}"
+msgid "${user} updated file ${path} in Dropbox in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:138
@@ -4362,7 +4395,7 @@ msgid "${user} removed ${path_type} ${path} from Dropbox Business in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:145
-msgid "${user}updated file ${path} in Dropbox Business in ${node}"
+msgid "${user} updated file ${path} in Dropbox Business in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:146
@@ -4837,6 +4870,40 @@ msgstr ""
 
 #: website/static/js/logActionsList_extract.js:262
 msgid "${user} deauthorized the Zotero addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:263
+msgid "${user} added file ${path} to Nextcloud (for Institutions) in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:264
+msgid ""
+"${user} removed ${path_type} ${path} from Nextcloud (for Institutions) in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:265
+msgid "${user} updated file ${path} in Nextcloud (for Institutions) in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:266
+msgid "${user} created folder ${path} in Nextcloud (for Institutions) in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:267
+msgid "${user} linked Nextcloud (for Institutions) folder ${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:268
+msgid "${user} authorized the Nextcloud (for Institutions) addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:269
+msgid "${user} deauthorized the Nextcloud (for Institutions) addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:270
+msgid "Nextcloud (for Institutions) addon for ${node} deauthorized"
 msgstr ""
 
 #: website/static/js/logTextParser.js:824
@@ -5996,7 +6063,7 @@ msgstr ""
 msgid "Examples of valid searches include:"
 msgstr ""
 
-#: website/static/js/search-grdm.js:769 website/static/js/search-grdm.js:1035
+#: website/static/js/search-grdm.js:769 website/static/js/search-grdm.js:1067
 #: website/static/js/search.js:578 website/static/js/search.js:605
 msgid "GakuNin RDM | Search"
 msgstr ""
