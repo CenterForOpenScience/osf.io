@@ -49,7 +49,7 @@ class TestNodeStorage:
     def embed_url(self, project):
         return '/{}nodes/{}/?embed=storage'.format(API_BASE, project._id)
 
-    def test_node_storage(self, app, url, embed_url, project, admin_contributor,
+    def test_node_storage_permissions(self, app, url, project,
             write_contributor, read_contributor, non_contributor):
 
         # Test GET unauthenticated
@@ -64,30 +64,41 @@ class TestNodeStorage:
         res = app.get(url, auth=read_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # Test POST not allowed
-        res = app.post_json_api(url, auth=write_contributor.auth, expect_errors=True)
-        assert res.status_code == 405
-
         # Tests Node Storage fo Nodes without Storage Usage
-        res = app.get(url, auth=write_contributor.auth, expect_errors=True)
+        res = app.get(url, auth=write_contributor.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['storage_limit_status'] == 'DEFAULT'
         assert data['attributes']['storage_usage'] == '0.0B'
 
+    def test_node_storage_request_type(self, app, url, project, write_contributor):
+
+        # Test POST not allowed
+        res = app.post_json_api(url, auth=write_contributor.auth, expect_errors=True)
+        assert res.status_code == 405
+
+    def test_node_storage_with_storage_usage(self, app, url, project, admin_contributor):
+
+        # Test Node Storage with OSFStorage Usage
         storage_usage = (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs
         formatted_storage_usage = sizeof_fmt(storage_usage)
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
         storage_usage_cache.set(key, storage_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
-        # Tests Node Storage for Nodes with Storage Usage
         res = app.get(url, auth=admin_contributor.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['storage_limit_status'] == 'OVER_PRIVATE'
         assert data['attributes']['storage_usage'] == formatted_storage_usage
 
+    def test_node_storage_embed(self, app, embed_url, project, admin_contributor):
+
         # Tests Node Storage Embed
+        storage_usage = (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs
+        formatted_storage_usage = sizeof_fmt(storage_usage)
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, storage_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
         res = app.get(embed_url, auth=admin_contributor.auth)
         assert res.status_code == 200
         data = res.json['data']
