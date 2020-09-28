@@ -1230,9 +1230,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
-            else:
-                self.is_public = False
-                self.keenio_read_key = ''
+
+            if auth:
+                if self.storage_limit_status is not None:
+                    if self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
+                        raise NodeStateError(reason='This project exceeds private project storage limits and thus cannot be converted into a private project.')
+                else:
+                    raise NodeStateError(reason='This project\'s node storage usage could not be calculated. Please try again.')
+
+            self.is_public = False
+            self.keenio_read_key = ''
         else:
             return False
 
@@ -2126,12 +2133,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             elif key == 'category':
                 self.set_category(category=value, auth=auth, save=False)
             elif key == 'is_public':
-                if value is False:
-                    if self.storage_limit_status is not None:
-                        if self.is_public and self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
-                            raise NodeUpdateError(reason='This project exceeds private project storage limits and thus cannot be converted into a private project.', key=key)
-                    else:
-                        raise NodeUpdateError(reason='This project\'s node storage usage could not be calculated. Please try again.', key=key)
                 self.set_privacy(
                     Node.PUBLIC if value else Node.PRIVATE,
                     auth=auth,
