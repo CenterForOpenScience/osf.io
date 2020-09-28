@@ -20,9 +20,18 @@ class RegistrationProviderForm(forms.ModelForm):
 
     class Meta:
         model = RegistrationProvider
-        exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
-                   'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
-                   'reviews_comments_private', 'reviews_workflow', 'collected_type_choices', 'status_choices']
+        exclude = [
+            'primary_identifier_name',
+            'primary_collection',
+            'type',
+            'advisory_board',
+            'example',
+            'domain',
+            'domain_redirect_enabled',
+            'collected_type_choices',
+            'status_choices'
+        ]
+
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
         }
