@@ -5,9 +5,9 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
 
-from api.actions.serializers import NodeRequestActionSerializer
+from api.actions.serializers import RegistrationActionSerializer
 from api.base import permissions as base_permissions
-from osf.models.action import RegistrationRequestAction
+from osf.models.action import RegistrationAction
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView, DeprecatedView
@@ -730,10 +730,10 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
     required_read_scopes = [CoreScopes.ACTIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = NodeRequestActionSerializer
+    serializer_class = RegistrationActionSerializer
 
     def get_default_queryset(self):
-        return RegistrationRequestAction.objects.filter(
+        return RegistrationAction.objects.filter(
             target__provider_id=self.get_provider().id,
             target__deleted__isnull=True,
         )

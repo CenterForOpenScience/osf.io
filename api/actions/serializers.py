@@ -237,3 +237,18 @@ class PreprintRequestActionSerializer(BaseActionSerializer):
         related_view='requests:request-detail',
         related_view_kwargs={'request_id': '<target._id>'},
     )
+
+
+class RegistrationActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'registration-actions'
+
+    target = RelationshipField(
+        read_only=True,
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<target._id>'},
+        filter_key='target__guids___id',
+    )
+
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)

@@ -6,7 +6,7 @@ from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
-from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationRequestAction
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
 
 
 from osf.utils import permissions
@@ -344,14 +344,14 @@ class PreprintRequestMachine(BaseMachine):
 
 
 class RegistrationMachine(BaseMachine):
-    ActionClass = RegistrationRequestAction
+    ActionClass = RegistrationAction
     States = RegistrationStates
     Transitions = REGISTRATION_TRANSITIONS
 
     def save_action(self, ev):
         user = ev.kwargs.get('user')
         self.action = self.ActionClass.objects.create(
-            target=self.machineable,
+            target=self.machineable.registered_node,
             creator=user,
             trigger=ev.event.name,
             from_state=self.from_state.name,
