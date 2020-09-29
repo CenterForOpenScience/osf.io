@@ -89,7 +89,7 @@ function JupyterButton() {
                     },
                     icon: 'fa fa-external-link',
                     className : 'text-primary'
-                }, 'JupyterHub');
+                }, 'Launch');
                 return {
                   view : function(ctrl, args, children) {
                     var tb = args.treebeard;
