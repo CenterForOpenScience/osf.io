@@ -9,7 +9,6 @@ var logPrefix = '[jupyterhub] ';
 var _ = require('js/rdmGettext')._;
 
 
-
 function JupyterButton() {
   var self = this;
   self.baseUrl = window.contextVars.node.urls.api + 'jupyterhub/';
