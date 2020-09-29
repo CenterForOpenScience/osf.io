@@ -201,6 +201,10 @@ msgstr ""
 msgid "Autocomplete"
 msgstr ""
 
+#: addons/jupyterhub/static/files.js:92
+msgid "Launch"
+msgstr ""
+
 #: admin/static/js/collection_providers/collectionProviders.js:9
 msgid "Hide Form"
 msgstr ""
@@ -6657,4 +6661,3 @@ msgstr ""
 #: website/static/js/pages/wiki-edit-page.js:110
 msgid "Could not GET wiki menu pages"
 msgstr ""
-
