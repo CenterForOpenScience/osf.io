@@ -82,9 +82,8 @@ class Sanction(ObjectIDMixin, BaseModel):
                              default=UNAPPROVED,
                              max_length=255)
 
-    def __repr__(self):
-        return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
-            self=self)
+    def __str__(self):
+        return f'{self._id!r} {self.__class__.__name__} ends {self.end_date:%Y-%m-%d %H:%M} ({self.state})'
 
     @property
     def is_pending_approval(self):

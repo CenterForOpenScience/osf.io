@@ -46,4 +46,5 @@ urlpatterns = [
         views.NodeRecalculateStorage.as_view(), name='recalculate-node-storage'),
     url(r'^(?P<guid>[a-z0-9]+)/make_private/$',
         views.NodeMakePrivate.as_view(), name='make-node-private'),
+    url(r'^(?P<guid>[a-z0-9]+)/edit_registration/$', views.EditRegistration.as_view(), name='edit_registration'),
 ]

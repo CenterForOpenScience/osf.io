@@ -47,6 +47,7 @@
                                 </form>
                             {% endif %}
                         {% else %}
+                            <a href="{% url 'nodes:edit_registration' guid=node.id %}" class="btn btn-default">Edit</a>
                             {% if node.is_stuck_registration %}
                                 <a href="{% url 'nodes:restart-stuck-registrations' guid=node.id %}"
                                    data-toggle="modal" data-target="#confirmRestartRegistration"

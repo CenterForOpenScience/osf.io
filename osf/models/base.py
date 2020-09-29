@@ -156,8 +156,8 @@ class Guid(BaseModel):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
 
-    def __repr__(self):
-        return '<id:{0}, referent:({1})>'.format(self._id, self.referent.__repr__())
+    def __str__(self):
+        return f'{self._id} {self.referent.__str__()}'
 
     # Override load in order to load by GUID
     @classmethod

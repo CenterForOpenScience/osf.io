@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block title %}
+    <title>List of Registration Providers</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Registrations</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>State</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for registration in registrations %}
+    <tr>
+        <td><a href="{% url 'nodes:edit_registration'  guid=registration.guid %}">{{ registration.title }} ({{ registration.guid }})</a></td>
+        <td> {{ registration.state }} </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import ListView, DeleteView, View, TemplateView
+from django.views.generic import ListView, DeleteView, View, TemplateView, UpdateView
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
 from django.contrib import messages
@@ -33,10 +33,14 @@ from osf.models.admin_log_entry import (
 )
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
+from admin.nodes.forms import RegistrationForm
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 from website.project.views.register import osf_admin_change_status_identifier
 from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, StorageLimits
+from django.urls import reverse_lazy
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
@@ -611,3 +615,33 @@ class RemoveStuckRegistrationsView(StuckRegistrationsView):
                                     ' if the problem persists get a developer to fix it.')
 
         return redirect(reverse_node(self.kwargs.get('guid')))
+
+
+class EditRegistration(PermissionRequiredMixin, UpdateView):
+    permission_required = 'osf.change_registrationprovider'
+    raise_exception = True
+    model = Registration
+    form_class = RegistrationForm
+    template_name = 'nodes/edit.html'
+
+    def form_invalid(self, form):
+        super().form_invalid(form)
+        err_message = ''
+        for item in form.errors.values():
+            err_message = err_message + item + '\n'
+        return HttpResponse(err_message, status=400)
+
+    def get_object(self, queryset=None):
+        registration_id = self.kwargs.get('guid')
+
+        reg = Registration.load(registration_id)
+        if reg is None:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        # templating doesn't allow underscores for some reason
+        reg.guid = registration_id
+        return reg
+
+    def get_success_url(self, *args, **kwargs):
+        return reverse_lazy('nodes:edit_registration',
+                            kwargs={'guid': self.kwargs.get('guid')})

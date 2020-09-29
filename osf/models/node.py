@@ -470,9 +470,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self._is_templated_clone = False
         super(AbstractNode, self).__init__(*args, **kwargs)
 
-    def __repr__(self):
-        return ('(title={self.title!r}, category={self.category!r}) '
-                'with guid {self._id!r}').format(self=self)
+    def __str__(self):
+        return f'{self.title} ({self._id!r})'
 
     @property
     def is_registration(self):
