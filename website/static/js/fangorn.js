@@ -2224,7 +2224,7 @@ var FGToolbar = {
                     icon: 'fa fa-exclamation-triangle',
                     className : window.contextVars.node.storageLimitsStatus.class,
                     tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon.',
-                    onclick: function() { window.open('https://help.osf.io/', '_blank'); }
+                    onclick: function() { window.open('https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps', '_blank'); }
                 })
             );
         }
