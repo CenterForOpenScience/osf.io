@@ -24,7 +24,6 @@ from addons.osfstorage.tests.utils import make_payload
 from framework.auth import signing
 from website.util import rubeus, api_url_for
 from framework.auth import cas
-from api.caching.utils import storage_usage_cache
 
 from osf import features
 from osf.models import Tag, QuickFilesNode
@@ -35,6 +34,7 @@ from addons.base.views import make_auth, addon_view_file
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file, create_test_preprint_file
 from api.caching.settings import STORAGE_USAGE_KEY
+from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
@@ -218,6 +218,45 @@ class TestGetMetadataHook(HookTestCase):
         )
         assert_equal(res.status_code, 404)
 
+
+@pytest.mark.django_db
+class TestGetStorageQuotaHook(HookTestCase):
+    def test_no_storage_use(self):
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
+
+    def test_under_quota_storage_use(self):
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE - 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
+
+    def test_over_quota_storage_use(self):
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_true(res.json['over_quota'])
 
 @pytest.mark.django_db
 class TestUploadFileHook(HookTestCase):

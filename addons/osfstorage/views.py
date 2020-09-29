@@ -16,7 +16,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, OSFUser
+from osf.models import FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -95,6 +95,26 @@ def osfstorage_update_metadata(payload, **kwargs):
     version.update_metadata(metadata)
 
     return {'status': 'success'}
+
+@must_be_signed
+def osfstorage_get_storage_quota_status(payload, **kwargs):
+    node_id = kwargs.get('guid')
+
+    try:
+        node = Node.load(node_id)
+    except KeyError:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if node.storage_usage is None:
+        raise HTTPError(http_status.HTTP_202_ACCEPTED)
+
+    if node.is_public:
+        over_quota = False if node.storage_limit_status < 4 else True
+    else:
+        over_quota = False if node.storage_limit_status < 2 else True
+    return {
+        'over_quota': over_quota
+    }
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
