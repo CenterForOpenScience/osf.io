@@ -5,7 +5,7 @@ from website import settings
 from osf.utils.workflows import RegistrationStates
 
 from osf_tests.factories import (
-    DraftRegistrationFactory,
+    RegistrationFactory,
     CommentFactory
 )
 
@@ -20,7 +20,7 @@ class TestRegistrationMachine:
 
     @pytest.fixture()
     def draft_registration(self):
-        return DraftRegistrationFactory()
+        return RegistrationFactory().draft_registration.last()
 
     @pytest.fixture()
     def comment(self):
