@@ -674,7 +674,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
         return Registration.objects.filter(
             provider=provider,
             registration_approval__state=RegistrationApproval.APPROVED,
-        ).annotate(machine_state=F(provider.MODERATION_MACHINE_STATE_RELATION))
+        ).annotate(machine_state=F('draft_registration__machine_state'))
 
     # overrides ListAPIView
     def get_queryset(self):

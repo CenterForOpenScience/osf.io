@@ -199,9 +199,8 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
-    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEWABLE_RELATION_NAME = 'draft_registrations'
     REVIEW_STATES = RegistrationStates
-    MODERATION_MACHINE_STATE_RELATION = 'draft_registration__machine_state'
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
