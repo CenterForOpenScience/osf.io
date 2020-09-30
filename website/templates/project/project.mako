@@ -37,7 +37,7 @@
                 <div class="btn-toolbar node-control pull-right">
                     <div class="btn-group">
                         % if node.get('storage_limit_status') and node['storage_limit_status']['text']:
-                            <a href=" https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps"  target="_blank" class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon."><i class="fa fa-exclamation-triangle"></i></a>
+                            <a href="https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps"  target="_blank" class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon."><i class="fa fa-exclamation-triangle"></i></a>
                         % endif
 
                         % if node.get('storage_usage'):
