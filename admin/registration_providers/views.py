@@ -17,7 +17,7 @@ from admin.registration_providers.forms import RegistrationProviderForm, Registr
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from website import settings as website_settings
-from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema, OSFUser, Registration
+from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema, OSFUser
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -432,7 +432,7 @@ class AddModerators(TemplateView):
 
         moderator = OSFUser.load(data['add-moderators-form'][0])
         if moderator is None:
-            messages.success(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
+            messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
             return redirect('registration_providers:add_moderators', registration_provider_id=registration_provider.id)
 
         registration_provider.add_to_group(moderator, 'moderator')
@@ -467,22 +467,3 @@ class RemoveModerators(TemplateView):
         messages.success(request, f'The following moderators were successfully removed: {moderator_names}')
 
         return redirect('registration_providers:remove_moderators', registration_provider_id=registration_provider.id)
-
-
-class ProviderListRegistrations(TemplateView):
-    permission_required = 'osf.change_registrationprovider'
-    template_name = 'registration_providers/list_registrations.html'
-
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        registrations = Registration.objects.filter(
-            provider_id=self.kwargs['registration_provider_id']
-        ).annotate(
-            state=F('draft_registration__machine_state'),
-            guid=F('guids___id')
-        )
-
-        context = super().get_context_data(**kwargs)
-        context['registrations'] = registrations
-        return context
