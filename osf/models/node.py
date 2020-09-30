@@ -63,7 +63,6 @@ from website.citations.utils import datetime_to_csl
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
 from website.project.model import NodeUpdateError
-from website.project.utils import sizeof_fmt
 from website.identifiers.tasks import update_doi_metadata_on_change
 from website.identifiers.clients import DataCiteClient
 from osf.utils.permissions import (
@@ -2396,12 +2395,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             update_storage_usage(self)  # sets cache
             return storage_usage_cache.get(key) or 0
-
-    @property
-    def formatted_storage_usage(self):
-        if self.storage_usage is not None:
-            return sizeof_fmt(self.storage_usage)
-        return None
 
     # Overrides ContributorMixin
     # TODO: Deprecate this when we emberize contributors management for nodes

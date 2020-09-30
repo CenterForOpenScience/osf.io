@@ -9,7 +9,6 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE
 from website import settings
-from website.project.utils import sizeof_fmt
 
 
 @pytest.mark.django_db
@@ -69,7 +68,7 @@ class TestNodeStorage:
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['storage_limit_status'] == 'DEFAULT'
-        assert data['attributes']['storage_usage'] == '0.0B'
+        assert data['attributes']['storage_usage'] == '0'
 
     def test_node_storage_request_type(self, app, url, project, write_contributor):
 
@@ -81,7 +80,6 @@ class TestNodeStorage:
 
         # Test Node Storage with OSFStorage Usage
         storage_usage = (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs
-        formatted_storage_usage = sizeof_fmt(storage_usage)
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
         storage_usage_cache.set(key, storage_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
@@ -89,13 +87,12 @@ class TestNodeStorage:
         assert res.status_code == 200
         data = res.json['data']
         assert data['attributes']['storage_limit_status'] == 'OVER_PRIVATE'
-        assert data['attributes']['storage_usage'] == formatted_storage_usage
+        assert data['attributes']['storage_usage'] == str(storage_usage)
 
     def test_node_storage_embed(self, app, embed_url, project, admin_contributor):
 
         # Tests Node Storage Embed
         storage_usage = (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs
-        formatted_storage_usage = sizeof_fmt(storage_usage)
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
         storage_usage_cache.set(key, storage_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
@@ -103,4 +100,4 @@ class TestNodeStorage:
         assert res.status_code == 200
         data = res.json['data']
         assert data['embeds']['storage']['data']['attributes']['storage_limit_status'] == 'OVER_PRIVATE'
-        assert data['embeds']['storage']['data']['attributes']['storage_usage'] == formatted_storage_usage
+        assert data['embeds']['storage']['data']['attributes']['storage_usage'] == str(storage_usage)

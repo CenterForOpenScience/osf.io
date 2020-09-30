@@ -1364,7 +1364,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 class NodeStorageSerializer(JSONAPISerializer):
     id = IDField(source='_id', required=True)
     storage_limit_status = ser.CharField(source='storage_limit_status.name', read_only=True, allow_null=True)
-    storage_usage = ser.CharField(source='formatted_storage_usage', read_only=True, allow_null=True)
+    storage_usage = ser.CharField(read_only=True, allow_null=True)
 
     class Meta:
         type_ = 'node-storage'
