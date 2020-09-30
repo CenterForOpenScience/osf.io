@@ -1198,6 +1198,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         return self.is_contributor_or_group_member(auth.user)
 
+    def check_privacy_change_viability(self, auth=None):
+        if auth:
+            if self.storage_limit_status is None:
+                raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
+            elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
+                raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
@@ -1231,11 +1238,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
 
-            if auth:
-                if self.storage_limit_status is None:
-                    raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
-                elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
-                    raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
+            self.check_privacy_change_viability(auth)
 
             self.is_public = False
             self.keenio_read_key = ''
