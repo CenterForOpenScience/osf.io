@@ -97,21 +97,22 @@ def osfstorage_update_metadata(payload, **kwargs):
     return {'status': 'success'}
 
 @must_be_signed
-def osfstorage_get_storage_quota_status(payload, **kwargs):
-    node_id = kwargs.get('guid')
-
-    try:
-        node = Node.load(node_id)
-    except KeyError:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    if node.storage_usage is None:
+@decorators.load_guid_as_target
+def osfstorage_get_storage_quota_status(target, **kwargs):
+    # Storage caps only restrict Nodes
+    if not isinstance(target, Node):
+        return {
+            'over_quota': False
+        }
+    # Storage calculation for the target has been accepted and will run asynchronously
+    if target.storage_usage is None:
         raise HTTPError(http_status.HTTP_202_ACCEPTED)
 
-    if node.is_public:
-        over_quota = False if node.storage_limit_status < 4 else True
+    # Storage cap limits differ for public and private nodes
+    if target.is_public:
+        over_quota = False if target.storage_limit_status < 4 else True
     else:
-        over_quota = False if node.storage_limit_status < 2 else True
+        over_quota = False if target.storage_limit_status < 2 else True
     return {
         'over_quota': over_quota
     }

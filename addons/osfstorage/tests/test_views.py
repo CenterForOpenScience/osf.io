@@ -258,6 +258,18 @@ class TestGetStorageQuotaHook(HookTestCase):
         assert_equal(res.status_code, 200)
         assert_true(res.json['over_quota'])
 
+    def test_preprint_storage_use(self):
+        preprint = PreprintFactory()
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': preprint._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
+
 @pytest.mark.django_db
 class TestUploadFileHook(HookTestCase):
 
