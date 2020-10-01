@@ -190,7 +190,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         update_users_set = grdm_member_users_set & nc_member_users_set
 
         DEBUG('add_users_set: ' + str(add_users_set))
-        DEBUG('remove_users_set: ' + str(add_users_set))
+        DEBUG('remove_users_set: ' + str(remove_users_set))
         DEBUG('update_users_set: ' + str(update_users_set))
 
         first_exception = None
