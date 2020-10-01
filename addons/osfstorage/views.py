@@ -25,6 +25,7 @@ from website.project.decorators import (
 from website.project.model import has_anonymous_link
 
 from website.files import exceptions
+from website.settings import StorageLimits
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
 from addons.osfstorage.models import OsfStorageFolder
@@ -110,9 +111,9 @@ def osfstorage_get_storage_quota_status(target, **kwargs):
 
     # Storage cap limits differ for public and private nodes
     if target.is_public:
-        over_quota = False if target.storage_limit_status < 4 else True
+        over_quota = target.storage_limit_status >= StorageLimits.OVER_PUBLIC
     else:
-        over_quota = False if target.storage_limit_status < 2 else True
+        over_quota = target.storage_limit_status >= StorageLimits.OVER_PRIVATE
     return {
         'over_quota': over_quota
     }
