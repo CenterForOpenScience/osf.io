@@ -2394,7 +2394,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return storage_usage_total
         else:
             update_storage_usage(self)  # sets cache
-            return storage_usage_cache.get(key) or 0
+            return storage_usage_cache.get(key)
 
     # Overrides ContributorMixin
     # TODO: Deprecate this when we emberize contributors management for nodes
