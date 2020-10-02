@@ -164,6 +164,8 @@ def update_storage_usage_with_size(payload):
         return update_storage_usage(target_node)
 
     current_usage = target_node.storage_usage
+    if current_usage is None:
+        return update_storage_usage(target_node)
     target_file = BaseFileNode.load(target_file_id)
 
     if target_file and action in ['copy', 'delete', 'move']:
