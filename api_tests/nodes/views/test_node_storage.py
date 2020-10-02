@@ -63,7 +63,11 @@ class TestNodeStorage:
         res = app.get(url, auth=read_contributor.auth, expect_errors=True)
         assert res.status_code == 403
 
-        # Tests Node Storage fo Nodes without Storage Usage
+        # Tests Node Storage for Nodes without Storage Usage Calculated
+        res = app.get(url, auth=write_contributor.auth)
+        assert res.status_code == 202
+
+        # Tests Node Storage for Nodes no Storage Usage
         res = app.get(url, auth=write_contributor.auth)
         assert res.status_code == 200
         data = res.json['data']

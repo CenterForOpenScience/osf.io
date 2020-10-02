@@ -676,13 +676,17 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def project_public(self, user, title, description, category):
-        return ProjectFactory(
+        project = ProjectFactory(
             title=title,
             description=description,
             category=category,
             is_public=True,
             creator=user
         )
+        # Sets public project storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
 
     @pytest.fixture()
     def project_private(self, user, title, description, category):
@@ -823,6 +827,23 @@ class TestNodeUpdate(NodeCRUDTestCase):
             assert res.status_code == 200
             project_private.reload()
             assert project_private.is_public
+
+    def test_make_project_private_uncalculated_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.delete(key)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This project\'s node storage usage could not be calculated. Please try again.'
 
     def test_make_project_private_over_storage_limit(
         self, app, url_public, project_public, user
