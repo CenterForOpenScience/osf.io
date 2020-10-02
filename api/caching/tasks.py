@@ -166,6 +166,8 @@ def update_storage_usage_with_size(payload):
     current_usage = target_node.storage_usage
     if current_usage is None:
         return update_storage_usage(target_node)
+
+    current_usage = target_node.storage_usage
     target_file = BaseFileNode.load(target_file_id)
 
     if target_file and action in ['copy', 'delete', 'move']:
@@ -191,6 +193,8 @@ def update_storage_usage_with_size(payload):
             source_node_usage = source_node.storage_usage
             if source_node_usage is None:
                 return update_storage_usage(source_node)
+
+            source_node_usage = source_node.storage_usage
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
             key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
