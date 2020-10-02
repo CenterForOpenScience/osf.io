@@ -1198,7 +1198,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def check_privacy_change_viability(self, auth=None):
         if auth and isinstance(self, Node):
-            if self.storage_limit_status is None:
+            if self.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
                 raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
             elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
                 raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
