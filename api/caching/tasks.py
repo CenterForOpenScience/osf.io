@@ -183,6 +183,8 @@ def update_storage_usage_with_size(payload):
             return  # Its not going anywhere.
         if source_provider == 'osfstorage' and not source_node.is_quickfiles:
             source_node_usage = source_node.storage_usage
+            if source_node_usage is None:
+                return update_storage_usage(target_node)
             source_node_usage = max(source_node_usage - target_file_size, 0)
 
             key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
