@@ -106,7 +106,7 @@ def osfstorage_get_storage_quota_status(target, **kwargs):
             'over_quota': False
         }
     # Storage calculation for the target has been accepted and will run asynchronously
-    if target.storage_usage is None:
+    if target.storage_limit_status is StorageLimits.NOT_CALCULATED:
         raise HTTPError(http_status.HTTP_202_ACCEPTED)
 
     # Storage cap limits differ for public and private nodes

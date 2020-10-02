@@ -139,7 +139,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
-from website import mails
+from website import mails, settings
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -1750,7 +1750,7 @@ class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-        if instance.storage_usage is None:
+        if instance.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
             return Response(serializer.data, status=HTTP_202_ACCEPTED)
         else:
             return Response(serializer.data)
