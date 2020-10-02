@@ -20,7 +20,7 @@ def serialize_node(node):
         'public': node.is_public,
         'parent': node.parent_id,
         'root': node.root._id,
-        'storage_usage': sizeof_fmt(node.storage_usage) if node.storage_usage else None,
+        'storage_usage': sizeof_fmt(node.storage_usage) if node.storage_usage is not None else None,
         'storage_limit_status': node.storage_limit_status.value,
         'public_storage_cap': round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1),
         'private_storage_cap': round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1),

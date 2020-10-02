@@ -398,12 +398,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def storage_limit_status(self):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
         a custom limit this should indicate that."""
-        if self.storage_usage is not None:
-            return settings.StorageLimits.from_node_usage(
-                self.storage_usage,
-                self.custom_storage_usage_limit_private,
-                self.custom_storage_usage_limit_public
-            )
+        return settings.StorageLimits.from_node_usage(
+            self.storage_usage,
+            self.custom_storage_usage_limit_private,
+            self.custom_storage_usage_limit_public
+        )
 
     @property
     def nodes(self):

@@ -1981,11 +1981,12 @@ class StorageLimits(enum.IntEnum):
     """
     Values here are in GBs
     """
-    DEFAULT = 0
-    APPROACHING_PRIVATE = 1
-    OVER_PRIVATE = 2
-    APPROACHING_PUBLIC = 3
-    OVER_PUBLIC = 4
+    NOT_CALCULATED = 0
+    DEFAULT = 1
+    APPROACHING_PRIVATE = 2
+    OVER_PRIVATE = 3
+    APPROACHING_PUBLIC = 4
+    OVER_PUBLIC = 5
 
 
     @classmethod
@@ -1995,6 +1996,8 @@ class StorageLimits(enum.IntEnum):
         public_limit = public_limit or STORAGE_LIMIT_PUBLIC
         private_limit = private_limit or STORAGE_LIMIT_PRIVATE
 
+        if usage_bytes is None:
+            return cls.NOT_CALCULATED
         if usage_bytes >= float(public_limit) * GBs:
             return cls.OVER_PUBLIC
         elif usage_bytes >= float(public_limit) * STORAGE_WARNING_THRESHOLD * GBs:
