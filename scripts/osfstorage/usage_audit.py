@@ -23,7 +23,7 @@ from osf.models import TrashedFile, Node
 
 from website import mails
 from website.app import init_app
-from api.base.settings.defaults import GBs
+from website.settings.defaults import GBs
 
 from scripts import utils as scripts_utils
 
