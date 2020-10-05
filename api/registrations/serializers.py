@@ -339,6 +339,16 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    review_actions = RelationshipField(
+        related_view='registrations:registration-actions-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    requests = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-requests-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin

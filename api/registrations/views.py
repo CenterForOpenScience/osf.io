@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser
+from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
 from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
@@ -60,8 +60,12 @@ from api.registrations.serializers import RegistrationNodeLinksSerializer, Regis
 from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
+from api.actions.serializers import RegistrationActionSerializer
+from api.requests.serializers import RegistrationRequestSerializer
 from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
+from api.providers.permissions import MustBeModerator
+from api.providers.views import ProviderMixin
 
 
 class RegistrationMixin(NodeMixin):
@@ -770,3 +774,45 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     """
 
     serializer_class = RegistrationIdentifierSerializer
+
+
+class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+    provider_class = RegistrationProvider
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+
+    view_category = 'registrations'
+    view_name = 'registration-actions-list'
+
+    serializer_class = RegistrationActionSerializer
+
+    def get_default_queryset(self):
+        return self.get_node().actions.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+    provider_class = RegistrationProvider
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+
+    view_category = 'registrations'
+    view_name = 'registration-requests-list'
+
+    serializer_class = RegistrationRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_node().requests.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

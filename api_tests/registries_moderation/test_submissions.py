@@ -76,8 +76,12 @@ class TestRegistriesModerationSubmissions:
         return reg
 
     @pytest.fixture()
-    def withdraw_requests_url(self, provider):
+    def provider_requests_url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/requests/'
+
+    @pytest.fixture()
+    def registration_requests_url(self, registration_with_withdraw_request):
+        return f'/{API_BASE}registrations/{registration_with_withdraw_request._id}/requests/'
 
     @pytest.fixture()
     def registrations_url(self, provider):
@@ -92,22 +96,44 @@ class TestRegistriesModerationSubmissions:
         return f'/{API_BASE}registrations/{registration._id}/logs/'
 
     @pytest.fixture()
-    def actions_url(self, provider):
+    def provider_actions_url(self, provider):
         return f'/{API_BASE}providers/registrations/{provider._id}/actions/'
 
-    def test_get_requests(self, app, withdraw_requests_url, registration_with_withdraw_request, access_request, moderator, moderator_wrong_provider):
-        resp = app.get(withdraw_requests_url, expect_errors=True)
+    @pytest.fixture()
+    def registration_actions_url(self, registration):
+        return f'/{API_BASE}registrations/{registration._id}/actions/'
+
+    def test_get_provider_requests(self, app, provider_requests_url, registration_with_withdraw_request, access_request, moderator, moderator_wrong_provider):
+        resp = app.get(provider_requests_url, expect_errors=True)
         assert resp.status_code == 401
 
-        resp = app.get(withdraw_requests_url, auth=moderator_wrong_provider.auth, expect_errors=True)
+        resp = app.get(provider_requests_url, auth=moderator_wrong_provider.auth, expect_errors=True)
         assert resp.status_code == 403
 
-        resp = app.get(withdraw_requests_url, auth=moderator.auth)
+        resp = app.get(provider_requests_url, auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 2
 
-        resp = app.get(f'{withdraw_requests_url}?filter[request_type]=withdrawal', auth=moderator.auth)
+        resp = app.get(f'{provider_requests_url}?filter[request_type]=withdrawal', auth=moderator.auth)
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['relationships']['target']['data']['id'] == registration_with_withdraw_request._id
+
+    def test_get_registration_requests(self, app, registration_requests_url, registration_with_withdraw_request, access_request, moderator, moderator_wrong_provider):
+        resp = app.get(registration_requests_url, expect_errors=True)
+        assert resp.status_code == 401
+
+        resp = app.get(registration_requests_url, auth=moderator_wrong_provider.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        resp = app.get(registration_requests_url, auth=moderator.auth)
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 1
+
+        resp = app.get(f'{registration_requests_url}?filter[request_type]=withdrawal', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
@@ -126,6 +152,8 @@ class TestRegistriesModerationSubmissions:
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
         assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.INITIAL.value
+        assert resp.json['data'][0]['relationships']['requests']
+        assert resp.json['data'][0]['relationships']['review_actions']
 
     def test_get_registrations_machine_state_filter(self, app, registrations_url, registration, moderator):
 
@@ -152,9 +180,11 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['meta']['reviews_state_counts']['pending'] == 1
 
     @pytest.mark.enable_quickfiles_creation
-    def test_get_action(self, app, actions_url, registration, moderator):
+    def test_get_registration_actions(self, app, registration_actions_url, registration, moderator):
+        resp = app.get(registration_actions_url, expect_errors=True)
+        assert resp.status_code == 401
 
-        resp = app.get(actions_url, auth=moderator.auth)
+        resp = app.get(registration_actions_url, auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
@@ -162,7 +192,26 @@ class TestRegistriesModerationSubmissions:
         registration.draft_registration.last().run_submit(registration.creator)
         registration.save()
 
-        resp = app.get(actions_url, auth=moderator.auth)
+        resp = app.get(registration_actions_url, auth=moderator.auth)
+
+        assert len(resp.json['data']) == 1
+        assert resp.json['data'][0]['attributes']['trigger'] == RegistrationTriggers.SUBMIT.value
+        assert resp.json['data'][0]['relationships']['creator']['data']['id'] == registration.creator._id
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_get_provider_actions(self, app, provider_actions_url, registration, moderator):
+        resp = app.get(provider_actions_url, expect_errors=True)
+        assert resp.status_code == 401
+
+        resp = app.get(provider_actions_url, auth=moderator.auth)
+
+        assert resp.status_code == 200
+        assert len(resp.json['data']) == 0
+
+        registration.draft_registration.last().run_submit(registration.creator)
+        registration.save()
+
+        resp = app.get(provider_actions_url, auth=moderator.auth)
 
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['attributes']['trigger'] == RegistrationTriggers.SUBMIT.value

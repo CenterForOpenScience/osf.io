@@ -57,12 +57,22 @@ class ProviderMixin:
     def get_provider(self):
         # used in perms class
         assert self.provider_class is not None, 'must define provider class to use ProviderMixin'
-        return get_object_or_error(
-            self.provider_class,
-            self.kwargs['provider_id'],
-            self.request,
-            display_name=self.provider_class.__name__,
-        )
+
+        if self.kwargs.get('provider_id'):
+            return get_object_or_error(
+                self.provider_class,
+                self.kwargs['provider_id'],
+                self.request,
+                display_name=self.provider_class.__name__,
+            )
+
+        if self.kwargs.get('node_id'):
+            return get_object_or_error(
+                AbstractNode,
+                self.kwargs['node_id'],
+                self.request,
+                display_name=AbstractNode.__name__,
+            ).provider
 
 
 class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
