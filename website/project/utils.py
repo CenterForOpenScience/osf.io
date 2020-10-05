@@ -118,3 +118,48 @@ def sizeof_fmt(num, suffix='B'):
             return '%3.1f%s%s' % (num, unit, suffix)
         num /= 1000.0
     return '%.1f%s%s' % (num, 'Y', suffix)
+
+
+def get_storage_limits_css(node):
+    status = node.storage_limit_status
+
+    if status is settings.StorageLimits.APPROACHING_PRIVATE:
+        return {
+            'text': 'approaching',
+            'class': 'btn-warning storage-warning',
+            'disableUploads': False,
+            'canMakePrivate': True
+        }
+    elif status is settings.StorageLimits.OVER_PRIVATE and not node.is_public:
+        return {
+            'text': 'over',
+            'class': 'btn-danger  storage-warning',
+            'disableUploads': True,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.OVER_PRIVATE and node.is_public:
+        return {
+            'text': None,
+            'class': None,
+            'disableUploads': False,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.APPROACHING_PUBLIC:
+        return {
+            'text': 'approaching',
+            'class': 'btn-warning  storage-warning',
+            'disableUploads': False,
+            'canMakePrivate': False
+
+        }
+    elif status is settings.StorageLimits.OVER_PUBLIC:
+        return {
+            'text': 'over',
+            'class': 'btn-danger  storage-warning',
+            'disableUploads': True,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.DEFAULT:
+        return None
+    else:
+        raise NotImplementedError()

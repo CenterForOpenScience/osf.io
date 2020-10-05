@@ -873,6 +873,11 @@ function _fangornCanDrop(treebeard, item) {
     if (canDrop === null) {
         canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
     }
+    var status = window.contextVars.node.storageLimitsStatus;
+    if (status && status.disableUploads) {
+        return false;
+    }
+
     return canDrop;
 }
 
@@ -1011,7 +1016,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (file.isDirectory) {
         msgText = 'Cannot upload folders.';
     } else if (xhr && xhr.status === 507) {
-        msgText = 'Cannot upload file due to insufficient storage.';
+        msgText = 'This file cannot be added to this project/component because it would exceed the storage limit for OSF Storage';
     } else if (xhr && xhr.status === 0) {
         // There is no way for Safari to know if it was a folder at present
          msgText = '';
@@ -1936,17 +1941,32 @@ var FGItemButtons = {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: function(event) {_uploadEvent.call(tb, event, item); },
-                        icon: 'fa fa-upload',
-                        className : 'text-success'
-                    }, 'Upload'),
-                    m.component(FGButton, {
                         onclick: function () {
                             mode(toolbarModes.ADDFOLDER);
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
-                    }, 'Create Folder'));
+                    }, 'Create Folder')
+                );
+                if(window.contextVars.node.storageLimitsStatus.disableUploads) {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            icon: 'fa fa-upload',
+                            className : 'text-success disabled storage-disabled',
+                            tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
+                        }, 'Upload')
+                    );
+                } else {
+                    rowButtons.push(
+                        m.component(FGButton, {
+                            onclick: function(event) {_uploadEvent.call(tb, event, item); },
+                            icon: 'fa fa-upload',
+                            className : 'text-success',
+                        }, 'Upload')
+                    );
+
+                }
+
                 if (item.data.path) {
                     rowButtons.push(
                         m.component(FGButton, {
@@ -2196,6 +2216,16 @@ var FGToolbar = {
                     icon: 'fa fa-time-circle',
                     className : 'text-danger'
                 }, 'Cancel Pending Uploads')
+            );
+        }
+        if(window.contextVars.node.storageLimitsStatus.text) {
+            generalButtons.push(
+                m.component(FGButton, {
+                    icon: 'fa fa-exclamation-triangle',
+                    className : window.contextVars.node.storageLimitsStatus.class,
+                    tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon.',
+                    onclick: function() { window.open('https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps', '_blank'); }
+                })
             );
         }
         // multiple selection icons
