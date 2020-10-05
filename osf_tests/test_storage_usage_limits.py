@@ -13,13 +13,15 @@ class TestStorageUsageLimits:
     def node(self):
         return ProjectFactory()
 
-    def test_limit_default(self, node):
-        assert node.storage_usage is 0
+    def test_uncalculated_limit(self, node):
+        assert node.storage_usage is None
+        assert node.storage_limit_status is StorageLimits.NOT_CALCULATED
 
+    def test_limit_default(self, node):
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, 0)
 
-        assert node.storage_limit_status == StorageLimits.DEFAULT
+        assert node.storage_limit_status is StorageLimits.DEFAULT
 
     def test_storage_limits(self, node):
         GBs = 1024 ** 3.0

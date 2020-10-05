@@ -16,7 +16,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, OSFUser
+from osf.models import FileVersion, Node, OSFUser
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -25,6 +25,7 @@ from website.project.decorators import (
 from website.project.model import has_anonymous_link
 
 from website.files import exceptions
+from website.settings import StorageLimits
 from addons.osfstorage import utils
 from addons.osfstorage import decorators
 from addons.osfstorage.models import OsfStorageFolder
@@ -95,6 +96,27 @@ def osfstorage_update_metadata(payload, **kwargs):
     version.update_metadata(metadata)
 
     return {'status': 'success'}
+
+@must_be_signed
+@decorators.load_guid_as_target
+def osfstorage_get_storage_quota_status(target, **kwargs):
+    # Storage caps only restrict Nodes
+    if not isinstance(target, Node):
+        return {
+            'over_quota': False
+        }
+    # Storage calculation for the target has been accepted and will run asynchronously
+    if target.storage_limit_status is StorageLimits.NOT_CALCULATED:
+        raise HTTPError(http_status.HTTP_202_ACCEPTED)
+
+    # Storage cap limits differ for public and private nodes
+    if target.is_public:
+        over_quota = target.storage_limit_status >= StorageLimits.OVER_PUBLIC
+    else:
+        over_quota = target.storage_limit_status >= StorageLimits.OVER_PRIVATE
+    return {
+        'over_quota': over_quota
+    }
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
