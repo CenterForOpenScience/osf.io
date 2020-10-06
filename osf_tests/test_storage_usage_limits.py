@@ -24,6 +24,7 @@ class TestStorageUsageLimits:
         assert node.storage_limit_status is StorageLimits.DEFAULT
 
     def test_storage_limits(self, node):
+        assert node.storage_limit_status is StorageLimits.NOT_CALCULATED
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
         storage_usage_cache.set(key, int(STORAGE_LIMIT_PUBLIC * STORAGE_WARNING_THRESHOLD * GBs))
