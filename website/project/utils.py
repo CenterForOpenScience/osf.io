@@ -161,5 +161,7 @@ def get_storage_limits_css(node):
         }
     elif status is settings.StorageLimits.DEFAULT:
         return None
+    elif status is settings.StorageLimits.NOT_CALCULATED:
+        return None
     else:
         raise NotImplementedError()
