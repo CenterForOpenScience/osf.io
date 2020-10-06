@@ -1948,7 +1948,7 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder')
                 );
-                if(window.contextVars.node.storageLimitsStatus.disableUploads) {
+                if(window.contextVars.node.storageLimitsStatus && window.contextVars.node.storageLimitsStatus.disableUploads) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
