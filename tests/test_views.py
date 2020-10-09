@@ -97,6 +97,8 @@ from osf_tests.factories import (
     RegionFactory,
     DraftRegistrationFactory,
 )
+from osf.utils.tokens.handlers import registration_approval_handler
+from waffle.models import Flag
 
 @mock_app.route('/errorexc')
 def error_exc():
@@ -5014,8 +5016,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
@@ -5041,6 +5041,31 @@ class TestResolveGuid(OsfTestCase):
 
         assert_equal(res.status_code, http_status.HTTP_410_GONE)
         assert_equal(res.request.path, '/{}/'.format(guid))
+
+
+@pytest.mark.enable_bookmark_creation
+@mock.patch('website.views.PROXY_EMBER_APPS', True)
+class TestResolveGuidEmberOSF(OsfTestCase):
+    def setUp(self):
+        super(TestResolveGuidEmberOSF, self).setUp()
+        ember_registration_detail_flag, _ = Flag.objects.get_or_create(name='ember_registries_detail_page')
+        ember_registration_detail_flag.everyone = True
+        ember_registration_detail_flag.save()
+
+    def test_registration_approval_cookie_setting(self):
+        user = AuthUserFactory()
+        registration = RegistrationFactory(is_public=True, creator=user)
+        registered_from = registration.registered_from
+
+        registration_approval_handler('approve', registration, registered_from)
+
+        url = web_url_for('resolve_guid', _guid=True, guid=registration._id)
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(
+            res.request.path,
+            '/{}/'.format(registration._id)
+        )
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
