@@ -16,7 +16,7 @@ from django.db.models import Q
 from website import search
 from osf.models import NodeLog
 from osf.models.user import OSFUser
-from osf.models.node import Node
+from osf.models.node import Node, AbstractNode
 from osf.models.registrations import Registration
 from osf.models import SpamStatus
 from admin.base.utils import change_embargo_date, validate_embargo_date
@@ -34,7 +34,9 @@ from osf.models.admin_log_entry import (
 from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
 from api.share.utils import update_share
+from api.caching.tasks import update_storage_usage_cache
 from website.project.views.register import osf_admin_change_status_identifier
+from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, StorageLimits
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
@@ -216,6 +218,7 @@ class NodeView(PermissionRequiredMixin, GuidView):
         kwargs = super(NodeView, self).get_context_data(**kwargs)
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
+        kwargs.update({'STORAGE_LIMITS': StorageLimits})
         return kwargs
 
     def get_object(self, queryset=None):
@@ -497,6 +500,72 @@ class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
         context['resource_type'] = 'node'
         return context
 
+class NodeModifyStorageUsage(TemplateView):
+    template_name = 'nodes/modify_storage_caps.html'
+
+    def get_object(self, queryset=None):
+        node = AbstractNode.load(self.kwargs.get('guid'))
+        return {
+            'id': node.id,
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        context['id'] = node._id
+        context['public_cap'] = round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1)
+        context['private_cap'] = round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        new_private_cap = request.POST.get('private-cap-input')
+        new_public_cap = request.POST.get('public-cap-input')
+        if float(new_private_cap) != (node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE):
+            node.custom_storage_usage_limit_private = new_private_cap
+
+        if float(new_public_cap) != (node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC):
+            node.custom_storage_usage_limit_public = new_public_cap
+
+        node.save()
+        return redirect(reverse_node(self.kwargs.get('guid')))
+
+class NodeRecalculateStorage(NodeDeleteBase):
+    template_name = 'nodes/recalculate_node_storage.html'
+
+    def get_object(self, queryset=None):
+        return AbstractNode.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        update_storage_usage_cache(node.id, node._id)
+        if isinstance(node, (Node, Registration)):
+            return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['link'] = 'nodes:recalculate-node-storage'
+        context['resource_type'] = 'node'
+        return context
+
+class NodeMakePrivate(NodeDeleteBase):
+    template_name = 'nodes/make_private.html'
+
+    def get_object(self, queryset=None):
+        return AbstractNode.load(self.kwargs.get('guid'))
+
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        # TODO: update to force set private
+        node.set_privacy('private')
+        if isinstance(node, (Node, Registration)):
+            return redirect(reverse_node(self.kwargs.get('guid')))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['link'] = 'nodes:make-node-private'
+        context['resource_type'] = 'node'
+        return context
 
 class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):
     permission_required = ('osf.view_node', 'osf.change_node')
