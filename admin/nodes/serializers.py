@@ -3,6 +3,8 @@ import json
 from osf.models import Contributor
 
 from admin.users.serializers import serialize_simple_node
+from website.project.utils import sizeof_fmt
+from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE
 
 
 def serialize_node(node):
@@ -18,6 +20,10 @@ def serialize_node(node):
         'public': node.is_public,
         'parent': node.parent_id,
         'root': node.root._id,
+        'storage_usage': sizeof_fmt(node.storage_usage) if node.storage_usage else 0,
+        'storage_limit_status': node.storage_limit_status.value,
+        'public_storage_cap': round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1),
+        'private_storage_cap': round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1),
         'is_registration': node.is_registration,
         'is_stuck_registration': getattr(node, 'is_stuck_registration', False),
         'date_created': node.created,
