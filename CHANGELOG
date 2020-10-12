@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.18.0 (2020-10-12)
+====================
+- Add admin panel for storage usage
+- Make scopes play better with files
+
 20.17.0 (2020-09-16)
 ====================
 - Re-enable calculation of storage cache with more efficient updates
