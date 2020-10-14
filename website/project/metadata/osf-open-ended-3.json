@@ -1,6 +1,9 @@
 {
     "name": "Open-Ended Registration",
     "version": 3,
+    "config": {
+    	"hasFiles": true
+    },
     "description": "You will be asked to provide a narrative summary of what is contained in your project. There is no minimum character length.",
     "pages": [{
         "id": "page1",
