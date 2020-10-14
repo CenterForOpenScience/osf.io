@@ -2272,6 +2272,24 @@ class RegistriesModerationMixin(MachineableMixin):
         """
         return self._run_transition(self.TriggersClass.REQUEST_WITHDRAW.value, user=user, comment=comment)
 
+    def run_request_withdraw_fails(self, user, comment):
+        """Run the 'request_withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_FAILS.value, user=user, comment=comment)
+
+    def run_request_withdraw_passes(self, user, comment):
+        """Run the 'request_withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_PASSES.value, user=user, comment=comment)
+
     def run_withdraw_registration(self, user, comment):
         """Run the 'withdraw' state transition and create a corresponding Action.
 

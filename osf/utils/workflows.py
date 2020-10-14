@@ -38,6 +38,8 @@ REGISTRATION_TRIGGERS = DEFAULT_TRIGGERS + [
     ('EMBARGO', 'embargo'),
     ('WITHDRAW', 'withdraw'),
     ('REQUEST_WITHDRAW', 'request_withdraw'),
+    ('WITHDRAW_REQUEST_FAILS', 'withdraw_request_fails'),
+    ('WITHDRAW_REQUEST_PASSES', 'withdraw_request_pass'),
     ('REJECT_WITHDRAW', 'reject_withdraw'),
     ('FORCE_WITHDRAW', 'force_withdraw'),
     ('REQUEST_EMBARGO', 'request_embargo'),
@@ -51,6 +53,7 @@ REGISTRATION_STATES = REVIEW_STATES + [
     ('PENDING_EMBARGO', 'pending_embargo'),
     ('EMBARGO', 'embargo'),
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
+    ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
     ('PENDING_WITHDRAW', 'pending_withdraw'),
 ]
 
@@ -137,7 +140,7 @@ REGISTRATION_TRANSITIONS = [
     },
     {
         'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
-        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value],
+        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value, RegistrationStates.PENDING_WITHDRAW.value],
         'dest': RegistrationStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
     },
@@ -162,8 +165,20 @@ REGISTRATION_TRANSITIONS = [
     {
         'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,
         'source': [RegistrationStates.ACCEPTED.value],
+        'dest': RegistrationStates.PENDING_WITHDRAW_REQUEST.value,
+        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw_request']
+    },
+    {
+        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_PASSES.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
         'dest': RegistrationStates.PENDING_WITHDRAW.value,
-        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw']
+        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_submitted']
+    },
+    {
+        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_FAILS.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
+        'dest': RegistrationStates.ACCEPTED.value,
+        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_denied', 'withdrawal_request_fails']
     },
     {
         'trigger': RegistrationTriggers.WITHDRAW.value,

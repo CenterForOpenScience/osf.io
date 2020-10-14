@@ -7,6 +7,7 @@ from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
+from osf.models.sanctions import Retraction
 
 
 from osf.utils import permissions
@@ -421,6 +422,11 @@ class RegistrationMachine(BaseMachine):
             save=True
         )
 
+    def withdrawal_request_fails(self, ev):
+        user = ev.kwargs.get('user')
+        self.machineable.registered_node.retraction._on_reject(user)
+        self.machineable.registered_node.retraction.state = Retraction.REJECTED
+
     def force_withdrawal(self, ev):
         pass
 
@@ -443,4 +449,13 @@ class RegistrationMachine(BaseMachine):
         pass
 
     def notify_submit(self, ev):
+        pass
+
+    def notify_withdraw_request_submitted(self, ev):
+        pass
+
+    def notify_withdraw_request_denied(self, ev):
+        pass
+
+    def notify_withdraw_request(self, ev):
         pass
