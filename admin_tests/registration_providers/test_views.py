@@ -9,7 +9,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     ProviderAssetFileFactory
 )
-from osf.models import RegistrationProvider, RegistrationSchema
+from osf.models import RegistrationProvider, RegistrationSchema, NotificationSubscription
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
 from admin.registration_providers.forms import RegistrationProviderForm
@@ -22,6 +22,9 @@ from admin_tests.mixins.providers import (
 )
 import responses
 from website import settings
+
+from django.contrib.messages.storage.fallback import FallbackStorage
+from osf.migrations import update_provider_auth_groups
 
 pytestmark = pytest.mark.django_db
 
@@ -236,3 +239,87 @@ class TestChangeSchemas:
         res = view.post(req)
         assert res.status_code == 302
         assert provider.schemas.get(id=schema_id)
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestEditModerators:
+
+    @pytest.fixture()
+    def req(self, user):
+        req = RequestFactory().get('/fake_path')
+        req.user = user
+        return req
+
+    @pytest.fixture()
+    def provider(self):
+        provider = RegistrationProviderFactory()
+        NotificationSubscription.objects.get_or_create(
+            _id=f'{provider._id}_new_pending_submissions',
+            event_name='new_pending_submissions',
+            provider=provider
+        )
+        update_provider_auth_groups()
+        return provider
+
+    @pytest.fixture()
+    def moderator(self, provider):
+        user = AuthUserFactory()
+        provider.add_to_group(user, 'moderator')
+        return user
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def remove_moderator_view(self, req, provider):
+        view = views.RemoveModerators()
+        view = setup_view(view, req)
+        view.kwargs = {'registration_provider_id': provider.id}
+        return view
+
+    @pytest.fixture()
+    def add_moderator_view(self, req, provider):
+        view = views.AddModerators()
+        view = setup_view(view, req)
+        view.kwargs = {'registration_provider_id': provider.id}
+        return view
+
+    def test_get(self, add_moderator_view, remove_moderator_view, req):
+        res = add_moderator_view.get(req)
+        assert res.status_code == 200
+
+        res = remove_moderator_view.get(req)
+        assert res.status_code == 200
+
+    def test_post_remove(self, remove_moderator_view, req, moderator, provider):
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            str(moderator.id): ['on']
+        }
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        res = remove_moderator_view.post(req)
+        assert res.status_code == 302
+        assert not provider.get_group('moderator').user_set.all()
+
+    def test_post_add(self, add_moderator_view, req, user, provider):
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            'add-moderators-form': [user._id]
+        }
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        res = add_moderator_view.post(req)
+        assert res.status_code == 302
+        assert user in provider.get_group('moderator').user_set.all()
