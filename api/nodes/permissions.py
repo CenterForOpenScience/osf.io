@@ -41,10 +41,10 @@ class ContributorOrPublic(permissions.BasePermission):
 
         if isinstance(obj, Registration) and obj.provider:
             if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
-                return True
+                is_moderator = True
 
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return obj.is_public or obj.can_view(auth) or is_moderator
         else:
             return obj.can_edit(auth)
 
