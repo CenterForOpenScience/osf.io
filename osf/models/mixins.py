@@ -961,6 +961,8 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
+    REVIEW_STATES = ReviewStates
+
     groups = REVIEW_GROUPS
     group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
 
@@ -980,8 +982,8 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in ReviewStates}
+        qs = qs.filter(deleted__isnull=True).values('machine_state').annotate(count=models.Count('*'))
+        counts = {state.value: 0 for state in self.REVIEW_STATES}
         counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
         return counts
 
@@ -2269,6 +2271,24 @@ class RegistriesModerationMixin(MachineableMixin):
             comment: Text describing why.
         """
         return self._run_transition(self.TriggersClass.REQUEST_WITHDRAW.value, user=user, comment=comment)
+
+    def run_request_withdraw_fails(self, user, comment):
+        """Run the 'request_withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_FAILS.value, user=user, comment=comment)
+
+    def run_request_withdraw_passes(self, user, comment):
+        """Run the 'request_withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_PASSES.value, user=user, comment=comment)
 
     def run_withdraw_registration(self, user, comment):
         """Run the 'withdraw' state transition and create a corresponding Action.

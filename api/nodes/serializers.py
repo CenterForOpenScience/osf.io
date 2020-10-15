@@ -240,6 +240,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'contributors',
         'preprint',
         'subjects',
+        'machine_state',
     ])
 
     # If you add a field to this serializer, be sure to add to this
