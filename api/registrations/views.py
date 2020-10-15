@@ -19,9 +19,16 @@ from api.base.views import (
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
+from api.base.exceptions import Conflict
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
-from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
+from api.base.utils import (
+    get_user_auth,
+    default_node_list_permission_queryset,
+    is_bulk_request,
+    is_truthy,
+    absolute_reverse,
+)
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
@@ -61,7 +68,7 @@ from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 from api.actions.serializers import RegistrationActionSerializer
-from api.requests.serializers import RegistrationRequestSerializer
+from api.requests.serializers import RegistrationRequestSerializer, RegistrationRequestCreateSerializer
 from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
@@ -776,7 +783,7 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     serializer_class = RegistrationIdentifierSerializer
 
 
-class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
     provider_class = RegistrationProvider
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
@@ -788,6 +795,10 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIV
         MustBeModerator,
     )
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
     view_category = 'registrations'
     view_name = 'registration-actions-list'
 
@@ -799,8 +810,23 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIV
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
 
-class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+        if not target.provider.is_reviewed:
+            moderation_setup_url = absolute_reverse(
+                'providers:preprint-providers:preprint-provider-detail', kwargs={
+                    'provider_id': target.provider._id,
+                    'version': self.request.parser_context['kwargs']['version'],
+                },
+            )
+            raise Conflict(f'{target.provider.name } is an umoderated provider. If you are an admin, set up moderation by setting reviews_workflow at {moderation_setup_url}')
+
+        serializer.save(user=self.request.user)
+
+
+class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
     provider_class = RegistrationProvider
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
@@ -812,10 +838,19 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListAPI
         MustBeModerator,
     )
 
+    required_read_scopes = [CoreScopes.REGISTRATION_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.REGISTRATION_REQUESTS_WRITE]
+
     view_category = 'registrations'
     view_name = 'registration-requests-list'
 
     serializer_class = RegistrationRequestSerializer
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RegistrationRequestCreateSerializer
+        else:
+            return RegistrationRequestSerializer
 
     def get_default_queryset(self):
         return self.get_node().requests.all()

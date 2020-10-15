@@ -729,6 +729,9 @@ class RegistrationProviderRequestList(JSONAPIBaseView, generics.ListAPIView, Lis
 class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
     provider_class = RegistrationProvider
 
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -738,7 +741,7 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
     view_name = 'registration-provider-action-list'
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     serializer_class = RegistrationActionSerializer
 

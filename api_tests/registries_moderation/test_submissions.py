@@ -1,5 +1,6 @@
 import pytest
 from api.base.settings.defaults import API_BASE
+
 from api.providers.workflows import Workflows
 from osf.utils.workflows import RequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
 
@@ -42,6 +43,7 @@ class TestRegistriesModerationSubmissions:
         provider.schemas.add(get_default_metaschema())
         provider.get_group('moderator').user_set.add(moderator)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
+
         provider.save()
 
         return provider
@@ -104,6 +106,24 @@ class TestRegistriesModerationSubmissions:
     @pytest.fixture()
     def registration_actions_url(self, registration):
         return f'/{API_BASE}registrations/{registration._id}/actions/'
+
+    @pytest.fixture()
+    def actions_payload_base(self):
+        payload = {
+            'data': {
+                'attributes': {
+                },
+                'relationships': {
+                    'target': {
+                        'data': {
+                            'type': 'registrations'
+                        }
+                    }
+                },
+                'type': 'registration-actions'
+            }
+        }
+        return payload
 
     def test_get_provider_requests(self, app, provider_requests_url, registration_with_withdraw_request, access_request, moderator, moderator_wrong_provider):
         resp = app.get(provider_requests_url, expect_errors=True)
@@ -248,3 +268,15 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.get(registration_log_url, auth=moderator.auth)
         assert resp.status_code == 200
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_registries_moderation_post(self, app, registration, moderator, registration_actions_url, actions_payload_base):
+        draft_registration = registration.draft_registration.last()
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.SUBMIT.value
+        actions_payload_base['data']['attributes']['comment'] = 'Submitting registration'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        draft_registration.reload()
+        assert draft_registration.machine_state == RegistrationModerationStates.PENDING.value

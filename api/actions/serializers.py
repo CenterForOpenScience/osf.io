@@ -15,8 +15,14 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import Preprint, NodeRequest, PreprintRequest
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.models import Preprint, NodeRequest, PreprintRequest, Registration
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ReviewStates,
+    ReviewTriggers,
+    RegistrationTriggers,
+)
 from osf.utils import permissions
 
 
@@ -131,6 +137,9 @@ class BaseActionSerializer(JSONAPISerializer):
         comment = validated_data.pop('comment', '')
         permissions = validated_data.pop('permissions', '')
         visible = validated_data.pop('visible', '')
+
+        if isinstance(target, Registration):
+            target = target.draft_registration.last()
         try:
             if trigger == DefaultTriggers.ACCEPT.value:
                 return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
@@ -243,12 +252,54 @@ class RegistrationActionSerializer(BaseActionSerializer):
     class Meta:
         type_ = 'registration-actions'
 
-    target = RelationshipField(
-        read_only=True,
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)
+    trigger = ser.ChoiceField(choices=RegistrationTriggers.choices())
+
+    embargo_end_date = ser.DateTimeField(required=False)
+
+    target = TargetRelationshipField(
+        target_class=Registration,
+        read_only=False,
+        required=True,
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<target._id>'},
         filter_key='target__guids___id',
     )
 
-    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
-    visible = ser.BooleanField(default=True, required=False)
+    def create(self, validated_data):
+        trigger = validated_data.get('trigger')
+
+        if trigger in DefaultTriggers.values():
+            return super().create(validated_data)
+
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        user = validated_data.pop('user')
+
+        draft_registration = target.draft_registration.last()
+
+        try:
+            if trigger == RegistrationTriggers.EMBARGO.value:
+                embargo_end_date = validated_data.get('embargo_end_date')
+                if embargo_end_date:
+                    return draft_registration.run_accept(user=user, comment=comment, embargo_end_date=embargo_end_date)
+                else:
+                    raise JSONAPIAttributeException(attribute='embargo_end_date', detail='Must have a valid end date for embargo.')
+            if trigger == RegistrationTriggers.WITHDRAW.value:
+                return draft_registration.run_withdraw_registration(user, comment)
+            if trigger == RegistrationTriggers.REQUEST_WITHDRAW.value:
+                return draft_registration.run_request_withdraw(user, comment)
+            if trigger == RegistrationTriggers.REJECT_WITHDRAW.value:
+                return draft_registration.run_reject_withdraw(user, comment)
+            if trigger == RegistrationTriggers.FORCE_WITHDRAW.value:
+                return draft_registration.run_force_withdraw(user, comment)
+            if trigger == RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value:
+                return draft_registration.run_request_embargo_registration(user, comment)
+            if trigger == RegistrationTriggers.TERMINATE_EMBARGO.value:
+                return draft_registration.run_terminate_embargo(user, comment)
+        except InvalidTriggerError as e:
+            # Invalid transition from the current state
+            raise Conflict(str(e))
+        else:
+            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
