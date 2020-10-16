@@ -112,7 +112,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
 
     @property
     def approval_state(self):
-        return SanctionStates[self.sanction_state]
+        return SanctionStates.from_db_name(self.sanction_state)
 
     @approval_state.setter
     def approval_state(self, state):

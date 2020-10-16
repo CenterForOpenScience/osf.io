@@ -1,9 +1,7 @@
-
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from enum import Enum, IntEnum
-from enum import unique
+from enum import Enum, IntEnum, unique
 
 
 class ModerationEnum(IntEnum):
@@ -15,6 +13,10 @@ class ModerationEnum(IntEnum):
     @classmethod
     def char_choices(cls):
         return tuple((member.db_name, member.readable_name) for member in cls if member.value != 0)
+
+    @classmethod
+    def from_db_name(cls, state_db_name):
+        return cls[state_db_name.upper()]
 
     @property
     def readable_value(self):
