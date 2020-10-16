@@ -36,7 +36,6 @@ def main(json_file, dry=False):
     targets = json.load(json_file)
     errors = []
     p_bar = tqdm(total=len(targets))
-    i = 1
     for user, public_nodes, private_nodes in obj_gen(targets):
         if public_nodes or private_nodes:
             if not dry:
@@ -53,8 +52,7 @@ def main(json_file, dry=False):
                     errors.append(user._id)
             else:
                 logger.info(f'[Dry] Would mail {user._id}')
-        p_bar.update(i)
-        i += 1
+        p_bar.update()
     p_bar.close()
     logger.info(f'Complete. Errors mailing: {errors}')
 

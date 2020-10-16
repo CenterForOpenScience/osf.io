@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 import json
 import logging
+from tqdm import tqdm
 
 from addons.osfstorage.models import OsfStorageFile
 from api.caching.tasks import update_storage_usage_cache
@@ -22,11 +23,10 @@ def retrieve_user_nodes_exceeding_storage_limits():
 
     files = OsfStorageFile.objects.filter(target_object_id=OuterRef('pk'), target_content_type_id=ContentType.objects.get(model='abstractnode').id)
     nodes = Node.objects.annotate(has_files=Exists(files)).filter(has_files=True)
-
+    logger.info('Counting targets...')
+    p_bar = tqdm(total=nodes.count())
     for node in nodes:
-        if node.storage_limit_status is StorageLimits.NOT_CALCULATED:
-            logger.info(f'{node._id}\'s storage is uncalculated. Calculating storage now.')
-            update_storage_usage_cache(node.id, node._id)
+        update_storage_usage_cache(node.id, node._id)
 
         if (node.is_public and node.storage_limit_status >= StorageLimits.OVER_PUBLIC) or (not node.is_public and node.storage_limit_status >= StorageLimits.OVER_PRIVATE):
             contributors = get_admin_contributors(node)
@@ -45,6 +45,9 @@ def retrieve_user_nodes_exceeding_storage_limits():
                         'private': user_private_nodes_exceeding
                     }
                 })
+        p_bar.update()
+    p_bar.close()
+    logger.info(f'Complete. Detected {len(exceeded_user_node_dict)} users to mail.')
     return exceeded_user_node_dict
 
 
