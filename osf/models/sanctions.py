@@ -108,7 +108,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
 
     @property
     def is_moderated(self):
-        return self._get_registration().is_moderated
+        return self.target_registration().is_moderated
 
     @property
     def approval_state(self):
@@ -218,7 +218,7 @@ class TokenApprovableSanction(Sanction):
                 for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
             # Avoid prematurely invoking moderator approval
-            if self.sanction_state is SanctionStates.PENDING_ADMIN_APPROVAL:
+            if self.approval_state is SanctionStates.PENDING_ADMIN_APPROVAL:
                 self.accept(user, token)  # state machine trigger
 
     def token_for_user(self, user, method):
