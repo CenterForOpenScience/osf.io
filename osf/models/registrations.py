@@ -50,6 +50,7 @@ from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.workflows import RegistrationModerationStates
 
 logger = logging.getLogger(__name__)
 
@@ -245,6 +246,28 @@ class Registration(AbstractNode):
     def archiving(self):
         job = self.archive_job
         return job and not job.done and not job.archive_tree_finished()
+
+    @property
+    def moderation_state(self):
+        active_sanction = self.sanction
+        if active_sanction is None:
+            return RegistrationModerationStates.ACCEPTED
+
+        state = RegistrationModerationStates.from_sanction_and_state(
+            active_sanction.SANCTION_TYPE, self.sanction.review_state)
+        if state is not RegistrationModerationStates.UNDEFINED:
+            return state
+
+        # The "active sanction" was a rejected withdrawal
+        # Determine the state of the embargo or registration_approval instead
+        root = self._dirty_root
+        active_sanction = root.embargo or root.registration_approval
+        return RegistrationModerationStates.from_sanction_and_state(
+            active_sanction.SANCTION_TYPE, active_sanction.review_state)
+
+    @property
+    def moderation_type(self):
+        return self.provider.reviews_workflow
 
     @property
     def _dirty_root(self):

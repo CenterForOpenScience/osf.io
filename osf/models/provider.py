@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
+
+from api.provider.workflows import Workflows as ReviewWorkflows
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
@@ -201,6 +203,15 @@ class CollectionProvider(AbstractProvider):
 class RegistrationProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'draft_registrations'
     REVIEW_STATES = RegistrationStates
+
+    # Override the inherited reviews_workflow field to only allow supported moderation types
+    SUPPORTED_MODERATION_WORKFLOWS = {ReviewWorkflows.NONE.value, ReviewWorkflows.PRE_MODERATION.value}
+    WORKFLOW_CHOICES = [
+        (db_value, readable_value) for db_value, readable_value in ReviewWorkflows.choices()
+        if db_value in SUPPORTED_MODERATION_WORKFLOWS
+    ]
+    reviews_workflow = reviews_workflow = models.CharField(
+        null=True, blank=True, max_length=15, choices=WORKFLOW_CHOICES)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'

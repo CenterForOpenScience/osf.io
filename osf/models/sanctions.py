@@ -25,11 +25,13 @@ from osf.exceptions import (
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
+from osf.utils.machines import SanctionsStateMachine
+from osf.utils.workflows import SanctionStates, SanctionTypes
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
-class Sanction(ObjectIDMixin, BaseModel):
+class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
@@ -45,6 +47,7 @@ class Sanction(ObjectIDMixin, BaseModel):
                      (REJECTED, REJECTED.title()),
                      (COMPLETED, COMPLETED.title()),)
 
+    SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
     # SHORT_NAME must correspond with the associated foreign field to query against,
     # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
@@ -98,11 +101,19 @@ class Sanction(ObjectIDMixin, BaseModel):
     def is_rejected(self):
         return self.state == Sanction.REJECTED
 
+    @property
+    def is_moderated(self):
+        return self._get_registration().is_moderated
+
     def approve(self, user):
         raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
     def reject(self, user):
         raise NotImplementedError('Sanction subclasses must implement an approve method.')
+
+    def _get_registration(self):
+        """Get the Registration that is waiting on this sanction."""
+        raise NotImplementedError('Sanction subclasses must implement a #_gt_registration method')
 
     def _on_reject(self, user):
         """Callback for rejection of a Sanction
@@ -128,7 +139,7 @@ class Sanction(ObjectIDMixin, BaseModel):
 
 
 class TokenApprovableSanction(Sanction):
-    def _validate_authorizer(self, user):
+    def validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
         :return Boolean: True if user is allowed to be an authorizer else False
         """
@@ -189,7 +200,9 @@ class TokenApprovableSanction(Sanction):
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
-            self._on_complete(user)
+            # Avoid prematurely invoking moderator approval
+            if self.sanction_state is SanctionStates.PENDING_ADMIN_APPROVAL:
+                self.accept(user, token)  # state machine trigger
 
     def token_for_user(self, user, method):
         """
@@ -228,7 +241,7 @@ class TokenApprovableSanction(Sanction):
                 self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(
                     DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
-        self._on_reject(user)
+        self.deny(user)  # state machine trigger
         self.save()
 
     def _notify_authorizer(self, user, node):
@@ -364,6 +377,7 @@ class SanctionCallbackMixin(object):
 
 class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
+    SANCTION_TYPE = SanctionTypes.EMBARGO
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
@@ -555,6 +569,7 @@ class Retraction(EmailApprovableSanction):
     Externally (specifically in user-facing language) retractions should be referred to as "Withdrawals", i.e.
     "Retract Registration" -> "Withdraw Registration", "Retracted" -> "Withdrawn", etc.
     """
+    SANCTION_TYPE = SanctionTypes.RETRACTION
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
@@ -696,6 +711,7 @@ class Retraction(EmailApprovableSanction):
 
 
 class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
+    SANCTION_TYPE = SanctionTypes.REGISTRATION_APPROVAL
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
@@ -838,6 +854,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
 
 class DraftRegistrationApproval(Sanction):
+
+    SANCTION_TYPE = SanctionTypes.DRAFT_REGISTRATION_APPROVAL
     mode = Sanction.ANY
 
     # Since draft registrations that require approval are not immediately registered,
@@ -901,6 +919,7 @@ class DraftRegistrationApproval(Sanction):
 
 
 class EmbargoTerminationApproval(EmailApprovableSanction):
+    SANCTION_TYPE = SanctionTypes.EMBARGO_TERMINATION_APPROVAL
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 

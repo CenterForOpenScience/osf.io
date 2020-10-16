@@ -2,8 +2,95 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from enum import Enum
+from enum import Enum, IntEnum
 from enum import unique
+
+
+class ModerationEnum(IntEnum):
+
+    @classmethod
+    def int_choices(cls):
+        return tuple((member.value, member.readable_name) for member in cls if member.value != 0)
+
+    @classmethod
+    def char_choices(cls):
+        return tuple((member.db_name, member.readable_name) for member in cls if member.value != 0)
+
+    @property
+    def readable_value(self):
+        return super().name.title().replace('_', '')
+
+    @property
+    def db_name(self):
+        return self.name.lower()
+
+
+class SanctionTypes(ModerationEnum):
+
+    UNDEFINED = 0
+    REGISTRATION_APPROVAL = 1
+    EMBARGO = 2
+    RETRACTION = 3
+    EMBARGO_TERMINATION_APPROVAL = 4
+    DRAFT_REGISTRATION_APPROVAL = 5
+
+
+class SanctionStates(ModerationEnum):
+
+    UNDEFINED = 0
+    PENDING_ADMIN_APPROVAL = 1
+    PENDING_MODERATOR_APPROVAL = 2
+    ACCEPTED = 3
+    REJECTED = 4
+    COMPLETE = 5  # Embargo only
+
+
+class RegistrationModerationStates(ModerationEnum):
+
+    UNDEFINED = 0
+    INITIAL = 1
+    PENDING = 2
+    REJECTED = 3
+    ACCEPTED = 4
+    EMBARGO = 5
+    PENDING_EMBARGO_TERMINATION_REQUEST = 6
+    PENDING_EMBARGO_TERMINATION = 7
+    PENDING_WITHDRAW_REQUEST = 8
+    PENDING_WITHDRAW = 9
+    WITHDRAWN = 10
+
+    @classmethod
+    def from_sanction_and_state(cls, sanction_type, state):
+        SANCTION_STATE_MAP = {
+            SanctionTypes.REGISTRATION_APPROVAL: {
+                SanctionStates.PENDING_ADMIN_APPROVAL: cls.INITIAL,
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING,
+                SanctionStates.ACCEPTED: cls.ACCEPTED,
+                SanctionStates.REJECTED: cls.REJECTED,
+            },
+            SanctionTypes.EMBARGO: {
+                SanctionStates.PENDING_ADMIN_APPROVAL: cls.INITIAL,
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING,
+                SanctionStates.ACCEPTED: cls.EMBARGO,
+                SanctionStates.COMPLETE: cls.ACCEPTED,
+                SanctionStates.REJECTED: cls.REJECTED,
+            },
+            SanctionTypes.RETRACTION: {
+                SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_WITHDRAW_REQUEST,
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING_WITHDRAW,
+                SanctionStates.ACCEPTED: cls.WITHDRAWN,
+                SanctionStates.REJECTED: cls.UNDEFINED,  # Either ACCEPTED or EMBARGO
+            },
+            SanctionTypes.EMBARGO_TERMINATION_APPROVAL: {
+                SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_EMBARGO_TERMINATION_REQUEST,
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING_EMBARGO_TERMINATION,
+                SanctionStates.ACCEPTED: cls.ACCEPTED,
+                SanctionStates.REJECTED: cls.EMBARGO,
+            },
+        }
+
+        return SANCTION_STATE_MAP[sanction_type][state]
+
 
 @unique
 class ChoiceEnum(Enum):
@@ -50,7 +137,6 @@ REGISTRATION_TRIGGERS = DEFAULT_TRIGGERS + [
 ]
 
 REGISTRATION_STATES = REVIEW_STATES + [
-    ('PENDING_EMBARGO', 'pending_embargo'),
     ('EMBARGO', 'embargo'),
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
     ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
@@ -123,32 +209,48 @@ REGISTRATION_TRANSITIONS = [
     {
         'trigger': RegistrationTriggers.SUBMIT.value,
         'source': [RegistrationStates.INITIAL.value],
+        'dest': RegistrationStates.ACCEPTED.value,
+        'unless': ['is_moderated', 'is_embargoed'],
+        'after': ['save_action', 'update_last_transitioned', 'accept_registration', 'notify_accept_reject']
+    },
+    {
+        'trigger': RegistrationTriggers.SUBMIT.value,
+        'source': [RegistrationStates.INITIAL.value],
+        'dest': RegistrationStates.EMBARGO.value,
+        'unless': ['is_moderated'],
+        'after': ['save_action', 'update_last_transitioned', 'embargo_registration', 'notify_accept_reject']
+    },
+
+    {
+        'trigger': RegistrationTriggers.SUBMIT.value,
+        'source': [RegistrationStates.INITIAL.value],
         'dest': RegistrationStates.PENDING.value,
-        'after': ['save_action', 'update_last_transitioned', 'submit_draft_registration', 'notify_submit'],
+        'after': ['save_action', 'update_last_transitioned', 'submit_registration', 'notify_submit'],
     },
     {
         'trigger': RegistrationTriggers.ACCEPT.value,
         'source': [RegistrationStates.PENDING.value],
         'dest': RegistrationStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
+        'unless': ['is_embargoed'],
+        'after': ['save_action', 'update_last_transitioned', 'accept_registration', 'notify_accept_reject'],
+    },
+    {
+        'trigger': RegistrationTriggers.ACCEPT.value,
+        'source': [RegistrationStates.PENDING.value],
+        'dest': RegistrationStates.EMBARGO.value,
+        'after': ['save_action', 'update_last_transitioned', 'notify_accept_reject']
     },
     {
         'trigger': RegistrationTriggers.REJECT.value,
         'source': [RegistrationStates.PENDING.value],
         'dest': RegistrationStates.REJECTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'reject_draft_registration', 'notify_accept_reject'],
+        'after': ['save_action', 'update_last_transitioned', 'reject_registration', 'notify_accept_reject'],
     },
     {
         'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
-        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value, RegistrationStates.PENDING_WITHDRAW.value],
+        'source': [RegistrationStates.ACCEPTED.value, RegistrationStates.EMBARGO.value, RegistrationStates.PENDING_WITHDRAW.value],
         'dest': RegistrationStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
-    },
-    {
-        'trigger': RegistrationTriggers.EMBARGO.value,
-        'source': [RegistrationStates.PENDING.value],
-        'dest': RegistrationStates.EMBARGO.value,
-        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'embargo_registration', 'notify_embargo']
     },
     {
         'trigger': RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value,
@@ -164,9 +266,16 @@ REGISTRATION_TRANSITIONS = [
     },
     {
         'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,
-        'source': [RegistrationStates.ACCEPTED.value],
+        'source': [RegistrationStates.ACCEPTED.value, RegistrationStates.EMBARGO.value],
         'dest': RegistrationStates.PENDING_WITHDRAW_REQUEST.value,
         'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw_request']
+    },
+    {
+        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_PASSES.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
+        'dest': RegistrationStates.WITHDRAWN.value,
+        'unless': ['is_moderated'],
+        'after': ['save_action', 'update_last_transitioned', 'withdraw_registration'],
     },
     {
         'trigger': RegistrationTriggers.WITHDRAW_REQUEST_PASSES.value,
@@ -178,6 +287,13 @@ REGISTRATION_TRANSITIONS = [
         'trigger': RegistrationTriggers.WITHDRAW_REQUEST_FAILS.value,
         'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
         'dest': RegistrationStates.ACCEPTED.value,
+        'unless': 'is_embargoed',
+        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_denied', 'withdrawal_request_fails']
+    },
+    {
+        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_FAILS.value,
+        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
+        'dest': RegistrationStates.EMBARGO.value,
         'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_denied', 'withdrawal_request_fails']
     },
     {
@@ -192,6 +308,28 @@ REGISTRATION_TRANSITIONS = [
         'dest': RegistrationStates.ACCEPTED.value,
         'after': ['save_action', 'update_last_transitioned', 'reject_withdrawal', 'notify_withdraw']
     }
+]
+
+
+SANCTION_TRANSITIONS = [
+    {
+        'trigger': 'accept',
+        'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
+        'dest': SanctionStates.PENDING_MODERATOR_APPROVAL,
+        'cond': ['is_moderated'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL, SanctionStates.PENDING_ADMIN_APPROVAL],
+        'dest': SanctionStates.ACCEPTED,
+        'after': ['_on_complete']
+    },
+    {
+        'trigger': 'deny',
+        'source': ['*'],
+        'dest': SanctionStates.REJECTED,
+        'after': ['_on_reject']
+    },
 ]
 
 @unique

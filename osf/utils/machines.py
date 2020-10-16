@@ -16,9 +16,11 @@ from osf.utils.workflows import (
     DefaultTriggers,
     RegistrationStates,
     ReviewStates,
+    SanctionStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    REGISTRATION_TRANSITIONS
+    REGISTRATION_TRANSITIONS,
+    SANCTION_TRANSITIONS
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
@@ -459,3 +461,31 @@ class RegistrationMachine(BaseMachine):
 
     def notify_withdraw_request(self, ev):
         pass
+
+
+class SanctionsStateMachine(Machine):
+
+    STATE_FIELD = 'state'
+
+    def __init__(self):
+        super().__init__(
+            states=SanctionStates,
+            transitions=SANCTION_TRANSITIONS,
+            initial_state=getattr(self, self.STATE_FIELD),
+            model_attribute=self.STATE_FIELD,
+            prepare_event='initialize_transition',
+            send_event=True,
+            ignore_invalid_triggers=True
+        )
+
+    def initialize_transition(self, event_data):
+        self.action = None,
+        self.from_state = event_data.state
+
+    @property
+    def target_registration(self):
+        raise NotImplementedError
+
+    def save_action(self, event_data):
+        event_data.kwargs['target'] = self.machineable._get_registration()
+        super().save_action(event_data)
