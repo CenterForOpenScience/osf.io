@@ -209,48 +209,32 @@ REGISTRATION_TRANSITIONS = [
     {
         'trigger': RegistrationTriggers.SUBMIT.value,
         'source': [RegistrationStates.INITIAL.value],
-        'dest': RegistrationStates.ACCEPTED.value,
-        'unless': ['is_moderated', 'is_embargoed'],
-        'after': ['save_action', 'update_last_transitioned', 'accept_registration', 'notify_accept_reject']
-    },
-    {
-        'trigger': RegistrationTriggers.SUBMIT.value,
-        'source': [RegistrationStates.INITIAL.value],
-        'dest': RegistrationStates.EMBARGO.value,
-        'unless': ['is_moderated'],
-        'after': ['save_action', 'update_last_transitioned', 'embargo_registration', 'notify_accept_reject']
-    },
-
-    {
-        'trigger': RegistrationTriggers.SUBMIT.value,
-        'source': [RegistrationStates.INITIAL.value],
         'dest': RegistrationStates.PENDING.value,
-        'after': ['save_action', 'update_last_transitioned', 'submit_registration', 'notify_submit'],
+        'after': ['save_action', 'update_last_transitioned', 'submit_draft_registration', 'notify_submit'],
     },
     {
         'trigger': RegistrationTriggers.ACCEPT.value,
         'source': [RegistrationStates.PENDING.value],
         'dest': RegistrationStates.ACCEPTED.value,
-        'unless': ['is_embargoed'],
-        'after': ['save_action', 'update_last_transitioned', 'accept_registration', 'notify_accept_reject'],
-    },
-    {
-        'trigger': RegistrationTriggers.ACCEPT.value,
-        'source': [RegistrationStates.PENDING.value],
-        'dest': RegistrationStates.EMBARGO.value,
-        'after': ['save_action', 'update_last_transitioned', 'notify_accept_reject']
+        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
     },
     {
         'trigger': RegistrationTriggers.REJECT.value,
         'source': [RegistrationStates.PENDING.value],
         'dest': RegistrationStates.REJECTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'reject_registration', 'notify_accept_reject'],
+        'after': ['save_action', 'update_last_transitioned', 'reject_draft_registration', 'notify_accept_reject'],
     },
     {
         'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
-        'source': [RegistrationStates.ACCEPTED.value, RegistrationStates.EMBARGO.value, RegistrationStates.PENDING_WITHDRAW.value],
+        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value],
         'dest': RegistrationStates.WITHDRAWN.value,
         'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
+    },
+    {
+        'trigger': RegistrationTriggers.EMBARGO.value,
+        'source': [RegistrationStates.PENDING.value],
+        'dest': RegistrationStates.EMBARGO.value,
+        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'embargo_registration', 'notify_embargo']
     },
     {
         'trigger': RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value,
@@ -266,35 +250,9 @@ REGISTRATION_TRANSITIONS = [
     },
     {
         'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,
-        'source': [RegistrationStates.ACCEPTED.value, RegistrationStates.EMBARGO.value],
-        'dest': RegistrationStates.PENDING_WITHDRAW_REQUEST.value,
-        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw_request']
-    },
-    {
-        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_PASSES.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
-        'dest': RegistrationStates.WITHDRAWN.value,
-        'unless': ['is_moderated'],
-        'after': ['save_action', 'update_last_transitioned', 'withdraw_registration'],
-    },
-    {
-        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_PASSES.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
+        'source': [RegistrationStates.ACCEPTED.value],
         'dest': RegistrationStates.PENDING_WITHDRAW.value,
-        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_submitted']
-    },
-    {
-        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_FAILS.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
-        'dest': RegistrationStates.ACCEPTED.value,
-        'unless': 'is_embargoed',
-        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_denied', 'withdrawal_request_fails']
-    },
-    {
-        'trigger': RegistrationTriggers.WITHDRAW_REQUEST_FAILS.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW_REQUEST.value],
-        'dest': RegistrationStates.EMBARGO.value,
-        'after': ['save_action', 'update_last_transitioned', 'notify_withdraw_request_denied', 'withdrawal_request_fails']
+        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw']
     },
     {
         'trigger': RegistrationTriggers.WITHDRAW.value,
@@ -309,7 +267,6 @@ REGISTRATION_TRANSITIONS = [
         'after': ['save_action', 'update_last_transitioned', 'reject_withdrawal', 'notify_withdraw']
     }
 ]
-
 
 SANCTION_TRANSITIONS = [
     {

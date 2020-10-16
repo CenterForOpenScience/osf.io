@@ -85,6 +85,11 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
                              default=UNAPPROVED,
                              max_length=255)
 
+    sanction_state = models.CharField(
+        max_length=30,
+        choices=SanctionStates.char_choices(),
+        default=SanctionStates.PENDING_ADMIN_APPROVAL.value)
+
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
             self=self)
@@ -105,6 +110,18 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
     def is_moderated(self):
         return self._get_registration().is_moderated
 
+    @property
+    def approval_state(self):
+        return SanctionStates[self.sanction_state]
+
+    @approval_state.setter
+    def approval_state(self, state):
+        self.sanction_state = state.db_name
+
+    @property
+    def target_registration(self):
+        return self._get_registration()
+
     def approve(self, user):
         raise NotImplementedError('Sanction subclasses must implement an approve method.')
 
@@ -113,7 +130,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
 
     def _get_registration(self):
         """Get the Registration that is waiting on this sanction."""
-        raise NotImplementedError('Sanction subclasses must implement a #_gt_registration method')
+        raise NotImplementedError('Sanction subclasses must implement a #_get_registration method')
 
     def _on_reject(self, user):
         """Callback for rejection of a Sanction
@@ -139,7 +156,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
 
 
 class TokenApprovableSanction(Sanction):
-    def validate_authorizer(self, user):
+    def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
         :return Boolean: True if user is allowed to be an authorizer else False
         """

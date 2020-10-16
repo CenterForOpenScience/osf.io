@@ -266,8 +266,8 @@ class Registration(AbstractNode):
             active_sanction.SANCTION_TYPE, active_sanction.review_state)
 
     @property
-    def moderation_type(self):
-        return self.provider.reviews_workflow
+    def is_moderated(self):
+        return self.provider.reviews_workflow is not None
 
     @property
     def _dirty_root(self):
