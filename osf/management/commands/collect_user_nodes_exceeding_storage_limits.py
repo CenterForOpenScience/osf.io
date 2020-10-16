@@ -1,65 +1,50 @@
 from django.core.management.base import BaseCommand
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Exists, OuterRef
 import json
 import logging
 
+from addons.osfstorage.models import OsfStorageFile
 from api.caching.tasks import update_storage_usage_cache
 from osf.models import Node
+from osf.utils.permissions import ADMIN
 from website.settings import StorageLimits
 
 logger = logging.getLogger(__name__)
 
 
-def get_write_admin_contributors(node):
-    write_admin_contributor_set = set()
-    for contributor in node.contributor_set.all():
-        if contributor.permission in ['write', 'admin']:
-            write_admin_contributor_set.add(contributor.user._id)
-    return write_admin_contributor_set
+def get_admin_contributors(node):
+    return node.get_group(ADMIN).user_set.filter(is_active=True).values_list('guids___id', flat=True)
 
 
 def retrieve_user_nodes_exceeding_storage_limits():
     exceeded_user_node_dict = dict()
 
-    for node in Node.objects.filter(type='osf.node'):
-        # if node.storage_limit_status is StorageLimits.NOT_CALCULATED:
-        storage_usage = node.storage_usage
-        if storage_usage is None:
+    files = OsfStorageFile.objects.filter(target_object_id=OuterRef('pk'), target_content_type_id=ContentType.objects.get(model='abstractnode').id)
+    nodes = Node.objects.annotate(has_files=Exists(files)).filter(has_files=True)
+
+    for node in nodes:
+        if node.storage_limit_status is StorageLimits.NOT_CALCULATED:
             logger.info(f'{node._id}\'s storage is uncalculated. Calculating storage now.')
             update_storage_usage_cache(node.id, node._id)
 
-        if node.is_public:
-            if node.storage_limit_status >= StorageLimits.OVER_PUBLIC:
-                contributors = get_write_admin_contributors(node)
-                for user_id in contributors:
-                    if user_id in exceeded_user_node_dict:
-                        user_public_nodes_exceeding = exceeded_user_node_dict[user_id]['public'].append(node._id)
-                        user_private_nodes_exceeding = exceeded_user_node_dict[user_id]['private']
-                    else:
-                        user_public_nodes_exceeding = [node._id]
-                        user_private_nodes_exceeding = []
-                    exceeded_user_node_dict.update({
-                        user_id: {
-                            'public': user_public_nodes_exceeding,
-                            'private': user_private_nodes_exceeding
-                        }
-                    })
-        else:
-            if node.storage_limit_status >= StorageLimits.OVER_PRIVATE:
-                contributors = get_write_admin_contributors(node)
-                for user_id in contributors:
-                    if user_id in exceeded_user_node_dict:
-                        user_public_nodes_exceeding = exceeded_user_node_dict[user_id]['public']
-                        user_private_nodes_exceeding = exceeded_user_node_dict[user_id]['private'].append(node._id)
-                    else:
-                        user_public_nodes_exceeding = []
-                        user_private_nodes_exceeding = [node._id]
+        if (node.is_public and node.storage_limit_status >= StorageLimits.OVER_PUBLIC) or (not node.is_public and node.storage_limit_status >= StorageLimits.OVER_PRIVATE):
+            contributors = get_admin_contributors(node)
+            for user_id in contributors:
+                user_public_nodes_exceeding = exceeded_user_node_dict.get(user_id, {}).get('public', list())
+                user_private_nodes_exceeding = exceeded_user_node_dict.get(user_id, {}).get('private', list())
 
-                    exceeded_user_node_dict.update({
-                        user_id: {
-                            'public': user_public_nodes_exceeding,
-                            'private': user_private_nodes_exceeding
-                        }
-                    })
+                if node.is_public:
+                    user_public_nodes_exceeding.append(node._id)
+                else:
+                    user_private_nodes_exceeding.append(node._id)
+
+                exceeded_user_node_dict.update({
+                    user_id: {
+                        'public': user_public_nodes_exceeding,
+                        'private': user_private_nodes_exceeding
+                    }
+                })
     return exceeded_user_node_dict
 
 
