@@ -15,4 +15,6 @@ urlpatterns = [
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/schemas/$', views.ChangeSchema.as_view(), name='schemas'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/cannot_delete/$', views.CannotDeleteProvider.as_view(), name='cannot_delete'),
     url(r'^(?P<registration_provider_id>[a-z0-9]+)/share_source/$', views.ShareSourceRegistrationProvider.as_view(), name='share_source'),
+    url(r'^(?P<registration_provider_id>[a-z0-9]+)/remove_moderators/$', views.RemoveModerators.as_view(), name='remove_moderators'),
+    url(r'^(?P<registration_provider_id>[a-z0-9]+)/add_moderators/$', views.AddModerators.as_view(), name='add_moderators'),
 ]
