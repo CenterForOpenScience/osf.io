@@ -218,6 +218,7 @@ class Registration(AbstractNode):
 
     @property
     def is_pending_embargo_termination(self):
+        return self.moderation_state is RegistrationModerationStates.PENDING_EMBARGO_TERMINATION
         root = self._dirty_root
         if root.embargo_termination_approval is None:
             return False
@@ -249,21 +250,24 @@ class Registration(AbstractNode):
 
     @property
     def moderation_state(self):
+        '''Derive the RegistrationModerationState from the state of the active sanction.'''
         active_sanction = self.sanction
-        if active_sanction is None:
+        if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
             return RegistrationModerationStates.ACCEPTED
 
-        state = RegistrationModerationStates.from_sanction_and_state(
-            active_sanction.SANCTION_TYPE, self.sanction.review_state)
+        state = RegistrationModerationStates.from_sanction(active_sanction)
         if state is not RegistrationModerationStates.UNDEFINED:
             return state
 
-        # The "active sanction" was a rejected withdrawal
-        # Determine the state of the embargo or registration_approval instead
+        # The "active sanction" was a rejected withdrawal.
+        # Determine the state any active embargo or registration_approval instead.
         root = self._dirty_root
         active_sanction = root.embargo or root.registration_approval
-        return RegistrationModerationStates.from_sanction_and_state(
-            active_sanction.SANCTION_TYPE, active_sanction.review_state)
+
+        if active_sanction is None:  # Again, ACCEPTED if no active sanctions.
+            return RegistrationModerationStates.ACCEPTED
+
+        return RegistrationModerationStates.from_sanction(active_sanction)
 
     @property
     def is_moderated(self):

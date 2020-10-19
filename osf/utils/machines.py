@@ -479,13 +479,17 @@ class SanctionsStateMachine(Machine):
         )
 
     def initialize_transition(self, event_data):
-        self.action = None,
         self.from_state = event_data.state
 
     @property
     def target_registration(self):
-        raise NotImplementedError
+        raise NotImplementedError(
+            'Subclassses of SanctionsStateMachine must define a target_registration property'
+        )
 
     def save_action(self, event_data):
-        event_data.kwargs['target'] = self.machineable._get_registration()
-        super().save_action(event_data)
+        self.target_registration.write_action(
+            trigger=event_data.event.name,
+            from_state=self.from_state,
+            to_state=event_data.state
+        )

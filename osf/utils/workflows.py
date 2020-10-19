@@ -55,14 +55,14 @@ class RegistrationModerationStates(ModerationEnum):
     REJECTED = 3
     ACCEPTED = 4
     EMBARGO = 5
-    PENDING_EMBARGO_TERMINATION_REQUEST = 6
     PENDING_EMBARGO_TERMINATION = 7
     PENDING_WITHDRAW_REQUEST = 8
     PENDING_WITHDRAW = 9
     WITHDRAWN = 10
 
     @classmethod
-    def from_sanction_and_state(cls, sanction_type, state):
+    def from_sanction(cls, sanction):
+        '''Returns a RegistrationModerationState based on sanction's type and state.'''
         SANCTION_STATE_MAP = {
             SanctionTypes.REGISTRATION_APPROVAL: {
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.INITIAL,
@@ -81,17 +81,17 @@ class RegistrationModerationStates(ModerationEnum):
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_WITHDRAW_REQUEST,
                 SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING_WITHDRAW,
                 SanctionStates.ACCEPTED: cls.WITHDRAWN,
-                SanctionStates.REJECTED: cls.UNDEFINED,  # Either ACCEPTED or EMBARGO
+                SanctionStates.REJECTED: cls.UNDEFINED,  # Could be either ACCEPTED or EMBARGO
             },
             SanctionTypes.EMBARGO_TERMINATION_APPROVAL: {
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_EMBARGO_TERMINATION_REQUEST,
-                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.PENDING_EMBARGO_TERMINATION,
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.ACCEPTED,  # Should be unreachable
                 SanctionStates.ACCEPTED: cls.ACCEPTED,
                 SanctionStates.REJECTED: cls.EMBARGO,
             },
         }
 
-        return SANCTION_STATE_MAP[sanction_type][state]
+        return SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_state]
 
 
 @unique
@@ -272,22 +272,38 @@ REGISTRATION_TRANSITIONS = [
 
 SANCTION_TRANSITIONS = [
     {
-        'trigger': 'accept',
+        'trigger': 'approve',  # Approval from an individual admin
+        'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
+        'dest': None,
+        'before': ['_verify_approver'],
+        'after': ['_on_approve'],
+    },
+    {
+        'trigger': 'accept',  # Called in _on_approve when admin approval requirements are fulfilled
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.PENDING_MODERATOR_APPROVAL,
         'cond': ['is_moderated'],
+        'after': [],  # send emails here?
     },
     {
-        'trigger': 'accept',
-        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL, SanctionStates.PENDING_ADMIN_APPROVAL],
+        'trigger': 'accept',  # Called in _on_approve when admin approval requirements are fulfilled
+        'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
-        'after': ['_on_complete']
+        'after': ['_on_complete'],
     },
     {
-        'trigger': 'deny',
-        'source': ['*'],
+        'trigger': 'accept',  # As called via Moderation API
+        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL],
+        'dest': SanctionStates.ACCEPTED,
+        'before': ['_verify_approver'],
+        'after': ['_on_complete'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL, SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.REJECTED,
-        'after': ['_on_reject']
+        'before': ['_verify_rejector'],
+        'after': ['_on_reject'],
     },
 ]
 

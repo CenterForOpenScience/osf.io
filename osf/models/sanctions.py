@@ -1,6 +1,6 @@
 import pytz
 import functools
-from rest_framework import status as http_status
+#from rest_framework import status as http_status
 
 from api.share.utils import update_share
 
@@ -13,10 +13,11 @@ from django.db import models
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.auth import Auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import PermissionsError  # , HTTPError
 from website import settings as osf_settings
 from website import mails
 from osf.exceptions import (
+    ApproverRoleError,
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
     NodeStateError,
@@ -53,8 +54,8 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
     # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
     SHORT_NAME = 'sanction'
 
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
+    ACTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to {ACTION} this {DISPLAY_NAME}'
+    INVALID_TOKEN_MESSAGE = 'Invalid token provided to {ACTION} this {DISPLAY_NAME}.'
     REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
@@ -62,6 +63,9 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
     ANY = 'any'
     UNANIMOUS = 'unanimous'
     mode = UNANIMOUS
+
+    ADMIN_ROLE = 'admin'
+    MODERATOR_ROLE = 'moderator'
 
     # Sanction subclasses must have an initiated_by field
     # initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
@@ -108,42 +112,61 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
 
     @property
     def is_moderated(self):
-        return self.target_registration().is_moderated
+        return self.target_registration.is_moderated
 
     @property
-    def approval_state(self):
+    def approval_stage(self):
         return SanctionStates.from_db_name(self.sanction_state)
 
-    @approval_state.setter
-    def approval_state(self, state):
+    @approval_stage.setter
+    def approval_stage(self, state):
         self.sanction_state = state.db_name
 
     @property
     def target_registration(self):
         return self._get_registration()
 
-    def approve(self, user):
-        raise NotImplementedError('Sanction subclasses must implement an approve method.')
-
-    def reject(self, user):
-        raise NotImplementedError('Sanction subclasses must implement an approve method.')
+    # The Sanction object will also inherit the following functions from the SanctionStateMachine:
+    #
+    # approve(self, user, token)
+    # accept(self, user, token)
+    # reject(self, user, token)
+    #
+    # Overriding these functions will break the
 
     def _get_registration(self):
         """Get the Registration that is waiting on this sanction."""
         raise NotImplementedError('Sanction subclasses must implement a #_get_registration method')
 
-    def _on_reject(self, user):
-        """Callback for rejection of a Sanction
+    def _on_approve(self, event_data):
+        """Callback for individual admin approval of a sanction.
 
-        :param User user:
+        Invoked by state machine on approve_transition
+
+        :param EventData event_data: An EventData object from transitions.core
+            contains information about the active state transition and arbitrary args and kwargs
+        """
+        raise NotImplementedError(
+            'Sanction subclasses must implement an #_on_approve method')
+
+    def _on_reject(self, event_data):
+        """Callback for rejection of a Sanction.
+
+        Invoked by state machine on a reject transition
+
+        :param EventData event_data: An EventData object from transitions.core
+            contains information about the active state transition and arbitrary args and kwargs
         """
         raise NotImplementedError(
             'Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
-        """Callback for when a Sanction has approval and enters the ACTIVE state
+        """Callback for when a Sanction is fully approved.
 
-        :param User user:
+        invoked by state machine on an accept transition
+
+        :param EventData event_data: An EventData object from transitions.core
+            contains information about the active state transition and arbitrary args and kwargs
         """
         raise NotImplementedError(
             'Sanction subclasses must implement an #_on_complete method')
@@ -155,26 +178,71 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
         abstract = True
 
 
-class TokenApprovableSanction(Sanction):
+class TokenApprovableSanction(Sanction, SanctionsStateMachine):
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
         :return Boolean: True if user is allowed to be an authorizer else False
         """
         return True
 
-    def add_authorizer(self, user, node, approved=False, save=False):
+    def _verify_user_role(self, user, method):
+        '''Compare the caller's known role against the current sanction approval stage.'''
+        try:
+            user_role = self.approval_State[user._id]['approver_role']
+        except KeyError:
+            raise ApproverRoleError()
+
+        required_role = (
+            self.ADMIN_ROLE if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL else
+            self.MODERATOR_ROLE if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
+            else ''
+        )
+
+        if user_role != required_role:
+            raise ApproverRoleError()
+
+    def _validate_response(self, event_data):
+        '''Verify that an approve/accept/reject call meets all preconditions.'''
+        action = event_data.event.name
+        user = event_data.kwargs.get('user')
+        token = event_data.kwargs.get('token')
+
+        try:
+            self._verify_user_role(user)
+        except ApproverRoleError:
+            raise
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
+                ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
+
+        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
+            return True  # Auth validated by API, no token to check
+
+        if action == 'approve' and self.approval_state[user._id]['approval_token'] != token:
+            raise InvalidSanctionApprovalToken(
+                self.APPROVAL_INVALID_TOKEN_MESSAGE.format(
+                    ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
+        elif action == 'reject' and self.approval_State[user._id]['rejection_token'] != token:
+            raise InvalidSanctionRejectionToken(
+                self.REJECTION_INVALID_TOKEN_MESSAGE.format(
+                    ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
+
+        return True
+
+    def add_authorizer(self, user, node, approved=False, save=False, role=Sanction.ADMIN_ROLE):
         """Add an admin user to this Sanction's approval state.
 
         :param User user: User to add.
         :param Node registration: The pending registration node.
         :param bool approved: Whether `user` has approved.
         :param bool save: Whether to save this object.
+        :param str role: The role (admin or moderator) of the authorizer
         """
         valid = self._validate_authorizer(user)
         if valid and user._id not in self.approval_state:
             self.approval_state[user._id] = {
                 'has_approved': approved,
                 'node_id': node._id,
+                'approver_role': role,
                 'approval_token': tokens.encode({
                     'user_id': user._id,
                     'sanction_id': self._id,
@@ -205,21 +273,25 @@ class TokenApprovableSanction(Sanction):
             self.save()
         return True
 
-    def _on_approve(self, user, token):
-        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+    def _on_approve(self, event_data):
+        """Callback from #approve state machien trigger.
+
+        Calls #accept trigger under either of two conditions:
         - mode is ANY and the Sanction has not already been cancelled
         - mode is UNANIMOUS and all users have given approval
-
-        :param User user:
-        :param str token: user's approval token
         """
+        user = event_data.kwargs['user']
+        self.approval_state[user._id]['has_approved'] = True
+
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
-            # Avoid prematurely invoking moderator approval
-            if self.approval_state is SanctionStates.PENDING_ADMIN_APPROVAL:
-                self.accept(user, token)  # state machine trigger
+            self.accept(**event_data.kwargs)  # state machine trigger
+
+    def _on_reject(self, event_data):
+        """Callback from reject statemachine trigger."""
+        self.state = Sanction.REJECTED
 
     def token_for_user(self, user, method):
         """
@@ -231,35 +303,6 @@ class TokenApprovableSanction(Sanction):
             raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
                 DISPLAY_NAME=self.DISPLAY_NAME))
         return user_state['{0}_token'.format(method)]
-
-    def approve(self, user, token):
-        """Add user to approval list if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidSanctionApprovalToken(
-                    self.APPROVAL_INVALID_TOKEN_MESSAGE.format(
-                        DISPLAY_NAME=self.DISPLAY_NAME))
-        except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
-                DISPLAY_NAME=self.DISPLAY_NAME))
-        self.approval_state[user._id]['has_approved'] = True
-        self._on_approve(user, token)
-        self.save()
-
-    def reject(self, user, token):
-        """Cancels sanction if user is admin and token verifies."""
-        try:
-            if self.approval_state[user._id]['rejection_token'] != token:
-                raise InvalidSanctionRejectionToken(
-                    self.REJECTION_INVALID_TOKEN_MESSAGE.format(
-                        DISPLAY_NAME=self.DISPLAY_NAME))
-        except KeyError:
-            raise PermissionsError(
-                self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(
-                    DISPLAY_NAME=self.DISPLAY_NAME))
-        self.state = Sanction.REJECTED
-        self.deny(user)  # state machine trigger
-        self.save()
 
     def _notify_authorizer(self, user, node):
         pass
@@ -414,9 +457,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     @property
     def is_deleted(self):
-        parent_registration = self._get_registration()
-        if parent_registration:
-            return parent_registration.is_deleted
+        if self.target_registration:
+            return self.target_registration.is_deleted
         else:  # Embargo is orphaned, so consider it deleted
             return True
 
@@ -515,22 +557,25 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             })
         return context
 
-    def reject(self, user, token):
-        reg = self._get_registration()
-        if reg.is_public:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Registrations cannot be modified',
-                    'message_long': 'This project has already been registered and cannot be deleted',
-                }
-            )
-        super(Embargo, self).reject(user, token)
+# TODO: Determine whether new model makes this unecessary
+#    def reject(self, user, token):
+#        reg = self._get_registration()
+#        if reg.is_public:
+#            raise HTTPError(
+#                http_status.HTTP_400_BAD_REQUEST,
+#                data={
+#                    'message_short': 'Registrations cannot be modified',
+#                    'message_long': 'This project has already been registered and cannot be deleted',
+#                }
+#            )
+#        super(Embargo, self).reject(user, token)
 
-    def _on_reject(self, user):
+    def _on_reject(self, event_data):
+        super()._on_reject(event_data)
+        user = event_data.kwargs['user']
         NodeLog = apps.get_model('osf.NodeLog')
 
-        parent_registration = self._get_registration()
+        parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -551,16 +596,16 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def disapprove_embargo(self, user, token):
         """Cancels retraction if user is admin and token verifies."""
-        self.reject(user, token)
+        self.reject(user=user, token=token)
 
-    def _on_complete(self, user):
+    def _on_complete(self, event_data):
         NodeLog = apps.get_model('osf.NodeLog')
 
-        parent_registration = self._get_registration()
+        parent_registration = self.target_registration
         if parent_registration.is_spammy:
             raise NodeStateError('Cannot complete a spammy registration.')
 
-        super(Embargo, self)._on_complete(user)
+        super()._on_complete(event_data)
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -573,10 +618,11 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
-        self.approve(user, token)
+        self.approve(user=user, token=token)
 
     def mark_as_completed(self):
         self.state = Sanction.COMPLETED
+        self.approval_stage.to_completed()
         self.save()
 
 
@@ -602,7 +648,10 @@ class Retraction(EmailApprovableSanction):
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _get_registration(self):
-        return self.registrations.first()
+        Registration = apps.get_model('osf.Registration')
+        parent_registration = Registration.objects.get(retraction=self)
+
+        return parent_registration
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first() or node
@@ -661,11 +710,12 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
             }
 
-    def _on_reject(self, user):
-        Registration = apps.get_model('osf.Registration')
-        NodeLog = apps.get_model('osf.NodeLog')
+    def _on_reject(self, event_data):
+        user = event_data.kwargs['user']
+        super()._on_reject()
 
-        parent_registration = Registration.objects.get(retraction=self)
+        NodeLog = apps.get_model('osf.NodeLog')
+        parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_CANCELLED,
             params={
@@ -677,14 +727,13 @@ class Retraction(EmailApprovableSanction):
             save=True,
         )
 
-    def _on_complete(self, user):
-        Registration = apps.get_model('osf.Registration')
+    def _on_complete(self, event_data):
         NodeLog = apps.get_model('osf.NodeLog')
 
         self.date_retracted = timezone.now()
         self.save()
 
-        parent_registration = Registration.objects.get(retraction=self)
+        parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
@@ -694,6 +743,8 @@ class Retraction(EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by),
         )
+
+        # TODO: Move this into the registration to be re-used in Forced Withdrawal
         # Remove any embargoes associated with the registration
         if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
             parent_registration.embargo.state = self.REJECTED
@@ -721,9 +772,11 @@ class Retraction(EmailApprovableSanction):
             update_share(parent_registration)
 
     def approve_retraction(self, user, token):
+        '''Test function'''
         self.approve(user, token)
 
     def disapprove_retraction(self, user, token):
+        '''Test function'''
         self.reject(user, token)
 
 
@@ -819,14 +872,15 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         )
         src.save()
 
-    def _on_complete(self, user):
+    def _on_complete(self, event_data):
+        user = event_data.kwargs['user']
         NodeLog = apps.get_model('osf.NodeLog')
 
         register = self._get_registration()
         if register.is_spammy:
             raise NodeStateError('Cannot approve a spammy registration')
 
-        super(RegistrationApproval, self)._on_complete(user)
+        super()._on_complete(event_data)
         self.state = Sanction.APPROVED
         self.save()
         registered_from = register.registered_from
@@ -853,17 +907,18 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-    def _on_reject(self, user):
+    def _on_reject(self, event_data):
+        super()._on_reject(event_data)
+        user = event_data.kwargs['user']
         NodeLog = apps.get_model('osf.NodeLog')
 
-        register = self._get_registration()
-        registered_from = register.registered_from
-        register.delete_registration_tree(save=True)
+        registered_from = self.target_registration.registered_from
+        self.target_registration.delete_registration_tree(save=True)
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
                 'node': registered_from._id,
-                'registration': register._id,
+                'registration': self.target_registration._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),
@@ -950,6 +1005,10 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     embargoed_registration = models.ForeignKey('Registration', null=True, blank=True, on_delete=models.CASCADE)
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
+    @property
+    def is_moderated(self):
+        return False  # Embargo Termination never requires Moderator Approval
+
     def _get_registration(self):
         return self.embargoed_registration
 
@@ -1014,12 +1073,11 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             })
         return context
 
-    def _on_complete(self, user=None):
-        super(EmbargoTerminationApproval, self)._on_complete(user)
-        registration = self._get_registration()
-        registration.terminate_embargo()
+    def _on_complete(self, event_data):
+        super()._on_complete(event_data)
+        self.target_registration.terminate_embargo()
 
-    def _on_reject(self, user=None):
+    def _on_reject(self, event_data):
         # Just forget this ever happened.
-        self.embargoed_registration.embargo_termination_approval = None
-        self.embargoed_registration.save()
+        self.target_registration.embargo_termination_approval = None
+        self.target_registration.save()
