@@ -450,3 +450,8 @@ TOU_NOTIF = Mail(
     'tou_notif',
     subject='Updated Terms of Use for COS Websites and Services',
 )
+
+STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
+    'storage_cap_exceeded_announcement',
+    subject='Action Required to avoid disruption to your OSF project',
+)
