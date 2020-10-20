@@ -178,7 +178,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
         abstract = True
 
 
-class TokenApprovableSanction(Sanction, SanctionsStateMachine):
+class TokenApprovableSanction(Sanction):
     def _validate_authorizer(self, user):
         """Subclasses may choose to provide extra restrictions on who can be an authorizer
         :return Boolean: True if user is allowed to be an authorizer else False
@@ -210,7 +210,6 @@ class TokenApprovableSanction(Sanction, SanctionsStateMachine):
         try:
             self._verify_user_role(user)
         except ApproverRoleError:
-            raise
             raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
                 ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
 
@@ -274,7 +273,7 @@ class TokenApprovableSanction(Sanction, SanctionsStateMachine):
         return True
 
     def _on_approve(self, event_data):
-        """Callback from #approve state machien trigger.
+        """Callback from #approve state machine trigger.
 
         Calls #accept trigger under either of two conditions:
         - mode is ANY and the Sanction has not already been cancelled
@@ -712,7 +711,7 @@ class Retraction(EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         user = event_data.kwargs['user']
-        super()._on_reject()
+        super()._on_reject(event_data)
 
         NodeLog = apps.get_model('osf.NodeLog')
         parent_registration = self.target_registration
@@ -773,11 +772,11 @@ class Retraction(EmailApprovableSanction):
 
     def approve_retraction(self, user, token):
         '''Test function'''
-        self.approve(user, token)
+        self.approve(user=user, token=token)
 
     def disapprove_retraction(self, user, token):
         '''Test function'''
-        self.reject(user, token)
+        self.reject(user=user, token=token)
 
 
 class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
