@@ -9,11 +9,11 @@ class ModerationEnum(IntEnum):
 
     @classmethod
     def int_choices(cls):
-        return tuple((member.value, member.readable_name) for member in cls if member.value != 0)
+        return tuple((member.value, member.readable_value) for member in cls)
 
     @classmethod
     def char_choices(cls):
-        return tuple((member.db_name, member.readable_name) for member in cls if member.value != 0)
+        return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
     def from_db_name(cls, state_db_name):
