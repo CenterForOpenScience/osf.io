@@ -39,6 +39,7 @@ class ContributorOrPublic(permissions.BasePermission):
         if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
             obj = obj.branched_from
 
+        is_moderator = False
         if isinstance(obj, Registration) and obj.provider:
             if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
                 is_moderator = True

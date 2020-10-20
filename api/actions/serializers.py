@@ -21,7 +21,7 @@ from osf.utils.workflows import (
     DefaultTriggers,
     ReviewStates,
     ReviewTriggers,
-    RegistrationTriggers,
+    RegistrationModerationTriggers,
 )
 from osf.utils import permissions
 
@@ -254,9 +254,7 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
     permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
-    trigger = ser.ChoiceField(choices=RegistrationTriggers.choices())
-
-    embargo_end_date = ser.DateTimeField(required=False)
+    trigger = ser.ChoiceField(choices=RegistrationModerationTriggers.char_choices())
 
     target = TargetRelationshipField(
         target_class=Registration,
@@ -270,36 +268,34 @@ class RegistrationActionSerializer(BaseActionSerializer):
     def create(self, validated_data):
         trigger = validated_data.get('trigger')
 
-        if trigger in DefaultTriggers.values():
-            return super().create(validated_data)
-
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         user = validated_data.pop('user')
 
-        draft_registration = target.draft_registration.last()
+        sanction = target.sanction
 
         try:
-            if trigger == RegistrationTriggers.EMBARGO.value:
-                embargo_end_date = validated_data.get('embargo_end_date')
-                if embargo_end_date:
-                    return draft_registration.run_accept(user=user, comment=comment, embargo_end_date=embargo_end_date)
-                else:
-                    raise JSONAPIAttributeException(attribute='embargo_end_date', detail='Must have a valid end date for embargo.')
-            if trigger == RegistrationTriggers.WITHDRAW.value:
-                return draft_registration.run_withdraw_registration(user, comment)
-            if trigger == RegistrationTriggers.REQUEST_WITHDRAW.value:
-                return draft_registration.run_request_withdraw(user, comment)
-            if trigger == RegistrationTriggers.REJECT_WITHDRAW.value:
-                return draft_registration.run_reject_withdraw(user, comment)
-            if trigger == RegistrationTriggers.FORCE_WITHDRAW.value:
-                return draft_registration.run_force_withdraw(user, comment)
-            if trigger == RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value:
-                return draft_registration.run_request_embargo_registration(user, comment)
-            if trigger == RegistrationTriggers.TERMINATE_EMBARGO.value:
-                return draft_registration.run_terminate_embargo(user, comment)
+            if trigger == RegistrationModerationTriggers.SUBMIT.db_name:
+                approval_token = sanction.token_for_user(user, 'approval')
+                sanction.approve(user=user, token=approval_token)
+            elif trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name:
+                sanction.accept(user)
+            elif trigger == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name:
+                sanction.reject(user=user)
+            elif trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name:
+                sanction.accept(user)
+            elif trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name:
+                sanction.reject(user)
+            elif trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name:
+                retraction = target.retract_registration(
+                    user=user, justification=comment,
+                )
+                retraction.accept(user=None)
+                retraction.accept(user)
+            else:
+                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except InvalidTriggerError as e:
             # Invalid transition from the current state
             raise Conflict(str(e))
-        else:
-            raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+
+        return target.actions.last()

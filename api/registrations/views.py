@@ -27,7 +27,6 @@ from api.base.utils import (
     default_node_list_permission_queryset,
     is_bulk_request,
     is_truthy,
-    absolute_reverse,
 )
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
@@ -45,6 +44,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
 )
+from api.registrations.permissions import ContributorOrModerator
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -792,7 +792,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        MustBeModerator,
+        ContributorOrModerator,
     )
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -815,13 +815,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            moderation_setup_url = absolute_reverse(
-                'providers:preprint-providers:preprint-provider-detail', kwargs={
-                    'provider_id': target.provider._id,
-                    'version': self.request.parser_context['kwargs']['version'],
-                },
-            )
-            raise Conflict(f'{target.provider.name } is an umoderated provider. If you are an admin, set up moderation by setting reviews_workflow at {moderation_setup_url}')
+            raise Conflict(f'{target.provider.name } is an umoderated provider. If you believe this is an error, contact OSF Support.')
 
         serializer.save(user=self.request.user)
 
