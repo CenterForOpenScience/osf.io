@@ -26,13 +26,13 @@ from osf.exceptions import (
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
-from osf.utils.machines import SanctionsStateMachine
+from osf.utils.machines import SanctionStateMachine
 from osf.utils.workflows import SanctionStates, SanctionTypes
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
-class Sanction(ObjectIDMixin, BaseModel, SanctionsStateMachine):
+class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
