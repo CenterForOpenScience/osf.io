@@ -843,7 +843,7 @@ def _view_project(node, auth, primary=False,
     data.update({'storage_flag_is_active': storage_i18n_flag_active()})
     if storage_usage_flag_active():
         storage_usage = node.storage_usage
-        if storage_usage:
+        if storage_usage is not None:
             data['node']['storage_usage'] = sizeof_fmt(storage_usage)
 
     if embed_contributors and not anonymous:
