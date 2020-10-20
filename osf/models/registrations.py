@@ -42,7 +42,6 @@ from osf.models.mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
-    RegistriesModerationMixin
 )
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
@@ -591,7 +590,7 @@ def get_default_id():
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
-        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin, RegistriesModerationMixin):
+        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
 
     # Fields that are writable by DraftRegistration.update
     WRITABLE_WHITELIST = [
