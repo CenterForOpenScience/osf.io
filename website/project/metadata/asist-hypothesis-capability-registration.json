@@ -1,0 +1,27 @@
+{
+	"name": "ASIST Hypothesis/Capability Registration",
+	"version": 1,
+	"config": {
+        "hasFiles": true
+    },
+	"description": "This template was created by researchers from the qualitative community for preregistration of qualitative research",
+	"pages": [{
+			"id": "page1",
+			"title": "Research Aims",
+			"questions": [{
+					"qid": "q1",
+					"type": "string",
+					"format": "text",
+					"title": "Study registration link",
+					"description": "Please specify the overall purposes, objectives or aims of the research.\n\nIn addition, please reflect on whether your aim is different across different domains (e.g. knowledge generation, policy development, community resourcing). If so, specify your aim for each domain that is relevant for your study.",
+					"required": true
+				}, {
+                    "qid": "q2",
+                    "title": "Hypothesis/Capability Registration",
+                    "type": "osf-upload",
+                    "format": "osf-upload-open",
+                    "description": "Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>"
+			}]
+		}
+    ]
+}

@@ -39,7 +39,11 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-preregistration.json')),
     ensure_schema_structure(from_json('osf-preregistration-3.json')),
     ensure_schema_structure(from_json('egap-registration.json')),
-    ensure_schema_structure(from_json('egap-registration-3.json'))
+    ensure_schema_structure(from_json('egap-registration-3.json')),
+    ensure_schema_structure(from_json('asist-hypothesis-capability-registration.json')),
+    ensure_schema_structure(from_json('asist-results-registration.json')),
+    ensure_schema_structure(from_json('real-world-evidence.json')),
+    ensure_schema_structure(from_json('qualitative-research.json'))
 ]
 
 METASCHEMA_ORDERING = (
