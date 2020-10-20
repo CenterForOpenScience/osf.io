@@ -201,7 +201,7 @@ class TokenApprovableSanction(Sanction):
         if user_role != required_role:
             raise ApproverRoleError()
 
-    def _validate_response(self, event_data):
+    def _validate_request(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
         action = event_data.event.name
         user = event_data.kwargs.get('user')
@@ -285,12 +285,15 @@ class TokenApprovableSanction(Sanction):
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
-            self.state = Sanction.APPROVED
             self.accept(**event_data.kwargs)  # state machine trigger
 
     def _on_reject(self, event_data):
-        """Callback from reject statemachine trigger."""
+        """Callback from #reject statemachine trigger."""
         self.state = Sanction.REJECTED
+
+    def _on_complete(self, event_data):
+        """Callback from #approve state machine trigger."""
+        self.state = Sanction.APPROVED
 
     def token_for_user(self, user, method):
         """
@@ -418,7 +421,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _notify_initiator(self):
         raise NotImplementedError
 
-    def _on_complete(self, *args):
+    def _on_complete(self, event_data):
+        super()._on_complete(event_data)
         if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
@@ -727,6 +731,7 @@ class Retraction(EmailApprovableSanction):
         )
 
     def _on_complete(self, event_data):
+        super()._on_complete(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         self.date_retracted = timezone.now()

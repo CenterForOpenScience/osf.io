@@ -7,19 +7,17 @@ from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
-from osf.models.sanctions import Retraction
-
 
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    RegistrationStates,
+    RegistrationModerationTriggers,
     ReviewStates,
     SanctionStates,
+    SanctionTypes,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    REGISTRATION_TRANSITIONS,
     SANCTION_TRANSITIONS
 )
 from website.mails import mails
@@ -346,150 +344,80 @@ class PreprintRequestMachine(BaseMachine):
         }
 
 
-class RegistrationMachine(BaseMachine):
-    ActionClass = RegistrationAction
-    States = RegistrationStates
-    Transitions = REGISTRATION_TRANSITIONS
+class SanctionStateMachine(Machine):
 
-    def save_action(self, ev):
-        user = ev.kwargs.get('user')
-        self.action = self.ActionClass.objects.create(
-            target=self.machineable.registered_node,
-            creator=user,
-            trigger=ev.event.name,
-            from_state=self.from_state.name,
-            to_state=ev.state.name,
-            comment=ev.kwargs.get('comment', ''),
-        )
-        self.machineable.save()
-
-    def request_withdrawal(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.refresh_from_db()
-        self.machineable.registered_node.retract_registration(user)
-
-    def request_terminate_embargo(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.refresh_from_db()
-
-        approval = self.machineable.registered_node.request_embargo_termination(user)
-        approval.save()
-
-    def withdraw_registration(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_complete(user)
-
-    def reject_withdrawal(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_reject(user)
-
-    def embargo_registration(self, ev):
-        user = ev.kwargs.get('user')
-        end_date = ev.kwargs.get('end_date')
-        self.machineable.refresh_from_db()
-        self.machineable.registered_node.embargo_registration(user, end_date)
-        self.machineable.registered_node.refresh_from_db()
-
-    def terminate_embargo(self, ev):
-        self.machineable.registered_node.terminate_embargo()
-
-    def edit_comment(self, ev):
-        self.machineable.comment = self.action.comment
-        self.machineable.save()
-
-    def accept_draft_registration(self, ev):
-        approval = self.machineable.approval
-        approval.approve(self.action.creator)
-        approval.save()
-
-    def reject_draft_registration(self, ev):
-        self.machineable.meta = {}
-        self.machineable.save()
-
-    def submit_draft_registration(self, ev):
-        embargo_date = ev.kwargs.get('embargo_date', None)
-
-        if embargo_date:
-            submission = 'embargo'
-            assert embargo_date, 'must include embargo date'
-        else:
-            submission = 'immediate'
-
-        self.machineable.submit_for_review(
-            self.action.creator,
-            {
-                'registration_choice': submission,
-                'embargo_end_date': embargo_date
-            },
-            save=True
-        )
-
-    def withdrawal_request_fails(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_reject(user)
-        self.machineable.registered_node.retraction.state = Retraction.REJECTED
-
-    def force_withdrawal(self, ev):
-        pass
-
-    def notify_embargo_termination(self, ev):
-        pass
-
-    def notify_embargo(self, ev):
-        pass
-
-    def notify_withdraw(self, ev):
-        pass
-
-    def notify_accept_reject(self, ev):
-        pass
-
-    def notify_edit_comment(self, ev):
-        pass
-
-    def notify_resubmit(self, ev):
-        pass
-
-    def notify_submit(self, ev):
-        pass
-
-    def notify_withdraw_request_submitted(self, ev):
-        pass
-
-    def notify_withdraw_request_denied(self, ev):
-        pass
-
-    def notify_withdraw_request(self, ev):
-        pass
-
-
-class SanctionsStateMachine(Machine):
-
-    STATE_FIELD = 'state'
+    SANCTION_TYPE = SanctionTypes.UNDEFINED
 
     def __init__(self):
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,
-            initial_state=getattr(self, self.STATE_FIELD),
-            model_attribute=self.STATE_FIELD,
+            initial_state=self.approval_stage,
+            model_attribute='approval_stage',
             prepare_event='initialize_transition',
+            after_state_change='save_transition',
             send_event=True,
             ignore_invalid_triggers=True
         )
 
-    def initialize_transition(self, event_data):
-        self.from_state = event_data.state
-
     @property
     def target_registration(self):
         raise NotImplementedError(
-            'Subclassses of SanctionsStateMachine must define a target_registration property'
+            'SanctionStateMachine subclasses must define a target_registration property'
         )
 
-    def save_action(self, event_data):
-        self.target_registration.write_action(
-            trigger=event_data.event.name,
-            from_state=self.from_state,
-            to_state=event_data.state
+    @property
+    def approval_stage(self):
+        raise NotImplementedError(
+            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
         )
+
+    def initialize_transition(self, event_data):
+        self.from_state = self.target_registration.moderation_state
+
+    def infer_last_trigger(self):
+        '''Determine the most recent 'trigger' for the sanction from a moderation perspective.'''
+        if self.SANCTION_TYPE is SanctionTypes.RETRACTION:
+            if self.approval_stage is SanctionStates.REJECTED:
+                return RegistrationModerationTriggers.REJECT_WITHDRAWAL
+            elif self.approval_stage is SanctionStates.ACCEPTED:
+                return RegistrationModerationTriggers.ACCEPT_WITHDRAWAL
+            else:  # PENDING_ADMIN_APPROVAL or PENDING_MODERATOR_APPROVAL
+                return RegistrationModerationTriggers.REQUEST_WITHDRAWAL
+
+        if self.SANCTION_TYPE in [SanctionTypes.EMBARGO, SanctionTypes.REGISTRATION_APPROVAL]:
+            if self.approval_stage is SanctionStates.REJECTED:
+                return RegistrationModerationTriggers.REJECT_SUBMISSION
+            elif self.approval_stage is SanctionStates.ACCEPTED:
+                return RegistrationModerationTriggers.ACCEPT_SUBMISSION
+            else:  # PENDING_ADMIN_APPROVAL or PENDING_MODERATOR_APPROVAL
+                return RegistrationModerationTriggers.SUBMIT
+
+        return None  # No moderation triggers for other sanction types
+
+    def _log_moderated_action(self, event_data):
+        '''Create a RegistrationAction for a moderated state change.'''
+        # When entering moderation, the Action should state who initiated the submission/withdrawal.
+        # Otherwise, the Action should state which moderator approved/rejected.
+        if event_data.state.name is SanctionStates.PENDING_MODERATOR_APPROVAL.name:
+            user = self.initiated_by
+        else:
+            user = event_data.kwargs['user']
+
+        RegistrationAction.objects.create(
+            target=self.target_registration,
+            creator=user,
+            trigger=self.infer_last_trigger().db_name,
+            from_state=self.from_state,
+            to_state=self.target_registration.moderation_state,
+            comment=event_data.kwargs.get('comment', '')
+        )
+
+    def _save_transition(self, event_data):
+        '''Save the sanction and write actions for any moderated triggers.'''
+        self.save()
+        source_state = event_data.transtision.source
+        new_state = event_data.transition.dest
+        if SanctionStates.PENDING_MODERATOR_APPROVAL in [source_state, new_state]:
+            self._log_moderated_action(self, event_data)
+        self.save()

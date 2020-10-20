@@ -5,6 +5,7 @@ from enum import Enum, IntEnum, unique
 
 
 class ModerationEnum(IntEnum):
+    '''A helper Enum superclass that provides easy translation to Int/CharChoices fields.'''
 
     @classmethod
     def int_choices(cls):
@@ -28,6 +29,7 @@ class ModerationEnum(IntEnum):
 
 
 class SanctionTypes(ModerationEnum):
+    '''A simple descriptor for the type of a sanction class'''
 
     UNDEFINED = 0
     REGISTRATION_APPROVAL = 1
@@ -38,6 +40,7 @@ class SanctionTypes(ModerationEnum):
 
 
 class SanctionStates(ModerationEnum):
+    '''The moderated state of a Sanction object.'''
 
     UNDEFINED = 0
     PENDING_ADMIN_APPROVAL = 1
@@ -48,7 +51,7 @@ class SanctionStates(ModerationEnum):
 
 
 class RegistrationModerationStates(ModerationEnum):
-
+    '''The publication state of a Registration object'''
     UNDEFINED = 0
     INITIAL = 1
     PENDING = 2
@@ -63,6 +66,8 @@ class RegistrationModerationStates(ModerationEnum):
     @classmethod
     def from_sanction(cls, sanction):
         '''Returns a RegistrationModerationState based on sanction's type and state.'''
+
+        # Define every time because it can't exist in the class body :(
         SANCTION_STATE_MAP = {
             SanctionTypes.REGISTRATION_APPROVAL: {
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.INITIAL,
@@ -91,8 +96,19 @@ class RegistrationModerationStates(ModerationEnum):
             },
         }
 
-        return SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_state]
+        return SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_stage]
 
+
+class RegistrationModerationTriggers(ModerationEnum):
+    '''The acceptable 'triggers' to describe a moderated action on a Registration.'''
+
+    SUBMIT = 0
+    ACCEPT_SUBMISSION = 1
+    REJECT_SUBMISSION = 2
+    REQUEST_WITHDRAWAL = 3
+    ACCEPT_WITHDRAWAL = 4
+    REJECT_WITHDRAWAL = 5
+    FORCE_WITHDRAW = 6
 
 @unique
 class ChoiceEnum(Enum):
@@ -123,21 +139,6 @@ REVIEW_TRIGGERS = DEFAULT_TRIGGERS + [
     ('WITHDRAW', 'withdraw')
 ]
 
-REGISTRATION_TRIGGERS = DEFAULT_TRIGGERS + [
-    ('EMBARGO', 'embargo'),
-    ('WITHDRAW', 'withdraw'),
-    ('REQUEST_WITHDRAW', 'request_withdraw'),
-    ('WITHDRAW_REQUEST_FAILS', 'withdraw_request_fails'),
-    ('WITHDRAW_REQUEST_PASSES', 'withdraw_request_pass'),
-    ('REJECT_WITHDRAW', 'reject_withdraw'),
-    ('FORCE_WITHDRAW', 'force_withdraw'),
-    ('REQUEST_EMBARGO', 'request_embargo'),
-    ('REQUEST_EMBARGO_TERMINATION', 'request_embargo_termination'),
-    ('TERMINATE_EMBARGO', 'terminate_embargo'),
-
-
-]
-
 REGISTRATION_STATES = REVIEW_STATES + [
     ('EMBARGO', 'embargo'),
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
@@ -150,8 +151,6 @@ ReviewStates = ChoiceEnum('ReviewStates', REVIEW_STATES)
 RegistrationStates = ChoiceEnum('RegistrationStates', REGISTRATION_STATES)
 DefaultTriggers = ChoiceEnum('DefaultTriggers', DEFAULT_TRIGGERS)
 ReviewTriggers = ChoiceEnum('ReviewTriggers', REVIEW_TRIGGERS)
-RegistrationTriggers = ChoiceEnum('RegistrationTriggers', REGISTRATION_TRIGGERS)
-
 
 CHRONOS_STATUS_STATES = [
     ('DRAFT', 1),
@@ -207,102 +206,46 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
     }
 ]
 
-REGISTRATION_TRANSITIONS = [
-    {
-        'trigger': RegistrationTriggers.SUBMIT.value,
-        'source': [RegistrationStates.INITIAL.value],
-        'dest': RegistrationStates.PENDING.value,
-        'after': ['save_action', 'update_last_transitioned', 'submit_draft_registration', 'notify_submit'],
-    },
-    {
-        'trigger': RegistrationTriggers.ACCEPT.value,
-        'source': [RegistrationStates.PENDING.value],
-        'dest': RegistrationStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'notify_accept_reject'],
-    },
-    {
-        'trigger': RegistrationTriggers.REJECT.value,
-        'source': [RegistrationStates.PENDING.value],
-        'dest': RegistrationStates.REJECTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'reject_draft_registration', 'notify_accept_reject'],
-    },
-    {
-        'trigger': RegistrationTriggers.FORCE_WITHDRAW.value,
-        'source': [RegistrationStates.PENDING.value, RegistrationStates.ACCEPTED.value],
-        'dest': RegistrationStates.WITHDRAWN.value,
-        'after': ['save_action', 'update_last_transitioned', 'force_withdrawal', 'notify_accept_reject'],
-    },
-    {
-        'trigger': RegistrationTriggers.EMBARGO.value,
-        'source': [RegistrationStates.PENDING.value],
-        'dest': RegistrationStates.EMBARGO.value,
-        'after': ['save_action', 'update_last_transitioned', 'accept_draft_registration', 'embargo_registration', 'notify_embargo']
-    },
-    {
-        'trigger': RegistrationTriggers.REQUEST_EMBARGO_TERMINATION.value,
-        'source': [RegistrationStates.EMBARGO.value],
-        'dest': RegistrationStates.PENDING_EMBARGO_TERMINATION.value,
-        'after': ['save_action', 'update_last_transitioned', 'request_terminate_embargo', 'notify_embargo_termination']
-    },
-    {
-        'trigger': RegistrationTriggers.TERMINATE_EMBARGO.value,
-        'source': [RegistrationStates.PENDING_EMBARGO_TERMINATION.value],
-        'dest': RegistrationStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'terminate_embargo', 'notify_embargo_termination']
-    },
-    {
-        'trigger': RegistrationTriggers.REQUEST_WITHDRAW.value,
-        'source': [RegistrationStates.ACCEPTED.value],
-        'dest': RegistrationStates.PENDING_WITHDRAW.value,
-        'after': ['save_action', 'update_last_transitioned', 'request_withdrawal', 'notify_withdraw']
-    },
-    {
-        'trigger': RegistrationTriggers.WITHDRAW.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW.value],
-        'dest': RegistrationStates.WITHDRAWN.value,
-        'after': ['save_action', 'update_last_transitioned', 'withdraw_registration']
-    },
-    {
-        'trigger': RegistrationTriggers.REJECT_WITHDRAW.value,
-        'source': [RegistrationStates.PENDING_WITHDRAW.value],
-        'dest': RegistrationStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'reject_withdrawal', 'notify_withdraw']
-    }
-]
-
 SANCTION_TRANSITIONS = [
     {
+        # A single admin approves a sanction
         'trigger': 'approve',  # Approval from an individual admin
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': None,
-        'before': ['_verify_approver'],
+        'before': ['_validate_request'],
         'after': ['_on_approve'],
     },
     {
-        'trigger': 'accept',  # Called in _on_approve when admin approval requirements are fulfilled
+        # A moderated sanction has satisfied its Admin approval requirements
+        # and is submitted for moderation. Validation handled by approve chain.
+        'trigger': 'accept',
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.PENDING_MODERATOR_APPROVAL,
         'cond': ['is_moderated'],
-        'after': [],  # send emails here?
+        'after': [],  # send moderator emails here?
     },
     {
-        'trigger': 'accept',  # Called in _on_approve when admin approval requirements are fulfilled
-        'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
+        # An unmodrated sanction has satisfied its Admin approval requirements
+        # and takes effect. Request validation handled via approve.
+        'trigger': 'accept',
+        'source': [SanctionStates.PENDING_ADMIN_APPROVAL, SanctionStates.PENDING_MODERATOR_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
         'after': ['_on_complete'],
     },
     {
-        'trigger': 'accept',  # As called via Moderation API
-        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL],
+        # A moderaetd sanction is accepted by moderators and takes effect
+        'trigger': 'accept',
+        'srouce': [SanctionStates.PENDING_MODERATOR_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
-        'before': ['_verify_approver'],
+        'before': ['validate_request'],
         'after': ['_on_complete'],
     },
     {
+        # A sanction is rejected by either an admin or a moderator
         'trigger': 'reject',
         'source': [SanctionStates.PENDING_MODERATOR_APPROVAL, SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.REJECTED,
-        'before': ['_verify_rejector'],
+        'before': ['_validate_request'],
         'after': ['_on_reject'],
     },
 ]
