@@ -78,6 +78,7 @@ class BitbucketClient(BaseClient):
         :return: list of repository objects
         """
         query_params = {
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.full_name'
         }
@@ -106,7 +107,7 @@ class BitbucketClient(BaseClient):
         """
 
         query_params = {
-            'role': 'member',
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.links.repositories.href'
         }
