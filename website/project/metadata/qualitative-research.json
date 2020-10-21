@@ -1,9 +1,6 @@
 {
    "name":"Qualitative Preregistration",
    "version":1,
-   "config":{
-      "hasFiles":true
-   },
    "description":"This preregistration template is part of the DARPA Artificial Social Intelligence for Successful Teams (ASIST) program. This template is intended to formally register performer hypothesis and AI capability preregistrations throughout the ASIST program.",
    "pages":[
       {
