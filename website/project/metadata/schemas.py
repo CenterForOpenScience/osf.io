@@ -60,4 +60,8 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
     'EGAP Registration',
+    'Qualitative Preregistration',
+    'Real World Evidence in Health Outcomes Minimum Recommended Form',
+    'Qualitative Preregistration',
+    'ASIST Results Registration',
 )
