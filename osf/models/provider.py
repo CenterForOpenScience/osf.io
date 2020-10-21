@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
 
-from api.provider.workflows import Workflows as ReviewWorkflows
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
@@ -21,7 +20,7 @@ from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationStates
+from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
@@ -201,17 +200,9 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
-    REVIEWABLE_RELATION_NAME = 'draft_registrations'
-    REVIEW_STATES = RegistrationStates
-
-    # Override the inherited reviews_workflow field to only allow supported moderation types
-    SUPPORTED_MODERATION_WORKFLOWS = {ReviewWorkflows.NONE.value, ReviewWorkflows.PRE_MODERATION.value}
-    WORKFLOW_CHOICES = [
-        (db_value, readable_value) for db_value, readable_value in ReviewWorkflows.choices()
-        if db_value in SUPPORTED_MODERATION_WORKFLOWS
-    ]
-    reviews_workflow = reviews_workflow = models.CharField(
-        null=True, blank=True, max_length=15, choices=WORKFLOW_CHOICES)
+    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEW_STATES = RegistrationModerationStates
+    STATE_FIELD_NAME = 'moderation_state'
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -242,7 +233,6 @@ class RegistrationProvider(AbstractProvider):
     def validate_schema(self, schema):
         if not self.schemas.filter(id=schema.id).exists():
             raise ValidationError('Invalid schema for provider.')
-
 
 class PreprintProvider(AbstractProvider):
 

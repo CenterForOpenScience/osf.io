@@ -1,6 +1,7 @@
 import pytest
 from api.base.settings.defaults import API_BASE
-from osf.utils.workflows import RequestTypes, RegistrationTriggers, RegistrationStates
+from api.providers.workflows import Workflows
+from osf.utils.workflows import RequestTypes, RegistrationModerationTriggers, RegistrationModerationStates
 
 
 from osf_tests.factories import (
@@ -40,6 +41,7 @@ class TestRegistriesModerationSubmissions:
         update_provider_auth_groups()
         provider.schemas.add(get_default_metaschema())
         provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
 
         return provider
@@ -151,7 +153,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.INITIAL.value
+        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.INITIAL.db_name
         assert resp.json['data'][0]['relationships']['requests']
         assert resp.json['data'][0]['relationships']['review_actions']
 
@@ -168,15 +170,19 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
-        draft_registration = registration.draft_registration.last()
-        draft_registration.run_submit(registration.creator)
+        registration.require_approval(user=registration.creator)
+        approval = registration.registration_approval
+        approval.approve(
+            user=registration.creator,
+            token=approval.token_for_user(registration.creator, 'approval')
+        )
 
         resp = app.get(f'{registrations_url}?filter[machine_state]=pending&meta[reviews_state_counts]=true', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationStates.PENDING.value
+        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.PENDING.value
         assert resp.json['meta']['reviews_state_counts']['pending'] == 1
 
     @pytest.mark.enable_quickfiles_creation
@@ -189,13 +195,19 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
-        registration.draft_registration.last().run_submit(registration.creator)
+        registration.is_public = True
+        retraction = registration.retract_registration(
+            user=registration.creator, justification='because')
+        retraction.approve(
+            user=registration.creator,
+            token=retraction.token_for_user(registration.creator, 'approval')
+        )
         registration.save()
 
         resp = app.get(registration_actions_url, auth=moderator.auth)
 
         assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['attributes']['trigger'] == RegistrationTriggers.SUBMIT.value
+        assert resp.json['data'][0]['attributes']['trigger'] == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
         assert resp.json['data'][0]['relationships']['creator']['data']['id'] == registration.creator._id
 
     @pytest.mark.enable_quickfiles_creation
@@ -208,13 +220,17 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
-        registration.draft_registration.last().run_submit(registration.creator)
-        registration.save()
+        registration.require_approval(user=registration.creator)
+        approval = registration.registration_approval
+        approval.approve(
+            user=registration.creator,
+            token=approval.token_for_user(registration.creator, 'approval')
+        )
 
         resp = app.get(provider_actions_url, auth=moderator.auth)
 
         assert len(resp.json['data']) == 1
-        assert resp.json['data'][0]['attributes']['trigger'] == RegistrationTriggers.SUBMIT.value
+        assert resp.json['data'][0]['attributes']['trigger'] == RegistrationModerationTriggers.SUBMIT.db_name
         assert resp.json['data'][0]['relationships']['creator']['data']['id'] == registration.creator._id
 
     def test_registries_moderation_permission(self, app, registration_detail_url, registration, moderator, moderator_wrong_provider):

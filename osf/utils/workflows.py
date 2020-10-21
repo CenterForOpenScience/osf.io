@@ -89,7 +89,7 @@ class RegistrationModerationStates(ModerationEnum):
                 SanctionStates.REJECTED: cls.UNDEFINED,  # Could be either ACCEPTED or EMBARGO
             },
             SanctionTypes.EMBARGO_TERMINATION_APPROVAL: {
-                SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_EMBARGO_TERMINATION_REQUEST,
+                SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_EMBARGO_TERMINATION,
                 SanctionStates.PENDING_MODERATOR_APPROVAL: cls.ACCEPTED,  # Should be unreachable
                 SanctionStates.ACCEPTED: cls.ACCEPTED,
                 SanctionStates.REJECTED: cls.EMBARGO,
@@ -221,21 +221,21 @@ SANCTION_TRANSITIONS = [
         'trigger': 'accept',
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.PENDING_MODERATOR_APPROVAL,
-        'cond': ['is_moderated'],
+        'conditions': ['is_moderated'],
         'after': [],  # send moderator emails here?
     },
     {
         # An unmodrated sanction has satisfied its Admin approval requirements
         # and takes effect. Request validation handled via approve.
         'trigger': 'accept',
-        'source': [SanctionStates.PENDING_ADMIN_APPROVAL, SanctionStates.PENDING_MODERATOR_APPROVAL],
+        'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
         'after': ['_on_complete'],
     },
     {
         # A moderaetd sanction is accepted by moderators and takes effect
         'trigger': 'accept',
-        'srouce': [SanctionStates.PENDING_MODERATOR_APPROVAL],
+        'source': [SanctionStates.PENDING_MODERATOR_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
         'before': ['validate_request'],
         'after': ['_on_complete'],

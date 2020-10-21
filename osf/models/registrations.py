@@ -106,6 +106,11 @@ class Registration(AbstractNode):
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
 
+    moderation_state = models.CharField(
+        max_length=30,
+        choices=RegistrationModerationStates.char_choices(),
+        default=RegistrationModerationStates.INITIAL.db_name)
+
     @staticmethod
     def find_failed_registrations():
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
@@ -217,7 +222,6 @@ class Registration(AbstractNode):
 
     @property
     def is_pending_embargo_termination(self):
-        return self.moderation_state is RegistrationModerationStates.PENDING_EMBARGO_TERMINATION
         root = self._dirty_root
         if root.embargo_termination_approval is None:
             return False
@@ -248,29 +252,8 @@ class Registration(AbstractNode):
         return job and not job.done and not job.archive_tree_finished()
 
     @property
-    def moderation_state(self):
-        '''Derive the RegistrationModerationState from the state of the active sanction.'''
-        active_sanction = self.sanction
-        if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
-            return RegistrationModerationStates.ACCEPTED
-
-        state = RegistrationModerationStates.from_sanction(active_sanction)
-        if state is not RegistrationModerationStates.UNDEFINED:
-            return state
-
-        # The "active sanction" was a rejected withdrawal.
-        # Determine the state any active embargo or registration_approval instead.
-        root = self._dirty_root
-        active_sanction = root.embargo or root.registration_approval
-
-        if active_sanction is None:  # Again, ACCEPTED if no active sanctions.
-            return RegistrationModerationStates.ACCEPTED
-
-        return RegistrationModerationStates.from_sanction(active_sanction)
-
-    @property
     def is_moderated(self):
-        return self.provider.reviews_workflow is not None
+        return self.provider.is_reviewed
 
     @property
     def _dirty_root(self):
@@ -289,6 +272,11 @@ class Registration(AbstractNode):
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
 
+    def require_approval(self, *args, **kwargs):
+        super().require_approval(*args, **kwargs)
+        self.update_moderation_state()
+        self.save()
+
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
         """Initiates the retraction process for a registration
@@ -305,6 +293,7 @@ class Registration(AbstractNode):
             for_existing_registration=for_existing_registration,
             notify_initiator_on_complete=notify_initiator_on_complete
         )
+        self.update_moderation_state()
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
@@ -364,6 +353,7 @@ class Registration(AbstractNode):
         approval.save()
         approval.ask(admins)
         self.embargo_termination_approval = approval
+        self.update_moderation_state()
         self.save()
         return approval
 
@@ -444,6 +434,7 @@ class Registration(AbstractNode):
             justification=justification or None,  # make empty strings None
             state=Retraction.UNAPPROVED
         )
+        self.update_moderation_state()
         self.save()
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
@@ -502,6 +493,26 @@ class Registration(AbstractNode):
         self.files_count = self.files.filter(deleted_on__isnull=True).count()
         self.save()
         field.auto_now = True
+
+    def update_moderation_state(self):
+        '''Derive the RegistrationModerationState from the state of the active sanction.'''
+        active_sanction = self.sanction
+        if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
+            state = RegistrationModerationStates.ACCEPTED
+        else:
+            state = RegistrationModerationStates.from_sanction(active_sanction)
+
+        # The state is UNDEFINED if the "active sanction" was a rejected withdrawal
+        # Determine the state based on any Embargo or RegistrationApproval instead
+        if state is RegistrationModerationStates.UNDEFINED:
+            root = self._dirty_root
+            actual_active_sanction = root.embargo or root.registration_approval
+            if actual_active_sanction is None:  # Rejected Retraction was the only sanction
+                state = RegistrationModerationStates.ACCEPTED
+            else:
+                state = RegistrationModerationStates.from_sanction(actual_active_sanction)
+
+        self.moderation_state = state.db_name
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:

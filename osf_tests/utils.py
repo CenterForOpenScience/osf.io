@@ -151,19 +151,29 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
 
     if autoapprove:
         sanction = registration.sanction
-        sanction.state = Sanction.APPROVED
-        sanction.save()
-        sanction._on_complete(project.creator)
-        sanction.save()
+        sanction.mode = Sanction.ANY
+        sanction.approve(
+            user=project.creator,
+            token=sanction.token_for_user(project.creator, 'approval')
+        )
+#        sanction.state = Sanction.APPROVED
+#        sanction.save()
+#        sanction.accept(project.creator)
+#        sanction.save()
 
     if retraction:
         justification = justification or 'Because reasons'
         registration.refresh_from_db()
         retraction = registration.retract_registration(project.creator, justification=justification)
         if autoapprove_retraction:
-            retraction.state = Sanction.APPROVED
-            retraction._on_complete(project.creator)
-        retraction.save()
+            retraction.mode = Sanction.ANY
+            retraction.approve(
+                user=project.creator,
+                token=retraction.token_for_user(project.creator, 'approval')
+            )
+#            retraction.state = Sanction.APPROVED
+#            retraction._on_complete(project.creator)
+#        retraction.save()
         registration.save()
     yield registration
 

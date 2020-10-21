@@ -1,6 +1,6 @@
 import pytz
 import functools
-#from rest_framework import status as http_status
+from rest_framework import status as http_status
 
 from api.share.utils import update_share
 
@@ -13,7 +13,7 @@ from django.db import models
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.auth import Auth
-from framework.exceptions import PermissionsError  # , HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from website import settings as osf_settings
 from website import mails
 from osf.exceptions import (
@@ -55,8 +55,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     SHORT_NAME = 'sanction'
 
     ACTION_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to {ACTION} this {DISPLAY_NAME}'
-    INVALID_TOKEN_MESSAGE = 'Invalid token provided to {ACTION} this {DISPLAY_NAME}.'
-    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
     # Controls whether or not the Sanction needs unanimous approval or just a single approval
@@ -92,7 +91,8 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     sanction_state = models.CharField(
         max_length=30,
         choices=SanctionStates.char_choices(),
-        default=SanctionStates.PENDING_ADMIN_APPROVAL.value)
+        default=SanctionStates.PENDING_ADMIN_APPROVAL.db_name)
+    MACHINE_STATE_FIELD_NAME = 'sanction_state'
 
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
@@ -185,10 +185,10 @@ class TokenApprovableSanction(Sanction):
         """
         return True
 
-    def _verify_user_role(self, user, method):
+    def _verify_user_role(self, user):
         '''Compare the caller's known role against the current sanction approval stage.'''
         try:
-            user_role = self.approval_State[user._id]['approver_role']
+            user_role = self.approval_state[user._id]['approver_role']
         except KeyError:
             raise ApproverRoleError()
 
@@ -210,7 +210,7 @@ class TokenApprovableSanction(Sanction):
         try:
             self._verify_user_role(user)
         except ApproverRoleError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(
+            raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
                 ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
 
         if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
@@ -218,12 +218,10 @@ class TokenApprovableSanction(Sanction):
 
         if action == 'approve' and self.approval_state[user._id]['approval_token'] != token:
             raise InvalidSanctionApprovalToken(
-                self.APPROVAL_INVALID_TOKEN_MESSAGE.format(
-                    ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
-        elif action == 'reject' and self.approval_State[user._id]['rejection_token'] != token:
+                self.APPROVAL_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
+        elif action == 'reject' and self.approval_state[user._id]['rejection_token'] != token:
             raise InvalidSanctionRejectionToken(
-                self.REJECTION_INVALID_TOKEN_MESSAGE.format(
-                    ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
+                self.REJECTION_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
 
         return True
 
@@ -560,18 +558,18 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             })
         return context
 
-# TODO: Determine whether new model makes this unecessary
-#    def reject(self, user, token):
-#        reg = self._get_registration()
-#        if reg.is_public:
-#            raise HTTPError(
-#                http_status.HTTP_400_BAD_REQUEST,
-#                data={
-#                    'message_short': 'Registrations cannot be modified',
-#                    'message_long': 'This project has already been registered and cannot be deleted',
-#                }
-#            )
-#        super(Embargo, self).reject(user, token)
+    def _validate_response(self, event_data):
+        # TODO: Does this still need to exist?
+        action = event_data.event.name
+        if action == 'reject' and self.target_registration.is_public:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    'message_short': 'Registrations cannot be modified',
+                    'message_long': 'This project has already been registered and cannot be deleted',
+                }
+            )
+        super()._validate_response(event_data)
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)
@@ -625,7 +623,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def mark_as_completed(self):
         self.state = Sanction.COMPLETED
-        self.approval_stage.to_completed()
+        self.to_COMPLETE()
         self.save()
 
 
@@ -1083,5 +1081,6 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.
+        super()._on_reject(event_data)
         self.target_registration.embargo_termination_approval = None
         self.target_registration.save()

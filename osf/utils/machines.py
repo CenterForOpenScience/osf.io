@@ -347,15 +347,17 @@ class PreprintRequestMachine(BaseMachine):
 class SanctionStateMachine(Machine):
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
+    MACHINE_STATE_FIELD_NAME = ''
 
     def __init__(self):
+
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,
-            initial_state=self.approval_stage,
+            initial=SanctionStates.from_db_name(getattr(self, self.MACHINE_STATE_FIELD_NAME)),
             model_attribute='approval_stage',
             prepare_event='initialize_transition',
-            after_state_change='save_transition',
+            after_state_change='_save_transition',
             send_event=True,
             ignore_invalid_triggers=True
         )
@@ -366,11 +368,17 @@ class SanctionStateMachine(Machine):
             'SanctionStateMachine subclasses must define a target_registration property'
         )
 
-    @property
-    def approval_stage(self):
-        raise NotImplementedError(
-            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
-        )
+#    @property
+#    def approval_stage(self):
+#        field_value = getattr(self, self.MACHINE_STATE_FIELD_NAME)
+#        return SanctionStates.from_db_value(field_value)
+#        raise NotImplementedError(
+#            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
+#        )
+
+#    @approval_stage.setter
+#    def approval_stage(self, new_state):
+#        setattr(self, self.MACHINE_STATE_FIELD_NAME, new_state.db_value)
 
     def initialize_transition(self, event_data):
         self.from_state = self.target_registration.moderation_state
@@ -411,13 +419,16 @@ class SanctionStateMachine(Machine):
             from_state=self.from_state,
             to_state=self.target_registration.moderation_state,
             comment=event_data.kwargs.get('comment', '')
-        )
+        ).save()
 
     def _save_transition(self, event_data):
         '''Save the sanction and write actions for any moderated triggers.'''
         self.save()
-        source_state = event_data.transtision.source
+        self.target_registration.update_moderation_state()
+        self.target_registration.save()
+        source_state = event_data.transition.source
         new_state = event_data.transition.dest
-        if SanctionStates.PENDING_MODERATOR_APPROVAL in [source_state, new_state]:
-            self._log_moderated_action(self, event_data)
-        self.save()
+        print([source_state, new_state])
+        if SanctionStates.PENDING_MODERATOR_APPROVAL.name in [source_state, new_state]:
+            self._log_moderated_action(event_data)
+#        self.save()

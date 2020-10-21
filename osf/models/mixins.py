@@ -959,6 +959,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     REVIEWABLE_RELATION_NAME = None
     REVIEW_STATES = ReviewStates
+    STATE_FIELD_NAME = 'machine_state'
 
     groups = REVIEW_GROUPS
     group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
@@ -979,9 +980,11 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True).values('machine_state').annotate(count=models.Count('*'))
+        qs = qs.filter(deleted__isnull=True).values(self.STATE_FIELD_NAME).annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in self.REVIEW_STATES}
-        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        counts.update({
+            row[self.STATE_FIELD_NAME]: row['count']
+            for row in qs if row[self.STATE_FIELD_NAME] in counts})
         return counts
 
     def get_request_state_counts(self):
