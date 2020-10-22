@@ -1018,6 +1018,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
          if ($osf.isSafari()) {
              msgText += 'Could not upload file. Possible reasons: <br>';
              msgText += '1. Cannot upload folders. <br>2. ';
+             msgText += 'Your project/component is over its storage limit. <br>3. ';
          }
          msgText += 'Unable to reach the provider, please try again later. ';
          msgText += 'If the problem persists, please contact ' + $osf.osfSupportEmail() + '.';
