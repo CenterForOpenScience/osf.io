@@ -577,12 +577,9 @@ class ModeratorMixin(ProviderMixin):
     provider_class = PreprintProvider
     model_class = OSFUser
 
-<<<<<<< HEAD
-=======
     def get_provider(self):
         return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
 
->>>>>>> Adds registration provider moderator list and detail endpoints
     def get_serializer_context(self, *args, **kwargs):
         ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
         ctx.update({'provider': self.get_provider()})
