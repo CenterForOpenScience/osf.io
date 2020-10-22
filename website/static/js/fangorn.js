@@ -873,8 +873,8 @@ function _fangornCanDrop(treebeard, item) {
     if (canDrop === null) {
         canDrop = item.data.provider && item.kind === 'folder' && item.data.permissions.edit;
     }
-    var status = window.contextVars.node.storageLimitsStatus;
-    if (status && status.disableUploads) {
+    var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
+    if (storageLimitsStatus && storageLimitsStatus.disableUploads) {
         return false;
     }
 
@@ -1948,12 +1948,14 @@ var FGItemButtons = {
                         className: 'text-success'
                     }, 'Create Folder')
                 );
-                if(window.contextVars.node.storageLimitsStatus && window.contextVars.node.storageLimitsStatus.disableUploads) {
+
+                var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
+                if(storageLimitsStatus && storageLimitsStatus.disableUploads && window.contextVars.currentUser.can_edit) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
                             className : 'text-success disabled storage-disabled',
-                            tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
+                            tooltip: 'This project/component is ' + storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options visit https://help.osf.io/.',
                         }, 'Upload')
                     );
                 } else {
@@ -2218,12 +2220,14 @@ var FGToolbar = {
                 }, 'Cancel Pending Uploads')
             );
         }
-        if(window.contextVars.node.storageLimitsStatus) {
+
+        var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
+        if(storageLimitsStatus && window.contextVars.currentUser.can_edit) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
-                    className : window.contextVars.node.storageLimitsStatus.class,
-                    tooltip: 'This project/component is ' + window.contextVars.node.storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon.',
+                    className : storageLimitsStatus.class,
+                    tooltip: 'This project/component is ' + storageLimitsStatus.text + ' the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon.',
                     onclick: function() { window.open('https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps', '_blank'); }
                 })
             );
