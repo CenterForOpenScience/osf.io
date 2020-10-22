@@ -5,14 +5,14 @@
    "pages":[
       {
          "id":"page1",
-         "title":"General Information About the Study",
+         "title":"Study Information",
          "questions":[
             {
                "qid":"q1",
                "type":"string",
                "format":"textarea",
-               "title":"Study registration link",
-               "description":"Please provide a link to the study registration this study relies upon.",
+               "title":"Research Aims",
+               "description":"Please specify the overall purposes, objectives or aims of the research. In addition, please reflect on whether your aim is different across different domains (e.g. knowledge generation, policy development, community resourcing). If so, specify your aim for each domain that is relevant for your study.",
                "required":true
             },
             {
@@ -27,7 +27,6 @@
                   "Comparing",
                   "Understanding"
                ],
-               "required":true
             },
             {
                "qid":"q3",
@@ -132,14 +131,7 @@
             },
             {
                "qid":"q13",
-               "type":"string",
-               "format":"textarea",
                "title":"Credibility strategies",
-               "description":"Please specify the strategies, actions or measures you will employ to assure methodological integrity. Examples include (but are not limited to):",
-               "required":true
-            },
-            {
-               "qid":"q14",
                "type":"choose",
                "format":"multiselect",
                "options":[
@@ -162,10 +154,11 @@
                   "Dialogues with subjects",
                   "Other (please explain)"
                ],
+               "description":"Please specify the strategies, actions or measures you will employ to assure methodological integrity. Examples include (but are not limited to):",
                "required":true
             },
             {
-               "qid":"q15",
+               "qid":"q14",
                "type":"string",
                "format":"textarea",
                "description":"Please provide a short rationale for why you selected particular strategies and how they are appropriate given your study’s aim(s) and approach.",
@@ -175,10 +168,10 @@
       },
       {
          "id":"page4",
-         "title":"Analysis Plan",
+         "title":"Miscellaneous",
          "questions":[
             {
-               "qid":"q16",
+               "qid":"q15",
                "type":"string",
                "format":"textarea",
                "title":"Reflection on your positionality (optional)",
