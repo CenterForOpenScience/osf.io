@@ -170,7 +170,6 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
-        registration.require_approval(user=registration.creator)
         approval = registration.registration_approval
         approval.approve(
             user=registration.creator,
@@ -182,7 +181,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.PENDING.value
+        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.PENDING.db_name
         assert resp.json['meta']['reviews_state_counts']['pending'] == 1
 
     @pytest.mark.enable_quickfiles_creation

@@ -1,6 +1,5 @@
 import pytz
 import functools
-from rest_framework import status as http_status
 
 from api.share.utils import update_share
 
@@ -13,7 +12,7 @@ from django.db import models
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.auth import Auth
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import PermissionsError
 from website import settings as osf_settings
 from website import mails
 from osf.exceptions import (
@@ -225,7 +224,7 @@ class TokenApprovableSanction(Sanction):
 
         return True
 
-    def add_authorizer(self, user, node, approved=False, save=False, role=Sanction.ADMIN_ROLE):
+    def add_authorizer(self, user, node=None, approved=False, save=False, role=Sanction.ADMIN_ROLE):
         """Add an admin user to this Sanction's approval state.
 
         :param User user: User to add.
@@ -234,27 +233,41 @@ class TokenApprovableSanction(Sanction):
         :param bool save: Whether to save this object.
         :param str role: The role (admin or moderator) of the authorizer
         """
+        if role not in ['moderator', 'admin']:
+            raise ValueError('Authorizer role must be either "moderator" or "admin".')
+        if role == Sanction.ADMIN_ROLE and node is None:
+            raise ValueError('Admin authorizers for Sanctions must provide a node')
+
         valid = self._validate_authorizer(user)
-        if valid and user._id not in self.approval_state:
-            self.approval_state[user._id] = {
-                'has_approved': approved,
-                'node_id': node._id,
-                'approver_role': role,
-                'approval_token': tokens.encode({
-                    'user_id': user._id,
-                    'sanction_id': self._id,
-                    'action': 'approve_{}'.format(self.SHORT_NAME)
-                }),
-                'rejection_token': tokens.encode({
-                    'user_id': user._id,
-                    'sanction_id': self._id,
-                    'action': 'reject_{}'.format(self.SHORT_NAME)
-                }),
-            }
-            if save:
-                self.save()
-            return True
-        return False
+        if not valid or user._id in self.approval_state:
+            return False
+
+        self.approval_state[user._id] = {
+            'has_approved': approved,
+            'node_id': node._id,
+            'approver_role': role,
+        }
+
+        # Add tokens and node IDs for admin approvers
+        if role == Sanction.ADMIN_ROLE:
+            approval_token = tokens.encode({
+                'user_id': user.id,
+                'sanction_id': self._id,
+                'action': 'approve_{}'.format(self.SHORT_NAME)
+            })
+            rejection_token = tokens.encode({
+                'user_id': user.id,
+                'sanction_id': self._id,
+                'action': 'reject_{}'.format(self.SHORT_NAME)
+            })
+            self.approval_state[user._id]['node_id'] = node._id
+            self.approval_state[user._id]['approval_token'] = approval_token
+            self.approval_state[user._id]['rejection_token'] = rejection_token
+
+        if save:
+            self.save()
+
+        return True
 
     def remove_authorizer(self, user, save=False):
         """Remove a user as an authorizer
@@ -557,19 +570,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
             })
         return context
-
-    def _validate_response(self, event_data):
-        # TODO: Does this still need to exist?
-        action = event_data.event.name
-        if action == 'reject' and self.target_registration.is_public:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Registrations cannot be modified',
-                    'message_long': 'This project has already been registered and cannot be deleted',
-                }
-            )
-        super()._validate_response(event_data)
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)

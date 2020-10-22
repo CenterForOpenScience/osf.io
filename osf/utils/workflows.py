@@ -66,8 +66,7 @@ class RegistrationModerationStates(ModerationEnum):
     @classmethod
     def from_sanction(cls, sanction):
         '''Returns a RegistrationModerationState based on sanction's type and state.'''
-
-        # Define every time because it can't exist in the class body :(
+        # Define every time because it gets interpreted as an enum member in the class body :(
         SANCTION_STATE_MAP = {
             SanctionTypes.REGISTRATION_APPROVAL: {
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.INITIAL,
@@ -96,7 +95,8 @@ class RegistrationModerationStates(ModerationEnum):
             },
         }
 
-        return SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_stage]
+        new_state = SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_stage]
+        return new_state
 
 
 class RegistrationModerationTriggers(ModerationEnum):
@@ -119,6 +119,15 @@ class ChoiceEnum(Enum):
     @classmethod
     def values(cls):
         return tuple(c.value for c in cls)
+
+    @property
+    def db_name(self):
+        '''Return the value stored in the database for the enum member.
+
+        For parity with ModerationEnum.
+        '''
+        return self.value
+
 
 DEFAULT_STATES = [
     ('INITIAL', 'initial'),
@@ -237,7 +246,7 @@ SANCTION_TRANSITIONS = [
         'trigger': 'accept',
         'source': [SanctionStates.PENDING_MODERATOR_APPROVAL],
         'dest': SanctionStates.ACCEPTED,
-        'before': ['validate_request'],
+        'before': ['_validate_request'],
         'after': ['_on_complete'],
     },
     {

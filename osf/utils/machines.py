@@ -1,8 +1,10 @@
 from django.utils import timezone
-from transitions import Machine
+from rest_framework import status as http_status
+from transitions import Machine, MachineError
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
+from framework.exceptions import HTTPError
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
@@ -359,7 +361,7 @@ class SanctionStateMachine(Machine):
             prepare_event='initialize_transition',
             after_state_change='_save_transition',
             send_event=True,
-            ignore_invalid_triggers=True
+            queued=True,
         )
 
     @property
@@ -368,17 +370,31 @@ class SanctionStateMachine(Machine):
             'SanctionStateMachine subclasses must define a target_registration property'
         )
 
-#    @property
-#    def approval_stage(self):
-#        field_value = getattr(self, self.MACHINE_STATE_FIELD_NAME)
-#        return SanctionStates.from_db_value(field_value)
-#        raise NotImplementedError(
-#            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
-#        )
+    @property
+    def approval_stage(self):
+        raise NotImplementedError(
+            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
+        )
 
-#    @approval_stage.setter
-#    def approval_stage(self, new_state):
-#        setattr(self, self.MACHINE_STATE_FIELD_NAME, new_state.db_value)
+    def _process(self, *args, **kwargs):
+        '''Wrap superclass _process to handle specific MachineErrors.'''
+        try:
+            super()._process(*args, **kwargs)
+        except MachineError as e:
+            short_message = 'Operation not allowed at this time'
+            if self.approval_stage is SanctionStates.REJECTED:
+                long_message = (
+                    'This {sanction} has already been rejected and cannot be approved'.format(
+                        self.DISPLAY_NAME))
+            elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETED]:
+                long_message = (
+                    'This {sanction} has all required approvals and cannot be rejected'.format(
+                        sanction=self.DISPLAY_NAME))
+            else:
+                raise e
+
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                'message_short': short_message, 'message_long': long_message})
 
     def initialize_transition(self, event_data):
         self.from_state = self.target_registration.moderation_state
@@ -424,11 +440,11 @@ class SanctionStateMachine(Machine):
     def _save_transition(self, event_data):
         '''Save the sanction and write actions for any moderated triggers.'''
         self.save()
-        self.target_registration.update_moderation_state()
-        self.target_registration.save()
-        source_state = event_data.transition.source
         new_state = event_data.transition.dest
-        print([source_state, new_state])
+        # No need to update registration state with no sanction state change
+        if new_state is None:
+            return
+
+        source_state = event_data.transition.source
         if SanctionStates.PENDING_MODERATOR_APPROVAL.name in [source_state, new_state]:
             self._log_moderated_action(event_data)
-#        self.save()

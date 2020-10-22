@@ -981,7 +981,7 @@ class ReviewProviderMixin(GuardianMixin):
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
         qs = qs.filter(deleted__isnull=True).values(self.STATE_FIELD_NAME).annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in self.REVIEW_STATES}
+        counts = {state.db_name: 0 for state in self.REVIEW_STATES}
         counts.update({
             row[self.STATE_FIELD_NAME]: row['count']
             for row in qs if row[self.STATE_FIELD_NAME] in counts})

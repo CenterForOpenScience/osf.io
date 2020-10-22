@@ -426,10 +426,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         user = registration.contributors.first()
 
         registration.terminate_embargo()
-
-        rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
+        rejection_token = registration.embargo.token_for_user(user, 'rejection')
         with assert_raises(HTTPError) as e:
-            registration.embargo.disapprove_embargo(user, rejection_token)
+            registration.embargo.reject(user=user, token=rejection_token)
 
         registration.refresh_from_db()
         assert registration.is_deleted is False
