@@ -9,7 +9,7 @@
     <br>
     リンクをクリックしてメールアドレスを認証してください：<br>
     <br>
-    ${confirmation_url}<br>
+    <a href="${confirmation_url}">${confirmation_url}</a><br>
     <br>
     どうぞよろしくお願いいたします。<br>
     <br>
@@ -24,7 +24,7 @@
     <br>
     Please verify your email address by visiting this link:<br>
     <br>
-    ${confirmation_url}<br>
+    <a href="${confirmation_url}">${confirmation_url}</a><br>
     <br>
     Sincerely yours,<br>
     <br>
