@@ -223,10 +223,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             valid_credentials = True
             try:
                 mine = connection.repos()
-                ours = connection.team_repos()
                 repo_names = [
                     repo['full_name'].replace('/', ' / ')
-                    for repo in mine + ours
+                    for repo in mine
                 ]
             except Exception:
                 repo_names = []
