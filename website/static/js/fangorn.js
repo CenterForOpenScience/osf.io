@@ -1950,7 +1950,7 @@ var FGItemButtons = {
                 );
 
                 var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
-                if(storageLimitsStatus && storageLimitsStatus.disableUploads && window.contextVars.currentUser.can_edit) {
+                if(storageLimitsStatus && storageLimitsStatus.disableUploads && window.contextVars.currentUser.canEdit) {
                     rowButtons.push(
                         m.component(FGButton, {
                             icon: 'fa fa-upload',
@@ -2222,7 +2222,7 @@ var FGToolbar = {
         }
 
         var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
-        if(storageLimitsStatus && window.contextVars.currentUser.can_edit) {
+        if(storageLimitsStatus && window.contextVars.currentUser.canEdit) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
