@@ -23,7 +23,8 @@
                "title":"Hypothesis/Capability Registration",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>"
+               "description":"Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>",
+               "required":true
             }
          ]
       }

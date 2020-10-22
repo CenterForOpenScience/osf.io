@@ -58,7 +58,8 @@
                "title":"Results registration",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"Please attach the preregistration file containing your hypothesis/capability results registration details."
+               "description":"Please attach the preregistration file containing your hypothesis/capability results registration details.",
+               "required":true
             }
          ]
       }

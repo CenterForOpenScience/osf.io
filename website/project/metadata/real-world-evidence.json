@@ -224,7 +224,8 @@
                "title":"Upload protocol document",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"You may attach up to 5 file(s) to this question. You may attach files that you already have in OSF Storage in this project or upload (drag and drop) a new file from your computer. Uploaded files will automatically be added to this project so that they can be registered. To attach files from other components or an add-on, first add them to this project."
+               "description":"You may attach up to 5 file(s) to this question. You may attach files that you already have in OSF Storage in this project or upload (drag and drop) a new file from your computer. Uploaded files will automatically be added to this project so that they can be registered. To attach files from other components or an add-on, first add them to this project.",
+               "required":true
             }
          ]
       }
