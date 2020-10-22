@@ -8,7 +8,7 @@
     %>
     こんにちは、${requester.fullname}さん<br>
     <br>
-    本メールは、<a href="${node.absolute_url}">${node.absolute_url}</a>のプロジェクトへのアクセス申請が却下されたことを通知するものです。<br>
+    本メールは、 <a href="${node.absolute_url}">${node.absolute_url}</a> のプロジェクトへのアクセス申請が却下されたことを通知するものです。<br>
     <br>
     よろしくお願いいたします。<br>
     <br>
