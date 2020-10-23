@@ -14,7 +14,6 @@ def add_invisible_schemas(apps, schema_editor):
         ensure_schema_structure(from_json('asist-hypothesis-capability-registration.json')),
         ensure_schema_structure(from_json('asist-results-registration.json')),
         ensure_schema_structure(from_json('real-world-evidence.json')),
-        ensure_schema_structure(from_json('qualitative-research.json'))
     ]
 
     schema_names = [schema['name'] for schema in schemas]

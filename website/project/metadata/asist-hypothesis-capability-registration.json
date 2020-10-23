@@ -4,7 +4,7 @@
    "config":{
       "hasFiles":true
    },
-   "description":"This template was created by researchers from the qualitative community for preregistration of qualitative research",
+   "description":"This preregistration template is part of the DARPA Artificial Social Intelligence for Successful Teams (ASIST) program. This template is intended to formally register performer hypothesis and AI capability preregistrations throughout the ASIST program.",
    "pages":[
       {
          "id":"page1",
@@ -15,7 +15,7 @@
                "type":"string",
                "format":"text",
                "title":"Study registration link",
-               "description":"Please specify the overall purposes, objectives or aims of the research.\n\nIn addition, please reflect on whether your aim is different across different domains (e.g. knowledge generation, policy development, community resourcing). If so, specify your aim for each domain that is relevant for your study.",
+               "description":"Please provide a link to the study registration this study relies upon.",
                "required":true
             },
             {
@@ -23,7 +23,7 @@
                "title":"Hypothesis/Capability Registration",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"Please upload your pre-analysis plan, along with any other supporting documents, such as survey instrument, research protocol, any data, etc. OSF functionality allows for de-identified registration links to be generated after the registration is complete. However, it cannot automatically update the documents you attach.<b>If you plan to generate a de-identified link for this registration (for journal submission/review purposes, for instance), please MAKE SURE ALL FILES UPLOADED HERE ARE ANONYMIZED</b>",
+               "description":"Please attach the preregistration file containing your hypothesis/capability registration details.",
                "required":true
             }
          ]
