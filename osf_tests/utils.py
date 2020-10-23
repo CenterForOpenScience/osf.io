@@ -156,10 +156,6 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
             user=project.creator,
             token=sanction.token_for_user(project.creator, 'approval')
         )
-#        sanction.state = Sanction.APPROVED
-#        sanction.save()
-#        sanction.accept(project.creator)
-#        sanction.save()
 
     if retraction:
         justification = justification or 'Because reasons'
@@ -171,9 +167,6 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                 user=project.creator,
                 token=retraction.token_for_user(project.creator, 'approval')
             )
-#            retraction.state = Sanction.APPROVED
-#            retraction._on_complete(project.creator)
-#        retraction.save()
         registration.save()
     yield registration
 

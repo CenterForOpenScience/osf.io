@@ -133,10 +133,6 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     # accept(self, user, token)
     # reject(self, user, token)
     #
-    # These functions are state machine "triggers" that will validate that the caller has
-    # the authority to invoke the trigger, update the approval_staage and of the sanctions object,
-    # )via the approval_stage property) and call the _on_{trigger} function on the sanction.
-    #
     # Overrriding these functions will divorce the offending Sanction class from that trigger's
     # functionality on the state machine.
 
@@ -147,7 +143,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     def _on_approve(self, event_data):
         """Callback for individual admin approval of a sanction.
 
-        Invoked by state machine on approve_transition
+        Invoked by state machine as the last step of an 'approve' trigger
 
         :param EventData event_data: An EventData object from transitions.core
             contains information about the active state transition and arbitrary args and kwargs
@@ -158,7 +154,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     def _on_reject(self, event_data):
         """Callback for rejection of a Sanction.
 
-        Invoked by state machine on a reject transition
+        Invoked by state machine as the last step of a 'reject' trigger
 
         :param EventData event_data: An EventData object from transitions.core
             contains information about the active state transition and arbitrary args and kwargs
@@ -169,7 +165,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     def _on_complete(self, user):
         """Callback for when a Sanction is fully approved.
 
-        invoked by state machine on an accept transition
+        Invoked by state machine as the last step of an 'accept' trigger
 
         :param EventData event_data: An EventData object from transitions.core
             contains information about the active state transition and arbitrary args and kwargs
@@ -192,7 +188,7 @@ class TokenApprovableSanction(Sanction):
         return True
 
     def _verify_user_role(self, user):
-        '''Compare the caller's known role against the current sanction approval stage.'''
+        '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
         if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
             moderator_group_name = self.target_registration.provider.format_group('moderator')
             if user.groups.filter(name=moderator_group_name).exists():
@@ -233,7 +229,6 @@ class TokenApprovableSanction(Sanction):
         :param Node registration: The pending registration node.
         :param bool approved: Whether `user` has approved.
         :param bool save: Whether to save this object.
-        :param str role: The role (admin or moderator) of the authorizer
         """
 
         valid = self._validate_authorizer(user)
@@ -874,7 +869,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             raise NodeStateError('Cannot approve a spammy registration')
 
         super()._on_complete(event_data)
-        self.state = Sanction.APPROVED
         self.save()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be

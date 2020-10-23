@@ -4,22 +4,14 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, HTTPError
 from nose.tools import assert_raises
-from osf.exceptions import (
-    InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
-)
 from osf.migrations import update_provider_auth_groups
-from osf.models import Registration, Contributor, OSFUser, SpamStatus
-from osf.models import AbstractNode
-from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf_tests.factories import (
     AuthUserFactory, EmbargoFactory, RegistrationProviderFactory,
     RegistrationFactory, RegistrationApprovalFactory, RetractionFactory
 )
 from osf.utils import tokens
 from osf.utils.workflows import RegistrationModerationStates, SanctionStates
-from osf.utils import permissions
-from tests import utils
-from tests.base import fake, OsfTestCase
+from tests.base import OsfTestCase
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -534,7 +526,7 @@ class TestModeratedFlows():
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.django_db
+#@pytest.mark.django_db
 class TestEmbargoTerminationFlows(OsfTestCase):
 
     def setUp(self):

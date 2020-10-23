@@ -7,6 +7,9 @@ import datetime
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 
+from framework.exceptions import HTTPError
+from nose.tools import assert_raises
+
 from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
 from osf.exceptions import NodeStateError
 from osf_tests import factories
@@ -223,7 +226,9 @@ class TestRegistrationEmbargoTermination:
         user_1_tok = embargo_termination.token_for_user(user, 'rejection')
         user_2_tok = embargo_termination.token_for_user(user2, 'approval')
         embargo_termination.reject(user=user, token=user_1_tok)
-        embargo_termination.approve(user=user2, token=user_2_tok)
+        with assert_raises(HTTPError):
+            embargo_termination.approve(user=user2, token=user_2_tok)
+
         assert embargo_termination.state == embargo_termination.REJECTED
         assert embargo_termination.approval_stage is SanctionStates.REJECTED
 

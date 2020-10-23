@@ -349,7 +349,7 @@ class Registration(AbstractNode):
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
         for (admin, node) in admins:
-            approval.add_authorizer(admin, node)
+            approval.add_authorizer(admin, node=node)
         approval.save()
         approval.ask(admins)
         self.embargo_termination_approval = approval

@@ -154,7 +154,3 @@ class SchemaBlockConversionError(OSFError):
     'schema block' format.
     """
     pass
-
-class ApproverRoleError(OSFError):
-    """Raised if a user with the incorrect role attempts to approve or reject a sanction."""
-    pass
