@@ -347,6 +347,28 @@ class PreprintRequestMachine(BaseMachine):
 
 
 class SanctionStateMachine(Machine):
+    '''SanctionsStateMachine manages state transitions for Sanctions objects.
+
+    The valid machine states for a Sanction object are defined in Workflows.SanctionStates.
+    The valid transitions between these states are defined in Workflows.SANCTION_TRANSITIONS.
+
+    Subclasses of SanctionStateMachine inherit the 'tirgger' functions named in
+    the SANCTION_TRANSITIONS dictionary (approve, accept, and reject).
+    These tirgger functions will, in order,
+    1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
+    2) Call Sanction member functions listed in the 'conditions' key of the dictionary
+    3) Call Sanction member functions listed in the 'before' key of the dictionary
+    4) Update the state field of the Sanction object via the approval_stage setter
+    5) Call Sanction member functions listed in the 'after' key of the dictionary
+
+    If any step fails, the whole transition will fail and the Sanction's
+    approval_stage will be rolled back.
+
+    SanctionStateMachine also provides some extra functionality to write
+    RegistrationActions on events moving in to or out of Moderated machine states
+    as well as to convert MachineErrors (which arise on unsupported state changes
+    requests) into HTTPErrors to report back to users who try to initiate such errors.
+    '''
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     MACHINE_STATE_FIELD_NAME = ''
@@ -358,7 +380,7 @@ class SanctionStateMachine(Machine):
             transitions=SANCTION_TRANSITIONS,
             initial=SanctionStates.from_db_name(getattr(self, self.MACHINE_STATE_FIELD_NAME)),
             model_attribute='approval_stage',
-            prepare_event='initialize_transition',
+            prepare_event='_initialize_transition',
             after_state_change='_save_transition',
             send_event=True,
             queued=True,
@@ -377,16 +399,16 @@ class SanctionStateMachine(Machine):
         )
 
     def _process(self, *args, **kwargs):
-        '''Wrap superclass _process to handle specific MachineErrors.'''
+        '''Wrap superclass _process to handle expected MachineErrors.'''
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
             short_message = 'Operation not allowed at this time'
-            if self.approval_stage is SanctionStates.REJECTED:
+            if self.approval_stage in [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED]:
                 long_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
-                        self.DISPLAY_NAME))
-            elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETED]:
+                        sanction=self.DISPLAY_NAME))
+            elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETE]:
                 long_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))
@@ -396,13 +418,13 @@ class SanctionStateMachine(Machine):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': short_message, 'message_long': long_message})
 
-    def initialize_transition(self, event_data):
+    def _initialize_transition(self, event_data):
         self.from_state = self.target_registration.moderation_state
 
-    def infer_last_trigger(self):
+    def _infer_last_trigger(self):
         '''Determine the most recent 'trigger' for the sanction from a moderation perspective.'''
         if self.SANCTION_TYPE is SanctionTypes.RETRACTION:
-            if self.approval_stage is SanctionStates.REJECTED:
+            if self.approval_stage is SanctionStates.MODERATOR_REJECTED:
                 return RegistrationModerationTriggers.REJECT_WITHDRAWAL
             elif self.approval_stage is SanctionStates.ACCEPTED:
                 return RegistrationModerationTriggers.ACCEPT_WITHDRAWAL
@@ -410,7 +432,7 @@ class SanctionStateMachine(Machine):
                 return RegistrationModerationTriggers.REQUEST_WITHDRAWAL
 
         if self.SANCTION_TYPE in [SanctionTypes.EMBARGO, SanctionTypes.REGISTRATION_APPROVAL]:
-            if self.approval_stage is SanctionStates.REJECTED:
+            if self.approval_stage is SanctionStates.MODERATOR_REJECTED:
                 return RegistrationModerationTriggers.REJECT_SUBMISSION
             elif self.approval_stage is SanctionStates.ACCEPTED:
                 return RegistrationModerationTriggers.ACCEPT_SUBMISSION
@@ -420,7 +442,7 @@ class SanctionStateMachine(Machine):
         return None  # No moderation triggers for other sanction types
 
     def _log_moderated_action(self, event_data):
-        '''Create a RegistrationAction for a moderated state change.'''
+        """Create a RegistrationAction for a moderated state change."""
         # When entering moderation, the Action should state who initiated the submission/withdrawal.
         # Otherwise, the Action should state which moderator approved/rejected.
         if event_data.state.name is SanctionStates.PENDING_MODERATOR_APPROVAL.name:
@@ -431,20 +453,20 @@ class SanctionStateMachine(Machine):
         RegistrationAction.objects.create(
             target=self.target_registration,
             creator=user,
-            trigger=self.infer_last_trigger().db_name,
+            trigger=self._infer_last_trigger().db_name,
             from_state=self.from_state,
             to_state=self.target_registration.moderation_state,
             comment=event_data.kwargs.get('comment', '')
         ).save()
 
     def _save_transition(self, event_data):
-        '''Save the sanction and write actions for any moderated triggers.'''
+        """Recored the effects of a state transition in the databsse."""
         self.save()
         new_state = event_data.transition.dest
         # No need to update registration state with no sanction state change
         if new_state is None:
             return
-
+        self.target_registration.update_moderation_state()
         source_state = event_data.transition.source
         if SanctionStates.PENDING_MODERATOR_APPROVAL.name in [source_state, new_state]:
             self._log_moderated_action(event_data)

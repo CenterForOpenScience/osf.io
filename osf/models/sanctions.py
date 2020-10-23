@@ -16,7 +16,6 @@ from framework.exceptions import PermissionsError
 from website import settings as osf_settings
 from website import mails
 from osf.exceptions import (
-    ApproverRoleError,
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
     NodeStateError,
@@ -62,9 +61,6 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     UNANIMOUS = 'unanimous'
     mode = UNANIMOUS
 
-    ADMIN_ROLE = 'admin'
-    MODERATOR_ROLE = 'moderator'
-
     # Sanction subclasses must have an initiated_by field
     # initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True)
 
@@ -99,15 +95,21 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def is_pending_approval(self):
-        return self.state == Sanction.UNAPPROVED
+        pending_states = [
+            SanctionStates.PENDING_ADMIN_APPROVAL, SanctionStates.PENDING_MODERATOR_APPROVAL
+        ]
+        return self.approval_stage in pending_states or self.state == Sanction.UNAPPROVED
 
     @property
     def is_approved(self):
-        return self.state == Sanction.APPROVED
+        return self.approval_stage is SanctionStates.ACCEPTED or self.state == Sanction.APPROVED
 
     @property
     def is_rejected(self):
-        return self.state == Sanction.REJECTED
+        rejected_states = [
+            SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED
+        ]
+        return self.approval_stage in rejected_states or self.state == Sanction.REJECTED
 
     @property
     def is_moderated(self):
@@ -131,7 +133,12 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     # accept(self, user, token)
     # reject(self, user, token)
     #
-    # Overriding these functions will break the
+    # These functions are state machine "triggers" that will validate that the caller has
+    # the authority to invoke the trigger, update the approval_staage and of the sanctions object,
+    # )via the approval_stage property) and call the _on_{trigger} function on the sanction.
+    #
+    # Overrriding these functions will divorce the offending Sanction class from that trigger's
+    # functionality on the state machine.
 
     def _get_registration(self):
         """Get the Registration that is waiting on this sanction."""
@@ -186,19 +193,16 @@ class TokenApprovableSanction(Sanction):
 
     def _verify_user_role(self, user):
         '''Compare the caller's known role against the current sanction approval stage.'''
-        try:
-            user_role = self.approval_state[user._id]['approver_role']
-        except KeyError:
-            raise ApproverRoleError()
+        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
+            moderator_group_name = self.target_registration.provider.format_group('moderator')
+            if user.groups.filter(name=moderator_group_name).exists():
+                return True
 
-        required_role = (
-            self.ADMIN_ROLE if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL else
-            self.MODERATOR_ROLE if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
-            else ''
-        )
+        if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL:
+            if user._id in self.approval_state:
+                return True
 
-        if user_role != required_role:
-            raise ApproverRoleError()
+        return False
 
     def _validate_request(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
@@ -206,9 +210,7 @@ class TokenApprovableSanction(Sanction):
         user = event_data.kwargs.get('user')
         token = event_data.kwargs.get('token')
 
-        try:
-            self._verify_user_role(user)
-        except ApproverRoleError:
+        if not self._verify_user_role(user):
             raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
                 ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
 
@@ -224,7 +226,7 @@ class TokenApprovableSanction(Sanction):
 
         return True
 
-    def add_authorizer(self, user, node=None, approved=False, save=False, role=Sanction.ADMIN_ROLE):
+    def add_authorizer(self, user, node, approved=False, save=False):
         """Add an admin user to this Sanction's approval state.
 
         :param User user: User to add.
@@ -233,10 +235,6 @@ class TokenApprovableSanction(Sanction):
         :param bool save: Whether to save this object.
         :param str role: The role (admin or moderator) of the authorizer
         """
-        if role not in ['moderator', 'admin']:
-            raise ValueError('Authorizer role must be either "moderator" or "admin".')
-        if role == Sanction.ADMIN_ROLE and node is None:
-            raise ValueError('Admin authorizers for Sanctions must provide a node')
 
         valid = self._validate_authorizer(user)
         if not valid or user._id in self.approval_state:
@@ -245,24 +243,17 @@ class TokenApprovableSanction(Sanction):
         self.approval_state[user._id] = {
             'has_approved': approved,
             'node_id': node._id,
-            'approver_role': role,
-        }
-
-        # Add tokens and node IDs for admin approvers
-        if role == Sanction.ADMIN_ROLE:
-            approval_token = tokens.encode({
+            'approval_token': tokens.encode({
                 'user_id': user.id,
                 'sanction_id': self._id,
                 'action': 'approve_{}'.format(self.SHORT_NAME)
-            })
-            rejection_token = tokens.encode({
+            }),
+            'rejection_token': tokens.encode({
                 'user_id': user.id,
                 'sanction_id': self._id,
                 'action': 'reject_{}'.format(self.SHORT_NAME)
             })
-            self.approval_state[user._id]['node_id'] = node._id
-            self.approval_state[user._id]['approval_token'] = approval_token
-            self.approval_state[user._id]['rejection_token'] = rejection_token
+        }
 
         if save:
             self.save()

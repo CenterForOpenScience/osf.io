@@ -275,12 +275,6 @@ class Registration(AbstractNode):
     def require_approval(self, *args, **kwargs):
         super().require_approval(*args, **kwargs)
         self.update_moderation_state()
-        if self.is_moderated:
-            moderators = self.provider.get_group('moderator').userset().all()
-            for moderator in moderators:
-                self.registration_approval.add_authorizer(moderator, role='moderator')
-
-        self.registration_approval.save()
         self.save()
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
@@ -303,12 +297,7 @@ class Registration(AbstractNode):
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            self.embargo.add_authorizer(admin, node=Node, role='admin')
-        if self.is_moderated:
-            moderators = self.provider.get_group('moderator').userset().all()
-            for moderator in moderators:
-                self.embargo.add_authorizer(moderator, role='moderator')
-
+            self.embargo.add_authorizer(admin, node)
         self.embargo.save()  # Save embargo's approval_state
         return self.embargo
 
@@ -360,7 +349,7 @@ class Registration(AbstractNode):
         )
         admins = [admin for admin in self.root.get_admin_contributors_recursive(unique_users=True)]
         for (admin, node) in admins:
-            approval.add_authorizer(admin, node=node, role='admin')
+            approval.add_authorizer(admin, node)
         approval.save()
         approval.ask(admins)
         self.embargo_termination_approval = approval
@@ -449,12 +438,7 @@ class Registration(AbstractNode):
         self.save()
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            self.retraction.add_authorizer(admin, node=node, role='admin')
-        if self.is_moderated:
-            moderators = self.provider.get_group('moderator').userset().all()
-            for moderator in moderators:
-                self.retraction.add_authorizer(moderator, role='moderator')
-
+            self.retraction.add_authorizer(admin, node)
         self.retraction.save()  # Save retraction approval state
         return self.retraction
 
