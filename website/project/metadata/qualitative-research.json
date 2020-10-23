@@ -1,7 +1,7 @@
 {
    "name":"Qualitative Preregistration",
    "version":1,
-   "description":"This preregistration template is part of the DARPA Artificial Social Intelligence for Successful Teams (ASIST) program. This template is intended to formally register performer hypothesis and AI capability preregistrations throughout the ASIST program.",
+   "description":"This template was created by researchers from the qualitative community for preregistration of qualitative research",
    "pages":[
       {
          "id":"page1",
@@ -126,7 +126,7 @@
                "type":"string",
                "format":"textarea",
                "title":"Data analysis process",
-               "description":"Please describe what your process of data analysis will look like. Questions to keep in mind could be (but are not limited to):* who will be involved in the data analysis, and in what role?* if relevant, indicate any procedures that will be used to turn “raw” data into analyzable form (e.g., a coding scheme)* if relevant, indicate any evidentiary criteria that will be used to assess any hypotheses (e.g., what evidence will count as consistent or inconsistent with a given proposition)* if relevant, what software or analytic tools will you use and how will you use them?",
+               "description":"Please describe what your process of data analysis will look like. Questions to keep in mind could be (but are not limited to):* who will be involved in the data analysis, and in what role?* if relevant, indicate any procedures that will be used to turn “raw” data into analyzable form (e.g., a coding scheme) * if relevant, indicate any evidentiary criteria that will be used to assess any hypotheses (e.g., what evidence will count as consistent or inconsistent with a given proposition)* if relevant, what software or analytic tools will you use and how will you use them?",
                "required":true
             },
             {
@@ -139,15 +139,15 @@
                   "Triangulation with other data sources",
                   "Bringing in different perspectives",
                   "Have different researchers analyse the data",
-                  "Concensus building among team members or 'interrater reliability'",
-                  "negative case analysis",
+                  "Consensus building among team members or 'interrater reliability'",
+                  "Negative case analysis",
                   "Peer debriefing",
                   "Cross-checks for rivalling explanations",
                   "Bring in an 'auditor'",
                   "Reflexitivity",
                   "Verisimilitude",
                   "Emotionality",
-                  "Personal responsitbility",
+                  "Personal Responsibility",
                   "An ethic of caring",
                   "Political praxis",
                   "Multivoiced texts",
@@ -175,7 +175,7 @@
                "type":"string",
                "format":"textarea",
                "title":"Reflection on your positionality (optional)",
-               "description":"Feel free to reflect on your relation to* or association with the studied phenomenon and your position in the research setting/field, including your academic/personal standpoints, assumptions and values. In addition, if there is a potential conflict of interest that can arise, you may want to report that here.* whether you have a previous relationship with the studied phenomenon, and if you consider that there are previous positions or assumptions that may influence the present study.",
+               "description":"Feel free to reflect on your relation to * or association with the studied phenomenon and your position in the research setting/field, including your academic/personal standpoints, assumptions and values. In addition, if there is a potential conflict of interest that can arise, you may want to report that here.* whether you have a previous relationship with the studied phenomenon, and if you consider that there are previous positions or assumptions that may influence the present study.",
                "help":"For example, if you study the lives of detained immigrants, you might want to talk about your political viewpoints, experience working with detained immigrants, relevant policy work, or perhaps your own experience as a detained immigrant.",
                "required":false
             }

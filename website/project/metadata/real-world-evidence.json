@@ -90,7 +90,7 @@
                "format":"textarea",
                "title":"Study population",
                "description":"Please choose one the population under evaluation in the study",
-               "help":"Adults with sleep disordered breathing",
+               "help":"The population under evaluation in the study",
                "required":true
             },
             {
@@ -108,14 +108,14 @@
                "format":"textarea",
                "title":"Specific Inclusion criteria",
                "description":"A description of how exactly patients enter the study",
-               "help":"a prior diagnosis of condition X.",
+               "help":"A prior diagnosis of condition X.",
                "required":true
             },
             {
                "qid":"q11",
                "type":"string",
                "format":"textarea",
-               "title":"Specific Inclusion criteria",
+               "title":"Specific Exclusion criteria",
                "description":"The population that you want to leave OUT of the study",
                "help":"Adults with previous sleep disordered breathing-related surgery; Patients under 18 years of age",
                "required":true
@@ -209,7 +209,7 @@
                   "Study analysis in progress",
                   "Statistical comparisons completed"
                ],
-               "description":"TPlease choose the one best short description that best reflects the amount of data handling that you have had up until the date of registration for this study.",
+               "description":"Please choose the one best short description that best reflects the amount of data handling that you have had up until the date of registration for this study.",
                "help":"If you have looked at the data to determine whether there are enough adults with sleep disordered breathing to at least satisfy requirements for your sample size, you should choose option 3 –conducted feasibility counts.",
                "required":true
             }
