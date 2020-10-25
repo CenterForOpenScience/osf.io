@@ -12,7 +12,8 @@ var no_storage_name_providers = ['osfstorage'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py
-var preload_accounts_type2 = ['nextcloudinstitutions']
+var preload_accounts_type2 = ['nextcloudinstitutions',
+			      's3compatinstitutions']
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -105,6 +106,14 @@ $('#s3compat_modal input').keyup(function () {
 
 $('#s3compat_modal input').on('paste', function(e) {
     validateRequiredFields('s3compat');
+});
+
+$('#s3compatinstitutions_modal input').keyup(function () {
+    validateRequiredFields('s3compatinstitutions');
+});
+
+$('#s3compatinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('s3compatinstitutions');
 });
 
 $('#swift_modal input').keyup(function () {
@@ -250,7 +259,7 @@ function ajaxCommon(type, params, providerShortName, route, callback) {
         data: params,
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
-        timeout: 30000,
+        timeout: 120000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
             if (callback) {

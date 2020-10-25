@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import traceback
+
 from boxsdk import Client as BoxClient, OAuth2
 from boxsdk.exception import BoxAPIException
 from furl import furl
@@ -23,6 +25,8 @@ from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
+from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
+from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
@@ -39,6 +43,7 @@ providers = None
 enabled_providers_forinstitutions_list = [
     'dropboxbusiness',
     'nextcloudinstitutions',
+    's3compatinstitutions',
 ]
 
 enabled_providers_list = [
@@ -239,23 +244,43 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
             'message': 'All the fields above are required.'
         }, httplib.BAD_REQUEST)
 
-    user_info = s3compat_utils.get_user_info(host, access_key, secret_key)
+    try:
+        user_info = s3compat_utils.get_user_info(host, access_key, secret_key)
+        e_message = ''
+    except Exception as e:
+        user_info = None
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
     if not user_info:
-        return {
+        return ({
             'message': 'Unable to access account.\n'
             'Check to make sure that the above credentials are valid, '
-            'and that they have permission to list buckets.'
-        }, httplib.BAD_REQUEST
+            'and that they have permission to list buckets.',
+            'e_message': e_message
+        }, httplib.BAD_REQUEST)
 
-    if not s3compat_utils.can_list(host, access_key, secret_key):
-        return {
-            'message': 'Unable to list buckets.\n'
-            'Listing buckets is required permission that can be changed via IAM'
-        }, httplib.BAD_REQUEST
-
-    if not s3compat_utils.bucket_exists(host, access_key, secret_key, bucket):
+    try:
+        res = s3compat_utils.can_list(host, access_key, secret_key)
+        e_message = ''
+    except Exception as e:
+        res = False
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    if not res:
         return ({
-            'message': 'Invalid bucket.'
+            'message': 'Unable to list buckets.\n'
+            'Listing buckets is required permission that can be changed via IAM',
+            'e_message': e_message
+        }, httplib.BAD_REQUEST)
+
+    try:
+        res = s3compat_utils.bucket_exists(host, access_key, secret_key, bucket)
+        e_message = ''
+    except Exception as e:
+        res = False
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    if not res:
+        return ({
+            'message': 'Invalid bucket.',
+            'e_message': e_message
         }, httplib.BAD_REQUEST)
 
     return ({
@@ -707,23 +732,17 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
         'message': 'Dropbox Business was set successfully!!'
     }, httplib.OK)
 
-def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, provider_name):
-    test_connection_result = test_owncloud_connection(
-        host_url, username, password, folder, provider_name)
-    if test_connection_result[1] != httplib.OK:
-        return test_connection_result
-
-    host = use_https(host_url)
-    provider = NextcloudInstitutionsProvider(
-        account=None, host=host.url,
-        username=username, password=password)
+def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, separator=':'):
     try:
         provider.account.save()
     except ValidationError:
+        host = provider.host
+        username = provider.username
+        password = provider.password
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id='{}{}{}'.format(host, separator, username).lower()
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password
@@ -751,8 +770,35 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
         'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
-def get_nextcloudinstitutions_credentials(institution):
-    provider_name = 'nextcloudinstitutions'
+def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, provider_name):
+    test_connection_result = test_owncloud_connection(
+        host_url, username, password, folder, provider_name)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = use_https(host_url)
+    provider = NextcloudInstitutionsProvider(
+        account=None, host=host.url,
+        username=username, password=password)
+    return save_basic_storage_institutions_credentials_common(
+        institution, storage_name, folder, provider_name, provider)
+
+def save_s3compatinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    test_connection_result = test_s3compat_connection(
+        host, access_key, secret_key, bucket)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    separator = '\t'
+    provider = S3CompatInstitutionsProvider(
+        account=None, host=host,
+        username=access_key, password=secret_key, separator=separator)
+
+    return save_basic_storage_institutions_credentials_common(
+        institution, storage_name, bucket, provider_name, provider, separator)
+
+def get_credentials_common(institution, provider_name):
     clear_usermap_tmp(provider_name, institution)
     rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
                                             create=False)
@@ -761,17 +807,54 @@ def get_nextcloudinstitutions_credentials(institution):
     exacc = rdm_addon_option.external_accounts.first()
     if not exacc:
         return None
-    provider = NextcloudInstitutionsProvider(exacc)
-    folder = rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)
+    return rdm_addon_option, exacc
+
+def get_nextcloudinstitutions_credentials(institution):
+    provider_name = 'nextcloudinstitutions'
+    res = get_credentials_common(institution, provider_name)
+    if res:
+        opt, exacc = res
+        provider = NextcloudInstitutionsProvider(exacc)
+        host = use_https(provider.host).host
+        username = provider.username
+        password = provider.password
+        folder = opt.extended.get(KEYNAME_BASE_FOLDER)
+    else:
+        host = ''
+        username = ''
+        password = ''
+        folder = None
     if not folder:
         folder = nextcloudinstitutions_settings.DEFAULT_BASE_FOLDER
-
     data = {}
-    host = use_https(provider.host)
-    data[provider_name + '_host'] = host.host
-    data[provider_name + '_username'] = provider.username
-    data[provider_name + '_password'] = provider.password  # NOTICE
+    data[provider_name + '_host'] = host
+    data[provider_name + '_username'] = username
+    data[provider_name + '_password'] = password
     data[provider_name + '_folder'] = folder
+    return data
+
+def get_s3compatinstitutions_credentials(institution):
+    provider_name = 's3compatinstitutions'
+    res = get_credentials_common(institution, provider_name)
+    if res:
+        opt, exacc = res
+        provider = S3CompatInstitutionsProvider(exacc)
+        host = provider.host  # host:port
+        access_key = provider.username
+        secret_key = provider.password
+        bucket = opt.extended.get(KEYNAME_BASE_FOLDER)
+    else:
+        host = ''
+        access_key = ''
+        secret_key = ''
+        bucket = None
+    if not bucket:
+        bucket = s3compatinstitutions_settings.DEFAULT_BASE_BUCKET
+    data = {}
+    data[provider_name + '_endpoint_url'] = host
+    data[provider_name + '_access_key'] = access_key
+    data[provider_name + '_secret_key'] = secret_key
+    data[provider_name + '_bucket'] = bucket
     return data
 
 def extuser_exists(provider_name, post_params, extuser):

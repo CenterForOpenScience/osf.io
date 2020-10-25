@@ -104,6 +104,13 @@ class TestConnectionView(InstitutionalStorageBaseView, View):
                 data.get('s3compat_secret_key'),
                 data.get('s3compat_bucket'),
             )
+        elif provider_short_name == 's3compatinstitutions':
+            result = utils.test_s3compat_connection(
+                data.get('s3compatinstitutions_endpoint_url'),
+                data.get('s3compatinstitutions_access_key'),
+                data.get('s3compatinstitutions_secret_key'),
+                data.get('s3compatinstitutions_bucket'),
+            )
         elif provider_short_name == 'owncloud':
             result = utils.test_owncloud_connection(
                 data.get('owncloud_host'),
@@ -190,6 +197,16 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('s3compat_secret_key'),
                 data.get('s3compat_bucket'),
             )
+        elif provider_short_name == 's3compatinstitutions':
+            result = utils.save_s3compatinstitutions_credentials(
+                institution,
+                storage_name,
+                data.get('s3compatinstitutions_endpoint_url'),
+                data.get('s3compatinstitutions_access_key'),
+                data.get('s3compatinstitutions_secret_key'),
+                data.get('s3compatinstitutions_bucket'),
+                provider_short_name,
+            )
         elif provider_short_name == 'swift':
             result = utils.save_swift_credentials(
                 institution_id,
@@ -274,12 +291,18 @@ class FetchCredentialsView(InstitutionalStorageBaseView, View):
             return JsonResponse(response, status=httplib.BAD_REQUEST)
 
         result = None
+        data = None
         if provider_short_name == 'nextcloudinstitutions':
             data = utils.get_nextcloudinstitutions_credentials(institution)
-            if data:
-                result = (data, httplib.OK)
-            else:
-                result = ({'message': 'no credentials'}, httplib.BAD_REQUEST)
+        elif provider_short_name == 's3compatinstitutions':
+            data = utils.get_s3compatinstitutions_credentials(institution)
+        else:
+            result = ({'message': 'unsupported'}, httplib.BAD_REQUEST)
+
+        if data:
+            result = (data, httplib.OK)
+        elif not result:
+            result = ({'message': 'no credentials'}, httplib.BAD_REQUEST)
 
         return JsonResponse(result[0], status=result[1])
 

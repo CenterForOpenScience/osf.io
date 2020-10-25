@@ -113,7 +113,7 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     def after_template(self, tmpl_node, new_node, user, save=True):
         if not self.has_auth:
             return
-        dest_addon = new_node.get_addon(self.SHORT_NAME)
+        dest_addon = new_node.get_addon(self.SHORT_NAME)  # same provider
         if not dest_addon:
             return
         if not dest_addon.has_auth:
@@ -182,7 +182,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
     def init_addon(cls, node, institution_id, addon_name):
         addon_option = cls.get_addon_option(institution_id, addon_name)
         if addon_option is None:
-            logger.info('No addon option for institution_id={}'.format(institution_id))
+            logger.debug('No addon option for institution_id={}, addon_name={}'.format(institution_id, addon_name))
             return None  # disabled
 
         provider = cls.provider_switch(addon_option)
@@ -218,6 +218,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
             pass  # no DEFAULT_BASE_FOLDER
         return ''
 
+    # root_folder=BASE_FOLDR/ROOT_FOLDER_FORMAT
     @classmethod
     def root_folder(cls, addon_option, node):
         base_folder = cls.base_folder(addon_option)
@@ -374,6 +375,8 @@ def node_post_save(sender, instance, created, **kwargs):
         if institution_id is None:
             logger.error(u'user={} has no institution.'.format(node.creator.username))
             return  # disabled
+
+        logger.debug(u'ENABLED_ADDONS_FOR_INSTITUTIONS={}, website_settings.ADDONS_AVAILABLE_DICT={}, website_settings.ADDONS_AVAILABLE={}'.format(str(ENABLED_ADDONS_FOR_INSTITUTIONS), str(website_settings.ADDONS_AVAILABLE_DICT), str(website_settings.ADDONS_AVAILABLE)))
 
         for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
             if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
