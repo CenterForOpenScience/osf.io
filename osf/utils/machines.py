@@ -418,6 +418,23 @@ class SanctionStateMachine(Machine):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': short_message, 'message_long': long_message})
 
+    def _parse_user_and_token_from_event_data(self, event_data):
+        '''Parse any provided user and token from the event_data.
+
+        User and token are the only supported args to SanctionStateMachine triggers.
+        If passed as potisional args, user must be first and token must be second.
+        '''
+        user = None
+        token = None
+        try:
+            user = event_data.args[0]
+            token = event_data.args[1]
+        except IndexError:
+            user = event_data.kwargs.get('user', user)
+            token = event_data.kwargs.get('token', token)
+
+        return user, token
+
     def _initialize_transition(self, event_data):
         self.from_state = self.target_registration.moderation_state
 

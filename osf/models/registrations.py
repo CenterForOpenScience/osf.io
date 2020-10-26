@@ -253,6 +253,8 @@ class Registration(AbstractNode):
 
     @property
     def is_moderated(self):
+        if not self.provider:
+            return False
         return self.provider.is_reviewed
 
     @property

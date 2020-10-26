@@ -229,8 +229,7 @@ class TestRegistrationEmbargoTermination:
         with assert_raises(HTTPError):
             embargo_termination.approve(user=user2, token=user_2_tok)
 
-        assert embargo_termination.state == embargo_termination.REJECTED
-        assert embargo_termination.approval_stage is SanctionStates.REJECTED
+        assert embargo_termination.is_rejected
 
     def test_single_approve_stays_unapproved(self, user, user2, embargo_termination):
         user_1_tok = embargo_termination.token_for_user(user, 'approval')

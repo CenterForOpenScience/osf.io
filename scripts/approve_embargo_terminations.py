@@ -62,16 +62,21 @@ def main():
         else:
             count += 1
             logger.info('Ending the Embargo ({0}) of Registration ({1}) early. Making the registration and all of its children public now.'.format(embargo._id, registration._id))
-            # Manually marking EmbargoTerminationApproval as 'approved' instead of calling _on_approve() hook
-            # _on_approve hook would require that all users had given their approval.
-            request.state = models.Sanction.APPROVED
-            request.save()
+            # Call 'accept' trigger directly. This will terminate the embargo
+            # if the registration is unmoderated or push it into the moderation
+            # queue if it is part of a moderated registry.
+            request.accept(user=request.initiated_by)
+#            request.state = models.Sanction.APPROVED
+#            request.save()
             # This will mark Embargo as 'complete' and the registration as 'public'.
-            request._on_complete()
+#            request._on_complete()
             registration.reload()
+            embargo_termination_state = request.embargo_termination.approval_stage
             assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
+            assert embargo_termination_state is SanctionStates.ACCEPTED
             assert registration.is_embargoed is False
             assert registration.is_public is True
+
     logger.info('Auto-approved {0} of {1} embargo termination requests'.format(count, len(pending_embargo_termination_requests)))
 
 @celery_app.task(name='scripts.approve_embargo_terminations')

@@ -203,8 +203,11 @@ class TokenApprovableSanction(Sanction):
     def _validate_request(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
         action = event_data.event.name
-        user = event_data.kwargs.get('user')
-        token = event_data.kwargs.get('token')
+        user, token = self._parse_user_and_token_from_event_data(event_data)
+        if not user:
+            raise ValueError('All state trigger functions must specify a user')
+        if self.approval_state is SanctionStates.PENDING_ADMIN_APPROVAL and not token:
+            raise ValueError('Admin actions require a token')
 
         if not self._verify_user_role(user):
             raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
@@ -276,13 +279,13 @@ class TokenApprovableSanction(Sanction):
         - mode is ANY and the Sanction has not already been cancelled
         - mode is UNANIMOUS and all users have given approval
         """
-        user = event_data.kwargs['user']
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
         self.approval_state[user._id]['has_approved'] = True
 
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
-            self.accept(**event_data.kwargs)  # state machine trigger
+            self.accept(*event_data.args, **event_data.kwargs)  # state machine trigger
 
     def _on_reject(self, event_data):
         """Callback from #reject statemachine trigger."""
@@ -559,7 +562,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)
-        user = event_data.kwargs['user']
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         parent_registration = self.target_registration
@@ -698,7 +701,7 @@ class Retraction(EmailApprovableSanction):
             }
 
     def _on_reject(self, event_data):
-        user = event_data.kwargs['user']
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
         super()._on_reject(event_data)
 
         NodeLog = apps.get_model('osf.NodeLog')
@@ -861,7 +864,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, event_data):
-        user = event_data.kwargs['user']
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         register = self._get_registration()
@@ -896,7 +899,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)
-        user = event_data.kwargs['user']
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         registered_from = self.target_registration.registered_from

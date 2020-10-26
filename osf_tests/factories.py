@@ -443,6 +443,7 @@ class RegistrationFactory(BaseNodeFactory):
                 archive_job.status = ARCHIVER_SUCCESS
                 archive_job.done = True
                 reg.sanction.state = Sanction.APPROVED
+                reg.sanction.to_ACCEPTED()
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
