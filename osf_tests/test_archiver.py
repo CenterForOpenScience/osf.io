@@ -1261,7 +1261,6 @@ class TestArchiverBehavior(OsfTestCase):
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
         ) as (mock_finished, mock_success):
             listeners.archive_callback(reg)
-        print(reg.is_public)
         assert_true(mock_delete_index_node.called)
 
     @mock.patch('osf.models.AbstractNode.update_search')

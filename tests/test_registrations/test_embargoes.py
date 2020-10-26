@@ -1125,14 +1125,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
-#        self.registration.embargo.to_ACCEPTED()
-#        self.registration.update_moderation_state()
+
         for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.refresh_from_db()
-        print(self.registration.moderation_state)
-        print(self.registration.embargo.approval_stage)
 
         self.registration.set_privacy('public', Auth(self.registration.creator))
         for reg in self.registration.node_and_primary_descendants():
