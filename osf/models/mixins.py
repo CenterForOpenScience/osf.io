@@ -973,6 +973,8 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 
+    default_subscriptions = ['new_pending_submissions']
+
     @property
     def is_reviewed(self):
         return self.reviews_workflow is not None
@@ -1002,13 +1004,9 @@ class ReviewProviderMixin(GuardianMixin):
 
     def add_to_group(self, user, group):
         # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        for subscription in self.default_subscriptions:
+            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+
         return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -1018,10 +1016,23 @@ class ReviewProviderMixin(GuardianMixin):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-            notification.remove_user_from_subscription(user, save=True)
+            for subscription in self.default_subscriptions:
+                self.remove_user_from_subscription(user, subscription.format(self._id))
 
         return _group.user_set.remove(user)
+
+    def add_user_to_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+
+    def remove_user_from_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        notification.remove_user_from_subscription(user, save=True)
 
 
 class TaxonomizableMixin(models.Model):
@@ -2325,9 +2336,9 @@ class RegistriesModerationMixin(MachineableMixin):
             comment: Text describing why.
         """
         if embargo_end_date:
-            return self._run_transition(self.TriggersClass.EMBARGO.value, user=user, end_date=embargo_end_date)
+            return self._run_transition(self.TriggersClass.EMBARGO.value, user=user, comment=comment, end_date=embargo_end_date)
         else:
-            return self._run_transition(self.TriggersClass.ACCEPT.value, user=user)
+            return self._run_transition(self.TriggersClass.ACCEPT.value, user=user, comment=comment)
 
     def run_request_embargo_termination(self, user, comment):
         """Run the 'embargo_termination' state transition and create a corresponding Action.

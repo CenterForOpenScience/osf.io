@@ -4,6 +4,7 @@ from transitions import Machine
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 
+from django.core.exceptions import ObjectDoesNotExist
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
@@ -97,7 +98,66 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ReviewsMachine(BaseMachine):
+class ModerationNotificationMixin(BaseMachine):
+
+    def notify_submit(self, ev):
+        context = self.get_context()
+        context['referrer'] = ev.kwargs.get('user')
+        recipients = list(self.machineable.contributors)
+        reviews_signals.reviews_email_submit.send(
+            context=context,
+            recipients=recipients
+        )
+        reviews_signals.reviews_email_submit_moderators_notifications.send(
+            timestamp=timezone.now(),
+            context=context
+        )
+
+    def notify_resubmit(self, ev):
+        context = self.get_context()
+        reviews_signals.reviews_email.send(
+            creator=ev.kwargs.get('user'), context=context,
+            template='reviews_resubmission_confirmation',
+            action=self.action
+        )
+
+    def notify_accept_reject(self, ev):
+        context = self.get_context()
+        context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
+        context['comment'] = self.action.comment
+        context['is_rejected'] = self.action.to_state == self.States.REJECTED.value
+        context['was_pending'] = self.action.from_state == self.States.PENDING.value
+        reviews_signals.reviews_email.send(
+            creator=ev.kwargs.get('user'),
+            context=context,
+            template='reviews_submission_status',
+            action=self.action
+        )
+
+    def notify_edit_comment(self, ev):
+        context = self.get_context()
+        context['comment'] = self.action.comment
+        if not self.machineable.provider.reviews_comments_private and self.action.comment:
+            reviews_signals.reviews_email.send(
+                creator=ev.kwargs.get('user'),
+                context=context,
+                template='reviews_update_comment',
+                action=self.action
+            )
+
+    def get_context(self):
+        return {
+            'domain': DOMAIN,
+            'reviewable': self.machineable,
+            'workflow': self.machineable.provider.reviews_workflow,
+            'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
+            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+            'document_type': self.machineable.provider.preprint_word
+        }
+
+
+class ReviewsMachine(ModerationNotificationMixin):
     ActionClass = ReviewAction
     States = ReviewStates
     Transitions = REVIEWABLE_TRANSITIONS
@@ -117,6 +177,15 @@ class ReviewsMachine(BaseMachine):
             self.machineable.date_published = now
             self.machineable.is_published = True
             self.machineable.ever_public = True
+            self.machineable.add_log(
+                action=PreprintLog.PUBLISHED,
+                params={
+                    'preprint': self.machineable._id
+                },
+                auth=Auth(self.action.creator),
+                save=False,
+            )
+
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
@@ -133,47 +202,6 @@ class ReviewsMachine(BaseMachine):
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
-
-    def notify_submit(self, ev):
-        context = self.get_context()
-        context['referrer'] = ev.kwargs.get('user')
-        user = ev.kwargs.get('user')
-        auth = Auth(user)
-        self.machineable.add_log(
-            action=PreprintLog.PUBLISHED,
-            params={
-                'preprint': self.machineable._id
-            },
-            auth=auth,
-            save=False,
-        )
-        recipients = list(self.machineable.contributors)
-        reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
-        reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
-
-    def notify_resubmit(self, ev):
-        context = self.get_context()
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_resubmission_confirmation',
-                                           action=self.action)
-
-    def notify_accept_reject(self, ev):
-        context = self.get_context()
-        context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
-        context['comment'] = self.action.comment
-        context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
-        context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_submission_status',
-                                           action=self.action)
-
-    def notify_edit_comment(self, ev):
-        context = self.get_context()
-        context['comment'] = self.action.comment
-        if not self.machineable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                               template='reviews_update_comment',
-                                               action=self.action)
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -196,20 +224,8 @@ class ReviewsMachine(BaseMachine):
                 contributor.username,
                 mails.WITHDRAWAL_REQUEST_GRANTED,
                 mimetype='html',
-                document_type=self.machineable.provider.preprint_word,
                 **context
             )
-
-    def get_context(self):
-        return {
-            'domain': DOMAIN,
-            'reviewable': self.machineable,
-            'workflow': self.machineable.provider.reviews_workflow,
-            'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
-            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
-            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
-        }
-
 
 class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
@@ -282,7 +298,7 @@ class NodeRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node': self.machineable.target,
-            'requester': self.machineable.creator
+            'requester': self.machineable.creator,
         }
 
 
@@ -317,7 +333,7 @@ class PreprintRequestMachine(BaseMachine):
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
-                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mails.WITHDRAWAL_REQUEST_DECLINED,
                 mimetype='html',
                 **context
             )
@@ -341,10 +357,11 @@ class PreprintRequestMachine(BaseMachine):
             'reviewable': self.machineable.target,
             'requester': self.machineable.creator,
             'is_request_email': True,
+            'document_type': self.machineable.target.provider.preprint_word
         }
 
 
-class RegistrationMachine(BaseMachine):
+class RegistrationMachine(ModerationNotificationMixin):
     ActionClass = RegistrationAction
     States = RegistrationStates
     Transitions = REGISTRATION_TRANSITIONS
@@ -430,32 +447,75 @@ class RegistrationMachine(BaseMachine):
     def force_withdrawal(self, ev):
         pass
 
-    def notify_embargo_termination(self, ev):
+    def notify_request_withdraw(self, ev):
         pass
 
-    def notify_embargo(self, ev):
-        pass
+    def notify_withdraw_registration(self, ev):
+        context = self.get_context()
+        for contributor in self.machineable.registered_node.contributors.all():
+            context['contributor'] = contributor
+            context['user'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
 
-    def notify_withdraw(self, ev):
-        pass
+            mails.send_mail(
+                contributor.username,
+                mails.WITHDRAWAL_REQUEST_GRANTED,
+                mimetype='html',
+                **context
+            )
 
-    def notify_accept_reject(self, ev):
-        pass
+    def notify_reject_withdraw_request(self, ev):
+        context = self.get_context()
+        try:
+            action = RegistrationAction.objects.get(
+                target__id=self.machineable.registered_node.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept'
+            )
+            context['requester'] = action.target.creator
+        except ObjectDoesNotExist:
+            # If there is no registration request action, it means the withdrawal is directly initiated by admin/moderator
+            context['withdrawal_submitter_is_moderator_or_admin'] = True
 
-    def notify_edit_comment(self, ev):
-        pass
+        for contributor in self.machineable.registered_node.contributors.all():
+            context['contributor'] = contributor
+            if context.get('requester', None):
+                context['is_requester'] = context['requester'].username == contributor.username
 
-    def notify_resubmit(self, ev):
-        pass
+            mails.send_mail(
+                contributor.username,
+                mails.WITHDRAWAL_REQUEST_DECLINED,
+                mimetype='html',
+                **context
+            )
 
-    def notify_submit(self, ev):
-        pass
+    def notify_withdraw_request_sent(self, ev):
+        context = self.get_context()
+        context['referrer'] = ev.kwargs.get('user')
+        reviews_signals.reviews_withdraw_requests_notification_moderators.send(
+            timestamp=timezone.now(),
+            context=context
+        )
 
     def notify_withdraw_request_submitted(self, ev):
-        pass
+        registration = self.machineable.registered_node
+        registration.retraction.ask(
+            registration.get_active_contributors_recursive(unique_users=True)
+        )
 
     def notify_withdraw_request_denied(self, ev):
         pass
 
-    def notify_withdraw_request(self, ev):
-        pass
+    def get_context(self):
+        return {
+            'domain': DOMAIN,
+            'reviewable': self.machineable.registered_node,
+            'workflow': self.machineable.provider.reviews_workflow,
+            'provider_url': self.machineable.provider.domain,
+            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+            'requester': self.action.creator,
+            'document_type': 'registrations'
+        }

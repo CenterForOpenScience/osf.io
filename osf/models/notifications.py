@@ -11,7 +11,7 @@ from website.util import api_v2_url
 
 class NotificationSubscription(BaseModel):
     primary_identifier_name = '_id'
-    _id = models.CharField(max_length=50, db_index=True, unique=True)  # pxyz_wiki_updated, uabc_comment_replies
+    _id = models.CharField(max_length=100, db_index=True, unique=False)  # pxyz_wiki_updated, uabc_comment_replies
 
     event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
 
@@ -25,6 +25,10 @@ class NotificationSubscription(BaseModel):
     none = models.ManyToManyField('OSFUser', related_name='+')  # reverse relationships
     email_digest = models.ManyToManyField('OSFUser', related_name='+')  # for these
     email_transactional = models.ManyToManyField('OSFUser', related_name='+')  # are pointless
+
+    class Meta:
+        # Both PreprintProvider and RegistrationProvider default instances use "osf" as their `_id`
+        unique_together = ('_id', 'provider')
 
     @classmethod
     def load(cls, q):

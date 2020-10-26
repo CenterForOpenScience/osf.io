@@ -2261,6 +2261,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             provider_name=self.preprint.provider.name,
             no_future_emails=[],
             logo=settings.OSF_PREPRINTS_LOGO,
+            document_type=self.preprint.provider.preprint_word,
         )
         assert_equals(send_mail.call_count, 1)
 

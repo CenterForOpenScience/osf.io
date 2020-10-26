@@ -125,3 +125,28 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
+
+
+def populate_registration_provider_subscriptions(app=None, state=None):
+    from django.apps import apps
+
+    update_provider_auth_groups()  # for test envs
+
+    NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+
+    for provider in RegistrationProvider.objects.all():
+        provider_admins = provider.get_group('admin').user_set.all()
+        provider_moderators = provider.get_group('moderator').user_set.all()
+
+        for subscription in provider.default_subscriptions:
+            instance, created = NotificationSubscription.objects.get_or_create(
+                _id=f'{provider._id}_{subscription}',
+                event_name=subscription,
+                provider=provider
+            )
+            if created:
+                instance.save()
+            for user in provider_admins | provider_moderators:
+                # add user to subscription list but set their notification to none by default
+                instance.add_user_to_subscription(user, 'email_transactional', save=True)

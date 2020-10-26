@@ -9,7 +9,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     ProviderAssetFileFactory
 )
-from osf.models import RegistrationProvider, RegistrationSchema, NotificationSubscription
+from osf.models import RegistrationProvider, RegistrationSchema
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
 from admin.registration_providers.forms import RegistrationProviderForm
@@ -253,11 +253,6 @@ class TestEditModerators:
     @pytest.fixture()
     def provider(self):
         provider = RegistrationProviderFactory()
-        NotificationSubscription.objects.get_or_create(
-            _id=f'{provider._id}_new_pending_submissions',
-            event_name='new_pending_submissions',
-            provider=provider
-        )
         update_provider_auth_groups()
         return provider
 
