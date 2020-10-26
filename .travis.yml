@@ -158,10 +158,6 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 
-after_script:
-    # This ensures failed tests are removed from the cache so they can be re-tried.
-    - inv remove_failures_from_testmon --db-path=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
-
 script:
     - export COVERAGE=`if [ $(echo "$TRAVIS_BRANCH"|grep -e "feature/") ]; then echo "--coverage"; else echo ""; fi`
     # Testmon will run for PRs, but will be disabled when merging into master or develop
@@ -174,6 +170,8 @@ after_success:
     - if [[ $(echo "$TRAVIS_BRANCH"|grep -e "feature/") ]]; then coveralls; fi
 
 before_cache:
+  # This ensures failed tests are removed from the cache so they can be re-tried.
+  - inv remove_failures_from_testmon --db-path=$HOME/.cache/testmon/.testmondata_$TEST_BUILD
   - rm -Rf $HOME/.cache/pip/http
   - rm -f $HOME/.cache/pip/log/debug.log
   # exclude python requirements from github repo's
