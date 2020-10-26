@@ -599,10 +599,10 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            # 'run_keen_snapshots': {
-            #     'task': 'scripts.analytics.run_keen_snapshots',
-            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            # },
+            'run_keen_snapshots': {
+                'task': 'scripts.analytics.run_keen_snapshots',
+                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
