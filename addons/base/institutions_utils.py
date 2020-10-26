@@ -287,6 +287,16 @@ class InstitutionsStorageAddon(BaseStorageAddon):
                 return extuser
         return None
 
+    def extuser_to_osfuser(self, extuser):
+        extended = self.addon_option.extended
+        osfuser_to_extuser = extended.get(KEYNAME_USERMAP)
+        if osfuser_to_extuser:
+            reversemap = {v: k for k, v in osfuser_to_extuser.items()}
+            osfuser = reversemap.get(extuser)
+            if osfuser:
+                return osfuser
+        return None
+
     ###
     ### required methods:
     ###
