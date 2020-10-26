@@ -24,7 +24,7 @@ def add_invisible_schemas(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0218_auto_20200929_1850'),
+        ('osf', '0219_auto_20201020_1836'),
     ]
 
     operations = [
