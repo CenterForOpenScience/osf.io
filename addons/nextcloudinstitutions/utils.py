@@ -148,10 +148,16 @@ def _check_for_file(project, path, fileinfo):
         'path': path,
         'materialized': path,
     }
+    if created:
+        action = 'file_added'
+    else:
+        action = 'file_updated'
     if user:  # modified by user
         verify_result = timestamp.add_token(user.id, node, info)
+        project.create_waterbutler_log(Auth(user), action, metadata)
     else:  # modified by unknown user
         verify_result = timestamp.add_token(admin.id, node, info)
+        project.create_waterbutler_log(None, action, metadata)
     logger.info('update timestamp by Webhook for Nextcloud: node_guid={}, path={}, verify_result={}'.format(
         node._id, path, verify_result.get('verify_result_title')))
 
