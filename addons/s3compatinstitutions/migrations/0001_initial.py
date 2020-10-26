@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 import addons.base.institutions_utils
+from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
