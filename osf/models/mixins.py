@@ -1017,7 +1017,7 @@ class ReviewProviderMixin(GuardianMixin):
         if unsubscribe:
             # remove notification subscription
             for subscription in self.default_subscriptions:
-                self.remove_user_from_subscription(user, subscription.format(self._id))
+                self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
 
         return _group.user_set.remove(user)
 

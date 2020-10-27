@@ -98,7 +98,7 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ModerationNotificationMixin(BaseMachine):
+class ModerationNotificationMixin(object):
 
     def notify_submit(self, ev):
         context = self.get_context()
