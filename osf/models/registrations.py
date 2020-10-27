@@ -34,6 +34,7 @@ from osf.models import (
     DraftRegistrationContributor,
 )
 
+from osf.models.action import RegistrationAction
 from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.draft_node import DraftNode
@@ -49,7 +50,7 @@ from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationModerationStates
+from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
 
 logger = logging.getLogger(__name__)
 
@@ -496,26 +497,44 @@ class Registration(AbstractNode):
         self.save()
         field.auto_now = True
 
-    def update_moderation_state(self):
+    def update_moderation_state(self, initiated_by=None, comment=''):
         '''Derive the RegistrationModerationState from the state of the active sanction.'''
+        from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
         active_sanction = self.sanction
         if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
-            state = RegistrationModerationStates.ACCEPTED
+            to_state = RegistrationModerationStates.ACCEPTED
         else:
-            state = RegistrationModerationStates.from_sanction(active_sanction)
+            to_state = RegistrationModerationStates.from_sanction(active_sanction)
 
         # The state is UNDEFINED if the "active sanction" was a rejected withdrawal
         # Determine the state based on any Embargo or RegistrationApproval instead
-        if state is RegistrationModerationStates.UNDEFINED:
+        if to_state is RegistrationModerationStates.UNDEFINED:
             root = self._dirty_root
             actual_active_sanction = root.embargo or root.registration_approval
             if actual_active_sanction is None:  # Rejected Retraction was the only sanction
-                state = RegistrationModerationStates.ACCEPTED
+                to_state = RegistrationModerationStates.ACCEPTED
             else:
-                state = RegistrationModerationStates.from_sanction(actual_active_sanction)
+                to_state = RegistrationModerationStates.from_sanction(actual_active_sanction)
 
-        self.moderation_state = state.db_name
+        self.write_registration_action(from_state, to_state, initiated_by, comment)
+        self.moderation_state = to_state.db_name
         self.save()
+
+    def write_registration_action(self, from_state, to_state, initiated_by, comment):
+        '''Write a new RegistrationAction on relevant state transitions.'''
+        trigger = RegistrationModerationTriggers.from_transition(from_state, to_state)
+        if trigger is None:
+            return  # Not a moderated event, no need to write an action
+
+        initiated_by = initiated_by or self.sanction.initiated_by
+        RegistrationAction.objects.create(
+            target=self,
+            creator=initiated_by,
+            trigger=trigger.db_name,
+            from_state=from_state.db_name,
+            to_state=to_state.db_name,
+            comment=comment
+        ).save()
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:

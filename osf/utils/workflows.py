@@ -102,7 +102,12 @@ class RegistrationModerationStates(ModerationEnum):
             },
         }
 
-        new_state = SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_stage]
+        states_for_sanction_type = SANCTION_STATE_MAP.get(sanction.SANCTION_TYPE)
+        if not states_for_sanction_type:
+            return cls.UNDEFINED
+
+        new_state = states_for_sanction_type.get(sanction.approval_stage, cls.UNDEFINED)
+
         return new_state
 
 
@@ -116,6 +121,25 @@ class RegistrationModerationTriggers(ModerationEnum):
     ACCEPT_WITHDRAWAL = 4
     REJECT_WITHDRAWAL = 5
     FORCE_WITHDRAW = 6
+
+    @classmethod
+    def from_transition(cls, from_state, to_state):
+        '''Infer a trigger from a from_state/to_state pair.'''
+        moderation_states = RegistrationModerationStates
+        transition_to_trigger_mappings = {
+            (moderation_states.INITIAL, moderation_states.PENDING): cls.SUBMIT,
+            (moderation_states.PENDING, moderation_states.ACCEPTED): cls.ACCEPT_SUBMISSION,
+            (moderation_states.PENDING, moderation_states.EMBARGO): cls.ACCEPT_SUBMISSION,
+            (moderation_states.PENDING, moderation_states.REJECTED): cls.REJECT_SUBMISSION,
+            (moderation_states.PENDING_WITHDRAW_REQUEST,
+                moderation_states.PENDING_WITHDRAW): cls.REQUEST_WITHDRAWAL,
+            (moderation_states.PENDING_WITHDRAW,
+                moderation_states.WITHDRAWN): cls.ACCEPT_WITHDRAWAL,
+            (moderation_states.PENDING_WITHDRAW, moderation_states.ACCEPTED): cls.REJECT_WITHDRAWAL,
+            (moderation_states.PENDING_WITHDRAW, moderation_states.EMBARGO): cls.REJECT_WITHDRAWAL,
+        }
+        return transition_to_trigger_mappings.get((from_state, to_state))
+
 
 @unique
 class ChoiceEnum(Enum):

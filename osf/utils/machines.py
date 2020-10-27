@@ -8,13 +8,12 @@ from framework.exceptions import HTTPError
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
-from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    RegistrationModerationTriggers,
     ReviewStates,
     SanctionStates,
     SanctionTypes,
@@ -380,7 +379,6 @@ class SanctionStateMachine(Machine):
             transitions=SANCTION_TRANSITIONS,
             initial=SanctionStates.from_db_name(getattr(self, self.MACHINE_STATE_FIELD_NAME)),
             model_attribute='approval_stage',
-            prepare_event='_initialize_transition',
             after_state_change='_save_transition',
             send_event=True,
             queued=True,
@@ -435,47 +433,6 @@ class SanctionStateMachine(Machine):
 
         return user, token
 
-    def _initialize_transition(self, event_data):
-        self.from_state = self.target_registration.moderation_state
-
-    def _infer_last_trigger(self):
-        '''Determine the most recent 'trigger' for the sanction from a moderation perspective.'''
-        if self.SANCTION_TYPE is SanctionTypes.RETRACTION:
-            if self.approval_stage is SanctionStates.MODERATOR_REJECTED:
-                return RegistrationModerationTriggers.REJECT_WITHDRAWAL
-            elif self.approval_stage is SanctionStates.ACCEPTED:
-                return RegistrationModerationTriggers.ACCEPT_WITHDRAWAL
-            else:  # PENDING_ADMIN_APPROVAL or PENDING_MODERATOR_APPROVAL
-                return RegistrationModerationTriggers.REQUEST_WITHDRAWAL
-
-        if self.SANCTION_TYPE in [SanctionTypes.EMBARGO, SanctionTypes.REGISTRATION_APPROVAL]:
-            if self.approval_stage is SanctionStates.MODERATOR_REJECTED:
-                return RegistrationModerationTriggers.REJECT_SUBMISSION
-            elif self.approval_stage is SanctionStates.ACCEPTED:
-                return RegistrationModerationTriggers.ACCEPT_SUBMISSION
-            else:  # PENDING_ADMIN_APPROVAL or PENDING_MODERATOR_APPROVAL
-                return RegistrationModerationTriggers.SUBMIT
-
-        return None  # No moderation triggers for other sanction types
-
-    def _log_moderated_action(self, event_data):
-        """Create a RegistrationAction for a moderated state change."""
-        # When entering moderation, the Action should state who initiated the submission/withdrawal.
-        # Otherwise, the Action should state which moderator approved/rejected.
-        if event_data.state.name is SanctionStates.PENDING_MODERATOR_APPROVAL.name:
-            user = self.initiated_by
-        else:
-            user = event_data.kwargs['user']
-
-        RegistrationAction.objects.create(
-            target=self.target_registration,
-            creator=user,
-            trigger=self._infer_last_trigger().db_name,
-            from_state=self.from_state,
-            to_state=self.target_registration.moderation_state,
-            comment=event_data.kwargs.get('comment', '')
-        ).save()
-
     def _save_transition(self, event_data):
         """Recored the effects of a state transition in the databsse."""
         self.save()
@@ -483,7 +440,10 @@ class SanctionStateMachine(Machine):
         # No need to update registration state with no sanction state change
         if new_state is None:
             return
-        self.target_registration.update_moderation_state()
-        source_state = event_data.transition.source
-        if SanctionStates.PENDING_MODERATOR_APPROVAL.name in [source_state, new_state]:
-            self._log_moderated_action(event_data)
+
+        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        comment = event_data.kwargs.get('comment', '')
+        if new_state == SanctionStates.PENDING_MODERATOR_APPROVAL.name:
+            user = None  # Don't worry about the particular user who gave final approval
+
+        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)

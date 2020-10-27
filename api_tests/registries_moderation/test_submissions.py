@@ -165,24 +165,21 @@ class TestRegistriesModerationSubmissions:
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=pending', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[machine_state]=accepted', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
 
-        approval = registration.registration_approval
-        approval.approve(
-            user=registration.creator,
-            token=approval.token_for_user(registration.creator, 'approval')
-        )
+        # RegistrationFactory auto-approves the initial RegistrationApproval
+        registration.update_moderation_state()
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=pending&meta[reviews_state_counts]=true', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[machine_state]=accepted&meta[reviews_state_counts]=true', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.PENDING.db_name
-        assert resp.json['meta']['reviews_state_counts']['pending'] == 1
+        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.ACCEPTED.db_name
+        assert resp.json['meta']['reviews_state_counts']['accepted'] == 1
 
     @pytest.mark.enable_quickfiles_creation
     def test_get_registration_actions(self, app, registration_actions_url, registration, moderator):
