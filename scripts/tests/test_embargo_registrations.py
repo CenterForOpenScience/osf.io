@@ -103,42 +103,34 @@ class TestRetractRegistrations(OsfTestCase):
     def test_embargo_approval_adds_to_parent_projects_log(self):
         assert_false(
             self.registration.registered_from.logs.filter(
-                node=self.registration.registered_from,
                 action=NodeLog.EMBARGO_APPROVED
             ).exists()
         )
+
         self.registration.embargo.initiation_date = timezone.now() - timedelta(days=365)
         self.registration.embargo.save()
-
         main(dry_run=False)
-        # Logs: Created, made public, registered, embargo initiated, embargo approved
-        self.registration.embargo.refresh_from_db()
+
         assert_true(
             self.registration.registered_from.logs.filter(
-                node=self.registration.registered_from,
                 action=NodeLog.EMBARGO_APPROVED
             ).exists()
         )
 
     def test_embargo_completion_adds_to_parent_projects_log(self):
-        assert_true(
+        assert_false(
             self.registration.registered_from.logs.filter(
-                node=self.registration.registered_from,
                 action=NodeLog.EMBARGO_COMPLETED
             ).exists()
         )
-        self.registration.embargo.accept()
-        self.registration.save()
 
+        self.registration.embargo.accept()
         self.registration.embargo.end_date = timezone.now() - timedelta(days=1)
         self.registration.embargo.save()
 
         main(dry_run=False)
-        # Logs: Created, made public, registered, embargo initiated, embargo approved, embargo completed
-        embargoed_node_count = len([self.registration.node_and_primary_descendants()])
         assert_true(
             self.registration.registered_from.logs.filter(
-                node=self.registration.registered_from,
                 action=NodeLog.EMBARGO_COMPLETED
             ).exists()
         )

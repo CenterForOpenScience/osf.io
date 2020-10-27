@@ -351,7 +351,7 @@ class SanctionStateMachine(Machine):
     The valid machine states for a Sanction object are defined in Workflows.SanctionStates.
     The valid transitions between these states are defined in Workflows.SANCTION_TRANSITIONS.
 
-    Subclasses of SanctionStateMachine inherit the 'tirgger' functions named in
+    Subclasses of SanctionStateMachine inherit the 'trigger' functions named in
     the SANCTION_TRANSITIONS dictionary (approve, accept, and reject).
     These tirgger functions will, in order,
     1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
@@ -434,7 +434,7 @@ class SanctionStateMachine(Machine):
         return user, token
 
     def _save_transition(self, event_data):
-        """Recored the effects of a state transition in the databsse."""
+        """Recored the effects of a state transition in the database."""
         self.save()
         new_state = event_data.transition.dest
         # No need to update registration state with no sanction state change

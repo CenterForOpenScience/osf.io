@@ -95,7 +95,7 @@ class RegistrationModerationStates(ModerationEnum):
             },
             SanctionTypes.EMBARGO_TERMINATION_APPROVAL: {
                 SanctionStates.PENDING_ADMIN_APPROVAL: cls.PENDING_EMBARGO_TERMINATION,
-                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.ACCEPTED,  # Not currently raachable
+                SanctionStates.PENDING_MODERATOR_APPROVAL: cls.ACCEPTED,  # Not currently reachable
                 SanctionStates.ACCEPTED: cls.ACCEPTED,
                 SanctionStates.ADMIN_REJECTED: cls.EMBARGO,
                 SanctionStates.MODERATOR_REJECTED: cls.EMBARGO,  # Not currently reachable
