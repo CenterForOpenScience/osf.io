@@ -1089,7 +1089,10 @@ def _select_admin(node):
 def _check_and_add_timestamp(team_info, file_attr):
     from addons.dropboxbusiness.models import NodeSettings
 
-    team_folder_id, name, path = file_attr.team_folder_path()
+    tfp = file_attr.team_folder_path()
+    if tfp is None:
+        return
+    team_folder_id, name, path = tfp
     DEBUG(u'team_folder_id={}, name={}, path={}'.format(team_folder_id,
                                                         name, path))
 
