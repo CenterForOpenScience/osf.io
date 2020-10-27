@@ -353,7 +353,7 @@ class SanctionStateMachine(Machine):
 
     Subclasses of SanctionStateMachine inherit the 'trigger' functions named in
     the SANCTION_TRANSITIONS dictionary (approve, accept, and reject).
-    These tirgger functions will, in order,
+    These trigger functions will, in order,
     1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
     2) Call Sanction member functions listed in the 'conditions' key of the dictionary
     3) Call Sanction member functions listed in the 'before' key of the dictionary
