@@ -268,6 +268,7 @@ SANCTION_TRANSITIONS = [
     {
         # A moderated sanction has satisfied its Admin approval requirements
         # and is submitted for moderation.
+        # Allow calling without validation for use by OSF admins
         'trigger': 'accept',
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL],
         'dest': SanctionStates.PENDING_MODERATOR_APPROVAL,
@@ -276,8 +277,8 @@ SANCTION_TRANSITIONS = [
         'after': [],  # send moderator emails here?
     },
     {
-        # An unmodrated sanction has satisfied its Admin approval requirements
-        # or a moderated sanction receives moderator approval and takes effect
+        # An un moderated sanction has satisfied its Admin approval requirements
+        # or a moderated sanction recieves moderator approval and takes effect
         'trigger': 'accept',
         'source': [SanctionStates.PENDING_ADMIN_APPROVAL, SanctionStates.PENDING_MODERATOR_APPROVAL],
         'dest': SanctionStates.ACCEPTED,

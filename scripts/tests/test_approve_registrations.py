@@ -16,7 +16,7 @@ class TestApproveRegistrations(OsfTestCase):
     def setUp(self):
         super(TestApproveRegistrations, self).setUp()
         self.user = UserFactory()
-        self.registration = RegistrationFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user, archive=False)
         self.registration.is_public = True
         self.registration.require_approval(self.user)
 

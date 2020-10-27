@@ -49,12 +49,16 @@ def main(dry_run=True):
                 registration_approval.save()
                 continue
             if pending_registration.archiving:
+                print(pending_registration.archive_job)
+                print(pending_registration.archive_job.archive_tree_finished())
+                print(pending_registration.archive_job.done)
                 continue
 
             with transaction.atomic():
                 try:
-                    # Ensure no `User` is associated with the final approval
-#                    registration_approval._on_complete(None)
+                    # Call 'accept' trigger directly. This will terminate the embargo
+                    # if the registration is unmoderated or push it into the moderation
+                    # queue if it is part of a moderated registry.
                     registration_approval.accept()
                 except Exception as err:
                     logger.error(

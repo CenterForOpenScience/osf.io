@@ -49,17 +49,10 @@ def main(dry_run=True):
 
                 with transaction.atomic():
                     try:
-                        embargo.complete()
-#                        embargo.state = Embargo.APPROVED
-#                        parent_registration.registered_from.add_log(
-#                            action=NodeLog.EMBARGO_APPROVED,
-#                            params={
-#                                'node': parent_registration.registered_from._id,
-#                                'registration': parent_registration._id,
-#                                'embargo_id': embargo._id,
-#                            },
-#                            auth=None,
-#                        )
+                        # Call 'accept' trigger directly. This will terminate the embargo
+                        # if the registration is unmoderated or push it into the moderation
+                        # queue if it is part of a moderated registry.
+                        embargo.accept()
                         embargo.save()
                     except Exception as err:
                         logger.error(

@@ -65,11 +65,7 @@ def main():
             # Call 'accept' trigger directly. This will terminate the embargo
             # if the registration is unmoderated or push it into the moderation
             # queue if it is part of a moderated registry.
-            request.accept(user=request.initiated_by)
-#            request.state = models.Sanction.APPROVED
-#            request.save()
-            # This will mark Embargo as 'complete' and the registration as 'public'.
-#            request._on_complete()
+            request.accept()
             registration.reload()
             embargo_termination_state = request.embargo_termination.approval_stage
             assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
