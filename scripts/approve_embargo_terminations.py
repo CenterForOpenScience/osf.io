@@ -19,6 +19,7 @@ django.setup()
 from framework.celery_tasks import app as celery_app
 
 from osf import models
+from osf.utils.workflows import SanctionStates
 from website import settings
 from website.app import init_app
 
@@ -67,7 +68,7 @@ def main():
             # queue if it is part of a moderated registry.
             request.accept()
             registration.reload()
-            embargo_termination_state = request.embargo_termination.approval_stage
+            embargo_termination_state = registration.embargo_termination_approval.approval_stage
             assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
             assert embargo_termination_state is SanctionStates.ACCEPTED
             assert registration.is_embargoed is False

@@ -442,6 +442,7 @@ class RegistrationFactory(BaseNodeFactory):
                 archive_job = reg.archive_job
                 archive_job.status = ARCHIVER_SUCCESS
                 archive_job.done = True
+                archive_job.save()
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.approval_stage = SanctionStates.ACCEPTED
                 reg.sanction.save()

@@ -614,10 +614,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         self.approve(user=user, token=token)
 
     def mark_as_completed(self):
+        # Plucked from embargo_registrations script
         self.state = Sanction.COMPLETED
         self.to_COMPLETE()
-        self.save()
-
 
 class Retraction(EmailApprovableSanction):
     """
@@ -1068,7 +1067,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        self.target_registration.terminate_embargo()
+        self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.

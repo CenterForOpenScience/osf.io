@@ -49,9 +49,6 @@ def main(dry_run=True):
                 registration_approval.save()
                 continue
             if pending_registration.archiving:
-                print(pending_registration.archive_job)
-                print(pending_registration.archive_job.archive_tree_finished())
-                print(pending_registration.archive_job.done)
                 continue
 
             with transaction.atomic():

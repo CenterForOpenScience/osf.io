@@ -53,7 +53,6 @@ def main(dry_run=True):
                         # if the registration is unmoderated or push it into the moderation
                         # queue if it is part of a moderated registry.
                         embargo.accept()
-                        embargo.save()
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when activating embargo for '
@@ -79,19 +78,7 @@ def main(dry_run=True):
 
                 with transaction.atomic():
                     try:
-                        embargo.mark_as_completed()
-                        for node in parent_registration.node_and_primary_descendants():
-                            node.set_privacy('public', auth=None, save=True)
-                        parent_registration.registered_from.add_log(
-                            action=NodeLog.EMBARGO_COMPLETED,
-                            params={
-                                'node': parent_registration.registered_from._id,
-                                'registration': parent_registration._id,
-                                'embargo_id': embargo._id,
-                            },
-                            auth=None,
-                        )
-                        embargo.save()
+                        parent_registration.terminate_embargo()
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when completing embargo for '

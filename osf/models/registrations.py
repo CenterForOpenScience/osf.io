@@ -360,15 +360,16 @@ class Registration(AbstractNode):
         self.save()
         return approval
 
-    def terminate_embargo(self):
-        """Handles the actual early termination of an Embargoed registration.
+    def terminate_embargo(self, forced=False):
+        """Handles the completion of an Embargoed registration.
         Adds a log to the registered_from Node.
         """
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 
+        action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED
         self.registered_from.add_log(
-            action=NodeLog.EMBARGO_TERMINATED,
+            action=action,
             params={
                 'project': self._id,
                 'node': self.registered_from._id,
