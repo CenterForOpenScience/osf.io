@@ -56,7 +56,6 @@ def _send_global_and_node_emails(send_type):
             remove_notifications(email_notification_ids=notification_ids)
 
 
-
 def _send_reviews_moderator_emails(send_type):
     """
     Called by `send_users_email`. Send all reviews triggered emails.
