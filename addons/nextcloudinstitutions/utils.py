@@ -17,7 +17,9 @@ from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
 from osf.models.rdm_addons import RdmAddonOption
 from website.util import timestamp, waterbutler
-from addons.nextcloudinstitutions import apps, lock
+from addons.nextcloudinstitutions import apps
+from addons.nextcloudinstitutions.lock import TMPDIR, LOCK_PREFIX
+from addons.base.lock import Lock
 
 
 logger = logging.getLogger(__name__)
@@ -176,15 +178,19 @@ def _check_project_files(addon_option, fileinfo):
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_check_updated_files(self, provider_id, since, interval):
     DEBUG('provider_id: {}, since: {}, interval: {}'.format(provider_id, since, interval))
-    if not lock.LOCK_RUN.trylock():
-        DEBUG('lock acquisition failed')
-        return  # exit
 
     start_time = time.time()
     DEBUG('start_time: {}'.format(start_time))
 
     ea = ExternalAccount.objects.get(
         provider=SHORT_NAME, provider_id=provider_id)
+    DEBUG('external account id: {}'.format(ea._id))
+
+    lock = Lock(TMPDIR, LOCK_PREFIX, ea._id)
+    if not lock.trylock():
+        DEBUG('lock acquisition failed')
+        return  # exit
+
     opt = RdmAddonOption.objects.get(
         provider=SHORT_NAME, external_accounts=ea)
     if opt.extended is None:
@@ -225,4 +231,4 @@ def celery_check_updated_files(self, provider_id, since, interval):
             except Exception:
                 logger.exception('Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
 
-    lock.LOCK_RUN.unlock()
+    lock.unlock()

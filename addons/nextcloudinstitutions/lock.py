@@ -1,6 +1,6 @@
 import os
-import time
 import logging
+import glob
 import tempfile
 import shutil
 
@@ -13,38 +13,13 @@ ENABLE_DEBUG = False
 
 def DEBUG(msg):
     if ENABLE_DEBUG:
-        logger.error(u'DEBUG: ' + msg)
+        logger.error(u'DEBUG_nextcloudinstitutions: ' + msg)
     else:
         logger.debug(msg)
 
-class Lock():
-    def __init__(self, purpose):
-        self.lockdir = os.path.join(TMPDIR, LOCK_PREFIX + purpose)
 
-    def trylock(self):
-        try:
-            os.mkdir(self.lockdir)  # atomic operation
-            DEBUG('(try)lock: ' + self.lockdir)
-            return True
-        except Exception as e:
-            DEBUG(str(e))
-            return False
-
-    def lock(self):
-        if not self.trylock():
-            time.sleep(1)
-        return True
-
-    def unlock(self):
-        try:
-            shutil.rmtree(self.lockdir)
-            DEBUG('unlock: ' + self.lockdir)
-        except Exception as e:
-            DEBUG(str(e))
-
-
-#############################################################
-LOCK_RUN = Lock('RUN')
-
-def init_celery_lock():
-    LOCK_RUN.unlock()
+def init_lock():
+    dirs = glob.glob(os.path.join(TMPDIR, LOCK_PREFIX + '*'))
+    DEBUG('dirs: {}'.format(str(dirs)))
+    for d in dirs:
+        shutil.rmtree(d)
