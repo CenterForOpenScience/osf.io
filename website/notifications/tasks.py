@@ -56,6 +56,7 @@ def _send_global_and_node_emails(send_type):
             remove_notifications(email_notification_ids=notification_ids)
 
 
+
 def _send_reviews_moderator_emails(send_type):
     """
     Called by `send_users_email`. Send all reviews triggered emails.
@@ -110,7 +111,7 @@ def get_moderators_emails(send_type):
             )
         FROM osf_notificationdigest AS nd
           LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
-        WHERE send_type = %s AND event = 'new_pending_submissions'
+        WHERE send_type = %s AND event = 'new_pending_submissions'  OR event = 'new_pending_withdraw_requests'
         AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
         GROUP BY osf_guid.id, nd.provider_id
         ORDER BY osf_guid.id ASC
