@@ -85,9 +85,9 @@ class InstitutionsNodeSettings(BaseNodeSettings):
         return self.serialize_waterbutler_settings_impl()
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-                                     path=metadata['path'],
-                                     provider=self.SHORT_NAME)
+        url = u'/project/{}/files/{}{}/'.format(self._id,
+                                                self.SHORT_NAME,
+                                                metadata['path'].strip('/'))
         self.owner.add_log(
             '{}_{}'.format(self.SHORT_NAME, action),
             auth=auth,

@@ -63,6 +63,6 @@ def webhook_nextcloud_app():
 
     since = data.get('since')
     interval = data.get('min_interval')
-    utils.celery_check_updated_files(provider_id, since, interval)
+    utils.celery_check_updated_files.delay(provider_id, since, interval)
 
     return ''
