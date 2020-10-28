@@ -1,2 +1,2 @@
 default_app_config = 'addons.nextcloudinstitutions.apps.NextcloudInstitutionsAddonAppConfig'
-KEYNAME_SECRET = 'secret'
+KEYNAME_NOTIFICATION_SECRET = 'notification_secret'

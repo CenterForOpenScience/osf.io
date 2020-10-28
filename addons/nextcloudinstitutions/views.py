@@ -11,7 +11,7 @@ from framework.exceptions import HTTPError
 
 from osf.models.external import ExternalAccount
 from osf.models.rdm_addons import RdmAddonOption
-from addons.nextcloudinstitutions import utils, apps, KEYNAME_SECRET
+from addons.nextcloudinstitutions import utils, apps, KEYNAME_NOTIFICATION_SECRET
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def webhook_nextcloud_app():
         data = json.loads(request.data)
         provider_id = data.get('id')
     except Exception:
-        logger.error('provider_id not fuond')
+        logger.error('provider_id not found')
         raise HTTPError(http.FORBIDDEN)
 
     try:
@@ -46,10 +46,10 @@ def webhook_nextcloud_app():
         raise HTTPError(http.FORBIDDEN)
 
     if opt.extended is None:
-        logger.error('secret not fuond')
+        logger.error('secret not found')
         raise HTTPError(http.FORBIDDEN)
 
-    secret = opt.extended.get(KEYNAME_SECRET)
+    secret = opt.extended.get(KEYNAME_NOTIFICATION_SECRET)
     if secret is None:
         logger.error('secrets is empty')
         raise HTTPError(http.FORBIDDEN)

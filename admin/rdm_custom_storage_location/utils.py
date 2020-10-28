@@ -25,7 +25,7 @@ from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
-from addons.nextcloudinstitutions import KEYNAME_SECRET
+from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
@@ -775,7 +775,7 @@ def save_basic_storage_institutions_credentials_common(
     }, httplib.OK)
 
 def save_nextcloudinstitutions_credentials(
-        institution, storage_name, host_url, username, password, folder, secret, provider_name):
+        institution, storage_name, host_url, username, password, folder, notification_secret, provider_name):
     test_connection_result = test_owncloud_connection(
         host_url, username, password, folder, provider_name)
     if test_connection_result[1] != httplib.OK:
@@ -786,7 +786,7 @@ def save_nextcloudinstitutions_credentials(
         account=None, host=host.url,
         username=username, password=password)
     extended_data = {}
-    extended_data[KEYNAME_SECRET] = secret
+    extended_data[KEYNAME_NOTIFICATION_SECRET] = notification_secret
     return save_basic_storage_institutions_credentials_common(
         institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
 
