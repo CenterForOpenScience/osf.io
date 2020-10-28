@@ -210,6 +210,8 @@ def celery_worker(ctx, level='debug', hostname=None, beat=False, queues=None, co
         cmd = cmd + ' --concurrency={}'.format(concurrency)
     if max_tasks_per_child:
         cmd = cmd + ' --maxtasksperchild={}'.format(max_tasks_per_child)
+    from addons.dropboxbusiness import lock as dbbiz_lock
+    dbbiz_lock.init_celery_lock()
     ctx.run(bin_prefix(cmd), pty=True)
 
 
