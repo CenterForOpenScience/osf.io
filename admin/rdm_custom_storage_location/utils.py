@@ -25,6 +25,7 @@ from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.nextcloudinstitutions import settings as nextcloudinstitutions_settings
+from addons.nextcloudinstitutions import KEYNAME_SECRET
 from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
@@ -732,7 +733,8 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
         'message': 'Dropbox Business was set successfully!!'
     }, httplib.OK)
 
-def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, separator=':'):
+def save_basic_storage_institutions_credentials_common(
+        institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None):
     try:
         provider.account.save()
     except ValidationError:
@@ -755,6 +757,8 @@ def save_basic_storage_institutions_credentials_common(institution, storage_name
     rdm_addon_option.external_accounts.add(provider.account)
 
     rdm_addon_option.extended[KEYNAME_BASE_FOLDER] = folder
+    if type(extended_data) is dict:
+        rdm_addon_option.extended.update(extended_data)
     rdm_addon_option.save()
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
@@ -770,7 +774,8 @@ def save_basic_storage_institutions_credentials_common(institution, storage_name
         'message': 'Saved credentials successfully!!'
     }, httplib.OK)
 
-def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, provider_name):
+def save_nextcloudinstitutions_credentials(
+        institution, storage_name, host_url, username, password, folder, secret, provider_name):
     test_connection_result = test_owncloud_connection(
         host_url, username, password, folder, provider_name)
     if test_connection_result[1] != httplib.OK:
@@ -780,8 +785,10 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
     provider = NextcloudInstitutionsProvider(
         account=None, host=host.url,
         username=username, password=password)
+    extended_data = {}
+    extended_data[KEYNAME_SECRET] = secret
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, folder, provider_name, provider)
+        institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
 
 def save_s3compatinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')

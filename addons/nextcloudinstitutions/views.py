@@ -9,11 +9,13 @@ from flask import request
 
 from framework.exceptions import HTTPError
 
-from addons.nextcloudinstitutions import settings, utils
+from osf.models.external import ExternalAccount
+from osf.models.rdm_addons import RdmAddonOption
+from addons.nextcloudinstitutions import utils, apps, KEYNAME_SECRET
 
 logger = logging.getLogger(__name__)
 
-NOTIFICATION_SECRETS = settings.NOTIFICATION_SECRETS
+SHORT_NAME = apps.SHORT_NAME
 
 ENABLE_DEBUG = False
 
@@ -27,25 +29,38 @@ def webhook_nextcloud_app():
         raise HTTPError(http.FORBIDDEN)
     DEBUG('signature: {}'.format(signature))
 
-    if NOTIFICATION_SECRETS is None:
+    try:
+        data = json.loads(request.data)
+        provider_id = data.get('id')
+    except Exception:
+        logger.error('provider_id not fuond')
+        raise HTTPError(http.FORBIDDEN)
+
+    try:
+        ea = ExternalAccount.objects.get(
+            provider=SHORT_NAME, provider_id=provider_id)
+        opt = RdmAddonOption.objects.get(
+            provider=SHORT_NAME, external_accounts=ea)
+    except Exception:
+        logger.error('provider not found')
+        raise HTTPError(http.FORBIDDEN)
+
+    if opt.extended is None:
+        logger.error('secret not fuond')
+        raise HTTPError(http.FORBIDDEN)
+
+    secret = opt.extended.get(KEYNAME_SECRET)
+    if secret is None:
         logger.error('secrets is empty')
-        raise HTTPError(http.INTERNAL_SERVER_ERROR)
+        raise HTTPError(http.FORBIDDEN)
 
-    signature_valid = False
-    for secret in NOTIFICATION_SECRETS:
-        digest = hmac.new(secret, request.data, sha256).hexdigest()
-        if hmac.compare_digest(signature.encode('utf-8'), digest):
-            signature_valid = True
-            break
-
-    if signature_valid is False:
+    digest = hmac.new(secret.encode(), request.data, sha256).hexdigest()
+    if not hmac.compare_digest(signature.encode('utf-8'), digest):
         logger.error('invalid signature')
         raise HTTPError(http.FORBIDDEN)
 
-    data = json.loads(request.data)
     DEBUG(pf(data))
 
-    provider_id = data.get('id')
     since = data.get('since')
     interval = data.get('min_interval')
     utils.celery_check_updated_files(provider_id, since, interval)

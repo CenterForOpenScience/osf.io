@@ -258,6 +258,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('nextcloudinstitutions_username'),
                 data.get('nextcloudinstitutions_password'),
                 data.get('nextcloudinstitutions_folder'),  # base folder
+                data.get('nextcloudinstitutions_secret'),
                 provider_short_name,
             )
         elif provider_short_name == 'box':
