@@ -18,7 +18,7 @@ def add_invisible_schemas(apps, schema_editor):
 
     schema_names = [schema['name'] for schema in schemas]
 
-    RegistrationSchema.objects.filter(name__in=schema_names).update(visible=False, active=False)
+    RegistrationSchema.objects.filter(name__in=schema_names).update(visible=False, active=True)
 
 
 class Migration(migrations.Migration):
