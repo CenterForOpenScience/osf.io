@@ -16,7 +16,7 @@
                "format":"textarea",
                "title":"Results summary",
                "description":"Please provide a brief summary of the results enclosed in your results registration document. This includes results of analyses set forth in the preregistration and results of any post hoc analyses.",
-               "help":"Hypothesis #1 was confirmed: Navigation skill determines search strategy (p = 0.023). Hypothesis was not confirmed: H2 was not confirmed: Triage is more efficient before anticipated death of high value victims than after (p = .273).",
+               "example":"Hypothesis #1 was confirmed: Navigation skill determines search strategy (p = 0.023). Hypothesis was not confirmed: H2 was not confirmed: Triage is more efficient before anticipated death of high value victims than after (p = .273).",
                "required":true
             },
             {
@@ -41,7 +41,7 @@
                "format":"text",
                "title":"Testbed used",
                "description":"Please provide the name of and link to the latest testbed version used in gathering the data for the preregistered experiment.",
-               "help":"Last version of the testbed used: 1.0.n https://gitlab.asist.aptima.com/XXXX",
+               "example":"Last version of the testbed used: 1.0.n https://gitlab.asist.aptima.com/XXXX",
                "required":true
             },
             {
@@ -50,7 +50,7 @@
                "format":"text",
                "title":"Dataset used",
                "description":"Please link to the datasets used in running your the preregistered plans/analyses.",
-               "help":"The following datasets were used in running our preregistered analyses: https://console.cloud.google.com/XXXX",
+               "example":"The following datasets were used in running our preregistered analyses: https://console.cloud.google.com/XXXX",
                "required":true
             },
             {
