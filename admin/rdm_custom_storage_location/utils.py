@@ -825,11 +825,13 @@ def get_nextcloudinstitutions_credentials(institution):
         host = use_https(provider.host).host
         username = provider.username
         password = provider.password
+        notification_secret = opt.extended.get(KEYNAME_NOTIFICATION_SECRET)
         folder = opt.extended.get(KEYNAME_BASE_FOLDER)
     else:
         host = ''
         username = ''
         password = ''
+        notification_secret = None
         folder = None
     if not folder:
         folder = nextcloudinstitutions_settings.DEFAULT_BASE_FOLDER
@@ -837,6 +839,7 @@ def get_nextcloudinstitutions_credentials(institution):
     data[provider_name + '_host'] = host
     data[provider_name + '_username'] = username
     data[provider_name + '_password'] = password
+    data[provider_name + '_notification_secret'] = notification_secret
     data[provider_name + '_folder'] = folder
     return data
 
