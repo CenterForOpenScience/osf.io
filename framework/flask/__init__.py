@@ -24,14 +24,9 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = settings.BABEL_TRANSLATION_DIRECTO
 app.config['BABEL_DOMAIN'] = settings.BABEL_DOMAIN
 app.config['BABEL_DEFAULT_LOCALE'] = settings.BABEL_DEFAULT_LOCALE
 babel = Babel(app)
-import logging
-logger = logging.getLogger(__name__)
 
 @babel.localeselector
 def get_locale():
-    browserLanguage = request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
-    logger.info(str(request.accept_languages))
-    logger.info(str(request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())))
     return request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
 
 def rm_handler(app, handler_name, func, key=None):
