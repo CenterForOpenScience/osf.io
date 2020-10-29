@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 def get_locale():
     browserLanguage = request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
     logger.info(str(request.accept_languages))
-    return browserLanguage
+    logger.info(str(request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())))
+    return request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.
