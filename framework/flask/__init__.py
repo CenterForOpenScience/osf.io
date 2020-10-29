@@ -24,7 +24,7 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = settings.BABEL_TRANSLATION_DIRECTO
 app.config['BABEL_DOMAIN'] = settings.BABEL_DOMAIN
 app.config['BABEL_DEFAULT_LOCALE'] = settings.BABEL_DEFAULT_LOCALE
 babel = Babel(app)
-
+import logging
 logger = logging.getLogger(__name__)
 
 @babel.localeselector
