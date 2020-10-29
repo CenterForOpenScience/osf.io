@@ -7,11 +7,15 @@ import datetime
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 
-from osf.models import DraftRegistrationApproval, RegistrationSchema, NodeLog
+from framework.exceptions import HTTPError
+from nose.tools import assert_raises
+
+from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 from osf.utils import permissions
+from osf.utils.workflows import SanctionStates
 
 
 @pytest.mark.django_db
@@ -19,13 +23,13 @@ class TestRegistrationApprovalHooks:
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4940
     @mock.patch('osf.models.node.AbstractNode.update_search')
-    def test_on_complete_sets_state_to_approved(self, mock_update_search):
+    def test_unmoderated_accept_sets_state_to_approved(self, mock_update_search):
         user = factories.UserFactory()
         registration = factories.RegistrationFactory(creator=user)
         registration.require_approval(user)
 
         assert registration.registration_approval.is_pending_approval is True  # sanity check
-        registration.registration_approval._on_complete(None)
+        registration.registration_approval.accept(user=user)
         assert registration.registration_approval.is_pending_approval is False
 
 
@@ -221,11 +225,14 @@ class TestRegistrationEmbargoTermination:
     def test_reject_then_approve_stays_rejected(self, user, user2, embargo_termination):
         user_1_tok = embargo_termination.token_for_user(user, 'rejection')
         user_2_tok = embargo_termination.token_for_user(user2, 'approval')
-        embargo_termination.reject(user, user_1_tok)
-        embargo_termination.approve(user2, user_2_tok)
-        assert embargo_termination.state == embargo_termination.REJECTED
+        embargo_termination.reject(user=user, token=user_1_tok)
+        with assert_raises(HTTPError):
+            embargo_termination.approve(user=user2, token=user_2_tok)
+
+        assert embargo_termination.is_rejected
 
     def test_single_approve_stays_unapproved(self, user, user2, embargo_termination):
         user_1_tok = embargo_termination.token_for_user(user, 'approval')
-        embargo_termination.approve(user, user_1_tok)
+        embargo_termination.approve(user=user, token=user_1_tok)
         assert embargo_termination.state == embargo_termination.UNAPPROVED
+        assert embargo_termination.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL

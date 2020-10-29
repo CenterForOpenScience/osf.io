@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
+
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
@@ -18,7 +19,7 @@ from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationStates
+from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
@@ -199,8 +200,9 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
-    REVIEWABLE_RELATION_NAME = 'draft_registrations'
-    REVIEW_STATES = RegistrationStates
+    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEW_STATES = RegistrationModerationStates
+    STATE_FIELD_NAME = 'moderation_state'
 
     default_subscriptions = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
@@ -233,7 +235,6 @@ class RegistrationProvider(AbstractProvider):
     def validate_schema(self, schema):
         if not self.schemas.filter(id=schema.id).exists():
             raise ValidationError('Invalid schema for provider.')
-
 
 class PreprintProvider(AbstractProvider):
 

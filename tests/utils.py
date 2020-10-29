@@ -191,10 +191,10 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
 
     if autoapprove:
         sanction = registration.root.sanction
-        sanction.state = Sanction.APPROVED
+#        sanction.state = Sanction.APPROVED
         # save or _on_complete no worky
         sanction.save()
-        sanction._on_complete(project.creator)
+        sanction.accept(project.creator)
         sanction.save()
 
     if retraction:

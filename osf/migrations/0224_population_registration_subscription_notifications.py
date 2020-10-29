@@ -16,7 +16,7 @@ def revert(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0222_auto_20201026_1843'),
+        ('osf', '0223_auto_20201026_1843'),
     ]
 
     operations = [

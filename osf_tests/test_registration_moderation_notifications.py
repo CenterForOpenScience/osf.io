@@ -17,6 +17,7 @@ from unittest.mock import ANY
 
 from website import mails, settings
 
+from osf.utils.workflows import RegistrationStates
 
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
@@ -37,16 +38,16 @@ class TestRegistrationMachineNotification:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def draft_registration(self, admin, contrib):
+    def registration(self, admin, contrib):
         registration = RegistrationFactory(creator=admin)
         registration.add_contributor(admin, 'admin')
         registration.add_contributor(contrib, 'write')
         update_provider_auth_groups()
-        return registration.draft_registration.last()
+        return registration
 
     @pytest.fixture()
-    def provider(self, draft_registration):
-        return draft_registration.provider
+    def provider(self, registration):
+        return registration.provider
 
     @pytest.fixture()
     def moderator(self, provider):
@@ -54,15 +55,18 @@ class TestRegistrationMachineNotification:
         provider.add_to_group(user, 'moderator')
         return user
 
-    def test_run_submit_notifications(self, draft_registration, moderator, admin, contrib, provider):
+    def test_submit_notifications(self, registration, moderator, admin, contrib, provider):
         """
         "As moderator of branded registry, I receive email notification upon admin author(s) submission approval"
         :param mock_email:
         :param draft_registration:
         :return:
         """
+        registration.moderation_state = RegistrationStates.SUBMIT.value
+        registration.update_moderation_state()
+
         with mock.patch('website.reviews.listeners.mails.send_mail') as mock_send_mail:
-            draft_registration.run_submit(admin)
+            registration.run_submit(admin)
 
         assert len(mock_send_mail.call_args_list) == 1
 
@@ -81,7 +85,7 @@ class TestRegistrationMachineNotification:
             provider_url='http://localhost:5000/',
             referrer=admin,
             requester=admin,
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             user=admin,
             workflow=None
         )
@@ -156,7 +160,7 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
-    def test_run_reject_notifications(self, draft_registration, moderator, admin, contrib):
+    def test_reject_notifications(self, draft_registration, moderator, admin, contrib):
         """
         "As authors of rejected by moderator registration, we receive email notification of registration returned
         to draft state"

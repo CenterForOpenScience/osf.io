@@ -426,10 +426,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         user = registration.contributors.first()
 
         registration.terminate_embargo()
-
-        rejection_token = registration.embargo.approval_state[user._id]['rejection_token']
+        rejection_token = registration.embargo.token_for_user(user, 'rejection')
         with assert_raises(HTTPError) as e:
-            registration.embargo.disapprove_embargo(user, rejection_token)
+            registration.embargo.reject(user=user, token=rejection_token)
 
         registration.refresh_from_db()
         assert registration.is_deleted is False
@@ -1126,10 +1125,11 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.user,
             timezone.now() + datetime.timedelta(days=10)
         )
+
         for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
-        self.registration.save()
+        self.registration.refresh_from_db()
 
         self.registration.set_privacy('public', Auth(self.registration.creator))
         for reg in self.registration.node_and_primary_descendants():
@@ -1163,7 +1163,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
-        self.registration.save()
+        self.registration.refresh_from_db()  # save()
 
         self.registration.set_privacy('public', Auth(self.registration.creator))
         admin_contributors = []
@@ -1190,7 +1190,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for user_id, embargo_tokens in registration.embargo.approval_state.items():
             approval_token = embargo_tokens['approval_token']
             registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
-        self.registration.save()
+        registration.refresh_from_db()  # save()
 
         registration.set_privacy('public', Auth(self.registration.creator))
         asked_admins = [(admin._id, n._id) for admin, n in mock_ask.call_args[0][0]]
