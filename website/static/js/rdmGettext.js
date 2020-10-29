@@ -8,27 +8,38 @@ var defaultLanguage = 'en';
 var translationsBaseDir = 'translations';
 var osfLanguageProfileBaseName = 'osfLanguage';
 var getTextDomain = 'messages';
+var browserLanguage;
 
 var getBrowserLang = function() {
     var language = defaultLanguage;
-    var browserLanguage = (window.navigator.languages && window.navigator.languages[0]) ||
-                window.navigator.language ||
-                window.navigator.userLanguage ||
-                window.navigator.browserLanguage;
+    var lang_code = defaultLanguage;
+    var applyLanguage = false;
+    var endIndex;
 
-    for(var i=0 ; i<acceptLanguages.length ; i++) {
-        if(browserLanguage === acceptLanguages[i]) {
-            language = browserLanguage;
+
+    for(var i=0 ; i<window.navigator.languages.length ; i++) {
+        browserLanguage = (window.navigator.languages && window.navigator.languages[i]);
+        if(browserLanguage){
+            endIndex = browserLanguage.indexOf('-');
+            lang_code =browserLanguage.substring(0, endIndex != -1 ? endIndex : browserLanguage.length);
+
+            for(var j=0 ; j<acceptLanguages.length ; j++) {
+                if(lang_code === acceptLanguages[j]) {
+                    language = lang_code;
+                    applyLanguage = true;
+                    break;
+                }
+            }
+            if (applyLanguage) break;
         }
-    }
     return language;
-};
+    };
 
 var rdmGettext = function() {
     var gt = new Gettext();
     var currentlanguage = getBrowserLang();
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var translation = require('js/' + translationsBaseDir + '/' + acceptLanguages[i] + '.json');
+        var translation = require('js/translations/' + acceptLanguages[i] + '.json');
         gt.addTranslations(acceptLanguages[i], getTextDomain, translation);
     }
     gt.setLocale(currentlanguage);
@@ -39,7 +50,7 @@ var OsfLanguage = function() {
     var defaultDomain = [].slice.call(arguments);
     this.languages = {};
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var language = require('js/' + translationsBaseDir + '/' + osfLanguageProfileBaseName + '_' + acceptLanguages[i]);
+        var language = require('js/translations/' + osfLanguageProfileBaseName + '_' + acceptLanguages[i]);
         for(var j = 0; j < defaultDomain.length; j++) {
             language = language[defaultDomain[j]];
         }
