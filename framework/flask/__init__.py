@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @babel.localeselector
 def get_locale():
     browserLanguage = request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
-    logger.info(str(browserLanguage))
+    logger.info(str(request.accept_languages))
     return browserLanguage
 
 def rm_handler(app, handler_name, func, key=None):
