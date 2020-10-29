@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 
 from rest_framework import generics
 from rest_framework import serializers as ser
+from rest_framework import status as http_status
+
+from framework.exceptions import HTTPError
 
 from api.base import utils
 from api.base.exceptions import Conflict
@@ -138,8 +141,6 @@ class BaseActionSerializer(JSONAPISerializer):
         permissions = validated_data.pop('permissions', '')
         visible = validated_data.pop('visible', '')
 
-        if isinstance(target, Registration):
-            target = target.draft_registration.last()
         try:
             if trigger == DefaultTriggers.ACCEPT.value:
                 return target.run_accept(user=user, comment=comment, permissions=permissions, visible=visible)
@@ -294,8 +295,13 @@ class RegistrationActionSerializer(BaseActionSerializer):
                 retraction.accept(user)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
-        except InvalidTriggerError as e:
+        except InvalidTriggerError:
             # Invalid transition from the current state
-            raise Conflict(str(e))
+            short_message = 'Operation not allowed at this time'
+            long_message = f'This {trigger} is invalid for the current state of the registration'
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={'message_short': short_message, 'message_long': long_message},
+            )
 
         return target.actions.last()

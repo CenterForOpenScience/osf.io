@@ -89,40 +89,6 @@ class RegistrationRequestSerializer(RequestSerializer):
             },
         )
 
-class RegistrationRequestCreateSerializer(RegistrationRequestSerializer):
-    request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
-
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        if not auth.user:
-            raise exceptions.PermissionDenied
-
-        registration = self.context['view'].get_target()
-
-        if not registration.has_permission(auth.user, osf_permissions.ADMIN):
-            raise exceptions.PermissionDenied
-
-        comment = validated_data.pop('comment', '')
-        request_type = validated_data('request_type', None)
-
-        if NodeRequest.objects.filter(target_id=registration.id, creator_id=auth.user.id, request_type=request_type).exists():
-            raise Conflict(f'Users may not have more than one {request_type} request per registration.')
-
-        if request_type != RequestTypes.WITHDRAWAL.value:
-            raise exceptions.ValidationError('You must specify a valid request_type')
-
-        node_request = NodeRequest.objects.create(
-            target=registration,
-            creator=auth.user,
-            comment=comment,
-            machine_state=DefaultStates.INITIAL.value,
-            request_type=request_type,
-        )
-
-        node_request.save()
-        node_request.run_submit(auth.user)
-        return node_request
-
 class NodeRequestCreateSerializer(NodeRequestSerializer):
     request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
 
