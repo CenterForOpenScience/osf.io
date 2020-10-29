@@ -25,12 +25,13 @@ app.config['BABEL_DOMAIN'] = settings.BABEL_DOMAIN
 app.config['BABEL_DEFAULT_LOCALE'] = settings.BABEL_DEFAULT_LOCALE
 babel = Babel(app)
 
+logger = logging.getLogger(__name__)
+
 @babel.localeselector
 def get_locale():
     browserLanguage = request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
-    endIndex = browserLanguage.index('-')
-    lang_code =browserLanguage.program[0: endIndex if endIndex != -1 else len(browserLanguage)]
-    return lang_code
+    logger.info(str(browserLanguage))
+    return browserLanguage
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.
