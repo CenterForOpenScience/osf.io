@@ -86,11 +86,11 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
-        transactional = NotificationDigest.objects.all()[0]
+        notification = NotificationDigest.objects.all()[0]
 
-        assert transactional.user == moderator
-        assert transactional.send_type == 'email_transactional'
-        assert transactional.event == 'new_pending_submissions'
+        assert notification.user == moderator
+        assert notification.send_type == 'email_transactional'
+        assert notification.event == 'new_pending_submissions'
 
     def test_run_accept_notifications(self, draft_registration, moderator, admin, contrib):
         """
@@ -300,7 +300,7 @@ class TestRegistrationMachineNotification:
             user=contrib
         )
 
-    def test_run_withdrawal_registration_accepted_notifications(self, draft_registration, contrib, admin, moderator):
+    def test_run_withdrawal_registration_accepted_notifications(self, draft_registration, contrib, admin, moderator, provider):
         """
          "As moderator, I receive registration withdrawal request notification email"
 
@@ -322,35 +322,13 @@ class TestRegistrationMachineNotification:
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
             draft_registration.run_request_withdraw_passes(admin, 'yo')
 
-        assert len(mock_email.call_args_list) == 2
+        assert len(mock_email.call_args_list) == 1
 
-        transactional, digest = mock_email.call_args_list
+        transactional = mock_email.call_args_list[0]
 
         assert transactional == call(
             [moderator._id],
             'email_transactional',
-            'new_pending_withdraw_requests',
-            admin,
-            draft_registration.registered_node,
-            self.MOCK_NOW,
-            abstract_provider=draft_registration.provider,
-            document_type='registrations',
-            domain='http://localhost:5000/',
-            message=f'submitted "{draft_registration.registered_node.title}".',
-            profile_image_url=get_profile_image_url(admin),
-            provider_contact_email=settings.OSF_CONTACT_EMAIL,
-            provider_support_email=settings.OSF_SUPPORT_EMAIL,
-            provider_url='http://localhost:5000/',
-            referrer=admin,
-            requester=admin,
-            reviewable=draft_registration.registered_node,
-            reviews_submission_url=f'http://localhost:5000/reviews/registries/osf/{draft_registration.registered_node._id}',
-            workflow=None
-        )
-
-        assert digest == call(
-            [],
-            'email_digest',
             'new_pending_withdraw_requests',
             admin,
             draft_registration.registered_node,

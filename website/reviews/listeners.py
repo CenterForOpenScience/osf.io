@@ -142,24 +142,11 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
     email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
-    email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))
 
     # Store emails to be sent to subscribers instantly (at a 5 min interval)
     store_emails(
         email_transactional_ids,
         'email_transactional',
-        'new_pending_withdraw_requests',
-        context['referrer'],
-        resource,
-        timestamp,
-        abstract_provider=provider,
-        **context
-    )
-
-    # Store emails to be sent to subscribers daily
-    store_emails(
-        email_digest_ids,
-        'email_digest',
         'new_pending_withdraw_requests',
         context['referrer'],
         resource,

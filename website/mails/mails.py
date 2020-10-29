@@ -450,11 +450,6 @@ WITHDRAWAL_REQUEST_DECLINED = Mail(
     subject='Your withdrawal request has been declined',
 )
 
-NEW_PENDING_WITHDRAW_REQUESTS = Mail(
-    'new_pending_withdraw_requests',
-    subject='A withdrawal request has been made',
-)
-
 TOU_NOTIF = Mail(
     'tou_notif',
     subject='Updated Terms of Use for COS Websites and Services',

@@ -4,7 +4,6 @@ from transitions import Machine
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 
-from django.core.exceptions import ObjectDoesNotExist
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
@@ -16,6 +15,7 @@ from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     RegistrationStates,
+    RegistrationTriggers,
     ReviewStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
@@ -98,7 +98,7 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ModerationNotificationMixin(BaseMachine):
+class ModerationNotificationMixin(object):
 
     def notify_submit(self, ev):
         context = self.get_context()
@@ -157,7 +157,7 @@ class ModerationNotificationMixin(BaseMachine):
         }
 
 
-class ReviewsMachine(ModerationNotificationMixin):
+class ReviewsMachine(ModerationNotificationMixin, BaseMachine):
     ActionClass = ReviewAction
     States = ReviewStates
     Transitions = REVIEWABLE_TRANSITIONS
@@ -361,7 +361,7 @@ class PreprintRequestMachine(BaseMachine):
         }
 
 
-class RegistrationMachine(ModerationNotificationMixin):
+class RegistrationMachine(ModerationNotificationMixin, BaseMachine):
     ActionClass = RegistrationAction
     States = RegistrationStates
     Transitions = REGISTRATION_TRANSITIONS
@@ -467,17 +467,13 @@ class RegistrationMachine(ModerationNotificationMixin):
 
     def notify_reject_withdraw_request(self, ev):
         context = self.get_context()
-        try:
-            action = RegistrationAction.objects.get(
-                target__id=self.machineable.registered_node.id,
-                from_state='pending',
-                to_state='accepted',
-                trigger='accept'
-            )
-            context['requester'] = action.target.creator
-        except ObjectDoesNotExist:
-            # If there is no registration request action, it means the withdrawal is directly initiated by admin/moderator
-            context['withdrawal_submitter_is_moderator_or_admin'] = True
+        action = RegistrationAction.objects.get(
+            target__id=self.machineable.registered_node.id,
+            from_state=self.States.ACCEPTED.value,
+            to_state=self.States.PENDING_WITHDRAW_REQUEST.value,
+            trigger=RegistrationTriggers.REQUEST_WITHDRAW.value
+        )
+        context['requester'] = action.target.creator
 
         for contributor in self.machineable.registered_node.contributors.all():
             context['contributor'] = contributor
