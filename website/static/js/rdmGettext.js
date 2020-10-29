@@ -33,7 +33,8 @@ var getBrowserLang = function() {
             if (applyLanguage) break;
         }
     return language;
-    };
+    }
+};
 
 var rdmGettext = function() {
     var gt = new Gettext();
