@@ -32,8 +32,8 @@ var getBrowserLang = function() {
             }
             if (applyLanguage) break;
         }
-    return language;
     }
+    return language;
 };
 
 var rdmGettext = function() {
