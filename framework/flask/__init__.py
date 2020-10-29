@@ -27,7 +27,10 @@ babel = Babel(app)
 
 @babel.localeselector
 def get_locale():
-    return request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
+    browserLanguage = request.accept_languages.best_match(settings.BABEL_LANGUAGES.keys())
+    endIndex = browserLanguage.index('-')
+    lang_code =browserLanguage.program[0: endIndex if endIndex != -1 else len(browserLanguage)]
+    return lang_code
 
 def rm_handler(app, handler_name, func, key=None):
     """Remove a handler from an application.
