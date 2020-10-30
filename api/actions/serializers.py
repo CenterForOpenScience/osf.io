@@ -289,10 +289,9 @@ class RegistrationActionSerializer(BaseActionSerializer):
             elif trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name:
                 sanction.reject(user)
             elif trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name:
-                retraction = target.retract_registration(
-                    user=user, justification=comment,
+                target.retract_registration(
+                    user=user, justification=comment, moderator_initiated=True,
                 )
-                retraction.accept(user)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except InvalidTriggerError:
