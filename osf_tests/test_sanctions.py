@@ -7,8 +7,8 @@ import datetime
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 
-from framework.exceptions import HTTPError
 from nose.tools import assert_raises
+from transitions import MachineError
 
 from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
 from osf.exceptions import NodeStateError
@@ -66,10 +66,10 @@ class TestNodeEmbargoTerminations:
     def test_terminate_embargo_adds_log_to_registered_from(self, node, registration, user):
         registration.terminate_embargo()
         last_log = node.logs.first()
-        assert last_log.action == NodeLog.EMBARGO_TERMINATED
+        assert last_log.action == NodeLog.EMBARGO_COMPLETED
 
     def test_terminate_embargo_log_is_nouser(self, node, user, registration):
-        registration.terminate_embargo()
+        registration.terminate_embargo(forced=True)
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
@@ -226,7 +226,7 @@ class TestRegistrationEmbargoTermination:
         user_1_tok = embargo_termination.token_for_user(user, 'rejection')
         user_2_tok = embargo_termination.token_for_user(user2, 'approval')
         embargo_termination.reject(user=user, token=user_1_tok)
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             embargo_termination.approve(user=user2, token=user_2_tok)
 
         assert embargo_termination.is_rejected

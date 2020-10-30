@@ -8,11 +8,11 @@ class ModerationEnum(IntEnum):
     '''A helper Enum superclass that provides easy translation to Int/CharChoices fields.'''
 
     @classmethod
-    def int_choices(cls):
+    def int_field_choices(cls):
         return tuple((member.value, member.readable_value) for member in cls)
 
     @classmethod
-    def char_choices(cls):
+    def char_field_choices(cls):
         return tuple((member.db_name, member.readable_value) for member in cls)
 
     @classmethod
@@ -102,11 +102,10 @@ class RegistrationModerationStates(ModerationEnum):
             },
         }
 
-        states_for_sanction_type = SANCTION_STATE_MAP.get(sanction.SANCTION_TYPE)
-        if not states_for_sanction_type:
-            return cls.UNDEFINED
-
-        new_state = states_for_sanction_type.get(sanction.approval_stage, cls.UNDEFINED)
+        try:
+            new_state = SANCTION_STATE_MAP[sanction.SANCTION_TYPE][sanction.approval_stage]
+        except KeyError:
+            new_state = cls.UNDEFINED
 
         return new_state
 
@@ -137,6 +136,8 @@ class RegistrationModerationTriggers(ModerationEnum):
                 moderation_states.WITHDRAWN): cls.ACCEPT_WITHDRAWAL,
             (moderation_states.PENDING_WITHDRAW, moderation_states.ACCEPTED): cls.REJECT_WITHDRAWAL,
             (moderation_states.PENDING_WITHDRAW, moderation_states.EMBARGO): cls.REJECT_WITHDRAWAL,
+            (moderation_states.ACCEPTED, moderation_states.WITHDRAWN): cls.FORCE_WITHDRAW,
+            (moderation_states.EMBARGO, moderation_states.WITHDRAWN): cls.FORCE_WITHDRAW,
         }
         return transition_to_trigger_mappings.get((from_state, to_state))
 

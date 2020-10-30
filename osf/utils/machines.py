@@ -1,10 +1,8 @@
 from django.utils import timezone
-from rest_framework import status as http_status
 from transitions import Machine, MachineError
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
-from framework.exceptions import HTTPError
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
@@ -16,7 +14,6 @@ from osf.utils.workflows import (
     DefaultTriggers,
     ReviewStates,
     SanctionStates,
-    SanctionTypes,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
     SANCTION_TRANSITIONS
@@ -384,15 +381,12 @@ class SanctionStateMachine(ModerationNotificationMixin, Machine):
     requests) into HTTPErrors to report back to users who try to initiate such errors.
     '''
 
-    SANCTION_TYPE = SanctionTypes.UNDEFINED
-    MACHINE_STATE_FIELD_NAME = ''
-
     def __init__(self):
 
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,
-            initial=SanctionStates.from_db_name(getattr(self, self.MACHINE_STATE_FIELD_NAME)),
+            initial=SanctionStates.from_db_name(self.sanction_state),
             model_attribute='approval_stage',
             after_state_change='_save_transition',
             send_event=True,
@@ -416,26 +410,24 @@ class SanctionStateMachine(ModerationNotificationMixin, Machine):
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            short_message = 'Operation not allowed at this time'
             if self.approval_stage in [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED]:
-                long_message = (
+                error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
                         sanction=self.DISPLAY_NAME))
             elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETE]:
-                long_message = (
+                error_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))
             else:
                 raise e
 
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': short_message, 'message_long': long_message})
+            raise MachineError(error_message)
 
     def _parse_user_and_token_from_event_data(self, event_data):
         '''Parse any provided user and token from the event_data.
 
         User and token are the only supported args to SanctionStateMachine triggers.
-        If passed as potisional args, user must be first and token must be second.
+        If passed as positional args, user must be first and token must be second.
         '''
         user = None
         token = None
