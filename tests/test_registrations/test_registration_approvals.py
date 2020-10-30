@@ -259,7 +259,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         )
         self.registration.save()
         with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify_initiator:
-            self.registration.registration_approval.accept(user=self.user)
+            self.registration.registration_approval.accept()
         assert_equal(mock_notify_initiator.call_count, 0)
 
         # Tests email suppression for ask()
@@ -278,7 +278,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         )
         self.registration.save()
         with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
-            self.registration.registration_approval.accept(user=self.user)
+            self.registration.registration_approval.accept()
         assert_equal(mock_notify.call_count, 1)
 
     def test_accept_makes_project_and_components_public(self):
@@ -292,7 +292,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         registration = RegistrationFactory(project=project)
         with mock.patch.object(SanctionCallbackMixin, '_notify_initiator'):
-            registration.registration_approval.accept(user=self.user)
+            registration.registration_approval.accept()
 
     def test_accept_raises_error_if_project_is_spam(self):
         self.registration.require_approval(
@@ -303,5 +303,5 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.save()
         with mock.patch.object(SanctionCallbackMixin, '_notify_initiator') as mock_notify:
             with assert_raises(NodeStateError):
-                self.registration.registration_approval.accept(user=self.user)
+                self.registration.registration_approval.accept()
         assert_equal(mock_notify.call_count, 0)
