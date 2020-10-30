@@ -204,19 +204,28 @@ class TokenApprovableSanction(Sanction):
     def _validate_request(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
         action = event_data.event.name
-        user, token = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         # Allow certain 'accept' calls with no user for OSF admin use
         if not user and action != 'accept':
             raise ValueError('All state trigger functions must specify a user')
-        if self.approval_state is SanctionStates.PENDING_ADMIN_APPROVAL and not token:
-            raise ValueError('Admin actions require a token')
 
         if not self._verify_user_role(user):
             raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
                 ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
 
-        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
-            return True  # Auth validated by API, no token to check
+        # Moderator auth is validated by API, no token to check
+        # user is None and no prior exception -> OSF-internal accept call
+        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL or user is None:
+            return True
+
+        token = event_data.kwargs.get('token')
+        if token is None:
+            try:
+                token = event_data.args[1]
+            except IndexError:
+                raise ValueError('Admin actions require a token')
 
         if action == 'approve' and self.approval_state[user._id]['approval_token'] != token:
             raise InvalidSanctionApprovalToken(
@@ -281,7 +290,9 @@ class TokenApprovableSanction(Sanction):
         - mode is ANY and the Sanction has not already been cancelled
         - mode is UNANIMOUS and all users have given approval
         """
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         self.approval_state[user._id]['has_approved'] = True
 
         if self.mode == self.ANY or all(
@@ -564,7 +575,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
 
         parent_registration = self.target_registration
@@ -702,7 +715,9 @@ class Retraction(EmailApprovableSanction):
             }
 
     def _on_reject(self, event_data):
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         super()._on_reject(event_data)
 
         NodeLog = apps.get_model('osf.NodeLog')
@@ -872,7 +887,9 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, event_data):
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
 
         register = self._get_registration()
@@ -907,7 +924,9 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         super()._on_reject(event_data)
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
 
         registered_from = self.target_registration.registered_from

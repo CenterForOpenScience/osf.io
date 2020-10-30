@@ -408,23 +408,6 @@ class SanctionStateMachine(Machine):
 
             raise MachineError(error_message)
 
-    def _parse_user_and_token_from_event_data(self, event_data):
-        '''Parse any provided user and token from the event_data.
-
-        User and token are the only supported args to SanctionStateMachine triggers.
-        If passed as positional args, user must be first and token must be second.
-        '''
-        user = None
-        token = None
-        try:
-            user = event_data.args[0]
-            token = event_data.args[1]
-        except IndexError:
-            user = event_data.kwargs.get('user', user)
-            token = event_data.kwargs.get('token', token)
-
-        return user, token
-
     def _save_transition(self, event_data):
         """Recored the effects of a state transition in the database."""
         self.save()
@@ -433,7 +416,9 @@ class SanctionStateMachine(Machine):
         if new_state is None:
             return
 
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.kwargs:
+            user = event_data.args[0]
         comment = event_data.kwargs.get('comment', '')
         if new_state == SanctionStates.PENDING_MODERATOR_APPROVAL.name:
             user = None  # Don't worry about the particular user who gave final approval
