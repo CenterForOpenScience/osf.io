@@ -68,7 +68,7 @@ from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 from api.actions.serializers import RegistrationActionSerializer
-from api.requests.serializers import RegistrationRequestSerializer, RegistrationRequestCreateSerializer
+from api.requests.serializers import RegistrationRequestSerializer
 from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
@@ -839,12 +839,6 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
     view_name = 'registration-requests-list'
 
     serializer_class = RegistrationRequestSerializer
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return RegistrationRequestCreateSerializer
-        else:
-            return RegistrationRequestSerializer
 
     def get_default_queryset(self):
         return self.get_node().requests.all()

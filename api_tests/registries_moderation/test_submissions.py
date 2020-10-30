@@ -454,3 +454,97 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 201
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_registries_moderation_post_accept_errors(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
+        registration.require_approval(user=registration.creator)
+
+        #Moderator can't submit
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Submitting registration'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth, expect_errors=True)
+        assert resp.status_code == 403
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.SUBMIT.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Submitting registration'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth)
+        assert resp.status_code == 201
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        #Admin contributor can't approve
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
+        assert resp.status_code == 403
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_registries_moderation_post_withdraw_admin_cant_accept(self, app, retract_registration, reg_creator, retract_registration_actions_url, actions_payload_base, provider):
+        approval_token = retract_registration.sanction.token_for_user(retract_registration.creator, 'approval')
+        retract_registration.sanction.approve(user=retract_registration.creator, token=approval_token)
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Bye bye'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = retract_registration._id
+
+        resp = app.post_json_api(retract_registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_registries_moderation_post_embargo_admin_cant_accept(self, app, embargo_registration, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.SUBMIT.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'I fixed it.'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = embargo_registration._id
+
+        resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=reg_creator.auth)
+        assert resp.status_code == 201
+        embargo_registration.refresh_from_db()
+        assert embargo_registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Looks good! (Embargo)'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = embargo_registration._id
+
+        resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_registries_moderation_post_admin_cant_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
+        registration.require_approval(user=registration.creator)
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.SUBMIT.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Submitting registration'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth)
+        assert resp.status_code == 201
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Bye bye'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
+        assert resp.status_code == 403

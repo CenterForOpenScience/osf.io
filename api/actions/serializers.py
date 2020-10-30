@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework import status as http_status
+from rest_framework.exceptions import PermissionDenied
 
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 
 from api.base import utils
 from api.base.exceptions import Conflict
@@ -291,7 +292,6 @@ class RegistrationActionSerializer(BaseActionSerializer):
                 retraction = target.retract_registration(
                     user=user, justification=comment,
                 )
-                retraction.accept(user=None)
                 retraction.accept(user)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
@@ -303,5 +303,7 @@ class RegistrationActionSerializer(BaseActionSerializer):
                 http_status.HTTP_400_BAD_REQUEST,
                 data={'message_short': short_message, 'message_long': long_message},
             )
+        except PermissionsError:
+            raise PermissionDenied('You do not have permission to perform this trigger at this time')
 
         return target.actions.last()
