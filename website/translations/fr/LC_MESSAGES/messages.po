@@ -1,4 +1,4 @@
-# English translations for .
+# French translations for .
 # Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
@@ -11,7 +11,7 @@ msgstr ""
 "POT-Creation-Date: 2020-07-02 20:20+0900\n"
 "PO-Revision-Date: 2020-07-02 20:20+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
-"Language: en\n"
+"Language: fr\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
@@ -3772,3 +3772,4 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
+
