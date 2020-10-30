@@ -2281,9 +2281,7 @@ class TestSetPrivacy:
         )
         assert len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]) == 4
         embargo = registration.embargo
-#        embargo.state = Sanction.APPROVED
         embargo.accept()
-        embargo.save()
         with mock.patch('osf.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
