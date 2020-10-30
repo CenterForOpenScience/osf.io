@@ -36,7 +36,7 @@
                "type":"string",
                "format":"textarea",
                "title":"Research question(s)",
-               "help":"Please specify your research question or questions as they are guiding your research now. If relevant, you may also specify here any hypotheses to be assessed. The research questions may break down your aim into smaller, distinct inquiries. If relevant, you may distinguish between primary and secondary research questions or hypotheses.",
+               "help":"Please specify your research question or questions as they are guiding your research now. If relevant, you may also specify here any hypotheses to be assessed. The research questions may break down your aim into smaller, distinct inquiries.\n\nIf relevant, you may distinguish between primary and secondary research questions or hypotheses.",
                "example":"For example, if it is your aim to explore the attitudes of caregivers towards Alzheimer patients in a local ward, your research questions could specify precisely what you plan to study; for instance, how ward staff tries to treat the patients with dignity or how the relationship between the patient and their family members or loved ones evolved since that patient was admitted to the ward.",
                "required":true
             },
