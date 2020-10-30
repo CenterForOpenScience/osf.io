@@ -256,7 +256,7 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
     permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
-    trigger = ser.ChoiceField(choices=RegistrationModerationTriggers.char_choices())
+    trigger = ser.ChoiceField(choices=RegistrationModerationTriggers.char_field_choices())
 
     target = TargetRelationshipField(
         target_class=Registration,
