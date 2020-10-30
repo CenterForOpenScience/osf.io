@@ -5,6 +5,7 @@ from addons.wiki.models import WikiVersion
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
+from nose.tools import assert_raises
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
@@ -930,3 +931,19 @@ class TestForcedWithdrawal():
         assert action.comment == justification
         assert action.from_state == RegistrationModerationStates.ACCEPTED.db_name
         assert action.to_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_cannot_force_retraction_on_unmoderated_registration(self):
+        unmoderated_registration = factories.RegistrationFactory(is_public=True)
+        with assert_raises(ValueError):
+            unmoderated_registration.retract_registration(
+                user=unmoderated_registration.creator, justification='', moderator_initiated=True)
+
+    def test_nonmoderator_cannot_force_retraction(self, moderated_registration):
+        moderated_registration.retract_registration(
+            user=moderated_registration.creator, justification='', moderator_initiated=True)
+
+        assert moderated_registration.retraction is None
+        assert moderated_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        latest_log = moderated_registration.registered_from.logs.first()
+        assert latest_log.action == NodeLog.RETRACTION_CANCELLED

@@ -485,22 +485,28 @@ class Registration(AbstractNode):
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
             try:
-                retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
-                retraction.accept(user=user, comment=justification)
-                print(self.moderation_state)
+                self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+                self.retraction.accept(user=user, comment=justification)
+                self.refresh_from_db()  # grab updated state
             except PermissionsError:
                 # user wasn't a moderator, forget this happened
                 logger.warning('Non-moderator attempted to initiate forced withdrawal')
                 retraction.approval_stage = SanctionStates.MODERATOR_REJECTED
                 self.retraction = None
-        else:
-            # update_moderation_state called as part of accept trigger on a
-            # moderator_initaited retraction.
-            # Calling again writes a superfluous RegistrationAction
-            self.update_moderation_state()
+                self.registered_from.add_log(
+                    action=NodeLog.RETRACTION_CANCELLED,
+                    params={
+                        'node': self.registered_from._id,
+                        'registration': self._id,
+                        'retraction_id': retraction._id,
+                    },
+                    auth=None,
+                )
 
         if save:
+            self.update_moderation_state()
             self.save()
+
         return retraction
 
     def delete_registration_tree(self, save=False):
@@ -537,7 +543,6 @@ class Registration(AbstractNode):
         :param str comment: Any comment moderator comment associated with the state change;
                 used in reporting Actions.
         '''
-        print(self.moderation_state)
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
 
         active_sanction = self.sanction
@@ -566,9 +571,7 @@ class Registration(AbstractNode):
 
         self._write_registration_action(from_state, to_state, initiated_by, comment)
         self.moderation_state = to_state.db_name
-        print(self.moderation_state)
         self.save()
-        print(self.moderation_state)
 
     def _write_registration_action(self, from_state, to_state, initiated_by, comment):
         '''Write a new RegistrationAction on relevant state transitions.'''
