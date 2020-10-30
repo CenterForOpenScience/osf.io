@@ -2,7 +2,7 @@ import pytest
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import PermissionsError
 from nose.tools import assert_raises
 from osf.migrations import update_provider_auth_groups
 from osf_tests.factories import (
@@ -12,6 +12,7 @@ from osf_tests.factories import (
 from osf.utils import tokens
 from osf.utils.workflows import RegistrationModerationStates, SanctionStates
 from tests.base import OsfTestCase
+from transitions import MachineError
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -117,7 +118,7 @@ class TestUnmoderatedFlows():
         sanction_object.reject(user=registration.creator, token=rejection_token)
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.approve(user=registration.creator, token=approval_token)
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
@@ -129,7 +130,7 @@ class TestUnmoderatedFlows():
         registration.update_moderation_state()
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.reject(user=registration.creator, token=rejection_token)
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
@@ -428,7 +429,7 @@ class TestModeratedFlows():
         assert registration.moderation_state == registration_accepted_state
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
-    def test_admin_reject_after_accepted_raises_http_error(self, sanction_fixture, provider):
+    def test_admin_reject_after_accepted_raises_machine_error(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_fixture(self)
         sanction_object.to_ACCEPTED()
@@ -438,11 +439,11 @@ class TestModeratedFlows():
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
 
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.reject(user=registration.creator, token=rejection_token)
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
-    def test_moderator_reject_after_accepted_raises_http_error(
+    def test_moderator_reject_after_accepted_raises_machine_error(
             self, sanction_fixture, provider, moderator):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_fixture(self)
@@ -451,7 +452,7 @@ class TestModeratedFlows():
         registration.provider = provider
         registration.save()
 
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.reject(user=moderator)
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
@@ -496,7 +497,7 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
         'rejection_state', [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED])
-    def test_admin_approve_after_rejected_raises_http_error(
+    def test_admin_approve_after_rejected_raises_machine_error(
         self, sanction_fixture, rejection_state, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_fixture(self)
@@ -506,13 +507,13 @@ class TestModeratedFlows():
         registration.save()
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.approve(user=registration.creator, token=approval_token)
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
         'rejection_state', [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED])
-    def test_moderator_approve_after_rejected_raises_http_error(
+    def test_moderator_approve_after_rejected_raises_machine_error(
         self, sanction_fixture, rejection_state, provider, moderator):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_fixture(self)
@@ -521,7 +522,7 @@ class TestModeratedFlows():
         registration.provider = provider
         registration.save()
 
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             sanction_object.accept(user=moderator)
 
 
@@ -616,20 +617,20 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         assert self.embargo.approval_stage is SanctionStates.ACCEPTED
         assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
-    def test_reject_after_accept_raises_http_error(self):
+    def test_reject_after_accept_raises_machine_error(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
         embargo_termination.approve(user=self.user, token=approval_token)
 
         rejection_token = embargo_termination.token_for_user(self.user, 'rejection')
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             embargo_termination.reject(user=self.user, token=rejection_token)
 
-    def test_accept_after_reject_raises_http_error(self):
+    def test_accept_after_reject_raises_machine_error(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
         rejection_token = embargo_termination.token_for_user(self.user, 'rejection')
         embargo_termination.reject(user=self.user, token=rejection_token)
 
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
-        with assert_raises(HTTPError):
+        with assert_raises(MachineError):
             embargo_termination.approve(user=self.user, token=approval_token)

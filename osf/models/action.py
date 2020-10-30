@@ -64,6 +64,9 @@ class PreprintRequestAction(BaseAction):
 class RegistrationAction(BaseAction):
     target = models.ForeignKey('Registration', related_name='actions', on_delete=models.CASCADE)
 
-    trigger = models.CharField(max_length=31, choices=RegistrationModerationTriggers.char_choices())
-    from_state = models.CharField(max_length=31, choices=RegistrationModerationStates.char_choices())
-    to_state = models.CharField(max_length=31, choices=RegistrationModerationStates.char_choices())
+    trigger = models.CharField(
+        max_length=31, choices=RegistrationModerationTriggers.char_field_choices())
+    from_state = models.CharField(
+        max_length=31, choices=RegistrationModerationStates.char_field_choices())
+    to_state = models.CharField(
+        max_length=31, choices=RegistrationModerationStates.char_field_choices())

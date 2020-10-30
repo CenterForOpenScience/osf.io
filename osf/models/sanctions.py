@@ -85,9 +85,8 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     sanction_state = models.CharField(
         max_length=30,
-        choices=SanctionStates.char_choices(),
+        choices=SanctionStates.char_field_choices(),
         default=SanctionStates.PENDING_ADMIN_APPROVAL.db_name)
-    MACHINE_STATE_FIELD_NAME = 'sanction_state'
 
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
@@ -576,7 +575,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'registration': parent_registration._id,
                 'embargo_id': self._id,
             },
-            auth=Auth(user), )
+            auth=Auth(user) if user else Auth(self.initiated_by))
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
             parent_registration.delete_registration_tree(save=True)
@@ -740,7 +739,13 @@ class Retraction(EmailApprovableSanction):
         # TODO: Move this into the registration to be re-used in Forced Withdrawal
         # Remove any embargoes associated with the registration
         if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
+            # Alter embargo state to make sure registration doesn't accidentally get published
             parent_registration.embargo.state = self.REJECTED
+            parent_registration.embargo.approval_stage = (
+                SanctionStates.MODERATOR_REJECTED if self.is_moderated
+                else SanctionStates.ADMIN_REJECTED
+            )
+
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
                 params={
@@ -751,6 +756,7 @@ class Retraction(EmailApprovableSanction):
                 auth=Auth(self.initiated_by),
             )
             parent_registration.embargo.save()
+
         # Ensure retracted registration is public
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity

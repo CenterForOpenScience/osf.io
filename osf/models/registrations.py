@@ -50,7 +50,12 @@ from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
+from osf.utils.workflows import (
+    RegistrationModerationStates,
+    RegistrationModerationTriggers,
+    SanctionStates,
+    SanctionTypes
+)
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +114,9 @@ class Registration(AbstractNode):
 
     moderation_state = models.CharField(
         max_length=30,
-        choices=RegistrationModerationStates.char_choices(),
-        default=RegistrationModerationStates.INITIAL.db_name)
+        choices=RegistrationModerationStates.char_field_choices(),
+        default=RegistrationModerationStates.INITIAL.db_name
+    )
 
     @staticmethod
     def find_failed_registrations():
@@ -363,6 +369,10 @@ class Registration(AbstractNode):
     def terminate_embargo(self, forced=False):
         """Handles the completion of an Embargoed registration.
         Adds a log to the registered_from Node.
+
+        :param bool forced: False if the embargo is expiring,
+                            True if the embargo is being terminated early
+
         """
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
@@ -428,7 +438,7 @@ class Registration(AbstractNode):
         if save:
             self.save()
 
-    def _initiate_retraction(self, user, justification=None):
+    def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -436,17 +446,17 @@ class Registration(AbstractNode):
         self.retraction = Retraction.objects.create(
             initiated_by=user,
             justification=justification or None,  # make empty strings None
-            state=Retraction.UNAPPROVED
+            state=Retraction.UNAPPROVED,
         )
-        self.update_moderation_state()
         self.save()
-        admins = self.get_admin_contributors_recursive(unique_users=True)
-        for (admin, node) in admins:
-            self.retraction.add_authorizer(admin, node)
+        if not moderator_initiated:
+            admins = self.get_admin_contributors_recursive(unique_users=True)
+            for (admin, node) in admins:
+                self.retraction.add_authorizer(admin, node)
         self.retraction.save()  # Save retraction approval state
         return self.retraction
 
-    def retract_registration(self, user, justification=None, save=True):
+    def retract_registration(self, user, justification=None, save=True, moderator_initiated=False):
         """Retract public registration. Instantiate new Retraction object
         and associate it with the respective registration.
         """
@@ -457,7 +467,11 @@ class Registration(AbstractNode):
         if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
-        retraction = self._initiate_retraction(user, justification)
+        if moderator_initiated and not self.is_moderated:
+            raise ValueError('Forced retraction is only supported for moderated registrations.')
+
+        retraction = self._initiate_retraction(user, justification, moderator_initiated=moderator_initiated)
+        self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
@@ -467,7 +481,24 @@ class Registration(AbstractNode):
             },
             auth=Auth(user),
         )
-        self.retraction = retraction
+
+        # Automatically accept moderator_initiated retractions
+        if moderator_initiated:
+            try:
+                retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+                retraction.accept(user=user, comment=justification)
+                print(self.moderation_state)
+            except PermissionsError:
+                # user wasn't a moderator, forget this happened
+                logger.warning('Non-moderator attempted to initiate forced withdrawal')
+                retraction.approval_stage = SanctionStates.MODERATOR_REJECTED
+                self.retraction = None
+        else:
+            # update_moderation_state called as part of accept trigger on a
+            # moderator_initaited retraction.
+            # Calling again writes a superfluous RegistrationAction
+            self.update_moderation_state()
+
         if save:
             self.save()
         return retraction
@@ -499,29 +530,47 @@ class Registration(AbstractNode):
         field.auto_now = True
 
     def update_moderation_state(self, initiated_by=None, comment=''):
-        '''Derive the RegistrationModerationState from the state of the active sanction.'''
+        '''Derive the RegistrationModerationState from the state of the active sanction.
+
+        :param models.User initiated_by: The user who initiated the state change;
+                used in reporting actions.
+        :param str comment: Any comment moderator comment associated with the state change;
+                used in reporting Actions.
+        '''
+        print(self.moderation_state)
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
+
         active_sanction = self.sanction
         if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
             to_state = RegistrationModerationStates.ACCEPTED
         else:
             to_state = RegistrationModerationStates.from_sanction(active_sanction)
 
-        # The state is UNDEFINED if the "active sanction" was a rejected withdrawal
-        # Determine the state based on any Embargo or RegistrationApproval instead
         if to_state is RegistrationModerationStates.UNDEFINED:
-            root = self._dirty_root
-            actual_active_sanction = root.embargo or root.registration_approval
-            if actual_active_sanction is None:  # Rejected Retraction was the only sanction
-                to_state = RegistrationModerationStates.ACCEPTED
+            # An UNDEFINED state is expected from a rejected retraction.
+            # In other cases, report the error.
+            if active_sanction.SANCTION_TYPE is not SanctionTypes.RETRACTION:
+                logger.warning(
+                    'Could not update moderation state from unsupported sanction/state '
+                    'combination {sanction}.{state}'.format(
+                        sanction=active_sanction.SANCTION_TYPE,
+                        state=active_sanction.approval_stage.name)
+                )
+            # Use other underlying sanctions to compute the state
+            if self.embargo:
+                to_state = RegistrationModerationStates.from_sanction(self.embargo)
+            elif self.registration_approval:
+                to_state = RegistrationModerationStates.from_sanction(self.registration_approval)
             else:
-                to_state = RegistrationModerationStates.from_sanction(actual_active_sanction)
+                to_state = RegistrationModerationStates.ACCEPTED
 
-        self.write_registration_action(from_state, to_state, initiated_by, comment)
+        self._write_registration_action(from_state, to_state, initiated_by, comment)
         self.moderation_state = to_state.db_name
+        print(self.moderation_state)
         self.save()
+        print(self.moderation_state)
 
-    def write_registration_action(self, from_state, to_state, initiated_by, comment):
+    def _write_registration_action(self, from_state, to_state, initiated_by, comment):
         '''Write a new RegistrationAction on relevant state transitions.'''
         trigger = RegistrationModerationTriggers.from_transition(from_state, to_state)
         if trigger is None:
