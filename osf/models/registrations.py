@@ -497,10 +497,18 @@ class Registration(AbstractNode):
         if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
-        if moderator_initiated and not self.is_moderated:
-            raise ValueError('Forced retraction is only supported for moderated registrations.')
+        if moderator_initiated:
+            if not self.is_moderated:
+                raise ValueError('Forced retraction is only supported for moderated registrations.')
+            provider = self.provider
+            moderator_group_for_provider = provider.format_group('moderator')
+            if not user.groups.filter(name=moderator_group_for_provider).exists():
+                provider = self.provider
+                raise PermissionsError(
+                    f'User {user} does not have moderator privileges on Provider {provider}')
 
-        retraction = self._initiate_retraction(user, justification, moderator_initiated=moderator_initiated)
+        retraction = self._initiate_retraction(
+            user, justification, moderator_initiated=moderator_initiated)
         self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
@@ -514,24 +522,9 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            try:
-                self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
-                self.retraction.accept(user=user, comment=justification)
-                self.refresh_from_db()  # grab updated state
-            except PermissionsError:
-                # user wasn't a moderator, forget this happened
-                logger.warning('Non-moderator attempted to initiate forced withdrawal')
-                retraction.approval_stage = SanctionStates.MODERATOR_REJECTED
-                self.retraction = None
-                self.registered_from.add_log(
-                    action=NodeLog.RETRACTION_CANCELLED,
-                    params={
-                        'node': self.registered_from._id,
-                        'registration': self._id,
-                        'retraction_id': retraction._id,
-                    },
-                    auth=None,
-                )
+            self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+            self.retraction.accept(user=user, comment=justification)
+            self.refresh_from_db()  # grab updated state
 
         if save:
             self.update_moderation_state()
