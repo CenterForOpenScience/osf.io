@@ -3,7 +3,7 @@
 var Gettext = require('node-gettext');
 var $osf = require('js/osfHelpers');
 
-var acceptLanguages = ['en','ja','fr'];
+var acceptLanguages = ['en','ja'];
 var defaultLanguage = 'en';
 var translationsBaseDir = 'translations';
 var osfLanguageProfileBaseName = 'osfLanguage';
