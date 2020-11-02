@@ -58,6 +58,13 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
+from osf.utils.notifications import (
+    notify_submit,
+    notify_accept_reject,
+    notify_reject_withdraw_request,
+    notify_moderator_registration_requests_withdrawal
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -118,6 +125,14 @@ class Registration(AbstractNode):
         choices=RegistrationModerationStates.char_field_choices(),
         default=RegistrationModerationStates.INITIAL.db_name
     )
+
+    moderation_notifications = {
+        RegistrationModerationTriggers.SUBMIT: notify_submit,
+        RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify_accept_reject,
+        RegistrationModerationTriggers.REJECT_SUBMISSION: notify_accept_reject,
+        RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify_moderator_registration_requests_withdrawal,
+        RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify_reject_withdraw_request,
+    }
 
     @staticmethod
     def find_failed_registrations():
@@ -603,14 +618,24 @@ class Registration(AbstractNode):
             return  # Not a moderated event, no need to write an action
 
         initiated_by = initiated_by or self.sanction.initiated_by
-        RegistrationAction.objects.create(
+        action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
             trigger=trigger.db_name,
             from_state=from_state.db_name,
             to_state=to_state.db_name,
             comment=comment
-        ).save()
+        )
+        action.save()
+
+        notification = self.moderation_notifications.get(trigger)
+        if notification:
+            notification(
+                resource=self,
+                user=initiated_by,
+                action=action,
+                states=RegistrationModerationStates
+            )
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:

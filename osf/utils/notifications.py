@@ -19,9 +19,9 @@ def get_email_template_context(resource):
     }
 
 
-def notify_submit(resource, referrer):
+def notify_submit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['referrer'] = referrer
+    context['referrer'] = user
     recipients = list(resource.contributors)
     reviews_signals.reviews_email_submit.send(
         context=context,
@@ -33,50 +33,50 @@ def notify_submit(resource, referrer):
     )
 
 
-def notify_resubmit(resource, creator, action):
+def notify_resubmit(resource, user, action, *args, **kwargs):
     context = get_email_template_context(resource)
     reviews_signals.reviews_email.send(
-        creator=creator,
+        creator=user,
         context=context,
         template='reviews_resubmission_confirmation',
         action=action
     )
 
 
-def notify_accept_reject(resource, action, machine_states, creator):
+def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context = get_email_template_context(resource)
 
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
     context['requester'] = action.creator
-    context['is_rejected'] = action.to_state == machine_states.REJECTED.value
-    context['was_pending'] = action.from_state == machine_states.PENDING.value
+    context['is_rejected'] = action.to_state == states.REJECTED.value
+    context['was_pending'] = action.from_state == states.PENDING.value
     reviews_signals.reviews_email.send(
-        creator=creator,
+        creator=user,
         context=context,
         template='reviews_submission_status',
         action=action
     )
 
 
-def notify_edit_comment(resource, action, creator):
+def notify_edit_comment(resource, user, action, *args, **kwargs):
     context = get_email_template_context(resource)
 
     context['comment'] = action.comment
     if not resource.provider.reviews_comments_private and action.comment:
         reviews_signals.reviews_email.send(
-            creator=creator,
+            creator=user,
             context=context,
             template='reviews_update_comment',
             action=action
         )
 
 
-def notify_reject_withdraw_request(registration, action):
-    context = get_email_template_context(registration)
+def notify_reject_withdraw_request(resource, action, *args, **kwargs):
+    context = get_email_template_context(resource)
     context['requester'] = action.creator
 
-    for contributor in registration.contributors.all():
+    for contributor in resource.contributors.all():
         context['contributor'] = contributor
         context['requester'] = action.creator
         context['is_requester'] = action.creator == contributor
@@ -89,9 +89,9 @@ def notify_reject_withdraw_request(registration, action):
         )
 
 
-def notify_moderator_registration_requests_withdrawal(registration, referrer):
-    context = get_email_template_context(registration)
-    context['referrer'] = referrer
+def notify_moderator_registration_requests_withdrawal(resource, user, *args, **kwargs):
+    context = get_email_template_context(resource)
+    context['referrer'] = user
     reviews_signals.reviews_withdraw_requests_notification_moderators.send(
         timestamp=timezone.now(),
         context=context

@@ -153,7 +153,7 @@ class TestRegistrationMachineNotification:
         add_reviews_notification_setting('global_reviews')
 
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            notify_accept_reject(registration, accept_action, RegistrationModerationStates, registration.creator)
+            notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
 
         assert len(mock_email.call_args_list) == 2
 
@@ -217,7 +217,7 @@ class TestRegistrationMachineNotification:
         add_reviews_notification_setting('global_reviews')
 
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            notify_accept_reject(registration, accept_action, RegistrationModerationStates, registration.creator)
+            notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
 
         assert len(mock_email.call_args_list) == 2
 
