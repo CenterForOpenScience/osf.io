@@ -191,8 +191,7 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
 
     if autoapprove:
         sanction = registration.root.sanction
-        sanction.accept(project.creator)
-#        sanction.save()
+        sanction.accept()
 
     if retraction:
         justification = justification or 'Because reasons'

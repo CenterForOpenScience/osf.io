@@ -25,7 +25,6 @@ from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.notifications import (
     notify_submit,
     notify_resubmit,
-    notify_withdraw_registration,
     notify_accept_reject,
     notify_edit_comment,
 )
@@ -153,7 +152,7 @@ class ReviewsMachine(BaseMachine):
         )
 
     def notify_resubmit(self, ev):
-        notify_resubmit(self.machineable, ev.kwargs('user'))
+        notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_accept_reject(self, ev):
         notify_accept_reject(self.machineable, self.action, self.States, ev.kwargs.get('user'))
@@ -303,7 +302,7 @@ class PreprintRequestMachine(BaseMachine):
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
-                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mails.WITHDRAWAL_REQUEST_DECLINED,
                 mimetype='html',
                 **context
             )
@@ -327,6 +326,7 @@ class PreprintRequestMachine(BaseMachine):
             'reviewable': self.machineable.target,
             'requester': self.machineable.creator,
             'is_request_email': True,
+            'document_type': self.machineable.target.provider.preprint_word
         }
 
 
@@ -395,23 +395,6 @@ class SanctionStateMachine(Machine):
 
             raise MachineError(error_message)
 
-    def _parse_user_and_token_from_event_data(self, event_data):
-        '''Parse any provided user and token from the event_data.
-
-        User and token are the only supported args to SanctionStateMachine triggers.
-        If passed as positional args, user must be first and token must be second.
-        '''
-        user = None
-        token = None
-        try:
-            user = event_data.args[0]
-            token = event_data.args[1]
-        except IndexError:
-            user = event_data.kwargs.get('user', user)
-            token = event_data.kwargs.get('token', token)
-
-        return user, token
-
     def _save_transition(self, event_data):
         """Recored the effects of a state transition in the database."""
         self.save()
@@ -420,7 +403,9 @@ class SanctionStateMachine(Machine):
         if new_state is None:
             return
 
-        user, _ = self._parse_user_and_token_from_event_data(event_data)
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.kwargs:
+            user = event_data.args[0]
         comment = event_data.kwargs.get('comment', '')
         if new_state == SanctionStates.PENDING_MODERATOR_APPROVAL.name:
             user = None  # Don't worry about the particular user who gave final approval

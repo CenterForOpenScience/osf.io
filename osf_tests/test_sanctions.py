@@ -29,7 +29,7 @@ class TestRegistrationApprovalHooks:
         registration.require_approval(user)
 
         assert registration.registration_approval.is_pending_approval is True  # sanity check
-        registration.registration_approval.accept(user=user)
+        registration.registration_approval.accept()
         assert registration.registration_approval.is_pending_approval is False
 
 

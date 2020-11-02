@@ -24,14 +24,15 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
+    Embargo,
+    EmbargoTerminationApproval,
+    DraftRegistrationApproval,
+    DraftRegistrationContributor,
     Node,
     OSFUser,
-    Embargo,
-    Retraction,
+    RegistrationApproval,
     RegistrationSchema,
-    DraftRegistrationApproval,
-    EmbargoTerminationApproval,
-    DraftRegistrationContributor,
+    Retraction,
 )
 
 from osf.models.action import RegistrationAction
@@ -281,10 +282,39 @@ class Registration(AbstractNode):
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
 
-    def require_approval(self, *args, **kwargs):
-        super().require_approval(*args, **kwargs)
+    def _initiate_approval(self, user, notify_initiator_on_complete=False):
+        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
+        self.registration_approval = RegistrationApproval.objects.create(
+            initiated_by=user,
+            end_date=end_date,
+            notify_initiator_on_complete=notify_initiator_on_complete
+        )
+        self.save()  # Set foreign field reference Node.registration_approval
+        admins = self.get_admin_contributors_recursive(unique_users=True)
+        for (admin, node) in admins:
+            self.registration_approval.add_authorizer(admin, node=node)
+        self.registration_approval.save()  # Save approval's approval_state
+        return self.registration_approval
+
+    def require_approval(self, user, notify_initiator_on_complete=False):
+        if not self.is_registration:
+            raise NodeStateError('Only registrations can require registration approval')
+        if not self.is_admin_contributor(user):
+            raise PermissionsError('Only admins can initiate a registration approval')
+
+        approval = self._initiate_approval(user, notify_initiator_on_complete)
+
+        self.registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
+            params={
+                'node': self.registered_from._id,
+                'registration': self._id,
+                'registration_approval_id': approval._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
         self.update_moderation_state()
-        self.save()
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
@@ -467,10 +497,18 @@ class Registration(AbstractNode):
         if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
-        if moderator_initiated and not self.is_moderated:
-            raise ValueError('Forced retraction is only supported for moderated registrations.')
+        if moderator_initiated:
+            if not self.is_moderated:
+                raise ValueError('Forced retraction is only supported for moderated registrations.')
+            provider = self.provider
+            moderator_group_for_provider = provider.format_group('moderator')
+            if not user.groups.filter(name=moderator_group_for_provider).exists():
+                provider = self.provider
+                raise PermissionsError(
+                    f'User {user} does not have moderator privileges on Provider {provider}')
 
-        retraction = self._initiate_retraction(user, justification, moderator_initiated=moderator_initiated)
+        retraction = self._initiate_retraction(
+            user, justification, moderator_initiated=moderator_initiated)
         self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
@@ -484,24 +522,9 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            try:
-                self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
-                self.retraction.accept(user=user, comment=justification)
-                self.refresh_from_db()  # grab updated state
-            except PermissionsError:
-                # user wasn't a moderator, forget this happened
-                logger.warning('Non-moderator attempted to initiate forced withdrawal')
-                retraction.approval_stage = SanctionStates.MODERATOR_REJECTED
-                self.retraction = None
-                self.registered_from.add_log(
-                    action=NodeLog.RETRACTION_CANCELLED,
-                    params={
-                        'node': self.registered_from._id,
-                        'registration': self._id,
-                        'retraction_id': retraction._id,
-                    },
-                    auth=None,
-                )
+            self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+            self.retraction.accept(user=user, comment=justification)
+            self.refresh_from_db()  # grab updated state
 
         if save:
             self.update_moderation_state()
