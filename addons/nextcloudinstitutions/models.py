@@ -14,6 +14,7 @@ from addons.nextcloud.models import NextcloudProvider
 from addons.nextcloudinstitutions import settings, apps
 from osf.models.files import File, Folder, BaseFileNode
 from osf.utils.permissions import ADMIN, READ, WRITE
+from website.util import timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,20 @@ class NextcloudInstitutionsFolder(NextcloudInstitutionsFileNode, Folder):
 
 
 class NextcloudInstitutionsFile(NextcloudInstitutionsFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes'][SHORT_NAME]
+        except (IndexError, KeyError):
+            return None
+
+    # return (hash_type, hash_value)
+    def get_hash_for_timestamp(self):
+        hashes = self._hashes
+        if hashes:
+            if 'sha512' in hashes:
+                return timestamp.HASH_TYPE_SHA512, hashes['sha512']
+        return None, None  # unsupported
 
 
 class NextcloudInstitutionsProvider(NextcloudProvider):
