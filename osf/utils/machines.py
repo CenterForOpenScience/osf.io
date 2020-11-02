@@ -22,6 +22,13 @@ from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
+from osf.utils.notifications import (
+    notify_submit,
+    notify_resubmit,
+    notify_withdraw_registration,
+    notify_accept_reject,
+    notify_edit_comment,
+)
 
 class BaseMachine(Machine):
 
@@ -95,66 +102,7 @@ class BaseMachine(Machine):
         self.machineable.date_last_transitioned = now
 
 
-class ModerationNotificationMixin(object):
-
-    def notify_submit(self, ev):
-        context = self.get_context()
-        context['referrer'] = ev.kwargs.get('user')
-        recipients = list(self.machineable.contributors)
-        reviews_signals.reviews_email_submit.send(
-            context=context,
-            recipients=recipients
-        )
-        reviews_signals.reviews_email_submit_moderators_notifications.send(
-            timestamp=timezone.now(),
-            context=context
-        )
-
-    def notify_resubmit(self, ev):
-        context = self.get_context()
-        reviews_signals.reviews_email.send(
-            creator=ev.kwargs.get('user'), context=context,
-            template='reviews_resubmission_confirmation',
-            action=self.action
-        )
-
-    def notify_accept_reject(self, ev):
-        context = self.get_context()
-        context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
-        context['comment'] = self.action.comment
-        context['is_rejected'] = self.action.to_state == self.States.REJECTED.value
-        context['was_pending'] = self.action.from_state == self.States.PENDING.value
-        reviews_signals.reviews_email.send(
-            creator=ev.kwargs.get('user'),
-            context=context,
-            template='reviews_submission_status',
-            action=self.action
-        )
-
-    def notify_edit_comment(self, ev):
-        context = self.get_context()
-        context['comment'] = self.action.comment
-        if not self.machineable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(
-                creator=ev.kwargs.get('user'),
-                context=context,
-                template='reviews_update_comment',
-                action=self.action
-            )
-
-    def get_context(self):
-        return {
-            'domain': DOMAIN,
-            'reviewable': self.machineable,
-            'workflow': self.machineable.provider.reviews_workflow,
-            'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
-            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
-            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
-            'document_type': self.machineable.provider.preprint_word
-        }
-
-
-class ReviewsMachine(ModerationNotificationMixin, BaseMachine):
+class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction
     States = ReviewStates
     Transitions = REVIEWABLE_TRANSITIONS
@@ -174,15 +122,6 @@ class ReviewsMachine(ModerationNotificationMixin, BaseMachine):
             self.machineable.date_published = now
             self.machineable.is_published = True
             self.machineable.ever_public = True
-            self.machineable.add_log(
-                action=PreprintLog.PUBLISHED,
-                params={
-                    'preprint': self.machineable._id
-                },
-                auth=Auth(self.action.creator),
-                save=False,
-            )
-
         elif not should_publish and self.machineable.is_published:
             self.machineable.is_published = False
         self.machineable.save()
@@ -199,6 +138,28 @@ class ReviewsMachine(ModerationNotificationMixin, BaseMachine):
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
+
+    def notify_submit(self, ev):
+        user = ev.kwargs.get('user')
+        notify_submit(self.machineable, user)
+        auth = Auth(user)
+        self.machineable.add_log(
+            action=PreprintLog.PUBLISHED,
+            params={
+                'preprint': self.machineable._id
+            },
+            auth=auth,
+            save=False,
+        )
+
+    def notify_resubmit(self, ev):
+        notify_resubmit(self.machineable, ev.kwargs('user'))
+
+    def notify_accept_reject(self, ev):
+        notify_accept_reject(self.machineable, self.action, self.States, ev.kwargs.get('user'))
+
+    def notify_edit_comment(self, ev):
+        notify_edit_comment(self.machineable, self.action, ev.kwargs.get('user'))
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -221,8 +182,20 @@ class ReviewsMachine(ModerationNotificationMixin, BaseMachine):
                 contributor.username,
                 mails.WITHDRAWAL_REQUEST_GRANTED,
                 mimetype='html',
+                document_type=self.machineable.provider.preprint_word,
                 **context
             )
+
+    def get_context(self):
+        return {
+            'domain': DOMAIN,
+            'reviewable': self.machineable,
+            'workflow': self.machineable.provider.reviews_workflow,
+            'provider_url': self.machineable.provider.domain or '{domain}preprints/{provider_id}'.format(domain=DOMAIN, provider_id=self.machineable.provider._id),
+            'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
+            'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+        }
+
 
 class NodeRequestMachine(BaseMachine):
     ActionClass = NodeRequestAction
@@ -295,7 +268,7 @@ class NodeRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node': self.machineable.target,
-            'requester': self.machineable.creator,
+            'requester': self.machineable.creator
         }
 
 
@@ -330,7 +303,7 @@ class PreprintRequestMachine(BaseMachine):
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
-                mails.WITHDRAWAL_REQUEST_DECLINED,
+                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
                 mimetype='html',
                 **context
             )
@@ -354,12 +327,12 @@ class PreprintRequestMachine(BaseMachine):
             'reviewable': self.machineable.target,
             'requester': self.machineable.creator,
             'is_request_email': True,
-            'document_type': self.machineable.target.provider.preprint_word
         }
 
 
-class SanctionStateMachine(ModerationNotificationMixin, Machine):
+class SanctionStateMachine(Machine):
     '''SanctionsStateMachine manages state transitions for Sanctions objects.
+
     The valid machine states for a Sanction object are defined in Workflows.SanctionStates.
     The valid transitions between these states are defined in Workflows.SANCTION_TRANSITIONS.
 
@@ -382,7 +355,6 @@ class SanctionStateMachine(ModerationNotificationMixin, Machine):
     '''
 
     def __init__(self):
-
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,

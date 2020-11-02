@@ -6,6 +6,7 @@ import datetime
 from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
 from osf.migrations import update_provider_auth_groups
 from osf.models import NotificationDigest
+from osf.models.action import RegistrationAction
 from website.profile.utils import get_profile_image_url
 
 from osf_tests.factories import (
@@ -13,11 +14,17 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 
-from unittest.mock import ANY
-
 from website import mails, settings
 
-from osf.utils.workflows import RegistrationStates
+from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
+
+from osf.utils.notifications import (
+    notify_submit,
+    notify_accept_reject,
+    notify_moderator_registration_requests_withdrawal,
+    notify_withdraw_registration,
+    notify_reject_withdraw_request
+)
 
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
@@ -55,6 +62,30 @@ class TestRegistrationMachineNotification:
         provider.add_to_group(user, 'moderator')
         return user
 
+    @pytest.fixture()
+    def accept_action(self, registration, admin):
+        registration_action = RegistrationAction.objects.create(
+            creator=admin,
+            target=registration,
+            trigger=RegistrationModerationTriggers.ACCEPT_SUBMISSION.value,
+            from_state=RegistrationModerationStates.INITIAL.value,
+            to_state=RegistrationModerationStates.ACCEPTED.value,
+            comment='yo'
+        )
+        return registration_action
+
+    @pytest.fixture()
+    def withdraw_request_action(self, registration, admin):
+        registration_action = RegistrationAction.objects.create(
+            creator=admin,
+            target=registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.value,
+            from_state=RegistrationModerationStates.ACCEPTED.value,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.value,
+            comment='yo'
+        )
+        return registration_action
+
     def test_submit_notifications(self, registration, moderator, admin, contrib, provider):
         """
         "As moderator of branded registry, I receive email notification upon admin author(s) submission approval"
@@ -62,18 +93,17 @@ class TestRegistrationMachineNotification:
         :param draft_registration:
         :return:
         """
-        registration.moderation_state = RegistrationStates.SUBMIT.value
-        registration.update_moderation_state()
 
         with mock.patch('website.reviews.listeners.mails.send_mail') as mock_send_mail:
-            registration.run_submit(admin)
+            notify_submit(registration, admin)
 
-        assert len(mock_send_mail.call_args_list) == 1
+        assert len(mock_send_mail.call_args_list) == 2
+        admin_message, contrib_message = mock_send_mail.call_args_list
 
-        mock_send_mail.assert_called_with(
+        assert admin_message == call(
             admin.email,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             is_creator=True,
             logo='osf_registries',
@@ -84,19 +114,38 @@ class TestRegistrationMachineNotification:
             provider_name=provider.name,
             provider_url='http://localhost:5000/',
             referrer=admin,
-            requester=admin,
             reviewable=registration,
             user=admin,
             workflow=None
         )
 
-        notification = NotificationDigest.objects.all()[0]
+        assert contrib_message == call(
+            contrib.email,
+            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+            document_type='registration',
+            domain='http://localhost:5000/',
+            is_creator=False,
+            logo='osf_registries',
+            mimetype='html',
+            no_future_emails=[],
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            provider_name=provider.name,
+            provider_url='http://localhost:5000/',
+            referrer=admin,
+            reviewable=registration,
+            user=contrib,
+            workflow=None
+        )
 
-        assert notification.user == moderator
-        assert notification.send_type == 'email_transactional'
-        assert notification.event == 'new_pending_submissions'
+        assert NotificationDigest.objects.count() == 1
+        digest = NotificationDigest.objects.last()
 
-    def test_run_accept_notifications(self, draft_registration, moderator, admin, contrib):
+        assert digest.user == moderator
+        assert digest.send_type == 'email_transactional'
+        assert digest.event == 'new_pending_submissions'
+
+    def test_accept_notifications(self, registration, moderator, admin, contrib, accept_action):
         """
         "As registration authors, we receive email notification upon moderator acceptance"
         :param draft_registration:
@@ -104,9 +153,8 @@ class TestRegistrationMachineNotification:
         """
         add_reviews_notification_setting('global_reviews')
 
-        draft_registration.run_submit(admin)
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            draft_registration.run_accept(admin, 'yo')
+            notify_accept_reject(registration, accept_action, RegistrationModerationStates, registration.creator)
 
         assert len(mock_email.call_args_list) == 2
 
@@ -117,10 +165,10 @@ class TestRegistrationMachineNotification:
             'email_transactional',
             'global_reviews',
             admin,
-            draft_registration.registered_node,
+            registration,
             self.MOCK_NOW,
             comment='yo',
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             has_psyarxiv_chronos_text=False,
             is_creator=True,
@@ -129,10 +177,9 @@ class TestRegistrationMachineNotification:
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             template='reviews_submission_status',
-            was_pending=True,
-            requester=admin,
+            was_pending=False,
             workflow=None
         )
 
@@ -141,10 +188,10 @@ class TestRegistrationMachineNotification:
             'email_transactional',
             'global_reviews',
             admin,
-            draft_registration.registered_node,
+            registration,
             self.MOCK_NOW,
             comment='yo',
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             has_psyarxiv_chronos_text=False,
             is_creator=False,
@@ -153,14 +200,13 @@ class TestRegistrationMachineNotification:
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             template='reviews_submission_status',
-            was_pending=True,
-            requester=admin,
+            was_pending=False,
             workflow=None
         )
 
-    def test_reject_notifications(self, draft_registration, moderator, admin, contrib):
+    def test_reject_notifications(self, registration, moderator, admin, contrib, accept_action):
         """
         "As authors of rejected by moderator registration, we receive email notification of registration returned
         to draft state"
@@ -169,9 +215,8 @@ class TestRegistrationMachineNotification:
         """
         add_reviews_notification_setting('global_reviews')
 
-        draft_registration.run_submit(admin)
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            draft_registration.run_reject(admin, 'yo')
+            notify_accept_reject(registration, accept_action, RegistrationModerationStates, registration.creator)
 
         assert len(mock_email.call_args_list) == 2
 
@@ -182,22 +227,21 @@ class TestRegistrationMachineNotification:
             'email_transactional',
             'global_reviews',
             admin,
-            draft_registration.registered_node,
+            registration,
             self.MOCK_NOW,
             comment='yo',
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             has_psyarxiv_chronos_text=False,
             is_creator=True,
-            is_rejected=True,
+            is_rejected=False,
             notify_comment='yo',
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             template='reviews_submission_status',
-            was_pending=True,
-            requester=admin,
+            was_pending=False,
             workflow=None
         )
 
@@ -206,105 +250,25 @@ class TestRegistrationMachineNotification:
             'email_transactional',
             'global_reviews',
             admin,
-            draft_registration.registered_node,
+            registration,
             self.MOCK_NOW,
             comment='yo',
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             has_psyarxiv_chronos_text=False,
             is_creator=False,
-            is_rejected=True,
+            is_rejected=False,
             notify_comment='yo',
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             template='reviews_submission_status',
-            was_pending=True,
-            requester=admin,
+            was_pending=False,
             workflow=None
         )
 
-    def test_run_request_embargo_termination(self, draft_registration, admin):
-        add_reviews_notification_setting('global_reviews')
-
-        draft_registration.run_submit(admin)
-        draft_registration.run_accept(
-            admin,
-            'yo',
-            embargo_end_date=datetime.datetime(2020, 2, 4)
-        )
-
-        # Contributors confirm embargo
-        embargo = draft_registration.registered_node.embargo
-        embargo.state = 'approved'
-        embargo.save()
-
-        with mock.patch('osf.models.sanctions.mails.send_mail') as mock_email:
-            draft_registration.run_request_embargo_termination(admin, 'yo')
-
-        assert len(mock_email.call_args_list) == 1
-        transactional = mock_email.call_args_list[0]
-
-        assert transactional == call(
-            admin.email,
-            mails.PENDING_EMBARGO_TERMINATION_ADMIN,
-            approval_link=ANY,
-            approval_time_span=48,
-            can_change_preferences=False,
-            disapproval_link=ANY,
-            embargo_end_date=None,
-            initiated_by=admin.fullname,
-            is_initiator=True,
-            project_name=draft_registration.registered_node.title,
-            registration_link=f'http://localhost:5000/{draft_registration.registered_node._id}/',
-            user=admin
-        )
-
-    def test_run_request_withdrawal_notifications(self, draft_registration, contrib, admin, moderator):
-        """
-        "As admin(s) on pending withdrawal registration, I receive an email to approve/cancel my withdrawal within
-         48hrs."
-        :param mock_email:
-        :param draft_registration:
-        :param contrib:
-        :return:
-        """
-        draft_registration.run_submit(admin)
-        draft_registration.run_accept(admin, 'yo')
-        draft_registration.registered_node.is_public = True
-        draft_registration.registered_node.save()
-
-        with mock.patch('osf.models.sanctions.mails.send_mail') as mock_email:
-            draft_registration.run_request_withdraw(admin, 'yo')
-
-        assert len(mock_email.call_args_list) == 2
-        admin_message, contrib_message = mock_email.call_args_list
-
-        assert admin_message == call(
-            admin.email,
-            mails.PENDING_RETRACTION_ADMIN,
-            approval_link=ANY,
-            approval_time_span=48,
-            can_change_preferences=False,
-            disapproval_link=ANY,
-            initiated_by=admin.fullname,
-            is_initiator=True,
-            project_name=draft_registration.registered_node.title,
-            registration_link=f'http://localhost:5000/{draft_registration.registered_node._id}/',
-            user=admin
-        )
-
-        assert contrib_message == call(
-            contrib.email,
-            mails.PENDING_RETRACTION_NON_ADMIN,
-            can_change_preferences=False,
-            initiated_by=admin.fullname,
-            registration_link=f'http://localhost:5000/{draft_registration.registered_node._id}/',
-            user=contrib
-        )
-
-    def test_run_withdrawal_registration_accepted_notifications(self, draft_registration, contrib, admin, moderator, provider):
+    def test_notify_moderator_registration_requests_withdrawal_notifications(self, registration, contrib, admin, moderator, provider):
         """
          "As moderator, I receive registration withdrawal request notification email"
 
@@ -313,18 +277,9 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-        add_reviews_notification_setting('global_reviews')
-        add_reviews_notification_setting('new_pending_submissions')
-        add_reviews_notification_setting('new_pending_withdraw_requests')
-
-        draft_registration.run_submit(admin)
-        draft_registration.run_accept(admin, 'yo')
-        draft_registration.registered_node.is_public = True
-        draft_registration.registered_node.save()
-        draft_registration.run_request_withdraw(admin, 'yo')
 
         with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            draft_registration.run_request_withdraw_passes(admin, 'yo')
+            notify_moderator_registration_requests_withdrawal(registration, admin)
 
         assert len(mock_email.call_args_list) == 1
 
@@ -335,24 +290,23 @@ class TestRegistrationMachineNotification:
             'email_transactional',
             'new_pending_withdraw_requests',
             admin,
-            draft_registration.registered_node,
+            registration,
             self.MOCK_NOW,
-            abstract_provider=draft_registration.provider,
-            document_type='registrations',
+            abstract_provider=registration.provider,
+            document_type='registration',
             domain='http://localhost:5000/',
-            message=f'submitted "{draft_registration.registered_node.title}".',
+            message=f'submitted "{registration.title}".',
             profile_image_url=get_profile_image_url(admin),
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             referrer=admin,
-            requester=admin,
-            reviewable=draft_registration.registered_node,
-            reviews_submission_url=f'http://localhost:5000/reviews/registries/osf/{draft_registration.registered_node._id}',
+            reviewable=registration,
+            reviews_submission_url=f'http://localhost:5000/reviews/registries/osf/{registration._id}',
             workflow=None
         )
 
-    def test_run_withdrawal_registration_rejected_notifications(self, draft_registration, contrib, admin):
+    def test_withdrawal_registration_rejected_notifications(self, registration, contrib, admin, withdraw_request_action):
         """
         "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
         decision"
@@ -362,15 +316,9 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-        draft_registration.run_submit(admin)
-        draft_registration.run_accept(admin, 'yo')
-        draft_registration.registered_node.is_public = True
-        draft_registration.registered_node.save()
-        draft_registration.run_request_withdraw(draft_registration.creator, 'yo')
-        draft_registration.run_request_withdraw_passes(admin, 'yo')
 
         with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
-            draft_registration.run_reject_withdraw(admin, 'yo')
+            notify_reject_withdraw_request(registration, withdraw_request_action)
 
         assert len(mock_email.call_args_list) == 2
         admin_message, contrib_message = mock_email.call_args_list
@@ -379,7 +327,7 @@ class TestRegistrationMachineNotification:
             admin.email,
             mails.WITHDRAWAL_REQUEST_DECLINED,
             contributor=admin,
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             is_requester=True,
             mimetype='html',
@@ -387,7 +335,7 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             workflow=None
         )
 
@@ -395,7 +343,7 @@ class TestRegistrationMachineNotification:
             contrib.email,
             mails.WITHDRAWAL_REQUEST_DECLINED,
             contributor=contrib,
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             is_requester=False,
             mimetype='html',
@@ -403,11 +351,11 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             workflow=None
         )
 
-    def test_run_withdrawal_registration_notifications(self, draft_registration, contrib, admin):
+    def test_withdrawal_registration_notifications(self, registration, contrib, admin, withdraw_request_action):
         """
         "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
         decision"
@@ -417,15 +365,8 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-        draft_registration.run_submit(admin)
-        draft_registration.run_accept(admin, 'yo')
-        draft_registration.registered_node.is_public = True
-        draft_registration.registered_node.save()
-        draft_registration.run_request_withdraw(admin, 'yo')
-        draft_registration.run_request_withdraw_passes(admin, 'yo')
-
         with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
-            draft_registration.run_withdraw_registration(admin, 'yo')
+            notify_withdraw_registration(registration, withdraw_request_action)
 
         assert len(mock_email.call_args_list) == 2
         admin_message, contrib_message = mock_email.call_args_list
@@ -434,14 +375,14 @@ class TestRegistrationMachineNotification:
             admin.email,
             mails.WITHDRAWAL_REQUEST_GRANTED,
             contributor=admin,
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             is_requester=True,
             mimetype='html',
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             requester=admin,
             user=admin,
             workflow=None
@@ -451,14 +392,14 @@ class TestRegistrationMachineNotification:
             contrib.email,
             mails.WITHDRAWAL_REQUEST_GRANTED,
             contributor=contrib,
-            document_type='registrations',
+            document_type='registration',
             domain='http://localhost:5000/',
             is_requester=False,
             mimetype='html',
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
-            reviewable=draft_registration.registered_node,
+            reviewable=registration,
             requester=admin,
             user=contrib,
             workflow=None
