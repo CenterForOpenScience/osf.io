@@ -26,6 +26,7 @@ from osf.utils.workflows import (
     ReviewStates,
     ReviewTriggers,
     RegistrationModerationTriggers,
+    RegistrationModerationStates,
 )
 from osf.utils import permissions
 
@@ -276,18 +277,17 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
         sanction = target.sanction
 
+        prior_sanction_state = RegistrationModerationStates.from_sanction(sanction)
+
         try:
-            if trigger == RegistrationModerationTriggers.SUBMIT.db_name:
-                approval_token = sanction.token_for_user(user, 'approval')
-                sanction.approve(user=user, token=approval_token)
-            elif trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name:
-                sanction.accept(user)
+            if trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name:
+                sanction.accept(user=user)
             elif trigger == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name:
                 sanction.reject(user=user)
             elif trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name:
-                sanction.accept(user)
+                sanction.accept(user=user)
             elif trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name:
-                sanction.reject(user)
+                sanction.reject(user=user)
             elif trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name:
                 target.retract_registration(
                     user=user, justification=comment, moderator_initiated=True,
@@ -304,5 +304,22 @@ class RegistrationActionSerializer(BaseActionSerializer):
             )
         except PermissionsError:
             raise PermissionDenied('You do not have permission to perform this trigger at this time')
+        except ValueError:
+            raise PermissionDenied('You do not have permission to perform this trigger at this time')
+
+        target.reload()
+        after_sanction_state = RegistrationModerationStates.from_db_name(target.moderation_state)
+        determined_trigger = RegistrationModerationTriggers.from_transition(
+            prior_sanction_state, after_sanction_state,
+        )
+        request_trigger = RegistrationModerationTriggers.from_db_name(trigger)
+
+        if trigger != RegistrationModerationTriggers.FORCE_WITHDRAW.db_name and determined_trigger != request_trigger:
+            short_message = 'Operation not allowed at this time'
+            long_message = f'This {trigger} is invalid for the current state of the registration. {prior_sanction_state} to {after_sanction_state}'
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={'message_short': short_message, 'message_long': long_message},
+            )
 
         return target.actions.last()
