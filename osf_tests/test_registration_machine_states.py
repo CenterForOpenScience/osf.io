@@ -5,7 +5,7 @@ from website import settings
 from osf.utils.workflows import RegistrationStates
 
 from osf_tests.factories import (
-    DraftRegistrationFactory,
+    RegistrationFactory,
     CommentFactory
 )
 
@@ -20,7 +20,7 @@ class TestRegistrationMachine:
 
     @pytest.fixture()
     def draft_registration(self):
-        return DraftRegistrationFactory()
+        return RegistrationFactory().draft_registration.last()
 
     @pytest.fixture()
     def comment(self):
@@ -80,17 +80,37 @@ class TestRegistrationMachine:
 
         draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
 
+        assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW_REQUEST.value
+        assert draft_registration.registered_node.retraction.state == Retraction.UNAPPROVED
+
+    def test_run_request_withdraw_fails(self, draft_registration):
+        draft_registration.run_submit(draft_registration.creator)
+        draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
+        draft_registration.registered_node.is_public = True
+        draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+
+        draft_registration.run_request_withdraw_fails(draft_registration.creator, 'Double Doink')
+
+        assert draft_registration.machine_state == RegistrationStates.ACCEPTED.value
+        assert draft_registration.registered_node.retraction.state == Retraction.REJECTED
+
+    def test_run_request_withdraw_passes(self, draft_registration):
+        draft_registration.run_submit(draft_registration.creator)
+        draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
+        draft_registration.registered_node.is_public = True
+        draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+
+        draft_registration.run_request_withdraw_passes(draft_registration.creator, 'Double Doink')
+
         assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW.value
         assert draft_registration.registered_node.retraction.state == Retraction.UNAPPROVED
 
     def test_run_withdraw_registration(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
         draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
-        draft_registration.refresh_from_db()
-
         draft_registration.registered_node.is_public = True
-
         draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+        draft_registration.run_request_withdraw_passes(draft_registration.creator, 'Double Doink')
 
         assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW.value
 
@@ -102,9 +122,9 @@ class TestRegistrationMachine:
     def test_run_force_withdraw(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
         draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
-        draft_registration.refresh_from_db()
-
         draft_registration.registered_node.is_public = True
+        draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+        draft_registration.run_request_withdraw_passes(draft_registration.creator, 'Double Doink')
 
         draft_registration.run_force_withdraw(draft_registration.creator, 'Double Doink')
 
@@ -113,11 +133,9 @@ class TestRegistrationMachine:
     def test_run_reject_withdraw(self, draft_registration):
         draft_registration.run_submit(draft_registration.creator)
         draft_registration.run_accept(draft_registration.creator, comment='Wanna Philly Philly?')
-        draft_registration.refresh_from_db()
-
         draft_registration.registered_node.is_public = True
-
         draft_registration.run_request_withdraw(draft_registration.creator, 'Double Doink')
+        draft_registration.run_request_withdraw_passes(draft_registration.creator, 'Double Doink')
 
         assert draft_registration.machine_state == RegistrationStates.PENDING_WITHDRAW.value
 

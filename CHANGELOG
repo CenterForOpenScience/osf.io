@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.19.0 (2020-11-02)
+====================
+- Add four new registration forms
+- Fix missing case for storage caps in admin app
+- Add GET endpoints for registries moderation
+- Add admin app for registries moderation
+
 20.18.0 (2020-10-12)
 ====================
 - Add admin panel for storage usage
