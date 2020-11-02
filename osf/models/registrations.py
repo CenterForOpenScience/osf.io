@@ -407,7 +407,7 @@ class Registration(AbstractNode):
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 
-        action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED
+        action = NodeLog.EMBARGO_TERMINATED if forced else NodeLog.EMBARGO_COMPLETED
         self.registered_from.add_log(
             action=action,
             params={
