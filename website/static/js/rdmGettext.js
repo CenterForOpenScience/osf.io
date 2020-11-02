@@ -21,7 +21,7 @@ var getBrowserLang = function() {
         browserLanguage = (window.navigator.languages && window.navigator.languages[i]);
         if(browserLanguage){
             endIndex = browserLanguage.indexOf('-');
-            lang_code =browserLanguage.substring(0, endIndex != -1 ? endIndex : browserLanguage.length);
+            lang_code = browserLanguage.substring(0, endIndex !== -1 ? endIndex : browserLanguage.length);
 
             for(var j=0 ; j<acceptLanguages.length ; j++) {
                 if(lang_code === acceptLanguages[j]) {
