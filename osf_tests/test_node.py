@@ -949,9 +949,7 @@ class TestContributorMethods:
 
         with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
-        assert str(excinfo.value) == 'This contributor cannot be added. ' \
-                                        'If the problem persists please report it to please report it to' \
-                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+        assert str(excinfo.value).startswith('This contributor cannot be added.')
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
@@ -2289,8 +2287,7 @@ class TestSetPrivacy:
         )
         assert len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]) == 4
         embargo = registration.embargo
-        embargo.state = Sanction.APPROVED
-        embargo.save()
+        embargo.accept()
         with mock.patch('osf.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
