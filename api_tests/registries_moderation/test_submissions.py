@@ -326,6 +326,7 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
@@ -342,14 +343,14 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
     @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
-        approval_token = embargo_registration.sanction.token_for_user(reg_creator, 'approval')
-        embargo_registration.sanction.approve(user=reg_creator, token=approval_token)
+        embargo_registration.sanction.accept()
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -359,14 +360,14 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
     @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_embargo_reject(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
-        approval_token = embargo_registration.sanction.token_for_user(reg_creator, 'approval')
-        embargo_registration.sanction.approve(user=reg_creator, token=approval_token)
+        embargo_registration.sanction.accept()
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -376,13 +377,13 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
     @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_accept(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
-        approval_token = retract_registration.sanction.token_for_user(retract_registration.creator, 'approval')
-        retract_registration.sanction.approve(user=retract_registration.creator, token=approval_token)
+        retract_registration.sanction.accept()
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
@@ -392,13 +393,13 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(retract_registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
     @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_reject(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
-        approval_token = retract_registration.sanction.token_for_user(retract_registration.creator, 'approval')
-        retract_registration.sanction.approve(user=retract_registration.creator, token=approval_token)
+        retract_registration.sanction.accept()
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
@@ -408,6 +409,7 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(retract_registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
@@ -415,8 +417,9 @@ class TestRegistriesModerationSubmissions:
     def test_registries_moderation_post_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
-        registration.is_public = True
-        registration.save()
+        registration.registration_approval.accept(user=moderator)  # Gotta make it Accepted
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
         actions_payload_base['data']['attributes']['comment'] = 'Bye bye'
@@ -424,6 +427,7 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
@@ -459,8 +463,7 @@ class TestRegistriesModerationSubmissions:
 
     @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_admin_cant_accept(self, app, retract_registration, reg_creator, retract_registration_actions_url, actions_payload_base, provider):
-        approval_token = retract_registration.sanction.token_for_user(retract_registration.creator, 'approval')
-        retract_registration.sanction.approve(user=retract_registration.creator, token=approval_token)
+        retract_registration.sanction.accept()
 
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
         actions_payload_base['data']['attributes']['comment'] = 'Bye bye'
@@ -497,6 +500,8 @@ class TestRegistriesModerationSubmissions:
 
         resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 

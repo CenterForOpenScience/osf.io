@@ -5,6 +5,7 @@ from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework import status as http_status
 from rest_framework.exceptions import PermissionDenied
+from transitions import MachineError
 
 from framework.exceptions import HTTPError, PermissionsError
 
@@ -26,7 +27,6 @@ from osf.utils.workflows import (
     ReviewStates,
     ReviewTriggers,
     RegistrationModerationTriggers,
-    RegistrationModerationStates,
 )
 from osf.utils import permissions
 
@@ -277,16 +277,10 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
         sanction = target.sanction
 
-        prior_sanction_state = RegistrationModerationStates.from_sanction(sanction)
-
         try:
-            if trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name:
+            if trigger in [RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name, RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name]:
                 sanction.accept(user=user)
-            elif trigger == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name:
-                sanction.reject(user=user)
-            elif trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name:
-                sanction.accept(user=user)
-            elif trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name:
+            elif trigger in [RegistrationModerationTriggers.REJECT_SUBMISSION.db_name, RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name]:
                 sanction.reject(user=user)
             elif trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name:
                 target.retract_registration(
@@ -306,17 +300,16 @@ class RegistrationActionSerializer(BaseActionSerializer):
             raise PermissionDenied('You do not have permission to perform this trigger at this time')
         except ValueError:
             raise PermissionDenied('You do not have permission to perform this trigger at this time')
+        except MachineError:
+            raise PermissionDenied('You do not have permission to perform this trigger at this time')
 
-        target.reload()
-        after_sanction_state = RegistrationModerationStates.from_db_name(target.moderation_state)
-        determined_trigger = RegistrationModerationTriggers.from_transition(
-            prior_sanction_state, after_sanction_state,
-        )
+        target.refresh_from_db()
+        determined_trigger = RegistrationModerationTriggers.from_db_name(target.actions.last().trigger)
         request_trigger = RegistrationModerationTriggers.from_db_name(trigger)
 
-        if trigger != RegistrationModerationTriggers.FORCE_WITHDRAW.db_name and determined_trigger != request_trigger:
+        if determined_trigger != request_trigger:
             short_message = 'Operation not allowed at this time'
-            long_message = f'This {trigger} is invalid for the current state of the registration. {prior_sanction_state} to {after_sanction_state}'
+            long_message = f'This {trigger} is invalid for the current state of the registration.'
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
                 data={'message_short': short_message, 'message_long': long_message},

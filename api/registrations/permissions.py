@@ -8,6 +8,7 @@ class ContributorOrModerator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
 
+        is_moderator = False
         if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
                 is_moderator = True
 
