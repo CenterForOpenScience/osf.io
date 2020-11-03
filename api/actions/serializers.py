@@ -304,10 +304,9 @@ class RegistrationActionSerializer(BaseActionSerializer):
             raise PermissionDenied('You do not have permission to perform this trigger at this time')
 
         target.refresh_from_db()
-        determined_trigger = RegistrationModerationTriggers.from_db_name(target.actions.last().trigger)
-        request_trigger = RegistrationModerationTriggers.from_db_name(trigger)
+        determined_trigger = target.actions.last().trigger
 
-        if determined_trigger != request_trigger:
+        if determined_trigger != trigger:
             short_message = 'Operation not allowed at this time'
             long_message = f'This {trigger} is invalid for the current state of the registration.'
             raise HTTPError(
