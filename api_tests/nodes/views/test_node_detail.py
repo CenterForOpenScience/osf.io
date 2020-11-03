@@ -7,6 +7,8 @@ from nose.tools import *  # noqa:
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
@@ -35,6 +37,7 @@ from rest_framework import exceptions
 from tests.base import fake
 from tests.utils import assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
+from website import settings
 
 
 @pytest.fixture()
@@ -673,13 +676,17 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def project_public(self, user, title, description, category):
-        return ProjectFactory(
+        project = ProjectFactory(
             title=title,
             description=description,
             category=category,
             is_public=True,
             creator=user
         )
+        # Sets public project storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
 
     @pytest.fixture()
     def project_private(self, user, title, description, category):
@@ -820,6 +827,59 @@ class TestNodeUpdate(NodeCRUDTestCase):
             assert res.status_code == 200
             project_private.reload()
             assert project_private.is_public
+
+    def test_make_project_private_uncalculated_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.delete(key)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This project\'s node storage usage could not be calculated. Please try again.'
+
+    def test_make_project_private_over_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        # If the public node exceeds the the private storage limit
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This project exceeds private project storage limits and thus cannot be converted into a private project.'
+
+    def test_make_project_private_under_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        # If the public node does not exceed the private storage limit
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE - 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['public'] is False
 
     def test_update_errors(
             self, app, user, user_two, title_new, description_new,
@@ -1704,6 +1764,9 @@ class TestNodeTags:
             user_admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         project_private.add_contributor(
             user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        # Sets private project storage cache to avoid need for retries in tests updating public status
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_private._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         return project_private
 
     @pytest.fixture()

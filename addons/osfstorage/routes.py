@@ -23,6 +23,15 @@ api_routes = {
 
         Rule(
             [
+                '/<guid>/osfstorage/quota_status/',
+            ],
+            'get',
+            views.osfstorage_get_storage_quota_status,
+            json_renderer
+        ),
+
+        Rule(
+            [
                 '/<guid>/osfstorage/<fid>/',
             ],
             'delete',

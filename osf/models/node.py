@@ -398,7 +398,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def storage_limit_status(self):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
         a custom limit this should indicate that."""
-
         return settings.StorageLimits.from_node_usage(
             self.storage_usage,
             self.custom_storage_usage_limit_private,
@@ -1197,6 +1196,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         return self.is_contributor_or_group_member(auth.user)
 
+    def check_privacy_change_viability(self, auth=None):
+        if auth and isinstance(self, Node):
+            if self.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+                raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
+            elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
+                raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
@@ -1229,9 +1235,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
-            else:
-                self.is_public = False
-                self.keenio_read_key = ''
+
+            self.check_privacy_change_viability(auth)
+
+            self.is_public = False
+            self.keenio_read_key = ''
         else:
             return False
 

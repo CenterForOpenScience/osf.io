@@ -321,6 +321,15 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         return True
 
 
+class WriteAdmin(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        return obj.can_edit(auth)
+
+
 class ShowIfVersion(permissions.BasePermission):
 
     def __init__(self, min_version, max_version, deprecated_message):
