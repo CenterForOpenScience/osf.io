@@ -48,7 +48,6 @@ from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, Guar
                                EditableFieldsMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
-from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
@@ -1510,39 +1509,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def has_node_link_to(self, node):
         return self.node_relations.filter(child=node, is_node_link=True).exists()
-
-    def _initiate_approval(self, user, notify_initiator_on_complete=False):
-        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
-        self.registration_approval = RegistrationApproval.objects.create(
-            initiated_by=user,
-            end_date=end_date,
-            notify_initiator_on_complete=notify_initiator_on_complete
-        )
-        self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive(unique_users=True)
-        for (admin, node) in admins:
-            self.registration_approval.add_authorizer(admin, node=node)
-        self.registration_approval.save()  # Save approval's approval_state
-        return self.registration_approval
-
-    def require_approval(self, user, notify_initiator_on_complete=False):
-        if not self.is_registration:
-            raise NodeStateError('Only registrations can require registration approval')
-        if not self.is_admin_contributor(user):
-            raise PermissionsError('Only admins can initiate a registration approval')
-
-        approval = self._initiate_approval(user, notify_initiator_on_complete)
-
-        self.registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
-            params={
-                'node': self.registered_from._id,
-                'registration': self._id,
-                'registration_approval_id': approval._id,
-            },
-            auth=Auth(user),
-            save=True,
-        )
 
     def get_primary(self, node):
         return NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists()

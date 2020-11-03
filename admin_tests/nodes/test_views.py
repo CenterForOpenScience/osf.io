@@ -428,7 +428,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
     def setUp(self):
         super(TestRestartStuckRegistrationsView, self).setUp()
         self.user = AuthUserFactory()
-        self.registration = RegistrationFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user, archive=True)
         self.registration.save()
         self.view = RestartStuckRegistrationsView
         self.request = RequestFactory().post('/fake_path')
@@ -462,7 +462,7 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
     def setUp(self):
         super(TestRemoveStuckRegistrationsView, self).setUp()
         self.user = UserFactory()
-        self.registration = RegistrationFactory(creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user, archive=True)
         # Make the registration "stuck"
         archive_job = self.registration.archive_job
         archive_job.datetime_initiated = (
