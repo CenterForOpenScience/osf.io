@@ -786,9 +786,6 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
 class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
     provider_class = RegistrationProvider
 
-    required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -831,9 +828,6 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
         base_permissions.TokenHasScope,
         MustBeModerator,
     )
-
-    required_read_scopes = [CoreScopes.REGISTRATION_REQUESTS_READ]
-    required_write_scopes = [CoreScopes.REGISTRATION_REQUESTS_WRITE]
 
     view_category = 'registrations'
     view_name = 'registration-requests-list'

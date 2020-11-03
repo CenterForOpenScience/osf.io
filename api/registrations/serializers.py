@@ -69,7 +69,7 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
-    machine_state = ser.CharField(read_only=True)
+    reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
