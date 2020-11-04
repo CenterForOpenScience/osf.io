@@ -715,7 +715,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
         return Registration.objects.filter(
             provider=provider,
             registration_approval__state=RegistrationApproval.APPROVED,
-        ).annotate(machine_state=F('draft_registration__machine_state'))
+        ).annotate(machine_state=F('moderation_state'))
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -769,7 +769,7 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
     view_name = 'registration-provider-action-list'
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     serializer_class = RegistrationActionSerializer
 

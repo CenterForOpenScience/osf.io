@@ -627,7 +627,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
-        self.registration.retraction.reject(self.user, self.rejection_token)
+        self.registration.retraction.reject(user=self.user, token=self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
         self.registration.retraction.save()
 
@@ -677,7 +677,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
-        self.registration.retraction.reject(self.user, self.rejection_token)
+        self.registration.retraction.reject(user=self.user, token=self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
         self.registration.retraction.save()
 
@@ -852,7 +852,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_embargo)
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
-        self.registration.embargo.approve(self.user, approval_token)
+        self.registration.embargo.approve(user=self.user, token=approval_token)
         assert_true(self.registration.embargo_end_date)
 
         res = self.app.post_json(

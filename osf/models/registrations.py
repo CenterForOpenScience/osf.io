@@ -24,16 +24,18 @@ from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
 from osf.models import (
+    Embargo,
+    EmbargoTerminationApproval,
+    DraftRegistrationApproval,
+    DraftRegistrationContributor,
     Node,
     OSFUser,
-    Embargo,
-    Retraction,
+    RegistrationApproval,
     RegistrationSchema,
-    DraftRegistrationApproval,
-    EmbargoTerminationApproval,
-    DraftRegistrationContributor,
+    Retraction,
 )
 
+from osf.models.action import RegistrationAction
 from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.draft_node import DraftNode
@@ -42,7 +44,6 @@ from osf.models.mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
-    RegistriesModerationMixin
 )
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
@@ -50,6 +51,12 @@ from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.workflows import (
+    RegistrationModerationStates,
+    RegistrationModerationTriggers,
+    SanctionStates,
+    SanctionTypes
+)
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +112,12 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
+
+    moderation_state = models.CharField(
+        max_length=30,
+        choices=RegistrationModerationStates.char_field_choices(),
+        default=RegistrationModerationStates.INITIAL.db_name
+    )
 
     @staticmethod
     def find_failed_registrations():
@@ -247,6 +260,12 @@ class Registration(AbstractNode):
         return job and not job.done and not job.archive_tree_finished()
 
     @property
+    def is_moderated(self):
+        if not self.provider:
+            return False
+        return self.provider.is_reviewed
+
+    @property
     def _dirty_root(self):
         """Equivalent to `self.root`, but don't let Django fetch a clean copy
         when `self == self.root`. Use when it's important to reflect unsaved
@@ -262,6 +281,40 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    def _initiate_approval(self, user, notify_initiator_on_complete=False):
+        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
+        self.registration_approval = RegistrationApproval.objects.create(
+            initiated_by=user,
+            end_date=end_date,
+            notify_initiator_on_complete=notify_initiator_on_complete
+        )
+        self.save()  # Set foreign field reference Node.registration_approval
+        admins = self.get_admin_contributors_recursive(unique_users=True)
+        for (admin, node) in admins:
+            self.registration_approval.add_authorizer(admin, node=node)
+        self.registration_approval.save()  # Save approval's approval_state
+        return self.registration_approval
+
+    def require_approval(self, user, notify_initiator_on_complete=False):
+        if not self.is_registration:
+            raise NodeStateError('Only registrations can require registration approval')
+        if not self.is_admin_contributor(user):
+            raise PermissionsError('Only admins can initiate a registration approval')
+
+        approval = self._initiate_approval(user, notify_initiator_on_complete)
+
+        self.registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
+            params={
+                'node': self.registered_from._id,
+                'registration': self._id,
+                'registration_approval_id': approval._id,
+            },
+            auth=Auth(user),
+            save=True,
+        )
+        self.update_moderation_state()
 
     def _initiate_embargo(self, user, end_date, for_existing_registration=False,
                           notify_initiator_on_complete=False):
@@ -279,6 +332,7 @@ class Registration(AbstractNode):
             for_existing_registration=for_existing_registration,
             notify_initiator_on_complete=notify_initiator_on_complete
         )
+        self.update_moderation_state()
         self.save()  # Set foreign field reference Node.embargo
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
@@ -296,7 +350,7 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.is_admin_contributor(user):
+        if not self.is_admin_contributor(user) and not self.provider.get_group('moderator').user_set.filter(id=user.id).exists():
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
@@ -338,18 +392,24 @@ class Registration(AbstractNode):
         approval.save()
         approval.ask(admins)
         self.embargo_termination_approval = approval
+        self.update_moderation_state()
         self.save()
         return approval
 
-    def terminate_embargo(self):
-        """Handles the actual early termination of an Embargoed registration.
+    def terminate_embargo(self, forced=False):
+        """Handles the completion of an Embargoed registration.
         Adds a log to the registered_from Node.
+
+        :param bool forced: False if the embargo is expiring,
+                            True if the embargo is being terminated early
+
         """
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 
+        action = NodeLog.EMBARGO_TERMINATED if forced else NodeLog.EMBARGO_COMPLETED
         self.registered_from.add_log(
-            action=NodeLog.EMBARGO_TERMINATED,
+            action=action,
             params={
                 'project': self._id,
                 'node': self.registered_from._id,
@@ -408,7 +468,7 @@ class Registration(AbstractNode):
         if save:
             self.save()
 
-    def _initiate_retraction(self, user, justification=None):
+    def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -416,16 +476,17 @@ class Registration(AbstractNode):
         self.retraction = Retraction.objects.create(
             initiated_by=user,
             justification=justification or None,  # make empty strings None
-            state=Retraction.UNAPPROVED
+            state=Retraction.UNAPPROVED,
         )
         self.save()
-        admins = self.get_admin_contributors_recursive(unique_users=True)
-        for (admin, node) in admins:
-            self.retraction.add_authorizer(admin, node)
+        if not moderator_initiated:
+            admins = self.get_admin_contributors_recursive(unique_users=True)
+            for (admin, node) in admins:
+                self.retraction.add_authorizer(admin, node)
         self.retraction.save()  # Save retraction approval state
         return self.retraction
 
-    def retract_registration(self, user, justification=None, save=True):
+    def retract_registration(self, user, justification=None, save=True, moderator_initiated=False):
         """Retract public registration. Instantiate new Retraction object
         and associate it with the respective registration.
         """
@@ -436,7 +497,19 @@ class Registration(AbstractNode):
         if self.root_id != self.id:
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
-        retraction = self._initiate_retraction(user, justification)
+        if moderator_initiated:
+            if not self.is_moderated:
+                raise ValueError('Forced retraction is only supported for moderated registrations.')
+            provider = self.provider
+            moderator_group_for_provider = provider.format_group('moderator')
+            if not user.groups.filter(name=moderator_group_for_provider).exists():
+                provider = self.provider
+                raise PermissionsError(
+                    f'User {user} does not have moderator privileges on Provider {provider}')
+
+        retraction = self._initiate_retraction(
+            user, justification, moderator_initiated=moderator_initiated)
+        self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
@@ -446,9 +519,17 @@ class Registration(AbstractNode):
             },
             auth=Auth(user),
         )
-        self.retraction = retraction
+
+        # Automatically accept moderator_initiated retractions
+        if moderator_initiated:
+            self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+            self.retraction.accept(user=user, comment=justification)
+            self.refresh_from_db()  # grab updated state
+
         if save:
+            self.update_moderation_state()
             self.save()
+
         return retraction
 
     def delete_registration_tree(self, save=False):
@@ -476,6 +557,60 @@ class Registration(AbstractNode):
         self.files_count = self.files.filter(deleted_on__isnull=True).count()
         self.save()
         field.auto_now = True
+
+    def update_moderation_state(self, initiated_by=None, comment=''):
+        '''Derive the RegistrationModerationState from the state of the active sanction.
+
+        :param models.User initiated_by: The user who initiated the state change;
+                used in reporting actions.
+        :param str comment: Any comment moderator comment associated with the state change;
+                used in reporting Actions.
+        '''
+        from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
+
+        active_sanction = self.sanction
+        if active_sanction is None:  # Registration is ACCEPTED if there are no active sanctions.
+            to_state = RegistrationModerationStates.ACCEPTED
+        else:
+            to_state = RegistrationModerationStates.from_sanction(active_sanction)
+
+        if to_state is RegistrationModerationStates.UNDEFINED:
+            # An UNDEFINED state is expected from a rejected retraction.
+            # In other cases, report the error.
+            if active_sanction.SANCTION_TYPE is not SanctionTypes.RETRACTION:
+                logger.warning(
+                    'Could not update moderation state from unsupported sanction/state '
+                    'combination {sanction}.{state}'.format(
+                        sanction=active_sanction.SANCTION_TYPE,
+                        state=active_sanction.approval_stage.name)
+                )
+            # Use other underlying sanctions to compute the state
+            if self.embargo:
+                to_state = RegistrationModerationStates.from_sanction(self.embargo)
+            elif self.registration_approval:
+                to_state = RegistrationModerationStates.from_sanction(self.registration_approval)
+            else:
+                to_state = RegistrationModerationStates.ACCEPTED
+
+        self._write_registration_action(from_state, to_state, initiated_by, comment)
+        self.moderation_state = to_state.db_name
+        self.save()
+
+    def _write_registration_action(self, from_state, to_state, initiated_by, comment):
+        '''Write a new RegistrationAction on relevant state transitions.'''
+        trigger = RegistrationModerationTriggers.from_transition(from_state, to_state)
+        if trigger is None:
+            return  # Not a moderated event, no need to write an action
+
+        initiated_by = initiated_by or self.sanction.initiated_by
+        RegistrationAction.objects.create(
+            target=self,
+            creator=initiated_by,
+            trigger=trigger.db_name,
+            from_state=from_state.db_name,
+            to_state=to_state.db_name,
+            comment=comment
+        ).save()
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
@@ -564,7 +699,7 @@ def get_default_id():
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
-        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin, RegistriesModerationMixin):
+        BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
 
     # Fields that are writable by DraftRegistration.update
     WRITABLE_WHITELIST = [

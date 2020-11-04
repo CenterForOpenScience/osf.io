@@ -185,6 +185,7 @@ def update_storage_usage_with_size(payload):
         if source_provider == 'osfstorage' and not source_node.is_quickfiles:
             if source_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
                 return update_storage_usage(source_node)
+
             source_node_usage = source_node.storage_usage
             source_node_usage = max(source_node_usage - target_file_size, 0)
 

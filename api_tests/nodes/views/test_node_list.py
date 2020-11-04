@@ -4,6 +4,8 @@ from nose.tools import *  # noqa:
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
@@ -28,6 +30,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_equals
 from website.views import find_bookmark_collection
+from website import settings
 from osf.utils.workflows import DefaultStates
 
 
@@ -2784,12 +2787,16 @@ class TestNodeBulkPartialUpdate:
 
     @pytest.fixture()
     def public_project_one(self, user, title, description, category):
-        return ProjectFactory(
+        project = ProjectFactory(
             title=title,
             description=description,
             category=category,
             is_public=True,
             creator=user)
+        # Sets public project storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
 
     @pytest.fixture()
     def public_project_two(self, user, title, description, category):

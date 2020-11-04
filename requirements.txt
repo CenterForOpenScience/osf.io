@@ -104,7 +104,7 @@ django-bulk-update==2.2.0
 ciso8601==1.0.5
 
 # Reviews requirements
-transitions==0.6.1
+transitions==0.8.2
 enum34==1.1.6
 
 # identifiers
