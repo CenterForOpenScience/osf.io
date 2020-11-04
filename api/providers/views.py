@@ -738,7 +738,7 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
     view_name = 'registration-provider-action-list'
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     serializer_class = RegistrationActionSerializer
 
