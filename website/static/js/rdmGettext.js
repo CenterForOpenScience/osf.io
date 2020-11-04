@@ -12,20 +12,18 @@ var browserLanguage;
 
 var getBrowserLang = function() {
     var language = defaultLanguage;
-    var lang_code = defaultLanguage;
+    var langCode = defaultLanguage;
     var applyLanguage = false;
     var endIndex;
 
-
-    for(var i=0 ; i<window.navigator.languages.length ; i++) {
-        browserLanguage = (window.navigator.languages && window.navigator.languages[i]);
-        if(browserLanguage){
-            endIndex = browserLanguage.indexOf('-');
-            lang_code = browserLanguage.substring(0, endIndex !== -1 ? endIndex : browserLanguage.length);
+    if(window.navigator.languages){
+        for(var i=0 ; i<window.navigator.languages.length ; i++) {
+            browserLanguage = (window.navigator.languages && window.navigator.languages[i]);
+            langCode = browserLanguage.split('-')[0];
 
             for(var j=0 ; j<acceptLanguages.length ; j++) {
-                if(lang_code === acceptLanguages[j]) {
-                    language = lang_code;
+                if(langCode === acceptLanguages[j]) {
+                    language = langCode;
                     applyLanguage = true;
                     break;
                 }
