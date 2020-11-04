@@ -1,7 +1,7 @@
 'use strict';
 var gettextParser = require('gettext-parser');
 var fs = require('fs');
-var acceptLanguages = ['en','ja','fr'];
+var acceptLanguages = ['en','ja'];
 var translationsBaseDir = 'translations';
 var getTextDomain = 'js_messages';
 var poRelativePath = './website/' +  translationsBaseDir + '/';
