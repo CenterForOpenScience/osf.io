@@ -4,8 +4,10 @@ import logging
 import time
 import math
 import xml.etree.ElementTree as ET
+import base64
 
 from owncloud import Client as NextcloudClient
+from owncloud import HTTPResponseError as NCHTTPResponseError
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -17,7 +19,7 @@ from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
 from osf.models.rdm_addons import RdmAddonOption
 from website.util import timestamp, waterbutler
-from addons.nextcloudinstitutions import apps
+from addons.nextcloudinstitutions import apps, settings
 from addons.nextcloudinstitutions.lock import TMPDIR, LOCK_PREFIX
 from addons.base.lock import Lock
 
@@ -43,6 +45,119 @@ class FileInfo():
         self.name = et.find('name').text
         self.path = et.find('path').text
         self.muser = et.find('modified_user').text
+
+
+class MetadataClient(object):
+    """Nextcloud WebDAV metadata client"""
+
+    PROPPATCH_XML_BASE = """<?xml version="1.0"?>
+  <d:propertyupdate xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">
+  <d:set>
+    <d:prop>
+      {}
+    </d:prop>
+  </d:set>
+</d:propertyupdate>"""
+
+    PROPFIND_XML_BASE = """<?xml version="1.0" encoding="UTF-8"?>
+  <d:propfind xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns" >
+  <d:prop xmlns:oc="http://owncloud.org/ns">
+    {}
+  </d:prop>
+</d:propfind>"""
+
+    def __init__(self, server, account, password):
+        self.account = account
+        self.password = password
+        self.server = server
+        self.client = NextcloudClient(self.server, dav_endpoint_version=2)
+        self.client.login(self.account, self.password)
+
+    def set_metadata(self, path, attributes):
+        array = []
+        for k, v in attributes.items():
+            array.append('<nc:' + k + '>' + v + '</nc:' + k + '>')
+        str_attributes = '    '.join(array)
+        xml = self.PROPPATCH_XML_BASE.format(str_attributes)
+        try:
+            res = self.client._make_dav_request('PROPPATCH', path, data=xml)
+        except NCHTTPResponseError:
+            logger.error('cannot set timestamp: user={}, path={}'.format(self.account, path))
+            return None
+        return res
+
+    def get_metadata(self, path, attributes):
+        array = []
+        for a in attributes:
+            array.append('<nc:' + a + '/>')
+        str_attributes = '    '.join(array)
+        xml = self.PROPFIND_XML_BASE.format(str_attributes)
+        try:
+            res = self.client._make_dav_request('PROPFIND', path, data=xml)
+        except NCHTTPResponseError:
+            logger.error('cannot get timestamp: user={}, path={}'.format(self.account, path))
+            return None
+        return res
+
+    def get_attribute(self, fileinfo, prop):
+        key = '{http://nextcloud.org/ns}' + prop
+        return fileinfo.attributes[key]
+
+
+def get_timestamp(node_settings, path):
+    DEBUG('path: {}'.format(path))
+    provider = node_settings.provider
+    external_account = provider.account
+    url, username = external_account.provider_id.rsplit(':', 1)
+    password = external_account.oauth_key
+    attributes = [
+        'timestamp',
+        settings.PROPERTY_KEY_TIMESTAMP_STATUS
+    ]
+    cli = MetadataClient(url, username, password)
+    res = cli.get_metadata(path, attributes)
+    if res is not None:
+        timestamp = cli.get_attribute(res[0], 'timestamp')
+        if timestamp is None:
+            decoded_timestamp = None
+        else:
+            decoded_timestamp = base64.b64decode(timestamp)
+        DEBUG('get timestamp: {}'.format(timestamp))
+        timestamp_status = cli.get_attribute(res[0], settings.PROPERTY_KEY_TIMESTAMP_STATUS)
+        try:
+            timestamp_status = int(timestamp_status)
+        except Exception:
+            timestamp_status = None
+        DEBUG('get timestamp_status: {}'.format(timestamp_status))
+        context = {}
+        context['url'] = url
+        context['username'] = username
+        context['password'] = password
+        return (decoded_timestamp, timestamp_status, context)
+    return (None, None, None)
+
+
+def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context=None):
+    DEBUG('path: {}'.format(path))
+    if context is None:
+        provider = node_settings.provider
+        external_account = provider.account
+        url, username = external_account.provider_id.rsplit(':', 1)
+        password = external_account.oauth_key
+    else:
+        url = context['url']
+        username = context['username']
+        password = context['password']
+    encoded_timestamp = base64.b64encode(timestamp_data)
+    DEBUG('set timestamp: {}'.format(encoded_timestamp))
+    attributes = {
+        'timestamp': encoded_timestamp,
+        settings.PROPERTY_KEY_TIMESTAMP_STATUS: str(timestamp_status)
+    }
+    cli = MetadataClient(url, username, password)
+    res = cli.set_metadata(path, attributes)
+    if res:
+        DEBUG('metadata res: {}'.format(type(res)))
 
 
 def _list_updated_files(externa_account, since):

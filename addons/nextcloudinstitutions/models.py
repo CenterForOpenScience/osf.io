@@ -11,7 +11,7 @@ from addons.base.institutions_utils import (
     InstitutionsStorageAddon
 )
 from addons.nextcloud.models import NextcloudProvider
-from addons.nextcloudinstitutions import settings, apps
+from addons.nextcloudinstitutions import settings, apps, utils
 from osf.models.files import File, Folder, BaseFileNode
 from osf.utils.permissions import ADMIN, READ, WRITE
 from website.util import timestamp
@@ -52,6 +52,26 @@ class NextcloudInstitutionsFile(NextcloudInstitutionsFileNode, File):
             if 'sha512' in hashes:
                 return timestamp.HASH_TYPE_SHA512, hashes['sha512']
         return None, None  # unsupported
+
+    def _my_node_settings(self):
+        node = self.target
+        if node:
+            addon = node.get_addon(self.provider)
+            if addon:
+                return addon
+        return None
+
+    def get_timestamp(self):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            return utils.get_timestamp(node_settings, node_settings.folder_id + self.path)
+        return None, None, None
+
+    def set_timestamp(self, timestamp_data, timestamp_status, context):
+        node_settings = self._my_node_settings()
+        if node_settings:
+            utils.set_timestamp(node_settings, node_settings.folder_id + self.path,
+                                timestamp_data, timestamp_status, context=context)
 
 
 class NextcloudInstitutionsProvider(NextcloudProvider):
