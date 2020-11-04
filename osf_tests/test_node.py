@@ -9,6 +9,8 @@ from django.utils import timezone
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from osf.exceptions import NodeStateError
@@ -79,7 +81,11 @@ def user():
 
 @pytest.fixture()
 def node(user):
-    return NodeFactory(creator=user)
+    node = NodeFactory(creator=user)
+    # Sets node storage cache to avoid need for retries in tests
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
+    storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    return node
 
 @pytest.fixture()
 def project(user):
@@ -4311,7 +4317,11 @@ class TestAddonCallbacks:
 
     @pytest.fixture()
     def node(self, user, parent):
-        return NodeFactory(creator=user, parent=parent)
+        node = NodeFactory(creator=user, parent=parent)
+        # Sets node storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return node
 
     @pytest.fixture(autouse=True)
     def mock_addons(self, node):

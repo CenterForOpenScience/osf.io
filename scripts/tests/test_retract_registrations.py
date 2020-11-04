@@ -6,6 +6,7 @@ from django.utils import timezone
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
+from osf.models import NodeLog
 from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.retract_registrations import main
@@ -29,7 +30,7 @@ class TestRetractRegistrations(OsfTestCase):
 
     def test_should_not_retract_pending_retraction_less_than_48_hours_old(self):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date =(timezone.now() - timedelta(hours=47))
+        self.registration.retraction.initiation_date = (timezone.now() - timedelta(hours=47))
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
 
@@ -38,7 +39,7 @@ class TestRetractRegistrations(OsfTestCase):
 
     def test_should_retract_pending_retraction_that_is_48_hours_old(self):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date =(timezone.now() - timedelta(hours=48))
+        self.registration.retraction.initiation_date = (timezone.now() - timedelta(hours=48))
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
 
@@ -48,7 +49,7 @@ class TestRetractRegistrations(OsfTestCase):
 
     def test_should_retract_pending_retraction_more_than_48_hours_old(self):
         # Retraction#iniation_date is read only
-        self.registration.retraction.initiation_date =(timezone.now() - timedelta(days=365))
+        self.registration.retraction.initiation_date = (timezone.now() - timedelta(days=365))
         self.registration.retraction.save()
         assert_false(self.registration.is_retracted)
 

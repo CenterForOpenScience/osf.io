@@ -11,7 +11,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row no-gutters">
-            <div class="col-lg-8 col-md-12 cite-container">
+            <div class="col-lg-6 col-md-12 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor_or_group_member']:
                         <h2 class="node-parent-title">
@@ -33,13 +33,17 @@
                 </h2>
             </div>
             <div class="clearfix visible-md-block"></div>
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <div class="btn-toolbar node-control pull-right">
-                    % if node.get('storage_usage'):
                     <div class="btn-group">
-                        <button style="pointer-events: auto;" class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project, including all versions of files.">${node['storage_usage']}</button>
+                        % if node.get('storage_limit_status') and node['storage_limit_status']['text'] and permissions.WRITE in user['permissions']:
+                            <a href="https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps"  target="_blank" class="btn ${node['storage_limit_status']['class']}"  data-toggle="tooltip" data-placement="bottom" title="This project/component is ${node['storage_limit_status']['text']} the storage limit for OSF Storage. To learn more about limits and alternative storage options click on this icon."><i class="fa fa-exclamation-triangle"></i></a>
+                        % endif
+
+                        % if node.get('storage_usage'):
+                            <button class="btn disabled" data-toggle="tooltip" data-placement="bottom" title="This is the amount of OSF Storage used for this project.">${node['storage_usage']}</button>
+                        % endif
                     </div>
-                    % endif
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class="btn btn-default disabled">Private</button>
@@ -52,7 +56,9 @@
                         </a>
                         % endif
                     % else:
-                        % if permissions.ADMIN in user['permissions'] and not node['is_registration']:
+                        % if node.get('storage_limit_status') and permissions.ADMIN in user['permissions'] and not node['is_registration'] and not node['storage_limit_status']['canMakePrivate']:
+                            <a class="storage-disabled btn btn-default" data-toggle="tooltip" style="opacity: .65;" data-placement="bottom" title="You cannot make your project private because you are above the storage limit for a private project.">Make Private</a>
+                        % elif permissions.ADMIN in user['permissions'] and not node['is_registration']:
                             <a class="btn btn-default" href="#nodesPrivacy" data-toggle="modal">Make Private</a>
                         % endif
                         <button class="btn btn-default disabled">Public</button>

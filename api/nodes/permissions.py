@@ -39,12 +39,13 @@ class ContributorOrPublic(permissions.BasePermission):
         if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
             obj = obj.branched_from
 
+        is_moderator = False
         if isinstance(obj, Registration) and obj.provider:
             if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
-                return True
+                is_moderator = True
 
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return obj.is_public or obj.can_view(auth) or is_moderator
         else:
             return obj.can_edit(auth)
 
@@ -319,6 +320,15 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+
+class WriteAdmin(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        return obj.can_edit(auth)
 
 
 class ShowIfVersion(permissions.BasePermission):
