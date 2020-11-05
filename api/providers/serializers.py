@@ -145,7 +145,6 @@ class RegistrationProviderSerializer(ProviderSerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'preprints': 'get_registrations_url',
         'external_url': 'get_external_url',
     })
 
