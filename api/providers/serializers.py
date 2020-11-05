@@ -145,6 +145,17 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'name',
     ])
 
+    registrations = ReviewableCountsRelationshipField(
+        related_view='providers:registration-providers:registrations-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'external_url': 'get_external_url',
+    })
+
+
 class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     class Meta:
