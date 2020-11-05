@@ -148,14 +148,6 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'external_url': 'get_external_url',
     })
 
-    def get_registrations_url(self, obj):
-        return absolute_reverse(
-            'providers:registration-providers:registrations-list', kwargs={
-                'provider_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
-
 
 class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
