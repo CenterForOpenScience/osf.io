@@ -138,6 +138,26 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'name',
     ])
 
+    registrations = ReviewableCountsRelationshipField(
+        related_view='providers:registration-providers:registrations-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'preprints': 'get_registrations_url',
+        'external_url': 'get_external_url',
+    })
+
+    def get_registrations_url(self, obj):
+        return absolute_reverse(
+            'providers:registration-providers:registrations-list', kwargs={
+                'provider_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+
 class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     class Meta:
