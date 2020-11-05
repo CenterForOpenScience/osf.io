@@ -1103,7 +1103,8 @@ class BrandFactory(DjangoModelFactory):
     class Meta:
         model = models.Brand
 
-    name = factory.Faker('company')
+    name = factory.fuzzy.FuzzyText(length=30)
+
     hero_logo_image = factory.Faker('url')
     topnav_logo_image = factory.Faker('url')
     hero_background_image = factory.Faker('url')
