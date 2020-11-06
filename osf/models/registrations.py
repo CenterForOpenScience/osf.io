@@ -127,7 +127,7 @@ class Registration(AbstractNode):
         RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
         RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
         RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
-        RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration
+        RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration,
         RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_force_withdraw,
     }
 

@@ -7,7 +7,7 @@ from osf.models import NotificationSubscription, RegistrationProvider
 logger = logging.getLogger(__file__)
 
 
-def populate_registration_provider_notification_subscriptions():
+def populate_registration_provider_notification_subscriptions(*arg, **kwargs):
     for provider in RegistrationProvider.objects.all():
         try:
             provider_admins = provider.get_group('admin').user_set.all()

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf.management.commands import populate_registration_provider_notification_subscriptions
+from osf.management.commands.populate_registration_provider_notification_subscriptions import populate_registration_provider_notification_subscriptions
 
 def revert(apps, schema_editor):
     NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
