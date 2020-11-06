@@ -87,7 +87,7 @@ class TestRegistrationMachineNotification:
 
     def test_submit_notifications(self, registration, moderator, admin, contrib, provider):
         """
-        "As moderator of branded registry, I receive email notification upon admin author(s) submission approval"
+        [REQS-96] "As moderator of branded registry, I receive email notification upon admin author(s) submission approval"
         :param mock_email:
         :param draft_registration:
         :return:
@@ -146,7 +146,7 @@ class TestRegistrationMachineNotification:
 
     def test_accept_notifications(self, registration, moderator, admin, contrib, accept_action):
         """
-        "As registration authors, we receive email notification upon moderator acceptance"
+        [REQS-98] "As registration authors, we receive email notification upon moderator acceptance"
         :param draft_registration:
         :return:
         """
@@ -209,7 +209,7 @@ class TestRegistrationMachineNotification:
 
     def test_reject_notifications(self, registration, moderator, admin, contrib, accept_action):
         """
-        "As authors of rejected by moderator registration, we receive email notification of registration returned
+        [REQS-100] "As authors of rejected by moderator registration, we receive email notification of registration returned
         to draft state"
         :param draft_registration:
         :return:
@@ -273,7 +273,7 @@ class TestRegistrationMachineNotification:
 
     def test_notify_moderator_registration_requests_withdrawal_notifications(self, registration, contrib, admin, moderator, provider):
         """
-         "As moderator, I receive registration withdrawal request notification email"
+         [REQS-106] "As moderator, I receive registration withdrawal request notification email"
 
         :param mock_email:
         :param draft_registration:
@@ -311,7 +311,7 @@ class TestRegistrationMachineNotification:
 
     def test_withdrawal_registration_rejected_notifications(self, registration, contrib, admin, withdraw_request_action):
         """
-        "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
+        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
         decision"
 
         :param mock_email:
