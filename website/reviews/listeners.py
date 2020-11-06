@@ -32,14 +32,13 @@ def reviews_submit_notification(self, recipients, context):
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import get_user_subscriptions
 
-    PreprintProvider = apps.get_model('osf.PreprintProvider')
-    RegistrationProvider = apps.get_model('osf.RegistrationProvider')
-
     event_type = utils.find_subscription_type('global_reviews')
-    if context['reviewable'].provider._id == 'osf':
-        if isinstance(context['reviewable'].provider, PreprintProvider):
+
+    provider = context['reviewable'].provider
+    if provider._id == 'osf':
+        if provider.type == 'osf.preprintprovider':
             context['logo'] = OSF_PREPRINTS_LOGO
-        elif isinstance(context['reviewable'].provider, RegistrationProvider):
+        elif provider.type == 'osf.registrationprovider':
             context['logo'] = OSF_REGISTRIES_LOGO
         else:
             raise NotImplementedError()
