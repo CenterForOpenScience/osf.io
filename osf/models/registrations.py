@@ -121,7 +121,7 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    moderation_notifications = {
+    MODERATION_NOTIFCATIONS = {
         RegistrationModerationTriggers.SUBMIT: notifications.notify_submit,
         RegistrationModerationTriggers.ACCEPT_SUBMISSION: notifications.notify_accept_reject,
         RegistrationModerationTriggers.REJECT_SUBMISSION: notifications.notify_accept_reject,
@@ -623,7 +623,7 @@ class Registration(AbstractNode):
         )
         action.save()
 
-        notification = self.moderation_notifications.get(trigger)
+        notification = self.MODERATION_NOTIFCATIONS.get(trigger)
         if notification:
             notification(
                 resource=self,
