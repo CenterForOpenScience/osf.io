@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Q, Value, When, F
+from django.db.models import Case, CharField, Q, Value, When
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -49,7 +49,6 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
-    RegistrationApproval,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
@@ -714,8 +713,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
-            registration_approval__state=RegistrationApproval.APPROVED,
-        ).annotate(machine_state=F('moderation_state'))
+        )
 
     # overrides ListAPIView
     def get_queryset(self):

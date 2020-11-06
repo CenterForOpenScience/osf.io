@@ -19,7 +19,7 @@ from osf_tests.factories import (
 
 from tests.base import get_default_metaschema
 
-from osf.models import NodeRequest, Registration
+from osf.models import NodeRequest
 
 from osf.migrations import update_provider_auth_groups
 
@@ -107,13 +107,6 @@ class TestRegistriesModerationSubmissions:
         registration.update_moderation_state()
         registration.save()
         return registration
-
-    @pytest.fixture(autouse=True)
-    def unapproved_registration(self, provider):
-        """ As far as registries moderation goes these unapproved registration should be invisible."""
-        reg = Registration(title='Test title', provider=provider)
-        reg.save()
-        return reg
 
     @pytest.fixture()
     def provider_requests_url(self, provider):
@@ -217,19 +210,19 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.INITIAL.db_name
+        assert resp.json['data'][0]['attributes']['reviews_state'] == RegistrationModerationStates.INITIAL.db_name
         assert resp.json['data'][0]['relationships']['requests']
         assert resp.json['data'][0]['relationships']['review_actions']
 
-    def test_get_registrations_machine_state_filter(self, app, registrations_url, registration, moderator):
+    def test_get_registrations_reviews_state_filter(self, app, registrations_url, registration, moderator):
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=initial', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[reviews_state]=initial', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=accepted', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[reviews_state]=accepted', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 0
@@ -237,12 +230,12 @@ class TestRegistriesModerationSubmissions:
         # RegistrationFactory auto-approves the initial RegistrationApproval
         registration.update_moderation_state()
 
-        resp = app.get(f'{registrations_url}?filter[machine_state]=accepted&meta[reviews_state_counts]=true', auth=moderator.auth)
+        resp = app.get(f'{registrations_url}?filter[reviews_state]=accepted&meta[reviews_state_counts]=true', auth=moderator.auth)
 
         assert resp.status_code == 200
         assert len(resp.json['data']) == 1
         assert resp.json['data'][0]['id'] == registration._id
-        assert resp.json['data'][0]['attributes']['machine_state'] == RegistrationModerationStates.ACCEPTED.db_name
+        assert resp.json['data'][0]['attributes']['reviews_state'] == RegistrationModerationStates.ACCEPTED.db_name
         assert resp.json['meta']['reviews_state_counts']['accepted'] == 1
 
     @pytest.mark.enable_quickfiles_creation
