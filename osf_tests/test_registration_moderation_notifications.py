@@ -22,7 +22,8 @@ from osf.utils.notifications import (
     notify_submit,
     notify_accept_reject,
     notify_moderator_registration_requests_withdrawal,
-    notify_reject_withdraw_request
+    notify_reject_withdraw_request,
+    notify_withdraw_registration
 )
 
 @pytest.mark.django_db
@@ -81,6 +82,18 @@ class TestRegistrationMachineNotification:
             trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.value,
             from_state=RegistrationModerationStates.ACCEPTED.value,
             to_state=RegistrationModerationStates.PENDING_WITHDRAW.value,
+            comment='yo'
+        )
+        return registration_action
+
+    @pytest.fixture()
+    def withdraw_action(self, registration, admin):
+        registration_action = RegistrationAction.objects.create(
+            creator=admin,
+            target=registration,
+            trigger=RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.value,
+            from_state=RegistrationModerationStates.PENDING_WITHDRAW.value,
+            to_state=RegistrationModerationStates.WITHDRAWN.value,
             comment='yo'
         )
         return registration_action
@@ -309,6 +322,55 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
+    def test_withdrawal_registration_accepted_notifications(self, registration, contrib, admin, withdraw_action, withdraw_request_action):
+        """
+        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
+        decision"
+
+        :param mock_email:
+        :param draft_registration:
+        :param contrib:
+        :return:
+        """
+
+        with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
+            notify_withdraw_registration(registration)
+
+        assert len(mock_email.call_args_list) == 2
+        admin_message, contrib_message = mock_email.call_args_list
+
+        assert admin_message == call(
+            admin.email,
+            mails.WITHDRAWAL_REQUEST_GRANTED,
+            contributor=admin,
+            document_type='registration',
+            domain='http://localhost:5000/',
+            is_requester=True,
+            force_withdrawal=False,
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            provider_url='http://localhost:5000/',
+            requester=admin,
+            reviewable=registration,
+            workflow=None
+        )
+
+        assert contrib_message == call(
+            contrib.email,
+            mails.WITHDRAWAL_REQUEST_GRANTED,
+            contributor=contrib,
+            document_type='registration',
+            domain='http://localhost:5000/',
+            is_requester=False,
+            force_withdrawal=False,
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            provider_url='http://localhost:5000/',
+            requester=admin,
+            reviewable=registration,
+            workflow=None
+        )
+
     def test_withdrawal_registration_rejected_notifications(self, registration, contrib, admin, withdraw_request_action):
         """
         [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
@@ -333,7 +395,6 @@ class TestRegistrationMachineNotification:
             document_type='registration',
             domain='http://localhost:5000/',
             is_requester=True,
-            mimetype='html',
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
@@ -349,7 +410,55 @@ class TestRegistrationMachineNotification:
             document_type='registration',
             domain='http://localhost:5000/',
             is_requester=False,
-            mimetype='html',
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            provider_url='http://localhost:5000/',
+            requester=admin,
+            reviewable=registration,
+            workflow=None
+        )
+
+    def test_withdrawal_registration_force_notifications(self, registration, contrib, admin, withdraw_action, withdraw_request_action):
+        """
+        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
+        decision"
+
+        :param mock_email:
+        :param draft_registration:
+        :param contrib:
+        :return:
+        """
+
+        with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
+            notify_withdraw_registration(registration)
+
+        assert len(mock_email.call_args_list) == 2
+        admin_message, contrib_message = mock_email.call_args_list
+
+        assert admin_message == call(
+            admin.email,
+            mails.WITHDRAWAL_REQUEST_GRANTED,
+            contributor=admin,
+            document_type='registration',
+            domain='http://localhost:5000/',
+            is_requester=True,
+            force_withdrawal=False,
+            provider_contact_email=settings.OSF_CONTACT_EMAIL,
+            provider_support_email=settings.OSF_SUPPORT_EMAIL,
+            provider_url='http://localhost:5000/',
+            requester=admin,
+            reviewable=registration,
+            workflow=None
+        )
+
+        assert contrib_message == call(
+            contrib.email,
+            mails.WITHDRAWAL_REQUEST_GRANTED,
+            contributor=contrib,
+            document_type='registration',
+            domain='http://localhost:5000/',
+            is_requester=False,
+            force_withdrawal=False,
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
