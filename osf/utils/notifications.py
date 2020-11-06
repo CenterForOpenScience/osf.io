@@ -15,7 +15,7 @@ def get_email_template_context(resource):
         'provider_url': resource.provider.domain or f'{DOMAIN}{url_segment}/{resource.provider._id}',
         'provider_contact_email': resource.provider.email_contact or OSF_CONTACT_EMAIL,
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
-        'document_type': getattr(resource, 'preprint_word', 'registration')
+        'document_type': getattr(resource.provider, 'preprint_word', 'registration')
     }
 
 
@@ -49,8 +49,8 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
     context['requester'] = action.creator
-    context['is_rejected'] = action.to_state == states.REJECTED.value
-    context['was_pending'] = action.from_state == states.PENDING.value
+    context['is_rejected'] = action.to_state.db_name == states.REJECTED.db_name
+    context['was_pending'] = action.from_state.db_name == states.PENDING.db_name
     reviews_signals.reviews_email.send(
         creator=user,
         context=context,
