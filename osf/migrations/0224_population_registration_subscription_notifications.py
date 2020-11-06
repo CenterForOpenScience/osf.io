@@ -4,12 +4,19 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
+from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
 from osf.management.commands.populate_registration_provider_notification_subscriptions import populate_registration_provider_notification_subscriptions
+
 
 def revert(apps, schema_editor):
     NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
     # The revert of this migration deletes all NotificationSubscription instances
     NotificationSubscription.objects.filter(provider__isnull=False, provider__type='osf.registrationprovider').delete()
+
+
+def populate_subscriptions(*args, **kwargs):
+    populate_registration_provider_notification_subscriptions()
+    add_reviews_notification_setting('global_reviews')
 
 
 class Migration(migrations.Migration):
@@ -19,5 +26,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(populate_registration_provider_notification_subscriptions, revert)
+        migrations.RunPython(populate_subscriptions, revert)
     ]

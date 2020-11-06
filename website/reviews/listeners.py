@@ -84,10 +84,12 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
-    if isinstance(provider, PreprintProvider):
+    if provider.type == 'osf.preprintprovider':
         context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
-    if isinstance(provider, RegistrationProvider):
+    elif provider.type == 'osf.registrationprovider':
         context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
+    else:
+        raise NotImplementedError()
 
     email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
     email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))
