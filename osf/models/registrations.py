@@ -58,7 +58,7 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
-import osf.utils.notifications as notifications
+import osf.utils.notifications as notify
 
 logger = logging.getLogger(__name__)
 
@@ -121,12 +121,14 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    MODERATION_NOTIFCATIONS = {
-        RegistrationModerationTriggers.SUBMIT: notifications.notify_submit,
-        RegistrationModerationTriggers.ACCEPT_SUBMISSION: notifications.notify_accept_reject,
-        RegistrationModerationTriggers.REJECT_SUBMISSION: notifications.notify_accept_reject,
-        RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notifications.notify_moderator_registration_requests_withdrawal,
-        RegistrationModerationTriggers.REJECT_WITHDRAWAL: notifications.notify_reject_withdraw_request,
+    MODERATION_NOTIFICATIONS = {
+        RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
+        RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify.notify_accept_reject,
+        RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
+        RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
+        RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
+        RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_force_withdraw,
+        RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration
     }
 
     @staticmethod
@@ -623,7 +625,7 @@ class Registration(AbstractNode):
         )
         action.save()
 
-        notification = self.MODERATION_NOTIFCATIONS.get(trigger)
+        notification = self.MODERATION_NOTIFICATIONS.get(trigger)
         if notification:
             notification(
                 resource=self,

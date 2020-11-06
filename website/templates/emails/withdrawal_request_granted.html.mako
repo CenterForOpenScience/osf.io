@@ -26,7 +26,7 @@
             <br>
             The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
             <br>
-        % elif withdrawal_submitter_is_moderator_or_admin:
+        % elif force_withdrawal:
             A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
             <br>
             The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).

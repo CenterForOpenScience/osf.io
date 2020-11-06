@@ -22,12 +22,7 @@ from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
-from osf.utils.notifications import (
-    notify_submit,
-    notify_resubmit,
-    notify_accept_reject,
-    notify_edit_comment,
-)
+from osf.utils import notifications as notify
 
 class BaseMachine(Machine):
 
@@ -128,19 +123,13 @@ class ReviewsMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
-    def withdrawal_submitter_is_moderator_or_admin(self, submitter):
-        # Returns True if the submitter of the request is a moderator or admin for the provider.
-        provider = self.machineable.provider
-        return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
-
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
         user = ev.kwargs.get('user')
-        notify_submit(self.machineable, user)
+        notify.notify_submit(self.machineable, user)
         auth = Auth(user)
         self.machineable.add_log(
             action=PreprintLog.PUBLISHED,
@@ -152,13 +141,13 @@ class ReviewsMachine(BaseMachine):
         )
 
     def notify_resubmit(self, ev):
-        notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
+        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_accept_reject(self, ev):
-        notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
+        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_edit_comment(self, ev):
-        notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -171,7 +160,7 @@ class ReviewsMachine(BaseMachine):
             context['requester'] = preprint_request_action.target.creator
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
-            context['withdrawal_submitter_is_moderator_or_admin'] = True
+            context['force_withdrawal'] = True
 
         for contributor in self.machineable.contributors.all():
             context['contributor'] = contributor
