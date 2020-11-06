@@ -64,4 +64,5 @@ METASCHEMA_ORDERING = (
     'Real World Evidence in Health Outcomes Minimum Recommended Form',
     'Qualitative Preregistration',
     'ASIST Results Registration',
+    'ASIST Hypothesis/Capability Registration'
 )
