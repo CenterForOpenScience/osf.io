@@ -345,6 +345,7 @@ API_TESTS1 = [
     'api_tests/schemas',
     'api_tests/providers',
     'api_tests/preprints',
+    'api_tests/registries_moderation',
     'api_tests/registrations',
     'api_tests/users',
 ]
