@@ -60,10 +60,9 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
 
 
 def notify_edit_comment(resource, user, action, *args, **kwargs):
-    context = get_email_template_context(resource)
-
-    context['comment'] = action.comment
     if not resource.provider.reviews_comments_private and action.comment:
+        context = get_email_template_context(resource)
+        context['comment'] = action.comment
         reviews_signals.reviews_email.send(
             creator=user,
             context=context,
