@@ -10,7 +10,7 @@ from osf.migrations import populate_registration_provider_subscriptions
 def revert(apps, schema_editor):
     NotificationSubscription = apps.get_model('osf', 'NotificationSubscription')
     # The revert of this migration deletes all NotificationSubscription instances
-    NotificationSubscription.objects.filter(provider__isnull=False).delete()
+    NotificationSubscription.objects.filter(provider__isnull=False, provider__type='osf.registrationprovider').delete()
 
 
 class Migration(migrations.Migration):
