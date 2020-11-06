@@ -219,7 +219,7 @@
                "type":"string",
                "format":"text",
                "help":"Clarify the description chosen for data handling.",
-               "required":true
+               "required":false
             }
          ]
       },
