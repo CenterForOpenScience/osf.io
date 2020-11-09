@@ -295,7 +295,7 @@ class Registration(AbstractNode):
             RegistrationModerationStates.EMBARGO.db_name,
             RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name,
         }
-        user_is_moderator = self.provider.user_is_moderator(auth.user)
+        user_is_moderator = auth.user.has_perm('view_submissions', self.provider)
         if self.moderation_state in moderator_viewable_states and user_is_moderator:
             return True
 
@@ -369,7 +369,7 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.is_admin_contributor(user) and not self.provider.user_is_moderator(user):
+        if not self.is_admin_contributor(user) and not user.has_perm('accept_submissions', self.provider):
             raise PermissionsError('Only admins may embargo a registration')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
@@ -519,7 +519,7 @@ class Registration(AbstractNode):
         if moderator_initiated:
             if not self.is_moderated:
                 raise ValueError('Forced retraction is only supported for moderated registrations.')
-            if not self.provider.user_is_moderator(user):
+            if not user.has_perm('withdraw_submissions', self.provider):
                 raise PermissionsError(
                     f'User {user} does not have moderator privileges on Provider {self.provider}')
 

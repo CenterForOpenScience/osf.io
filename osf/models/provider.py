@@ -234,14 +234,6 @@ class RegistrationProvider(AbstractProvider):
         if not self.schemas.filter(id=schema.id).exists():
             raise ValidationError('Invalid schema for provider.')
 
-    def user_is_moderator(self, user):
-        if not user:
-            return False
-
-        # generator so that we only check both groups if necessary
-        moderator_groups = (self.get_group(group_name) for group_name in ('moderator', 'admin'))
-        return any(group.user_set.filter(id=user.id).exists() for group in moderator_groups)
-
 
 class PreprintProvider(AbstractProvider):
 

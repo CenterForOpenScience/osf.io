@@ -186,16 +186,18 @@ class TokenApprovableSanction(Sanction):
         """
         return True
 
-    def _verify_user_role(self, user):
+    def _verify_user_role(self, user, action):
         '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
         if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL:
             # Allow user is None when PENDING_ADMIN_APPROVAL to support timed
             # sanction expiration from within OSF via the 'accept' trigger
             if user is None or user._id in self.approval_state:
                 return True
+            return False
 
+        required_permission = f'{action}_submissions'
         if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
-            return self.target_registration.provider.user_is_moderator(user)
+            return user.has_perm(required_permission, self.target_registration.provider)
 
         return False
 
@@ -209,7 +211,7 @@ class TokenApprovableSanction(Sanction):
         if not user and action != 'accept':
             raise ValueError('All state trigger functions must specify a user')
 
-        if not self._verify_user_role(user):
+        if not self._verify_user_role(user, action):
             raise PermissionsError(self.ACTION_NOT_AUTHORIZED_MESSAGE.format(
                 ACTION=action, DISPLAY_NAME=self.DISPLAY_NAME))
 
