@@ -6,7 +6,6 @@ from addons.base.models import BaseAddonSettings
 from osf.models import (
     AbstractNode,
     Contributor,
-    Registration,
     DraftRegistration,
     Institution,
     Node,
@@ -39,13 +38,8 @@ class ContributorOrPublic(permissions.BasePermission):
         if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
             obj = obj.branched_from
 
-        is_moderator = False
-        if isinstance(obj, Registration) and obj.provider:
-            if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
-                is_moderator = True
-
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth) or is_moderator
+            return obj.is_public or obj.can_view(auth)
         else:
             return obj.can_edit(auth)
 

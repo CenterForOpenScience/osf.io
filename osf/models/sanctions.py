@@ -195,9 +195,7 @@ class TokenApprovableSanction(Sanction):
                 return True
 
         if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
-            moderator_group_name = self.target_registration.provider.format_group('moderator')
-            if user.groups.filter(name=moderator_group_name).exists():
-                return True
+            return self.target_registration.provider.user_is_moderator(user)
 
         return False
 
