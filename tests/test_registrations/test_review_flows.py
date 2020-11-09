@@ -10,7 +10,11 @@ from osf_tests.factories import (
     RegistrationFactory, RegistrationApprovalFactory, RetractionFactory
 )
 from osf.utils import tokens
-from osf.utils.workflows import RegistrationModerationStates, SanctionStates
+from osf.utils.workflows import (
+    RegistrationModerationStates,
+    RegistrationModerationTriggers,
+    SanctionStates
+)
 from tests.base import OsfTestCase
 from transitions import MachineError
 
@@ -172,15 +176,10 @@ class TestModeratedFlows():
         return AuthUserFactory()
 
     @pytest.fixture
-    def provider_admin(self):
-        return AuthUserFactory()
-
-    @pytest.fixture
-    def provider(self, moderator, provider_admin):
+    def provider(self, moderator):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
-        provider.get_group('admin').user_set.add(provider_admin)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
@@ -518,13 +517,16 @@ class TestModeratedFlows():
         [('accept', SanctionStates.ACCEPTED), ('reject', SanctionStates.MODERATOR_REJECTED)]
     )
     def test_provider_admin_has_moderator_privileges(
-        self, sanction_fixture, moderator_trigger, end_state, provider, provider_admin):
-        sanction_object = sanction_fixtture(self, provider),
+        self, sanction_fixture, moderator_trigger, end_state, provider):
+        provider_admin = AuthUserFactory()
+        provider.get_group('admin').user_set.add(provider_admin)
+        provider.save()
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.accept()
         assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
 
         sanction_trigger = getattr(sanction_object, moderator_trigger)
-        moderator_trigger(user=provider_admin)
+        sanction_trigger(user=provider_admin)
         assert sanction_object.approval_stage is end_state
 
 
@@ -635,3 +637,117 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
         with assert_raises(MachineError):
             embargo_termination.approve(user=self.user, token=approval_token)
+
+
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.django_db
+class TestModeratedTriggersWriteActions:
+
+    @pytest.fixture
+    def moderator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def registration_approval(self, provider):
+        sanction = RegistrationApprovalFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def embargo(self, provider):
+        sanction = EmbargoFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def retraction(self, provider):
+        sanction = RetractionFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_admin_accept_submission_writes_submit_action(self, sanction_fixture, provider):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.SUBMIT.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_moderator_accept_submission_writes_accept_submission_action(
+        self, sanction_fixture, provider, moderator):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        sanction_object.accept(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_moderator_reject_submission_writes_accept_submission_action(
+        self, sanction_fixture, provider, moderator):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        sanction_object.reject(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+
+    def test_admin_accept_retraction_writes_request_withdrawal_action(self, retraction):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
+
+
+    def test_moderator_accept_retraction_writes_accept_withdrawal_action(
+        self, retraction, moderator):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        retraction.accept(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+
+    def test_moderator_reject_retraction_writes_reject_withdrawal_action(
+        self, retraction, moderator):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        retraction.reject(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name

@@ -9,7 +9,7 @@ class ContributorOrModerator(permissions.BasePermission):
         auth = get_user_auth(request)
 
         is_moderator = False
-        if obj.provider.get_group('moderator').user_set.filter(id=request.user.id).exists():
-                is_moderator = True
+        if obj.provider:
+            is_moderator = obj.provider.user_is_moderator(request.user)
 
         return obj.is_admin_contributor(auth.user) or is_moderator
