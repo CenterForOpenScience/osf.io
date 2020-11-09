@@ -493,8 +493,6 @@ class TestModeratedFlows():
         sanction_object = sanction_fixture(self, provider)
         sanction_object.approval_stage = rejection_state
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         with assert_raises(MachineError):
@@ -509,8 +507,6 @@ class TestModeratedFlows():
         sanction_object = sanction_fixture(self, provider)
         sanction_object.approval_stage = rejection_state
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
 
         with assert_raises(MachineError):
             sanction_object.accept(user=moderator)
