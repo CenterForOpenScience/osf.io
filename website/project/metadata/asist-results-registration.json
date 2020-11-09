@@ -23,7 +23,7 @@
                "qid":"q2",
                "type":"string",
                "format":"text",
-               "title":"Study registration link",
+               "title":"Study preregistration link",
                "description":"Please provide a link to the study preregistration this study relies upon.",
                "required":true
             },
@@ -58,7 +58,7 @@
                "title":"Results registration",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"Please attach the preregistration file containing your hypothesis/capability results registration details.",
+               "description":"Please attach the file containing your hypothesis/capability preregistration and results.",
                "required":true
             }
          ]

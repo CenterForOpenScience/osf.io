@@ -1,5 +1,5 @@
 {
-   "name":"ASIST Hypothesis/Capability Registration",
+   "name":"ASIST Hypothesis/Capability Preregistration",
    "version":1,
    "config":{
       "hasFiles":true
@@ -14,16 +14,16 @@
                "qid":"q1",
                "type":"string",
                "format":"text",
-               "title":"Study registration link",
-               "description":"Please provide a link to the study registration this study relies upon.",
+               "title":"Study preregistration link",
+               "description":"Please provide a link to the study preregistration this study relies upon.",
                "required":true
             },
             {
                "qid":"q2",
-               "title":"Hypothesis/Capability Registration",
+               "title":"Hypothesis/Capability preregistration",
                "type":"osf-upload",
                "format":"osf-upload-open",
-               "description":"Please attach the preregistration file containing your hypothesis/capability registration details.",
+               "description":"Please attach the preregistration file containing your hypothesis/capability preregistration details.",
                "required":true
             }
          ]
