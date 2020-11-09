@@ -344,6 +344,7 @@ class SanctionStateMachine(Machine):
     '''
 
     def __init__(self):
+
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,

@@ -94,17 +94,17 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def is_pending_approval(self):
-        pending_states = [
-            SanctionStates.PENDING_ADMIN_APPROVAL, SanctionStates.PENDING_MODERATOR_APPROVAL
-        ]
-        return self.approval_stage in pending_states or self.state == Sanction.UNAPPROVED
+        '''The sanction is awaiting admin approval.'''
+        return self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
 
     @property
     def is_approved(self):
+        '''The sanction has received all required admin and moderator approvals.'''
         return self.approval_stage is SanctionStates.ACCEPTED or self.state == Sanction.APPROVED
 
     @property
     def is_rejected(self):
+        '''The sanction has been rejected by either an admin or a moderator.'''
         rejected_states = [
             SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED
         ]

@@ -204,7 +204,7 @@ class RegistrationProvider(AbstractProvider):
     REVIEW_STATES = RegistrationModerationStates
     STATE_FIELD_NAME = 'moderation_state'
 
-    default_subscriptions = ['new_pending_submissions', 'new_pending_withdraw_requests']
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -340,7 +340,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
-        for subscription in instance.default_subscriptions:
+        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
             NotificationSubscription.objects.get_or_create(
                 _id=f'{instance._id}_{subscription}',
                 event_name=subscription,

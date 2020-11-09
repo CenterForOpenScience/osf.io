@@ -971,7 +971,7 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 
-    default_subscriptions = ['new_pending_submissions']
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     @property
     def is_reviewed(self):
@@ -1004,7 +1004,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def add_to_group(self, user, group):
         # Add default notification subscription
-        for subscription in self.default_subscriptions:
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
             self.add_user_to_subscription(user, f'{self._id}_{subscription}')
 
         return self.get_group(group).user_set.add(user)
@@ -1016,7 +1016,7 @@ class ReviewProviderMixin(GuardianMixin):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            for subscription in self.default_subscriptions:
+            for subscription in self.DEFAULT_SUBSCRIPTIONS:
                 self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
 
         return _group.user_set.remove(user)

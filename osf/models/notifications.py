@@ -13,7 +13,7 @@ class NotificationSubscription(BaseModel):
     primary_identifier_name = '_id'
     _id = models.CharField(max_length=100, db_index=True, unique=False)  # pxyz_wiki_updated, uabc_comment_replies
 
-    event_name = models.CharField(max_length=50)  # wiki_updated, comment_replies
+    event_name = models.CharField(max_length=100)  # wiki_updated, comment_replies
 
     user = models.ForeignKey('OSFUser', related_name='notification_subscriptions',
                              null=True, blank=True, on_delete=models.CASCADE)

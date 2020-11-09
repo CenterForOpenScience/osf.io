@@ -129,7 +129,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
     provider = resource.provider
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription = NotificationSubscription.objects.get(
+    provider_subscription, created = NotificationSubscription.objects.get_or_create(
         _id=f'{provider._id}_new_pending_withdraw_requests',
         provider=provider
     )
