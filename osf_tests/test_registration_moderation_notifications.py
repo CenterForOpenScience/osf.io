@@ -4,6 +4,8 @@ from mock import call
 import datetime
 
 from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
+from osf.management.commands.populate_registration_provider_notification_subscriptions import populate_registration_provider_notification_subscriptions
+
 from osf.migrations import update_provider_auth_groups
 from osf.models import NotificationDigest
 from osf.models.action import RegistrationAction
@@ -32,7 +34,8 @@ class TestRegistrationMachineNotification:
     MOCK_NOW = datetime.datetime(2018, 2, 4)
 
     @pytest.yield_fixture(autouse=True)
-    def time_machine(self):
+    def setup(self):
+        populate_registration_provider_notification_subscriptions()
         with mock.patch('osf.utils.machines.timezone.now', return_value=self.MOCK_NOW):
             yield
 
@@ -67,9 +70,9 @@ class TestRegistrationMachineNotification:
         registration_action = RegistrationAction.objects.create(
             creator=admin,
             target=registration,
-            trigger=RegistrationModerationTriggers.ACCEPT_SUBMISSION.value,
-            from_state=RegistrationModerationStates.INITIAL.value,
-            to_state=RegistrationModerationStates.ACCEPTED.value,
+            trigger=RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name,
+            from_state=RegistrationModerationStates.INITIAL.db_name,
+            to_state=RegistrationModerationStates.ACCEPTED.db_name,
             comment='yo'
         )
         return registration_action
@@ -79,9 +82,9 @@ class TestRegistrationMachineNotification:
         registration_action = RegistrationAction.objects.create(
             creator=admin,
             target=registration,
-            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.value,
-            from_state=RegistrationModerationStates.ACCEPTED.value,
-            to_state=RegistrationModerationStates.PENDING_WITHDRAW.value,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
             comment='yo'
         )
         return registration_action
@@ -91,9 +94,9 @@ class TestRegistrationMachineNotification:
         registration_action = RegistrationAction.objects.create(
             creator=admin,
             target=registration,
-            trigger=RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.value,
-            from_state=RegistrationModerationStates.PENDING_WITHDRAW.value,
-            to_state=RegistrationModerationStates.WITHDRAWN.value,
+            trigger=RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            to_state=RegistrationModerationStates.WITHDRAWN.db_name,
             comment='yo'
         )
         return registration_action

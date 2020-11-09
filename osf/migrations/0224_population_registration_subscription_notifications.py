@@ -17,6 +17,7 @@ def revert(apps, schema_editor):
 def populate_subscriptions(*args, **kwargs):
     populate_registration_provider_notification_subscriptions()
     add_reviews_notification_setting('global_reviews')
+    add_reviews_notification_setting('new_pending_submissions')
 
 
 class Migration(migrations.Migration):

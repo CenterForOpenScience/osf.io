@@ -664,6 +664,32 @@ class TestRegistationModerationStates():
     def moderated_registration(self, provider):
         return factories.RegistrationFactory(provider=provider, is_public=True)
 
+    @pytest.fixture
+    def withdraw_action(self, moderated_registration):
+        action = RegistrationAction.objects.create(
+            creator=moderated_registration.creator,
+            target=moderated_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
+    @pytest.fixture
+    def withdraw_action_for_retraction(self, retraction):
+        action = RegistrationAction.objects.create(
+            creator=retraction.target_registration.creator,
+            target=retraction.target_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
     def test_embargo_states(self, embargo):
         registration = embargo.target_registration
         embargo.to_PENDING_ADMIN_APPROVAL()
@@ -712,7 +738,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
 
-    def test_retraction_states_over_registration_approval(self, registration_approval):
+    def test_retraction_states_over_registration_approval(self, registration_approval, withdraw_action):
         registration = registration_approval.target_registration
         registration.is_public = True
         retraction = registration.retract_registration(registration.creator, justification='test')
@@ -828,11 +854,6 @@ class TestRegistationModerationStates():
             ),
             (
                 SanctionStates.PENDING_MODERATOR_APPROVAL.name,
-                SanctionStates.ACCEPTED.name,
-                RegistrationModerationTriggers.ACCEPT_WITHDRAWAL,
-            ),
-            (
-                SanctionStates.PENDING_MODERATOR_APPROVAL.name,
                 SanctionStates.MODERATOR_REJECTED.name,
                 RegistrationModerationTriggers.REJECT_WITHDRAWAL,
             ),
@@ -842,7 +863,7 @@ class TestRegistationModerationStates():
         assert len(RegistrationAction.objects.all()) == 0
         registration = retraction.target_registration
 
-        # Retrive/call transition functions instead of directly
+        # Retrieve/call transition functions instead of directly
         # setting state in order  to invoke state machine magic
         getattr(retraction, f'to_{from_state}')()
         registration.refresh_from_db()
@@ -852,6 +873,23 @@ class TestRegistationModerationStates():
 
         action = RegistrationAction.objects.last()
         assert action.trigger == expected_trigger.db_name
+        assert action.from_state == registration_from_state
+        assert action.to_state == registration.moderation_state
+
+    def test_write_moderated_accept_withdraw_actions(self, retraction, withdraw_action_for_retraction):
+        assert len(RegistrationAction.objects.all()) == 1  # withdraw action necessary for notifications
+        registration = retraction.target_registration
+
+        # Retrieve/call transition functions instead of directly
+        # setting state in order  to invoke state machine magic
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        registration_from_state = registration.moderation_state
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+
+        action = RegistrationAction.objects.last()
+        assert action.trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
         assert action.from_state == registration_from_state
         assert action.to_state == registration.moderation_state
 

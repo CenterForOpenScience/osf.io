@@ -5,7 +5,6 @@ from website.notifications import utils
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO, DOMAIN
-from django.apps import apps
 
 
 # Handle email notifications including: update comment, accept, and reject of submission.
@@ -25,6 +24,7 @@ def reviews_notification(self, creator, template, context, action):
         template=template,
         context=context
     )
+
 
 # Handle email notifications for a new submission.
 @reviews_signals.reviews_email_submit.connect
@@ -67,14 +67,11 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     from website.profile.utils import get_profile_image_url
     from website.notifications.emails import store_emails
 
-    PreprintProvider = apps.get_model('osf.PreprintProvider')
-    RegistrationProvider = apps.get_model('osf.RegistrationProvider')
-
     resource = context['reviewable']
     provider = resource.provider
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription = NotificationSubscription.objects.get(
+    provider_subscription, created = NotificationSubscription.objects.get_or_create(
         _id=f'{provider._id}_new_pending_submissions',
         provider=provider
     )
@@ -85,11 +82,13 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
     if provider.type == 'osf.preprintprovider':
-        context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
+        url_segment = 'preprints'
     elif provider.type == 'osf.registrationprovider':
-        context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
+        url_segment = 'registries'
     else:
         raise NotImplementedError()
+
+    context['reviews_submission_url'] = f'{DOMAIN}reviews/{url_segment}/{provider._id}/{resource._id}'
 
     email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
     email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))

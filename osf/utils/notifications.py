@@ -120,7 +120,7 @@ def notify_withdraw_registration(resource, *args, **kwargs):
     context['force_withdrawal'] = False
 
     withdrawal_requester = resource.actions.filter(
-        trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.value,
+        trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
         is_deleted=False
     ).get().creator
 

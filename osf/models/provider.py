@@ -335,6 +335,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
 
+
 @receiver(post_save, sender=PreprintProvider)
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
