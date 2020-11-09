@@ -176,10 +176,15 @@ class TestModeratedFlows():
         return AuthUserFactory()
 
     @pytest.fixture
-    def provider(self, moderator):
+    def provider_admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator, provider_admin):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
+        provider.get_group('admin').user_set.add(provider_admin)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
@@ -512,23 +517,24 @@ class TestModeratedFlows():
 
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
-    @pytest.mark.parametrize(
-        'moderator_trigger, end_state',
-        [('accept', SanctionStates.ACCEPTED), ('reject', SanctionStates.MODERATOR_REJECTED)]
-    )
-    def test_provider_admin_has_moderator_privileges(
-        self, sanction_fixture, moderator_trigger, end_state, provider):
-        provider_admin = AuthUserFactory()
-        provider.get_group('admin').user_set.add(provider_admin)
-        provider.save()
+    def test_provider_admin_can_accept_as_moderator(
+        self, sanction_fixture, provider, provider_admin):
         sanction_object = sanction_fixture(self, provider)
         sanction_object.accept()
         assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
 
-        sanction_trigger = getattr(sanction_object, moderator_trigger)
-        sanction_trigger(user=provider_admin)
-        assert sanction_object.approval_stage is end_state
+        sanction_object.accept(user=provider_admin)
+        assert sanction_object.approval_stage is SanctionStates.ACCEPTED
 
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_provider_admin_can_reject_as_moderator(
+        self, sanction_fixture, provider, provider_admin):
+        sanction_object = sanction_fixture(self, provider)
+        sanction_object.accept()
+        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
+
+        sanction_object.reject(user=provider_admin)
+        assert sanction_object.approval_stage is SanctionStates.MODERATOR_REJECTED
 
 @pytest.mark.enable_bookmark_creation
 class TestEmbargoTerminationFlows(OsfTestCase):
@@ -641,7 +647,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
-class TestModeratedTriggersWriteActions:
+class TestModerationActions:
 
     @pytest.fixture
     def moderator(self):
@@ -751,3 +757,24 @@ class TestModeratedTriggersWriteActions:
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_no_actions_written_on_unmoderated_accept(self, sanction_fixture):
+        sanction_object = sanction_fixture(self, None)
+        registration = sanction_object.target_registration
+
+        sanction_object.accept()
+        registration.refresh_from_db()
+        assert sanction_object.approval_stage is SanctionStates.ACCEPTED
+        assert registration.actions.count() == 0
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_no_actions_written_on_unmoderated_rejection(self, sanction_fixture, provider):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+
+        rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
+        sanction_object.reject(user=registration.creator, token=rejection_token)
+        registration.refresh_from_db()
+        assert sanction_object.approval_stage is SanctionStates.ADMIN_REJECTED
+        assert registration.actions.count() == 0
