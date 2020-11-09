@@ -111,13 +111,13 @@ def get_timestamp(node_settings, path):
     url, username = external_account.provider_id.rsplit(':', 1)
     password = external_account.oauth_key
     attributes = [
-        'timestamp',
+        settings.PROPERTY_KEY_TIMESTAMP,
         settings.PROPERTY_KEY_TIMESTAMP_STATUS
     ]
     cli = MetadataClient(url, username, password)
     res = cli.get_metadata(path, attributes)
     if res is not None:
-        timestamp = cli.get_attribute(res[0], 'timestamp')
+        timestamp = cli.get_attribute(res[0], settings.PROPERTY_KEY_TIMESTAMP)
         if timestamp is None:
             decoded_timestamp = None
         else:
@@ -151,7 +151,7 @@ def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context
     encoded_timestamp = base64.b64encode(timestamp_data)
     DEBUG('set timestamp: {}'.format(encoded_timestamp))
     attributes = {
-        'timestamp': encoded_timestamp,
+        settings.PROPERTY_KEY_TIMESTAMP: encoded_timestamp,
         settings.PROPERTY_KEY_TIMESTAMP_STATUS: str(timestamp_status)
     }
     cli = MetadataClient(url, username, password)

@@ -6,7 +6,8 @@ DEFAULT_BASE_FOLDER = '/GRDM'
 # available: {title} {guid}
 ROOT_FOLDER_FORMAT = 'GRDM_{title}_{guid}'
 
-PROPERTY_KEY_TIMESTAMP_STATUS = 'timestamp-status'
+PROPERTY_KEY_TIMESTAMP = 'grdm-timestamp'
+PROPERTY_KEY_TIMESTAMP_STATUS = 'grdm-timestamp-status'
 
 DEBUG_URL = None
 DEBUG_USER = None
