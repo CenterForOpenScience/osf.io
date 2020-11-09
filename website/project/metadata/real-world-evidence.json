@@ -1,5 +1,5 @@
 {
-   "name":"Real World Evidence in Health Outcomes Minimum Recommended Form",
+   "name":"Real World Evidence Recommended Minimum Study Registration Template",
    "version":1,
    "config":{
       "hasFiles":true
@@ -42,7 +42,7 @@
                "type":"string",
                "format":"text",
                "title":"Extraction date",
-               "help":"This refers to either the extraction version number or the date of the final analytic dataset of extraction for the RWD database that will be used to implement the study protocol.",
+               "help":"This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
                "example":"09/10/2020 or v 7.1.0",
                "required":true
             },
@@ -184,7 +184,7 @@
                "qid":"q18",
                "type":"string",
                "format":"textarea",
-               "title":"Treatment effect of interest and follow-up model",
+               "title":"Follow-up definition",
                "help":"The text definition of the full follow-up window inclusive of treatment for both intervention and comparator.",
                "example":"Day 1 (fill date) through 100 days, the last day of the study period, death, or disenrollment.",
                "required":true
@@ -212,6 +212,14 @@
                "help":"Please choose the one best short description that best reflects the amount of data handling that you have had up until the date of registration for this study.",
                "example":"If you have looked at the data to determine whether there are enough adults with sleep disordered breathing to at least satisfy requirements for your sample size, you should choose option 3 –conducted feasibility counts.",
                "required":true
+            },
+            {
+               "qid":"q20",
+               "title":"Data handling",
+               "type":"string",
+               "format":"text",
+               "help":"Clarify the description chosen for data handling.",
+               "required":false
             }
          ]
       },
@@ -220,7 +228,7 @@
          "title":"Protocol Document",
          "questions":[
             {
-               "qid":"q20",
+               "qid":"q21",
                "title":"Upload protocol document",
                "type":"osf-upload",
                "format":"osf-upload-open",

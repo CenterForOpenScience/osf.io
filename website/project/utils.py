@@ -121,6 +121,10 @@ def sizeof_fmt(num, suffix='B'):
 
 
 def get_storage_limits_css(node):
+    from osf.models import Node
+
+    if not isinstance(node, Node):
+        return None
     status = node.storage_limit_status
 
     if status is settings.StorageLimits.APPROACHING_PRIVATE:

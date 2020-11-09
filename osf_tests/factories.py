@@ -1106,7 +1106,9 @@ class BrandFactory(DjangoModelFactory):
     class Meta:
         model = models.Brand
 
-    name = factory.Faker('company')
+    # just limiting it to 30 chars
+    name = factory.LazyAttribute(lambda n: fake.company()[:29])
+
     hero_logo_image = factory.Faker('url')
     topnav_logo_image = factory.Faker('url')
     hero_background_image = factory.Faker('url')
