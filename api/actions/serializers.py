@@ -253,7 +253,7 @@ class PreprintRequestActionSerializer(BaseActionSerializer):
 
 class RegistrationActionSerializer(BaseActionSerializer):
     class Meta:
-        type_ = 'registration-actions'
+        type_ = 'review-actions'
 
     permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
