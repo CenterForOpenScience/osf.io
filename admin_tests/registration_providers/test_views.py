@@ -268,14 +268,14 @@ class TestEditModerators:
 
     @pytest.fixture()
     def remove_moderator_view(self, req, provider):
-        view = views.RemoveModerators()
+        view = views.RemoveAdminsAndModerators()
         view = setup_view(view, req)
         view.kwargs = {'registration_provider_id': provider.id}
         return view
 
     @pytest.fixture()
     def add_moderator_view(self, req, provider):
-        view = views.AddModerators()
+        view = views.AddAdminOrModerator()
         view = setup_view(view, req)
         view.kwargs = {'registration_provider_id': provider.id}
         return view
@@ -288,9 +288,10 @@ class TestEditModerators:
         assert res.status_code == 200
 
     def test_post_remove(self, remove_moderator_view, req, moderator, provider):
+        moderator_id = f'Moderator-{moderator.id}'
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
-            str(moderator.id): ['on']
+            moderator_id: ['on']
         }
 
         # django.contrib.messages has a bug which effects unittests
@@ -306,7 +307,8 @@ class TestEditModerators:
     def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
-            'add-moderators-form': [user._id]
+            'add-moderators-form': [user._id],
+            'moderator': ['Add Moderator']
         }
 
         # django.contrib.messages has a bug which effects unittests

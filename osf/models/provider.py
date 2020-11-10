@@ -236,6 +236,7 @@ class RegistrationProvider(AbstractProvider):
         if not self.schemas.filter(id=schema.id).exists():
             raise ValidationError('Invalid schema for provider.')
 
+
 class PreprintProvider(AbstractProvider):
 
     def __init__(self, *args, **kwargs):

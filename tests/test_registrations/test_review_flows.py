@@ -10,7 +10,11 @@ from osf_tests.factories import (
     RegistrationFactory, RegistrationApprovalFactory, RetractionFactory
 )
 from osf.utils import tokens
-from osf.utils.workflows import RegistrationModerationStates, SanctionStates
+from osf.utils.workflows import (
+    RegistrationModerationStates,
+    RegistrationModerationTriggers,
+    SanctionStates
+)
 from tests.base import OsfTestCase
 from transitions import MachineError
 
@@ -168,29 +172,49 @@ class TestUnmoderatedFlows():
 class TestModeratedFlows():
 
     @pytest.fixture
-    def registration_approval(self):
-        return RegistrationApprovalFactory()
-
-    @pytest.fixture
-    def embargo(self):
-        return EmbargoFactory()
-
-    @pytest.fixture
-    def retraction(self):
-        return RetractionFactory()
-
-    @pytest.fixture
     def moderator(self):
         return AuthUserFactory()
 
-    @pytest.fixture()
-    def provider(self, moderator):
+    @pytest.fixture
+    def provider_admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator, provider_admin):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
+        provider.get_group('admin').user_set.add(provider_admin)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
+
+    @pytest.fixture
+    def registration_approval(self, provider):
+        sanction = RegistrationApprovalFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def embargo(self, provider):
+        sanction = EmbargoFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def retraction(self, provider):
+        sanction = RetractionFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
 
     @pytest.mark.parametrize(
         'sanction_fixture, initial_state, intermediate_state, end_state',
@@ -218,11 +242,8 @@ class TestModeratedFlows():
     def test_approval_flow(
         self, sanction_fixture, initial_state, intermediate_state, end_state, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.update_moderation_state()
-        registration.provider = provider
-        registration.save()
 
         assert registration.moderation_state == initial_state.db_name
         assert registration.sanction._id == sanction_object._id
@@ -258,11 +279,8 @@ class TestModeratedFlows():
     )
     def test_admin_rejection_flow(self, sanction_fixture, initial_state, end_state, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
 
         assert registration.moderation_state == initial_state.db_name
         assert registration.sanction._id == sanction_object._id
@@ -299,11 +317,8 @@ class TestModeratedFlows():
     def test_moderator_rejection_flow(
         self, sanction_fixture, initial_state, intermediate_state, end_state, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
 
         assert registration.moderation_state == initial_state.db_name
         assert registration.sanction._id == sanction_object._id
@@ -320,12 +335,9 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_admin_cannot_give_moderator_approval(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.to_PENDING_MODERATOR_APPROVAL()
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         sanction_object.approve(user=registration.creator, token=approval_token)
@@ -337,12 +349,9 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_admin_cannot_reject_after_admin_approval_granted(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.to_PENDING_MODERATOR_APPROVAL()
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
         with assert_raises(PermissionsError):
@@ -352,11 +361,7 @@ class TestModeratedFlows():
     def test_moderator_cannot_accept_before_admin_approval(
         self, sanction_fixture, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        sanction_object = sanction_fixture(self, provider)
 
         with assert_raises(PermissionsError):
             # Confirm PermissionError, not InvalidSanctionApprovalToken
@@ -369,11 +374,7 @@ class TestModeratedFlows():
     def test_moderator_cannot_reject_before_admin_approval(
         self, sanction_fixture, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        sanction_object = sanction_fixture(self, provider)
 
         with assert_raises(PermissionsError):
             sanction_object.reject(user=moderator)
@@ -381,12 +382,10 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_admin_approve_after_accepted_is_noop(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.to_ACCEPTED()
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        sanction_object.to_ACCEPTED()
+        registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
@@ -398,12 +397,10 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_admin_accept_after_accepted_is_noop(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.to_ACCEPTED()
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.update_moderation_state()
-        registration.save()
+        sanction_object.to_ACCEPTED()
+        registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
@@ -415,12 +412,10 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_moderator_accept_after_accepted_is_noop(self, sanction_fixture, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.to_ACCEPTED()
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        sanction_object.to_ACCEPTED()
+        registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
         sanction_object.accept(user=moderator)
@@ -431,11 +426,10 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_admin_reject_after_accepted_raises_machine_error(self, sanction_fixture, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.to_ACCEPTED()
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
+        sanction_object.to_ACCEPTED()
+        registration.refresh_from_db()
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
 
@@ -444,13 +438,10 @@ class TestModeratedFlows():
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_moderator_reject_after_accepted_raises_machine_error(
-            self, sanction_fixture, provider, moderator):
+        self, sanction_fixture, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.to_ACCEPTED()
-        registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
 
         with assert_raises(MachineError):
             sanction_object.reject(user=moderator)
@@ -460,12 +451,11 @@ class TestModeratedFlows():
         'rejection_state', [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED])
     def test_admin_reject_after_rejected_is_noop(self, sanction_fixture, rejection_state, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.approval_stage = rejection_state
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        reject_transition = getattr(sanction_object, f'to_{rejection_state.name}')
+        reject_transition()
+        registration.refresh_from_db()
         registration_rejected_state = registration.moderation_state
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
@@ -478,15 +468,15 @@ class TestModeratedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
         'rejection_state', [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED])
-    def test_admin_reject_after_rejected_is_noop(
+    def test_moderator_reject_after_rejected_is_noop(
         self, sanction_fixture, rejection_state, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
-        sanction_object.approval_stage = rejection_state
+        sanction_object = sanction_fixture(self, provider)
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
-        registration.update_moderation_state()
+        reject_transition = getattr(sanction_object, f'to_{rejection_state.name}')
+        reject_transition()
+        sanction_object.approval_stage = rejection_state
+        registration.refresh_from_db()
         registration_rejected_state = registration.moderation_state
 
         sanction_object.reject(user=moderator)
@@ -500,11 +490,9 @@ class TestModeratedFlows():
     def test_admin_approve_after_rejected_raises_machine_error(
         self, sanction_fixture, rejection_state, provider):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.approval_stage = rejection_state
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         with assert_raises(MachineError):
@@ -516,18 +504,35 @@ class TestModeratedFlows():
     def test_moderator_approve_after_rejected_raises_machine_error(
         self, sanction_fixture, rejection_state, provider, moderator):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture(self, provider)
         sanction_object.approval_stage = rejection_state
         registration = sanction_object.target_registration
-        registration.provider = provider
-        registration.save()
 
         with assert_raises(MachineError):
             sanction_object.accept(user=moderator)
 
 
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_provider_admin_can_accept_as_moderator(
+        self, sanction_fixture, provider, provider_admin):
+        sanction_object = sanction_fixture(self, provider)
+        sanction_object.accept()
+        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
+
+        sanction_object.accept(user=provider_admin)
+        assert sanction_object.approval_stage is SanctionStates.ACCEPTED
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_provider_admin_can_reject_as_moderator(
+        self, sanction_fixture, provider, provider_admin):
+        sanction_object = sanction_fixture(self, provider)
+        sanction_object.accept()
+        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL
+
+        sanction_object.reject(user=provider_admin)
+        assert sanction_object.approval_stage is SanctionStates.MODERATOR_REJECTED
+
 @pytest.mark.enable_bookmark_creation
-#@pytest.mark.django_db
 class TestEmbargoTerminationFlows(OsfTestCase):
 
     def setUp(self):
@@ -634,3 +639,138 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
         with assert_raises(MachineError):
             embargo_termination.approve(user=self.user, token=approval_token)
+
+
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.django_db
+class TestModerationActions:
+
+    @pytest.fixture
+    def moderator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def registration_approval(self, provider):
+        sanction = RegistrationApprovalFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def embargo(self, provider):
+        sanction = EmbargoFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.fixture
+    def retraction(self, provider):
+        sanction = RetractionFactory()
+        registration = sanction.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return sanction
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_admin_accept_submission_writes_submit_action(self, sanction_fixture, provider):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.SUBMIT.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_moderator_accept_submission_writes_accept_submission_action(
+        self, sanction_fixture, provider, moderator):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        sanction_object.accept(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
+    def test_moderator_reject_submission_writes_accept_submission_action(
+        self, sanction_fixture, provider, moderator):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+        assert registration.actions.count() == 0
+
+        sanction_object.accept()
+        sanction_object.reject(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+
+    def test_admin_accept_retraction_writes_request_withdrawal_action(self, retraction):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
+
+
+    def test_moderator_accept_retraction_writes_accept_withdrawal_action(
+        self, retraction, moderator):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        retraction.accept(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+
+    def test_moderator_reject_retraction_writes_reject_withdrawal_action(
+        self, retraction, moderator):
+        registration = retraction.target_registration
+        assert registration.actions.count() == 0
+
+        retraction.accept()
+        retraction.reject(user=moderator)
+        registration.refresh_from_db()
+        latest_action = registration.actions.last()
+        assert latest_action.trigger == RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_no_actions_written_on_unmoderated_accept(self, sanction_fixture):
+        sanction_object = sanction_fixture(self, None)
+        registration = sanction_object.target_registration
+
+        sanction_object.accept()
+        registration.refresh_from_db()
+        assert sanction_object.approval_stage is SanctionStates.ACCEPTED
+        assert registration.actions.count() == 0
+
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_no_actions_written_on_unmoderated_rejection(self, sanction_fixture, provider):
+        sanction_object = sanction_fixture(self, provider)
+        registration = sanction_object.target_registration
+
+        rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
+        sanction_object.reject(user=registration.creator, token=rejection_token)
+        registration.refresh_from_db()
+        assert sanction_object.approval_stage is SanctionStates.ADMIN_REJECTED
+        assert registration.actions.count() == 0
