@@ -272,7 +272,7 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     return None, http_status.HTTP_204_NO_CONTENT
 
 
-def sort_schemas(schema):
+def order_schemas(schema):
     """ Schemas not specified in METASCHEMA_ORDERING get sent to the bottom of the list."""
     try:
         return METASCHEMA_ORDERING.index(schema.name)
@@ -294,7 +294,7 @@ def get_metaschemas(*args, **kwargs):
     if include == 'latest':
         meta_schemas = RegistrationSchema.objects.get_latest_versions()
 
-    meta_schemas = sorted(meta_schemas, key=lambda x: sort_schemas(x))
+    meta_schemas = sorted(meta_schemas, key=order_schemas)
 
     return {
         'meta_schemas': [
