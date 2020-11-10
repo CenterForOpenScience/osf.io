@@ -13,7 +13,8 @@ from website.profile.utils import get_profile_image_url
 
 from osf_tests.factories import (
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractionFactory
 )
 
 from website import mails, settings
@@ -53,6 +54,16 @@ class TestRegistrationMachineNotification:
         registration.add_contributor(admin, 'admin')
         registration.add_contributor(contrib, 'write')
         update_provider_auth_groups()
+        return registration
+
+    @pytest.fixture()
+    def registration_with_retraction(self, admin, contrib):
+        sanction = RetractionFactory(user=admin)
+        registration = sanction.target_registration
+        registration.update_moderation_state()
+        registration.add_contributor(admin, 'admin')
+        registration.add_contributor(contrib, 'write')
+        registration.save()
         return registration
 
     @pytest.fixture()
@@ -325,7 +336,7 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
-    def test_withdrawal_registration_accepted_notifications(self, registration, contrib, admin, withdraw_action, withdraw_request_action):
+    def test_withdrawal_registration_accepted_notifications(self, registration_with_retraction, contrib, admin, withdraw_action):
         """
         [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
         decision"
@@ -337,7 +348,7 @@ class TestRegistrationMachineNotification:
         """
 
         with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
-            notify_withdraw_registration(registration)
+            notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
         admin_message, contrib_message = mock_email.call_args_list
@@ -354,7 +365,7 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=registration,
+            reviewable=registration_with_retraction,
             workflow=None
         )
 
@@ -370,7 +381,7 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=registration,
+            reviewable=registration_with_retraction,
             workflow=None
         )
 
@@ -421,7 +432,7 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
-    def test_withdrawal_registration_force_notifications(self, registration, contrib, admin, withdraw_action, withdraw_request_action):
+    def test_withdrawal_registration_force_notifications(self, registration_with_retraction, contrib, admin, withdraw_action):
         """
         [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
         decision"
@@ -433,7 +444,7 @@ class TestRegistrationMachineNotification:
         """
 
         with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
-            notify_withdraw_registration(registration)
+            notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
         admin_message, contrib_message = mock_email.call_args_list
@@ -450,7 +461,7 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=registration,
+            reviewable=registration_with_retraction,
             workflow=None
         )
 
@@ -466,6 +477,6 @@ class TestRegistrationMachineNotification:
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
             provider_url='http://localhost:5000/',
             requester=admin,
-            reviewable=registration,
+            reviewable=registration_with_retraction,
             workflow=None
         )

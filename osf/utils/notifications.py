@@ -97,32 +97,14 @@ def notify_moderator_registration_requests_withdrawal(resource, user, *args, **k
     )
 
 
-def notify_force_withdraw(resource, action, *args, **kwargs):
+def notify_withdraw_registration(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['force_withdrawal'] = True
+
+    context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
 
     for contributor in resource.contributors.all():
         context['contributor'] = contributor
-        context['requester'] = action.creator
-        context['is_requester'] = context['requester'] == contributor
-        mails.send_mail(
-            contributor.username,
-            mails.WITHDRAWAL_REQUEST_GRANTED,
-            **context
-        )
-
-def notify_withdraw_registration(resource, *args, **kwargs):
-    context = get_email_template_context(resource)
-    context['force_withdrawal'] = False
-
-    withdrawal_requester = resource.actions.filter(
-        trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
-        is_deleted=False
-    ).get().creator
-
-    for contributor in resource.contributors.all():
-        context['contributor'] = contributor
-        context['requester'] = withdrawal_requester
+        context['requester'] = resource.retraction.initiated_by
         context['is_requester'] = context['requester'] == contributor
         mails.send_mail(
             contributor.username,
