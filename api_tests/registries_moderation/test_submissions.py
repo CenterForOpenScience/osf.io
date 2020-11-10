@@ -287,6 +287,9 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data'][0]['relationships']['creator']['data']['id'] == registration.creator._id
 
     def test_registries_moderation_permission(self, app, registration_detail_url, registration, moderator, moderator_wrong_provider):
+        # Moderators should be able to view registration details once the registration is pending
+        registration.moderation_state = RegistrationModerationStates.PENDING.db_name
+        registration.save()
         resp = app.get(registration_detail_url, expect_errors=True)
         assert resp.status_code == 401
 
@@ -297,6 +300,9 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
 
     def test_registries_moderation_permission_log(self, app, registration_log_url, registration, moderator, moderator_wrong_provider):
+        # Moderators should be able to view registration logs once the registration is pending
+        registration.moderation_state = RegistrationModerationStates.PENDING.db_name
+        registration.save()
         resp = app.get(registration_log_url, expect_errors=True)
         assert resp.status_code == 401
 
