@@ -566,7 +566,7 @@ class TestModeratorRegistrationViews:
 
 
     @pytest.mark.enable_quickfiles_creation
-    def test_modeartor_cannot_view_subpath_of_initial_registration(
+    def test_moderator_cannot_view_subpath_of_initial_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators should not have non-standard access to a registration
         # before it is submitted for moderation by its authors
@@ -576,7 +576,7 @@ class TestModeratorRegistrationViews:
         assert resp.status_code == 403
 
     @pytest.mark.enable_quickfiles_creation
-    def test_modeartor_can_view_subpath_of_submitted_registration(
+    def test_moderator_can_view_subpath_of_submitted_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of the pending registration
         # in order to determine whether to give approval
