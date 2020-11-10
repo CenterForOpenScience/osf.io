@@ -121,16 +121,6 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    MODERATION_NOTIFICATIONS = {
-        RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
-        RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify.notify_accept_reject,
-        RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
-        RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
-        RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
-        RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration,
-        RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_force_withdraw,
-    }
-
     @staticmethod
     def find_failed_registrations():
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
@@ -641,7 +631,17 @@ class Registration(AbstractNode):
         )
         action.save()
 
-        notification = self.MODERATION_NOTIFICATIONS.get(trigger)
+        moderation_notifications = {
+            RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
+            RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify.notify_accept_reject,
+            RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
+            RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
+            RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
+            RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration,
+            RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_withdraw_registration,
+        }
+
+        notification = moderation_notifications.get(trigger)
         if notification:
             notification(
                 resource=self,
