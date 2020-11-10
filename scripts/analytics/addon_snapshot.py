@@ -92,16 +92,14 @@ class AddonSnapshot(SnapshotAnalytics):
             if node_settings_model:
                 for node_settings in paginated(node_settings_model):
                     node = node_settings.owner
-                    if node and not node_settings.owner.all_tags.filter(name='old_node_collection', system=True).exists():
+                    if node and not node.all_tags.filter(name='old_node_collection', system=True).exists():
                         connected_count += 1
                         if node.is_public:
                             connected_public_count += 1
-                            if node.affiliated_institutions.exclude(name='Center For Open Science [Test]').exists():
-                                connected_public_affiliated_count += 1
+                            connected_public_affiliated_count += 1 if node.affiliated_institutions.exclude(_id='cos').exists() else 0
                         else:
                             connected_private_count += 1
-                            if node.affiliated_institutions.exclude(name='Center For Open Science [Test]').exists():
-                                connected_private_affiliated_count += 1
+                            connected_private_affiliated_count += 1 if node.affiliated_institutions.exclude(_id='cos').exists() else 0
                 deleted_count = addon.models['nodesettings'].objects.filter(deleted__isnull=False).count() if addon.models.get('nodesettings') else 0
                 if has_external_account:
                     disconnected_count = addon.models['nodesettings'].objects.filter(external_account__isnull=True, is_deleted=False).count() if addon.models.get('nodesettings') else 0
