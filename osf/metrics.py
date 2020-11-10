@@ -325,3 +325,35 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
         response = search.execute()
         if response:
             return response[0]
+
+
+class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
+    registration_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    trigger = metrics.Keyword(index=True, doc_values=True, required=True)
+    from_state = metrics.Keyword(index=True, doc_values=True, required=True)
+    to_state = metrics.Keyword(index=True, doc_values=True, required=True)
+    user_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    comment = metrics.Keyword(index=True, doc_values=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def record_transitions(cls, action):
+        return cls.record(
+            registration_id=action.target._id,
+            provider_id=action.target.provider._id,
+            from_state=action.from_state,
+            to_state=action.to_state,
+            trigger=action.trigger,
+            user_id=action.creator._id,
+            comment=action.comment,
+        )

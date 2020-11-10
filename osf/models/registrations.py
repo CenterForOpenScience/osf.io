@@ -23,6 +23,7 @@ from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
+from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
     Embargo,
     EmbargoTerminationApproval,
@@ -603,14 +604,16 @@ class Registration(AbstractNode):
             return  # Not a moderated event, no need to write an action
 
         initiated_by = initiated_by or self.sanction.initiated_by
-        RegistrationAction.objects.create(
+        action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
             trigger=trigger.db_name,
             from_state=from_state.db_name,
             to_state=to_state.db_name,
             comment=comment
-        ).save()
+        )
+        action.save()
+        RegistriesModerationMetrics.record_transitions(action)
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
