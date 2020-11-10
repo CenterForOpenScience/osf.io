@@ -5,10 +5,6 @@ from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.workflows import RegistrationModerationTriggers
 
 def get_email_template_context(resource):
-    provider = getattr(resource, 'provider', False)
-    assert provider, 'This resource does not fit the template'
-    assert provider.type in ['osf.preprintprovider', 'osf.registrationprovider']
-
     is_preprint = resource.provider.type == 'osf.preprintprovider'
     url_segment = 'preprints' if is_preprint else 'registries'
     document_type = resource.provider.preprint_word if is_preprint else 'registration'
