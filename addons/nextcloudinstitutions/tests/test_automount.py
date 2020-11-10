@@ -51,9 +51,24 @@ class TestNextcloudinstitutions(unittest.TestCase):
         account = ExternalAccountFactory(provider=NAME)
         self.option.external_accounts.add(account)
 
+    def _patch1(self):
+        return patch(PACKAGE + '.models.NextcloudClient')
+
+    @property
+    def _expected_folder_name(self):
+        return ROOT_FOLDER_FORMAT.format(
+            title=filename_filter(self.project.title),
+            guid=self.project._id)
+
+    @property
+    def _expected_root_folder(self):
+        name = self._expected_folder_name
+        base_folder = DEFAULT_BASE_FOLDER
+        return six.u('{}/{}').format(base_folder, name)
+
     def _new_project(self):
         if USE_MOCK:
-            with patch(PACKAGE + '.models.NextcloudClient') as mock1:
+            with self._patch1() as mock1:
                 mock1.return_value = MagicMock()
                 mock1.list.return_value = []
                 self.project = ProjectFactory(creator=self.user)
@@ -98,12 +113,7 @@ class TestNextcloudinstitutions(unittest.TestCase):
         self._new_project()
         result = self.project.get_addon(NAME)
         assert_true(isinstance(result, NodeSettings))
-        name = ROOT_FOLDER_FORMAT.format(
-            title=filename_filter(self.project.title),
-            guid=self.project._id)
-        base_folder = DEFAULT_BASE_FOLDER
-        exptected_root_folder = six.u('{}/{}').format(base_folder, name)
-        assert_equal(result.folder_id, exptected_root_folder)
+        assert_equal(result.root_folder_fullpath, self._expected_root_folder)
 
     def test_nextcloudinstitutions_automount_with_basefolder(self):
         base_folder = six.u('/GRDMプロジェクトフォルダ')
@@ -113,8 +123,16 @@ class TestNextcloudinstitutions(unittest.TestCase):
         self._new_project()
         result = self.project.get_addon(NAME)
         assert_true(isinstance(result, NodeSettings))
-        name = ROOT_FOLDER_FORMAT.format(
-            title=filename_filter(self.project.title),
-            guid=self.project._id)
-        exptected_root_folder = six.u('{}/{}').format(base_folder, name)
-        assert_equal(result.folder_id, exptected_root_folder)
+        name = self._expected_folder_name
+        expected_root_folder = six.u('{}/{}').format(base_folder, name)
+        assert_equal(result.root_folder_fullpath, expected_root_folder)
+
+    def test_nextcloudinstitutions_rename(self):
+        self._allow()
+        self._new_project()
+        with self._patch1() as mock1:
+            self.project.title = self.project.title + '_new'
+            self.project.save()
+        result = self.project.get_addon(NAME)
+        assert_true(isinstance(result, NodeSettings))
+        assert_equal(result.root_folder_fullpath, self._expected_root_folder)

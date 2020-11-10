@@ -51,9 +51,18 @@ class TestS3Compatinstitutions(unittest.TestCase):
         account = ExternalAccountFactory(provider=NAME)
         self.option.external_accounts.add(account)
 
+    def _patch1(self):
+        return patch(PACKAGE + '.models.boto3.client')
+
+    @property
+    def _expected_folder_name(self):
+        return six.u(ROOT_FOLDER_FORMAT.format(
+            title=filename_filter(self.project.title),
+            guid=self.project._id))
+
     def _new_project(self):
         if USE_MOCK:
-            with patch(PACKAGE + '.models.boto3.client') as mock1:
+            with self._patch1() as mock1:
                 mock1.return_value = MagicMock()
                 mock1.list_objects.return_value = {'Contents': []}
                 # mock1.list_buckets.return_value = None
@@ -99,11 +108,7 @@ class TestS3Compatinstitutions(unittest.TestCase):
         self._new_project()
         result = self.project.get_addon(NAME)
         assert_true(isinstance(result, NodeSettings))
-        name = ROOT_FOLDER_FORMAT.format(
-            title=filename_filter(self.project.title),
-            guid=self.project._id)
-        exptected_root_folder = six.u('{}').format(name)
-        assert_equal(result.folder_id, exptected_root_folder)
+        assert_equal(result.folder_name, self._expected_folder_name)
 
     def test_s3compatinstitutions_automount_with_basefolder(self):
         base_folder = six.u('GRDM_project_bucket')
@@ -113,8 +118,15 @@ class TestS3Compatinstitutions(unittest.TestCase):
         self._new_project()
         result = self.project.get_addon(NAME)
         assert_true(isinstance(result, NodeSettings))
-        name = ROOT_FOLDER_FORMAT.format(
-            title=filename_filter(self.project.title),
-            guid=self.project._id)
-        exptected_root_folder = six.u('{}').format(name)
-        assert_equal(result.folder_id, exptected_root_folder)
+        assert_equal(result.folder_name, self._expected_folder_name)
+
+    def test_s3compatinstitutions_rename(self):
+        self._allow()
+        self._new_project()
+        with self._patch1() as mock1:
+            self.project.title = self.project.title + '_new'
+            self.project.save()
+        result = self.project.get_addon(NAME)
+        assert_true(isinstance(result, NodeSettings))
+        # not changed
+        assert_equal(result.folder_name, self._expected_folder_name)

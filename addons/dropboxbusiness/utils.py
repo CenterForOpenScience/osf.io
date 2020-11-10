@@ -1106,6 +1106,8 @@ def _check_and_add_timestamp(team_info, file_attr):
 
     def _check_for_file(addon):
         node = addon.owner
+        if node.is_deleted:
+            return
         admin = _select_admin(node)
         admin_cookie = admin.get_or_create_cookie()
         created = True

@@ -288,9 +288,9 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         #     path=metadata['path'].strip('/'),
         #     provider='dropboxbusiness'
         # )
-        url = u'/project/{}/files/{}{}/'.format(self._id,
-                                                'dropboxbusiness',
-                                                metadata['path'].strip('/'))
+        url = u'/project/{}/files/{}/{}/'.format(self.owner._id,  # GUID
+                                                 'dropboxbusiness',
+                                                 metadata['path'].strip('/'))
         self.owner.add_log(
             'dropboxbusiness_{0}'.format(action),
             auth=auth,

@@ -212,6 +212,8 @@ def _select_admin(node):
 
 def _check_for_file(project, path, fileinfo):
     node = project.owner
+    if node.is_deleted:
+        return
     admin = _select_admin(node)
     admin_cookie = admin.get_or_create_cookie()
     created = True
@@ -283,11 +285,12 @@ def _check_project_files(addon_option, fileinfo):
     from addons.nextcloudinstitutions.models import NodeSettings
 
     for project in NodeSettings.objects.filter(addon_option=addon_option):
-        project_name = project.folder_id.split('/')[-1]
-        if project_name in fileinfo.path:
-            internal_path = fileinfo.path.split(project_name)[-1]
-            DEBUG('internal_path: {}'.format(internal_path))
-            _check_for_file(project, internal_path, fileinfo)
+        path = project.root_folder_fullpath
+        if fileinfo.path.startswith(path):
+            internal_path = fileinfo.path[len(path):]
+            if internal_path:
+                DEBUG('internal_path: {}'.format(internal_path))
+                _check_for_file(project, internal_path, fileinfo)
 
 
 @celery_app.task(bind=True, base=AbortableTask)
@@ -296,6 +299,9 @@ def celery_check_updated_files(self, provider_id, since, interval):
 
     start_time = time.time()
     DEBUG('start_time: {}'.format(start_time))
+
+    # to wait for updating timestamp in create_waterbutler_log()
+    time.sleep(5)
 
     ea = ExternalAccount.objects.get(
         provider=SHORT_NAME, provider_id=provider_id)

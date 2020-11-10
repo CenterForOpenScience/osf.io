@@ -64,14 +64,18 @@ class NextcloudInstitutionsFile(NextcloudInstitutionsFileNode, File):
     def get_timestamp(self):
         node_settings = self._my_node_settings()
         if node_settings:
-            return utils.get_timestamp(node_settings, node_settings.folder_id + self.path)
+            return utils.get_timestamp(
+                node_settings,
+                node_settings.root_folder_fullpath + self.path)
         return None, None, None
 
     def set_timestamp(self, timestamp_data, timestamp_status, context):
         node_settings = self._my_node_settings()
         if node_settings:
-            utils.set_timestamp(node_settings, node_settings.folder_id + self.path,
-                                timestamp_data, timestamp_status, context=context)
+            utils.set_timestamp(
+                node_settings,
+                node_settings.root_folder_fullpath + self.path,
+                timestamp_data, timestamp_status, context=context)
 
 
 class NextcloudInstitutionsProvider(NextcloudProvider):
@@ -124,23 +128,25 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         cls._list_count(client, '/')
 
     @classmethod
-    def create_folder(cls, client, path):
+    def create_folder(cls, client, base_folder, name):
+        path = cls.cls_fullpath(base_folder, name)
         logger.info(u'create folder: {}'.format(path))
         client.mkdir(path)  # may raise
-        return path
 
     @classmethod
-    def remove_folder(cls, client, path):
+    def remove_folder(cls, client, base_folder, name):
+        path = cls.cls_fullpath(base_folder, name)
         count = cls._list_count(client, path)
         if count != 0:
             raise exceptions.AddonError(u'cannot delete folder (not empty): {}'.format(path))
         logger.info(u'delete folder: {}'.format(path))
         client.delete(path)  # may raise
-        return path
 
     @classmethod
-    def rename_folder(cls, client, path_src, path_target):
-        client.move(path_src, path_target)  # may raise
+    def rename_folder(cls, client, base_folder, old_name, new_name):
+        old = cls.cls_fullpath(base_folder, old_name)
+        new = cls.cls_fullpath(base_folder, new_name)
+        client.move(old, new)  # may raise
 
     @classmethod
     def root_folder_format(cls):
@@ -155,7 +161,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
     def _delete_all_shares(self):
         c = self.client
-        for item in c.get_shares(path=self.folder_id):
+        for item in c.get_shares(path=self.root_folder_fullpath):
             if item.get_share_type() != c.OCS_SHARE_TYPE_USER:
                 continue
             user_id = item.get_share_with()
@@ -205,7 +211,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
         # nc_user_id -> (nc_share_id, nc_permissions)
         nc_member_all_dict = {}
-        for item in c.get_shares(path=self.folder_id):
+        for item in c.get_shares(path=self.root_folder_fullpath):  # may raise
             if item.get_share_type() == c.OCS_SHARE_TYPE_USER:
                 nc_member_all_dict[item.get_share_with()] \
                     = (item.get_id(), item.get_permissions())
@@ -234,11 +240,11 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
                 continue  # unexpected
             osfuser, perms = grdm_info
             try:
-                c.share_file_with_user(self.folder_id, user_id, perms=perms)
+                c.share_file_with_user(self.root_folder_fullpath, user_id, perms=perms)
             except Exception as e:
                 if first_exception:
                     first_exception = e
-                logger.warning(u'share_file_with_user failed: user_id={}: user_id={}: {}'.format(user_id), str(e))
+                logger.warning(u'share_file_with_user failed: user_id={}: user_id={}: {}'.format(user_id, str(e)))
 
         for user_id in remove_users_set:
             nc_info = nc_member_all_dict.get(user_id)
@@ -250,7 +256,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             except Exception as e:
                 if first_exception:
                     first_exception = e
-                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id), str(e))
+                logger.warning(u'delete_share failed: user_id={}: {}'.format(user_id, str(e)))
 
         for user_id in update_users_set:
             nc_info = nc_member_all_dict.get(user_id)
@@ -281,20 +287,20 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
     def serialize_waterbutler_settings_impl(self):
         return {
-            'folder': self.folder_id,
+            'folder': self.root_folder_fullpath,
             'verify_ssl': settings.USE_SSL
         }
 
     def copy_folders(self, dest_addon):
-        root_folder = '/' + self.folder_id.strip('/') + '/'
+        root_folder = '/' + self.root_folder_fullpath.strip('/') + '/'
         root_folder_len = len(root_folder)
         c = self.client
         destc = dest_addon.client
         for item in c.list(root_folder, depth='infinity'):  # may raise
             # print(item.path)
             if item.is_dir() and item.path.startswith(root_folder):
-                basepath = item.path[root_folder_len:]
-                newpath = dest_addon.folder_id + '/' + basepath
+                subpath = item.path[root_folder_len:]
+                newpath = dest_addon.root_folder_fullpath + '/' + subpath
                 logger.debug(u'copy_folders: mkdir({})'.format(newpath))
                 destc.mkdir(newpath)
 

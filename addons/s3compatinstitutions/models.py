@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import six
 import logging
 import re
 
@@ -51,15 +50,6 @@ class S3CompatInstitutionsProvider(BasicAuthProviderMixin):
     short_name = SHORT_NAME
 
 
-class S3Path(object):
-    def __init__(self, bucket, key):
-        self.bucket = bucket
-        self.key = key
-
-    def __unicode__(self):
-        return u'{}:{}'.format(self.bucket, self.key)
-
-
 class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
     FULL_NAME = FULL_NAME
     SHORT_NAME = SHORT_NAME
@@ -104,9 +94,9 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         return client
 
     @classmethod
-    def _list_count(cls, client, path):
+    def _list_count(cls, client, bucket, key):
         # may raise
-        res = client.list_objects(Bucket=path.backet, Prefix=path.key)
+        res = client.list_objects(Bucket=bucket, Prefix=key)
         contents = res.get('Contents')
         return len(contents)
 
@@ -116,58 +106,47 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         client.list_buckets()  # may raise
 
     @classmethod
-    def create_folder(cls, client, path):
-        logger.info(u'create folder: {}'.format(path))
-        folder = path.key + '/'
-        client.put_object(Bucket=path.bucket, Key=folder)  # may raise
-        return path
+    def create_folder(cls, client, base_folder, name):
+        bucket = base_folder
+        key = name.strip('/') + '/'
+        logger.info(u'create folder: bucket={}, key={}'.format(bucket, key))
+        client.put_object(Bucket=bucket, Key=key)  # may raise
 
     @classmethod
-    def remove_folder(cls, client, path):
-        count = cls._list_count(client, path)
+    def remove_folder(cls, client, base_folder, name):
+        bucket = base_folder
+        key = name.strip('/') + '/'
+        count = cls._list_count(client, bucket, key)
         if count != 0:
-            raise exceptions.AddonError(u'cannot delete folder (not empty): {}'.format(path))
-        logger.info(u'delete folder: {}'.format(path))
-        client.delete_object(Bucket=path.bucket, Key=path.key)  # may raise
-        return path
+            raise exceptions.AddonError(u'cannot remove folder (not empty): bucket={}, key={}'.format(bucket, key))
+        logger.info(u'remove folder: bucket={}, key={}'.format(bucket, key))
+        client.delete_object(Bucket=bucket, Key=key)  # may raise
 
     @classmethod
-    def rename_folder(cls, client, path_src, path_target):
+    def rename_folder(cls, client, base_folder, old_name, new_name):
         logger.info(u'rename operation is not supported in s3compatinstitutions')
 
     @classmethod
     def root_folder_format(cls):
         return settings.ROOT_FOLDER_FORMAT
 
-    # bucket=BASE_FOLDER, key=ROOT_FOLDER/key_to_objects
-    # override
-    @classmethod
-    def root_folder(cls, addon_option, node):
-        base_folder = cls.base_folder(addon_option)
-        title = cls.filename_filter(node.title)
-        fmt = six.u(cls.root_folder_format())
-        return S3Path(base_folder, fmt.format(title=title, guid=node._id))
-
-    # override
-    def set_folder(self, folder, auth=None):
-        self.folder_id = folder.key
-
     # override
     def sync_title(self):
+        # not supported
         # S3 and S3 compat cannot rename buckets and folders.
         pass
 
     def sync_contributors(self):
-        # TODO bucket policy API?
+        # not supported [GRDM-20960]
         pass
 
     @property
     def bucket(self):
-        return self.base_folder(self.addon_option)
+        return self.base_folder
 
     @property
     def root_prefix(self):
-        return self.folder_id
+        return self.folder_name
 
     def serialize_waterbutler_credentials_impl(self):
         return {
