@@ -50,8 +50,8 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
     context['requester'] = action.creator
-    context['is_rejected'] = action.to_state == states.REJECTED
-    context['was_pending'] = action.from_state == states.PENDING
+    context['is_rejected'] = action.to_state == states.REJECTED.db_name
+    context['was_pending'] = action.from_state == states.PENDING.db_name
     reviews_signals.reviews_email.send(
         creator=user,
         context=context,
