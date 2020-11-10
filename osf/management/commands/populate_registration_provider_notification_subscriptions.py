@@ -26,8 +26,6 @@ def populate_registration_provider_notification_subscriptions():
                 event_name=subscription,
                 provider=provider
             )
-            if created:
-                instance.save()
 
             if created:
                 logger.info(f'{provider._id}_{subscription} NotificationSubscription object has been created')
