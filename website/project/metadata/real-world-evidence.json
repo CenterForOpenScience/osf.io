@@ -42,8 +42,8 @@
                "type":"string",
                "format":"text",
                "title":"Extraction date",
-               "help":"This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
-               "example":"09/10/2020 or v 7.1.0",
+               "help":"This refers to either the extraction version number or the date of the final analytic dataset of extraction for the RWD database that will be used to implement the study protocol.",
+               "example":"This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
                "required":true
             },
             {
