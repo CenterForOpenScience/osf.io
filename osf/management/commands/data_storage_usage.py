@@ -84,7 +84,7 @@ NODE_LIST_SQL = """
                 ELSE
                     CASE
                         WHEN node.custom_storage_usage_limit_private IS NULL THEN %s
-                            ELSE node.custom_storage_usage_limit_public
+                            ELSE node.custom_storage_usage_limit_private
                     END
             END target_custom_cap
         FROM osf_basefileversionsthrough AS obfnv
