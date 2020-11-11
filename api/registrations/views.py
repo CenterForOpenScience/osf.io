@@ -783,7 +783,7 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     serializer_class = RegistrationIdentifierSerializer
 
 
-class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
+class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, ProviderMixin):
     provider_class = RegistrationProvider
 
     permission_classes = (
@@ -800,22 +800,21 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     view_name = 'registration-actions-list'
 
     serializer_class = RegistrationActionSerializer
+    node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
+    def get_registration(self):
+        registration = get_object_or_error(
             Registration,
             self.kwargs[self.node_lookup_url_kwarg],
             self.request,
-            check_deleted=False
+            check_deleted=False,
         )
-
         # May raise a permission denied
-        if check_object_permissions:
-            self.check_object_permissions(self.request, node)
-        return node
+        self.check_object_permissions(self.request, registration)
+        return registration
 
     def get_default_queryset(self):
-        return self.get_node().actions.all()
+        return self.get_registration().actions.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
