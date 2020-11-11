@@ -32,6 +32,7 @@ class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
         self.object = form.save(commit=False)
         self.object._creator = self.request.user
         self.object.save()
+        self.object.update_group_permissions()  # Creating moderator groups
         return super(CreateRegistrationProvider, self).form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
