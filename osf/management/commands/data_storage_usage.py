@@ -32,7 +32,7 @@ VALUES = [
     'target_object',
     'target_content_type_id',
     'deleted_on',
-    'size (b)',
+    'size',
     'region',
     'target_guid',
     'target_title',
@@ -43,7 +43,7 @@ VALUES = [
     'target_is_deleted',
     'target_spam_status',
     'target_is_supplementary_node',
-    'target_custom_cap (b)'
+    'target_custom_cap'
 ]
 
 # Grab the id of end of the basefilenode_version table for query limiting
