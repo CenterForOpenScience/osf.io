@@ -86,7 +86,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     elif provider.type == 'osf.registrationprovider':
         url_segment = 'registries'
     else:
-        raise NotImplementedError('unsupported provider type')
+        raise NotImplementedError(f'unsupported provider type {provider.type}')
 
     context['reviews_submission_url'] = f'{DOMAIN}reviews/{url_segment}/{provider._id}/{resource._id}'
 

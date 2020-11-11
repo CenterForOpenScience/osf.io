@@ -101,10 +101,10 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
 
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
+    context['requester'] = resource.retraction.initiated_by
 
     for contributor in resource.contributors.all():
         context['contributor'] = contributor
-        context['requester'] = resource.retraction.initiated_by
         context['is_requester'] = context['requester'] == contributor
         mails.send_mail(
             contributor.username,
