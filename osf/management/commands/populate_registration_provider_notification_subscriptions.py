@@ -9,7 +9,6 @@ logger = logging.getLogger(__file__)
 
 
 def populate_registration_provider_notification_subscriptions():
-    add_reviews_notification_setting('global_reviews')
     add_reviews_notification_setting('new_pending_submissions')
 
     for provider in RegistrationProvider.objects.all():
