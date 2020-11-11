@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-09-09 18:18+0900\n"
-"PO-Revision-Date: 2020-09-03 12:45+0900\n"
-"Last-Translator: Takuya Ishibashi\n"
+"POT-Creation-Date: 2020-11-10 11:10+0000\n"
+"PO-Revision-Date: 2020-11-10 14:40+0900\n"
+"Last-Translator: Hiroki Ohashi\n"
 "Language: en\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
@@ -226,7 +226,7 @@ msgid ""
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:395
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:404
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
@@ -279,7 +279,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:411
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:420
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -434,45 +434,45 @@ msgid ""
 "account."
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:80
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
 msgid "Are you sure you want to change institutional storage?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:82
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:85
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:86
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:264
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:491
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:626
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:273
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:500
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:635
 msgid "Some errors occurred"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:311
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:320
 msgid "Institutional Storage set successfully"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:391
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:400
 #: website/static/js/addonSettings.js:118
 msgid "Disconnect Account?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:393
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:402
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>?<br>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:394
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:403
 msgid ""
 "This will revoke access to %1$s for all projects using this "
 "account.<br><br>"
@@ -4906,7 +4906,7 @@ msgstr ""
 msgid "Nextcloud (for Institutions) addon for ${node} deauthorized"
 msgstr ""
 
-#: website/static/js/logTextParser.js:824
+#: website/static/js/logTextParser.js:827
 msgid "unknown format"
 msgstr ""
 
@@ -6492,6 +6492,15 @@ msgid ""
 "tree below, refresh the page."
 msgstr ""
 
+#: website/static/js/pages/file-page.js:123
+#: website/static/js/pages/file-page.js:126
+msgid "Timestamp verification:"
+msgstr ""
+
+#: website/static/js/pages/file-page.js:126
+msgid "Fail: not responded"
+msgstr ""
+
 #: website/static/js/pages/institution-page.js:30
 msgid "All Projects"
 msgstr ""
@@ -6696,5 +6705,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "${user}updated file ${path} in Dropbox Business in ${node}"
+#~ msgstr ""
+
+#~ msgid "Timestamp verification is in progress"
 #~ msgstr ""
 

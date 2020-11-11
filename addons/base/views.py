@@ -742,6 +742,41 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 
 
 @must_be_contributor_or_public
+def verify_timestamp(auth, path, provider, **kwargs):
+    extras = request.args.to_dict()
+    extras.pop('_', None)  # Clean up our url params a bit
+    guid = kwargs.get('guid')
+    guid_target = getattr(Guid.load(guid), 'referent', None)
+    target = guid_target or kwargs.get('node') or kwargs['project']
+    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
+
+    version = file_node.touch(
+        request.headers.get('Authorization'),
+        **dict(
+            extras,
+            cookie=request.cookies.get(settings.COOKIE_NAME)
+        )
+    )
+
+    # Verify file
+    verify_result = None
+    cookie = auth.user.get_or_create_cookie()
+    file_info = timestamp.get_file_info(cookie, file_node, version)
+    if file_info is not None:
+        verify_result = timestamp.check_file_timestamp(auth.user.id, target, file_info)
+    else:
+        verify_result = {
+            'verify_result': '',
+            'verify_result_title': ''
+        }
+
+    return {
+        'timestamp_verify_result': verify_result['verify_result'],
+        'timestamp_verify_result_title': verify_result['verify_result_title']
+    }
+
+
+@must_be_contributor_or_public
 @ember_flag_is_active(features.EMBER_FILE_DETAIL)
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
@@ -939,18 +974,6 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    # Verify file
-    verify_result = None
-    cookie = auth.user.get_or_create_cookie()
-    file_info = timestamp.get_file_info(cookie, file_node, version)
-    if file_info is not None:
-        verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
-    else:
-        verify_result = {
-            'verify_result': '',
-            'verify_result_title': ''
-        }
-
     mfr_url = get_mfr_url(node, file_node.provider)
     render_url = furl.furl(mfr_url).set(
         path=['render'],
@@ -983,8 +1006,6 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
-        'timestamp_verify_result': verify_result['verify_result'],
-        'timestamp_verify_result_title': verify_result['verify_result_title']
     })
 
     ret.update(rubeus.collect_addon_assets(node))

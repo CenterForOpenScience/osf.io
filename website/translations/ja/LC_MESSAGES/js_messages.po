@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-09-09 18:18+0900\n"
-"PO-Revision-Date: 2020-09-03 12:45+0900\n"
-"Last-Translator: Shunta Nishikawa\n"
+"POT-Creation-Date: 2020-11-10 20:10+0900\n"
+"PO-Revision-Date: 2020-11-10 20:10+0900\n"
+"Last-Translator: Hiroki Ohashi\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
@@ -228,7 +228,7 @@ msgid ""
 msgstr "これにより、アカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。<br><br>"
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:395
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:404
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr "次を入力して続行します。<strong>%1$s</ strong><br><br>"
 
@@ -283,7 +283,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:411
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:420
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -440,45 +440,45 @@ msgstr ""
 "S3アカウント<strong>%1$s</ "
 "strong>を切断してもよろしいですか？これにより、このアカウントに関連付けられているすべてのプロジェクトのS3へのアクセスが取り消されます。"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:80
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
 msgid "Are you sure you want to change institutional storage?"
 msgstr "機関のストレージを変更してもよろしいですか？"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:82
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr "<p>以前のストレージは、プロジェクトのすべてのメンバーが利用できなくなります。</p>"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:85
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:86
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr "変更"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:264
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:491
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:626
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:273
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:500
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:635
 msgid "Some errors occurred"
 msgstr "いくつかのエラーが発生しました"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:311
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:320
 msgid "Institutional Storage set successfully"
 msgstr "機関ストレージが正常に設定されました"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:391
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:400
 #: website/static/js/addonSettings.js:118
 msgid "Disconnect Account?"
 msgstr "アカウントを切断しますか？"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:393
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:402
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>?<br>"
 msgstr "1$sアカウント<strong>%2$s</ strong>を切断してもよろしいですか？"
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:394
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:403
 msgid ""
 "This will revoke access to %1$s for all projects using this "
 "account.<br><br>"
@@ -6018,7 +6018,7 @@ msgstr "${user}が${node}のNextcloud(for Institutions)アドオンの認証を�
 msgid "Nextcloud (for Institutions) addon for ${node} deauthorized"
 msgstr "${node}のNextcloud(for Institutions)アドオンの認証が解除されました"
 
-#: website/static/js/logTextParser.js:824
+#: website/static/js/logTextParser.js:827
 msgid "unknown format"
 msgstr "不明な形式"
 
@@ -7625,6 +7625,15 @@ msgid ""
 "tree below, refresh the page."
 msgstr "ファイルの名前が正常に変更されました。 下のファイルツリーで新しいファイル名を表示するには、ページを更新します。"
 
+#: website/static/js/pages/file-page.js:123
+#: website/static/js/pages/file-page.js:126
+msgid "Timestamp verification:"
+msgstr "タイムスタンプの検証："
+
+#: website/static/js/pages/file-page.js:126
+msgid "Fail: not responded"
+msgstr "失敗：レスポンスなし"
+
 #: website/static/js/pages/institution-page.js:30
 msgid "All Projects"
 msgstr "全てのプロジェクト"
@@ -7824,4 +7833,3 @@ msgstr "%1$sに報告してください"
 #: website/static/js/pages/wiki-edit-page.js:110
 msgid "Could not GET wiki menu pages"
 msgstr "Wikiメニューページを取得できませんでした"
-

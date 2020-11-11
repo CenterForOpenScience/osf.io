@@ -1428,6 +1428,16 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/<guid>/files/timestamp/<provider>/<path:path>',
+                '/api/v1/project/<pid>/files/timestamp/<provider>/<path:path>',
+                '/api/v1/project/<pid>/node/<nid>/files/timestamp/<provider>/<path:path>',
+            ],
+            'get',
+            addon_views.verify_timestamp,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/files/deleted/<trashed_id>/',
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],
