@@ -801,6 +801,19 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
 
     serializer_class = RegistrationActionSerializer
 
+    def get_node(self, check_object_permissions=True):
+        node = get_object_or_error(
+            Registration,
+            self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
+            check_deleted=False
+        )
+
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
+        return node
+
     def get_default_queryset(self):
         return self.get_node().actions.all()
 
