@@ -689,6 +689,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             'is_creator': True,
             'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
             'logo': logo,
+            'document_type': self.provider.preprint_word
         }
 
         mails.send_mail(

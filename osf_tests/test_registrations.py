@@ -664,6 +664,32 @@ class TestRegistationModerationStates():
     def moderated_registration(self, provider):
         return factories.RegistrationFactory(provider=provider, is_public=True)
 
+    @pytest.fixture
+    def withdraw_action(self, moderated_registration):
+        action = RegistrationAction.objects.create(
+            creator=moderated_registration.creator,
+            target=moderated_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
+    @pytest.fixture
+    def withdraw_action_for_retraction(self, retraction):
+        action = RegistrationAction.objects.create(
+            creator=retraction.target_registration.creator,
+            target=retraction.target_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
     def test_embargo_states(self, embargo):
         registration = embargo.target_registration
         embargo.to_PENDING_ADMIN_APPROVAL()
@@ -712,7 +738,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
 
-    def test_retraction_states_over_registration_approval(self, registration_approval):
+    def test_retraction_states_over_registration_approval(self, registration_approval, withdraw_action):
         registration = registration_approval.target_registration
         registration.is_public = True
         retraction = registration.retract_registration(registration.creator, justification='test')
