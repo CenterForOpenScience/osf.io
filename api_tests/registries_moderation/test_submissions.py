@@ -557,3 +557,21 @@ class TestRegistriesModerationSubmissions:
 
         persisted_action = registration.actions.get(trigger=moderator_trigger.db_name)
         assert persisted_action.comment == moderator_comment
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_post_force_withdraw_action_persists_comment(self, app, registration, moderator, registration_actions_url, actions_payload_base):
+        assert registration.actions.count() == 0
+        registration.is_public = True
+        registration.update_moderation_state()  # implicit ACCEPTED state from RegistrationFactory
+
+        moderator_comment = 'inane comment'
+        force_withdraw_trigger = RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
+        actions_payload_base['data']['attributes']['trigger'] = force_withdraw_trigger
+        actions_payload_base['data']['attributes']['comment'] = moderator_comment
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+
+        expected_comment = 'Force withdrawn by moderator: ' + moderator_comment
+        assert resp.json['data']['attributes']['comment'] == expected_comment
+        persisted_action = registration.actions.get(trigger=force_withdraw_trigger)
+        assert persisted_action.comment == expected_comment
