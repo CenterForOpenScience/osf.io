@@ -146,8 +146,8 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'reviews_workflow',
     ])
 
-    reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
-    reviews_comments_anonymous = ser.BooleanField()
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+    reviews_comments_anonymous = ser.BooleanField(read_only=True)
 
     registrations = ReviewableCountsRelationshipField(
         related_view='providers:registration-providers:registrations-list',
