@@ -279,9 +279,9 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
         try:
             if trigger in [RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name, RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name]:
-                sanction.accept(user=user)
+                sanction.accept(user=user, comment=comment)
             elif trigger in [RegistrationModerationTriggers.REJECT_SUBMISSION.db_name, RegistrationModerationTriggers.REJECT_WITHDRAWAL.db_name]:
-                sanction.reject(user=user)
+                sanction.reject(user=user, comment=comment)
             elif trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name:
                 target.retract_registration(
                     user=user, justification=comment, moderator_initiated=True,
