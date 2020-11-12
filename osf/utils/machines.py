@@ -22,6 +22,7 @@ from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
+from osf.utils import notifications as notify
 
 class BaseMachine(Machine):
 
@@ -122,20 +123,13 @@ class ReviewsMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
-    def withdrawal_submitter_is_moderator_or_admin(self, submitter):
-        # Returns True if the submitter of the request is a moderator or admin for the provider.
-        provider = self.machineable.provider
-        return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
-
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
-        context = self.get_context()
-        context['referrer'] = ev.kwargs.get('user')
         user = ev.kwargs.get('user')
+        notify.notify_submit(self.machineable, user)
         auth = Auth(user)
         self.machineable.add_log(
             action=PreprintLog.PUBLISHED,
@@ -145,33 +139,15 @@ class ReviewsMachine(BaseMachine):
             auth=auth,
             save=False,
         )
-        recipients = list(self.machineable.contributors)
-        reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
-        reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
 
     def notify_resubmit(self, ev):
-        context = self.get_context()
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_resubmission_confirmation',
-                                           action=self.action)
+        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_accept_reject(self, ev):
-        context = self.get_context()
-        context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
-        context['comment'] = self.action.comment
-        context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
-        context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_submission_status',
-                                           action=self.action)
+        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_edit_comment(self, ev):
-        context = self.get_context()
-        context['comment'] = self.action.comment
-        if not self.machineable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                               template='reviews_update_comment',
-                                               action=self.action)
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -184,7 +160,7 @@ class ReviewsMachine(BaseMachine):
             context['requester'] = preprint_request_action.target.creator
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
-            context['withdrawal_submitter_is_moderator_or_admin'] = True
+            context['force_withdrawal'] = True
 
         for contributor in self.machineable.contributors.all():
             context['contributor'] = contributor
@@ -315,7 +291,7 @@ class PreprintRequestMachine(BaseMachine):
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
-                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mails.WITHDRAWAL_REQUEST_DECLINED,
                 mimetype='html',
                 **context
             )
@@ -339,6 +315,7 @@ class PreprintRequestMachine(BaseMachine):
             'reviewable': self.machineable.target,
             'requester': self.machineable.creator,
             'is_request_email': True,
+            'document_type': self.machineable.target.provider.preprint_word
         }
 
 

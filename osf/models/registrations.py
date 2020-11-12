@@ -58,6 +58,8 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
+import osf.utils.notifications as notify
+
 logger = logging.getLogger(__name__)
 
 
@@ -426,7 +428,7 @@ class Registration(AbstractNode):
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 
-        action = NodeLog.EMBARGO_TERMINATED if forced else NodeLog.EMBARGO_COMPLETED
+        action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED
         self.registered_from.add_log(
             action=action,
             params={
@@ -619,14 +621,34 @@ class Registration(AbstractNode):
             return  # Not a moderated event, no need to write an action
 
         initiated_by = initiated_by or self.sanction.initiated_by
-        RegistrationAction.objects.create(
+        action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
             trigger=trigger.db_name,
             from_state=from_state.db_name,
             to_state=to_state.db_name,
             comment=comment
-        ).save()
+        )
+        action.save()
+
+        moderation_notifications = {
+            RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
+            RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify.notify_accept_reject,
+            RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
+            RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
+            RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
+            RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration,
+            RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_withdraw_registration,
+        }
+
+        notification = moderation_notifications.get(trigger)
+        if notification:
+            notification(
+                resource=self,
+                user=initiated_by,
+                action=action,
+                states=RegistrationModerationStates
+            )
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if self.retraction is None:
