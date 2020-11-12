@@ -621,6 +621,9 @@ class Registration(AbstractNode):
             return  # Not a moderated event, no need to write an action
 
         initiated_by = initiated_by or self.sanction.initiated_by
+        if trigger == RegistrationModerationTriggers.FORCE_WITHDRAW:
+            comment = 'Force withdrawn by moderator: ' + comment
+
         action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,

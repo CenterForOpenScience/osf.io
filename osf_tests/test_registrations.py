@@ -855,7 +855,7 @@ class TestForcedWithdrawal():
 
         action = RegistrationAction.objects.last()
         assert action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
-        assert action.comment == justification
+        assert action.comment == f'Force withdrawn by moderator: {justification}'
         assert action.from_state == RegistrationModerationStates.ACCEPTED.db_name
         assert action.to_state == RegistrationModerationStates.WITHDRAWN.db_name
 
