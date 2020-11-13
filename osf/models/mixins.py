@@ -982,9 +982,19 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True).values('machine_state').annotate(count=models.Count('*'))
+        qs = qs.filter(
+            deleted__isnull=True
+        ).exclude(
+            # Excluding Spammy values instead of filtering for non-Spammy ones
+            # because SpamStatus.UNKNOWN = None, which does not work with `IN`
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
+        ).values(
+            'machine_state'
+        ).annotate(count=models.Count('*'))
         counts = {state.value: 0 for state in self.REVIEW_STATES}
-        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        counts.update({
+            row['machine_state']: row['count']
+            for row in qs if row['machine_state'] in counts})
         return counts
 
     def get_request_state_counts(self):
