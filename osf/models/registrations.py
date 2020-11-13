@@ -173,8 +173,8 @@ class Registration(AbstractNode):
     def sanction(self):
         root = self._dirty_root
         sanction = (
-            root.embargo_termination_approval or
             root.retraction or
+            root.embargo_termination_approval or
             root.embargo or
             root.registration_approval
         )
