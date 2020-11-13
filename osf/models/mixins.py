@@ -982,7 +982,15 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True).values(self.STATE_FIELD_NAME).annotate(count=models.Count('*'))
+        qs = qs.filter(
+            deleted__isnull=True
+        ).exclude(
+            # Excluding Spammy values instead of filtering for non-Spammy ones
+            # because SpamStatus.UNKNOWN = None, which confuses Django
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
+        ).values(
+            self.STATE_FIELD_NAME
+        ).annotate(count=models.Count('*'))
         counts = {state.db_name: 0 for state in self.REVIEW_STATES}
         counts.update({
             row[self.STATE_FIELD_NAME]: row['count']
