@@ -805,6 +805,32 @@ class TestRegistationModerationStates():
         registration.update_moderation_state()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
+    def test_retraction_states_over_embargo_termination(self, embargo_termination):
+        registration = embargo_termination.target_registration
+        embargo_termination.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction = registration.retract_registration(user=registration.creator, justification='because')
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
+
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
+
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
 
 class TestForcedWithdrawal():
 
