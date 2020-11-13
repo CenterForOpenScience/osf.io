@@ -986,7 +986,7 @@ class ReviewProviderMixin(GuardianMixin):
             deleted__isnull=True
         ).exclude(
             # Excluding Spammy values instead of filtering for non-Spammy ones
-            # because SpamStatus.UNKNOWN = None, which confuses Django
+            # because SpamStatus.UNKNOWN = None, which does not work with `IN`
             spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
         ).values(
             'machine_state'
