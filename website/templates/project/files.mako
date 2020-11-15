@@ -8,6 +8,10 @@
     <span class="f-w-xl">${_("Click on a storage provider or drag and drop to upload")}</span>
 %endif
 
+<div id="link_container" style="display: none;">
+    <input type="text"/>
+</div>
+
 <div id="treeGrid">
     <div class="ball-scale ball-scale-blue text-center m-v-xl"><div></div></div>
 </div>
@@ -37,5 +41,10 @@
             },
         });
         window.contextVars.threshold = ${node['threshold']};
+        window.contextVars.directory = {
+            provider: ${ directory['provider'] if directory else False | sjson, n },
+            path: ${ directory['path'] if directory else False | sjson, n },
+            materializedPath: ${ directory['materializedPath'] if directory else False | sjson, n },
+        };
     </script>
 </%def>

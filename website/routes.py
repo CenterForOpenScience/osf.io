@@ -1532,6 +1532,20 @@ def make_url_map(app):
             ['post'],
             project_views.timestamp.verify_timestamp_token,
             json_renderer,
+        ),
+
+        # directory
+        Rule(
+            [
+                '/<pid>/files/dir/<provider>/',
+                '/<pid>/files/dir/<provider>/<path:path>/',
+                '/project/<pid>/files/dir/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/dir/<provider>/<path:path>/',
+            ],
+            'get',
+            project_views.file.open_directory_link,
+            OsfWebRenderer('project/files.mako', trust=False),
+            view_kwargs={'mode': 'page'},
         )
     ])
 
