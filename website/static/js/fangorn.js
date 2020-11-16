@@ -2080,7 +2080,7 @@ var FGItemButtons = {
                     }, gettext('Rename'))
                 );
             }
-            if (tb.options.placement === 'project-files' && window.File && window.FileReader && item.kind === 'folder' && item.data.permissions && item.data.permissions.edit) {
+            if (window.File && window.FileReader && item.kind === 'folder' && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function (event) { _createLinkEvent.call(tb, event, item); },
