@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-15 19:29+0900\n"
-"PO-Revision-Date: 2020-11-15 19:29+0900\n"
+"POT-Creation-Date: 2020-11-16 20:17+0900\n"
+"PO-Revision-Date: 2020-11-16 20:17+0900\n"
 "Last-Translator: Hiroki Ohashi\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
@@ -3027,7 +3027,7 @@ msgid "Rename"
 msgstr ""
 
 #: website/static/js/fangorn.js:2089
-msgid "create link"
+msgid "copy link"
 msgstr ""
 
 #: website/static/js/fangorn.js:2171
@@ -6505,7 +6505,8 @@ msgstr ""
 msgid "Fail: not responded"
 msgstr ""
 
-#: website/static/js/pages/files-page.js:42
+#: website/static/js/pages/files-page.js:57
+#: website/static/js/pages/files-page.js:104
 msgid "Could not open the path"
 msgstr ""
 

@@ -2086,7 +2086,7 @@ var FGItemButtons = {
                         onclick: function (event) { _createLinkEvent.call(tb, event, item); },
                         icon: 'fa fa-link',
                         className: 'text-primary'
-                    }, gettext('create link'))
+                    }, gettext('copy link'))
                 );
             }
             return m('span', rowButtons);
