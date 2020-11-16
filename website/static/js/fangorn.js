@@ -1468,9 +1468,10 @@ function _createLinkEvent(event, item) {
         path = item.data.materialized;
     }
     var link = location.protocol + '//' + location.host + '/' + item.data.nodeId + '/files/dir/' + item.data.provider + path;
+    var encodedLink = encodeURI(link);
     var container = $('#link_container');
     var input = $('#link_container input');
-    input.val(link);
+    input.val(encodedLink);
     container.css('display', 'block');
     input.focus();
     input.select();
