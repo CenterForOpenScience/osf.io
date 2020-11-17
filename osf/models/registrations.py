@@ -519,6 +519,7 @@ class Registration(AbstractNode):
             raise NodeStateError('Withdrawal of non-parent registrations is not permitted.')
 
         if moderator_initiated:
+            justification = 'Force withdrawn by moderator: ' + justification
             if not self.is_moderated:
                 raise ValueError('Forced retraction is only supported for moderated registrations.')
             if not user.has_perm('withdraw_submissions', self.provider):
@@ -622,8 +623,6 @@ class Registration(AbstractNode):
 
         initiated_by = initiated_by or self.sanction.initiated_by
 
-        if trigger == RegistrationModerationTriggers.FORCE_WITHDRAW:
-            comment = 'Force withdrawn by moderator: ' + comment
         action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
