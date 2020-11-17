@@ -426,7 +426,6 @@ class CeleryConfig:
         'website.identifier.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
-        'osf.management.commands.withdraw_all_preprints_from_provider'
     }
 
     high_pri_modules = {
@@ -540,14 +539,6 @@ class CeleryConfig:
                     'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
                 }},
             },
-            #'withdraw_all_preprints_from_provider': { # Schedule to remove all earthrxiv preprints
-            #    'task': 'osf.management.commands.withdraw_all_preprints_from_provider',
-            #    'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
-            #    'kwargs': {
-            #        'dry_run': False,
-            #        'user': #  Need to put in the user that will be the creator,
-            #    },
-            #},
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m

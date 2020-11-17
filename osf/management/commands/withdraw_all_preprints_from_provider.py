@@ -1,12 +1,15 @@
 import logging
 
-from django.db import transaction
 from django.core.management.base import BaseCommand
 
 from osf.models import PreprintProvider, PreprintRequest, OSFUser
 from osf.utils.workflows import DefaultStates, RequestTypes
 
 PAGE_SIZE = 100
+
+PROVIDER_WITHDRAWAL_COMMENT = {
+    'eartharxiv': 'This preprint was moved to the new EartharXiv hosted by CDL. The DOI now resolves to the new location at https://eartharxiv.org/.'
+}
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,12 @@ def withdraw_all_preprints(provider_id, page_size, user_guid, comment=None):
     if not user:
         raise RuntimeError('Could not find user. Check GUID and try again')
 
-    if not comment:
-        comment = 'This preprint was moved to the new EartharXiv hosted by CDL. The DOI now resolves to the new location at https://eartharxiv.org/.'
+    saved_comment = PROVIDER_WITHDRAWAL_COMMENT.get(provider_id, None)
+    if not comment and saved_comment:
+        comment = saved_comment
+
+    if not comment and not saved_comment:
+        raise RuntimeError('Comment not provided!')
 
     preprints = provider.preprints.filter(date_withdrawn=None)[:page_size]
 
@@ -58,12 +65,6 @@ class Command(BaseCommand):
             help='ID of the preprint provider to withdraw',
         )
         parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            dest='dry_run',
-            help='Do not commit, just for testing'
-        )
-        parser.add_argument(
             '--page-size',
             dest='page_size',
             help='How many preprints to withdraw this run.'
@@ -81,7 +82,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         provider_id = options.get('provider_id', None)
-        dry_run = options.get('dry_run', False)
         page_size = int(options.get('page_size', PAGE_SIZE))
         user_guid = options.get('user_guid', None)
         comment = options.get('comment', None)
@@ -92,7 +92,4 @@ class Command(BaseCommand):
         if not user_guid:
             raise RuntimeError('Must provider a user to use as action creator.')
 
-        with transaction.atomic():
-            withdraw_all_preprints(provider_id, page_size, user_guid, comment)
-            if dry_run:
-                raise RuntimeError('Dry run, transaction rolled back.')
+        withdraw_all_preprints(provider_id, page_size, user_guid, comment)
