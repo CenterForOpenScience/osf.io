@@ -10,7 +10,7 @@ from django.contrib.auth.models import Permission
 from nose.tools import assert_raises
 from transitions import MachineError
 
-from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
+from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema, Sanction
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
@@ -236,3 +236,47 @@ class TestRegistrationEmbargoTermination:
         embargo_termination.approve(user=user, token=user_1_tok)
         assert embargo_termination.state == embargo_termination.UNAPPROVED
         assert embargo_termination.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
+
+
+@pytest.mark.django_db
+class TestStatePropertiesCoexist:
+
+    # As part of Registries Moderation, we added a new state field to sanctions
+    # called "sanction_state". This field needs to coexist with the old fields
+    # for sanctions that were created before the field existed.
+    #
+    # That means  `is_pending`, 'is_approved', and 'is_rejected' must return the
+    # correct values when sanction_state has the default value.
+
+    @pytest.fixture(params=[
+        factories.RegistrationApprovalFactory,
+        factories.EmbargoFactory,
+        factories.RetractionFactory,
+        factories.EmbargoTerminationApprovalFactory])
+    def sanction(self, request):
+        factory = request.param
+        return factory()
+
+    @pytest.mark.parametrize(
+        'state_field_value, expected_result',
+        [(Sanction.UNAPPROVED, True), (Sanction.APPROVED, False), (Sanction.REJECTED, False)]
+    )
+    def test_is_pending_approval(self, sanction, state_field_value, expected_result):
+        sanction.state = state_field_value
+        assert sanction.is_pending_approval == expected_result
+
+    @pytest.mark.parametrize(
+        'state_field_value, expected_result',
+        [(Sanction.UNAPPROVED, False), (Sanction.APPROVED, True), (Sanction.REJECTED, False)]
+    )
+    def test_is_approved(self, sanction, state_field_value, expected_result):
+        sanction.state = state_field_value
+        assert sanction.is_approved == expected_result
+
+    @pytest.mark.parametrize(
+        'state_field_value, expected_result',
+        [(Sanction.UNAPPROVED, False), (Sanction.APPROVED, False), (Sanction.REJECTED, True)]
+    )
+    def test_is_rejected(self, sanction, state_field_value, expected_result):
+        sanction.state = state_field_value
+        assert sanction.is_rejected == expected_result
