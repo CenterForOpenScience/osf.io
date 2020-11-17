@@ -444,7 +444,7 @@ class RegistrationFactory(BaseNodeFactory):
                 archive_job.done = True
                 archive_job.save()
                 reg.sanction.state = Sanction.APPROVED
-                reg.sanction.approval_stage = SanctionStates.ACCEPTED
+                reg.sanction.approval_stage = SanctionStates.APPROVED
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
@@ -489,7 +489,7 @@ class SanctionFactory(DjangoModelFactory):
         RegistrationFactory(**reg_kwargs)
         if not approve:
             sanction.state = Sanction.UNAPPROVED
-            sanction.approval_stage = SanctionStates.PENDING_ADMIN_APPROVAL
+            sanction.approval_stage = SanctionStates.UNAPPROVED
             sanction.save()
         return sanction
 

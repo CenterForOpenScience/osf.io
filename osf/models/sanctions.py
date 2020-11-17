@@ -36,15 +36,22 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     UNAPPROVED = 'unapproved'
     # Has approval
     APPROVED = 'approved'
-    # Rejected by at least one person
+    # Rejected by at least one contributor
     REJECTED = 'rejected'
     # Embargo has been completed
     COMPLETED = 'completed'
+    # Approved by admins but pending moderator approval/rejection
+    PENDING_MODERATION = 'pending_moderation'
+    # Rejected by a moderator
+    MODERATOR_REJECTED = 'moderator_rejected'
 
     STATE_CHOICES = ((UNAPPROVED, UNAPPROVED.title()),
                      (APPROVED, APPROVED.title()),
                      (REJECTED, REJECTED.title()),
-                     (COMPLETED, COMPLETED.title()),)
+                     (COMPLETED, COMPLETED.title()),
+                     (PENDING_MODERATION, PENDING_MODERATION.title()),
+                     (MODERATOR_REJECTED, MODERATOR_REJECTED.title())
+                     )
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
@@ -86,7 +93,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     sanction_state = models.CharField(
         max_length=30,
         choices=SanctionStates.char_field_choices(),
-        default=SanctionStates.PENDING_ADMIN_APPROVAL.db_name)
+        default=SanctionStates.UNAPPROVED.db_name)
 
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
@@ -95,18 +102,18 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def is_pending_approval(self):
         '''The sanction is awaiting admin approval.'''
-        return self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
+        return self.approval_stage is SanctionStates.UNAPPROVED
 
     @property
     def is_approved(self):
         '''The sanction has received all required admin and moderator approvals.'''
-        return self.approval_stage is SanctionStates.ACCEPTED or self.state == Sanction.APPROVED
+        return self.approval_stage is SanctionStates.APPROVED or self.state == Sanction.APPROVED
 
     @property
     def is_rejected(self):
         '''The sanction has been rejected by either an admin or a moderator.'''
         rejected_states = [
-            SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED
+            SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED
         ]
         return self.approval_stage in rejected_states or self.state == Sanction.REJECTED
 
@@ -116,11 +123,11 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def approval_stage(self):
-        return SanctionStates.from_db_name(self.sanction_state)
+        return SanctionStates.from_db_name(self.state)
 
     @approval_stage.setter
     def approval_stage(self, state):
-        self.sanction_state = state.db_name
+        self.state = state.db_name
 
     @property
     def target_registration(self):
@@ -188,15 +195,15 @@ class TokenApprovableSanction(Sanction):
 
     def _verify_user_role(self, user, action):
         '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
-        if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL:
-            # Allow user is None when PENDING_ADMIN_APPROVAL to support timed
+        if self.approval_stage is SanctionStates.UNAPPROVED:
+            # Allow user is None when UNAPPROVED to support timed
             # sanction expiration from within OSF via the 'accept' trigger
             if user is None or user._id in self.approval_state:
                 return True
             return False
 
         required_permission = f'{action}_submissions'
-        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
+        if self.approval_stage is SanctionStates.PENDING_MODERATION:
             return user.has_perm(required_permission, self.target_registration.provider)
 
         return False
@@ -217,7 +224,7 @@ class TokenApprovableSanction(Sanction):
 
         # Moderator auth is validated by API, no token to check
         # user is None and no prior exception -> OSF-internal accept call
-        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL or user is None:
+        if self.approval_stage is SanctionStates.PENDING_MODERATION or user is None:
             return True
 
         token = event_data.kwargs.get('token')
@@ -627,8 +634,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def mark_as_completed(self):
         # Plucked from embargo_registrations script
-        self.state = Sanction.COMPLETED
-        self.to_COMPLETE()
+        # self.state = Sanction.COMPLETED
+        self.to_COMPLETED()
 
 class Retraction(EmailApprovableSanction):
     """
@@ -758,7 +765,7 @@ class Retraction(EmailApprovableSanction):
             parent_registration.embargo.state = self.REJECTED
             parent_registration.embargo.approval_stage = (
                 SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.ADMIN_REJECTED
+                else SanctionStates.REJECTED
             )
 
             parent_registration.registered_from.add_log(
