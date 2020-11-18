@@ -145,6 +145,9 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         # set api key for tinymce
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
 
+        # this doesn't apply to reg providers so delete it and exclude from form
+        del kwargs['registration_provider']['reviews_comments_anonymous']
+
         return kwargs
 
 
