@@ -88,12 +88,12 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
             raise PermissionDenied('You do not have permission to view this Action')
 
         # Query all Action classes that aren't deleted
-        actions = [
+        action_querysets = [
             action_subclass.objects.filter(_id=action_id, is_deleted=False)
             for action_subclass in BaseAction.__subclasses__()
         ]
-        if actions:
-            action = [action for action in actions if action][0]  # clear empty querysets
+        if action_querysets:
+            action = [action_queryset for action_queryset in action_querysets if action_queryset][0]  # clear empty querysets
             action.include(
                 'creator__guids',
                 'target__guids',
