@@ -2,8 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 
-from osf.models import PreprintProvider, PreprintRequest, OSFUser
-from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.models import PreprintProvider, OSFUser
 
 PAGE_SIZE = 100
 
@@ -39,15 +38,7 @@ def withdraw_all_preprints(provider_id, page_size, user_guid, comment=None):
     preprints_withdrawn = 0
 
     for preprint in preprints:
-        preprint_request = PreprintRequest(
-            target=preprint,
-            request_type=RequestTypes.WITHDRAWAL.value,
-            machine_state=DefaultStates.INITIAL.value,
-            creator=user
-        )
-        preprint_request.save()
-        preprint_request.run_submit(user)
-        preprint_request.run_accept(user, comment=comment)
+        preprint.run_withdraw(user, comment)
         preprint.reload()
         assert preprint.is_retracted
         preprints_withdrawn += 1
