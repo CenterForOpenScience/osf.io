@@ -26,7 +26,6 @@ class ReviewActionPermission(drf_permissions.BasePermission):
             return False
 
         target = None
-        provider = None
         if isinstance(obj, tuple(BaseAction.__subclasses__())):
             target = obj.target
             provider = target.provider

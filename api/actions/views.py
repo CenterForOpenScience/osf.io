@@ -20,8 +20,7 @@ from api.base.utils import absolute_reverse
 from api.requests.views import NodeRequestMixin, PreprintRequestMixin
 from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, PreprintRequestAction
-from osf.models.action import BaseAction
+from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, PreprintRequestAction, BaseAction
 
 
 def get_review_actions_queryset():
@@ -82,25 +81,25 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         action = None
-        if NodeRequestAction.objects.filter(_id=self.kwargs['action_id']).exists() or PreprintRequestAction.objects.filter(_id=self.kwargs['action_id']).exists():
+        action_id = self.kwargs['action_id']
+
+        if NodeRequestAction.objects.filter(_id=action_id).exists() or PreprintRequestAction.objects.filter(_id=action_id).exists():
             # No permissions allow for viewing RequestActions yet
             raise PermissionDenied('You do not have permission to view this Action')
 
         # Query all Action classes that aren't deleted
-        action = [
-            action.objects.filter(_id=self.kwargs['action_id']).include(
+        actions = [
+            action_subclass.objects.filter(_id=action_id, is_deleted=False)
+            for action_subclass in BaseAction.__subclasses__()
+        ]
+        if actions:
+            action = [action for action in actions if action][0]  # clear empty querysets
+            action.include(
                 'creator__guids',
                 'target__guids',
                 'target__provider',
             )
-            for action in BaseAction.__subclasses__()
-            if action.objects.filter(
-                _id=self.kwargs['action_id'],
-                is_deleted=False,
-            ).exists()
-        ]
-        if action:
-            action = action[0].get()
+            action = action.get()
         else:
             raise NotFound('Unable to find specified Action')
         self.check_object_permissions(self.request, action)
