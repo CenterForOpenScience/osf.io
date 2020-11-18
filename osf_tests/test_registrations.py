@@ -879,9 +879,12 @@ class TestForcedWithdrawal():
         moderated_registration.retract_registration(
             user=moderator, justification=justification, moderator_initiated=True)
 
+        expected_justification = 'Force withdrawn by moderator: ' + justification
+        assert moderated_registration.retraction.justification == expected_justification
+
         action = RegistrationAction.objects.last()
         assert action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
-        assert action.comment == f'Force withdrawn by moderator: {justification}'
+        assert action.comment == expected_justification
         assert action.from_state == RegistrationModerationStates.ACCEPTED.db_name
         assert action.to_state == RegistrationModerationStates.WITHDRAWN.db_name
 
