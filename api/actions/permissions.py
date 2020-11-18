@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
-from osf.models.action import ReviewAction
+from osf.models.action import BaseAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import ReviewTriggers
 from osf.utils import permissions as osf_permissions
@@ -27,7 +27,7 @@ class ReviewActionPermission(drf_permissions.BasePermission):
 
         target = None
         provider = None
-        if isinstance(obj, ReviewAction):
+        if isinstance(obj, tuple(BaseAction.__subclasses__())):
             target = obj.target
             provider = target.provider
         elif isinstance(obj, ReviewableMixin):
