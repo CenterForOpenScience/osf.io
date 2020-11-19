@@ -247,7 +247,6 @@ class Registration(AbstractNode):
         root = self._dirty_root
         if root.is_public or root.embargo is None:
             return False
-        print(root.embargo.approval_stage)
         return root.embargo.is_approved
 
     @property
@@ -426,7 +425,6 @@ class Registration(AbstractNode):
                             True if the embargo is being terminated early
 
         """
-        print('terminate embargo')
         if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 

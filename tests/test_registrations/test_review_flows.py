@@ -62,7 +62,6 @@ class TestUnmoderatedFlows():
     def test_approval_flow(self, sanction_fixture, initial_state, end_state):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_fixture(self)
-        sanction_object.save()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
 
@@ -70,7 +69,6 @@ class TestUnmoderatedFlows():
         assert registration.sanction._id == sanction_object._id
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-#        registration.sanction.approve(user=registration.creator, token=approval_token)
         sanction_object.approve(user=registration.creator, token=approval_token)
 
         registration.refresh_from_db()

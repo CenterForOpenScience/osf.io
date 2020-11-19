@@ -348,7 +348,7 @@ class SanctionStateMachine(Machine):
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,
-            initial=SanctionStates.from_db_name(self.sanction_state),
+            initial=SanctionStates.from_db_name(self.state),
             model_attribute='approval_stage',
             after_state_change='_save_transition',
             send_event=True,

@@ -15,7 +15,6 @@ from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 from osf.utils import permissions
-from osf.utils.workflows import SanctionStates
 
 
 @pytest.mark.django_db
@@ -235,4 +234,3 @@ class TestRegistrationEmbargoTermination:
         user_1_tok = embargo_termination.token_for_user(user, 'approval')
         embargo_termination.approve(user=user, token=user_1_tok)
         assert embargo_termination.state == embargo_termination.UNAPPROVED
-        assert embargo_termination.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL

@@ -82,11 +82,6 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
                              default=UNAPPROVED,
                              max_length=255)
 
-    sanction_state = models.CharField(
-        max_length=30,
-        choices=SanctionStates.char_field_choices(),
-        default=SanctionStates.UNAPPROVED.db_name)
-
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
             self=self)
@@ -107,7 +102,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
         rejected_states = [
             SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED
         ]
-        return self.approval_stage in rejected_states or self.state == Sanction.REJECTED
+        return self.approval_stage in rejected_states
 
     @property
     def is_moderated(self):
@@ -641,7 +636,10 @@ class Retraction(EmailApprovableSanction):
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _get_registration(self):
-        return self.registrations.first()
+        Registration = apps.get_model('osf.Registration')
+        parent_registration = Registration.objects.get(retraction=self)
+
+        return parent_registration
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first() or node
@@ -719,6 +717,7 @@ class Retraction(EmailApprovableSanction):
         )
 
     def _on_complete(self, event_data):
+        super()._on_complete(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         self.date_retracted = timezone.now()
@@ -880,7 +879,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if register.is_spammy:
             raise NodeStateError('Cannot approve a spammy registration')
 
-#        super()._on_complete(event_data)
+        super()._on_complete(event_data)
         self.save()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be
@@ -1074,6 +1073,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         return context
 
     def _on_complete(self, event_data):
+        super()._on_complete(event_data)
         self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
