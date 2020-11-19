@@ -95,7 +95,16 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def is_pending_approval(self):
         '''The sanction is awaiting admin approval.'''
-        return self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
+        # Pending backfill of sanction_state/approval_stage, all old sanctions will have
+        # approval_stage == PENDING_ADMIN_APROVAL, only those sanctions that are also in
+        # state == UNAPPROVED should be considered pending.
+        #
+        # For is_approved and is_rejected, the 'or' condition looking at the old
+        # state field will ensure correct results.
+        return (
+            self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
+            and self.state == Sanction.UNAPPROVED
+        )
 
     @property
     def is_approved(self):
