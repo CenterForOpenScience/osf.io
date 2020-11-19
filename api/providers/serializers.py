@@ -38,6 +38,7 @@ class ProviderSerializer(JSONAPISerializer):
 
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
+    permissions = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -93,6 +94,12 @@ class ProviderSerializer(JSONAPISerializer):
     def get_assets(self, obj):
         return {asset.name: asset.file.url for asset in obj.asset_files.all()} or None
 
+    def get_permissions(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if not auth.user:
+            return []
+        return get_perms(auth.user, obj)
+
 
 class CollectionProviderSerializer(ProviderSerializer):
     class Meta:
@@ -144,6 +151,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'id',
         'name',
         'reviews_workflow',
+        'permissions',
     ])
 
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
@@ -184,7 +192,6 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
-    permissions = ser.SerializerMethodField()
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -214,12 +221,6 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
-
-    def get_permissions(self, obj):
-        auth = get_user_auth(self.context['request'])
-        if not auth.user:
-            return []
-        return get_perms(auth.user, obj)
 
     def validate(self, data):
         required_fields = ('reviews_workflow', 'reviews_comments_private', 'reviews_comments_anonymous')

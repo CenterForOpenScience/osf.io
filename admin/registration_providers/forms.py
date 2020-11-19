@@ -30,7 +30,8 @@ class RegistrationProviderForm(forms.ModelForm):
             'domain_redirect_enabled',
             'collected_type_choices',
             'status_choices',
-            'reviews_comments_private'
+            'reviews_comments_private',
+            'reviews_comments_anonymous',
         ]
 
         widgets = {
