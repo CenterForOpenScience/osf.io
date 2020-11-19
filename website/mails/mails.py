@@ -296,6 +296,10 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
     subject='Withdrawal pending for one of your projects.'
 )
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Withdrawal pending for one of your projects.'
+)
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
@@ -441,8 +445,8 @@ GROUP_ADDED_TO_NODE = Mail(
     subject='Your group, ${group_name}, has been added to an OSF Project'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
-    'preprint_withdrawal_request_declined',
+WITHDRAWAL_REQUEST_DECLINED = Mail(
+    'withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
 )
 

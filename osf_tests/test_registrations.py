@@ -664,6 +664,32 @@ class TestRegistationModerationStates():
     def moderated_registration(self, provider):
         return factories.RegistrationFactory(provider=provider, is_public=True)
 
+    @pytest.fixture
+    def withdraw_action(self, moderated_registration):
+        action = RegistrationAction.objects.create(
+            creator=moderated_registration.creator,
+            target=moderated_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
+    @pytest.fixture
+    def withdraw_action_for_retraction(self, retraction):
+        action = RegistrationAction.objects.create(
+            creator=retraction.target_registration.creator,
+            target=retraction.target_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
     def test_embargo_states(self, embargo):
         registration = embargo.target_registration
         embargo.to_PENDING_ADMIN_APPROVAL()
@@ -712,7 +738,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
 
-    def test_retraction_states_over_registration_approval(self, registration_approval):
+    def test_retraction_states_over_registration_approval(self, registration_approval, withdraw_action):
         registration = registration_approval.target_registration
         registration.is_public = True
         retraction = registration.retract_registration(registration.creator, justification='test')
@@ -779,6 +805,32 @@ class TestRegistationModerationStates():
         registration.update_moderation_state()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
+    def test_retraction_states_over_embargo_termination(self, embargo_termination):
+        registration = embargo_termination.target_registration
+        embargo_termination.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction = registration.retract_registration(user=registration.creator, justification='because')
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
+
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
+
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
 
 class TestForcedWithdrawal():
 
@@ -827,9 +879,12 @@ class TestForcedWithdrawal():
         moderated_registration.retract_registration(
             user=moderator, justification=justification, moderator_initiated=True)
 
+        expected_justification = 'Force withdrawn by moderator: ' + justification
+        assert moderated_registration.retraction.justification == expected_justification
+
         action = RegistrationAction.objects.last()
         assert action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
-        assert action.comment == justification
+        assert action.comment == expected_justification
         assert action.from_state == RegistrationModerationStates.ACCEPTED.db_name
         assert action.to_state == RegistrationModerationStates.WITHDRAWN.db_name
 

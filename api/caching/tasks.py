@@ -158,7 +158,7 @@ def update_storage_usage_with_size(payload):
     provider = metadata.get('provider', 'osfstorage')
 
     target_file_id = metadata['path'].replace('/', '')
-    target_file_size = metadata.get('size', 0)
+    target_file_size = metadata.get('sizeInt', 0)
 
     if target_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
         return update_storage_usage(target_node)

@@ -480,6 +480,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -552,6 +553,7 @@ class TestAddonLogs(OsfTestCase):
             'materialized': path,
             'kind': 'file',
             'path': path,
+            'sizeInt': 100,
             'size': 100,
             'nid': self.node._id,
         })
@@ -567,6 +569,7 @@ class TestAddonLogs(OsfTestCase):
             'materialized': path,
             'kind': 'file',
             'path': path,
+            'sizeInt': 120,
             'size': 120,
             'nid': self.node._id,
         }, action='update')
@@ -578,6 +581,7 @@ class TestAddonLogs(OsfTestCase):
             'materialized': path,
             'kind': 'file',
             'path': path,
+            'sizeInt': 140,
             'size': 140,
             'nid': self.node._id,
         }, action='update')
@@ -594,6 +598,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -635,6 +640,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -644,6 +650,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 275,
             'size': 275,
             'contentType': 'img/png'
         }).save()
@@ -686,6 +693,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -738,6 +746,7 @@ class TestAddonLogs(OsfTestCase):
                 'provider': 'osfstorage',
                 'nid': self.node._id,
                 'name': 'new.txt',
+                'sizeInt': 220,
                 'size': 220
             },
         )
@@ -755,6 +764,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -797,6 +807,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -806,6 +817,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 275,
             'size': 275,
             'contentType': 'img/png'
         }).save()
@@ -848,6 +860,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -887,6 +900,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -896,6 +910,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 275,
             'size': 275,
             'contentType': 'img/png'
         }).save()
@@ -938,6 +953,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 200,
             'size': 200,
             'contentType': 'img/png'
         }).save()
@@ -967,6 +983,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 200,
             'size': 200,
             'contentType': 'img/png'
         }).save()
@@ -976,6 +993,7 @@ class TestAddonLogs(OsfTestCase):
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
         }, {
+            'sizeInt': 250,
             'size': 250,
             'contentType': 'img/png'
         }).save()
@@ -1295,6 +1313,7 @@ class TestAddonFileViews(OsfTestCase):
                 'external': '',
                 'archived_from': '',
             },
+            'sizeInt': '',
             'size': '',
             'extra': '',
             'file_name': '',
