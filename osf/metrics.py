@@ -334,7 +334,7 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
     from_state = metrics.Keyword(index=True, doc_values=True, required=True)
     to_state = metrics.Keyword(index=True, doc_values=True, required=True)
     user_id = metrics.Keyword(index=True, doc_values=True, required=True)
-    comment = metrics.Keyword(index=True, doc_values=True)
+    comment = metrics.Keyword(index=True)
 
     class Index:
         settings = {
