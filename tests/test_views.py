@@ -11,7 +11,7 @@ import time
 import unittest
 from future.moves.urllib.parse import quote
 
-from flask import request
+from flask import Response, request
 import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
@@ -5052,20 +5052,34 @@ class TestResolveGuidEmberOSF(OsfTestCase):
         ember_registration_detail_flag.everyone = True
         ember_registration_detail_flag.save()
 
-    def test_registration_approval_cookie_setting(self):
+    @mock.patch('flask.Response.set_cookie')
+    def test_registration_approval_cookie_setting(self, mock_set_cookie):
+        # Relies on mocking set_cookie because the osf_status cookie is set and then cleared
+        # upon load of the ember page
+
         user = AuthUserFactory()
         registration = RegistrationFactory(is_public=True, creator=user)
         registered_from = registration.registered_from
+        approval_token = registration.registration_approval.approval_state[user._id]['approval_token']
 
-        registration_approval_handler('approve', registration, registered_from)
+        registration_approval_response = self.app.get(
+            registration.web_url_for('token_action', token=approval_token),
+            auth=user.auth
+        )
+        assert_equal(registration_approval_response.status_code,  http_status.HTTP_302_FOUND)
+        registration.reload()
+        assert_false(registration.is_pending_registration)
 
-        url = web_url_for('resolve_guid', _guid=True, guid=registration._id)
-        res = self.app.get(url, auth=user.auth)
+        res = self.app.get(
+            web_url_for('resolve_guid', _guid=True, guid=registration._id),
+            auth=user.auth
+        )
         assert_equal(res.status_code, 200)
         assert_equal(
             res.request.path,
             '/{}/'.format(registration._id)
         )
+        assert_true(mock_set_cookie.called)
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
