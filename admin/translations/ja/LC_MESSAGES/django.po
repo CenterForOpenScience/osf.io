@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-06 09:04+0000\n"
+"POT-Creation-Date: 2020-11-19 13:20+0000\n"
 "PO-Revision-Date: 2020-09-02 11:10+0900\n"
 "Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
@@ -213,7 +213,7 @@ msgstr "バナーをスケジュールする"
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:85
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:59
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:95
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:111
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
@@ -1738,7 +1738,7 @@ msgstr "ありませんか？：%(guid)s"
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:83
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:57
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:93
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:109
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
@@ -2401,7 +2401,7 @@ msgstr "フォルダID(例：ルートの場合は0)"
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:84
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:58
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:94
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:110
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:41
@@ -2494,10 +2494,6 @@ msgstr ""
 "v1.7</a>をサポートするNextcloudインスタンスのみがサポートされます。"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:45
-msgid "Notification Secret"
-msgstr "通知用シークレット"
-
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:50
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly\n"
 "                                        encourage</strong> using a <a\n"
@@ -2512,32 +2508,44 @@ msgstr ""
 "#managing-devices\" target=\"_blank\"> Device (or App) "
 "Password</a>の使用を<strong>強く推奨</strong>します。"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:60
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:56
+msgid "Connection URL for File Update Notification App"
+msgstr "ファイル更新通知アプリの接続用URLに指定"
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:62
+msgid "Connection ID for File Update Notification App"
+msgstr "ファイル更新通知アプリの接続用IDに指定"
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:68
+msgid "Connection Secret from File Update Notifications App"
+msgstr "ファイル更新通知アプリの接続用シークレットを指定"
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:76
 msgid "Download User Mapping file"
 msgstr "ユーザ対応表ファイルをダウンロード"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:61
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:77
 #: admin/templates/rdm_timestampadd/timestampadd.html:228
 msgid "Download"
 msgstr "ダウンロード"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:65
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:81
 msgid "Upload User Mapping file"
 msgstr "ユーザ対応表ファイルをアップロード"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:82
 msgid "Check existence of external users"
 msgstr "外部ユーザの存在を確認する"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:82
 msgid "Only Nextcloud Admin can check"
 msgstr "Nextcloud管理者だけが確認可能です。"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:69
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:85
 msgid "Browse"
 msgstr "ファイルを選択"
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:75
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:91
 msgid "Example of User Mapping file"
 msgstr "ユーザ対応表ファイルの例"
 

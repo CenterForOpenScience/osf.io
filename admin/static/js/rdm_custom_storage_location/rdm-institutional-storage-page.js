@@ -8,6 +8,8 @@ var bootbox = require('bootbox');
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
+var clipboard = require('js/clipboard');
+
 var no_storage_name_providers = ['osfstorage'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
@@ -162,6 +164,31 @@ $('#box_modal input').keyup(function () {
 
 $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
+});
+
+function nextcloudinstitutions_host() {
+    // url.rstrip('/') in admin/rdm_custom_storage_location/utils.py
+    return 'https://' + $('#nextcloudinstitutions_host').val().replace(/\/+$/g, '');
+}
+
+function update_nextcloudinstitutions_notification_connid() {
+    var connid = nextcloudinstitutions_host() + ':' + $('#nextcloudinstitutions_username').val();
+    $('#nextcloudinstitutions_notification_connid').attr('value', connid);
+    clipboard('#copy_button_connid');
+}
+
+function update_nextcloudinstitutions_notification_url() {
+    var url = nextcloudinstitutions_host() + '/api/v1/addons/nextcloudinstitutions/webhook/';
+    $('#nextcloudinstitutions_notification_url').attr('value', url);
+    clipboard('#copy_button_url');
+}
+
+$('#nextcloudinstitutions_host').on('keyup paste', function () {
+    update_nextcloudinstitutions_notification_connid();
+    update_nextcloudinstitutions_notification_url();
+});
+$('#nextcloudinstitutions_username').on('keyup paste', function () {
+    update_nextcloudinstitutions_notification_connid();
 });
 
 $('#csv_file').on('change', function() {
@@ -456,6 +483,11 @@ function setParameters(provider_short_name, data) {
             $(e).val(val);
         }
     });
+
+    if (provider_short_name === 'nextcloudinstitutions') {
+	update_nextcloudinstitutions_notification_connid();
+	update_nextcloudinstitutions_notification_url();
+    }
 }
 
 function setParametersFailed(provider_short_name, message) {

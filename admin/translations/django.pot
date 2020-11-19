@@ -8,13 +8,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-06 08:28+0000\n"
-"PO-Revision-Date: 2020-11-06 08:28+0000\n"
-"Last-Translator: Hiroki Ohashi\n"
+"POT-Creation-Date: 2020-11-19 13:19+0000\n"
+"PO-Revision-Date: 2020-11-19 13:19+0000\n"
+"Last-Translator: Takuya Ishibashi\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #: admin/banners/forms.py:18 admin/banners/forms.py:19
@@ -209,7 +209,7 @@ msgstr ""
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:85
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:59
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:95
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:111
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
@@ -1731,7 +1731,7 @@ msgstr ""
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:83
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:57
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:93
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:109
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
@@ -2384,7 +2384,7 @@ msgstr ""
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:84
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:58
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:94
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:110
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:41
@@ -2464,10 +2464,6 @@ msgid ""
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:45
-msgid "Notification Secret"
-msgstr ""
-
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:50
 msgid ""
 " These credentials will be encrypted. However, we <strong>strongly\n"
 "                                        encourage</strong> using a <a\n"
@@ -2477,32 +2473,44 @@ msgid ""
 "Password</a>."
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:60
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:56
+msgid "Connection URL for File Update Notification App"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:62
+msgid "Connection ID for File Update Notification App"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:68
+msgid "Connection Secret from File Update Notifications App"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:76
 msgid "Download User Mapping file"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:61
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:77
 #: admin/templates/rdm_timestampadd/timestampadd.html:228
 msgid "Download"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:65
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:81
 msgid "Upload User Mapping file"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:82
 msgid "Check existence of external users"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:82
 msgid "Only Nextcloud Admin can check"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:69
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:85
 msgid "Browse"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:75
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:91
 msgid "Example of User Mapping file"
 msgstr ""
 

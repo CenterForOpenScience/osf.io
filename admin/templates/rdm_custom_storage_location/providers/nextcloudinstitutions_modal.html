@@ -9,7 +9,7 @@
                 </div>
                 <div class="modal-body">
                     <div class='row'>
-                        <div class="col-sm-6">
+                        <div class="col-md-4">
                             <!-- Custom input -->
                             <div id="nextcloudinstitutions_custom_host_div">
                                 <label>{% trans "Host URL" %}</label>
@@ -41,11 +41,6 @@
                                 <input type="password" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_password"
                                     placeholder="********" required>
                             </div>
-                            <div class="form-group">
-                                <label for="nextcloudinstitutions_notification_secret">{% trans "Notification Secret" %}</label>
-                                <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_notification_secret"
-                                    placeholder="secret" required>
-                            </div>
                             <div class="text-muted" style="text-align: center">
                                 <em>{% blocktrans %} These credentials will be encrypted. However, we <strong>strongly
                                         encourage</strong> using a <a
@@ -55,7 +50,27 @@
                             </div>
                         </div>
 
-                        <div class="col-sm-6">
+                        <div class="col-md-3">
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_url">{% trans "Connection URL for File Update Notification App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-notif-app-params" id="nextcloudinstitutions_notification_url" readonly>
+                                <div class="text-right"><button id="copy_button_url" class="btn btn-default" data-clipboard-target="#nextcloudinstitutions_notification_url"><div class="fa fa-copy"></div></button></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_connid">{% trans "Connection ID for File Update Notification App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-notif-app-params" id="nextcloudinstitutions_notification_connid" readonly>
+                                <div class="text-right"><button id="copy_button_connid" class="btn btn-default" data-clipboard-target="#nextcloudinstitutions_notification_connid"><div class="fa fa-copy"></div></button></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_secret">{% trans "Connection Secret from File Update Notifications App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_notification_secret">
+                            </div>
+                        </div>
+
+                        <div class="col-md-5">
                             <div class="form-group">
                                 <label>{% trans "Download User Mapping file" %}</label><br/>
                                 <button type="button" class="btn btn-default download-csv" id="csv_download">{% trans "Download" %}</button>
@@ -74,8 +89,8 @@
                                     <em>
 {% blocktrans %}Example of User Mapping file{% endblocktrans %}:<br/>
 #User_GUID(or ePPN),External_UserID,Fullname(ignored)<br/>
-eppn_user1@idp.example.com,external_user1,User1<br/>
-ABCDE,external_user2,User2<br/>
+eppn_user1@idp.example.com,ext_user1,User1<br/>
+ABCDE,ext_user2,User2<br/>
                                     </em>
                                 </div>
                                 <div id="csv_usermap" hidden></div>
@@ -84,12 +99,12 @@ ABCDE,external_user2,User2<br/>
                             </div>
                         </div>
                     </div>
-                    <div class="help-block">
-                        <p id="nextcloudinstitutions_message" class="text-danger"></p>
-                    </div>
 
                 </div>
                 <div class="modal-footer">
+                    <div class="help-block">
+                        <p id="nextcloudinstitutions_message" class="text-danger"></p>
+                    </div>
                     <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
                     <button type="button" class="btn btn-success test-connection" id="nextcloudinstitutions_connect" disabled>{% trans "Connect" %}</button>
                     <button type="button" class="btn btn-default save-credentials" id="nextcloudinstitutions_save" disabled>{% trans "Save" %}</button>
