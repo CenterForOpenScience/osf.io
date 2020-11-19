@@ -19,7 +19,6 @@ django.setup()
 from framework.celery_tasks import app as celery_app
 
 from osf import models
-from osf.utils.workflows import SanctionStates
 from website import settings
 from website.app import init_app
 
@@ -70,7 +69,6 @@ def main():
             registration.reload()
             embargo_termination_state = registration.embargo_termination_approval.approval_stage
             assert registration.embargo_termination_approval.state == models.Sanction.APPROVED
-            assert embargo_termination_state is SanctionStates.ACCEPTED
             assert registration.is_embargoed is False
             assert registration.is_public is True
 

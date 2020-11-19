@@ -465,7 +465,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     @property
     def embargo_end_date(self):
-        if self.is_approved:
+        if self.state == self.APPROVED:
             return self.end_date
         return False
 
