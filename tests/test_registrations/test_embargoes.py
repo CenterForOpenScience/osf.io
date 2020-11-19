@@ -484,7 +484,8 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
 
         # Ensure descendant nodes are in embargo
         descendants = self.registration.get_descendants_recursive()
-        for node in descendants:
+        for index, node in enumerate(descendants):
+            print(index)
             assert_true(node.embargo_end_date)
 
     def test_disapproval_cancels_embargo_on_descendant_nodes(self):

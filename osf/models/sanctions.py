@@ -33,25 +33,17 @@ VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
-    UNAPPROVED = 'unapproved'
+    UNAPPROVED = SanctionStates.UNAPPROVED.db_name
     # Has approval
-    APPROVED = 'approved'
+    APPROVED = SanctionStates.APPROVED.db_name
     # Rejected by at least one contributor
-    REJECTED = 'rejected'
+    REJECTED = SanctionStates.REJECTED.db_name
     # Embargo has been completed
-    COMPLETED = 'completed'
+    COMPLETED = SanctionStates.COMPLETED.db_name
     # Approved by admins but pending moderator approval/rejection
-    PENDING_MODERATION = 'pending_moderation'
+    PENDING_MODERATION = SanctionStates.PENDING_MODERATION.db_name
     # Rejected by a moderator
-    MODERATOR_REJECTED = 'moderator_rejected'
-
-    STATE_CHOICES = ((UNAPPROVED, UNAPPROVED.title()),
-                     (APPROVED, APPROVED.title()),
-                     (REJECTED, REJECTED.title()),
-                     (COMPLETED, COMPLETED.title()),
-                     (PENDING_MODERATION, PENDING_MODERATION.title()),
-                     (MODERATOR_REJECTED, MODERATOR_REJECTED.title())
-                     )
+    MODERATOR_REJECTED = SanctionStates.MODERATOR_REJECTED.db_name
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
@@ -86,7 +78,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
     initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
-    state = models.CharField(choices=STATE_CHOICES,
+    state = models.CharField(choices=SanctionStates.char_field_choices(),
                              default=UNAPPROVED,
                              max_length=255)
 
@@ -107,7 +99,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def is_approved(self):
         '''The sanction has received all required admin and moderator approvals.'''
-        return self.approval_stage is SanctionStates.APPROVED or self.state == Sanction.APPROVED
+        return self.approval_stage is SanctionStates.APPROVED
 
     @property
     def is_rejected(self):
@@ -307,14 +299,6 @@ class TokenApprovableSanction(Sanction):
                 for authorizer in self.approval_state.values()):
             self.accept(*event_data.args, **event_data.kwargs)  # state machine trigger
 
-    def _on_reject(self, event_data):
-        """Callback from #reject statemachine trigger."""
-        self.state = Sanction.REJECTED
-
-    def _on_complete(self, event_data):
-        """Callback from #approve state machine trigger."""
-        self.state = Sanction.APPROVED
-
     def token_for_user(self, user, method):
         """
         :param str method: 'approval' | 'rejection'
@@ -442,7 +426,6 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, event_data):
-        super()._on_complete(event_data)
         if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
@@ -487,7 +470,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     @property
     def embargo_end_date(self):
-        if self.state == self.APPROVED:
+        if self.is_approved:
             return self.end_date
         return False
 
@@ -581,7 +564,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         return context
 
     def _on_reject(self, event_data):
-        super()._on_reject(event_data)
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
@@ -659,10 +641,7 @@ class Retraction(EmailApprovableSanction):
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _get_registration(self):
-        Registration = apps.get_model('osf.Registration')
-        parent_registration = Registration.objects.get(retraction=self)
-
-        return parent_registration
+        return self.registrations.first()
 
     def _view_url_context(self, user_id, node):
         registration = self.registrations.first() or node
@@ -725,7 +704,6 @@ class Retraction(EmailApprovableSanction):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
-        super()._on_reject(event_data)
 
         NodeLog = apps.get_model('osf.NodeLog')
         parent_registration = self.target_registration
@@ -741,7 +719,6 @@ class Retraction(EmailApprovableSanction):
         )
 
     def _on_complete(self, event_data):
-        super()._on_complete(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
 
         self.date_retracted = timezone.now()
@@ -903,7 +880,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if register.is_spammy:
             raise NodeStateError('Cannot approve a spammy registration')
 
-        super()._on_complete(event_data)
+#        super()._on_complete(event_data)
         self.save()
         registered_from = register.registered_from
         # Pass auth=None because the registration initiator may not be
@@ -930,7 +907,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, event_data):
-        super()._on_reject(event_data)
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
@@ -1098,11 +1074,9 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         return context
 
     def _on_complete(self, event_data):
-        super()._on_complete(event_data)
         self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.
-        super()._on_reject(event_data)
         self.target_registration.embargo_termination_approval = None
         self.target_registration.save()
