@@ -696,7 +696,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        embargo.to_PENDING_MODERATOR_APPROVAL()
+        embargo.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -722,7 +722,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        registration_approval.to_PENDING_MODERATOR_APPROVAL()
+        registration_approval.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -746,7 +746,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATOR_APPROVAL()
+        retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
@@ -769,7 +769,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATOR_APPROVAL()
+        retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
@@ -815,7 +815,7 @@ class TestRegistationModerationStates():
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATOR_APPROVAL()
+        retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
@@ -871,7 +871,7 @@ class TestForcedWithdrawal():
 
         moderated_registration.refresh_from_db()
         assert moderated_registration.is_retracted
-        assert moderated_registration.retraction.approval_stage is SanctionStates.ACCEPTED
+        assert moderated_registration.retraction.approval_stage is SanctionStates.APPROVED
         assert moderated_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
     def test_force_retraction_writes_action(self, moderated_registration, moderator):
