@@ -1325,6 +1325,10 @@ class TimeStampTokenVerifyCheck:
 
             verify_result.inspection_result_status = ret
         # else: verify_result.inspection_result_status is not updated
+
+        if ENABLE_DEBUG:
+            verify_result_title += ' (download Hash) (local Timestamp)'
+
         return self.generate_verify_result(
             baseFileNode, file_info, userid,
             verify_result, verify_result_title, ret)
@@ -1531,11 +1535,11 @@ class TimeStampTokenVerifyCheckHash:
         verify_result.inspection_result_status = ret
 
         if ENABLE_DEBUG:
-            verify_result_title += ' (remote hash)'
+            verify_result_title += ' (remote Hash)'
             if ext_info.has_timestamp:
-                verify_result_title += ' (remote timestamp)'
+                verify_result_title += ' (remote Timestamp)'
             else:
-                verify_result_title += ' (local timestamp)'
+                verify_result_title += ' (local Timestamp)'
 
         return verify_result, verify_result_title, ret
 
