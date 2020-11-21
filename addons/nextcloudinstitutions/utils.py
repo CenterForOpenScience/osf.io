@@ -322,7 +322,7 @@ def celery_check_updated_files(self, provider_id, since, interval):
 
     latest = since
     for f in updated_files:
-        DEBUG('path: {}, mtime: {}, modified user: {}'.format(f.path, f.mtime, f.muser))
+        DEBUG(u'path: {}, mtime: {}, modified user: {}'.format(f.path, f.mtime, f.muser))
         if f.ftype == 'file':
             try:
                 _check_project_files(opt, f)
@@ -345,7 +345,7 @@ def celery_check_updated_files(self, provider_id, since, interval):
     DEBUG('update files2: {}'.format(str(updated_files2)))
 
     for f in updated_files2:
-        DEBUG('path: {}, mtime: {}, modified user: {}'.format(f.path, f.mtime, f.muser))
+        DEBUG(u'path: {}, mtime: {}, modified user: {}'.format(f.path, f.mtime, f.muser))
         if f.ftype == 'file':
             try:
                 _check_project_files(opt, f)
