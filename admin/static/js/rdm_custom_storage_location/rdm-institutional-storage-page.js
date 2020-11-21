@@ -166,9 +166,13 @@ $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
 });
 
+function strip_last_slash(s) {
+    return s.replace(/\/+$/g, '');
+}
+
 function nextcloudinstitutions_host() {
     // url.rstrip('/') in admin/rdm_custom_storage_location/utils.py
-    return 'https://' + $('#nextcloudinstitutions_host').val().replace(/\/+$/g, '');
+    return 'https://' + strip_last_slash($('#nextcloudinstitutions_host').val());
 }
 
 function update_nextcloudinstitutions_notification_connid() {
@@ -178,7 +182,8 @@ function update_nextcloudinstitutions_notification_connid() {
 }
 
 function update_nextcloudinstitutions_notification_url() {
-    var url = nextcloudinstitutions_host() + '/api/v1/addons/nextcloudinstitutions/webhook/';
+    var osf_domain = strip_last_slash($('#osf_domain').val());
+    var url = osf_domain + '/api/v1/addons/nextcloudinstitutions/webhook/';
     $('#nextcloudinstitutions_notification_url').attr('value', url);
     clipboard('#copy_button_url');
 }

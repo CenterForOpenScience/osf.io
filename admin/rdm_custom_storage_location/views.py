@@ -18,6 +18,7 @@ from admin.rdm_custom_storage_location import utils
 from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
+from website import settings as osf_settings
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         kwargs['providers'] = utils.get_providers()
         kwargs['selected_provider_short_name'] = provider_name
         kwargs['have_storage_name'] = utils.have_storage_name(provider_name)
+        kwargs['osf_domain'] = osf_settings.DOMAIN
         return kwargs
 
 
