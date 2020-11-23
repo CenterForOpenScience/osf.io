@@ -19,7 +19,7 @@ def registration_approval_handler(action, registration, registered_from):
         }[action],
         id={
             'approve': 'registration_approved',
-            'reject': 'rgistration_rejected'
+            'reject': 'registration_rejected'
         }[action],
         kind='success',
         trust=False
@@ -35,7 +35,7 @@ def embargo_handler(action, registration, registered_from):
         }[action],
         id={
             'approve': 'embargo_approved',
-            'reject': 'emargo_rejected'
+            'reject': 'embargo_rejected'
         }[action],
         kind='success',
         trust=False
