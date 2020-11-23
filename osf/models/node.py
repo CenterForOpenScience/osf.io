@@ -77,7 +77,7 @@ from osf.utils.permissions import (
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
-from api.caching.tasks import update_storage_usage
+from api.caching.tasks import update_storage_usage, update_storage_usage_cache
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from api.share.utils import update_share
@@ -1665,6 +1665,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             addon.after_fork(original, forked, user)
 
         forked.save()
+        update_storage_usage_cache(forked.id, forked._id)  # Files were copied in the addons. Need to update storage usage
 
         # Need to call this after save for the notifications to be created with the _primary_key
         project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
@@ -1925,6 +1926,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     visible=True,
                 )
                 self.add_permission(self.creator, ADMIN)
+            update_storage_usage_cache(self.id, self._id)
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
