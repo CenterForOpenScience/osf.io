@@ -6,12 +6,12 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.6.0\n"
-"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-16 20:17+0900\n"
-"PO-Revision-Date: 2020-11-16 20:17+0900\n"
-"Last-Translator: Hiroki Ohashi\n"
-"Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2020-11-23 09:25+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -38,7 +38,7 @@ msgstr ""
 #: website/static/js/contribManager.js:433 website/static/js/fangorn.js:537
 #: website/static/js/fangorn.js:542 website/static/js/fangorn.js:1212
 #: website/static/js/fangorn.js:1235 website/static/js/fangorn.js:1288
-#: website/static/js/fangorn.js:1307 website/static/js/fangorn.js:2024
+#: website/static/js/fangorn.js:1307 website/static/js/fangorn.js:2025
 #: website/static/js/filepage/index.js:213
 #: website/static/js/folderPickerNodeConfig.js:510
 #: website/static/js/folderPickerNodeConfig.js:566
@@ -225,7 +225,7 @@ msgid ""
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:404
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:436
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
@@ -278,7 +278,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:420
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:452
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -433,45 +433,45 @@ msgid ""
 "account."
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:81
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:83
 msgid "Are you sure you want to change institutional storage?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:82
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:84
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:86
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:88
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:273
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:500
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:635
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:305
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:537
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:672
 msgid "Some errors occurred"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:320
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:352
 msgid "Institutional Storage set successfully"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:400
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:432
 #: website/static/js/addonSettings.js:118
 msgid "Disconnect Account?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:402
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:434
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>?<br>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:403
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:435
 msgid ""
 "This will revoke access to %1$s for all projects using this "
 "account.<br><br>"
@@ -1813,7 +1813,7 @@ msgid ""
 "required to enter your password."
 msgstr ""
 
-#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2285
+#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2286
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
 #: website/static/js/pages/project-settings-page.js:118
@@ -2325,7 +2325,7 @@ msgstr ""
 msgid "View original document"
 msgstr ""
 
-#: website/static/js/citationGrid.js:202 website/static/js/fangorn.js:2059
+#: website/static/js/citationGrid.js:202 website/static/js/fangorn.js:2060
 msgid "View on %1$s"
 msgstr ""
 
@@ -2434,7 +2434,7 @@ msgstr ""
 msgid "Import %1$s access token"
 msgstr ""
 
-#: website/static/js/clipboard.js:27 website/static/js/fangorn.js:1479
+#: website/static/js/clipboard.js:27 website/static/js/fangorn.js:1480
 msgid "Copied!"
 msgstr ""
 
@@ -2534,7 +2534,7 @@ msgstr ""
 msgid "Date Created"
 msgstr ""
 
-#: website/static/js/conference.js:43 website/static/js/fangorn.js:1701
+#: website/static/js/conference.js:43 website/static/js/fangorn.js:1702
 msgid "Downloads"
 msgstr ""
 
@@ -2872,7 +2872,7 @@ msgid ""
 msgstr ""
 
 #: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
-#: website/static/js/fangorn.js:2014 website/static/js/fangorn.js:2050
+#: website/static/js/fangorn.js:2015 website/static/js/fangorn.js:2051
 #: website/static/js/filepage/index.js:209
 #: website/static/js/filepage/index.js:522 website/static/js/myProjects.js:1637
 msgid "Delete"
@@ -2936,7 +2936,7 @@ msgstr ""
 msgid " by another user."
 msgstr ""
 
-#: website/static/js/fangorn.js:1688 website/static/js/fileViewTreebeard.js:63
+#: website/static/js/fangorn.js:1689 website/static/js/fileViewTreebeard.js:63
 #: website/static/js/filesWidget.js:34 website/static/js/meetings.js:18
 #: website/static/js/pages/project-dashboard-page.js:549
 #: website/static/js/project-organizer.js:192
@@ -2944,224 +2944,224 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-#: website/static/js/fangorn.js:1693
+#: website/static/js/fangorn.js:1694
 msgid "Size"
 msgstr ""
 
-#: website/static/js/fangorn.js:1697
+#: website/static/js/fangorn.js:1698
 msgid "Version"
 msgstr ""
 
-#: website/static/js/fangorn.js:1705
+#: website/static/js/fangorn.js:1706
 #: website/static/js/pages/project-dashboard-page.js:555
 #: website/static/js/project-organizer.js:201
 msgid "Modified"
 msgstr ""
 
-#: website/static/js/fangorn.js:1779
+#: website/static/js/fangorn.js:1780
 msgid "Unable to retrieve components."
 msgstr ""
 
-#: website/static/js/fangorn.js:1781
+#: website/static/js/fangorn.js:1782
 msgid "Unable to retrieve components for node %1$s"
 msgstr ""
 
-#: website/static/js/fangorn.js:1863
+#: website/static/js/fangorn.js:1864
 msgid "You cannot rename your Wiki images folder."
 msgstr ""
 
-#: website/static/js/fangorn.js:1971
+#: website/static/js/fangorn.js:1972
 msgid "Upload"
 msgstr ""
 
-#: website/static/js/fangorn.js:1978
+#: website/static/js/fangorn.js:1979
 msgid "Create Folder"
 msgstr ""
 
-#: website/static/js/fangorn.js:1985
+#: website/static/js/fangorn.js:1986
 msgid "Delete Folder"
 msgstr ""
 
-#: website/static/js/fangorn.js:1994 website/static/js/filepage/index.js:525
+#: website/static/js/fangorn.js:1995 website/static/js/filepage/index.js:525
 #: website/static/js/filepage/revisions.js:111
 msgid "Download"
 msgstr ""
 
-#: website/static/js/fangorn.js:2004 website/static/js/filepage/index.js:547
+#: website/static/js/fangorn.js:2005 website/static/js/filepage/index.js:547
 msgid "View"
 msgstr ""
 
-#: website/static/js/fangorn.js:2020 website/static/js/filepage/index.js:221
+#: website/static/js/fangorn.js:2021 website/static/js/filepage/index.js:221
 msgid "This would mean "
 msgstr ""
 
-#: website/static/js/fangorn.js:2021 website/static/js/filepage/index.js:222
+#: website/static/js/fangorn.js:2022 website/static/js/filepage/index.js:222
 msgid ""
 "other contributors cannot edit, delete or upload new versions of this "
 "file "
 msgstr ""
 
-#: website/static/js/fangorn.js:2022
+#: website/static/js/fangorn.js:2023
 msgid "as long as it is checked-out. You can check it back in at anytime."
 msgstr ""
 
-#: website/static/js/fangorn.js:2027 website/static/js/fangorn.js:2032
+#: website/static/js/fangorn.js:2028 website/static/js/fangorn.js:2033
 #: website/static/js/filepage/index.js:248
 msgid "Check out file"
 msgstr ""
 
-#: website/static/js/fangorn.js:2028
+#: website/static/js/fangorn.js:2029
 msgid "Confirm file check-out?"
 msgstr ""
 
-#: website/static/js/fangorn.js:2041
+#: website/static/js/fangorn.js:2042
 msgid "Check in file"
 msgstr ""
 
-#: website/static/js/fangorn.js:2069
+#: website/static/js/fangorn.js:2070
 msgid "Download as zip"
 msgstr ""
 
-#: website/static/js/fangorn.js:2080 website/static/js/myProjects.js:1613
+#: website/static/js/fangorn.js:2081 website/static/js/myProjects.js:1613
 msgid "Rename"
 msgstr ""
 
-#: website/static/js/fangorn.js:2089
+#: website/static/js/fangorn.js:2090
 msgid "copy link"
 msgstr ""
 
-#: website/static/js/fangorn.js:2171
+#: website/static/js/fangorn.js:2172
 msgid "New folder name"
 msgstr ""
 
-#: website/static/js/fangorn.js:2199
+#: website/static/js/fangorn.js:2200
 msgid "Enter name"
 msgstr ""
 
-#: website/static/js/fangorn.js:2236
+#: website/static/js/fangorn.js:2237
 msgid "Cancel Pending Uploads"
 msgstr ""
 
-#: website/static/js/fangorn.js:2260
+#: website/static/js/fangorn.js:2261
 msgid "Delete Multiple"
 msgstr ""
 
-#: website/static/js/fangorn.js:2271 website/static/js/fangorn.js:2982
+#: website/static/js/fangorn.js:2272 website/static/js/fangorn.js:2983
 msgid "Filter"
 msgstr ""
 
-#: website/static/js/fangorn.js:2276
+#: website/static/js/fangorn.js:2277
 msgid "Select rows:"
 msgstr ""
 
-#: website/static/js/fangorn.js:2276
+#: website/static/js/fangorn.js:2277
 msgid ""
 " Click on a row (outside the add-on, file, or folder name) to show "
 "further actions in the toolbar. Use Command or Shift keys to select "
 "multiple files."
 msgstr ""
 
-#: website/static/js/fangorn.js:2277
+#: website/static/js/fangorn.js:2278
 msgid "Open files:"
 msgstr ""
 
-#: website/static/js/fangorn.js:2277
+#: website/static/js/fangorn.js:2278
 msgid " Click a file name to go to view the file in the GakuNin RDM."
 msgstr ""
 
-#: website/static/js/fangorn.js:2278
+#: website/static/js/fangorn.js:2279
 msgid "Open files in new tab:"
 msgstr ""
 
-#: website/static/js/fangorn.js:2278
+#: website/static/js/fangorn.js:2279
 msgid ""
 " Press Command (Ctrl in Windows) and click a file name to open it in a "
 "new tab."
 msgstr ""
 
-#: website/static/js/fangorn.js:2279
+#: website/static/js/fangorn.js:2280
 msgid "Download as zip:"
 msgstr ""
 
-#: website/static/js/fangorn.js:2279
+#: website/static/js/fangorn.js:2280
 msgid ""
 " Click on the row of an add-on or folder and click the Download as Zip "
 "button in the toolbar."
 msgstr ""
 
-#: website/static/js/fangorn.js:2279
+#: website/static/js/fangorn.js:2280
 msgid " Not available for all storage add-ons."
 msgstr ""
 
-#: website/static/js/fangorn.js:2280
+#: website/static/js/fangorn.js:2281
 msgid "Copy files:"
 msgstr ""
 
-#: website/static/js/fangorn.js:2280
+#: website/static/js/fangorn.js:2281
 msgid ""
 " Press Option (Alt in Windows) while dragging a file to a new folder or "
 "component."
 msgstr ""
 
-#: website/static/js/fangorn.js:2280
+#: website/static/js/fangorn.js:2281
 msgid " Only for contributors with write access."
 msgstr ""
 
-#: website/static/js/fangorn.js:2286
+#: website/static/js/fangorn.js:2287
 msgid "How to Use the File Browser"
 msgstr ""
 
-#: website/static/js/fangorn.js:2350
+#: website/static/js/fangorn.js:2351
 msgid "Please wait for current action to complete"
 msgstr ""
 
-#: website/static/js/fangorn.js:2531
+#: website/static/js/fangorn.js:2532
 msgid "Upload Status"
 msgstr ""
 
-#: website/static/js/fangorn.js:2531
+#: website/static/js/fangorn.js:2532
 msgid " files succeeded."
 msgstr ""
 
-#: website/static/js/fangorn.js:2632
+#: website/static/js/fangorn.js:2633
 msgid "Done"
 msgstr ""
 
-#: website/static/js/fangorn.js:2634
+#: website/static/js/fangorn.js:2635
 msgid "Move Status"
 msgstr ""
 
-#: website/static/js/fangorn.js:2636
+#: website/static/js/fangorn.js:2637
 msgid " files successfully moved."
 msgstr ""
 
-#: website/static/js/fangorn.js:2637
+#: website/static/js/fangorn.js:2638
 msgid " Skipped %1$s/%2$s files."
 msgstr ""
 
-#: website/static/js/fangorn.js:2907
+#: website/static/js/fangorn.js:2908
 msgid "You have pending uploads, if you leave this page they may not complete."
 msgstr ""
 
-#: website/static/js/fangorn.js:2910
+#: website/static/js/fangorn.js:2911
 msgid ""
 "You have pending file operations, if you leave this page they may not "
 "complete."
 msgstr ""
 
-#: website/static/js/fangorn.js:2944
+#: website/static/js/fangorn.js:2945
 msgid "This file is too large (%1$s). Max file size is %2$s."
 msgstr ""
 
-#: website/static/js/fangorn.js:2960
+#: website/static/js/fangorn.js:2961
 msgid "Not enough quota to upload the file."
 msgstr ""
 
-#: website/static/js/fangorn.js:2967
+#: website/static/js/fangorn.js:2968
 msgid "Quota usage alert"
 msgstr ""
 
-#: website/static/js/fangorn.js:2968
+#: website/static/js/fangorn.js:2969
 #, python-format
 msgid "You have used more than %1$s% of your quota."
 msgstr ""
@@ -4908,6 +4908,52 @@ msgstr ""
 
 #: website/static/js/logActionsList_extract.js:270
 msgid "Nextcloud (for Institutions) addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:271
+msgid ""
+"${user} added file ${path} to S3 Compatible Storage for Institutions in "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:272
+msgid ""
+"${user} removed ${path_type} ${path} from S3 Compatible Storage for "
+"Institutions in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:273
+msgid ""
+"${user} updated file ${path} in S3 Compatible Storage for Institutions in"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:274
+msgid ""
+"${user} created folder ${path} in S3 Compatible Storage for Institutions "
+"in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:275
+msgid ""
+"${user} linked S3 Compatible Storage for Institutions folder ${folder} to"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:276
+msgid ""
+"${user} authorized the S3 Compatible Storage for Institutions addon for "
+"${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:277
+msgid ""
+"${user} deauthorized the S3 Compatible Storage for Institutions addon for"
+" ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:278
+msgid "S3 Compatible Storage for Institutions addon for ${node} deauthorized"
 msgstr ""
 
 #: website/static/js/logTextParser.js:828
