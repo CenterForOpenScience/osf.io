@@ -11,7 +11,6 @@ from transitions import MachineError
 from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
-    # TODO: Unnecessary and duplicated dictionary.
     status.push_status_message(
         message={
             'approve': 'Your registration approval has been accepted.',
