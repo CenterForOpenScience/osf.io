@@ -321,7 +321,15 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
-    retcode = pytest.main(args)
+
+    try:
+        retcode = pytest.main(args)
+    except sqlite3.OperationalError as e:
+        if 'already exists' in str(e):
+            os.remove(os.environ.get('TESTMON_DATAFILE'))  # set in .travis.yml
+            retcode = pytest.main(args)
+        else:
+            raise e
 
     # exit code 5 is all tests skipped which is the same as passing with testmon
     sys.exit(0 if retcode == NO_TESTS_COLLECTED else retcode)
