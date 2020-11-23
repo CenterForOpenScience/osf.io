@@ -292,6 +292,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
+    from testmon.testmon_core import TestmonData
+
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
@@ -325,7 +327,10 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     try:
         retcode = pytest.main(args)
     except sqlite3.OperationalError as e:
-        if 'already exists' in str(e):
+        # Unsticks stuck travis caches that were stuck during migration.
+        if ' no such table' in str(e):
+            TestmonData(os.environ.get('TESTMON_DATAFILE')).init_tables()
+        elif 'already exists' in str(e):
             os.remove(os.environ.get('TESTMON_DATAFILE'))  # set in .travis.yml
             retcode = pytest.main(args)
         else:
