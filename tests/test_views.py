@@ -11,7 +11,7 @@ import time
 import unittest
 from future.moves.urllib.parse import quote
 
-from flask import Response, request
+from flask import request
 import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
@@ -97,8 +97,6 @@ from osf_tests.factories import (
     RegionFactory,
     DraftRegistrationFactory,
 )
-from osf.utils.tokens.handlers import registration_approval_handler
-from waffle.models import Flag
 
 @mock_app.route('/errorexc')
 def error_exc():
@@ -5041,45 +5039,6 @@ class TestResolveGuid(OsfTestCase):
 
         assert_equal(res.status_code, http_status.HTTP_410_GONE)
         assert_equal(res.request.path, '/{}/'.format(guid))
-
-
-@pytest.mark.enable_bookmark_creation
-@mock.patch('website.views.PROXY_EMBER_APPS', True)
-class TestResolveGuidEmberOSF(OsfTestCase):
-    def setUp(self):
-        super(TestResolveGuidEmberOSF, self).setUp()
-        ember_registration_detail_flag, _ = Flag.objects.get_or_create(name='ember_registries_detail_page')
-        ember_registration_detail_flag.everyone = True
-        ember_registration_detail_flag.save()
-
-    @mock.patch('flask.Response.set_cookie')
-    def test_registration_approval_cookie_setting(self, mock_set_cookie):
-        # Relies on mocking set_cookie because the osf_status cookie is set and then cleared
-        # upon load of the ember page
-
-        user = AuthUserFactory()
-        registration = RegistrationFactory(is_public=True, creator=user)
-        registered_from = registration.registered_from
-        approval_token = registration.registration_approval.approval_state[user._id]['approval_token']
-
-        registration_approval_response = self.app.get(
-            registration.web_url_for('token_action', token=approval_token),
-            auth=user.auth
-        )
-        assert_equal(registration_approval_response.status_code,  http_status.HTTP_302_FOUND)
-        registration.reload()
-        assert_false(registration.is_pending_registration)
-
-        res = self.app.get(
-            web_url_for('resolve_guid', _guid=True, guid=registration._id),
-            auth=user.auth
-        )
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(registration._id)
-        )
-        assert_true(mock_set_cookie.called)
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
