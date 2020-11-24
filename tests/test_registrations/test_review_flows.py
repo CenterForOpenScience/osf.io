@@ -1,13 +1,15 @@
 import pytest
 
 from api.providers.workflows import Workflows
-from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from nose.tools import assert_raises
 from osf.migrations import update_provider_auth_groups
 from osf_tests.factories import (
-    AuthUserFactory, EmbargoFactory, RegistrationProviderFactory,
-    RegistrationFactory, RegistrationApprovalFactory, RetractionFactory
+    AuthUserFactory,
+    EmbargoFactory,
+    RegistrationProviderFactory,
+    RegistrationApprovalFactory,
+    RetractionFactory
 )
 from osf.utils import tokens
 from osf.utils.workflows import (
@@ -135,7 +137,7 @@ class TestUnmoderatedFlows():
     def test_approve_after_reject_fails(self, sanction_object):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
-        sanction_object.to_ADMIN_REJECTED()
+        sanction_object.to_REJECTED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
 
@@ -150,7 +152,7 @@ class TestUnmoderatedFlows():
     def test_reject_after_arpprove_fails(self, sanction_object):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
-        sanction_object.to_ACCEPTED()
+        sanction_object.to_APPROVED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
 
@@ -162,7 +164,7 @@ class TestUnmoderatedFlows():
     def test_approve_after_accept_is_noop(self, sanction_object):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
-        sanction_object.to_ACCEPTED()
+        sanction_object.to_APPROVED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
         registration_accepted_state = registration.moderation_state
@@ -173,11 +175,11 @@ class TestUnmoderatedFlows():
         assert registration.moderation_state == registration_accepted_state
         assert sanction_object.approval_stage is SanctionStates.APPROVED
 
-    @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
-    def test_approve_after_accept_is_noop(self, sanction_object):
+    @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
+    def test_approve_after_reject_is_noop(self, sanction_fixture):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_object()
-        sanction_object.to_ADMIN_REJECTED()
+        sanction_object = sanction_fixture(self)
+        sanction_object.to_REJECTED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
         registration_rejected_state = registration.moderation_state
@@ -331,7 +333,7 @@ class TestModeratedFlows():
     def test_admin_cannot_give_moderator_approval(self, sanction_object, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
-        sanction_object.to_PENDING_MODERATOR_APPROVAL()
+        sanction_object.to_PENDING_MODERATION()
         registration = sanction_object.target_registration
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
@@ -345,7 +347,7 @@ class TestModeratedFlows():
     def test_admin_cannot_reject_after_admin_approval_granted(self, sanction_object, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
-        sanction_object.to_PENDING_MODERATOR_APPROVAL()
+        sanction_object.to_PENDING_MODERATION()
         registration = sanction_object.target_registration
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
@@ -436,7 +438,7 @@ class TestModeratedFlows():
         self, sanction_object, provider, moderator):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
-        sanction_object.to_ACCEPTED()
+        sanction_object.to_APPROVED()
 
         with assert_raises(MachineError):
             sanction_object.reject(user=moderator)
