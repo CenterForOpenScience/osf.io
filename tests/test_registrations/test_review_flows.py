@@ -178,7 +178,7 @@ class TestUnmoderatedFlows():
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_approve_after_reject_is_noop(self, sanction_fixture):
         # using fixtures in parametrize returns the function
-        sanction_object = sanction_fixture(self)
+        sanction_object = sanction_fixture()
         sanction_object.to_REJECTED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
