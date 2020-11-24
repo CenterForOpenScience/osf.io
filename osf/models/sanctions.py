@@ -33,18 +33,17 @@ VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
-    UNAPPROVED = 'unapproved'
+    UNAPPROVED = SanctionStates.UNAPPROVED.db_name
     # Has approval
-    APPROVED = 'approved'
-    # Rejected by at least one person
-    REJECTED = 'rejected'
+    APPROVED = SanctionStates.APPROVED.db_name
+    # Rejected by at least one contributor
+    REJECTED = SanctionStates.REJECTED.db_name
     # Embargo has been completed
-    COMPLETED = 'completed'
-
-    STATE_CHOICES = ((UNAPPROVED, UNAPPROVED.title()),
-                     (APPROVED, APPROVED.title()),
-                     (REJECTED, REJECTED.title()),
-                     (COMPLETED, COMPLETED.title()),)
+    COMPLETED = SanctionStates.COMPLETED.db_name
+    # Approved by admins but pending moderator approval/rejection
+    PENDING_MODERATION = SanctionStates.PENDING_MODERATION.db_name
+    # Rejected by a moderator
+    MODERATOR_REJECTED = SanctionStates.MODERATOR_REJECTED.db_name
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
@@ -79,14 +78,9 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
     initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
-    state = models.CharField(choices=STATE_CHOICES,
+    state = models.CharField(choices=SanctionStates.char_field_choices(),
                              default=UNAPPROVED,
                              max_length=255)
-
-    sanction_state = models.CharField(
-        max_length=30,
-        choices=SanctionStates.char_field_choices(),
-        default=SanctionStates.PENDING_ADMIN_APPROVAL.db_name)
 
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
@@ -95,29 +89,20 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def is_pending_approval(self):
         '''The sanction is awaiting admin approval.'''
-        # Pending backfill of sanction_state/approval_stage, all old sanctions will have
-        # approval_stage == PENDING_ADMIN_APROVAL, only those sanctions that are also in
-        # state == UNAPPROVED should be considered pending.
-        #
-        # For is_approved and is_rejected, the 'or' condition looking at the old
-        # state field will ensure correct results.
-        return (
-            self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL
-            and self.state == Sanction.UNAPPROVED
-        )
+        return self.approval_stage is SanctionStates.UNAPPROVED
 
     @property
     def is_approved(self):
         '''The sanction has received all required admin and moderator approvals.'''
-        return self.approval_stage is SanctionStates.ACCEPTED or self.state == Sanction.APPROVED
+        return self.approval_stage is SanctionStates.APPROVED
 
     @property
     def is_rejected(self):
         '''The sanction has been rejected by either an admin or a moderator.'''
         rejected_states = [
-            SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED
+            SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED
         ]
-        return self.approval_stage in rejected_states or self.state == Sanction.REJECTED
+        return self.approval_stage in rejected_states
 
     @property
     def is_moderated(self):
@@ -125,11 +110,11 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def approval_stage(self):
-        return SanctionStates.from_db_name(self.sanction_state)
+        return SanctionStates.from_db_name(self.state)
 
     @approval_stage.setter
     def approval_stage(self, state):
-        self.sanction_state = state.db_name
+        self.state = state.db_name
 
     @property
     def target_registration(self):
@@ -197,15 +182,15 @@ class TokenApprovableSanction(Sanction):
 
     def _verify_user_role(self, user, action):
         '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
-        if self.approval_stage is SanctionStates.PENDING_ADMIN_APPROVAL:
-            # Allow user is None when PENDING_ADMIN_APPROVAL to support timed
+        if self.approval_stage is SanctionStates.UNAPPROVED:
+            # Allow user is None when UNAPPROVED to support timed
             # sanction expiration from within OSF via the 'accept' trigger
             if user is None or user._id in self.approval_state:
                 return True
             return False
 
         required_permission = f'{action}_submissions'
-        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL:
+        if self.approval_stage is SanctionStates.PENDING_MODERATION:
             return user.has_perm(required_permission, self.target_registration.provider)
 
         return False
@@ -226,7 +211,7 @@ class TokenApprovableSanction(Sanction):
 
         # Moderator auth is validated by API, no token to check
         # user is None and no prior exception -> OSF-internal accept call
-        if self.approval_stage is SanctionStates.PENDING_MODERATOR_APPROVAL or user is None:
+        if self.approval_stage is SanctionStates.PENDING_MODERATION or user is None:
             return True
 
         token = event_data.kwargs.get('token')
@@ -308,14 +293,6 @@ class TokenApprovableSanction(Sanction):
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
             self.accept(*event_data.args, **event_data.kwargs)  # state machine trigger
-
-    def _on_reject(self, event_data):
-        """Callback from #reject statemachine trigger."""
-        self.state = Sanction.REJECTED
-
-    def _on_complete(self, event_data):
-        """Callback from #approve state machine trigger."""
-        self.state = Sanction.APPROVED
 
     def token_for_user(self, user, method):
         """
@@ -444,7 +421,6 @@ class EmailApprovableSanction(TokenApprovableSanction):
         raise NotImplementedError
 
     def _on_complete(self, event_data):
-        super()._on_complete(event_data)
         if self.notify_initiator_on_complete and not self.should_suppress_emails:
             self._notify_initiator()
 
@@ -583,7 +559,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         return context
 
     def _on_reject(self, event_data):
-        super()._on_reject(event_data)
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
@@ -636,8 +611,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     def mark_as_completed(self):
         # Plucked from embargo_registrations script
-        self.state = Sanction.COMPLETED
-        self.to_COMPLETE()
+        # self.state = Sanction.COMPLETED
+        self.to_COMPLETED()
 
 class Retraction(EmailApprovableSanction):
     """
@@ -727,7 +702,6 @@ class Retraction(EmailApprovableSanction):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
-        super()._on_reject(event_data)
 
         NodeLog = apps.get_model('osf.NodeLog')
         parent_registration = self.target_registration
@@ -767,7 +741,7 @@ class Retraction(EmailApprovableSanction):
             parent_registration.embargo.state = self.REJECTED
             parent_registration.embargo.approval_stage = (
                 SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.ADMIN_REJECTED
+                else SanctionStates.REJECTED
             )
 
             parent_registration.registered_from.add_log(
@@ -932,7 +906,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, event_data):
-        super()._on_reject(event_data)
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
@@ -1105,6 +1078,5 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.
-        super()._on_reject(event_data)
         self.target_registration.embargo_termination_approval = None
         self.target_registration.save()

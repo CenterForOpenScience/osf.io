@@ -292,6 +292,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     from past.builtins import basestring
     os.environ['DJANGO_SETTINGS_MODULE'] = 'osf_tests.settings'
     import pytest
+    from testmon.testmon_core import TestmonData
+
     if not numprocesses:
         from multiprocessing import cpu_count
         numprocesses = cpu_count()
@@ -321,7 +323,18 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
-    retcode = pytest.main(args)
+
+    try:
+        retcode = pytest.main(args)
+    except sqlite3.OperationalError as e:
+        # Unsticks stuck travis caches that were stuck during migration.
+        if ' no such table' in str(e):
+            TestmonData(os.environ.get('TESTMON_DATAFILE')).init_tables()
+        elif 'already exists' in str(e):
+            os.remove(os.environ.get('TESTMON_DATAFILE'))  # set in .travis.yml
+            retcode = pytest.main(args)
+        else:
+            raise e
 
     # exit code 5 is all tests skipped which is the same as passing with testmon
     sys.exit(0 if retcode == NO_TESTS_COLLECTED else retcode)
