@@ -119,7 +119,7 @@ def _test_speedups():
 def _test_speedups_disable(request, settings, _test_speedups):
     patchers = []
     for target, config in _MOCKS.items():
-        if not request.node.get_marker(config['mark']):
+        if not request.node.get_closest_marker(config['mark']):
             continue
         patchers.append(_test_speedups[target])
         patchers[-1].stop()
