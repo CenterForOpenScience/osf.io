@@ -75,18 +75,20 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def create_identifier(self, node, category):
         if category == 'doi':
-            metadata = self.build_metadata(node)
-            resp = self._client.metadata_post(metadata)
-            # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
-            doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
-            if settings.DATACITE_MINT_DOIS:
+            if settings.DATACITE_ENABLED:
+                metadata = self.build_metadata(node)
+                resp = self._client.metadata_post(metadata)
+                # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
+                doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
                 self._client.doi_post(doi, node.absolute_url)
-            return {'doi': doi}
+                return {'doi': doi}
+            logger.info('TEST ENV: DOI built but not minted')
+            return {'doi': self.build_doi(node)}
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
     def update_identifier(self, node, category):
-        if not node.is_public or node.is_deleted:
+        if settings.DATACITE_ENABLED and not node.is_public or node.is_deleted:
             if category == 'doi':
                 doi = self.build_doi(node)
                 self._client.metadata_delete(doi)

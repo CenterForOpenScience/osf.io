@@ -327,6 +327,8 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()
+        assert registration.identifiers.all().count() == 1
+
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
     @pytest.mark.enable_quickfiles_creation
