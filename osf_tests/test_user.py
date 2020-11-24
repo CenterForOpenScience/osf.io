@@ -981,7 +981,7 @@ class TestChangePassword:
         user = UserFactory()
         user.set_password('password')
         user.save()
-        with pytest.raises(ChangePasswordError, message=error_message) as excinfo:
+        with pytest.raises(ChangePasswordError, match=error_message):
             user.change_password(old_password, new_password, confirm_password)
             user.save()
 
