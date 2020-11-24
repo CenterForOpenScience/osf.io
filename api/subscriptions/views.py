@@ -28,7 +28,13 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         user = self.request.user
-        return NotificationSubscription.objects.filter(Q(none=user) | Q(email_digest=user) | Q(email_transactional=user))
+        return NotificationSubscription.objects.filter(
+            Q(none=user) |
+            Q(email_digest=user) |
+            Q(
+                email_transactional=user,
+            ),
+        ).distinct()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
