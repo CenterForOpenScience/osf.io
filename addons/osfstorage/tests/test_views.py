@@ -1359,7 +1359,7 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
         # Cache should stay untouched because net storage usage hasn't changed
         key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert storage_usage_cache.get(key) is None
+        assert storage_usage_cache.get(key) == 0
 
         assert_equal(res.status_code, 200)
 

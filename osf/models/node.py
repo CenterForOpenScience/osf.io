@@ -1926,7 +1926,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     visible=True,
                 )
                 self.add_permission(self.creator, ADMIN)
-            update_storage_usage_cache(self.id, self._id)
+            update_storage_usage(self)
         return ret
 
     def update_or_enqueue_on_node_updated(self, user_id, first_save, saved_fields):
