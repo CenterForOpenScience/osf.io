@@ -800,6 +800,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     view_name = 'registration-actions-list'
 
     serializer_class = RegistrationActionSerializer
+    ordering = ('-created',)
     node_lookup_url_kwarg = 'node_id'
 
     def get_registration(self):
