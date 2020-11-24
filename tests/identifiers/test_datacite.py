@@ -26,6 +26,12 @@ FIXTURES = os.path.join(HERE, 'fixtures')
 def override_doi_settings():
     settings.DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
+
+def datacite_metadata_response():
+    with open(os.path.join(FIXTURES, 'datacite_post_metadata_response.xml'), 'r') as fp:
+        return fp.read()
+
+
 @pytest.fixture()
 def datacite_client(registration):
     class MockDataciteClient(object):
@@ -44,14 +50,10 @@ def datacite_client(registration):
         client=MockDataciteClient()
     )
 
+
 @pytest.fixture()
 def registration():
     return RegistrationFactory(is_public=True)
-
-@pytest.fixture()
-def datacite_metadata_response():
-    with open(os.path.join(FIXTURES, 'datacite_post_metadata_response.xml'), 'r') as fp:
-        return fp.read()
 
 
 @pytest.mark.django_db
