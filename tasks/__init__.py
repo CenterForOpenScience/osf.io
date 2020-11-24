@@ -329,7 +329,9 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     except sqlite3.OperationalError as e:
         # Unsticks stuck travis caches that were stuck during migration.
         if ' no such table' in str(e):
+            os.remove(os.environ.get('TESTMON_DATAFILE'))  # set in .travis.yml, meant to rm pre-1.0.0 cached DB
             TestmonData(os.environ.get('TESTMON_DATAFILE')).init_tables()
+            retcode = pytest.main(args)
         elif 'already exists' in str(e):
             os.remove(os.environ.get('TESTMON_DATAFILE'))  # set in .travis.yml
             retcode = pytest.main(args)
