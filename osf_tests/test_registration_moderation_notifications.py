@@ -1,15 +1,15 @@
 import pytest
 import mock
 from mock import call
-import datetime
 
+from django.utils import timezone
 from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
 from osf.management.commands.populate_registration_provider_notification_subscriptions import populate_registration_provider_notification_subscriptions
 
 from osf.migrations import update_provider_auth_groups
 from osf.models import NotificationDigest
 from osf.models.action import RegistrationAction
-from website.profile.utils import get_profile_image_url
+from website.notifications.tasks import get_moderators_emails, get_users_emails
 
 from osf_tests.factories import (
     RegistrationFactory,
@@ -32,7 +32,7 @@ from osf.utils.notifications import (
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
 
-    MOCK_NOW = datetime.datetime(2018, 2, 4)
+    MOCK_NOW = timezone.now()
 
     @pytest.yield_fixture(autouse=True)
     def setup(self):
@@ -74,6 +74,15 @@ class TestRegistrationMachineNotification:
     def moderator(self, provider):
         user = AuthUserFactory()
         provider.add_to_group(user, 'moderator')
+        return user
+
+    @pytest.fixture()
+    def daily_moderator(self, provider):
+        user = AuthUserFactory()
+        provider.add_to_group(user, 'moderator')
+        for subscription_type in provider.DEFAULT_SUBSCRIPTIONS:
+            subscription = provider.notification_subscriptions.get(event_name=subscription_type)
+            subscription.add_user_to_subscription(user, 'email_digest')
         return user
 
     @pytest.fixture()
@@ -298,7 +307,7 @@ class TestRegistrationMachineNotification:
             workflow=None
         )
 
-    def test_notify_moderator_registration_requests_withdrawal_notifications(self, registration, contrib, admin, moderator, provider):
+    def test_notify_moderator_registration_requests_withdrawal_notifications(self, moderator, daily_moderator, registration, admin, provider):
         """
          [REQS-106] "As moderator, I receive registration withdrawal request notification email"
 
@@ -307,34 +316,20 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
+        assert NotificationDigest.objects.count() == 0
+        notify_moderator_registration_requests_withdrawal(registration, admin)
 
-        with mock.patch('website.notifications.emails.store_emails') as mock_email:
-            notify_moderator_registration_requests_withdrawal(registration, admin)
+        assert NotificationDigest.objects.count() == 2
 
-        assert len(mock_email.call_args_list) == 1
+        daily_digest = NotificationDigest.objects.get(send_type='email_digest')
+        transactional_digest = NotificationDigest.objects.get(send_type='email_transactional')
+        assert daily_digest.user == daily_moderator
+        assert transactional_digest.user == moderator
 
-        transactional = mock_email.call_args_list[0]
-
-        assert transactional == call(
-            [moderator._id],
-            'email_transactional',
-            'new_pending_withdraw_requests',
-            admin,
-            registration,
-            self.MOCK_NOW,
-            abstract_provider=registration.provider,
-            document_type='registration',
-            domain='http://localhost:5000/',
-            message=f'submitted "{registration.title}".',
-            profile_image_url=get_profile_image_url(admin),
-            provider_contact_email=settings.OSF_CONTACT_EMAIL,
-            provider_support_email=settings.OSF_SUPPORT_EMAIL,
-            provider_url='http://localhost:5000/',
-            referrer=admin,
-            reviewable=registration,
-            reviews_submission_url=f'http://localhost:5000/reviews/registries/osf/{registration._id}',
-            workflow=None
-        )
+        for digest in (daily_digest, transactional_digest):
+            assert 'requested withdrawal' in digest.message
+            assert digest.event == 'new_pending_withdraw_requests'
+            assert digest.provider == provider
 
     def test_withdrawal_registration_accepted_notifications(self, registration_with_retraction, contrib, admin, withdraw_action):
         """
@@ -480,3 +475,37 @@ class TestRegistrationMachineNotification:
             reviewable=registration_with_retraction,
             workflow=None
         )
+
+    @pytest.mark.parametrize(
+        'digest_type, expected_recipient',
+        [('email_transactional', moderator), ('email_digest', daily_moderator)]
+    )
+    def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider):
+        # Invoke the fixture function to get the recipient because parametrize
+        expected_recipient = expected_recipient(self, provider)
+        with mock.patch('website.reviews.listeners.mails.send_mail'):
+            notify_submit(registration, admin)
+        notify_moderator_registration_requests_withdrawal(registration, admin)
+
+        # One user, one provider => one email
+        grouped_notifications = list(get_moderators_emails(digest_type))
+        assert len(grouped_notifications) == 1
+
+        moderator_message = grouped_notifications[0]
+        assert moderator_message['user_id'] == expected_recipient._id
+        assert moderator_message['provider_id'] == provider.id
+
+        # No fixed ordering of the entires, so just make sure that
+        # keywords for each action type are in some message
+        updates = moderator_message['info']
+        assert len(updates) == 2
+        assert any('submitted' in entry['message'] for entry in updates)
+        assert any('requested withdrawal' in entry['message'] for entry in updates)
+
+    @pytest.mark.parametrize('digest_type', ['email_transactional', 'email_digest'])
+    def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
+        with mock.patch('website.reviews.listeners.mails.send_mail'):
+            notify_submit(registration, admin)
+        notify_moderator_registration_requests_withdrawal(registration, admin)
+
+        assert not list(get_users_emails(digest_type))

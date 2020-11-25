@@ -135,13 +135,15 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
     )
 
     # Set message
-    context['message'] = f'submitted "{resource.title}".'
+    context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
     email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
+#    print(email_transactional_ids)
+    email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))
 
     # Store emails to be sent to subscribers instantly (at a 5 min interval)
     store_emails(
@@ -152,9 +154,22 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
         resource,
         timestamp,
         abstract_provider=provider,
+        template='new_pending_submissions',
         **context
     )
 
+    # Store emails to be sent to subscribers daily
+    store_emails(
+        email_digest_ids,
+        'email_digest',
+        'new_pending_withdraw_requests',
+        context['referrer'],
+        resource,
+        timestamp,
+        abstract_provider=provider,
+        template='new_pending_submissions',
+        **context
+    )
 
 # Handle email notifications to notify moderators of new withdrawal requests
 @reviews_signals.reviews_email_withdrawal_requests.connect
