@@ -1,6 +1,7 @@
 <!doctype html>
 <%!
     from website import settings
+    from datetime import datetime
 %>
 <html class="no-js" lang="">
 <head>
