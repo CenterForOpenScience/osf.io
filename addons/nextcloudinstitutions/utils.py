@@ -30,6 +30,8 @@ SHORT_NAME = apps.SHORT_NAME
 
 ENABLE_DEBUG = False
 
+NEXTCLOUD_FILE_UPDATE_SINCE = 'nextcloud.file_update.since'
+
 def DEBUG(msg):
     if ENABLE_DEBUG:
         logger.error(u'DEBUG_nextcloudinstitutions: ' + msg)
@@ -317,6 +319,11 @@ def celery_check_updated_files(self, provider_id, since, interval):
     if opt.extended is None:
         opt.extended = {}
 
+    val = opt.extended.get(NEXTCLOUD_FILE_UPDATE_SINCE)
+    if val and val.isdigit():
+        DEBUG('get "since" from DB: {}'.format(val))
+        since = val
+
     updated_files = _list_updated_files(ea, since)
     DEBUG('update files: {}'.format(str(updated_files)))
 
@@ -349,7 +356,12 @@ def celery_check_updated_files(self, provider_id, since, interval):
         if f.ftype == 'file':
             try:
                 _check_project_files(opt, f)
+                if latest < f.mtime:
+                    latest = f.mtime
+                    DEBUG('latest: {}'.format(str(latest)))
             except Exception:
                 logger.exception('Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
 
+    opt.extended[NEXTCLOUD_FILE_UPDATE_SINCE] = latest
+    opt.save()
     lock.unlock()
