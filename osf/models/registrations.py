@@ -542,7 +542,7 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+            self.retraction.approval_stage = SanctionStates.PENDING_MODERATION
             self.retraction.accept(user=user, comment=justification)
             self.refresh_from_db()  # grab updated state
 

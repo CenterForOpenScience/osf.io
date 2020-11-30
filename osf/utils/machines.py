@@ -348,7 +348,7 @@ class SanctionStateMachine(Machine):
         super().__init__(
             states=SanctionStates,
             transitions=SANCTION_TRANSITIONS,
-            initial=SanctionStates.from_db_name(self.sanction_state),
+            initial=SanctionStates.from_db_name(self.state),
             model_attribute='approval_stage',
             after_state_change='_save_transition',
             send_event=True,
@@ -372,11 +372,11 @@ class SanctionStateMachine(Machine):
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            if self.approval_stage in [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED]:
+            if self.approval_stage in [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED]:
                 error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
                         sanction=self.DISPLAY_NAME))
-            elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETE]:
+            elif self.approval_stage in [SanctionStates.APPROVED, SanctionStates.COMPLETED]:
                 error_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))
@@ -397,7 +397,7 @@ class SanctionStateMachine(Machine):
         if user is None and event_data.kwargs:
             user = event_data.args[0]
         comment = event_data.kwargs.get('comment', '')
-        if new_state == SanctionStates.PENDING_MODERATOR_APPROVAL.name:
+        if new_state == SanctionStates.PENDING_MODERATION.name:
             user = None  # Don't worry about the particular user who gave final approval
 
         self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
