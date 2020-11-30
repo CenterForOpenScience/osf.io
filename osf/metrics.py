@@ -293,6 +293,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
 
         return search
 
+
 class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
     user_count = metrics.Integer(index=True, doc_values=True, required=True)
@@ -357,3 +358,108 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
             user_id=action.creator._id,
             comment=action.comment,
         )
+
+    @classmethod
+    def get_registries_info(cls) -> list:
+        """
+        Gets metrics info for each registry
+        excpected output:
+        {
+            'doc_count_error_upper_bound': 0,
+            'sum_other_doc_count': 0,
+            'buckets': [{
+                'key': 'osf',
+                'doc_count': 6,
+                'rejected': {'doc_count': 0},
+                'submissions': {'doc_count': 3},
+                'not_embargoed_but_accepted': {'doc_count': 0},
+                'withdrawn': {'doc_count': 0},
+                'transitions_without_comments': {'doc_count': 1},
+                'embargoed': {'doc_count': 0},
+                'transitions_with_comments': {'doc_count': 5}
+            },
+            {
+                'key': 'provider2',
+               'doc_count': 4,
+               'rejected': {'doc_count': 1},
+               'submissions': {'doc_count': 1},
+               'not_embargoed_but_accepted': {'doc_count': 1},
+               'withdrawn': {'doc_count': 0},
+               'transitions_without_comments': {'doc_count': 0},
+               'embargoed': {'doc_count': 0},
+               'transitions_with_comments': {'doc_count': 4}
+               }]
+        }
+        :return: dict
+        """
+        search = cls.search()
+
+        return search.update_from_dict({
+           "aggs": {
+              "providers": {
+                 "terms": {
+                    "field": "provider_id"
+                 },
+                 "aggs": {
+                    "transitions_without_comments": {
+                       "missing": {
+                          "field":"comment"
+                       }
+                    },
+                    "transitions_with_comments": {
+                       "filter": {
+                          "exists": {
+                             "field":"comment"
+                          }
+                       }
+                    },
+                    "submissions": {
+                       "filter": {
+                          "match": {
+                             "trigger": {
+                                "query":"submit"
+                             }
+                          }
+                       }
+                    },
+                    "accepted_with_embargo": {
+                       "filter": {
+                          "match": {
+                             "to_state": {
+                                "query": "embargo"
+                             }
+                          }
+                       }
+                    },
+                    "accepted_without_embargo": {
+                       "filter": {
+                          "match": {
+                             "to_state": {
+                                "query": "accepted"
+                             }
+                          }
+                       }
+                    },
+                    "rejected": {
+                       "filter": {
+                          "match": {
+                             "trigger": {
+                                "query": "reject"
+                             }
+                          }
+                       }
+                    },
+                    "withdrawn": {
+                       "filter": {
+                          "match": {
+                             "trigger": {
+                                "query": "reject"
+                             }
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        }
+    ).execute().aggregations['providers'].to_dict()

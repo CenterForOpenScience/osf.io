@@ -8,7 +8,7 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
-from osf.metrics import PreprintDownload, PreprintView
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics
 from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializer
 from api.metrics.utils import parse_datetimes
@@ -216,24 +216,5 @@ class RegistriesModerationMetricsView(GenericAPIView):
     view_category = 'raw-metrics'
     view_name = 'raw-metrics-view'
 
-    serializer_class = RawMetricsSerializer
-
-    def delete(self, request, *args, **kwargs):
-        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
-
     def get(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        return JsonResponse(connection.transport.perform_request('GET', f'/osf_registriesmoderationmetrics_*/{url_path}'))
-
-    def post(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('POST', f'/osf_registriesmoderationmetrics_*/{url_path}', body=body))
-
-    def put(self, request, *args, **kwargs):
-        connection = get_connection()
-        url_path = kwargs['url_path']
-        body = json.loads(request.body)
-        return JsonResponse(connection.transport.perform_request('PUT', f'/osf_registriesmoderationmetrics_*/{url_path}', body=body))
+        return JsonResponse(RegistriesModerationMetrics.get_registries_info())
