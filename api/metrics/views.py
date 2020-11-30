@@ -9,7 +9,7 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
 from osf.metrics import PreprintDownload, PreprintView
-from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser
+from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
@@ -200,3 +200,40 @@ class RawMetricsView(GenericAPIView):
         url_path = kwargs['url_path']
         body = json.loads(request.body)
         return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+
+
+class RegistriesModerationMetricsView(GenericAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsRegistriesModerationMetricsUser,
+        TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.METRICS_BASIC]
+    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
+
+    view_category = 'raw-metrics'
+    view_name = 'raw-metrics-view'
+
+    serializer_class = RawMetricsSerializer
+
+    def delete(self, request, *args, **kwargs):
+        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
+
+    def get(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        return JsonResponse(connection.transport.perform_request('GET', f'/osf_registriesmoderationmetrics_*/{url_path}'))
+
+    def post(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('POST', f'/osf_registriesmoderationmetrics_*/{url_path}', body=body))
+
+    def put(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('PUT', f'/osf_registriesmoderationmetrics_*/{url_path}', body=body))
