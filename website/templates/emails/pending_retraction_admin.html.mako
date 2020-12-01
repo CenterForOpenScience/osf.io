@@ -11,7 +11,7 @@
     ${initiated_by} initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    If approved,
+    If approved
     % if is_moderated:
         by project admins, a withdrawal request will be sent to ${reviewable.provider.name} moderators for review.
         <br>
@@ -20,7 +20,7 @@
         The title of a withdrawn registration and its contributor list will remain, as will justification or
         explanation of the withdrawal, should you wish to provide it.
     % else:
-        the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic
+        , the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic
          metadata behind. The title of a withdrawn registration and its contributor list will remain, as will
          justification or explanation of the withdrawal, should you wish to provide it.<br>
     % endif
