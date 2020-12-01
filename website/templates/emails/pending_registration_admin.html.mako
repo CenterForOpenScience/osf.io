@@ -11,10 +11,11 @@
     ${initiated_by} has initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    If approved, a registration will be created for the project and will be made public immediately.
+    If approved, a registration will be created for the project and will be made public immediately
     % if is_moderated:
-         and sent to ${reviewable.provider.name} moderators for review.
+         and sent to ${reviewable.provider.name} moderators for review
     % endif
+    .
     <br>
     <br>
     To approve this registration, click the following link: ${approval_link}<br>
