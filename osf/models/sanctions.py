@@ -685,6 +685,7 @@ class Retraction(EmailApprovableSanction):
 
             return {
                 'is_initiator': self.initiated_by == user,
+                'is_moderated': self._get_registration().is_moderated,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
@@ -840,6 +841,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
+                'is_moderated': registration.is_moderated,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -1056,6 +1058,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
             context.update({
                 'is_initiator': self.initiated_by == user,
+                'is_moderated': registration.is_moderated,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
