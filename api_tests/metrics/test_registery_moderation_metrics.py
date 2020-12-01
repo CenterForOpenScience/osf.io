@@ -6,7 +6,6 @@ from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
 from osf.metrics import RegistriesModerationMetrics
-from api.base.settings import API_BASE
 
 pytestmark = pytest.mark.django_db
 

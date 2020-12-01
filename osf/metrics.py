@@ -395,71 +395,70 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
         search = cls.search()
 
         return search.update_from_dict({
-           "aggs": {
-              "providers": {
-                 "terms": {
-                    "field": "provider_id"
-                 },
-                 "aggs": {
-                    "transitions_without_comments": {
-                       "missing": {
-                          "field":"comment"
-                       }
+            'aggs': {
+                'providers': {
+                    'terms': {
+                        'field': 'provider_id'
                     },
-                    "transitions_with_comments": {
-                       "filter": {
-                          "exists": {
-                             "field":"comment"
-                          }
-                       }
-                    },
-                    "submissions": {
-                       "filter": {
-                          "match": {
-                             "trigger": {
-                                "query":"submit"
-                             }
-                          }
-                       }
-                    },
-                    "accepted_with_embargo": {
-                       "filter": {
-                          "match": {
-                             "to_state": {
-                                "query": "embargo"
-                             }
-                          }
-                       }
-                    },
-                    "accepted_without_embargo": {
-                       "filter": {
-                          "match": {
-                             "to_state": {
-                                "query": "accepted"
-                             }
-                          }
-                       }
-                    },
-                    "rejected": {
-                       "filter": {
-                          "match": {
-                             "trigger": {
-                                "query": "reject"
-                             }
-                          }
-                       }
-                    },
-                    "withdrawn": {
-                       "filter": {
-                          "match": {
-                             "trigger": {
-                                "query": "reject"
-                             }
-                          }
-                       }
+                    'aggs': {
+                        'transitions_without_comments': {
+                            'missing': {
+                                'field': 'comment'
+                            }
+                        },
+                        'transitions_with_comments': {
+                            'filter': {
+                                'exists': {
+                                    'field': 'comment'
+                                }
+                            }
+                        },
+                        'submissions': {
+                            'filter': {
+                                'match': {
+                                    'trigger': {
+                                        'query': 'submit'
+                                    }
+                                }
+                            }
+                        },
+                        'accepted_with_embargo': {
+                            'filter': {
+                                'match': {
+                                    'to_state': {
+                                        'query': 'embargo'
+                                    }
+                                }
+                            }
+                        },
+                        'accepted_without_embargo': {
+                            'filter': {
+                                'match': {
+                                    'to_state': {
+                                        'query': 'accepted'
+                                    }
+                                }
+                            }
+                        },
+                        'rejected': {
+                            'filter': {
+                                'match': {
+                                    'trigger': {
+                                        'query': 'reject'
+                                    }
+                                }
+                            }
+                        },
+                        'withdrawn': {
+                            'filter': {
+                                'match': {
+                                    'trigger': {
+                                        'query': 'reject'
+                                    }
+                                }
+                            }
+                        }
                     }
-                 }
-              }
-           }
-        }
-    ).execute().aggregations['providers'].to_dict()
+                }
+            }
+        }).execute().aggregations['providers'].to_dict()

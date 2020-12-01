@@ -20,7 +20,7 @@ def pip_install(req_file, constraints_file=None):
     Return the proper 'pip install' command for installing the dependencies
     defined in ``req_file``. Optionally obey a file of constraints in case of version conflicts
     """
-    cmd = bin_prefix('pip3 install --exists-action w --upgrade -r {} '.format(req_file))
+    cmd = bin_prefix('pip3 install --use-deprecated=legacy-resolver --exists-action w --upgrade -r {} '.format(req_file))
     if constraints_file:  # Support added in pip 7.1
         cmd += ' -c {}'.format(constraints_file)
 
