@@ -362,7 +362,7 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_registries_info(cls) -> list:
+    def get_registries_info(cls) -> dict:
         """
         Gets metrics info for each registry
         excpected output:
