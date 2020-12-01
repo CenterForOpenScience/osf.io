@@ -4,7 +4,9 @@ from elasticsearch.exceptions import NotFoundError
 from elasticsearch_metrics import metrics
 from django.db import models
 from django.utils import timezone
+from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 import pytz
+
 
 from api.base.settings import MAX_SIZE_OF_ES_QUERY, DEFAULT_ES_NULL_VALUE
 
@@ -417,47 +419,83 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
                             'filter': {
                                 'match': {
                                     'trigger': {
-                                        'query': 'submit'
+                                        'query': RegistrationModerationTriggers.SUBMIT.db_name
                                     }
                                 }
                             }
                         },
                         'accepted_with_embargo': {
                             'filter': {
-                                'match': {
-                                    'to_state': {
-                                        'query': 'embargo'
-                                    }
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.EMBARGO.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         },
                         'accepted_without_embargo': {
                             'filter': {
-                                'match': {
-                                    'to_state': {
-                                        'query': 'accepted'
-                                    }
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.ACCEPTED.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         },
                         'rejected': {
                             'filter': {
-                                'match': {
-                                    'trigger': {
-                                        'query': 'reject'
-                                    }
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.REJECTED.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         },
                         'withdrawn': {
                             'filter': {
-                                'match': {
-                                    'trigger': {
-                                        'query': 'reject'
-                                    }
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.WITHDRAWN.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+                                            }
+                                        }
+                                    ]
                                 }
                             }
-                        }
+                        },
                     }
                 }
             }
