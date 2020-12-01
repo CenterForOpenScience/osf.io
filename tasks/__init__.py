@@ -346,6 +346,7 @@ API_TESTS1 = [
     'api_tests/providers',
     'api_tests/preprints',
     'api_tests/registrations',
+    'api_tests/registries_moderation',
     'api_tests/users',
 ]
 API_TESTS2 = [
@@ -464,11 +465,7 @@ def test(ctx, all=False, lint=False):
 def remove_failures_from_testmon(ctx, db_path=None):
 
     conn = sqlite3.connect(db_path)
-    try:
-        tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
-    except Exception:
-        # Typically "sqlite3.OperationalError: no such table: node"
-        tests_decached = 0
+    tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
     ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
 
 @task

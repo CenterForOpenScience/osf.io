@@ -9,7 +9,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     ProviderAssetFileFactory
 )
-from osf.models import RegistrationProvider, RegistrationSchema, NotificationSubscription
+from osf.models import RegistrationProvider, RegistrationSchema
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
 from admin.registration_providers.forms import RegistrationProviderForm
@@ -253,11 +253,6 @@ class TestEditModerators:
     @pytest.fixture()
     def provider(self):
         provider = RegistrationProviderFactory()
-        NotificationSubscription.objects.get_or_create(
-            _id=f'{provider._id}_new_pending_submissions',
-            event_name='new_pending_submissions',
-            provider=provider
-        )
         update_provider_auth_groups()
         return provider
 
@@ -273,14 +268,14 @@ class TestEditModerators:
 
     @pytest.fixture()
     def remove_moderator_view(self, req, provider):
-        view = views.RemoveModerators()
+        view = views.RemoveAdminsAndModerators()
         view = setup_view(view, req)
         view.kwargs = {'registration_provider_id': provider.id}
         return view
 
     @pytest.fixture()
     def add_moderator_view(self, req, provider):
-        view = views.AddModerators()
+        view = views.AddAdminOrModerator()
         view = setup_view(view, req)
         view.kwargs = {'registration_provider_id': provider.id}
         return view
@@ -293,9 +288,10 @@ class TestEditModerators:
         assert res.status_code == 200
 
     def test_post_remove(self, remove_moderator_view, req, moderator, provider):
+        moderator_id = f'Moderator-{moderator.id}'
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
-            str(moderator.id): ['on']
+            moderator_id: ['on']
         }
 
         # django.contrib.messages has a bug which effects unittests
@@ -311,7 +307,8 @@ class TestEditModerators:
     def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
-            'add-moderators-form': [user._id]
+            'add-moderators-form': [user._id],
+            'moderator': ['Add Moderator']
         }
 
         # django.contrib.messages has a bug which effects unittests

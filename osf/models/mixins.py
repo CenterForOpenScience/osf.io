@@ -40,7 +40,6 @@ from osf.utils.machines import (
     ReviewsMachine,
     NodeRequestMachine,
     PreprintRequestMachine,
-    RegistrationMachine
 )
 
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
@@ -50,8 +49,6 @@ from osf.utils.workflows import (
     DefaultTriggers,
     ReviewStates,
     ReviewTriggers,
-    RegistrationStates,
-    RegistrationTriggers
 )
 
 from osf.utils.requests import get_request_and_user_id
@@ -962,6 +959,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     REVIEWABLE_RELATION_NAME = None
     REVIEW_STATES = ReviewStates
+    STATE_FIELD_NAME = 'machine_state'
 
     groups = REVIEW_GROUPS
     group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
@@ -972,6 +970,8 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
+
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     @property
     def is_reviewed(self):
@@ -989,12 +989,12 @@ class ReviewProviderMixin(GuardianMixin):
             # because SpamStatus.UNKNOWN = None, which does not work with `IN`
             spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
         ).values(
-            'machine_state'
+            self.STATE_FIELD_NAME
         ).annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in self.REVIEW_STATES}
+        counts = {state.db_name: 0 for state in self.REVIEW_STATES}
         counts.update({
-            row['machine_state']: row['count']
-            for row in qs if row['machine_state'] in counts})
+            row[self.STATE_FIELD_NAME]: row['count']
+            for row in qs if row[self.STATE_FIELD_NAME] in counts})
         return counts
 
     def get_request_state_counts(self):
@@ -1012,13 +1012,9 @@ class ReviewProviderMixin(GuardianMixin):
 
     def add_to_group(self, user, group):
         # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
+            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+
         return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -1028,10 +1024,23 @@ class ReviewProviderMixin(GuardianMixin):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-            notification.remove_user_from_subscription(user, save=True)
+            for subscription in self.DEFAULT_SUBSCRIPTIONS:
+                self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
 
         return _group.user_set.remove(user)
+
+    def add_user_to_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+
+    def remove_user_from_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        notification.remove_user_from_subscription(user, save=True)
 
 
 class TaxonomizableMixin(models.Model):
@@ -2254,104 +2263,3 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
     class Meta:
         abstract = True
-
-
-class RegistriesModerationMixin(MachineableMixin):
-    """This is to facilitate the registraies modeation process and should extend the DraftRegistration model.
-    """
-    TriggersClass = RegistrationTriggers
-
-    machine_state = models.CharField(
-        max_length=30,
-        db_index=True,
-        choices=RegistrationStates.choices(),
-        default=RegistrationStates.INITIAL.value
-    )
-
-    class Meta:
-        abstract = True
-
-    MachineClass = RegistrationMachine
-
-    def run_request_withdraw(self, user, comment):
-        """Run the 'request_withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.REQUEST_WITHDRAW.value, user=user, comment=comment)
-
-    def run_request_withdraw_fails(self, user, comment):
-        """Run the 'request_withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_FAILS.value, user=user, comment=comment)
-
-    def run_request_withdraw_passes(self, user, comment):
-        """Run the 'request_withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.WITHDRAW_REQUEST_PASSES.value, user=user, comment=comment)
-
-    def run_withdraw_registration(self, user, comment):
-        """Run the 'withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.WITHDRAW.value, user=user, comment=comment)
-
-    def run_reject_withdraw(self, user, comment):
-        """Run the 'withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.REJECT_WITHDRAW.value, user=user, comment=comment)
-
-    def run_force_withdraw(self, user, comment):
-        """Run the 'withdraw' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.FORCE_WITHDRAW.value, user=user, comment=comment)
-
-    def run_accept(self, user, comment, embargo_end_date=None):
-        """ Run the 'accept/embargo' state transition and create a corresponding Action.
-
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        if embargo_end_date:
-            return self._run_transition(self.TriggersClass.EMBARGO.value, user=user, end_date=embargo_end_date)
-        else:
-            return self._run_transition(self.TriggersClass.ACCEPT.value, user=user)
-
-    def run_request_embargo_termination(self, user, comment):
-        """Run the 'embargo_termination' state transition and create a corresponding Action.
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-
-        return self._run_transition(self.TriggersClass.REQUEST_EMBARGO_TERMINATION.value, user=user, comment=comment)
-
-    def run_terminate_embargo(self, user, comment):
-        """Run the 'embargo_termination' state transition and create a corresponding Action.
-        Params:
-            user: The user triggering this transition.
-            comment: Text describing why.
-        """
-        return self._run_transition(self.TriggersClass.TERMINATE_EMBARGO.value, user=user, comment=comment)

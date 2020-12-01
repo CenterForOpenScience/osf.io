@@ -19,9 +19,15 @@ from api.base.views import (
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
+from api.base.exceptions import Conflict
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
-from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
+from api.base.utils import (
+    get_user_auth,
+    default_node_list_permission_queryset,
+    is_bulk_request,
+    is_truthy,
+)
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
@@ -38,6 +44,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
 )
+from api.registrations.permissions import ContributorOrModerator
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -776,31 +783,53 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     serializer_class = RegistrationIdentifierSerializer
 
 
-class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, ProviderMixin):
     provider_class = RegistrationProvider
-
-    required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
 
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        MustBeModerator,
+        ContributorOrModerator,
     )
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
     view_category = 'registrations'
     view_name = 'registration-actions-list'
 
     serializer_class = RegistrationActionSerializer
+    node_lookup_url_kwarg = 'node_id'
+
+    def get_registration(self):
+        registration = get_object_or_error(
+            Registration,
+            self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
+            check_deleted=False,
+        )
+        # May raise a permission denied
+        self.check_object_permissions(self.request, registration)
+        return registration
 
     def get_default_queryset(self):
-        return self.get_node().actions.all()
+        return self.get_registration().actions.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
 
-class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, RegistrationMixin, ProviderMixin):
+        if not target.provider.is_reviewed:
+            raise Conflict(f'{target.provider.name } is an umoderated provider. If you believe this is an error, contact OSF Support.')
+
+        serializer.save(user=self.request.user)
+
+
+class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
     provider_class = RegistrationProvider
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]

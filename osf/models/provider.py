@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import requests
+
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
@@ -17,14 +18,14 @@ from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
-from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationStates
+from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
 from functools import reduce
+from osf.models.notifications import NotificationSubscription
 
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
@@ -199,8 +200,11 @@ class CollectionProvider(AbstractProvider):
 
 
 class RegistrationProvider(AbstractProvider):
-    REVIEWABLE_RELATION_NAME = 'draft_registrations'
-    REVIEW_STATES = RegistrationStates
+    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEW_STATES = RegistrationModerationStates
+    STATE_FIELD_NAME = 'moderation_state'
+
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -327,18 +331,23 @@ def rules_to_subjects(rules):
 
 
 @receiver(post_save, sender=PreprintProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
 
+
 @receiver(post_save, sender=PreprintProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
-        NotificationSubscription.objects.get_or_create(
-            _id='{provider_id}_new_pending_submissions'.format(provider_id=instance._id),
-            event_name='new_pending_submissions',
-            provider=instance
-        )
+        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
+            NotificationSubscription.objects.get_or_create(
+                _id=f'{instance._id}_{subscription}',
+                event_name=subscription,
+                provider=instance
+            )
+
 
 @receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=RegistrationProvider)

@@ -1,29 +1,28 @@
 from django.utils import timezone
-from transitions import Machine
+from transitions import Machine, MachineError
 
 from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
-from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction, RegistrationAction
-from osf.models.sanctions import Retraction
-
+from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
-    RegistrationStates,
     ReviewStates,
+    SanctionStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    REGISTRATION_TRANSITIONS
+    SANCTION_TRANSITIONS
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
+from osf.utils import notifications as notify
 
 class BaseMachine(Machine):
 
@@ -124,20 +123,13 @@ class ReviewsMachine(BaseMachine):
     def resubmission_allowed(self, ev):
         return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
 
-    def withdrawal_submitter_is_moderator_or_admin(self, submitter):
-        # Returns True if the submitter of the request is a moderator or admin for the provider.
-        provider = self.machineable.provider
-        return provider.get_group('moderator').user_set.filter(id=submitter.id).exists() or \
-               provider.get_group(permissions.ADMIN).user_set.filter(id=submitter.id).exists()
-
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
-        context = self.get_context()
-        context['referrer'] = ev.kwargs.get('user')
         user = ev.kwargs.get('user')
+        notify.notify_submit(self.machineable, user)
         auth = Auth(user)
         self.machineable.add_log(
             action=PreprintLog.PUBLISHED,
@@ -147,33 +139,15 @@ class ReviewsMachine(BaseMachine):
             auth=auth,
             save=False,
         )
-        recipients = list(self.machineable.contributors)
-        reviews_signals.reviews_email_submit.send(context=context, recipients=recipients)
-        reviews_signals.reviews_email_submit_moderators_notifications.send(timestamp=timezone.now(), context=context)
 
     def notify_resubmit(self, ev):
-        context = self.get_context()
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_resubmission_confirmation',
-                                           action=self.action)
+        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_accept_reject(self, ev):
-        context = self.get_context()
-        context['notify_comment'] = not self.machineable.provider.reviews_comments_private and self.action.comment
-        context['comment'] = self.action.comment
-        context['is_rejected'] = self.action.to_state == DefaultStates.REJECTED.value
-        context['was_pending'] = self.action.from_state == DefaultStates.PENDING.value
-        reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                           template='reviews_submission_status',
-                                           action=self.action)
+        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_edit_comment(self, ev):
-        context = self.get_context()
-        context['comment'] = self.action.comment
-        if not self.machineable.provider.reviews_comments_private and self.action.comment:
-            reviews_signals.reviews_email.send(creator=ev.kwargs.get('user'), context=context,
-                                               template='reviews_update_comment',
-                                               action=self.action)
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
 
     def notify_withdraw(self, ev):
         context = self.get_context()
@@ -186,7 +160,7 @@ class ReviewsMachine(BaseMachine):
             context['requester'] = preprint_request_action.target.creator
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
-            context['withdrawal_submitter_is_moderator_or_admin'] = True
+            context['force_withdrawal'] = True
 
         for contributor in self.machineable.contributors.all():
             context['contributor'] = contributor
@@ -317,7 +291,7 @@ class PreprintRequestMachine(BaseMachine):
             context = self.get_context()
             mails.send_mail(
                 self.machineable.creator.username,
-                mails.PREPRINT_WITHDRAWAL_REQUEST_DECLINED,
+                mails.WITHDRAWAL_REQUEST_DECLINED,
                 mimetype='html',
                 **context
             )
@@ -341,121 +315,89 @@ class PreprintRequestMachine(BaseMachine):
             'reviewable': self.machineable.target,
             'requester': self.machineable.creator,
             'is_request_email': True,
+            'document_type': self.machineable.target.provider.preprint_word
         }
 
 
-class RegistrationMachine(BaseMachine):
-    ActionClass = RegistrationAction
-    States = RegistrationStates
-    Transitions = REGISTRATION_TRANSITIONS
+class SanctionStateMachine(Machine):
+    '''SanctionsStateMachine manages state transitions for Sanctions objects.
 
-    def save_action(self, ev):
-        user = ev.kwargs.get('user')
-        self.action = self.ActionClass.objects.create(
-            target=self.machineable.registered_node,
-            creator=user,
-            trigger=ev.event.name,
-            from_state=self.from_state.name,
-            to_state=ev.state.name,
-            comment=ev.kwargs.get('comment', ''),
-        )
-        self.machineable.save()
+    The valid machine states for a Sanction object are defined in Workflows.SanctionStates.
+    The valid transitions between these states are defined in Workflows.SANCTION_TRANSITIONS.
 
-    def request_withdrawal(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.refresh_from_db()
-        self.machineable.registered_node.retract_registration(user)
+    Subclasses of SanctionStateMachine inherit the 'trigger' functions named in
+    the SANCTION_TRANSITIONS dictionary (approve, accept, and reject).
+    These trigger functions will, in order,
+    1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
+    2) Call Sanction member functions listed in the 'conditions' key of the dictionary
+    3) Call Sanction member functions listed in the 'before' key of the dictionary
+    4) Update the state field of the Sanction object via the approval_stage setter
+    5) Call Sanction member functions listed in the 'after' key of the dictionary
 
-    def request_terminate_embargo(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.refresh_from_db()
+    If any step fails, the whole transition will fail and the Sanction's
+    approval_stage will be rolled back.
 
-        approval = self.machineable.registered_node.request_embargo_termination(user)
-        approval.save()
+    SanctionStateMachine also provides some extra functionality to write
+    RegistrationActions on events moving in to or out of Moderated machine states
+    as well as to convert MachineErrors (which arise on unsupported state changes
+    requests) into HTTPErrors to report back to users who try to initiate such errors.
+    '''
 
-    def withdraw_registration(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_complete(user)
+    def __init__(self):
 
-    def reject_withdrawal(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_reject(user)
-
-    def embargo_registration(self, ev):
-        user = ev.kwargs.get('user')
-        end_date = ev.kwargs.get('end_date')
-        self.machineable.refresh_from_db()
-        self.machineable.registered_node.embargo_registration(user, end_date)
-        self.machineable.registered_node.refresh_from_db()
-
-    def terminate_embargo(self, ev):
-        self.machineable.registered_node.terminate_embargo()
-
-    def edit_comment(self, ev):
-        self.machineable.comment = self.action.comment
-        self.machineable.save()
-
-    def accept_draft_registration(self, ev):
-        approval = self.machineable.approval
-        approval.approve(self.action.creator)
-        approval.save()
-
-    def reject_draft_registration(self, ev):
-        self.machineable.meta = {}
-        self.machineable.save()
-
-    def submit_draft_registration(self, ev):
-        embargo_date = ev.kwargs.get('embargo_date', None)
-
-        if embargo_date:
-            submission = 'embargo'
-            assert embargo_date, 'must include embargo date'
-        else:
-            submission = 'immediate'
-
-        self.machineable.submit_for_review(
-            self.action.creator,
-            {
-                'registration_choice': submission,
-                'embargo_end_date': embargo_date
-            },
-            save=True
+        super().__init__(
+            states=SanctionStates,
+            transitions=SANCTION_TRANSITIONS,
+            initial=SanctionStates.from_db_name(self.sanction_state),
+            model_attribute='approval_stage',
+            after_state_change='_save_transition',
+            send_event=True,
+            queued=True,
         )
 
-    def withdrawal_request_fails(self, ev):
-        user = ev.kwargs.get('user')
-        self.machineable.registered_node.retraction._on_reject(user)
-        self.machineable.registered_node.retraction.state = Retraction.REJECTED
+    @property
+    def target_registration(self):
+        raise NotImplementedError(
+            'SanctionStateMachine subclasses must define a target_registration property'
+        )
 
-    def force_withdrawal(self, ev):
-        pass
+    @property
+    def approval_stage(self):
+        raise NotImplementedError(
+            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
+        )
 
-    def notify_embargo_termination(self, ev):
-        pass
+    def _process(self, *args, **kwargs):
+        '''Wrap superclass _process to handle expected MachineErrors.'''
+        try:
+            super()._process(*args, **kwargs)
+        except MachineError as e:
+            if self.approval_stage in [SanctionStates.ADMIN_REJECTED, SanctionStates.MODERATOR_REJECTED]:
+                error_message = (
+                    'This {sanction} has already been rejected and cannot be approved'.format(
+                        sanction=self.DISPLAY_NAME))
+            elif self.approval_stage in [SanctionStates.ACCEPTED, SanctionStates.COMPLETE]:
+                error_message = (
+                    'This {sanction} has all required approvals and cannot be rejected'.format(
+                        sanction=self.DISPLAY_NAME))
+            else:
+                raise e
 
-    def notify_embargo(self, ev):
-        pass
+            raise MachineError(error_message)
 
-    def notify_withdraw(self, ev):
-        pass
+    def _save_transition(self, event_data):
+        """Recored the effects of a state transition in the database."""
+        self.save()
+        new_state = event_data.transition.dest
+        # No need to update registration state with no sanction state change
+        if new_state is None:
+            return
 
-    def notify_accept_reject(self, ev):
-        pass
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.kwargs:
+            user = event_data.args[0]
+        comment = event_data.kwargs.get('comment', '')
+        if new_state == SanctionStates.PENDING_MODERATOR_APPROVAL.name:
+            user = None  # Don't worry about the particular user who gave final approval
 
-    def notify_edit_comment(self, ev):
-        pass
-
-    def notify_resubmit(self, ev):
-        pass
-
-    def notify_submit(self, ev):
-        pass
-
-    def notify_withdraw_request_submitted(self, ev):
-        pass
-
-    def notify_withdraw_request_denied(self, ev):
-        pass
-
-    def notify_withdraw_request(self, ev):
-        pass
+        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)

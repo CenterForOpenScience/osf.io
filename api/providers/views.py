@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Q, Value, When, F
+from django.db.models import Case, CharField, Q, Value, When
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -22,7 +22,13 @@ from api.requests.serializers import PreprintRequestSerializer, RegistrationRequ
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
-from api.providers.serializers import CollectionProviderSerializer, PreprintProviderSerializer, ModeratorSerializer, RegistrationProviderSerializer
+from api.providers.serializers import (
+    CollectionProviderSerializer,
+    PreprintProviderSerializer,
+    PreprintModeratorSerializer,
+    RegistrationProviderSerializer,
+    RegistrationModeratorSerializer,
+)
 from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
@@ -43,7 +49,6 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
-    RegistrationApproval,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
@@ -571,26 +576,26 @@ class ModeratorMixin(ProviderMixin):
     provider_class = PreprintProvider
     model_class = OSFUser
 
+    def get_provider(self):
+        return get_object_or_error(self.provider_type, self.kwargs['provider_id'], self.request, display_name='PreprintProvider')
+
     def get_serializer_context(self, *args, **kwargs):
         ctx = super(ModeratorMixin, self).get_serializer_context(*args, **kwargs)
         ctx.update({'provider': self.get_provider()})
         return ctx
 
 
-class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         MustBeModerator,
         CanAddModerator,
     )
-    view_category = 'moderators'
     view_name = 'provider-moderator-list'
 
     required_read_scopes = [CoreScopes.MODERATORS_READ]
     required_write_scopes = [CoreScopes.MODERATORS_WRITE]
-
-    serializer_class = ModeratorSerializer
 
     def get_default_queryset(self):
         provider = self.get_provider()
@@ -605,7 +610,7 @@ class PreprintProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.L
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -613,19 +618,16 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
         CanUpdateModerator,
         CanDeleteModerator,
     )
-    view_category = 'moderators'
     view_name = 'provider-moderator-detail'
 
     required_read_scopes = [CoreScopes.MODERATORS_READ]
     required_write_scopes = [CoreScopes.MODERATORS_WRITE]
 
-    serializer_class = ModeratorSerializer
-
     def get_object(self):
         provider = self.get_provider()
         user = get_object_or_error(OSFUser, self.kwargs['moderator_id'], self.request, display_name='OSFUser')
         try:
-            perm_group = user.groups.filter(name__contains=PreprintProvider.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
+            perm_group = user.groups.filter(name__contains=self.provider_type.group_format.format(self=provider, group='')).order_by('name').first().name.split('_')[-1]
         except AttributeError:
             # Group doesn't exist -- users not moderator
             raise NotFound
@@ -637,6 +639,34 @@ class PreprintProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics
             self.get_provider().remove_from_group(instance, instance.permission_group)
         except ValueError as e:
             raise ValidationError(str(e))
+
+
+class PreprintProviderModeratorsList(ProviderModeratorsList):
+    provider_type = PreprintProvider
+    serializer_class = PreprintModeratorSerializer
+
+    view_category = 'preprint-providers'
+
+
+class PreprintProviderModeratorsDetail(ProviderModeratorsDetail):
+    provider_type = PreprintProvider
+    serializer_class = PreprintModeratorSerializer
+
+    view_category = 'preprint-providers'
+
+
+class RegistrationProviderModeratorsList(ProviderModeratorsList):
+    provider_type = RegistrationProvider
+    serializer_class = RegistrationModeratorSerializer
+
+    view_category = 'registration-providers'
+
+
+class RegistrationProviderModeratorsDetail(ProviderModeratorsDetail):
+    provider_type = RegistrationProvider
+    serializer_class = RegistrationModeratorSerializer
+
+    view_category = 'registration-providers'
 
 
 class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
@@ -683,8 +713,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
-            registration_approval__state=RegistrationApproval.APPROVED,
-        ).annotate(machine_state=F('draft_registration__machine_state'))
+        )
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -738,7 +767,7 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
     view_name = 'registration-provider-action-list'
 
     required_read_scopes = [CoreScopes.ACTIONS_READ]
-    required_write_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
 
     serializer_class = RegistrationActionSerializer
 

@@ -5,6 +5,8 @@ from addons.wiki.models import WikiVersion
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
+from nose.tools import assert_raises
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
@@ -15,11 +17,19 @@ from . import factories
 from .utils import assert_datetime_equal, mock_archive
 from .factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from api.providers.workflows import Workflows
+from osf.migrations import update_provider_auth_groups
+from osf.models.action import RegistrationAction
 from osf_tests.management_commands.test_migration_registration_responses import (
     prereg_registration_responses,
     prereg_registration_metadata_built,
     veer_registration_responses,
     veer_condensed
+)
+from osf.utils.workflows import (
+    RegistrationModerationStates,
+    RegistrationModerationTriggers,
+    SanctionStates
 )
 
 pytestmark = pytest.mark.django_db
@@ -617,3 +627,277 @@ class TestRegistrationMixin:
         registration_metadata = draft_veer.expand_registration_responses()
 
         assert registration_metadata == veer_condensed
+
+
+class TestRegistationModerationStates():
+
+    @pytest.fixture
+    def embargo(self):
+        return factories.EmbargoFactory()
+
+    @pytest.fixture
+    def registration_approval(self):
+        return factories.RegistrationApprovalFactory()
+
+    @pytest.fixture
+    def retraction(self):
+        return factories.RetractionFactory()
+
+    @pytest.fixture
+    def embargo_termination(self):
+        return factories.EmbargoTerminationApprovalFactory()
+
+    @pytest.fixture
+    def moderator(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator):
+        provider = factories.RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def moderated_registration(self, provider):
+        return factories.RegistrationFactory(provider=provider, is_public=True)
+
+    @pytest.fixture
+    def withdraw_action(self, moderated_registration):
+        action = RegistrationAction.objects.create(
+            creator=moderated_registration.creator,
+            target=moderated_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
+    @pytest.fixture
+    def withdraw_action_for_retraction(self, retraction):
+        action = RegistrationAction.objects.create(
+            creator=retraction.target_registration.creator,
+            target=retraction.target_registration,
+            trigger=RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name,
+            from_state=RegistrationModerationStates.ACCEPTED.db_name,
+            to_state=RegistrationModerationStates.PENDING_WITHDRAW.db_name,
+            comment='yo'
+        )
+        action.save()
+        return action
+
+    def test_embargo_states(self, embargo):
+        registration = embargo.target_registration
+        embargo.to_PENDING_ADMIN_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+
+        embargo.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        embargo.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+
+        embargo.to_COMPLETE()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        embargo.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+
+        embargo.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
+
+    def test_registration_approval_states(self, registration_approval):
+        registration = registration_approval.target_registration
+        registration_approval.to_PENDING_ADMIN_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+
+        registration_approval.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        registration_approval.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        registration_approval.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+
+        registration_approval.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
+
+    def test_retraction_states_over_registration_approval(self, registration_approval, withdraw_action):
+        registration = registration_approval.target_registration
+        registration.is_public = True
+        retraction = registration.retract_registration(registration.creator, justification='test')
+        registration_approval.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
+
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
+
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+    def test_retraction_states_over_embargo(self, embargo):
+        registration = embargo.target_registration
+        retraction = registration.retract_registration(user=registration.creator, justification='test')
+        embargo.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
+
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
+
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+
+        retraction.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+
+        embargo.to_COMPLETE()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+    def test_embargo_termination_states(self, embargo_termination):
+        registration = embargo_termination.target_registration
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name
+
+        embargo_termination.to_ADMIN_REJECTED()
+        registration.update_moderation_state()
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+
+        embargo_termination.to_ACCEPTED()
+        registration.update_moderation_state()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+    def test_retraction_states_over_embargo_termination(self, embargo_termination):
+        registration = embargo_termination.target_registration
+        embargo_termination.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction = registration.retract_registration(user=registration.creator, justification='because')
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
+
+        retraction.to_PENDING_MODERATOR_APPROVAL()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
+
+        retraction.to_ACCEPTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+        retraction.to_MODERATOR_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+        retraction.to_ADMIN_REJECTED()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+
+class TestForcedWithdrawal():
+
+    @pytest.fixture
+    def embargo_termination(self):
+        return factories.EmbargoTerminationApprovalFactory()
+
+    @pytest.fixture
+    def moderator(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator):
+        provider = factories.RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def moderated_registration(self, provider):
+        registration = factories.RegistrationFactory(provider=provider, is_public=True)
+        # Move to implicit ACCEPTED state
+        registration.update_moderation_state()
+        return registration
+
+    @pytest.fixture
+    def unmoderated_registration(self):
+        registration = factories.RegistrationFactory(is_public=True)
+        # Move to implicit ACCEPTED state
+        registration.update_moderation_state()
+        return registration
+
+    def test_force_retraction_changes_state(self, moderated_registration, moderator):
+        moderated_registration.retract_registration(
+            user=moderator, justification='because', moderator_initiated=True)
+
+        moderated_registration.refresh_from_db()
+        assert moderated_registration.is_retracted
+        assert moderated_registration.retraction.approval_stage is SanctionStates.ACCEPTED
+        assert moderated_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_force_retraction_writes_action(self, moderated_registration, moderator):
+        justification = 'because power'
+        moderated_registration.retract_registration(
+            user=moderator, justification=justification, moderator_initiated=True)
+
+        expected_justification = 'Force withdrawn by moderator: ' + justification
+        assert moderated_registration.retraction.justification == expected_justification
+
+        action = RegistrationAction.objects.last()
+        assert action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
+        assert action.comment == expected_justification
+        assert action.from_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert action.to_state == RegistrationModerationStates.WITHDRAWN.db_name
+
+    def test_cannot_force_retraction_on_unmoderated_registration(self):
+        unmoderated_registration = factories.RegistrationFactory(is_public=True)
+        with assert_raises(ValueError):
+            unmoderated_registration.retract_registration(
+                user=unmoderated_registration.creator, justification='', moderator_initiated=True)
+
+    def test_nonmoderator_cannot_force_retraction(self, moderated_registration):
+        with assert_raises(PermissionsError):
+            moderated_registration.retract_registration(
+                user=moderated_registration.creator, justification='', moderator_initiated=True)
+
+        assert moderated_registration.retraction is None
+        assert moderated_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
