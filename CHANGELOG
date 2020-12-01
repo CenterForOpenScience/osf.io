@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.21.0 (2020-11-24)
+====================
+- Miscellaneous fixes for Registries Moderation integration
+- Add Registries Moderation notification management
+
 20.20.0 (2020-11-03)
 ====================
 - Add storage limits to nodes
