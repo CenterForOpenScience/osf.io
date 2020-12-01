@@ -29,6 +29,22 @@ from osf.utils.notifications import (
     notify_withdraw_registration
 )
 
+
+def get_moderator(provider):
+    user = AuthUserFactory()
+    provider.add_to_group(user, 'moderator')
+    return user
+
+
+def get_daily_moderator(provider):
+    user = AuthUserFactory()
+    provider.add_to_group(user, 'moderator')
+    for subscription_type in provider.DEFAULT_SUBSCRIPTIONS:
+        subscription = provider.notification_subscriptions.get(event_name=subscription_type)
+        subscription.add_user_to_subscription(user, 'email_digest')
+    return user
+
+
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
 
@@ -478,11 +494,11 @@ class TestRegistrationMachineNotification:
 
     @pytest.mark.parametrize(
         'digest_type, expected_recipient',
-        [('email_transactional', moderator), ('email_digest', daily_moderator)]
+        [('email_transactional', get_moderator), ('email_digest', get_daily_moderator)]
     )
     def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider):
         # Invoke the fixture function to get the recipient because parametrize
-        expected_recipient = expected_recipient(self, provider)
+        expected_recipient = expected_recipient(provider)
         with mock.patch('website.reviews.listeners.mails.send_mail'):
             notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
