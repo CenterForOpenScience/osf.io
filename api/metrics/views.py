@@ -8,8 +8,8 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
-from osf.metrics import PreprintDownload, PreprintView
-from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics
+from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
 from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
@@ -200,3 +200,21 @@ class RawMetricsView(GenericAPIView):
         url_path = kwargs['url_path']
         body = json.loads(request.body)
         return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+
+
+class RegistriesModerationMetricsView(GenericAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsRegistriesModerationMetricsUser,
+        TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.METRICS_BASIC]
+    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
+
+    view_category = 'raw-metrics'
+    view_name = 'raw-metrics-view'
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse(RegistriesModerationMetrics.get_registries_info())

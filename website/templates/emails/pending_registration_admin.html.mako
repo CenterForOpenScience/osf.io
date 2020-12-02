@@ -11,16 +11,31 @@
     ${initiated_by} has initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    If approved, a registration will be created for the project and will be made public immediately.<br>
+
+    % if is_moderated:
+         If approved, a registration will be created for the project and sent to ${reviewable.provider.name} moderators for review
+    % else:
+        If approved, a registration will be created for the project and will be made public immediately.
+    % endif
     <br>
-    To approve this registration, click the following link: ${approval_link}<br>
     <br>
-    To cancel this registration, click the following link: ${disapproval_link}<br>
+    To approve this registration, click the following link: <a href="${approval_link}">Click here</a><br>
     <br>
-    Note: Clicking the disapproval link will immediately cancel the pending registration and the<br>
-    registration will remain in draft state. If you neither approve nor cancel the registration<br>
-    within ${approval_time_span} hours from midnight tonight (EDT) the registration will be<br>
-    automatically approved and made public. This operation is irreversible.<br>
+    To cancel this registration, click the following link: <a href="${disapproval_link}">Click here</a><br>
+    <br>
+    Note: Clicking the cancel link will immediately cancel the pending registration and the
+    registration will remain in draft state. This operation is irreversible. <br>
+
+    % if is_moderated:
+        If you neither approve nor cancel the registration within ${approval_time_span} hours from
+        midnight tonight (EDT) the registration will be automatically approved and
+         sent to ${reviewable.provider.name} moderators for review.
+    % else:
+        If you neither approve nor cancel the registration within ${approval_time_span} hours from midnight tonight
+         (EDT) the registration will be automatically approved and made public.
+    % endif
+    <br>
+
     <br>
     Sincerely yours,<br>
     <br>

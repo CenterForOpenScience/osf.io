@@ -7,8 +7,12 @@
     <br>
     We just wanted to let you know that ${initiated_by} has initiated the following pending registration: ${registration_link}.<br>
     <br>
-    If approved, a registration will be created for the project, viewable here: ${registration_link}, and it will remain<br>
-    public until it is withdrawn.<br>
+    % if is_moderated:
+        If approved by project admins, the registration will be created and sent to ${reviewable.provider.name} moderators for review.
+    % else:
+        If approved, a registration will be created for the project, viewable here: <a href="${registration_link}">Click here</a>, and it will remain
+        public until it is withdrawn.
+    % endif
     <br>
     Sincerely yours,<br>
     <br>

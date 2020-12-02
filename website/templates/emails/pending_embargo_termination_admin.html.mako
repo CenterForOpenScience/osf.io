@@ -11,11 +11,13 @@
     ${initiated_by} initiated a request to end the embargo for a registration of ${project_name}. The embargoed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
-    To approve this change and to make this registration public immediately, click the following link: ${approval_link}.<br>
+    Approve this change and make this registration public immediately:  <a href="${approval_link}">Click here</a>.<br>
     <br>
-    To cancel this change, click the following link: ${disapproval_link}.<br>
+    Cancel this change and keep embargo the same:  <a href="${disapproval_link}">Click here</a><br>
     <br>
-    Note: Clicking the disapproval link will immediately cancel the embargo termination request. If you neither approve nor cancel the request within ${approval_time_span} hours from midnight tonight (EDT) the embargo will be lifted and the registration will be made public. This operation is irreversible.<br>
+    Note: Clicking the disapproval link will immediately cancel the embargo termination request. This operation is irreversible.
+    <br>
+    If you neither approve nor cancel the request within ${approval_time_span} hours from midnight tonight (EDT) the embargo will be lifted and the registration will be made public.
     <br>
     Sincerely yours,<br>
     <br>
