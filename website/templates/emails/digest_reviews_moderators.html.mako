@@ -19,11 +19,11 @@
                         <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
                             Hello ${user.fullname},
                             <br>
-                            Below are the recent registration submission and withdrawal requests that require attention.
+                            Below are the recent registration submission and withdrawal requests that require your attention.
                             <br>
-                            Visit your <a href=${reviews_submissions_url}> provider's submissions.</a>
+                            <a href=${reviews_submissions_url}>View all submissions</a>
                             <br>
-                            Visit your <a href=${reviews_withdrawal_url}> provider's withdrawal requests.</a>
+                            <a href=${reviews_withdrawal_url}> View all withdrawal requests</a>
                         </h3>
                     </th>
                 </tr>

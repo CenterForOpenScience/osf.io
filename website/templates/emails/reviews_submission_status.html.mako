@@ -8,7 +8,7 @@
         % if is_rejected:
             not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission. <a href=${reviewable.absolute_url}>Click here</a> to view your draft.
         % else:
-            been accepted by the moderator
+            been accepted by the moderator.
         % endif
         % if notify_comment:
              The moderator has provided a comment:

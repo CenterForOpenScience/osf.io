@@ -12,7 +12,7 @@
             % if document_type == 'registration':
                 Hello ${user.fullname},
                 <br>
-                Your registration has been successfully submitted to ${reviewable.provider.name}.
+                Your ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully submitted to ${reviewable.provider.name}.
                 <br>
                 ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
                 <br>
