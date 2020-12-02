@@ -6,11 +6,19 @@
     Hello ${user.fullname},<br>
     <br>
     % if is_initiator:
-    You initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
-     The proposed registration can be viewed here: ${registration_link}.<br>
+        % if is_moderated:
+             You initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
+        % else
+            You initiated an embargoed registration of ${project_name}.
+        % endif
+         The proposed registration can be viewed here: ${registration_link}.<br>
     % else:
-    ${initiated_by} initiated an embargoed registration of ${project_name}  with embargo end date ${embargo_end_date.date()}.
-     The proposed registration can be viewed here: ${registration_link}.<br>
+        % if is_moderated:
+             ${initiated_by} initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
+        % else
+            ${initiated_by} initiated an embargoed registration of ${project_name}.
+        % endif
+         The proposed registration can be viewed here: ${registration_link}.<br>
     % endif
     <br>
     % if is_moderated:
