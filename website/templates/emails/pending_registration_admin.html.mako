@@ -14,7 +14,7 @@
 
     % if is_moderated:
          If approved, a registration will be created for the project and sent to ${reviewable.provider.name} moderators for review
-    % else
+    % else:
         If approved, a registration will be created for the project and will be made public immediately.
     % endif
     <br>
