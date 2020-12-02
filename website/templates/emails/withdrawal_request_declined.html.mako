@@ -24,7 +24,7 @@
             Sincerely,<br>
             The ${reviewable.provider.name} and OSF Teams
             <br>
-        $ endif
+        % endif
         <br>
         Sincerely,<br>
         The ${reviewable.provider.name} and OSF Teams

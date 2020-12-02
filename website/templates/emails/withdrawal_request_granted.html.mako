@@ -14,7 +14,7 @@
         % else:
             Your request to withdraw your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> has been approved by ${reviewable.provider.name} moderators.
         % endif
-        $ if notify_comment:
+        % if notify_comment:
             <br>
             The moderator has provided the following comment:
             <br>
