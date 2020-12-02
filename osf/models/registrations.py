@@ -23,6 +23,7 @@ from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
+from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
     Embargo,
     EmbargoTerminationApproval,
@@ -632,6 +633,7 @@ class Registration(AbstractNode):
             comment=comment
         )
         action.save()
+        RegistriesModerationMetrics.record_transitions(action)
 
         moderation_notifications = {
             RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
