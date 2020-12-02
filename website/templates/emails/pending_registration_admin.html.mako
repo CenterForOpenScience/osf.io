@@ -22,28 +22,21 @@
     <br>
     To cancel this registration, click the following link: <a href="${disapproval_link}">Click here</a><br>
     <br>
+    Note: Clicking the cancel link will immediately cancel the pending registration and the
+    registration will remain in draft state.
+
     % if is_moderated:
-        Note: Clicking the cancel link will immediately cancel the pending registration and the
-        registration will remain in draft state.
+        <br>
         If you neither approve nor cancel the registration within ${approval_time_span} hours from
         midnight tonight (EDT) the registration will be automatically approved and
          sent to ${reviewable.provider.name} moderators for review.
     % else:
-        If you neither approve nor cancel the registration within ${approval_time_span} hours from midnight tonight (EDT) the registration will be automatically approved and made public.
+        This operation is irreversible. <br>
+
+        If you neither approve nor cancel the registration within ${approval_time_span} hours from midnight tonight
+         (EDT) the registration will be automatically approved and made public.
     % endif
     <br>
-
-
-    Note: Clicking the cancel link will immediately cancel the pending registration and the<br>
-    registration will remain in draft state. If you neither approve nor cancel the registration<br>
-    within ${approval_time_span} hours from midnight tonight (EDT) the registration will be<br>
-    automatically approved and made public. This operation is irreversible.If you neither approve
-    nor cancel the registration within ${approval_time_span} hours from midnight tonight (EDT)
-     the registration will be automatically approved and made public.
-     % if is_moderated:
-      and sent to ${reviewable.provider.name} moderators for review.
-    % endif
-
 
     <br>
     Sincerely yours,<br>
