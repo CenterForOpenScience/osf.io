@@ -7,7 +7,7 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from osf.models import OSFUser, AbstractNode, AbstractProvider
+from osf.models import OSFUser, AbstractNode, AbstractProvider, RegistrationProvider
 from osf.models import NotificationDigest
 from osf.utils.permissions import ADMIN
 from website import mails, settings
@@ -65,8 +65,13 @@ def _send_reviews_moderator_emails(send_type):
         user = OSFUser.load(group['user_id'])
         info = group['info']
         notification_ids = [message['_id'] for message in info]
+        provider = AbstractProvider.objects.get(id=group['provider_id'])
+        if isinstance(provider, RegistrationProvider):
+            provider_type = 'registration'
+        else:
+            provider_type = 'preprint'
         if not user.is_disabled:
-            provider = AbstractProvider.objects.get(id=group['provider_id'])
+
             mails.send_mail(
                 to_addr=user.username,
                 mimetype='html',
@@ -74,10 +79,12 @@ def _send_reviews_moderator_emails(send_type):
                 name=user.fullname,
                 message=info,
                 provider_name=provider.name,
-                reviews_submissions_url='{}reviews/preprints/{}'.format(settings.DOMAIN, provider._id),
-                notification_settings_url='{}reviews/preprints/{}/notifications'.format(settings.DOMAIN, provider._id),
+                reviews_submissions_url=f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}',
+                notification_settings_url=f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications',
+                reviews_withdrawal_url=f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions?state=pending_withdraw',
                 is_reviews_moderator_notification=True,
-                is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
+                is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
+                provider_type=provider_type
             )
         remove_notifications(email_notification_ids=notification_ids)
 

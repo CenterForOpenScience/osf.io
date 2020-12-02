@@ -83,12 +83,14 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     # Set submission url
     if provider.type == 'osf.preprintprovider':
         url_segment = 'preprints'
+        flag_suffix = ''
     elif provider.type == 'osf.registrationprovider':
         url_segment = 'registries'
+        flag_suffix = '?mode=moderator'
     else:
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 
-    context['reviews_submission_url'] = f'{DOMAIN}reviews/{url_segment}/{provider._id}/{resource._id}'
+    context['reviews_submission_url'] = f'{DOMAIN}reviews/{url_segment}/{provider._id}/{resource._id}{flag_suffix}'
 
     email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
     email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))
