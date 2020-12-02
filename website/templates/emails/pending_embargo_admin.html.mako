@@ -6,20 +6,12 @@
     Hello ${user.fullname},<br>
     <br>
     % if is_initiator:
-        % if is_moderated:
-             You initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
-        % else
-            You initiated an embargoed registration of ${project_name}.
-        % endif
-         The proposed registration can be viewed here: ${registration_link}.<br>
+        You initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
     % else:
-        % if is_moderated:
-             ${initiated_by} initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
-        % else
-            ${initiated_by} initiated an embargoed registration of ${project_name}.
-        % endif
-         The proposed registration can be viewed here: ${registration_link}.<br>
+       ${initiated_by} initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
     % endif
+
+    The proposed registration can be viewed here: ${registration_link}.<br>
     <br>
     % if is_moderated:
         If approved, an embargoed registration will be created for the project and sent to ${reviewable.provider.name}
