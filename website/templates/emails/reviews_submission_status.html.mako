@@ -3,40 +3,42 @@
 <div style="margin: 15px 30px 30px; background: white;">
     <p>Hello ${recipient.fullname},</p>
     <p>
-    % if workflow == 'pre-moderation':
+    % if document_type == 'registration':
         Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
         % if is_rejected:
-            % if document_type == 'preprint':
+            not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission. <a href=${reviewable.absolute_url}>Click here</a> to view your draft.
+        % else:
+            been accepted by the moderator
+        % endif
+        % if notify_comment:
+             The moderator has provided a comment:
+             <br>
+             ${comment}
+        % endif
+    % else:
+        % if workflow == 'pre-moderation':
+            Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
+            % if is_rejected:
                 not been accepted. Contributors with admin permissions may edit the ${document_type} and
                 resubmit, at which time it will return to a pending state and be reviewed by a moderator.
             % else:
-                not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission. <a href=${reviewable.absolute_url}>Click here</a> to view your draft.
-            % endif
-        % else:
-            % if document_type == 'preprint':
                 been accepted by the moderator and is now discoverable to others.
+            % endif
+        % elif workflow == 'post-moderation':
+            Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
+            % if is_rejected:
+                not been accepted and will be made private and not discoverable by others.
+                Contributors with admin permissions may edit the ${document_type} and contact
+                the moderator at ${provider_contact_email} to resubmit.
             % else:
-                been accepted by the moderator.
+                been accepted by the moderator and ${'remains' if was_pending else 'is now'} discoverable to others.
             % endif
         % endif
-    % elif workflow == 'post-moderation':
-        Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
-        % if is_rejected:
-            not been accepted and will be made private and not discoverable by others.
-            Contributors with admin permissions may edit the ${document_type} and contact
-            the moderator at ${provider_contact_email} to resubmit.
-        % else:
-            been accepted by the moderator and ${'remains' if was_pending else 'is now'} discoverable to others.
-        % endif
-    % endif
 
-    % if notify_comment:
-        % if document_type == 'preprint':
+        % if notify_comment:
             The moderator has also provided a comment that is only visible to contributors
             of the ${document_type}, and not to others:<br/>
             ${comment}
-        % else:
-            The moderator has provided a comment: ${comment}
         % endif
     % endif
     </p>

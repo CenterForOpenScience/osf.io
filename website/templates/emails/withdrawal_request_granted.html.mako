@@ -8,55 +8,57 @@
     %>
         Dear ${contributor.fullname},<br>
         <br>
-    % if not ever_public:
-        % if is_requester:
-            You have withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
-            <br>
-            The ${document_type} has been removed from ${reviewable.provider.name}.
-            <br>
+    % if document_type == 'registration':
+        % if force_withdrawal:
+            A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
         % else:
-            ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
-            <br>
-            The ${document_type} has been removed from ${reviewable.provider.name}.
-            <br>
+            Your request to withdraw your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> has been approved by ${reviewable.provider.name} moderators.
         % endif
+        $ if notify_comment:
+            <br>
+            The moderator has provided the following comment:
+            <br>
+            ${comment}
+        % endif
+        <br>
+        The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
     % else:
-        % if is_requester:
-            % if document_type == 'preprint':
-                Your request to withdraw your preprint <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name} has been approved by the service moderators.
+        % if not ever_public:
+            % if is_requester:
+                You have withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
                 <br>
-                The registration has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+                The ${document_type} has been removed from ${reviewable.provider.name}.
                 <br>
             % else:
-                Your request to withdraw your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> has been approved by ${reviewable.provider.name} moderators.
-                % endif
-        % elif force_withdrawal:
-
-            A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
-            <br>
-            % if document_type == 'preprint':
-                The preprint has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+                ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
+                <br>
+                The ${document_type} has been removed from ${reviewable.provider.name}.
                 <br>
             % endif
         % else:
-            ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
-            <br>
-            The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
-            <br>
+            % if is_requester:
+                Your request to withdraw your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name} has been approved by the service moderators.
+                <br>
+                The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+                <br>
+            % elif force_withdrawal:
+                A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
+                <br>
+                The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+                <br>
+            % else:
+                ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
+                <br>
+                The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
+                <br>
+            % endif
         % endif
-    % if reviewable.withdrawal_justification:
-        The moderator has provided the following comment:
-        <br>
-        ${comment}
-        <br>
-        The ${document_type} has been removed from ${reviewable.provider.name} but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
     % endif
         <br>
         Sincerely,<br>
         The ${reviewable.provider.name} and OSF Teams
         <br>
-        <br>
-        To change how often you receive emails, visit your <a href="https://osf.io/settings/notifications/">user settings</a> to manage default email settings.
+        To change how often you receive emails, visit your <a href='https://osf.io/settings/notifications/'>User Settings</a> to manage default email settings.
 
 </tr>
 </%def>

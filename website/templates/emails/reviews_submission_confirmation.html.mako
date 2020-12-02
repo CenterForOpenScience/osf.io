@@ -9,7 +9,20 @@
     %>
     <tr>
         <td>
-            % if document_type == 'preprint':
+            % if document_type == 'registration':
+                Hello ${user.fullname},
+                <br>
+                Your registration has been successfully submitted to ${reviewable.provider.name}.
+                <br>
+                ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
+                <br>
+                You will receive a separate notification informing you of any status changes.
+                <br>
+                Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
+                <br>
+                Sincerely,
+                The {reviewable.provider.name} and OSF teams.
+            % else:
                 <div style="margin: 40px; background: white;">
                     <p>Hello ${user.fullname},</p>
                     % if is_creator:
@@ -90,17 +103,6 @@
                         ${'The OSF team' if isOsfSubmission else 'The {provider} and OSF teams'.format(provider=reviewable.provider.name)}
                     </p>
                 </div>
-            % else:
-                Hello ${user.fullname},
-                <br>
-                ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
-                <br>
-                You will receive a separate notification informing you of any status changes.
-                <br>
-                Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
-                <br>
-                Sincerely,
-                The {reviewable.provider.name} and OSF teams.
             % endif
         </td>
     </tr>

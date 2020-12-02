@@ -39,9 +39,6 @@
             </tr>
         </tbody>
     </table>
-    % if provider_type == 'registration':
-        You are receiving these emails because you are a moderator on {provider.name}. To change your moderation notification preferences, visit your <a href="https://osf.io/settings/notifications/"> notification settings.</a>
-    % endif
 </%def>
 
 <%def name="content()">
