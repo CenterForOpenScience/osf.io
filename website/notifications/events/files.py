@@ -16,6 +16,7 @@ from website.notifications.events.base import (
     register, Event, event_registry, RegistryError
 )
 from website.notifications.events import utils as event_utils
+from website.settings import StorageLimits
 from osf.models import AbstractNode, NodeLog, Preprint
 from addons.base.signals import file_updated as signal
 
@@ -37,6 +38,7 @@ class FileEvent(Event):
         super(FileEvent, self).__init__(user, node, event)
         self.payload = payload
         self._url = None
+        self.storage_limit_status = node.storage_limit_status
 
     @property
     def html_message(self):
@@ -63,6 +65,32 @@ class FileEvent(Event):
         )
 
     @property
+    def storage_limit_context(self):
+        node = self.node
+        if node.is_public:
+            if node.storage_limit_status is StorageLimits.APPROACHING_PUBLIC:
+                return {
+                    'public': True,
+                    'storage_limit_status': 'approaching'
+                }
+            elif node.storage_limit_status is StorageLimits.OVER_PUBLIC:
+                return {
+                    'public': True,
+                    'storage_limit_status': 'over'
+                }
+        else:
+            if node.storage_limit_status is StorageLimits.APPROACHING_PRIVATE:
+                return {
+                    'public': False,
+                    'storage_limit_status': 'approaching'
+                }
+            elif node.storage_limit_status >= StorageLimits.OVER_PRIVATE:
+                return {
+                    'public': False,
+                    'storage_limit_status': 'over'
+                }
+
+    @property
     def event_type(self):
         """Most basic event type."""
         return 'file_updated'
@@ -82,6 +110,18 @@ class FileEvent(Event):
             ).split('/')
 
         return self._url.url
+
+    def perform(self):
+        emails.notify(
+            event=self.event_type,
+            user=self.user,
+            node=self.node,
+            timestamp=self.timestamp,
+            message=self.html_message,
+            profile_image_url=self.profile_image_url,
+            url=self.url,
+            storage_limit_context=self.storage_limit_context
+        )
 
 
 @register(NodeLog.FILE_ADDED)
