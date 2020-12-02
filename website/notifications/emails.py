@@ -39,7 +39,6 @@ def notify(event, user, node, timestamp, **context):
             continue
         # Remove excluded ids from each notification type
         subscriptions[notification_type] = [guid for guid in subscriptions[notification_type] if guid not in exclude]
-
         # If target, they get a reply email and are removed from the general email
         if target_user and target_user._id in subscriptions[notification_type]:
             subscriptions[notification_type].remove(target_user._id)
@@ -105,6 +104,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         recipient = OSFUser.load(recipient_id)
         if recipient.is_disabled:
             continue
+        context['admin_recipient'] = node.has_permission(recipient, ADMIN, check_parent=False)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
         message = mails.render_message(template, **context)

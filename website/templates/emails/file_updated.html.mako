@@ -6,7 +6,7 @@
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
                 <span class="person" style="font-weight: bold;">${user.fullname} </span>
                 ${message}
-                % if storage_limit_context:
+                % if storage_limit_context and admin_recipient:
                     % if storage_limit_context['public']:
                         This public project is ${storage_limit_context['storage_limit_status']} the 50GB OSF Storage limit and requires your attention. In order to avoid disruption of your workflow, please take action through one of the following options:<br>
                         <ul>
