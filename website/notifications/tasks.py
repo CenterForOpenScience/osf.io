@@ -157,8 +157,10 @@ def get_users_emails(send_type):
         )
     FROM osf_notificationdigest AS nd
       LEFT JOIN osf_guid ON nd.user_id = osf_guid.object_id
-    WHERE send_type = %s AND event != 'new_pending_submissions'
-    AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
+    WHERE send_type = %s
+        AND event != 'new_pending_submissions'
+        AND event != 'new_pending_withdraw_requests'
+        AND osf_guid.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')
     GROUP BY osf_guid.id
     ORDER BY osf_guid.id ASC
     """
