@@ -56,7 +56,7 @@
         The ${reviewable.provider.name} and OSF Teams
         <br>
         <br>
-        To change how often you receive emails, visit your <a href=${notification_settings}>user settings</a> to manage default email settings.
+        To change how often you receive emails, visit your <a href="https://osf.io/settings/notifications/">user settings</a> to manage default email settings.
 
 </tr>
 </%def>
