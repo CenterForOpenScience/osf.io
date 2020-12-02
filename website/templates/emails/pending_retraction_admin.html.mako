@@ -26,9 +26,9 @@
     % endif
 
     <br>
-    To approve this withdrawal, click the following link: ${approval_link}.<br>
+    To approve this withdrawal, click the following link: <a href="${approval_link}">Click here</a>.<br>
     <br>
-    To cancel this withdrawal, click the following link: ${disapproval_link}.<br>
+    To cancel this withdrawal, click the following link: <a href="${disapproval_link}">Click here</a>.<br>
     <br>
     Note: Clicking the disapproval link will immediately cancel the pending withdrawal. This operation is irreversible.
     <br>
