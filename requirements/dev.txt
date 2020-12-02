@@ -3,7 +3,7 @@
 # Requirements that are used in the development environment only
 
 # Testing
-pytest==5.0.0
+pytest==6.0.0
 pytest-socket==0.3.5
 pytest-xdist==1.15.0
 pytest-django==3.10.0
