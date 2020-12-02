@@ -21,9 +21,9 @@
          it is manually made public, or the embargo end date is passed on ${embargo_end_date.date()}.
     % endif
     <br>
-    Approve this embargoed registration: ${approval_link}.<br>
+    Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
     <br>
-    Cancel this embargoed registration: ${disapproval_link}.<br>
+    Cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.<br>
     <br>
     Note: Clicking the cancel link will immediately cancel the pending embargo and the registration will remain in draft state. This operation is irreversible.
     <br>

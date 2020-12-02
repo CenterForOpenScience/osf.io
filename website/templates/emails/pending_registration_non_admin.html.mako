@@ -11,7 +11,7 @@
     % if is_moderated:
          by project admins, the registration will be created and sent to ${reviewable.provider.name} moderators for review.
     % else:
-        , a registration will be created for the project, viewable here: ${registration_link}, and it will remain
+        , a registration will be created for the project, viewable here: <a href="${registration_link}">Click here</a>, and it will remain
         public until it is withdrawn.
     % endif
     <br>

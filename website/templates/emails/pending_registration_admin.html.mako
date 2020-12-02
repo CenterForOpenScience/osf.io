@@ -18,9 +18,9 @@
     .
     <br>
     <br>
-    To approve this registration, click the following link: ${approval_link}<br>
+    To approve this registration, click the following link: <a href="${approval_link}">Click here</a><br>
     <br>
-    To cancel this registration, click the following link: ${disapproval_link}<br>
+    To cancel this registration, click the following link: <a href="${disapproval_link}">Click here</a><br>
     <br>
     % if is_moderated:
         Note: Clicking the cancel link will immediately cancel the pending registration and the
