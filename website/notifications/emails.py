@@ -107,11 +107,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
             continue
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(context)
         message = mails.render_message(template, **context)
-        logger.info(message)
         digest = NotificationDigest(
             timestamp=timestamp,
             send_type=notification_type,
