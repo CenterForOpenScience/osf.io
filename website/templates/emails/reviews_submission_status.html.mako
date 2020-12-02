@@ -6,10 +6,18 @@
     % if workflow == 'pre-moderation':
         Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
         % if is_rejected:
-            not been accepted. Contributors with admin permissions may edit the ${document_type} and
-            resubmit, at which time it will return to a pending state and be reviewed by a moderator.
+            % if document_type == 'preprint':
+                not been accepted. Contributors with admin permissions may edit the ${document_type} and
+                resubmit, at which time it will return to a pending state and be reviewed by a moderator.
+            % else:
+                not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission. <a href=${reviewable.absolute_url}>Click here</a> to view your draft.
+            % endif
         % else:
-            been accepted by the moderator and is now discoverable to others.
+            % if document_type == 'preprint':
+                been accepted by the moderator and is now discoverable to others.
+            % else:
+                been accepted by the moderator.
+            % endif
         % endif
     % elif workflow == 'post-moderation':
         Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
@@ -23,9 +31,13 @@
     % endif
 
     % if notify_comment:
-        The moderator has also provided a comment that is only visible to contributors
-        of the ${document_type}, and not to others:<br/>
-        ${comment}
+        % if document_type == 'preprint':
+            The moderator has also provided a comment that is only visible to contributors
+            of the ${document_type}, and not to others:<br/>
+            ${comment}
+        % else:
+            The moderator has provided a comment: ${comment}
+        % endif
     % endif
     </p>
 
