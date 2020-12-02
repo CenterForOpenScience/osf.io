@@ -105,9 +105,9 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         recipient = OSFUser.load(recipient_id)
         if recipient.is_disabled:
             continue
-        context['admin_recipient'] = node.has_permission(recipient, ADMIN, check_parent=False)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         context['recipient'] = recipient
+        context['admin_recipient'] = node.has_permission(recipient, ADMIN, check_parent=False)
         message = mails.render_message(template, **context)
         digest = NotificationDigest(
             timestamp=timestamp,
