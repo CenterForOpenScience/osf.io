@@ -74,6 +74,7 @@ def _send_reviews_moderator_emails(send_type):
 
             mails.send_mail(
                 to_addr=user.username,
+                user=user,
                 mimetype='html',
                 mail=mails.DIGEST_REVIEWS_MODERATORS,
                 name=user.fullname,
