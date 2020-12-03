@@ -17,7 +17,7 @@
                 <tr>
                     <th colspan="2" style="padding: 0px 15px 0 15px">
                         <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
-                            Hello ${user.fullname},
+                            Hello ${name},
                             <br>
                             Below are the recent registration submission and withdrawal requests that require your attention.
                             <br>
