@@ -70,7 +70,7 @@
 
 * _NOTE: After making changes to `Environment Variables` or `Volume Mounts` you will need to recreate the container(s)._
 
-  - `$ docker-compose up --force-recreate --no-deps preprints`
+  - `$ docker-compose up -d --force-recreate --no-deps preprints`
 
 1. Application Settings
  - e.g. OSF & OSF API local.py
