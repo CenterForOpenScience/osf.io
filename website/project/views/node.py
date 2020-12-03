@@ -451,7 +451,7 @@ def collect_node_config_js(addons):
 def node_choose_addons(auth, node, **kwargs):
     config = request.json
     try:
-        for addon_name, enabled in config.iteritems():
+        for addon_name, enabled in config.items():
             if enabled:
                 validate_rdm_addons_allowed(auth, addon_name)
     except PermissionsError as e:
