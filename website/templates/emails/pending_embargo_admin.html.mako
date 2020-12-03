@@ -16,7 +16,7 @@
     % if is_moderated:
         If approved, an embargoed registration will be created for the project and sent to ${reviewable.provider.name}
          moderators for review.
-    % else
+    % else:
         If approved, a registration will be created for the project, and it will remain private until it is withdrawn,
          it is manually made public, or the embargo end date is passed on ${embargo_end_date.date()}.
     % endif
