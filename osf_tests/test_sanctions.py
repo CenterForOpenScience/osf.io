@@ -239,6 +239,10 @@ class TestRegistrationEmbargoTermination:
 @pytest.mark.django_db
 class TestSanctionEmailRendering:
 
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
     @pytest.fixture(
         params=[
             factories.EmbargoFactory,
@@ -247,23 +251,30 @@ class TestSanctionEmailRendering:
             factories.EmbargoTerminationApprovalFactory,
         ]
     )
-    def registration(self, request):
+    def registration(self, request, contributor):
         sanction_factory = request.param
-        sanction = sanction_factory()
+        sanction = sanction_factory(end_date=timezone.now())
         registration = sanction.target_registration
-        non_authorizer = factories.UserFactory()
-        registration.add_contributor(non_authorizer)
+        registration.add_contributor(contributor)
         registration.save()
         return registration
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
-    def test_render_emails(self, registration, reviews_workflow):
+    def test_render_admin_emails(self, registration, reviews_workflow):
         provider = registration.provider
         provider.reviews_workflow = reviews_workflow
         provider.save()
 
-        registration.sanction.ask(
-            registration.get_active_contributors_recursive(unique_users=True)
-        )
-        assert True
+        registration.sanction.ask([(registration.creator, registration)])
+        assert True  # mail rendered successfully
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    def test_render_non_admin_emails(self, registration, reviews_workflow, contributor):
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.sanction.ask([(contributor, registration)])
+        assert True  # mail rendered successfully

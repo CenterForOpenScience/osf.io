@@ -9,7 +9,15 @@ from osf.management.commands.populate_registration_provider_notification_subscri
 from osf.migrations import update_provider_auth_groups
 from osf.models import NotificationDigest
 from osf.models.action import RegistrationAction
-from website.notifications.tasks import get_moderators_emails, get_users_emails
+from osf.utils import machines
+from osf.utils.notifications import (
+    notify_submit,
+    notify_accept_reject,
+    notify_moderator_registration_requests_withdrawal,
+    notify_reject_withdraw_request,
+    notify_withdraw_registration
+)
+from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 
 from osf_tests.factories import (
     RegistrationFactory,
@@ -18,17 +26,11 @@ from osf_tests.factories import (
 )
 
 from website import mails, settings
+from website.notifications import emails, tasks
+from website.reviews import listeners
 
-from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 
-from osf.utils.notifications import (
-    notify_submit,
-    notify_accept_reject,
-    notify_moderator_registration_requests_withdrawal,
-    notify_reject_withdraw_request,
-    notify_withdraw_registration
-)
-
+@mock.patch('website.mails.settings.USE_EMAIL', False)
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
 
@@ -128,8 +130,11 @@ class TestRegistrationMachineNotification:
         :param draft_registration:
         :return:
         """
-
-        with mock.patch('website.reviews.listeners.mails.send_mail') as mock_send_mail:
+        # Set up mock_send_mail as a pass-through to the original function.
+        # This lets us assert on the call/args and also implicitly ensures
+        # that the email acutally renders as normal in send_mail.
+        send_mail = mails.send_mail
+        with mock.patch.object(listeners.mails, 'send_mail', side_effect=send_mail) as mock_send_mail:
             notify_submit(registration, admin)
 
         assert len(mock_send_mail.call_args_list) == 2
@@ -188,7 +193,11 @@ class TestRegistrationMachineNotification:
         """
         add_reviews_notification_setting('global_reviews')
 
-        with mock.patch('website.notifications.emails.store_emails') as mock_email:
+        # Set up mock_email as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # ensures that the email acutally renders correctly.
+        store_emails = emails.store_emails
+        with mock.patch.object(emails, 'store_emails', side_effect=store_emails) as mock_email:
             notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
 
         assert len(mock_email.call_args_list) == 2
@@ -252,7 +261,11 @@ class TestRegistrationMachineNotification:
         """
         add_reviews_notification_setting('global_reviews')
 
-        with mock.patch('website.notifications.emails.store_emails') as mock_email:
+        # Set up mock_email as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # ensures that the email acutally renders correctly
+        store_emails = emails.store_emails
+        with mock.patch.object(emails, 'store_emails', side_effect=store_emails) as mock_email:
             notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
 
         assert len(mock_email.call_args_list) == 2
@@ -341,8 +354,11 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-
-        with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
+        # Set up mock_send_mail as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # enxurs that the email acutally renders as normal in send_mail.
+        send_mail = mails.send_mail
+        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
             notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -394,8 +410,11 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-
-        with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
+        # Set up mock_send_mail as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # ensures that the email acutally renders as normal in send_mail.
+        send_mail = mails.send_mail
+        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
             notify_reject_withdraw_request(registration, withdraw_request_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -441,8 +460,11 @@ class TestRegistrationMachineNotification:
         :param contrib:
         :return:
         """
-
-        with mock.patch('osf.utils.machines.mails.send_mail') as mock_email:
+        # Set up mock_send_mail as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # ensures that the email acutally renders as normal in send_mail.
+        send_mail = mails.send_mail
+        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
             notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -491,12 +513,11 @@ class TestRegistrationMachineNotification:
     def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider):
         # Invoke the fixture function to get the recipient because parametrize
         expected_recipient = expected_recipient(self, provider)
-        with mock.patch('website.reviews.listeners.mails.send_mail'):
-            notify_submit(registration, admin)
+        notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
         # One user, one provider => one email
-        grouped_notifications = list(get_moderators_emails(digest_type))
+        grouped_notifications = list(tasks.get_moderators_emails(digest_type))
         assert len(grouped_notifications) == 1
 
         moderator_message = grouped_notifications[0]
@@ -512,8 +533,18 @@ class TestRegistrationMachineNotification:
 
     @pytest.mark.parametrize('digest_type', ['email_transactional', 'email_digest'])
     def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
-        with mock.patch('website.reviews.listeners.mails.send_mail'):
-            notify_submit(registration, admin)
+        notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
-        assert not list(get_users_emails(digest_type))
+        assert not list(tasks.get_users_emails(digest_type))
+
+    def test_moderator_digest_emails_render(self, registration, admin, moderator):
+        notify_moderator_registration_requests_withdrawal(registration, admin)
+        # Set up mock_send_mail as a pass-through to the original function.
+        # This lets us assert on the call count/args and also implicitly
+        # ensures that the email acutally renders as normal in send_mail.
+        send_mail = mails.send_mail
+        with mock.patch.object(tasks.mails, 'send_mail', side_effect=send_mail) as mock_send_mail:
+            tasks._send_reviews_moderator_emails('email_transactional')
+
+        mock_send_mail.assert_called()
