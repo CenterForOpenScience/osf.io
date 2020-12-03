@@ -21,8 +21,9 @@ def get_email_template_context(resource):
 
     if document_type == 'registration' and resource.provider.brand:
         brand = resource.provider.brand
-        base_context['logo_url']: brand.hero_logo_image
-        base_context['top_bar_color']: brand.primary_color
+        base_context['logo_url'] = brand.hero_logo_image
+        base_context['top_bar_color'] = brand.primary_color
+        base_context['provider_name'] = resource.provider.name
 
     return base_context
 

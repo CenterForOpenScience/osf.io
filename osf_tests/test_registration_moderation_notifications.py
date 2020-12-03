@@ -7,7 +7,7 @@ from osf.management.commands.add_notification_subscription import add_reviews_no
 from osf.management.commands.populate_registration_provider_notification_subscriptions import populate_registration_provider_notification_subscriptions
 
 from osf.migrations import update_provider_auth_groups
-from osf.models import NotificationDigest
+from osf.models import Brand, NotificationDigest
 from osf.models.action import RegistrationAction
 from osf.utils import machines
 from osf.utils.notifications import (
@@ -548,3 +548,13 @@ class TestRegistrationMachineNotification:
             tasks._send_reviews_moderator_emails('email_transactional')
 
         mock_send_mail.assert_called()
+
+    def test_branded_provider_notification_renders(self, registration, admin, moderator):
+        provider = registration.provider
+        provider.brand = Brand.objects.create(hero_logo_image='not-a-url', primary_color='#FFA500')
+        provider.name = 'Test Provider'
+        provider.save()
+
+        notify_submit(registration, admin)
+        tasks._send_reviews_moderator_emails('email_transactional')
+        assert True  # everything rendered!
