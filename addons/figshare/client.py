@@ -36,10 +36,22 @@ class FigshareClient(BaseClient):
         ).json()
 
     # PROJECT LEVEL API
-    def projects(self):
+    def user_projects(self):
+        """
+        All the users projects, public and private
+        """
         return self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'account', 'projects')
+        ).json()
+
+    def public_projects(self):
+        """
+        Just the users public projects
+        """
+        return self._make_request(
+            'GET',
+            self._build_url(settings.API_BASE_URL, 'projects')
         ).json()
 
     def project(self, project_id):
@@ -79,15 +91,6 @@ class FigshareClient(BaseClient):
     def article_is_public(self, article_id):
         return self.article(article_id).get('is_public')
 
-    def project_is_public(self, project_id):
-        return bool(self.project(project_id).get('date_published'))
-
-    def container_is_public(self, container_id, container_type):
-        if container_type == 'project':
-            return self.project_is_public(container_id)
-        elif container_id in settings.FIGSHARE_FOLDER_TYPES:
-            return self.article_is_public(container_id)
-
     def article(self, article_id):
         return self._make_request(
             'GET',
@@ -99,7 +102,8 @@ class FigshareClient(BaseClient):
     def get_folders(self):
         """ Return a list containing both projects and folder-like articles. """
 
-        projects = self.projects()
+        projects = self.user_projects()
+
         project_list = [
             {
                 'name': project['title'],

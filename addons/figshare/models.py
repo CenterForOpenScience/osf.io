@@ -224,12 +224,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if node_permissions == 'private':
                 message = messages.BEFORE_PAGE_LOAD_PRIVATE_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.folder_id)
                 return [message]
-            else:
-                message = messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_MIXED_FS.format(category=node.project_or_component, project_id=figshare.folder_id)
 
         connect = FigshareClient(self.external_account.oauth_key)
         try:
-            project_is_public = connect.container_is_public(self.folder_id, self.folder_path)
+            public_project_ids = [project['url'].split('/')[-1] for project in connect.public_projects()]
+            if self.folder_path == 'project':
+                project_is_public = self.folder_id in public_project_ids
+            elif self.folder_id in figshare_settings.FIGSHARE_FOLDER_TYPES:
+                project_is_public = connect.article_is_public(self.folder_id)
         except HTTPError as e:
             if e.code == 403:
                 return [messages.OAUTH_INVALID]
