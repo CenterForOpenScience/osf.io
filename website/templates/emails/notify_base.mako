@@ -17,7 +17,7 @@
             <td style="border-collapse: collapse;">
                 <table id="layout-table" width="100%" border="0" cellpadding="10" cellspacing="0" height="100%">
                     <tbody>
-                        <tr class="banner" style="background: #${context.get('top_bar_color', 214762)};color: white;">
+                        <tr class="banner" style="background: ${context.get('top_bar_color', #214762)};color: white;">
                             <td class="text-center" style="border-collapse: collapse;text-align: center;">
                                 <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                     <tr>
