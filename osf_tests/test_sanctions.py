@@ -234,3 +234,36 @@ class TestRegistrationEmbargoTermination:
         user_1_tok = embargo_termination.token_for_user(user, 'approval')
         embargo_termination.approve(user=user, token=user_1_tok)
         assert embargo_termination.state == embargo_termination.UNAPPROVED
+
+
+@pytest.mark.django_db
+class TestSanctionEmailRendering:
+
+    @pytest.fixture(
+        params=[
+            factories.EmbargoFactory,
+            factories.RegistrationApprovalFactory,
+            factories.RetractionFactory,
+            factories.EmbargoTerminationApprovalFactory,
+        ]
+    )
+    def registration(self, request):
+        sanction_factory = request.param
+        sanction = sanction_factory()
+        registration = sanction.target_registration
+        non_authorizer = factories.UserFactory()
+        registration.add_contributor(non_authorizer)
+        registration.save()
+        return registration
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    def test_render_emails(self, registration, reviews_workflow):
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.sanction.ask(
+            registration.get_active_contributors_recursive(unique_users=True)
+        )
+        assert True
