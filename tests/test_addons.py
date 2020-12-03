@@ -41,7 +41,6 @@ from website.util import api_url_for, rubeus
 from api.caching import settings as cache_settings
 from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
-from api.caching.tasks import update_storage_usage
 from dateutil.parser import parse as parse_date
 from framework import sentry
 
@@ -486,7 +485,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 250
 
         payload = self.build_payload_with_dest(
@@ -605,7 +603,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 250
 
         payload = self.build_payload_with_dest(
@@ -658,7 +655,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 525
 
         payload = self.build_payload_with_dest(
@@ -702,7 +698,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 250
 
         payload = self.build_payload_with_dest(
@@ -774,7 +769,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 250
 
         payload = self.build_payload_with_dest(
@@ -828,7 +822,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 525
 
         payload = self.build_payload_with_dest(
@@ -872,7 +865,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 250
 
         payload = self.build_payload_with_dest(
@@ -923,7 +915,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 525
 
         payload = self.build_payload_with_dest(
@@ -967,7 +958,6 @@ class TestAddonLogs(OsfTestCase):
         }).save()
 
         self.node.reload()
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 200
 
         payload = self.build_payload(metadata={
@@ -1008,7 +998,6 @@ class TestAddonLogs(OsfTestCase):
         }).save()
 
         self.node.reload()
-        update_storage_usage(self.node)
         assert self.node.storage_usage == 450
 
         payload = self.build_payload(metadata={

@@ -25,6 +25,7 @@ from website.util import api_url_for
 from website import settings as website_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from website.util import api_v2_url
+from api.caching.tasks import update_storage_usage
 
 settings = apps.get_app_config('addons_osfstorage')
 
@@ -311,6 +312,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
         # Adds version to the list of file versions - using custom through table
         self.add_version(version)
         self.save()
+
+        update_storage_usage(self.target)
 
         return version
 
