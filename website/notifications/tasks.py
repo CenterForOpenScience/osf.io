@@ -66,16 +66,22 @@ def _send_reviews_moderator_emails(send_type):
         info = group['info']
         notification_ids = [message['_id'] for message in info]
         provider = AbstractProvider.objects.get(id=group['provider_id'])
+        additional_context = dict()
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
             submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions',
             withdrawals_url = f'{submissions_url}?state=pending_withdraw'
+            if provider.brand:
+                additional_context = {
+                    'logo_url': provider.brand.hero_logo_image,
+                    'top_bar_color': provider.brand.primary_color
+                }
         else:
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}',
             withdrawals_url = ''
-        if not user.is_disabled:
 
+        if not user.is_disabled:
             mails.send_mail(
                 to_addr=user.username,
                 mimetype='html',
@@ -88,7 +94,8 @@ def _send_reviews_moderator_emails(send_type):
                 reviews_withdrawal_url=withdrawals_url,
                 is_reviews_moderator_notification=True,
                 is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
-                provider_type=provider_type
+                provider_type=provider_type,
+                **additional_context
             )
         remove_notifications(email_notification_ids=notification_ids)
 
