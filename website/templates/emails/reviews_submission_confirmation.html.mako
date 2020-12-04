@@ -22,7 +22,7 @@
 					Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
 					<p>
 					Sincerely,
-					The $"{reviewable.provider.name}" and OSF teams.
+					The ${reviewable.provider.name} and OSF teams.
 				</div>
             % else:
                 <div style="margin: 40px; background: white;">

@@ -356,7 +356,7 @@ class TestRegistrationMachineNotification:
         """
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # enxurs that the email acutally renders as normal in send_mail.
+        # ensures that the email acutally renders as normal in send_mail.
         send_mail = mails.send_mail
         with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
             notify_withdraw_registration(registration_with_retraction, withdraw_action)

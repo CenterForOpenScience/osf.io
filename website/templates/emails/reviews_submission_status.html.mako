@@ -10,6 +10,7 @@
         % else:
             been accepted by the moderator.
         % endif
+		<p>
         % if notify_comment:
              The moderator has provided a comment:
              <br>
@@ -103,5 +104,4 @@
         Sincerely,<br>
         The ${reviewable.provider.name} and OSF teams
     </p>
-        To change how often you receive emails, visit your <a href='https://osf.io/settings/notifications/'>User Settings</a> to manage default email settings.
 </div>
