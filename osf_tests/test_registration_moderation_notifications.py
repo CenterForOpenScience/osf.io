@@ -30,7 +30,9 @@ from website.notifications import emails, tasks
 from website.reviews import listeners
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', False)
+# Set USE_EMAIL to true and mock out the default mailer for consistency with other mocked settings
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.tasks.send_email', mock.MagicMock())
 @pytest.mark.django_db
 class TestRegistrationMachineNotification:
 
@@ -550,11 +552,19 @@ class TestRegistrationMachineNotification:
         mock_send_mail.assert_called()
 
     def test_branded_provider_notification_renders(self, registration, admin, moderator):
+        # Set brand details to be checked in notify_base.mako
         provider = registration.provider
         provider.brand = Brand.objects.create(hero_logo_image='not-a-url', primary_color='#FFA500')
         provider.name = 'Test Provider'
         provider.save()
 
+        # Implicitly check that all of our uses of notify_base.mako render with branded details:
+        #
+        # notify_submit renders reviews_submission_confirmation using context from
+        # osf.utils.notifications and stores emails to be picked up in the moderator digest
+        #
+        # _send_Reviews_moderator_emails renders digest_reviews_moderators using context from
+        # website.notifications.tasks
         notify_submit(registration, admin)
         tasks._send_reviews_moderator_emails('email_transactional')
         assert True  # everything rendered!
