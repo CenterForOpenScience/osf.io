@@ -4,7 +4,7 @@ from functools import reduce
 from rest_framework import status as http_status
 import json
 import logging
-import urllib
+from urllib.parse import quote
 
 from django.db import transaction
 from django.db.models import Subquery
@@ -311,7 +311,7 @@ def iqbrims_get_storage(**kwargs):
         url_folder_path = folders[0]['title']
         with transaction.atomic():
             path = u'{}/{}'.format(url_folder_path, f['title'])
-            path = urllib.quote(path.encode('utf8'))
+            path = quote(path.encode('utf8'))
             logger.info(u'Node URL: {}'.format(path))
             file_node = BaseFileNode.resolve_class('iqbrims', BaseFileNode.FILE).get_or_create(node, path)
             url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
@@ -319,7 +319,7 @@ def iqbrims_get_storage(**kwargs):
         with transaction.atomic():
             sroot_folder_path = root_folder_path.strip('/')
             path = u'{}/{}/{}'.format(sroot_folder_path, url_folder_path, f['title'])
-            path = urllib.quote(path.encode('utf8'))
+            path = quote(path.encode('utf8'))
             logger.info(u'Management URL: {}'.format(path))
             file_node = BaseFileNode.resolve_class('googledrive', BaseFileNode.FILE).get_or_create(management_node, path)
             url = website_settings.DOMAIN.rstrip('/') + '/' + file_node.get_guid(create=True)._id + '/'
@@ -419,14 +419,14 @@ def iqbrims_reject_storage(**kwargs):
         for f in files:
             url = website_settings.DOMAIN.rstrip('/') + '/' + node._id + \
                 '/files/iqbrims/' + \
-                urllib.quote(rejected_name.encode('utf8')) + '/' + \
-                urllib.quote(f['title'].encode('utf8'))
+                quote(rejected_name.encode('utf8')) + '/' + \
+                quote(f['title'].encode('utf8'))
             node_urls.append({'title': f['title'], 'url': url})
             url = website_settings.DOMAIN.rstrip('/') + '/' + management_node._id + \
                   '/files/googledrive' + \
-                  urllib.quote(root_folder_path.encode('utf8')) + \
-                  urllib.quote(rejected_name.encode('utf8')) + '/' + \
-                  urllib.quote(f['title'].encode('utf8'))
+                  quote(root_folder_path.encode('utf8')) + \
+                  quote(rejected_name.encode('utf8')) + '/' + \
+                  quote(f['title'].encode('utf8'))
             management_urls.append({'title': f['title'], 'url': url})
         return {'status': 'rejected',
                 'root_folder': root_folder_path,

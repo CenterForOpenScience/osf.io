@@ -221,7 +221,7 @@ def get_full_list(uid, pid, node):
 
     api_url = util.api_v2_url('nodes/{}/files'.format(pid))
     headers = {'content-type': 'application/json'}
-    cookies = {settings.COOKIE_NAME: cookie}
+    cookies = {settings.COOKIE_NAME: str(cookie)}
 
     file_res = requests.get(api_url, headers=headers, cookies=cookies)
     provider_json_res = file_res.json()
@@ -570,7 +570,7 @@ def get_file_info(cookie, file_node, version):
     file_data_request = requests.get(
         file_node.generate_waterbutler_url(
             version=version.identifier, meta='', _internal=True
-        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+        ), headers=headers, cookies={settings.COOKIE_NAME: str(cookie)}
     )
     if file_data_request.status_code == 200:
         file_data = file_data_request.json().get('data')

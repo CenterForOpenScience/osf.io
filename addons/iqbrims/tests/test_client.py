@@ -30,10 +30,10 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(len(mkreq.mock_calls), 1)
             name, args, kwargs = mkreq.mock_calls[0]
             assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart'))
-            assert_equal(kwargs['files']['data'],
-                         ('metadata',
-                          '{"parents": [{"id": "folderid456"}], "title": "files.txt"}',
-                          'application/json; charset=UTF-8'))
+            assert_equal(kwargs['files']['data'][0], 'metadata')
+            assert_equal(json.loads(kwargs['files']['data'][1]),
+                         {"parents": [{"id": "folderid456"}], "title": "files.txt"})
+            assert_equal(kwargs['files']['data'][2], 'application/json; charset=UTF-8')
             assert_equal(kwargs['files']['file'],
                          ('files.txt',
                           'TEST',
@@ -60,7 +60,8 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(len(mkreq.mock_calls), 2)
             name, args, kwargs = mkreq.mock_calls[1]
             assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions'))
-            assert_equal(kwargs['data'], '{"type": "anyone", "role": "writer", "allowFileDiscovery": false}')
+            assert_equal(json.loads(kwargs['data']),
+                         {"type": "anyone", "role": "writer", "allowFileDiscovery": False})
 
     def test_grant_access_from_anyone_second(self):
         client = IQBRIMSClient('0001')
@@ -712,7 +713,7 @@ class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
             del _user_settings_cache['loadedTime']
 
         client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
-        assert_equal(client.LABO_LIST, [{'text': u"No text: {u'tet': u'XXX', u'id': u'xxx'}", 'id': 'error'}])
+        assert_equal(client.LABO_LIST, [{'text': u"No text: {'id': 'xxx', 'tet': 'XXX'}", 'id': 'error'}])
 
 
 class TestIQBRIMSFlowableClient(OsfTestCase):
