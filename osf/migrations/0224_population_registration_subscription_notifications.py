@@ -30,6 +30,5 @@ class Migration(migrations.Migration):
             model_name='notificationsubscription',
             name='event_name',
             field=models.CharField(max_length=100),
-        ),
-        migrations.RunPython(populate_subscriptions, revert)
+        )
     ]
