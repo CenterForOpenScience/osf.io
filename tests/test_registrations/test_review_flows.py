@@ -708,7 +708,6 @@ class TestModerationActions:
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
-        assert latest_action.comment == 'bird'
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
     def test_moderator_reject_submission_writes_accept_submission_action(
@@ -731,6 +730,7 @@ class TestModerationActions:
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
+        assert latest_action.comment == 'bird'
 
 
     def test_moderator_accept_retraction_writes_accept_withdrawal_action(
