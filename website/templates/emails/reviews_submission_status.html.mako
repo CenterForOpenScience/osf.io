@@ -4,16 +4,16 @@
     <p>Hello ${recipient.fullname},</p>
     <p>
     % if document_type == 'registration':
-        Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
         % if is_rejected:
-            not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission. <a href=${reviewable.absolute_url}>Click here</a> to view your draft.
+			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name},
+            has not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission.
+			<a href=${reviewable.absolute_url}>Click here</a> to view your draft.
         % else:
-            been accepted by the moderator.
+			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
         % endif
 		<p>
         % if notify_comment:
-             The moderator has provided a comment:
-             <br>
+             The moderator has provided a comment:<br>
              ${comment}
         % endif
     % else:

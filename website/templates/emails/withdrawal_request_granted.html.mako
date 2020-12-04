@@ -6,8 +6,8 @@
     <%!
         from website import settings
     %>
-        Dear ${contributor.fullname},<br>
-        <br>
+        Dear ${contributor.fullname},
+        <p>
     % if document_type == 'registration':
         % if force_withdrawal:
             A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
@@ -16,8 +16,7 @@
         % endif
         % if notify_comment:
             <p>
-            The moderator has provided the following comment:
-            <br>
+            The moderator has provided the following comment:<br>
             ${comment}
         % endif
         <p>
@@ -57,6 +56,5 @@
         <p>
         Sincerely,<br>
         The ${reviewable.provider.name} and OSF Teams
-
 </tr>
 </%def>

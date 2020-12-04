@@ -12,11 +12,10 @@
     % else:
         If approved, the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic
         metadata behind. The title of a withdrawn registration and its contributor list will remain, as will
-        justification or explanation of the withdrawal, if provided.<br>
+        justification or explanation of the withdrawal, if provided.
     % endif
     <p>
-    Sincerely yours,
-    <br>
+    Sincerely yours,<br>
     The OSF Robots<br>
 </tr>
 </%def>

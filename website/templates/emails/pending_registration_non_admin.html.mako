@@ -14,8 +14,7 @@
         public until it is withdrawn.
     % endif
     <p>
-    Sincerely yours,
-    <br>
+    Sincerely yours,<br>
     The OSF Robots<br>
 </tr>
 </%def>

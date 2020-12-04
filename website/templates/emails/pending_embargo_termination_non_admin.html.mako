@@ -9,8 +9,7 @@
     <p>
     If approved, the embargo will be terminated and the registration and all of its components will be made public immediately.
     <p>
-    Sincerely yours,
-    <br>
+    Sincerely yours,<br>
     The OSF Robots<br>
 
 </tr>
