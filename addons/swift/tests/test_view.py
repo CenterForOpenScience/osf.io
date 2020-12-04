@@ -412,4 +412,5 @@ class TestCreateContainer(SwiftAddonTestCase, OsfTestCase):
         url = '/api/v1/project/{0}/swift/newcontainer/'.format(self.project._id)
         ret = self.app.post_json(url, {'container_name': 'doesntevenmatter'}, auth=self.user.auth, expect_errors=True)
 
-        assert_equals(ret.body.decode(), '{"message": "This should work", "title": "Problem creating container \'doesntevenmatter\'"}')
+        assert_equals(ret.body.decode(),
+                      '{"message": "This should work: 418 because Im a test", "title": "Problem creating container \'doesntevenmatter\'"}')
