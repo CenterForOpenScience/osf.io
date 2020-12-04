@@ -32,7 +32,7 @@ class TestIQBRIMSClient(OsfTestCase):
             assert_equal(args, ('POST', 'https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart'))
             assert_equal(kwargs['files']['data'][0], 'metadata')
             assert_equal(json.loads(kwargs['files']['data'][1]),
-                         {"parents": [{"id": "folderid456"}], "title": "files.txt"})
+                         {'parents': [{'id': 'folderid456'}], 'title': 'files.txt'})
             assert_equal(kwargs['files']['data'][2], 'application/json; charset=UTF-8')
             assert_equal(kwargs['files']['file'],
                          ('files.txt',
@@ -61,7 +61,7 @@ class TestIQBRIMSClient(OsfTestCase):
             name, args, kwargs = mkreq.mock_calls[1]
             assert_equal(args, ('POST', 'https://www.googleapis.com/drive/v3/files/fileid123/permissions'))
             assert_equal(json.loads(kwargs['data']),
-                         {"type": "anyone", "role": "writer", "allowFileDiscovery": False})
+                         {'type': 'anyone', 'role': 'writer', 'allowFileDiscovery': False})
 
     def test_grant_access_from_anyone_second(self):
         client = IQBRIMSClient('0001')
