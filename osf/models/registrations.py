@@ -624,6 +624,9 @@ class Registration(AbstractNode):
 
         initiated_by = initiated_by or self.sanction.initiated_by
 
+        if trigger is RegistrationModerationTriggers.REQUEST_WITHDRAWAL.value:
+            comment = self.withdrawal_justification
+
         action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
