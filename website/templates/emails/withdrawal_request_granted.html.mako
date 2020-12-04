@@ -6,8 +6,8 @@
     <%!
         from website import settings
     %>
-        Dear ${contributor.fullname},<br>
-        <br>
+        Dear ${contributor.fullname},
+        <p>
     % if document_type == 'registration':
         % if force_withdrawal:
             A moderator has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
@@ -15,12 +15,11 @@
             Your request to withdraw your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> has been approved by ${reviewable.provider.name} moderators.
         % endif
         % if notify_comment:
-            <br>
-            The moderator has provided the following comment:
-            <br>
+            <p>
+            The moderator has provided the following comment:<br>
             ${comment}
         % endif
-        <br>
+        <p>
         The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, DOI, and reason for withdrawal (if provided).
     % else:
         % if not ever_public:
@@ -54,11 +53,8 @@
             % endif
         % endif
     % endif
-        <br>
+        <p>
         Sincerely,<br>
         The ${reviewable.provider.name} and OSF Teams
-        <br>
-        To change how often you receive emails, visit your <a href='https://osf.io/settings/notifications/'>User Settings</a> to manage default email settings.
-
 </tr>
 </%def>

@@ -1081,6 +1081,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         else:
             context.update({
                 'initiated_by': self.initiated_by.fullname,
+                'project_name': self.target_registration.title,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,

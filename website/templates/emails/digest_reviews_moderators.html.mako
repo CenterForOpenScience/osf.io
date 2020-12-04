@@ -18,9 +18,9 @@
                     <th colspan="2" style="padding: 0px 15px 0 15px">
                         <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
                             Hello ${name},
-                            <br>
+                            <p>
                             Below are the recent registration submission and withdrawal requests that require your attention.
-                            <br>
+                            <p>
                             <a href=${reviews_submissions_url}>View all submissions</a>
                             <br>
                             <a href=${reviews_withdrawal_url}> View all withdrawal requests</a>
