@@ -137,7 +137,8 @@ install:
     - cp api/base/settings/local-travis.py api/base/settings/local.py
     - '[ -d $HOME/preprints ] || ( mkdir -p $HOME/preprints && touch $HOME/preprints/index.html )'
 
-    - travis_retry pip install --upgrade pip
+    # to use legacy resolver
+    - travis_retry pip install --upgrade pip==20.2
     - travis_retry pip install invoke==0.13.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons
