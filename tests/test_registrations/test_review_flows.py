@@ -678,7 +678,7 @@ class TestModerationActions:
 
     @pytest.fixture
     def retraction(self, provider):
-        sanction = RetractionFactory()
+        sanction = RetractionFactory(justification='bird')
         registration = sanction.target_registration
         registration.provider = provider
         registration.update_moderation_state()
@@ -708,6 +708,7 @@ class TestModerationActions:
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        assert latest_action.comment == 'bird'
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo])
     def test_moderator_reject_submission_writes_accept_submission_action(
