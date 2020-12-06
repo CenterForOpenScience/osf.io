@@ -78,6 +78,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'checkout': None,
             u'md5': None,
             u'sha256': None,
+            u'sha512': None,
         })
 
         version = file.create_version(
@@ -105,6 +106,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'checkout': None,
             u'md5': None,
             u'sha256': None,
+            u'sha512': None,
         })
 
         date = timezone.now()
@@ -128,6 +130,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'checkout': None,
             u'md5': None,
             u'sha256': None,
+            u'sha512': None,
         })
 
     def test_get_child_by_name(self):

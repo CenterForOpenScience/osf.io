@@ -767,12 +767,16 @@ def verify_timestamp(auth, path, provider, **kwargs):
     else:
         verify_result = {
             'verify_result': '',
-            'verify_result_title': ''
+            'verify_result_title': '',
+            'use_hash': False,
+            'external_timestamp': False,
         }
 
     return {
         'timestamp_verify_result': verify_result['verify_result'],
-        'timestamp_verify_result_title': verify_result['verify_result_title']
+        'timestamp_verify_result_title': verify_result['verify_result_title'],
+        'use_hash': verify_result['use_hash'],
+        'external_timestamp': verify_result['external_timestamp'],
     }
 
 

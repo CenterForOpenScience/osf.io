@@ -246,6 +246,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
         return {
             'sha1': last_version.metadata['sha1'],
             'sha256': last_version.metadata['sha256'],
+            'sha512': last_version.metadata.get('sha512', None),
             'md5': last_version.metadata['md5']
         }
 
@@ -288,6 +289,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             'version': self.versions.count(),
             'md5': version.metadata.get('md5') if version else None,
             'sha256': version.metadata.get('sha256') if version else None,
+            'sha512': version.metadata.get('sha512') if version else None,
             'modified': version.created.isoformat() if version else None,
             'created': earliest_version.created.isoformat() if version else None,
         })
@@ -394,6 +396,16 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if not skip_search:
             search.update_file(self)
         return ret
+
+    # return (hash_type, hash_value)
+    def get_hash_for_timestamp(self):
+        hashes = self._hashes
+        if hashes:
+            sha512 = self._hashes.get('sha512', None)
+            if sha512:
+                from website.util import timestamp
+                return timestamp.HASH_TYPE_SHA512, sha512
+        return None, None  # unsupported
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
