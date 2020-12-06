@@ -43,7 +43,7 @@ class FileInfo():
     def __init__(self, et):
         self.fileid = et.find('id').text
         self.ftype = et.find('type').text
-        self.mtime = et.find('mtime').text
+        self.mtime = et.find('time').text  # upload_time (not modified time)
         self.name = et.find('name').text
         self.path = et.find('path').text
         self.muser = et.find('modified_user').text
@@ -170,7 +170,7 @@ def _list_updated_files(externa_account, since):
     client.login(username, password)
     response = client.make_ocs_request(
         'GET',
-        'apps/file-update-notifications',
+        'apps/file_upload_notification',
         'api/recent?since={}'.format(since))
 
     root = ET.fromstring(response.content)
