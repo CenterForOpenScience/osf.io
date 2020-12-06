@@ -1416,7 +1416,7 @@ class AddTimestampHash:
     def _generate_timestamp(cls, ext_info):
         try:
             if not api_settings.USE_UPKI:
-                req_out = cls.gen_timestamp_request(ext_info)
+                req_out = cls._gen_timestamp_request(ext_info)
                 tsa_response = cls._gen_timestamp_response(req_out)
             else:
                 tsa_response = cls._gen_timestamp_upki(ext_info)
