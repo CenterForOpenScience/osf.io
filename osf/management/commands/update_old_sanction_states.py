@@ -1,3 +1,8 @@
+"""
+  Fix bad sanction states introduced by https://github.com/CenterForOpenScience/osf.io/pull/3919
+
+    python3 manage.py update_old_sanction_states
+"""
 from django.core.management.base import BaseCommand
 
 from osf.models import Embargo, Retraction
@@ -13,10 +18,10 @@ def update_old_sanction_states():
     will bring them up-to-date.
     '''
 
-    Embargo.objects.filter(state_iexact='active').update(state=Embargo.APPROVED)
-    Embargo.objects.filter(state_iexact='cancelled').update(state=Embargo.REJECTED)
-    Retraction.objects.filter(state_iexact='retracted').update(state=Retraction.APPROVED)
-    Retraction.objects.filter(state_iexact='cancelled').update(state=Retraction.REJECTED)
+    Embargo.objects.filter(state__iexact='active').update(state=Embargo.APPROVED)
+    Embargo.objects.filter(state__iexact='cancelled').update(state=Embargo.REJECTED)
+    Retraction.objects.filter(state__iexact='retracted').update(state=Retraction.APPROVED)
+    Retraction.objects.filter(state__iexact='cancelled').update(state=Retraction.REJECTED)
 
 
 class Command(BaseCommand):
