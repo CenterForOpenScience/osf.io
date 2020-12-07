@@ -10,18 +10,20 @@
     <tr>
         <td>
             % if document_type == 'registration':
-                Hello ${user.fullname},
-                <br>
-                Your ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully submitted to ${reviewable.provider.name}.
-                <br>
-                ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
-                <br>
-                You will receive a separate notification informing you of any status changes.
-                <br>
-                Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
-                <br>
-                Sincerely,
-                The {reviewable.provider.name} and OSF teams.
+                <div style="margin: 40px; background: white;">
+					Hello ${user.fullname},
+					<p>
+					Your ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully submitted to ${reviewable.provider.name}.
+					<p>
+					${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
+					<p>
+					You will receive a separate notification informing you of any status changes.
+					<p>
+					Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
+					<p>
+					Sincerely,
+					The ${reviewable.provider.name} and OSF teams.
+				</div>
             % else:
                 <div style="margin: 40px; background: white;">
                     <p>Hello ${user.fullname},</p>
