@@ -23,6 +23,9 @@ class TestUpdateOldSanctionStates:
         old_style_cancelled_retraction = factories.RetractionFactory()
         old_style_cancelled_retraction.state = 'cancelled'
         old_style_cancelled_retraction.save()
+        old_style_pending_retraction = factories.RetractionFactory()
+        old_style_pending_retraction.state = 'pending'
+        old_style_pending_retraction.save()
 
         assert Embargo.objects.filter(state=Embargo.UNAPPROVED).count() == 1
         assert Embargo.objects.filter(state=Embargo.APPROVED).count() == 0
@@ -36,7 +39,7 @@ class TestUpdateOldSanctionStates:
         assert Embargo.objects.filter(state=Embargo.UNAPPROVED).count() == 1
         assert Embargo.objects.filter(state=Embargo.APPROVED).count() == 1
         assert Embargo.objects.filter(state=Embargo.REJECTED).count() == 1
-        assert Retraction.objects.filter(state=Retraction.UNAPPROVED).count() == 1
+        assert Retraction.objects.filter(state=Retraction.UNAPPROVED).count() == 2
         assert Retraction.objects.filter(state=Retraction.APPROVED).count() == 1
         assert Retraction.objects.filter(state=Retraction.REJECTED).count() == 1
 
@@ -48,6 +51,8 @@ class TestUpdateOldSanctionStates:
         assert old_style_embargo.state == Embargo.APPROVED
         old_style_retraction.refresh_from_db()
         assert old_style_retraction.state == Retraction.APPROVED
+        old_style_pending_retraction.refresh_from_db()
+        assert old_style_pending_retraction.state == Retraction.UNAPPROVED
         old_style_cancelled_embargo.refresh_from_db()
         assert old_style_cancelled_embargo.state == Embargo.REJECTED
         old_style_cancelled_retraction.refresh_from_db()

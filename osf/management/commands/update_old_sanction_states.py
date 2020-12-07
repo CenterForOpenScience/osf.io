@@ -21,6 +21,7 @@ def update_old_sanction_states():
     Embargo.objects.filter(state__iexact='active').update(state=Embargo.APPROVED)
     Embargo.objects.filter(state__iexact='cancelled').update(state=Embargo.REJECTED)
     Retraction.objects.filter(state__iexact='retracted').update(state=Retraction.APPROVED)
+    Retraction.objects.filter(state__iexact='pending').update(state=Retraction.UNAPPROVED)
     Retraction.objects.filter(state__iexact='cancelled').update(state=Retraction.REJECTED)
 
 
