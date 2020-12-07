@@ -9,7 +9,7 @@ from rest_framework import status as http_status
 from mimetypes import MimeTypes
 import os
 import csv
-import StringIO
+from io import StringIO
 import logging
 
 from addons.osfstorage.models import Region
