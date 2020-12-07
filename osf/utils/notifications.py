@@ -18,12 +18,13 @@ def get_email_template_context(resource):
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
         'document_type': document_type
     }
-
     if document_type == 'registration' and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
         base_context['top_bar_color'] = brand.primary_color
         base_context['provider_name'] = resource.provider.name
+    elif document_type == 'registration':
+        base_context['draft_registration'] = resource.draft_registration.get()
 
     return base_context
 

@@ -5,9 +5,9 @@
     <p>
     % if document_type == 'registration':
         % if is_rejected:
-			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name},
+			Your submission ${reviewable.title}, submitted to ${reviewable.provider.name},
             has not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission.
-			<a href=${reviewable.absolute_url}>Click here</a> to view your draft.
+			<a href=${draft_registration.absolute_url}>Click here</a> to view your draft.
         % else:
 			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
         % endif
