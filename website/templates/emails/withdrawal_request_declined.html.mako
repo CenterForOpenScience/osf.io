@@ -6,7 +6,7 @@
     <%!
         from website import settings
     %>
-        Dear ${requester.fullname},
+        Dear ${contributor.fullname},
 		<p>
         % if document_type == 'registration':
             Your request to withdraw your registration <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name} has been declined by the service moderators. The registration is still publicly available on ${reviewable.provider.name}.
