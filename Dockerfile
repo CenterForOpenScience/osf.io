@@ -23,6 +23,10 @@ RUN apk add --no-cache --virtual .run-deps \
     libev \
     libevent \
     openblas-dev \
+    wkhtmltopdf \
+    xvfb \
+    jq \
+    python3-tkinter \
     && yarn global add bower
 
 WORKDIR /code
@@ -55,6 +59,8 @@ COPY ./addons/weko/requirements.txt ./addons/weko/
 COPY ./addons/s3compat/requirements.txt ./addons/s3compat/
 COPY ./addons/nextcloud/requirements.txt ./addons/nextcloud/
 COPY ./addons/nextcloudinstitutions/requirements.txt ./addons/nextcloudinstitutions/
+COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
+COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
 
 RUN set -ex \
     && mkdir -p /var/www \
@@ -79,6 +85,7 @@ RUN set -ex \
         /code/requirements.txt \
         /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
+        /code/admin/rdm*/requirements.txt \
     ; do \
         pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
