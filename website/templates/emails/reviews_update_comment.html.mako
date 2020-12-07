@@ -7,13 +7,12 @@
     </p>
     <p>
         You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future notification emails
-        for this ${document_type}. Each ${document_type} is associated with a
-        project on the Open Science Framework for managing the ${document_type}. To change your
+        for this ${document_type}. To change your
         email notification preferences, visit your <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
     </p>
     <p>
-        If you have been erroneously associated with "${reviewable.title}", then you may visit the project's
-        "Contributors" page and remove yourself as a contributor.
+        If you have been erroneously associated with "${reviewable.title}," then you may visit the ${document_type}
+        and remove yourself as a contributor.
     </p>
     <p>
         For more information about ${reviewable.provider.name}, visit <a href="${provider_url}">${provider_url}</a> to
