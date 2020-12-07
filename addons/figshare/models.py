@@ -228,6 +228,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         connect = FigshareClient(self.external_account.oauth_key)
         try:
             public_project_ids = [project['url'].split('/')[-1] for project in connect.public_projects()]
+            project_is_public = False
             if self.folder_path == 'project':
                 project_is_public = self.folder_id in public_project_ids
             elif self.folder_id in figshare_settings.FIGSHARE_FOLDER_TYPES:
