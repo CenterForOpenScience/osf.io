@@ -2,6 +2,7 @@ import os
 
 from addons.base.apps import BaseAddonAppConfig
 from website.util import rubeus
+from addons.s3compatinstitutions.settings import MAX_UPLOAD_SIZE
 
 FULL_NAME = 'S3 Compatible Storage for Institutions'
 SHORT_NAME = 's3compatinstitutions'
@@ -43,6 +44,7 @@ class S3CompatInstitutionsAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
+    max_file_size = MAX_UPLOAD_SIZE
 
     user_settings_template = os.path.join(
         TEMPLATE_PATH, 's3compatinstitutions_user_settings.mako')

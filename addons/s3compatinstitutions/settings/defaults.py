@@ -1,5 +1,8 @@
 ENCRYPT_UPLOADS = True
 
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = None
+
 DEFAULT_BASE_BUCKET = 'GRDM'
 
 # available: {guid} (required) (DO NOT USE "{title}")
