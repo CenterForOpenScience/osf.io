@@ -71,6 +71,7 @@ def _send_reviews_moderator_emails(send_type):
             provider_type = 'registration'
             submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions',
             withdrawals_url = f'{submissions_url}?state=pending_withdraw'
+            notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
             if provider.brand:
                 additional_context = {
                     'logo_url': provider.brand.hero_logo_image,
@@ -80,6 +81,7 @@ def _send_reviews_moderator_emails(send_type):
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}',
             withdrawals_url = ''
+            notification_settings_url = f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications'
 
         if not user.is_disabled:
             mails.send_mail(
@@ -90,7 +92,7 @@ def _send_reviews_moderator_emails(send_type):
                 message=info,
                 provider_name=provider.name,
                 reviews_submissions_url=submissions_url,
-                notification_settings_url=f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications',
+                notification_settings_url=notification_settings_url,
                 reviews_withdrawal_url=withdrawals_url,
                 is_reviews_moderator_notification=True,
                 is_admin=provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),

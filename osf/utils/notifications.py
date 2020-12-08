@@ -19,6 +19,8 @@ def get_email_template_context(resource):
         'document_type': document_type
     }
 
+    if document_type == 'registration':
+        base_context['draft_registration'] = resource.draft_registration.get()
     if document_type == 'registration' and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
