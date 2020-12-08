@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.22.0 (2020-12-08
+===================
+- Update emails for Registries Moderation
+
 20.21.0 (2020-11-24)
 ====================
 - Miscellaneous fixes for Registries Moderation integration
