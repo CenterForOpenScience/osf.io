@@ -527,7 +527,7 @@ def user_choose_addons(**kwargs):
     auth = kwargs['auth']
     config = escape_html(request.get_json())
     try:
-        for addon_name, enabled in config.iteritems():
+        for addon_name, enabled in config.items():
             if enabled:
                 validate_rdm_addons_allowed(auth, addon_name)
     except PermissionsError as e:
