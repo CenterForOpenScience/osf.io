@@ -348,7 +348,7 @@ wb:
 
 When you use "Trusted Timestamp Token", execute following steps.
 1. add cotaining keyfile directory at web container:
-mofify docker-compose.yml
+mofify docker-compose.override.yml
 ```yml
 admin:
   ...
@@ -370,4 +370,3 @@ web:
 ```bash
   $ api/timestamp/local-dist.py api/timestamp/local.py
 ```
-

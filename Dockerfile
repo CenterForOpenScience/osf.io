@@ -157,9 +157,6 @@ RUN \
     && mkdir -p ./website/static/built/ \
     && invoke build_js_config_files \
     && yarn run webpack-prod \
-    && yarn upgrade \
-    && yarn add gettext-parser \
-    && node ./scripts/translations/rdmPoToJson.js \
     # Admin
     && cd ./admin \
     && yarn install --frozen-lockfile \
@@ -167,16 +164,10 @@ RUN \
     && cd ../ \
     # Cleanup
     && yarn cache clean \
-    && npm cache clean --force \
-    && yarn remove gettext-parser
+    && npm cache clean --force
 
 # Copy the rest of the code over
 COPY ./ ./
-
-RUN invoke requirements --all
-RUN invoke assets --dev
-
-RUN invoke admin.assets --dev
 
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}

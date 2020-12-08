@@ -172,6 +172,7 @@ scripts/guid_blacklist.txt
 # Generated json
 website/static/js/_allLogTexts.json
 website/static/js/_anonymousLogTexts.json
+website/static/js/translations/*.json
 
 # Admin Specific
 #################
@@ -203,4 +204,3 @@ ssl/
 
 # pyenv
 .python-version
-

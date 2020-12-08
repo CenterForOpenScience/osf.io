@@ -28,7 +28,7 @@ var rdmGettext = function() {
     var gt = new Gettext();
     var currentlanguage = getBrowserLang();
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var translation = require('js/' + translationsBaseDir + '/' + acceptLanguages[i] + '.json');
+        var translation = require('js/translations/' + acceptLanguages[i] + '.json');
         gt.addTranslations(acceptLanguages[i], getTextDomain, translation);
     }
     gt.setLocale(currentlanguage);
