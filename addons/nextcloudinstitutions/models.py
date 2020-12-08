@@ -124,8 +124,9 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         return count
 
     @classmethod
-    def can_access(cls, client):
-        cls._list_count(client, '/')
+    def can_access(cls, client, base_folder):
+        path = cls.cls_fullpath(base_folder, '/')
+        cls._list_count(client, path)
 
     @classmethod
     def create_folder(cls, client, base_folder, name):
@@ -151,6 +152,14 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
     @classmethod
     def root_folder_format(cls):
         return settings.ROOT_FOLDER_FORMAT
+
+    @property
+    def exists(self):
+        try:
+            self._list_count(self.client, self.root_folder_fullpath)
+            return True
+        except Exception:
+            return False
 
     # override
     def sync_title(self):
@@ -229,9 +238,9 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         remove_users_set = nc_member_users_set - grdm_member_users_set
         update_users_set = grdm_member_users_set & nc_member_users_set
 
-        DEBUG('add_users_set: ' + str(add_users_set))
-        DEBUG('remove_users_set: ' + str(remove_users_set))
-        DEBUG('update_users_set: ' + str(update_users_set))
+        DEBUG(u'add_users_set: ' + str(add_users_set))
+        DEBUG(u'remove_users_set: ' + str(remove_users_set))
+        DEBUG(u'update_users_set: ' + str(update_users_set))
 
         first_exception = None
         for user_id in add_users_set:
@@ -244,7 +253,7 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
             except Exception as e:
                 if first_exception:
                     first_exception = e
-                logger.warning(u'share_file_with_user failed: user_id={}: user_id={}: {}'.format(user_id, str(e)))
+                logger.warning(u'share_file_with_user failed: user_id={}: {}'.format(user_id, str(e)))
 
         for user_id in remove_users_set:
             nc_info = nc_member_all_dict.get(user_id)

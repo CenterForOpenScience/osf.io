@@ -2,7 +2,7 @@ ENCRYPT_UPLOADS = True
 
 DEFAULT_BASE_BUCKET = 'GRDM'
 
-# available: {guid} (required)
+# available: {guid} (required) (DO NOT USE "{title}")
 ROOT_FOLDER_FORMAT = '{guid}'
 
 DEBUG_URL = None

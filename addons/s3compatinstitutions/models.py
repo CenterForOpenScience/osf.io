@@ -98,12 +98,14 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         # may raise
         res = client.list_objects(Bucket=bucket, Prefix=key)
         contents = res.get('Contents')
+        if not contents:
+            return 0
         return len(contents)
 
     @classmethod
-    def can_access(cls, client):
+    def can_access(cls, client, bucket):
         # access check
-        client.list_buckets()  # may raise
+        cls._list_count(client, bucket, '/')  # may raise
 
     @classmethod
     def create_folder(cls, client, base_folder, name):
@@ -128,7 +130,16 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
     @classmethod
     def root_folder_format(cls):
+        # DO NOT USE "{title}", see sync_title()
         return settings.ROOT_FOLDER_FORMAT
+
+    @property
+    def exists(self):
+        try:
+            self._list_count(self.client, self.bucket, self.root_prefix)
+            return True
+        except Exception:
+            return False
 
     # override
     def sync_title(self):

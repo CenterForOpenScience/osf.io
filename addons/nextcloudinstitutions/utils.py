@@ -84,7 +84,7 @@ class MetadataClient(object):
         try:
             res = self.client._make_dav_request('PROPPATCH', path, data=xml)
         except NCHTTPResponseError:
-            logger.error('cannot set timestamp: user={}, path={}'.format(self.account, path))
+            logger.error(u'cannot set timestamp: user={}, path={}'.format(self.account, path))
             return None
         return res
 
@@ -97,7 +97,7 @@ class MetadataClient(object):
         try:
             res = self.client._make_dav_request('PROPFIND', path, data=xml)
         except NCHTTPResponseError:
-            logger.error('cannot get timestamp: user={}, path={}'.format(self.account, path))
+            logger.error(u'cannot get timestamp: user={}, path={}'.format(self.account, path))
             return None
         return res
 
@@ -107,7 +107,7 @@ class MetadataClient(object):
 
 
 def get_timestamp(node_settings, path):
-    DEBUG('path: {}'.format(path))
+    DEBUG(u'path: {}'.format(path))
     provider = node_settings.provider
     external_account = provider.account
     url, username = external_account.provider_id.rsplit(':', 1)
@@ -124,13 +124,13 @@ def get_timestamp(node_settings, path):
             decoded_timestamp = None
         else:
             decoded_timestamp = base64.b64decode(timestamp)
-        DEBUG('get timestamp: {}'.format(timestamp))
+        DEBUG(u'get timestamp: {}'.format(timestamp))
         timestamp_status = cli.get_attribute(res[0], settings.PROPERTY_KEY_TIMESTAMP_STATUS)
         try:
             timestamp_status = int(timestamp_status)
         except Exception:
             timestamp_status = None
-        DEBUG('get timestamp_status: {}'.format(timestamp_status))
+        DEBUG(u'get timestamp_status: {}'.format(timestamp_status))
         context = {}
         context['url'] = url
         context['username'] = username
@@ -140,7 +140,7 @@ def get_timestamp(node_settings, path):
 
 
 def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context=None):
-    DEBUG('path: {}'.format(path))
+    DEBUG(u'path: {}'.format(path))
     if context is None:
         provider = node_settings.provider
         external_account = provider.account
@@ -151,7 +151,7 @@ def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context
         username = context['username']
         password = context['password']
     encoded_timestamp = base64.b64encode(timestamp_data)
-    DEBUG('set timestamp: {}'.format(encoded_timestamp))
+    DEBUG(u'set timestamp: {}'.format(encoded_timestamp))
     attributes = {
         settings.PROPERTY_KEY_TIMESTAMP: encoded_timestamp,
         settings.PROPERTY_KEY_TIMESTAMP_STATUS: str(timestamp_status)
@@ -159,7 +159,7 @@ def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context
     cli = MetadataClient(url, username, password)
     res = cli.set_metadata(path, attributes)
     if res:
-        DEBUG('metadata res: {}'.format(type(res)))
+        DEBUG(u'metadata res: {}'.format(type(res)))
 
 
 def _list_updated_files(externa_account, since):
@@ -177,7 +177,7 @@ def _list_updated_files(externa_account, since):
     meta = root[0]
     status = meta[0]
     statuscode = meta[1]
-    DEBUG('status: {}, code: {}'.format(status.text, statuscode.text))
+    DEBUG(u'status: {}, code: {}'.format(status.text, statuscode.text))
     OCSAPI_SUCCESS = '100'
     if statuscode.text != OCSAPI_SUCCESS:
         return None
@@ -207,7 +207,7 @@ def _select_admin(node):
         if user.is_disabled or user.eppn is None:
             continue
         if node.is_admin_contributor(user):
-            DEBUG('selected user for timestamp: username={}, eppn={}'.format(user.username, user.eppn))
+            DEBUG(u'selected user for timestamp: username={}, eppn={}'.format(user.username, user.eppn))
             return user
     raise Exception('unexpected condition')
 
@@ -226,14 +226,14 @@ def _check_for_file(project, path, fileinfo):
     file_node = cls.get_or_create(node, path)
     json = waterbutler.get_node_info(admin_cookie, node._id, SHORT_NAME, path)
     if json is None:
-        DEBUG('waterbutler.get_node_info() is None: path={}'.format(path))
+        DEBUG(u'waterbutler.get_node_info() is None: path={}'.format(path))
         return
 
     data = json.get('data')
     if data is None:
         DEBUG('waterbutler.get_node_info().get("data") is None: path={}'.format(path))
         return
-    DEBUG('data: {}'.format(str(data)))
+    DEBUG(u'data: {}'.format(str(data)))
 
     attrs = data['attributes']
     file_node.update(None, attrs, user=admin)  # update content_hash
@@ -249,7 +249,7 @@ def _check_for_file(project, path, fileinfo):
     }
     # verified by admin
     verify_result = timestamp.check_file_timestamp(admin.id, node, info, verify_external_only=True)
-    DEBUG('check timestamp: verify_result={}'.format(verify_result.get('verify_result_title')))
+    DEBUG(u'check timestamp: verify_result={}'.format(verify_result.get('verify_result_title')))
     if verify_result['verify_result'] == api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
         return  # already checked
 
@@ -257,13 +257,13 @@ def _check_for_file(project, path, fileinfo):
     user = None
     if fileinfo.muser:
         osfuser_guid = project.extuser_to_osfuser(fileinfo.muser)
-        DEBUG('osfuser_guid: {}'.format(osfuser_guid))
+        DEBUG(u'osfuser_guid: {}'.format(osfuser_guid))
         if osfuser_guid:
             try:
                 user = OSFUser.objects.get(guids___id=osfuser_guid)
-                DEBUG('user: {}'.format(str(user)))
+                DEBUG(u'user: {}'.format(str(user)))
             except OSFUser.DoesNotExist:
-                logger.warning('modified by unknown user: email={}'.format(fileinfo.muser))
+                logger.warning(u'modified by unknown user: email={}'.format(fileinfo.muser))
 
     metadata = {
         'path': path,
@@ -279,7 +279,7 @@ def _check_for_file(project, path, fileinfo):
     else:  # modified by unknown user
         verify_result = timestamp.add_token(admin.id, node, info)
         project.create_waterbutler_log(None, action, metadata)
-    logger.info('update timestamp by Webhook for Nextcloud: node_guid={}, path={}, verify_result={}'.format(
+    logger.info(u'update timestamp by Webhook for Nextcloud: node_guid={}, path={}, verify_result={}'.format(
         node._id, path, verify_result.get('verify_result_title')))
 
 
@@ -291,27 +291,27 @@ def _check_project_files(addon_option, fileinfo):
         if fileinfo.path.startswith(path):
             internal_path = fileinfo.path[len(path):]
             if internal_path:
-                DEBUG('internal_path: {}'.format(internal_path))
+                DEBUG(u'internal_path: {}'.format(internal_path))
                 _check_for_file(project, internal_path, fileinfo)
 
 
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_check_updated_files(self, provider_id, since, interval):
-    DEBUG('provider_id: {}, since: {}, interval: {}'.format(provider_id, since, interval))
+    DEBUG(u'provider_id: {}, since: {}, interval: {}'.format(provider_id, since, interval))
 
     start_time = time.time()
-    DEBUG('start_time: {}'.format(start_time))
+    DEBUG(u'start_time: {}'.format(start_time))
 
     # to wait for updating timestamp in create_waterbutler_log()
     time.sleep(5)
 
     ea = ExternalAccount.objects.get(
         provider=SHORT_NAME, provider_id=provider_id)
-    DEBUG('external account id: {}'.format(ea._id))
+    DEBUG(u'external account id: {}'.format(ea._id))
 
     lock = Lock(TMPDIR, LOCK_PREFIX, ea._id)
     if not lock.trylock():
-        DEBUG('lock acquisition failed')
+        DEBUG(u'lock acquisition failed')
         return  # exit
 
     opt = RdmAddonOption.objects.get(
@@ -321,11 +321,11 @@ def celery_check_updated_files(self, provider_id, since, interval):
 
     val = opt.extended.get(NEXTCLOUD_FILE_UPDATE_SINCE)
     if val and val.isdigit():
-        DEBUG('get "since" from DB: {}'.format(val))
+        DEBUG(u'get "since" from DB: {}'.format(val))
         since = val
 
     updated_files = _list_updated_files(ea, since)
-    DEBUG('update files: {}'.format(str(updated_files)))
+    DEBUG(u'update files: {}'.format(str(updated_files)))
 
     latest = since
     for f in updated_files:
@@ -335,9 +335,9 @@ def celery_check_updated_files(self, provider_id, since, interval):
                 _check_project_files(opt, f)
                 if latest < f.mtime:
                     latest = f.mtime
-                    DEBUG('latest: {}'.format(str(latest)))
+                    DEBUG(u'latest: {}'.format(str(latest)))
             except Exception:
-                logger.exception('Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
+                logger.exception(u'Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
 
     # wait for the specified interval
     current_time = time.time()
@@ -346,10 +346,10 @@ def celery_check_updated_files(self, provider_id, since, interval):
     if recheck_time - current_time > 0:
         sleep_time = math.ceil(recheck_time - current_time)
         time.sleep(sleep_time)
-    DEBUG('current: {}, recheck: {}, sleep: {}'.format(current_time, recheck_time, sleep_time))
+    DEBUG(u'current: {}, recheck: {}, sleep: {}'.format(current_time, recheck_time, sleep_time))
 
     updated_files2 = _list_updated_files(ea, latest)
-    DEBUG('update files2: {}'.format(str(updated_files2)))
+    DEBUG(u'update files2: {}'.format(str(updated_files2)))
 
     for f in updated_files2:
         DEBUG(u'path: {}, mtime: {}, modified user: {}'.format(f.path, f.mtime, f.muser))
@@ -358,9 +358,9 @@ def celery_check_updated_files(self, provider_id, since, interval):
                 _check_project_files(opt, f)
                 if latest < f.mtime:
                     latest = f.mtime
-                    DEBUG('latest: {}'.format(str(latest)))
+                    DEBUG(u'latest: {}'.format(str(latest)))
             except Exception:
-                logger.exception('Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
+                logger.exception(u'Insititution={}, Nextcloud ID={}'.format(opt.institution, provider_id))
 
     opt.extended[NEXTCLOUD_FILE_UPDATE_SINCE] = latest
     opt.save()

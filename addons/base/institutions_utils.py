@@ -2,6 +2,7 @@
 import abc
 import six
 import logging
+import time
 
 from django.db import models
 from django.db.models.signals import pre_save, post_save
@@ -193,9 +194,10 @@ class InstitutionsStorageAddon(BaseStorageAddon):
 
         provider = cls.cls_provider_switch(addon_option)
         client = cls.get_client(provider)
-        cls.can_access(client)
 
         base_folder = cls.cls_base_folder(addon_option)
+        cls.can_access(client, base_folder)
+
         folder_name = cls.cls_folder_name_from_node(node)
         # create_folder() may raise
         cls.create_folder(client, base_folder, folder_name)
@@ -245,9 +247,17 @@ class InstitutionsStorageAddon(BaseStorageAddon):
     @classmethod
     def cls_fullpath(cls, base_folder, folder_name):
         base_folder = base_folder.strip('/')
-        if not base_folder:
-            return '/' + folder_name
-        return '/' + base_folder + '/' + folder_name
+        folder_name = folder_name.strip('/')
+        if base_folder:
+            if folder_name:
+                return '/' + base_folder + '/' + folder_name
+            else:
+                return '/' + base_folder
+        else:
+            if folder_name:
+                return '/' + folder_name
+            else:
+                return '/'
 
     # full_path=BASE_FOLDR/ROOT_FOLDER_FORMAT
     @property
@@ -337,7 +347,8 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         raise NotImplementedError()
 
     @classmethod
-    def can_access(cls, client):
+    def can_access(cls, client, base_folder):
+        # raise error if you cannot access the base_folder.
         raise NotImplementedError()
 
     @classmethod
@@ -357,6 +368,11 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         raise NotImplementedError()
 
     def sync_contributors(self):
+        raise NotImplementedError()
+
+    @property
+    def exists(self):
+        # return True when the root_folder exists.
         raise NotImplementedError()
 
 
@@ -419,7 +435,46 @@ def node_post_save(sender, instance, created, **kwargs):
     else:
         sync_title(node)
 
+def loop_addons_for_institutuins(func, node, target_addons):
+    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
+        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+            continue  # skip
+        if target_addons and addon_name not in target_addons:
+            continue  # skip
+        ns = node.get_addon(addon_name)  # get NodeSetttings
+        if ns is None:  # disabled
+            continue  # skip
+        if not ns.addon_option.is_allowed:  # disabled
+            continue  # skip
+        if not ns.complete:  # disabled
+            continue  # skip
+        func(ns)
+
+def is_available(node):
+    if node.is_deleted:
+        return False
+    if not hasattr(node, 'get_addon'):
+        return False
+    return True
+
+def check_existence_and_create(node, ns, op_name):
+    if ns.exists:
+        return True
+    try:
+        ns.create_folder(ns.client, ns.base_folder, ns.folder_name)
+        logger.info(u'{}: create external storage folder: addon_name={}, project title={}, GUID={}'.format(op_name, ns.SHORT_NAME, node.title, node._id))
+        return True
+    except Exception as e:
+        logger.warning(u'{}: cannot create external storage folder: addon_name={}, project title={}, GUID={}: {}'.format(op_name, ns.SHORT_NAME, node.title, node._id, str(e)))
+        return False
+
+
+# sleep time (sec.) to limit API calls
+SYNC_WAIT = 1
+
 def sync_title(node, target_addons=None, force=False):
+    if not is_available(node):
+        return
     old_node_title = None
     if force is False:
         syncinfo = SyncInfo.get(node.id)
@@ -427,46 +482,41 @@ def sync_title(node, target_addons=None, force=False):
             return  # skip
         old_node_title = syncinfo.old_node_title
 
-    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
-        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
-            continue  # skip
-        if target_addons and addon_name not in target_addons:
-            continue  # skip
-        ns = node.get_addon(addon_name)  # get NodeSetttings
-        if ns is None or not ns.complete:  # disabled
-            continue  # skip
+    def _func(ns):  # NodeSettings
+        if not check_existence_and_create(node, ns, 'sync_title'):
+            return  # skip
         try:
             ns.sync_title()
+            time.sleep(SYNC_WAIT)
         except Exception:
             logger.exception('sync_title')
-            logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, old_node_title, node.title, node._id))
+            logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(ns.SHORT_NAME, old_node_title, node.title, node._id))
+
+    loop_addons_for_institutuins(_func, node, target_addons)
 
 @project_signals.contributors_updated.connect
 def sync_contributors(node, target_addons=None):
-    if node.is_deleted:
+    if not is_available(node):
         return
-    if not hasattr(node, 'get_addon'):
-        return
-    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
-        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
-            continue  # skip
-        if target_addons and addon_name not in target_addons:
-            continue  # skip
-        ns = node.get_addon(addon_name)  # get NodeSetttings
-        if ns is None or not ns.complete:  # disabled
-            continue  # skip
+
+    def _func(ns):  # NodeSettings
+        if not check_existence_and_create(node, ns, 'sync_contributors'):
+            return  # skip
         try:
             ns.sync_contributors()
+            time.sleep(SYNC_WAIT)
         except Exception as e:
             logger.exception(str(e))
-            logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(addon_name, node.title, node._id))
+            logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(ns.SHORT_NAME, node.title, node._id))
 
+    loop_addons_for_institutuins(_func, node, target_addons)
 
 from celery.contrib.abortable import AbortableTask
 from framework.celery_tasks import app as celery_app
 
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_sync_all(self, institution_id, target_addons=None):
+    time.sleep(5)  # is_allowed may not be updated.
     for n in Node.objects.filter(affiliated_institutions___id=institution_id,
                                  is_deleted=False):
         sync_title(n, target_addons=target_addons, force=True)
