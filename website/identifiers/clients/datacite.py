@@ -8,6 +8,7 @@ import datetime
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
+from osf.metadata.utils import datacite_format_subjects, datacite_format_contributors, datacite_format_creators
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +34,8 @@ class DataCiteClient(AbstractIdentifierClient):
                 'identifier': self.build_doi(node),
                 'identifierType': 'DOI',
             },
-            'creators': [
-                {'creatorName': user.fullname,
-                 'givenName': user.given_name,
-                 'familyName': user.family_name} for user in node.visible_contributors
-            ],
+            'creators': datacite_format_creators([node.creator]),
+            'contributors': datacite_format_contributors(node.visible_contributors),
             'titles': [
                 {'title': node.title}
             ],
@@ -48,6 +46,16 @@ class DataCiteClient(AbstractIdentifierClient):
                 'resourceTypeGeneral': 'Text'
             }
         }
+
+        article_doi = node.article_doi
+        if article_doi:
+            data['relatedIdentifiers'] = [
+                {
+                    'relatedIdentifier': article_doi,
+                    'relatedIdentifierType': 'DOI',
+                    'relationType': 'IsSupplementTo'
+                }
+            ]
 
         if node.description:
             data['descriptions'] = [{
@@ -60,6 +68,8 @@ class DataCiteClient(AbstractIdentifierClient):
                 'rights': node.node_license.name,
                 'rightsURI': node.node_license.url
             }]
+
+        data['subjects'] = datacite_format_subjects(node)
 
         # Validate dictionary
         assert schema40.validate(data)
