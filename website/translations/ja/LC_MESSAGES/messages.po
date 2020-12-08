@@ -3843,7 +3843,7 @@ msgstr "リンクされたJupyterHubs"
 
 #: website/templates/util/render_addon_widget.mako:158
 msgid "Launch"
-msgstr "始める"
+msgstr "起動"
 
 #: website/templates/util/render_addon_widget.mako:166
 msgid "No Linked JupyterHubs"
