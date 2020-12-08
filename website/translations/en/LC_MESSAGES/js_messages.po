@@ -202,6 +202,10 @@ msgstr ""
 msgid "Autocomplete"
 msgstr ""
 
+#: addons/jupyterhub/static/files.js:92
+msgid "Launch"
+msgstr ""
+
 #: admin/static/js/collection_providers/collectionProviders.js:9
 msgid "Hide Form"
 msgstr ""
@@ -6761,7 +6765,3 @@ msgstr ""
 
 #~ msgid "${user}updated file ${path} in Dropbox Business in ${node}"
 #~ msgstr ""
-
-#~ msgid "Timestamp verification is in progress"
-#~ msgstr ""
-
