@@ -6,6 +6,7 @@ var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
 
 var logPrefix = '[jupyterhub] ';
+var _ = require('js/rdmGettext')._;
 
 
 function JupyterButton() {
@@ -89,7 +90,7 @@ function JupyterButton() {
                     },
                     icon: 'fa fa-external-link',
                     className : 'text-primary'
-                }, 'JupyterHub');
+                }, _('Launch'));
                 return {
                   view : function(ctrl, args, children) {
                     var tb = args.treebeard;
