@@ -501,6 +501,7 @@ class CeleryConfig:
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.update_institution_project_counts',
+        'osf.management.commands.correct_registration_moderation_states',
     )
 
     # Modules that need metrics and release requirements

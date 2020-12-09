@@ -23,6 +23,7 @@ from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 
+from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
     Embargo,
     EmbargoTerminationApproval,
@@ -541,7 +542,7 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            self.retraction.approval_stage = SanctionStates.PENDING_MODERATOR_APPROVAL
+            self.retraction.approval_stage = SanctionStates.PENDING_MODERATION
             self.retraction.accept(user=user, comment=justification)
             self.refresh_from_db()  # grab updated state
 
@@ -623,6 +624,9 @@ class Registration(AbstractNode):
 
         initiated_by = initiated_by or self.sanction.initiated_by
 
+        if not comment and trigger is RegistrationModerationTriggers.REQUEST_WITHDRAWAL:
+            comment = self.withdrawal_justification or ''  # Withdrawal justification is null by default
+
         action = RegistrationAction.objects.create(
             target=self,
             creator=initiated_by,
@@ -632,6 +636,7 @@ class Registration(AbstractNode):
             comment=comment
         )
         action.save()
+        RegistriesModerationMetrics.record_transitions(action)
 
         moderation_notifications = {
             RegistrationModerationTriggers.SUBMIT: notify.notify_submit,

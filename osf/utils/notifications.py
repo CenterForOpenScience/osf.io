@@ -9,7 +9,7 @@ def get_email_template_context(resource):
     url_segment = 'preprints' if is_preprint else 'registries'
     document_type = resource.provider.preprint_word if is_preprint else 'registration'
 
-    return {
+    base_context = {
         'domain': DOMAIN,
         'reviewable': resource,
         'workflow': resource.provider.reviews_workflow,
@@ -19,6 +19,15 @@ def get_email_template_context(resource):
         'document_type': document_type
     }
 
+    if document_type == 'registration':
+        base_context['draft_registration'] = resource.draft_registration.get()
+    if document_type == 'registration' and resource.provider.brand:
+        brand = resource.provider.brand
+        base_context['logo_url'] = brand.hero_logo_image
+        base_context['top_bar_color'] = brand.primary_color
+        base_context['provider_name'] = resource.provider.name
+
+    return base_context
 
 def notify_submit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
@@ -102,6 +111,8 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
 
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester'] = resource.retraction.initiated_by
+    context['comment'] = action.comment
+    context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
 
     for contributor in resource.contributors.all():
         context['contributor'] = contributor

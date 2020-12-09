@@ -11,11 +11,21 @@ class IsPreprintMetricsUser(permissions.BasePermission):
             return True
         return False
 
+
 class IsRawMetricsUser(permissions.BasePermission):
 
     def has_permission(self, request, view):
         user = request.user
         if user.system_tags.filter(name='raw_es6').exists():
+            return True
+        return False
+
+
+class IsRegistriesModerationMetricsUser(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        user = request.user
+        if user.system_tags.filter(name='registries_moderation_metrics').exists():
             return True
         return False
 
