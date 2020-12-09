@@ -15,9 +15,14 @@ def correct_registration_moderation_states(page_size=None):
 
     # Any registration with a non-INITIAL state is already subject to the new
     # sanction state machine flows and should have the correct moderation_state
+    # Unapproved RegistrationApprovals and Embargoes should have an INITIAL state,
+    # and are excluded.
     default_value = RegistrationModerationStates.INITIAL.db_name
     out_of_date_registrations = Registration.objects.filter(
-        deleted__isnull=True, moderation_state=default_value)
+        deleted__isnull=True, moderation_state=default_value
+    ).exclude(
+        registration_approval__state='unapproved'
+    ).exclude(embargo__state='unapproved')
 
     if page_size:
         out_of_date_registrations = out_of_date_registrations[:page_size]
