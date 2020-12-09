@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 def main(provider_id):
     provider = AbstractProvider.objects.get(_id=provider_id)
+
+    assert provider.subjects.count() == 0, 'This provider already has a custom taxonomy'
+
     # Flat taxonomy is stored locally, read in here
     with open(os.path.join(settings.APP_PATH, 'website', 'static', 'bepress_taxonomy.json')) as fp:
         taxonomy = json.load(fp)
