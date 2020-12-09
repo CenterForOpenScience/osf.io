@@ -152,7 +152,7 @@ def mock_share():
     with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
         with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
             with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/', status=200)
+                rsps.add(responses.POST, f'{website_settings.SHARE_URL}api/v2/normalizeddata/', status=200)
                 yield rsps
 
 
