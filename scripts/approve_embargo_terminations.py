@@ -47,17 +47,23 @@ def main():
             )
             continue
         if not registration.is_embargoed:
+            # Embargo previously completed
             logger.warning('Registration {0} associated with this embargo termination request ({0}) is not embargoed.'.format(
                 registration._id,
                 request._id
             ))
+            registration.embargo_termination_approval = None
+            registration.save()
             continue
         embargo = registration.embargo
         if not embargo:
+            # Embargo was otherwise disappeared
             logger.warning('No Embargo associated with this embargo termination request ({0}) on Node: {1}'.format(
                 request._id,
                 registration._id
             ))
+            registration.embargo_termination_approval = None
+            registration.save()
             continue
         else:
             count += 1
