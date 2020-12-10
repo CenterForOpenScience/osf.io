@@ -1325,12 +1325,17 @@ class TimeStampTokenVerifyCheck:
 
             verify_result.inspection_result_status = ret
         # else: verify_result.inspection_result_status is not updated
+
+        use_hash = False
+        external_timestamp = False
+
         return self.generate_verify_result(
             baseFileNode, file_info, userid,
-            verify_result, verify_result_title, ret)
+            verify_result, verify_result_title,
+            use_hash, external_timestamp, ret)
 
     @classmethod
-    def generate_verify_result(cls, baseFileNode, file_info, userid, verify_result, verify_result_title, ret):
+    def generate_verify_result(cls, baseFileNode, file_info, userid, verify_result, verify_result_title, use_hash, external_timestamp, ret):
         file_created_at = file_info.get('created')
         file_modified_at = file_info.get('modified')
         file_size = file_info.get('size')
@@ -1359,10 +1364,22 @@ class TimeStampTokenVerifyCheck:
         else:
             filepath = file_info['provider'] + file_info['file_path']
 
+        if ENABLE_DEBUG:
+            if use_hash:
+                verify_result_title += ' (Hash from external storage)'
+            else:
+                verify_result_title += ' (Hash by download)'
+            if external_timestamp:
+                verify_result_title += ' (Timestamp from external storage)'
+            else:
+                verify_result_title += ' (Timestamp from local DB)'
+
         return {
             'timestamp_token': verify_result.timestamp_token,
             'verify_result': ret,
             'verify_result_title': verify_result_title,  # TODO use TIMESTAMP_MSG_MAP
+            'use_hash': use_hash,
+            'external_timestamp': external_timestamp,
             'filepath': filepath
         }
 
@@ -1399,7 +1416,7 @@ class AddTimestampHash:
     def _generate_timestamp(cls, ext_info):
         try:
             if not api_settings.USE_UPKI:
-                req_out = cls.gen_timestamp_request(ext_info)
+                req_out = cls._gen_timestamp_request(ext_info)
                 tsa_response = cls._gen_timestamp_response(req_out)
             else:
                 tsa_response = cls._gen_timestamp_upki(ext_info)
@@ -1530,13 +1547,6 @@ class TimeStampTokenVerifyCheckHash:
                 logger.error('upki verify error:{}'.format(err))
         verify_result.inspection_result_status = ret
 
-        if ENABLE_DEBUG:
-            verify_result_title += ' (remote hash)'
-            if ext_info.has_timestamp:
-                verify_result_title += ' (remote timestamp)'
-            else:
-                verify_result_title += ' (local timestamp)'
-
         return verify_result, verify_result_title, ret
 
     @classmethod
@@ -1555,9 +1565,14 @@ class TimeStampTokenVerifyCheckHash:
                 shutil.rmtree(tmp_dir)
                 raise
             shutil.rmtree(tmp_dir)
+
+        use_hash = True
+        external_timestamp = ext_info.has_timestamp
+
         return TimeStampTokenVerifyCheck.generate_verify_result(
             baseFileNode, file_info, user_id,
-            verify_result, verify_result_title, ret)
+            verify_result, verify_result_title,
+            use_hash, external_timestamp, ret)
 
 
 HASH_TYPE_SHA256 = 'sha256'

@@ -8,6 +8,9 @@ STATIC_PATH = os.path.join(parent_dir(HERE), 'static')
 
 MAX_RENDER_SIZE = (1024 ** 2) * 3
 
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 128
+
 ALLOWED_ORIGIN = '*'
 
 ENCRYPT_UPLOADS_DEFAULT = True

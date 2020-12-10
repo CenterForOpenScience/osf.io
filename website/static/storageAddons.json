@@ -75,6 +75,10 @@
         "fullName": "Nextcloud for Institutions",
         "externalView": false
     },
+    "s3compatinstitutions": {
+        "fullName": "S3 Compatible Storage for Institutions",
+        "externalView": false
+    },
     "dropboxbusiness": {
         "fullName": "Dropbox Business",
         "externalView": false

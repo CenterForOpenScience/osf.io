@@ -203,6 +203,9 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         kwargs = {'target_object_id': target.id,
                   'target_content_type': content_type,
                   '_path': '/' + path.lstrip('/')}
+        objs = cls.objects.filter(**kwargs)
+        if objs.exists():
+            return objs.first()
         try:
             obj, _ = cls.objects.get_or_create(**kwargs)
             return obj

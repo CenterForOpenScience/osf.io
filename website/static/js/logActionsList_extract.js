@@ -268,5 +268,11 @@ var nextcloudinstitutions_folder_selected = _('${user} linked Nextcloud (for Ins
 var nextcloudinstitutions_node_authorized = _('${user} authorized the Nextcloud (for Institutions) addon for ${node}');
 var nextcloudinstitutions_node_deauthorized = _('${user} deauthorized the Nextcloud (for Institutions) addon for ${node}');
 var nextcloudinstitutions_node_deauthorized_no_user = _('Nextcloud (for Institutions) addon for ${node} deauthorized');
-
-
+var s3compatinstitutions_file_added = _('${user} added file ${path} to S3 Compatible Storage for Institutions in ${node}');
+var s3compatinstitutions_file_removed =  _('${user} removed ${path_type} ${path} from S3 Compatible Storage for Institutions in ${node}');
+var s3compatinstitutions_file_updated = _('${user} updated file ${path} in S3 Compatible Storage for Institutions in ${node}');
+var s3compatinstitutions_folder_created =  _('${user} created folder ${path} in S3 Compatible Storage for Institutions in ${node}');
+var s3compatinstitutions_folder_selected = _('${user} linked S3 Compatible Storage for Institutions folder ${folder} to ${node}');
+var s3compatinstitutions_node_authorized = _('${user} authorized the S3 Compatible Storage for Institutions addon for ${node}');
+var s3compatinstitutions_node_deauthorized =  _('${user} deauthorized the S3 Compatible Storage for Institutions addon for ${node}');
+var s3compatinstitutions_node_deauthorized_no_user = _('S3 Compatible Storage for Institutions addon for ${node} deauthorized');

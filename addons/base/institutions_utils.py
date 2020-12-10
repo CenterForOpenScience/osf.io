@@ -2,6 +2,7 @@
 import abc
 import six
 import logging
+import time
 
 from django.db import models
 from django.db.models.signals import pre_save, post_save
@@ -55,14 +56,14 @@ class InstitutionsNodeSettings(BaseNodeSettings):
 
     @property
     def folder_path(self):
-        return self.folder_id
+        return '/' + self.folder_name
 
     @property
     def folder_name(self):
-        return self.folder_id
+        return self.folder_id.strip('/').split('/')[-1]  # basename
 
     def fetch_folder_name(self):
-        return self.folder_id.strip('/').split('/')[-1]
+        return self.folder_name
 
     def clear_settings(self):
         self.folder_id = None
@@ -85,9 +86,14 @@ class InstitutionsNodeSettings(BaseNodeSettings):
         return self.serialize_waterbutler_settings_impl()
 
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-                                     path=metadata['path'],
-                                     provider=self.SHORT_NAME)
+        ### url_for() of flask cannot be used in celery.
+        # url = self.owner.web_url_for('addon_view_or_download_file',
+        #     path=metadata['path'].strip('/'),
+        #     provider=self.SHORT_NAME
+        # )
+        url = u'/project/{}/files/{}/{}/'.format(self.owner._id,  # GUID
+                                                 self.SHORT_NAME,
+                                                 metadata['path'].strip('/'))
         self.owner.add_log(
             '{}_{}'.format(self.SHORT_NAME, action),
             auth=auth,
@@ -113,7 +119,7 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     def after_template(self, tmpl_node, new_node, user, save=True):
         if not self.has_auth:
             return
-        dest_addon = new_node.get_addon(self.SHORT_NAME)
+        dest_addon = new_node.get_addon(self.SHORT_NAME)  # same provider
         if not dest_addon:
             return
         if not dest_addon.has_auth:
@@ -138,6 +144,7 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     def SHORT_NAME(self):
         raise NotImplementedError()
 
+    # should use folder_name instead of folder_id.
     @abc.abstractproperty
     def folder_id(self):
         raise NotImplementedError()
@@ -157,7 +164,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
     ### common methods:
     ###
     @classmethod
-    def get_addon_option(cls, institution_id, addon_short_name):
+    def cls_get_addon_option(cls, institution_id, addon_short_name):
         addon_option = get_rdm_addon_option(
             institution_id, addon_short_name,
             create=False)
@@ -168,7 +175,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         return addon_option
 
     @classmethod
-    def provider_switch(cls, addon_option):
+    def cls_provider_switch(cls, addon_option):
         provider = cls.get_debug_provider()
         if provider is not None:
             return provider
@@ -179,32 +186,37 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         return cls.get_provider(exacc)
 
     @classmethod
-    def init_addon(cls, node, institution_id, addon_name):
-        addon_option = cls.get_addon_option(institution_id, addon_name)
+    def cls_init_addon(cls, node, institution_id, addon_name):
+        addon_option = cls.cls_get_addon_option(institution_id, addon_name)
         if addon_option is None:
-            logger.info('No addon option for institution_id={}'.format(institution_id))
+            logger.debug('No addon option for institution_id={}, addon_name={}'.format(institution_id, addon_name))
             return None  # disabled
 
-        provider = cls.provider_switch(addon_option)
+        provider = cls.cls_provider_switch(addon_option)
         client = cls.get_client(provider)
-        cls.can_access(client)
-        root_folder = cls.create_root_folder(addon_option, client, node)
+
+        base_folder = cls.cls_base_folder(addon_option)
+        cls.can_access(client, base_folder)
+
+        folder_name = cls.cls_folder_name_from_node(node)
+        # create_folder() may raise
+        cls.create_folder(client, base_folder, folder_name)
         try:
             addon = node.add_addon(addon_name, auth=Auth(node.creator),
                                    log=True)
             addon.set_addon_option(addon_option)
-            addon.set_folder(root_folder)
+            addon.set_folder_id(folder_name)
             addon.save()
             return addon
         except Exception:
             try:
-                cls.remove_folder(provider, client, root_folder)
+                cls.remove_folder(client, base_folder, folder_name)
             except Exception:
-                logger.error(u'cannot remove unnecessary folder: ({})/{}'.format(addon_name, root_folder))
+                logger.exception(u'cannot remove unnecessary folder: ({})/{}, {}'.format(addon_name, base_folder, folder_name))
             raise
 
     @classmethod
-    def base_folder(cls, addon_option):
+    def cls_base_folder(cls, addon_option):
         extended = addon_option.extended
         if extended:
             base_folder = extended.get(KEYNAME_BASE_FOLDER)
@@ -218,39 +230,58 @@ class InstitutionsStorageAddon(BaseStorageAddon):
             pass  # no DEFAULT_BASE_FOLDER
         return ''
 
-    @classmethod
-    def root_folder(cls, addon_option, node):
-        base_folder = cls.base_folder(addon_option)
-        title = cls.filename_filter(node.title)
-        fmt = six.u(cls.root_folder_format())
-        return u'{}/{}'.format(base_folder,
-                               fmt.format(title=title, guid=node._id))
+    @property
+    def base_folder(self):
+        return self.cls_base_folder(self.addon_option)
 
     @classmethod
-    def create_root_folder(cls, addon_option, client, node):
-        root_folder = cls.root_folder(addon_option, node)
-        return cls.create_folder(client, root_folder)
-
-    @classmethod
-    def filename_filter(cls, name):
+    def cls_filename_filter(cls, name):
         return name.replace('/', '_')
+
+    @classmethod
+    def cls_folder_name_from_node(cls, node):
+        title = cls.cls_filename_filter(node.title)
+        fmt = six.u(cls.root_folder_format())
+        return fmt.format(title=title, guid=node._id)
+
+    @classmethod
+    def cls_fullpath(cls, base_folder, folder_name):
+        base_folder = base_folder.strip('/')
+        folder_name = folder_name.strip('/')
+        if base_folder:
+            if folder_name:
+                return '/' + base_folder + '/' + folder_name
+            else:
+                return '/' + base_folder
+        else:
+            if folder_name:
+                return '/' + folder_name
+            else:
+                return '/'
+
+    # full_path=BASE_FOLDR/ROOT_FOLDER_FORMAT
+    @property
+    def root_folder_fullpath(self):
+        return self.cls_fullpath(self.base_folder, self.folder_name)
 
     def set_addon_option(self, addon_option):
         self.addon_option = addon_option
 
-    def set_folder(self, folder, auth=None):
-        self.folder_id = folder
+    # NOTE: override in s3compatinstitutions
+    def set_folder_id(self, folder_id, auth=None):
+        self.folder_id = folder_id
 
     def sync_title(self):
-        new_root_folder = self.root_folder(self.addon_option, self.owner)
-        if self.folder_id == new_root_folder:
+        new_folder_name = self.cls_folder_name_from_node(self.owner)
+        if self.folder_name == new_folder_name:
             return
         try:
-            self.rename_folder(self.client, self.folder_id, new_root_folder)
+            self.rename_folder(self.client, self.base_folder,
+                               self.folder_name, new_folder_name)
         except Exception:
-            logger.error(u'rename_folder({}, {}) failed'.format(self.folder_id, new_root_folder))
+            logger.exception(u'rename_folder({}, {}, {}) failed'.format(self.base_folder, self.folder_name, new_folder_name))
             raise
-        self.set_folder(new_root_folder)
+        self.set_folder_id(new_folder_name)
         self.save()
 
     _client = None
@@ -259,7 +290,7 @@ class InstitutionsStorageAddon(BaseStorageAddon):
     @property
     def provider(self):
         if self._provider is None:
-            self._provider = self.provider_switch(self.addon_option)
+            self._provider = self.cls_provider_switch(self.addon_option)
         return self._provider
 
     @property
@@ -286,6 +317,16 @@ class InstitutionsStorageAddon(BaseStorageAddon):
                 return extuser
         return None
 
+    def extuser_to_osfuser(self, extuser):
+        extended = self.addon_option.extended
+        osfuser_to_extuser = extended.get(KEYNAME_USERMAP)
+        if osfuser_to_extuser:
+            reversemap = {v: k for k, v in osfuser_to_extuser.items()}
+            osfuser = reversemap.get(extuser)
+            if osfuser:
+                return osfuser
+        return None
+
     ###
     ### required methods:
     ###
@@ -306,19 +347,20 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         raise NotImplementedError()
 
     @classmethod
-    def can_access(cls, client):
+    def can_access(cls, client, base_folder):
+        # raise error if you cannot access the base_folder.
         raise NotImplementedError()
 
     @classmethod
-    def create_folder(cls, client, path):
+    def create_folder(cls, client, base_folder, folder_name):
         raise NotImplementedError()
 
     @classmethod
-    def remove_folder(cls, client, path):
+    def remove_folder(cls, client, base_folder, folder_name):
         raise NotImplementedError()
 
     @classmethod
-    def rename_folder(cls, client, path_src, path_target):
+    def rename_folder(cls, client, base_folder, old_name, new_name):
         raise NotImplementedError()
 
     @classmethod
@@ -326,6 +368,11 @@ class InstitutionsStorageAddon(BaseStorageAddon):
         raise NotImplementedError()
 
     def sync_contributors(self):
+        raise NotImplementedError()
+
+    @property
+    def exists(self):
+        # return True when the root_folder exists.
         raise NotImplementedError()
 
 
@@ -375,10 +422,12 @@ def node_post_save(sender, instance, created, **kwargs):
             logger.error(u'user={} has no institution.'.format(node.creator.username))
             return  # disabled
 
+        logger.debug(u'ENABLED_ADDONS_FOR_INSTITUTIONS={}, website_settings.ADDONS_AVAILABLE_DICT={}, website_settings.ADDONS_AVAILABLE={}'.format(str(ENABLED_ADDONS_FOR_INSTITUTIONS), str(website_settings.ADDONS_AVAILABLE_DICT), str(website_settings.ADDONS_AVAILABLE)))
+
         for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
             if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
                 continue  # skip
-            node_settings_cls.init_addon(node, institution_id, addon_name)
+            node_settings_cls.cls_init_addon(node, institution_id, addon_name)
             ### NOTE: This is no effect,
             ###   because node.creator is not added to Contributor yet here.
             # if ns:
@@ -386,7 +435,46 @@ def node_post_save(sender, instance, created, **kwargs):
     else:
         sync_title(node)
 
+def loop_addons_for_institutuins(func, node, target_addons):
+    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
+        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
+            continue  # skip
+        if target_addons and addon_name not in target_addons:
+            continue  # skip
+        ns = node.get_addon(addon_name)  # get NodeSetttings
+        if ns is None:  # disabled
+            continue  # skip
+        if not ns.addon_option.is_allowed:  # disabled
+            continue  # skip
+        if not ns.complete:  # disabled
+            continue  # skip
+        func(ns)
+
+def is_available(node):
+    if node.is_deleted:
+        return False
+    if not hasattr(node, 'get_addon'):
+        return False
+    return True
+
+def check_existence_and_create(node, ns, op_name):
+    if ns.exists:
+        return True
+    try:
+        ns.create_folder(ns.client, ns.base_folder, ns.folder_name)
+        logger.info(u'{}: create external storage folder: addon_name={}, project title={}, GUID={}'.format(op_name, ns.SHORT_NAME, node.title, node._id))
+        return True
+    except Exception as e:
+        logger.warning(u'{}: cannot create external storage folder: addon_name={}, project title={}, GUID={}: {}'.format(op_name, ns.SHORT_NAME, node.title, node._id, str(e)))
+        return False
+
+
+# sleep time (sec.) to limit API calls
+SYNC_WAIT = 1
+
 def sync_title(node, target_addons=None, force=False):
+    if not is_available(node):
+        return
     old_node_title = None
     if force is False:
         syncinfo = SyncInfo.get(node.id)
@@ -394,45 +482,41 @@ def sync_title(node, target_addons=None, force=False):
             return  # skip
         old_node_title = syncinfo.old_node_title
 
-    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
-        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
-            continue  # skip
-        if target_addons and addon_name not in target_addons:
-            continue  # skip
-        ns = node.get_addon(addon_name)  # get NodeSetttings
-        if ns is None or not ns.complete:  # disabled
-            continue  # skip
+    def _func(ns):  # NodeSettings
+        if not check_existence_and_create(node, ns, 'sync_title'):
+            return  # skip
         try:
             ns.sync_title()
+            time.sleep(SYNC_WAIT)
         except Exception:
-            logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(addon_name, old_node_title, node.title, node._id))
+            logger.exception('sync_title')
+            logger.warning(u'cannot rename root folder: addon_name={}, old_title={}, new_title={}, GUID={}'.format(ns.SHORT_NAME, old_node_title, node.title, node._id))
+
+    loop_addons_for_institutuins(_func, node, target_addons)
 
 @project_signals.contributors_updated.connect
 def sync_contributors(node, target_addons=None):
-    if node.is_deleted:
+    if not is_available(node):
         return
-    if not hasattr(node, 'get_addon'):
-        return
-    for addon_name, node_settings_cls in ENABLED_ADDONS_FOR_INSTITUTIONS:
-        if addon_name not in website_settings.ADDONS_AVAILABLE_DICT:
-            continue  # skip
-        if target_addons and addon_name not in target_addons:
-            continue  # skip
-        ns = node.get_addon(addon_name)  # get NodeSetttings
-        if ns is None or not ns.complete:  # disabled
-            continue  # skip
+
+    def _func(ns):  # NodeSettings
+        if not check_existence_and_create(node, ns, 'sync_contributors'):
+            return  # skip
         try:
             ns.sync_contributors()
+            time.sleep(SYNC_WAIT)
         except Exception as e:
-            logger.error(str(e))
-            logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(addon_name, node.title, node._id))
+            logger.exception(str(e))
+            logger.warning(u'cannot synchronize contributors: addon_name={}, title={}, GUID={}'.format(ns.SHORT_NAME, node.title, node._id))
 
+    loop_addons_for_institutuins(_func, node, target_addons)
 
 from celery.contrib.abortable import AbortableTask
 from framework.celery_tasks import app as celery_app
 
 @celery_app.task(bind=True, base=AbortableTask)
 def celery_sync_all(self, institution_id, target_addons=None):
+    time.sleep(5)  # is_allowed may not be updated.
     for n in Node.objects.filter(affiliated_institutions___id=institution_id,
                                  is_deleted=False):
         sync_title(n, target_addons=target_addons, force=True)

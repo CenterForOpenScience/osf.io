@@ -259,12 +259,15 @@ class TestAddTimestampData(AdminTestCase):
             os.remove(pub_key_path)
         rdmuserkey_pub_key.delete()
 
+    @mock.patch('addons.osfstorage.models.OsfStorageFile._hashes',
+                new_callable=mock.PropertyMock)
     @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_post(self, mock_get, mock_shutil, mock_aborted, **kwargs):
+    def test_post(self, mock_get, mock_shutil, mock_aborted, mock_hashes, **kwargs):
         mock_get.return_value.content = ''
         mock_aborted.return_value = False
+        mock_hashes.return_value = None
 
         res_timestampaddlist = self.view.get_context_data()
         nt.assert_is_instance(res_timestampaddlist, dict)

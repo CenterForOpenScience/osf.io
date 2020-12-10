@@ -137,6 +137,7 @@ INSTALLED_APPS = (
     'addons.iqbrims',
     'addons.dropboxbusiness',
     'addons.nextcloudinstitutions',
+    'addons.s3compatinstitutions',
 )
 
 MIGRATION_MODULES = {
@@ -167,6 +168,7 @@ MIGRATION_MODULES = {
     'addons_iqbrims': None,
     'addons_dropboxbusiness': None,
     'addons_nextcloudinstitutions': None,
+    'addons_s3compatinstitutions': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [

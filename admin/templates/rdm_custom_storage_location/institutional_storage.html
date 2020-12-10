@@ -70,7 +70,10 @@
     {% for provider_item in providers %}
     {% include provider_item.modal_path %}
     {% endfor %}
+
 </div>
+
+<input type="hidden" id="osf_domain" value="{{ osf_domain }}">
 
 <br class="clear">
 {% endblock content %}

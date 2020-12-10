@@ -16,15 +16,20 @@ from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
                           GroupSelector, UserSelectorArg, GroupAccessType,
                           MemberAccess)
 
+from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
+
 from celery.contrib.abortable import AbortableTask
 
-from osf.models import BaseFileNode
+from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
+# from osf.models.nodelog import NodeLog
 from osf.models.rdm_addons import RdmAddonOption
 from addons.dropboxbusiness import settings, lock
 from admin.rdm_addons.utils import get_rdm_addon_option
 from website.util import timestamp, waterbutler
 from api.base import settings as api_settings
+from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 logger = logging.getLogger(__name__)
@@ -557,10 +562,11 @@ class TeamInfo(object):
     _fileaccess_client = None
     _fileaccess_client2 = None  # for bugfix
     _management_client = None
-    dbid_to_email = {}
-    dbid_to_role = {}
-    dbid_to_account_id = {}
+    dbmid_to_email = {}
+    dbmid_to_role = {}
+    dbmid_to_dbid = {}
     email_to_dbmid = {}
+    dbid_to_dbmid = {}
     _admin_dbmid = None
     admin_dbmid_all = []
     admin_email_all = []
@@ -678,10 +684,13 @@ class TeamInfo(object):
     def _setup_members(self):
         cursor = None
         has_more = True
-        self.dbmid_to_email = {}  # member_id
+        # dbmid: team member_id
+        # dbid : account_id
+        self.dbmid_to_email = {}
         self.dbmid_to_role = {}
-        self.dbmid_to_account_id = {}
+        self.dbmid_to_dbid = {}
         self.email_to_dbmid = {}
+        self.dbid_to_email = {}
         # NOTE: client = self.management_client ... usable
         client = self.fileaccess_client_team
         while has_more:
@@ -695,11 +704,13 @@ class TeamInfo(object):
                 p = m.profile
                 self.dbmid_to_email[p.team_member_id] = p.email
                 self.dbmid_to_role[p.team_member_id] = m.role
-                self.dbmid_to_account_id[p.team_member_id] = p.account_id
+                self.dbmid_to_dbid[p.team_member_id] = p.account_id
+                self.email_to_dbmid[p.email] = p.team_member_id
+                self.dbid_to_email[p.account_id] = p.email
+
         DEBUG('dbmid_to_email: ' + pf(self.dbmid_to_email))
         DEBUG('dbmid_to_role: ' + pf(self.dbmid_to_role))
-        DEBUG('dbmid_to_account_id: ' + pf(self.dbmid_to_account_id))
-        self.email_to_dbmid = {v: k for k, v in self.dbmid_to_email.items()}
+        DEBUG('dbmid_to_dbid: ' + pf(self.dbmid_to_dbid))
         DEBUG('email_to_dbmid: ' + pf(self.email_to_dbmid))
 
     def _setup_admin(self):
@@ -756,30 +767,10 @@ class TeamInfo(object):
                     self.team_folders[i] = tf
                     self.team_folder_names[meta.name] = tf
 
-    # return (team_folder_id, team_folder_name, subpath)
-    def _team_folder_path(self, path_display):
-        # NOTE: team_folder name is path_display.
-        p = path_display
-        team_folder_name = None
-        while True:
-            head, tail = os.path.split(p)  # dirname + basename
-            if head == '/':
-                team_folder_name = tail
-                break
-            p = head
-        if team_folder_name is None:
-            return None
-        tf = self.team_folder_names.get(team_folder_name)
-        if tf is None:
-            return None
-        subpath = path_display[len(u'/' + team_folder_name):]
-        return (tf.team_folder_id, team_folder_name, subpath)
-
     def list_updated_files(self, cursor):
         self._update_team_folders()
         client = self.fileaccess_client_user(self.admin_dbmid)
         has_more = True
-        has_entry = False
         files = []
         while has_more:
             if not cursor:
@@ -789,43 +780,7 @@ class TeamInfo(object):
             has_more = lst.has_more
             cursor = lst.cursor  # save
             for ent in lst.entries:
-                if not ENABLE_DEBUG:
-                    # DeletedMetadata and FolderMetadata are ignored.
-                    if not isinstance(ent, dropbox.files.FileMetadata):
-                        continue
-                else:  # debug
-                    path = u'{}, path_display={}'.format(
-                        ent.path_lower, ent.path_display)
-                    sharing_info = None
-                    if isinstance(ent, dropbox.files.FileMetadata):
-                        sharing_info = ent.sharing_info
-                        p = u'[FILE] {}, content_hash={}'.format(
-                            path, ent.content_hash)
-                    elif isinstance(ent, dropbox.files.FolderMetadata):
-                        sharing_info = ent.sharing_info
-                        p = u'[DIR] {}, id={}, shared_folder_id={}'.format(
-                            path, ent.id, ent.shared_folder_id)
-                    elif isinstance(ent, dropbox.files.DeletedMetadata):
-                        p = u'[DELETED] {}'.format(path)
-
-                    if sharing_info is not None:
-                        psf_id = sharing_info.parent_shared_folder_id
-                        p += ', parent_sharing_folder_id={}'.format(psf_id)
-                        tf = self.team_folders.get(psf_id)
-                        if tf:
-                            p += u', team_folder_name={}'.format(
-                                tf.metadata.name)
-                        else:
-                            p += ', <IN NOT A TEAM FOLDER>'
-                    DEBUG(p)
-
-                if isinstance(ent, dropbox.files.FileMetadata):
-                    r = self._team_folder_path(ent.path_display)
-                    if r:
-                        files.append(r)
-                has_entry = True
-        if not has_entry:
-            DEBUG('no updated file')
+                files.append(FileAttr(self, ent))
         return files, cursor
 
     def _prop_split_key(self, name, s):
@@ -1052,6 +1007,73 @@ class TeamInfo(object):
             return (None, None, None)
 
 
+class FileAttr(object):
+    OPTYPE_UNKNOWN = 0
+    OPTYPE_FILE = 1
+    OPTYPE_DIR = 2
+    OPTYPE_DELETED = 3
+
+    def __init__(self, team_info, ent):
+        self.team_info = team_info
+        self.path_display = ent.path_display
+        self.optype = self.OPTYPE_UNKNOWN
+        self.modified_by = None  # email
+
+        path = u'{}, path_display={}'.format(
+            ent.path_lower, ent.path_display)
+        p = 'ignored type'
+        sharing_info = None
+        if isinstance(ent, dropbox.files.FileMetadata):
+            sharing_info = ent.sharing_info
+            p = u'[FILE] {}, content_hash={}'.format(
+                path, ent.content_hash)
+            self.optype = self.OPTYPE_FILE
+        elif isinstance(ent, dropbox.files.FolderMetadata):
+            sharing_info = ent.sharing_info
+            p = u'[DIR] {}, id={}, shared_folder_id={}'.format(
+                path, ent.id, ent.shared_folder_id)
+            self.optype = self.OPTYPE_DIR
+        elif isinstance(ent, dropbox.files.DeletedMetadata):
+            p = u'[DELETED] {}'.format(path)
+            self.optype = self.OPTYPE_DELETED
+            # no sharing_info
+
+        if sharing_info is not None:
+            psf_id = sharing_info.parent_shared_folder_id
+            p += ', parent_sharing_folder_id={}'.format(psf_id)
+            tf = team_info.team_folders.get(psf_id)
+            if tf:
+                p += u', team_folder_name={}'.format(tf.metadata.name)
+            else:
+                p += ', <IN NOT A TEAM FOLDER>'
+
+            if self.optype == self.OPTYPE_FILE:
+                dbid = sharing_info.modified_by
+                self.modified_by = team_info.dbid_to_email.get(dbid)
+                p += ', modified_by=(dbid={}, email={})'.format(
+                    dbid, self.modified_by)
+        DEBUG(p)
+
+    # return (team_folder_id, team_folder_name, subpath)
+    def team_folder_path(self):
+        # NOTE: team_folder name is path_display.
+        p = self.path_display
+        team_folder_name = None
+        while True:
+            head, tail = os.path.split(p)  # dirname + basename
+            if head == '/':
+                team_folder_name = tail
+                break
+            p = head
+        if team_folder_name is None:
+            return None
+        tf = self.team_info.team_folder_names.get(team_folder_name)
+        if tf is None:
+            return None
+        subpath = self.path_display[len(u'/' + team_folder_name):]
+        return (tf.team_folder_id, team_folder_name, subpath)
+
+
 PROVIDER_NAME = 'dropboxbusiness'
 
 def _select_admin(node):
@@ -1064,18 +1086,38 @@ def _select_admin(node):
             return user
     raise Exception('unexpected condition')
 
-def _add_timestamp_for_celery(team_folder_id, path, team_info):
+def _check_and_add_timestamp(team_info, file_attr):
     from addons.dropboxbusiness.models import NodeSettings
 
-    def _check_and_add(addon):
+    tfp = file_attr.team_folder_path()
+    if tfp is None:
+        return
+    team_folder_id, name, path = tfp
+    DEBUG(u'team_folder_id={}, name={}, path={}'.format(team_folder_id,
+                                                        name, path))
+
+    def _file_exists(cls, target, path):
+        # see osf.models.files/BaseFileNode.get_or_create()
+        content_type = ContentType.objects.get_for_model(target)
+        kwargs = {'target_object_id': target.id,
+                  'target_content_type': content_type,
+                  '_path': '/' + path.lstrip('/')}
+        return cls.objects.filter(**kwargs).exists()
+
+    def _check_for_file(addon):
         node = addon.owner
-        user = _select_admin(node)
-        user_cookie = user.get_or_create_cookie()
+        if node.is_deleted:
+            return
+        admin = _select_admin(node)
+        admin_cookie = admin.get_or_create_cookie()
+        created = True
 
         cls = BaseFileNode.resolve_class(PROVIDER_NAME, BaseFileNode.FILE)
+        if _file_exists(cls, node, path):
+            created = False
         file_node = cls.get_or_create(node, path)
         waterbutler_json_res = waterbutler.get_node_info(
-            user_cookie, node._id, PROVIDER_NAME, path)
+            admin_cookie, node._id, PROVIDER_NAME, path)
         if waterbutler_json_res is None:
             DEBUG(u'waterbutler.get_node_info() is None: path={}'.format(path))
             return
@@ -1085,7 +1127,7 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info):
             return
         DEBUG(u'file_data: ' + str(file_data))
         attrs = file_data['attributes']
-        file_node.update(None, attrs, user=user)  # update content_hash
+        file_node.update(None, attrs, user=admin)  # update content_hash
         file_info = {
             'file_id': file_node._id,
             'file_name': attrs.get('name'),
@@ -1096,22 +1138,69 @@ def _add_timestamp_for_celery(team_folder_id, path, team_info):
             'file_version': '',
             'provider': PROVIDER_NAME
         }
+        # verified by admin
         verify_result = timestamp.check_file_timestamp(
-            user.id, node, file_info, verify_external_only=True)
+            admin.id, node, file_info, verify_external_only=True)
         DEBUG('check timestamp: verify_result={}'.format(verify_result.get('verify_result_title')))
         if verify_result['verify_result'] == \
            api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
-            return
-        verify_result = timestamp.add_token(user.id, node, file_info)
+            return  # already checked
+
+        # The file is created (new file) or modified.
+        user = None
+        if file_attr.modified_by:
+            eppn = email_to_eppn(file_attr.modified_by)
+            if eppn:
+                try:
+                    user = OSFUser.objects.get(eppn=eppn)
+                except OSFUser.DoesNotExist:
+                    logger.warning(u'modified by unknown user: email={}'.format(file_attr.modified_by))
+        metadata = {
+            'path': path
+        }
+        if created:
+            action = 'file_added'
+        else:
+            action = 'file_updated'
+        if user:  # modified by user
+            verify_result = timestamp.add_token(user.id, node, file_info)
+            addon.create_waterbutler_log(Auth(user), action, metadata)
+            # timestamp.add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, user.id, PROVIDER_NAME, file_node._id)
+        else:  # modified by unknown user
+            verify_result = timestamp.add_token(admin.id, node, file_info)
+            addon.create_waterbutler_log(None, action, metadata)
+            # timestamp.add_log_a_file(NodeLog.TIMESTAMP_ADDED, node, admin.id, PROVIDER_NAME, file_node._id)
         logger.info(u'update timestamp by Webhook for Dropbox Business: node_guid={}, path={}, verify_result={}'.format(node._id, path, verify_result.get('verify_result_title')))
+
+    def _check_for_folder(addon):
+        logger.info(u'folder created: path={}, path_display={}'.format(path, file_attr.path_display))
+        metadata = {
+            'path': path
+        }
+        addon.create_waterbutler_log(None, 'folder_created', metadata)
+
+    def _deleted_entry(addon):
+        logger.info(u'deleted: path={}, path_display={}'.format(path, file_attr.path_display))
+        metadata = {
+            'path': path
+        }
+        addon.create_waterbutler_log(None, 'file_removed', metadata)
 
     # team_folder_id of NodeSettings is not UNIQUE,
     # but two or more NodeSettings do not exist.
-    for addon in NodeSettings.objects.filter(team_folder_id=team_folder_id):
-        try:
-            _check_and_add(addon)
-        except Exception:
-            logger.exception('project guid={}'.format(addon.owner._id))
+    with transaction.atomic():
+        for addon in NodeSettings.objects.filter(
+                team_folder_id=team_folder_id):
+            try:
+                if file_attr.optype == FileAttr.OPTYPE_FILE:
+                    _check_for_file(addon)
+                ### unable to distinguish updating event from GRDM or Dropbox
+                # elif file_attr.optype == FileAttr.OPTYPE_DIR:
+                #     _check_for_folder(addon)
+                # elif file_attr.optype == FileAttr.OPTYPE_DELETED:
+                #     _deleted_entry(addon)
+            except Exception:
+                logger.exception('project guid={}'.format(addon.owner._id))
     # Unknown team_folder_id is ignored.
 
 def team_id_to_instituion(team_id):
@@ -1125,11 +1214,11 @@ def team_id_to_instituion(team_id):
         return None
 
 @celery_app.task(bind=True, base=AbortableTask)
-def celery_check_and_add_timestamp(self, team_ids):
+def celery_check_updated_files(self, team_ids):
     # avoid "ImportError: cannot import name"
     from addons.dropboxbusiness.models import DropboxBusinessManagementProvider
 
-    def _update_team_files(dbtid):
+    def _check_team_files(dbtid):
         ea = ExternalAccount.objects.get(
             provider=PROVIDER_NAME, provider_id=dbtid)
         opt = RdmAddonOption.objects.get(
@@ -1155,10 +1244,8 @@ def celery_check_and_add_timestamp(self, team_ids):
             opt.extended[KEY_ADMIN_ID] = admin_dbmid
             list_cursor = None
         files, cursor = team_info.list_updated_files(list_cursor)
-        for f in files:
-            i, n, p = f
-            DEBUG(u'team_folder_id={}, name={}, path={}'.format(i, n, p))
-            _add_timestamp_for_celery(i, p, team_info)
+        for file_attr in files:
+            _check_and_add_timestamp(team_info, file_attr)
         opt.extended[KEY_LIST_CURSOR] = cursor
         opt.save()
 
@@ -1177,8 +1264,8 @@ def celery_check_and_add_timestamp(self, team_ids):
             name = u'Institution={}, Dropbox Business Team ID={}'.format(
                 institution, dbtid)
             try:
-                logger.info(u'check and update timestamp: {}'.format(name))
-                _update_team_files(dbtid)
+                DEBUG(u'check and update timestamp: {}'.format(name))
+                _check_team_files(dbtid)
             except Exception:
                 logger.exception(name)
         team_ids = []

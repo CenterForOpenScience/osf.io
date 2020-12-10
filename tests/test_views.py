@@ -5315,16 +5315,19 @@ class TestTimestampView(OsfTestCase):
         assert 'osfstorage_test_file2.status_3' in res
         assert 'Unknown' in res
 
+    @mock.patch('addons.osfstorage.models.OsfStorageFile._hashes',
+                new_callable=mock.PropertyMock)
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
     @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.project.views.node.find_bookmark_collection')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection, mock_aborted, mock_ready):
+    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection, mock_aborted, mock_ready, mock_hashes):
         mock_get.return_value.content = ''
         mock_get.return_value.status_code = 200
         mock_aborted.return_value = False
         mock_ready.return_value = True
+        mock_hashes.return_value = None
 
         url_timestamp = self.project.url + 'timestamp/'
         res = self.app.get(url_timestamp, auth=self.user.auth)
