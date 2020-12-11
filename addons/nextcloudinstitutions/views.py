@@ -24,7 +24,7 @@ def DEBUG(msg):
         logger.error('DEBUG: ' + msg)
 
 def webhook_nextcloud_app():
-    signature = request.headers.get('X-Nextcloud-File-Update-Notifications-Signature')
+    signature = request.headers.get('X-Nextcloud-File-Upload-Notification-Signature')
     if not signature:
         raise HTTPError(http.FORBIDDEN)
     DEBUG('signature: {}'.format(signature))
