@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-29 14:25+0000\n"
+"POT-Creation-Date: 2020-12-11 15:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2475,15 +2475,15 @@ msgid ""
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:60
-msgid "Connection URL for File Update Notification App"
+msgid "Connection URL for File Upload Notification App"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
-msgid "Connection ID for File Update Notification App"
+msgid "Connection ID for File Upload Notification App"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:72
-msgid "Connection common key from File Update Notifications App"
+msgid "Connection common key from File Upload Notification App"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:79
