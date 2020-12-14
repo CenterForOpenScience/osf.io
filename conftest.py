@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 
 import logging
 
@@ -168,3 +169,18 @@ def mock_akismet():
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
             yield rsps
+
+
+@pytest.fixture
+def mock_datacite(registration):
+
+    doi = registration.get_doi_client().build_doi(registration)
+    with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml'), 'r') as fp:
+        data = fp.read().format(doi)
+
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
+        rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
+        rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
+        rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
+        yield rsps

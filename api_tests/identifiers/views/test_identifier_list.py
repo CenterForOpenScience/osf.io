@@ -1,4 +1,3 @@
-import mock
 import pytest
 
 from future.moves.urllib.parse import urlparse
@@ -21,8 +20,8 @@ from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
 from tests.utils import assert_equals
 from website.identifiers.clients import DataCiteClient
-from website import settings
 
+from website import settings
 
 @pytest.fixture()
 def user():
@@ -480,8 +479,8 @@ class TestNodeIdentifierCreate:
         }
 
     @pytest.fixture()
-    def client(self):
-        return DataCiteClient(base_url='https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
+    def client(self, resource):
+        return DataCiteClient(resource)
 
     @responses.activate
     def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,
@@ -489,7 +488,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                client.base_url + '/metadata',
+                f'{settings.DATACITE_URL}/metadata',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
@@ -497,7 +496,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                client.base_url + '/doi',
+                f'{settings.DATACITE_URL}/doi',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
@@ -508,16 +507,7 @@ class TestNodeIdentifierCreate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You can only mint a DOI, not a different type of identifier.'
 
-        # Cannot connect to DOI service
         res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 503
-        assert res.json['errors'][0]['detail'] == 'Service is unavailable at this time.'
-
-        with mock.patch('osf.models.AbstractNode.get_doi_client') as mock_get_doi:
-            mock_get_doi.return_value = client
-            res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth)
-
-        resource.reload()
         assert res.status_code == 201
         assert res.json['data']['attributes']['category'] == 'doi'
         assert res.json['data']['attributes']['value'] == resource.get_identifier_value('doi')
@@ -525,6 +515,13 @@ class TestNodeIdentifierCreate:
         assert res.json['data']['type'] == 'identifiers'
         assert resource.logs.first().action == 'external_ids_added'
         assert resource.identifiers.count() == 1
+
+        res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
+
+        resource.reload()
+        # cannot request a DOI when one already exists
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'A DOI already exists for this resource.'
 
         # write contributor cannot create identifier
         res = app.post_json_api(identifier_url, identifier_payload, auth=write_contributor.auth, expect_errors=True)

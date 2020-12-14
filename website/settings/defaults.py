@@ -327,7 +327,7 @@ DOI_FORMAT = '{prefix}/osf.io/{guid}'
 # datacite
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
-DATACITE_URL = None
+DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 # Minting DOIs only works on Datacite's production server, so
 # disable minting on staging and development environments by default

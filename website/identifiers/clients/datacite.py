@@ -14,14 +14,12 @@ logger = logging.getLogger(__name__)
 
 class DataCiteClient(AbstractIdentifierClient):
 
-    def __init__(self, base_url, prefix, client=None):
-        self.base_url = base_url
-        self.prefix = prefix
-        self._client = client or DataCiteMDSClient(
-            url=self.base_url,
+    def __init__(self, node):
+        self._client = DataCiteMDSClient(
+            url=settings.DATACITE_URL,
             username=settings.DATACITE_USERNAME,
             password=settings.DATACITE_PASSWORD,
-            prefix=self.prefix
+            prefix=getattr(node.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX
         )
 
     def build_metadata(self, node):
@@ -68,7 +66,14 @@ class DataCiteClient(AbstractIdentifierClient):
         return schema40.tostring(data)
 
     def build_doi(self, object):
-        return settings.DOI_FORMAT.format(prefix=self.prefix, guid=object._id)
+        print(settings.DOI_FORMAT.format(
+            prefix=getattr(object.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX,
+            guid=object._id
+        ))
+        return settings.DOI_FORMAT.format(
+            prefix=getattr(object.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX,
+            guid=object._id
+        )
 
     def get_identifier(self, identifier):
         self._client.doi_get(identifier)
