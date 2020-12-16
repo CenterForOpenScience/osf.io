@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def update_mailchimp_email():
     users_updated = 0
-    for user in OSFUser.objects.filter(deleted=None):
+    for user in OSFUser.objects.filter(deleted__isnull=True):
         for list_name, subscription in user.mailchimp_mailing_lists.items():
             if subscription:
                 mailchimp_utils.subscribe_mailchimp(list_name, user._id)
