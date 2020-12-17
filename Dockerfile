@@ -1,4 +1,4 @@
-FROM node:8-alpine3.9
+FROM node:15.4.0-alpine3.10
 
 ARG NODE_OPTIONS='--max-old-space-size=4096'
 
@@ -91,7 +91,8 @@ RUN set -ex \
         /code/addons/*/requirements.txt \
         /code/admin/rdm*/requirements.txt \
     ; do \
-        pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
+        pip3 install --upgrade pip3
+        && pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
