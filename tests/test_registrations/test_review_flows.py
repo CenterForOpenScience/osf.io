@@ -135,7 +135,6 @@ class TestUnmoderatedFlows():
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_approve_after_reject_fails(self, sanction_object):
-        # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
         sanction_object.to_REJECTED()
         registration = sanction_object.target_registration
@@ -654,10 +653,9 @@ class TestModerationActions:
         provider.save()
         return provider
 
-
     @pytest.fixture
     def retraction_fixture(self, provider):
-        sanction = RetractionFactory()
+        sanction = RetractionFactory(justification='bird')
         registration = sanction.target_registration
         registration.provider = provider
         registration.update_moderation_state()
@@ -708,6 +706,7 @@ class TestModerationActions:
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
+        assert latest_action.comment == 'bird'
 
 
     def test_moderator_accept_retraction_writes_accept_withdrawal_action(self, retraction_fixture, moderator):

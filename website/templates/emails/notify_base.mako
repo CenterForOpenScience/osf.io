@@ -17,12 +17,14 @@
             <td style="border-collapse: collapse;">
                 <table id="layout-table" width="100%" border="0" cellpadding="10" cellspacing="0" height="100%">
                     <tbody>
-                        <tr class="banner" style="background: #214762;color: white;">
+                        <tr class="banner" style="background: ${context.get('top_bar_color', '#214762')};color: white;">
                             <td class="text-center" style="border-collapse: collapse;text-align: center;">
                                 <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                     <tr>
                                         <td style="border-collapse: collapse;">
-                                            % if context.get('logo', settings.OSF_LOGO) not in settings.OSF_LOGO_LIST:
+											% if context.get('logo_url'):
+												<img src="${logo_url}" alt="${provider_name} logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;max-height: 100px;">
+                                            % elif context.get('logo', settings.OSF_LOGO) not in settings.OSF_LOGO_LIST:
                                                 <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${context.get('logo')}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                             %else:
                                                 <img src="https://osf.io/static/img/${context.get('logo', settings.OSF_LOGO)}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">

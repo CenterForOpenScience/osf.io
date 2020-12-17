@@ -3,14 +3,11 @@ import logging
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from osf.models import NotificationSubscription, RegistrationProvider
-from osf.management.commands.add_notification_subscription import add_reviews_notification_setting
 
 logger = logging.getLogger(__file__)
 
 
 def populate_registration_provider_notification_subscriptions():
-    add_reviews_notification_setting('new_pending_submissions')
-
     for provider in RegistrationProvider.objects.all():
         try:
             provider_admins = provider.get_group('admin').user_set.all()
