@@ -1,4 +1,4 @@
-FROM node:8-alpine3.9
+FROM node:15.4.0-alpine3.10
 
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
@@ -65,7 +65,8 @@ RUN set -ex \
         /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
     ; do \
-        pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
+        pip3 install --upgrade pip3
+        && pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
