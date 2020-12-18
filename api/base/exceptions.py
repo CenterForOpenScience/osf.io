@@ -306,3 +306,11 @@ class NonDescendantNodeError(APIException):
         if not detail:
             detail = self.default_detail.format(node_id)
         super(NonDescendantNodeError, self).__init__(detail=detail)
+
+
+class PermanentlyMovedError(APIException):
+    status_code = 301
+    location = ''
+
+    def __init__(self, detail=None):
+        super(PermanentlyMovedError, self).__init__(detail=detail)
