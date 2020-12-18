@@ -25,6 +25,7 @@ DATACITE_RESOURCE_TYPE_MAP = {
 
 def datacite_format_creators(creators):
     """ Format a list of contributors to match the datacite schema
+    Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
 
     :param contributors_list: list of OSFUsers to format
     :return: formatted json for datacite
@@ -60,11 +61,12 @@ def datacite_format_creators(creators):
 
 def datacite_format_contributors(contributors):
     """ Format a list of contributors to match the datacite schema
+    Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
 
     :param contributors_list: list of OSFUsers to format
     :return: formatted json for datacite
     """
-    creators = []
+    contributors_json = []
     for contributor in contributors:
         name_identifiers = [
             {
@@ -83,7 +85,7 @@ def datacite_format_contributors(contributors):
                     'schemeURI': 'http://orcid.org/'
                 })
 
-        creators.append({
+        contributors_json.append({
             'nameIdentifiers': name_identifiers,
             'contributorName': contributor.fullname,
             'contributorType': 'ProjectMember',
@@ -91,10 +93,16 @@ def datacite_format_contributors(contributors):
             'givenName': contributor.given_name
         })
 
-    return creators
+    return contributors_json
 
 
 def datacite_format_subjects(node):
+    """ Format a list of subjects to match the datacite schema
+    Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
+
+    :param node: a project or registration that should have it's subject formatted for datacite
+    :return: formatted json for datacite
+    """
     datacite_subjects = []
     subjects = node.subjects.all().select_related('bepress_subject')
     if subjects.exists():
@@ -114,16 +122,14 @@ def datacite_format_subjects(node):
     return datacite_subjects
 
 
-def datacite_format_identifier(target):
-    identifier = target.get_identifier('doi')
-    if identifier:
-        return {
-            'identifier': identifier.value,
-            'identifierType': 'DOI'
-        }
-
-
 def datacite_format_rights(license):
+    """ Format the liceses/rights of project/node for a datacite schema
+    Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
+
+    :param license: a lincense object for a node that should be formatted for datacite
+    :return: formatted json for datacite
+    """
+
     return {
         'rights': license.name,
         'rightsURI': license.url
