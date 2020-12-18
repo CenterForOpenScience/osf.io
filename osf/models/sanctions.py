@@ -465,9 +465,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
 
     @property
     def embargo_end_date(self):
-        if self.state == self.APPROVED:
-            return self.end_date
-        return False
+        return self.end_date
 
     # NOTE(hrybacki): Old, private registrations are grandfathered and do not
     # require to be made public or embargoed. This field differentiates them
