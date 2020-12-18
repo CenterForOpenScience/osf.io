@@ -61,13 +61,14 @@ class TestCorrectRegistrationModerationState(OsfTestCase):
     def test_correct_registration_moderation_states_only_collects_initial_registrations(self):
         # Implicitly invoke update_moderation_state.
         # We should not attempt to update state on these Registrations.
+        # Also should not attempt to update self.registration_approval, which should be in initial
         self.embargo.to_COMPLETED()
         self.retraction.to_APPROVED()
 
         with mock.patch.object(Registration, 'update_moderation_state') as mock_update:
             correct_registration_moderation_states()
 
-        assert mock_update.call_count == 2
+        assert mock_update.call_count == 1
 
     def test_correct_registration_moderation_states_ignores_deleted_registrations(self):
         deleted_registration = self.registration_approval.target_registration
@@ -77,7 +78,9 @@ class TestCorrectRegistrationModerationState(OsfTestCase):
         with mock.patch.object(Registration, 'update_moderation_state') as mock_update:
             correct_registration_moderation_states()
 
-        assert mock_update.call_count == 3
+        # Shouldn't attempt to update self.registration_approval (deleted)
+        # or self.embargo (correctly in 'initial')
+        assert mock_update.call_count == 2
 
     def test_correct_registration_moderation_states_only_reports_updated_registrations(self):
         # INITIAL is the correct state for a Registration with an
