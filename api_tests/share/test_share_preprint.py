@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import mock
 import pytest
@@ -9,6 +10,7 @@ from api_tests.utils import create_test_file
 
 from framework.auth.core import Auth
 
+from osf.models.spam import SpamStatus
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 from osf_tests.factories import (
@@ -43,7 +45,7 @@ class TestPreprintShare:
         )
 
     @pytest.fixture
-    def project(self, user):
+    def project(self, user, mock_share):
         return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture
@@ -164,3 +166,28 @@ class TestPreprintShare:
         graph = data['data']['attributes']['data']['@graph']
         data = next(data for data in graph if data['@type'] == 'preprint')
         assert data['title'] == preprint.title
+
+    def test_delete_from_share(self, mock_share):
+        preprint = PreprintFactory()
+        update_share(preprint)
+
+        data = json.loads(mock_share.calls[-1].request.body.decode())
+        graph = data['data']['attributes']['data']['@graph']
+        share_preprint = next(n for n in graph if n['@type'] == 'preprint')
+        assert not share_preprint['is_deleted']
+
+        preprint.date_withdrawn = datetime.now()
+        update_share(preprint)
+
+        data = json.loads(mock_share.calls[-1].request.body.decode())
+        graph = data['data']['attributes']['data']['@graph']
+        share_preprint = next(n for n in graph if n['@type'] == 'preprint')
+        assert not share_preprint['is_deleted']
+
+        preprint.spam_status = SpamStatus.SPAM
+        update_share(preprint)
+
+        data = json.loads(mock_share.calls[-1].request.body.decode())
+        graph = data['data']['attributes']['data']['@graph']
+        share_preprint = next(n for n in graph if n['@type'] == 'preprint')
+        assert share_preprint['is_deleted']
