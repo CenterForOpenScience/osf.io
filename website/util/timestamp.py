@@ -590,6 +590,8 @@ def get_file_info(cookie, file_node, version):
     return None
 
 def file_created_or_updated(node, metadata, user_id, created_flag):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
             metadata['provider'], BaseFileNode.FILE
@@ -632,6 +634,8 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.save()
 
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -830,6 +834,8 @@ def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
             file_node.delete()
 
 def file_node_deleted(project_id, addon_name, src_path):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     src_path = src_path if src_path[0] == '/' else '/' + src_path
 
     tst_status = api_settings.FILE_NOT_EXISTS
@@ -844,6 +850,8 @@ def file_node_deleted(project_id, addon_name, src_path):
     ).update(inspection_result_status=tst_status)
 
 def file_node_gone(project_id, addon_name, src_path):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     if project_id is None or addon_name is None or src_path is None:
         return
 
