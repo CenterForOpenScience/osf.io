@@ -95,7 +95,6 @@ class TestCrossRefEmailResponse:
             </doi_batch_diagnostic>
         """.format(preprint._id, preprint._id)
 
-    @pytest.fixture()
     def update_success_xml(self, preprint):
         return """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -177,7 +176,7 @@ class TestCrossRefEmailResponse:
         assert preprint.get_identifier_value('doi')
         assert preprint.preprint_doi_created
 
-    def test_update_success_response(self, app, preprint, url, update_success_xml):
+    def test_update_success_response(self, app, preprint, url):
         initial_value = 'TempDOIValue'
         preprint.set_identifier_value(category='doi', value=initial_value)
         update_xml = self.update_success_xml(preprint)
@@ -189,7 +188,7 @@ class TestCrossRefEmailResponse:
         assert not mock_send_mail.called
         assert preprint.get_identifier_value(category='doi') != initial_value
 
-    def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url, update_success_xml):
+    def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url):
         preprint.set_identifier_value(category='doi', value='test')
         preprint.preprint_doi_created = timezone.now()
         preprint.save()
@@ -215,7 +214,7 @@ class TestCrossRefEmailResponse:
         for preprint in preprint_list:
             assert preprint.get_identifier_value('doi') == settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=preprint._id)
 
-    def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint, update_success_xml):
+    def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint):
         legacy_value = 'IAmALegacyDOI'
         preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
         update_xml = self.update_success_xml(preprint)
