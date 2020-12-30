@@ -1981,6 +1981,8 @@ class SpamOverrideMixin(SpamMixin):
     # Override on model
     SPAM_CHECK_FIELDS = {}
 
+    SPAM_CREATION_THROTTLE_LIMIT = 5
+
     @property
     def log_class(self):
         return NotImplementedError()
@@ -2149,6 +2151,39 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+        if settings.SPAM_THROTTLE_AUTOBAN:
+            creator = self.creator
+            yesterday = timezone.now() - timezone.timedelta(days=1)
+            node_spam_count = creator.all_nodes.filter(spam_status=1, created__gt=yesterday).count()
+            preprint_spam_count = creator.preprints.filter(spam_status=1, created__gt=yesterday).count()
+
+            if (node_spam_count + preprint_spam_count) > self.SPAM_CREATION_THROTTLE_LIMIT:
+                self.set_privacy('private', log=False, save=False)
+
+                # Suspend the flagged user for spam.
+                creator.flag_spam()
+                if not creator.is_disabled:
+                    creator.disable_account()
+                    creator.is_registered = False
+                    mails.send_mail(
+                        to_addr=creator.username,
+                        mail=mails.SPAM_USER_BANNED,
+                        creator=creator,
+                        osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                        can_change_preferences=False,
+                    )
+                creator.save()
+
+                # Make public nodes private from this contributor
+                for node in creator.all_nodes:
+                    if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                        node.set_privacy('private', log=False, save=True)
+
+                # Make preprints private from this contributor
+                for preprint in creator.preprints.all():
+                    if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+                        preprint.set_privacy('private', log=False, save=True)
 
 
 class RegistrationResponseMixin(models.Model):
