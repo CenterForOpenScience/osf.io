@@ -310,7 +310,4 @@ class NonDescendantNodeError(APIException):
 
 class PermanentlyMovedError(APIException):
     status_code = 301
-    location = ''
-
-    def __init__(self, detail=None):
-        super(PermanentlyMovedError, self).__init__(detail=detail)
+    default_detail = _('This object has permanently moved.')
