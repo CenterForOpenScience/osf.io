@@ -60,6 +60,8 @@ from osf.utils.workflows import (
 )
 
 import osf.utils.notifications as notify
+from api.share.utils import update_share
+
 
 logger = logging.getLogger(__name__)
 
@@ -680,6 +682,39 @@ class Registration(AbstractNode):
             super(Registration, self).remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def force_withdraw(self):
+        if self.embargo_end_date or self.is_pending_embargo:
+            # Alter embargo state to make sure registration doesn't accidentally get published
+            self.embargo.state = self.retraction.REJECTED
+            self.embargo.approval_stage = (
+                SanctionStates.MODERATOR_REJECTED if self.is_moderated
+                else SanctionStates.REJECTED
+            )
+
+            self.registered_from.add_log(
+                action=NodeLog.EMBARGO_CANCELLED,
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                    'embargo_id': self.embargo._id,
+                },
+                auth=Auth(self.retraction.initiated_by),
+            )
+            self.embargo.save()
+
+        # Ensure retracted registration is public
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
+        for node in self.node_and_primary_descendants():
+            node.set_privacy('public', auth=None, save=True, log=False)
+            node.update_search()
+        # force a save before sending data to share or retraction will not be updated
+        self.save()
+
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

@@ -1,8 +1,6 @@
 import pytz
 import functools
 
-from api.share.utils import update_share
-
 from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.utils import timezone
@@ -126,7 +124,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     # accept(self, user, token)
     # reject(self, user, token)
     #
-    # Overrriding these functions will divorce the offending Sanction class from that trigger's
+    # Overriding these functions will divorce the offending Sanction class from that trigger's
     # functionality on the state machine.
 
     def _get_registration(self):
@@ -742,39 +740,7 @@ class Retraction(EmailApprovableSanction):
             auth=Auth(self.initiated_by),
         )
 
-        # TODO: Move this into the registration to be re-used in Forced Withdrawal
-        # Remove any embargoes associated with the registration
-        if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
-            # Alter embargo state to make sure registration doesn't accidentally get published
-            parent_registration.embargo.state = self.REJECTED
-            parent_registration.embargo.approval_stage = (
-                SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.REJECTED
-            )
-
-            parent_registration.registered_from.add_log(
-                action=NodeLog.EMBARGO_CANCELLED,
-                params={
-                    'node': parent_registration.registered_from._id,
-                    'registration': parent_registration._id,
-                    'embargo_id': parent_registration.embargo._id,
-                },
-                auth=Auth(self.initiated_by),
-            )
-            parent_registration.embargo.save()
-
-        # Ensure retracted registration is public
-        # Pass auth=None because the registration initiator may not be
-        # an admin on components (component admins had the opportunity
-        # to disapprove the retraction by this point)
-        for node in parent_registration.node_and_primary_descendants():
-            node.set_privacy('public', auth=None, save=True, log=False)
-            node.update_search()
-        # force a save before sending data to share or retraction will not be updated
-        self.save()
-
-        if osf_settings.SHARE_ENABLED:
-            update_share(parent_registration)
+        parent_registration.force_withdraw()
 
     def approve_retraction(self, user, token):
         '''Test function'''
