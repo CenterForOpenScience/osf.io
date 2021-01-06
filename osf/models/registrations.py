@@ -683,7 +683,7 @@ class Registration(AbstractNode):
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
-    def force_withdraw(self):
+    def withdraw(self):
         if self.embargo_end_date or self.is_pending_embargo:
             # Alter embargo state to make sure registration doesn't accidentally get published
             self.embargo.state = self.retraction.REJECTED

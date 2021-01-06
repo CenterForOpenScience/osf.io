@@ -725,22 +725,21 @@ class Retraction(EmailApprovableSanction):
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
         NodeLog = apps.get_model('osf.NodeLog')
-
         self.date_retracted = timezone.now()
-        self.save()
 
-        parent_registration = self.target_registration
-        parent_registration.registered_from.add_log(
+        registration = self.target_registration
+        registration.registered_from.add_log(
             action=NodeLog.RETRACTION_APPROVED,
             params={
-                'node': parent_registration.registered_from._id,
+                'node': registration.registered_from._id,
                 'retraction_id': self._id,
-                'registration': parent_registration._id
+                'registration': registration._id
             },
             auth=Auth(self.initiated_by),
         )
 
-        parent_registration.force_withdraw()
+        registration.withdraw()
+        self.save()
 
     def approve_retraction(self, user, token):
         '''Test function'''

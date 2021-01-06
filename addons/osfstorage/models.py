@@ -164,7 +164,7 @@ class OsfStorageFileNode(BaseFileNode):
     def delete(self, user=None, parent=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
+        return super().delete(user=user) if self._check_delete_allowed() else None
 
     def update_region_from_latest_version(self, destination_parent):
         raise NotImplementedError
