@@ -612,6 +612,7 @@ class TestShowIfVersion(ApiTestCase):
             registration=self.registration)
 
         req = make_drf_request_with_version(version='2.0')
+        self.registration.refresh_from_db()
         data = RegistrationSerializer(
             self.registration,
             context={'request': req}

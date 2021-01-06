@@ -214,6 +214,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.refresh_from_db()
         assert_true(self.registration.is_retracted)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 1)

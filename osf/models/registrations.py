@@ -214,10 +214,7 @@ class Registration(AbstractNode):
 
     @property
     def is_retracted(self):
-        root = self._dirty_root
-        if root.retraction is None:
-            return False
-        return root.retraction.is_approved
+        return self.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
     @property
     def is_pending_registration(self):
@@ -708,7 +705,7 @@ class Registration(AbstractNode):
         # an admin on components (component admins had the opportunity
         # to disapprove the retraction by this point)
         for node in self.node_and_primary_descendants():
-            node.set_privacy('public', auth=None, save=True, log=False)
+            node.set_privacy('public', auth=None, log=False)
             node.update_search()
         # force a save before sending data to share or retraction will not be updated
         self.save()
