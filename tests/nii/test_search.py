@@ -2150,7 +2150,7 @@ class TestSearchHighlight(OsfTestCase):
         return self.tag1 + nfd(text) + self.tag2
 
     def _gen_text(self, base, size=400):
-        len_kanji = size / 2
+        len_kanji = int(size / 2)
         tmp = []
         for i in range(len_kanji):
             tmp.append(u'漢')
