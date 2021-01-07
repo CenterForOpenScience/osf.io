@@ -143,6 +143,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.refresh_from_db()
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
@@ -169,6 +170,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         retraction_approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, retraction_approval_token)
+        self.registration.refresh_from_db()
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
@@ -245,6 +247,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.refresh_from_db()
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
@@ -290,6 +293,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
         retraction_approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, retraction_approval_token)
+        self.registration.refresh_from_db()
         assert_false(self.registration.is_pending_retraction)
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
@@ -314,6 +318,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         # Second admin approves
         approval_token = self.registration.retraction.approval_state[self.admin2._id]['approval_token']
         self.registration.retraction.approve_retraction(self.admin2, approval_token)
+        self.registration.refresh_from_db()
         num_of_approvals = sum([val['has_approved'] for val in self.registration.retraction.approval_state.values()])
         assert_equal(num_of_approvals, 2)
         assert_true(self.registration.is_retracted)

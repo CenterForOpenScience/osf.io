@@ -60,8 +60,9 @@ class TestInstitutionRegistrationList(ApiTestCase):
     def test_doesnt_return_retractions_without_auth(self):
         self.registration2.is_public = True
         self.registration2.save()
-        WithdrawnRegistrationFactory(
-            registration=self.registration2, user=self.user1)
+        WithdrawnRegistrationFactory(registration=self.registration2, user=self.user1)
+
+        self.registration2.refresh_from_db()
         assert_true(self.registration2.is_retracted)
 
         res = self.app.get(self.institution_node_url)
@@ -75,6 +76,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         WithdrawnRegistrationFactory(
             registration=self.registration2, user=self.user1)
 
+        self.registration2.refresh_from_db()
         assert_true(self.registration2.is_retracted)
 
         res = self.app.get(self.institution_node_url, auth=self.user1.auth)
