@@ -799,7 +799,7 @@ class TestRegistrationRetractions(OsfTestCase):
         self.registration.retraction.state = Retraction.APPROVED
         with run_celery_tasks():
             self.registration.retraction.save()
-            self.registration.save()
+            self.registration.update_moderation_state()
             self.registration.update_search()
 
         # Query and ensure unique string in wiki doesn't show up

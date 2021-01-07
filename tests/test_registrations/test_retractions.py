@@ -450,11 +450,13 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
 
         # Ensure descendant nodes are retracted
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
+            node.update_moderation_state()
             assert_true(node.is_retracted)
 
         assert mock_update_share.called
@@ -481,6 +483,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Ensure descendant nodes' retractions are cancelled
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
+            node.update_moderation_state()
             assert_false(node.is_pending_retraction)
             assert_false(node.is_retracted)
 
@@ -510,6 +513,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
@@ -517,6 +521,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Ensure descendant nodes are not pending embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
+            node.update_moderation_state()
             assert_true(node.is_retracted)
             assert_false(node.is_pending_embargo)
 
@@ -554,11 +559,14 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+
+        self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
 
         # Ensure descendant nodes are not pending embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
+            node.update_moderation_state()
             assert_true(node.is_retracted)
 
         assert mock_update_share.called
@@ -581,11 +589,12 @@ class RegistrationRetractionShareHook(OsfTestCase):
     def test_approval_calls_share_hook(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
-        self.registration.save()
+        self.registration.update_moderation_state()
 
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.registration.retraction.approve_retraction(self.user, approval_token)
+        self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
         assert mock_update_share.called
 
@@ -665,7 +674,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth
         )
-        self.registration.retraction.reload()
+        self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)
         assert_equal(res.status_code,  http_status.HTTP_302_FOUND)
