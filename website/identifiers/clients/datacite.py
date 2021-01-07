@@ -8,6 +8,7 @@ import datetime
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
+from django.core.exceptions import ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,11 @@ logger = logging.getLogger(__name__)
 class DataCiteClient(AbstractIdentifierClient):
 
     def __init__(self, node):
+        try:
+            assert settings.DATACITE_URL and (getattr(node.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX)
+        except AssertionError:
+            raise ImproperlyConfigured('OSF\'Datacite client\'s settings are not configured')
+
         self._client = DataCiteMDSClient(
             url=settings.DATACITE_URL,
             username=settings.DATACITE_USERNAME,
@@ -66,10 +72,6 @@ class DataCiteClient(AbstractIdentifierClient):
         return schema40.tostring(data)
 
     def build_doi(self, object):
-        print(settings.DOI_FORMAT.format(
-            prefix=getattr(object.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX,
-            guid=object._id
-        ))
         return settings.DOI_FORMAT.format(
             prefix=getattr(object.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX,
             guid=object._id
