@@ -13,6 +13,7 @@ from framework.celery_tasks import app as celery_app
 
 from elasticsearch_dsl.connections import connections
 from django.core.management import call_command
+import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 
@@ -161,10 +162,10 @@ def mock_share():
 def mock_akismet():
     """
     This should be used to mock our anti-spam service akismet.
-    Relevent endpoints:
-    'https://{api_key}.rest.akismet.com/1.1/submit-spam'
-    'https://{api_key}.rest.akismet.com/1.1/submit-ham'
-    'https://{api_key}.rest.akismet.com/1.1/comment-check'
+    Relevant endpoints:
+    f'https://{api_key}.rest.akismet.com/1.1/submit-spam'
+    f'https://{api_key}.rest.akismet.com/1.1/submit-ham'
+    f'https://{api_key}.rest.akismet.com/1.1/comment-check'
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -173,10 +174,23 @@ def mock_akismet():
 
 @pytest.fixture
 def mock_datacite(registration):
+    """
+    This should be used to mock our our datacite client.
+    Relevant endpoints:
+    f'{DATACITE_URL}/metadata'
+    f'{DATACITE_URL}/doi'
+    f'{DATACITE_URL}/metadata/{doi}'
+
+    Datacite url should be `https://mds.datacite.org' for production and `https://mds.test.datacite.org` for local
+    testing
+    """
 
     doi = registration.get_doi_client().build_doi(registration)
+
     with open(os.path.join('tests', 'identifiers', 'fixtures', 'datacite_post_metadata_response.xml'), 'r') as fp:
-        data = fp.read().format(doi)
+        base_xml = ET.fromstring(fp.read())
+        base_xml.find('{http://datacite.org/schema/kernel-4}identifier').text = doi
+        data = ET.tostring(base_xml)
 
     with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
         rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
