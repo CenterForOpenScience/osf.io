@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import furl
+from django.utils import timezone
 from rest_framework import status as http_status
 import json
 from future.moves.urllib.parse import quote
@@ -264,6 +265,15 @@ def make_response_from_ticket(ticket, service_url):
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
         # user found and authenticated
         if user and action == 'authenticate':
+            # If the user has checked the terms of service consent checkbox via CAS, `termsOfServiceChecked` with value
+            # `true` is then released to OSF among other authentication attributes. OSF trusts CAS and thus update the
+            # user object here.
+            # There is no need to apply this `if` statement for the other two cases (i.e. `external_credential == true`
+            # with either `action == 'authenticate'` or `action == 'external_first_login'`) since neither is the final
+            # step of an login flow.
+            if cas_resp.attributes.get('termsOfServiceChecked', False):
+                user.accepted_terms_of_service = timezone.now()
+                user.save()
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
                 user.verification_key = None
