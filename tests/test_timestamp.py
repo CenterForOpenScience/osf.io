@@ -152,7 +152,7 @@ class TestAddTimestamp(ApiTestCase):
 
     def test_add_timestamp_cjkname(self):
         ## create file_node
-        filename = unicode('𩸽.txt', 'utf-8')
+        filename = '𩸽.txt'
         file_node = create_test_file(node=self.node, user=self.user, filename=filename)
 
         ## create tmp_dir
