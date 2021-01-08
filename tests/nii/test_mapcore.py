@@ -5,7 +5,7 @@ import json
 import requests
 import string
 import random
-import urllib
+from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 from django.utils import timezone
@@ -89,7 +89,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
                     'client_id': client_id,
                     'state': state_str}
         url = settings.MAPCORE_HOSTNAME + settings.MAPCORE_AUTHCODE_PATH
-        target = url + '?' + urllib.urlencode(next_params)
+        target = url + '?' + urlencode(next_params)
 
         params = {'next_url': next_url}
         redirect_url = mapcore_request_authcode(self.me, params)

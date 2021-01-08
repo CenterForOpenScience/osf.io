@@ -8,7 +8,7 @@ import pytz
 import re
 import json
 import requests
-import urllib
+from urllib.parse import quote
 import csv
 import pandas as pd
 import numpy as np
@@ -283,7 +283,7 @@ def create_image_string(provider, statistics_data):
     canvas = FigureCanvasAgg(fig)
     png_output = BytesIO()
     canvas.print_png(png_output)
-    img_data = urllib.quote(png_output.getvalue())
+    img_data = quote(png_output.getvalue())
     plt.close()
     return img_data
 

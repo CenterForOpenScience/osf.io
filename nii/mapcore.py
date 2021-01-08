@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 import requests
-import urllib
+from urllib.parse import quote, urlencode
 import re
 from operator import attrgetter
 from pprint import pformat as pp
@@ -68,7 +68,7 @@ def utf8dec(s):
 
 ### Do not import from scripts.populate_institutions
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return quote(val, safe='~()*!.\'')
 
 def add_log(action, node, user, exc, save=False):
     if node.logs.count() >= 1:
@@ -213,7 +213,7 @@ def mapcore_request_authcode(user, params):
               'client_id': MAPCORE_CLIENTID,
               'state': state_str}
 
-    target = url + '?' + urllib.urlencode(next_params)
+    target = url + '?' + urlencode(next_params)
     entity_ids = user.get_idp_entity_ids()
     if len(entity_ids) == 1:
         query = '{}/Shibboleth.sso/DS?entityID={}&target={}'.format(
@@ -296,7 +296,7 @@ def mapcore_get_accesstoken(authcode, redirect):
         'redirect_uri': redirect,
         'code': authcode
     }
-    param = urllib.urlencode(param)
+    param = urlencode(param)
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
     }
@@ -332,7 +332,7 @@ def mapcore_get_accesstoken(authcode, redirect):
 #         'grant_type': 'refresh_token',
 #         'refresh_token': user.map_profile.oauth_refresh_token
 #     }
-#     param = urllib.urlencode(param)
+#     param = urlencode(param)
 #     headers = {
 #         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
 #     }
