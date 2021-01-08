@@ -674,6 +674,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=self.user.auth
         )
+        self.registration.retraction.reload()
         self.registration.update_moderation_state()
         assert_true(self.registration.is_retracted)
         assert_false(self.registration.is_pending_retraction)

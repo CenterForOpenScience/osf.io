@@ -1513,19 +1513,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_primary(self, node):
         return NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists()
 
-    # TODO optimize me
     def get_descendants_recursive(self, primary_only=False):
-        query = self.nodes_primary if primary_only else self._nodes
-        for node in query.all():
-            yield node
-            if not primary_only:
-                primary = self.get_primary(node)
-                if primary:
-                    for descendant in node.get_descendants_recursive(primary_only=primary_only):
-                        yield descendant
-            else:
-                for descendant in node.get_descendants_recursive(primary_only=primary_only):
-                    yield descendant
+        if primary_only:
+            return self.nodes_primary
+        else:
+            return self.objects.get_children(include_root=True)
 
     @property
     def nodes_primary(self):
