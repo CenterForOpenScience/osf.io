@@ -91,7 +91,8 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.filter(id__in=self.exclude(type__in=['osf.collection', 'osf.quickfilesnode', 'osf.draftnode']).values_list('root_id', flat=True))
 
-    def get_children(self, root, active=False, include_root=False):
+    @classmethod
+    def get_children(cls, root, active=False, include_root=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
         if root.id == root.root_id:
@@ -1517,7 +1518,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if primary_only:
             return self.nodes_primary
         else:
-            return self.objects.get_children(include_root=True)
+            return AbstractNodeQuerySet.get_children(self, include_root=True)
 
     @property
     def nodes_primary(self):
@@ -1819,7 +1820,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param node Node: target Node
         """
-        return itertools.chain([self], self.get_descendants_recursive(primary_only=True))
+        return itertools.chain([self], self.nodes_primary)
 
     def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
