@@ -643,6 +643,13 @@ class CeleryConfig:
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
+            'purge_files': {
+                'task': 'management.commands.purge_withdrawn_files',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False}
+
+            },
+
         }
 
         # Tasks that need metrics and release requirements
@@ -2011,3 +2018,6 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
+
+# Google Cloud storage credentials, our default osfstorage backend
+GCS_CREDS = None

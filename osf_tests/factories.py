@@ -459,7 +459,7 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
 
-        registration = kwargs.pop('registration', None)
+        registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
 

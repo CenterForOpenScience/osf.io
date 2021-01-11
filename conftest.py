@@ -1,4 +1,6 @@
 from __future__ import print_function
+import os
+from google.cloud import storage
 
 import logging
 
@@ -168,3 +170,16 @@ def mock_akismet():
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
             yield rsps
+
+
+@pytest.fixture
+def mock_gcs():
+    """
+    This should be used to mock our default backend storage Google Cloud Service.
+    Relevent endpoints:
+    """
+    with mock.patch.object(website_settings, 'GCS_CREDS', return_value='osf_tests/fakegcscreds.pem'):
+        with mock.patch.dict(os.environ, {'GOOGLE_APPLICATION_CREDENTIALS': 'osf_tests/fakegcscreds.pem'}):
+            mock_client = mock.create_autospec(storage.Client)
+            with mock.patch('osf.management.commands.purge_files.Client', mock_client):
+                yield mock_client
