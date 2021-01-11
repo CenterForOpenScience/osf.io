@@ -704,10 +704,13 @@ class Registration(AbstractNode):
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
         # to disapprove the retraction by this point)
-        for node in self.node_and_primary_descendants():
+        for node in self.get_descendants_recursive(primary_only=True):
             node.set_privacy('public', auth=None, log=False)
             node.update_search()
+
         # force a save before sending data to share or retraction will not be updated
+        self.set_privacy('public', auth=None, log=False)
+        self.update_search()
         self.save()
 
         if settings.SHARE_ENABLED:
