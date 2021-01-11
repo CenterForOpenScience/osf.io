@@ -395,6 +395,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         registration = RegistrationFactory(project=project)
         registration._initiate_retraction(self.user)
         registration.retraction._on_complete(self.user)
+        registration.reload()
         for each in registration.node_and_primary_descendants():
             each.reload()
             assert_true(each.is_public)

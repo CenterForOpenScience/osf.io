@@ -944,7 +944,7 @@ class TestProjectViews(OsfTestCase):
 
         approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
         registration.retraction.approve_retraction(self.user1, approval_token)
-        registration.refresh_from_db()
+        registration.update_moderation_state()
 
         url = registration.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)

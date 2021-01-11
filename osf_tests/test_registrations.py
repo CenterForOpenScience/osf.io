@@ -481,8 +481,9 @@ class TestNodeSanctionStates:
 
     def test_is_retracted(self):
         retraction = factories.RetractionFactory(state=Sanction.APPROVED, approve=True)
-        retraction._get_registration().update_moderation_state()
-        assert retraction._get_registration().is_retracted
+        registration = Registration.objects.get(retraction=retraction)
+        registration.update_moderation_state()
+        assert registration.is_retracted
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_is_retracted_searches_parents(self, mock_update_search):

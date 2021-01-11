@@ -240,9 +240,15 @@ class Registration(AbstractNode):
     @property
     def is_embargoed(self):
         """A Node is embargoed if:
-        - it's moderation state is embargoed
+        - it has an associated Embargo record
+        - that record has been approved
+        - the node is not public (embargo not yet lifted)
         """
-        return self.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+        root = self._dirty_root
+        if root.is_public or root.embargo is None:
+            return False
+        return root.embargo.is_approved
+
     @property
     def embargo_end_date(self):
         root = self._dirty_root
@@ -419,7 +425,7 @@ class Registration(AbstractNode):
                             True if the embargo is being terminated early
 
         """
-        if not self.moderation_state == RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name:
+        if not self.is_embargoed:
             raise NodeStateError('This node is not under active embargo')
 
         action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED

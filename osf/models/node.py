@@ -1,5 +1,6 @@
 from past.builtins import basestring
 import functools
+import itertools
 import logging
 import re
 from future.moves.urllib.parse import urljoin
@@ -90,18 +91,11 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
     def get_roots(self):
         return self.filter(id__in=self.exclude(type__in=['osf.collection', 'osf.quickfilesnode', 'osf.draftnode']).values_list('root_id', flat=True))
 
-    @classmethod
-    def get_children(cls, root, active=False, include_root=False, primary_only=False):
-        """
-        The optimized function for getting the children of a AbstractNode.
-        """
+    def get_children(self, root, active=False, include_root=False):
         # If `root` is a root node, we can use the 'descendants' related name
         # rather than doing a recursive query
-        if root.id == root.root_id or primary_only:
-            query = root.descendants.exclude(id=root.id)
-            if include_root:
-                # Order matters here
-                query |= AbstractNode.objects.filter(id=root.id)
+        if root.id == root.root_id:
+            query = root.descendants.all() if include_root else root.descendants.exclude(id=root.id)
             if active:
                 query = query.filter(is_deleted=False)
             return query
@@ -1519,14 +1513,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_primary(self, node):
         return NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists()
 
-    def get_descendants_recursive(self, primary_only=False, include_root=True):
-        if primary_only:
-            query = self.nodes_primary
-            if include_root:
-                query |= AbstractNode.objects.filter(id=self.id)
-            return query
-        else:
-            return AbstractNodeQuerySet.get_children(self, include_root=include_root)
+    # TODO optimize me
+    def get_descendants_recursive(self, primary_only=False):
+        query = self.nodes_primary if primary_only else self._nodes
+        for node in query.all():
+            yield node
+            if not primary_only:
+                primary = self.get_primary(node)
+                if primary:
+                    for descendant in node.get_descendants_recursive(primary_only=primary_only):
+                        yield descendant
+            else:
+                for descendant in node.get_descendants_recursive(primary_only=primary_only):
+                    yield descendant
 
     @property
     def nodes_primary(self):
@@ -1828,7 +1827,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         :param node Node: target Node
         """
-        return self.get_descendants_recursive(primary_only=True, include_root=True)
+        return itertools.chain([self], self.get_descendants_recursive(primary_only=True))
 
     def get_active_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
@@ -1838,7 +1837,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             during iteration.
         """
         visited_user_ids = []
-        for node in self.node_and_primary_descendants():
+        for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.active_contributors(*args, **kwargs):
                 if unique_users:
                     if contrib._id not in visited_user_ids:
@@ -1847,7 +1846,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 else:
                     yield (contrib, node)
 
-    def get_admin_contributors_recursive(self, unique_users=False):
+    def get_admin_contributors_recursive(self, unique_users=False, *args, **kwargs):
         """Yield (admin, node) tuples for this node and
         descendant nodes. Excludes contributors on node links and inactive users.
         Excludes group members.
@@ -1856,7 +1855,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             during iteration.
         """
         visited_user_ids = []
-        for node in self.get_descendants_recursive(include_root=True):
+        for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.contributors.all():
                 if node.has_permission(contrib, ADMIN) and contrib.is_active:
                     if unique_users:

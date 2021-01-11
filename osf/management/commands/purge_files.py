@@ -29,11 +29,11 @@ def purge_deleted_withdrawn_files(dry_run=False):
     deleted_file_ids_on_withdrawn_node = Registration.objects.filter(
         moderation_state=RegistrationModerationStates.WITHDRAWN.db_name,
         files__deleted__lte=timezone.now() - PURGE_DELTA
-    ).values_list('files__parent_id', flat=True).distinct()
+    ).values_list('files__id', flat=True).distinct()
 
     creds = Credentials.from_service_account_file(GCS_CREDS)
     client = Client(credentials=creds)
-    for file in TrashedFileNode.objects.filter(parent_id__in=deleted_file_ids_on_withdrawn_node):
+    for file in TrashedFileNode.objects.filter(id__in=deleted_file_ids_on_withdrawn_node):
         if not dry_run:
             file._purge(client=client)
 
