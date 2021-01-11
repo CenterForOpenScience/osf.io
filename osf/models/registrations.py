@@ -16,6 +16,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from framework.sentry import log_message
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
@@ -486,6 +487,9 @@ class Registration(AbstractNode):
 
         self.registered_meta[self.registration_schema._id] = registration_metadata
         self.registration_responses = registration_responses
+
+        if draft.registration_metadata == {}:
+            log_message(f'Issue creating registration: {self._id} no registered metadata. Registration was created anyway...')
 
         if save:
             self.save()
