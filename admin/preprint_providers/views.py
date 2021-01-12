@@ -10,7 +10,6 @@ from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, TemplateView, UpdateView
 from django.views.generic.edit import FormView
-from django.core.management import call_command
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
@@ -19,7 +18,7 @@ from django.shortcuts import redirect, render
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.preprint_providers.forms import PreprintProviderForm, PreprintProviderCustomTaxonomyForm, PreprintProviderRegisterModeratorOrAdminForm
-from osf.models import PreprintProvider, Subject, NodeLicense, OSFUser
+from osf.models import PreprintProvider, Subject, OSFUser, RegistrationProvider, CollectionProvider
 from osf.models.provider import rules_to_subjects, WhitelistedSHAREPreprintProvider
 from website import settings as website_settings
 
@@ -328,25 +327,38 @@ class CannotDeleteProvider(TemplateView):
         return context
 
 
-class ImportPreprintProvider(PermissionRequiredMixin, View):
-    permission_required = 'osf.change_preprintprovider'
+class ImportProviderView(PermissionRequiredMixin, View):
     raise_exception = True
+    provider_class = None
+
+    provider_namespaces = {
+        PreprintProvider: 'preprint_provider',
+        RegistrationProvider: 'registration_provider',
+        CollectionProvider: 'collection_provider'
+    }
 
     def post(self, request, *args, **kwargs):
         form = ImportFileForm(request.POST, request.FILES)
+        provider_id = self.kwargs.get(f'f{self.provider_namespaces[self.provider_class]}_id', None)
+
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])
             file_json = json.loads(file_str)
-            current_fields = [f.name for f in PreprintProvider._meta.get_fields()]
+            current_fields = [f.name for f in self.provider_class._meta.get_fields()]
             # make sure not to import an exported access token for SHARE
             cleaned_result = {key: value for key, value in file_json['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
+            if provider_id:
+                cleaned_result['id'] = provider_id
             try:
-                preprint_provider = self.create_or_update_provider(cleaned_result)
+                provider = self.provider_class.update_or_create_from_json(cleaned_result, request.user)
             except ValidationError:
                 messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
-                return redirect('preprint_providers:create')
+                return redirect(f'{self.provider_namespaces[self.provider_class]}s:create')
 
-            return redirect('preprint_providers:detail', preprint_provider_id=preprint_provider.id)
+            return redirect(
+                f'{self.provider_namespaces[self.provider_class]}s:detail',
+                **{f'{self.provider_namespaces[self.provider_class]}_id': provider.id}
+            )
 
     def parse_file(self, f):
         parsed_file = ''
@@ -356,36 +368,10 @@ class ImportPreprintProvider(PermissionRequiredMixin, View):
             parsed_file += chunk
         return parsed_file
 
-    def get_page_provider(self):
-        page_provider_id = self.kwargs.get('preprint_provider_id', '')
-        if page_provider_id:
-            return PreprintProvider.objects.get(id=page_provider_id)
 
-    def add_subjects(self, provider, subject_data):
-        call_command('populate_custom_taxonomies', '--provider', provider._id, '--data', json.dumps(subject_data))
-
-    def create_or_update_provider(self, provider_data):
-        provider = self.get_page_provider()
-        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
-        default_license = provider_data.pop('default_license', False)
-        subject_data = provider_data.pop('subjects', False)
-
-        if provider:
-            for key, val in provider_data.items():
-                setattr(provider, key, val)
-        else:
-            provider = PreprintProvider(**provider_data)
-
-        provider.save()
-
-        if licenses:
-            provider.licenses_acceptable.set(licenses)
-        if default_license:
-            provider.default_license = NodeLicense.objects.get(license_id=default_license)
-        # Only adds the JSON taxonomy if there is no existing taxonomy data
-        if subject_data and not provider.subjects.count():
-            self.add_subjects(provider, subject_data)
-        return provider
+class ImportPreprintProvider(ImportProviderView):
+    permission_required = 'osf.change_preprintprovider'
+    provider_class = PreprintProvider
 
 
 class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
