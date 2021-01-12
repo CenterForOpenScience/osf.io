@@ -2169,7 +2169,7 @@ class SpamOverrideMixin(SpamMixin):
                     mails.send_mail(
                         to_addr=creator.username,
                         mail=mails.SPAM_USER_BANNED,
-                        creator=creator,
+                        user=creator,
                         osf_support_email=settings.OSF_SUPPORT_EMAIL,
                         can_change_preferences=False,
                     )
