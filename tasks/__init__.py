@@ -541,10 +541,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = (
-                        'pip3 wheel --use-deprecated=legacy-resolver '
-                        '--find-links={} -r {} --wheel-dir={} '
-                    ).format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                    cmd = ('pip3 wheel --find-links={} -r {} --wheel-dir={} ').format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
                     ctx.run(cmd, pty=pty)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -552,10 +549,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = (
-        'pip3 wheel --use-deprecated=legacy-resolver '
-        '--find-links={} -r {} --wheel-dir={} '
-    ).format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} '.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     ctx.run(cmd, pty=pty)
 
 
