@@ -254,10 +254,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'onedrive_{0}'.format(action),
             auth=auth,
             params={
-                'path': metadata['path'],
+                'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder': self.folder_path,
+                'folder': self.folder_id,
                 'urls': {
                     'view': self.owner.web_url_for(
                         'addon_view_or_download_file',
