@@ -339,7 +339,7 @@ class ImportProviderView(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         form = ImportFileForm(request.POST, request.FILES)
-        provider_id = self.kwargs.get(f'f{self.provider_namespaces[self.provider_class]}_id', None)
+        provider_id = self.kwargs.get(f'{self.provider_namespaces[self.provider_class]}_id', None)
 
         if form.is_valid():
             file_str = self.parse_file(request.FILES['file'])

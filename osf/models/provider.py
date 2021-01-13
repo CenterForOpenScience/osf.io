@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import requests
 
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
-from django.core.management import call_command
 
 from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
@@ -29,7 +29,6 @@ from website import settings
 from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
-
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
@@ -56,18 +55,18 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             provider_data.pop('licenses_acceptable', [])
         ]
         default_license = provider_data.pop('default_license', False)
-        provider_data.pop('additional_providers')
+        provider_data.pop('additional_providers', False)
         subject_data = provider_data.pop('subjects', False)
 
         brand = None
         if provider_data.get('brand'):
             try:
                 brand = Brand.objects.get(id=provider_data.pop('brand'))
-            except Brand.DoesNotExist:
+            except Brand.DoesNotExist:  # JSON is old or imported from staging etc.
                 pass
 
-        if provider_data.get('id'):
-            provider = cls.objects.filter(id=provider_data['id']).update(**provider_data).get()
+        if provider_data.get('id'):  # <- determines if creating new or updating
+            provider = cls.objects.get(id=provider_data.pop('id'))
         else:
             try:
                 provider = RegistrationProvider(**provider_data)
@@ -77,12 +76,10 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                     provider_data.pop('_id')  # these must be unique
                     provider = RegistrationProvider(**provider_data)
                     provider.save()
-
             provider._creator = user
 
         if brand:
             provider.brand = brand
-
         if licenses:
             provider.licenses_acceptable.set(licenses)
         if default_license:
@@ -90,18 +87,16 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
         # Only adds the JSON taxonomy if there is no existing taxonomy data
         if subject_data and not provider.subjects.count():
-            call_command(
-                'populate_custom_taxonomies',
-                '--provider',
-                provider._id,
-                '--data',
-                subject_data,
-                '--type',
-                provider.type
+            # circular import
+            from osf.management.commands.populate_custom_taxonomies import migrate as add_subjects
+            add_subjects(
+                provider=provider._id,
+                data=subject_data if isinstance(subject_data, dict) else json.loads(subject_data),
+                dry_run=False
             )
 
+        # Collections only code
         primary_collection = provider_data.pop('primary_collection', None)
-
         if primary_collection:
             provider.primary_collection.collected_type_choices = primary_collection['fields']['collected_type_choices']
             provider.primary_collection.status_choices = primary_collection['fields']['status_choices']
