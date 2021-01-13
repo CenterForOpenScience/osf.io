@@ -1,4 +1,4 @@
-FROM node:15.4.0-alpine3.10
+FROM node:8-alpine3.9
 
 ARG NODE_OPTIONS='--max-old-space-size=4096'
 
@@ -8,6 +8,7 @@ RUN set -x \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
+    libxslt-dev \
     su-exec \
     bash \
     python3 \
@@ -65,6 +66,8 @@ COPY ./addons/nextcloudinstitutions/requirements.txt ./addons/nextcloudinstituti
 COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
 COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
 
+RUN pip3 install pip==21.0
+
 RUN set -ex \
     && mkdir -p /var/www \
     && chown www-data:www-data /var/www \
@@ -91,8 +94,7 @@ RUN set -ex \
         /code/addons/*/requirements.txt \
         /code/admin/rdm*/requirements.txt \
     ; do \
-        pip3 install --upgrade pip3
-        && pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
+        pip3 install --no-cache-dir -r "$reqs_file" \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
