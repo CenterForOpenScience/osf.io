@@ -1981,8 +1981,6 @@ class SpamOverrideMixin(SpamMixin):
     # Override on model
     SPAM_CHECK_FIELDS = {}
 
-    SPAM_CREATION_THROTTLE_LIMIT = 5
-
     @property
     def log_class(self):
         return NotImplementedError()
@@ -2155,35 +2153,40 @@ class SpamOverrideMixin(SpamMixin):
         if settings.SPAM_THROTTLE_AUTOBAN:
             creator = self.creator
             yesterday = timezone.now() - timezone.timedelta(days=1)
-            node_spam_count = creator.all_nodes.filter(spam_status=1, created__gt=yesterday).count()
-            preprint_spam_count = creator.preprints.filter(spam_status=1, created__gt=yesterday).count()
+            node_spam_count = creator.all_nodes.filter(
+                models.Q(spam_status=SpamStatus.FLAGGED) | models.Q(spam_status=SpamStatus.SPAM), models.Q(created__gt=yesterday)).count()
+            preprint_spam_count = creator.preprints.filter(
+                models.Q(spam_status=SpamStatus.FLAGGED) | models.Q(spam_status=SpamStatus.SPAM), models.Q(created__gt=yesterday)).count()
 
-            if (node_spam_count + preprint_spam_count) > self.SPAM_CREATION_THROTTLE_LIMIT:
-                self.set_privacy('private', log=False, save=False)
+            if (node_spam_count + preprint_spam_count) > settings.SPAM_CREATION_THROTTLE_LIMIT:
+                self.suspend_spam_user(creator)
 
-                # Suspend the flagged user for spam.
-                creator.flag_spam()
-                if not creator.is_disabled:
-                    creator.disable_account()
-                    creator.is_registered = False
-                    mails.send_mail(
-                        to_addr=creator.username,
-                        mail=mails.SPAM_USER_BANNED,
-                        user=creator,
-                        osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                        can_change_preferences=False,
-                    )
-                creator.save()
+    def suspend_spam_user(self, user):
+        self.set_privacy('private', log=False, save=False)
 
-                # Make public nodes private from this contributor
-                for node in creator.all_nodes:
-                    if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                        node.set_privacy('private', log=False, save=True)
+        # Suspend the flagged user for spam.
+        user.flag_spam()
+        if not user.is_disabled:
+            user.disable_account()
+            user.is_registered = False
+            mails.send_mail(
+                to_addr=user.username,
+                mail=mails.SPAM_USER_BANNED,
+                user=user,
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
+            )
+        user.save()
 
-                # Make preprints private from this contributor
-                for preprint in creator.preprints.all():
-                    if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                        preprint.set_privacy('private', log=False, save=True)
+        # Make public nodes private from this contributor
+        for node in user.all_nodes:
+            if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                node.set_privacy('private', log=False, save=True)
+
+        # Make preprints private from this contributor
+        for preprint in user.preprints.all():
+            if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+                preprint.set_privacy('private', log=False, save=True)
 
 
 class RegistrationResponseMixin(models.Model):
