@@ -544,9 +544,8 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
 
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and ((isinstance(node, (Preprint, DraftRegistration))) or
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
-        mimetype = 'html'
+    if contributor.is_registered and isinstance(node, (Preprint, DraftRegistration)) or \
+            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
         preprint_provider = None
         logo = None
         if email_template == 'preprint':
@@ -561,7 +560,6 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         elif email_template == 'draft_registration':
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
         elif email_template == 'access_request':
-            mimetype = 'html'
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
         elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
@@ -582,7 +580,6 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         mails.send_mail(
             contributor.username,
             email_template,
-            mimetype=mimetype,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',

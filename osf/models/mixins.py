@@ -1388,10 +1388,14 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-            if self._id and contrib_to_add:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email, permissions=permissions)
+            if self._id:
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth,
+                    email_template=send_email,
+                    permissions=permissions
+                )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
