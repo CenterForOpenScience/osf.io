@@ -534,48 +534,45 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     return to_addr
 
 
+def check_for_email_throttle(node, contributor, throttle=None):
+    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+
+    contributor_record = contributor.contributor_added_email_records.get(node._id, {})
+    if contributor_record:
+        timestamp = contributor_record.get('last_sent', None)
+        if timestamp:
+            if not throttle_period_expired(timestamp, throttle):
+                return True
+    else:
+        contributor.contributor_added_email_records[node._id] = {}
+
+
 @contributor_added.connect
 def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default', *args, **kwargs):
+    logo = settings.OSF_LOGO
+    if check_for_email_throttle(node, contributor, throttle=throttle):
+        return
     if email_template == 'false':
         return
-
-    if hasattr(node, 'is_published') and not getattr(node, 'is_published'):
+    if not getattr(node, 'is_published', True):
         return
 
-    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and isinstance(node, (Preprint, DraftRegistration)) or \
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
-        preprint_provider = None
-        logo = None
+    is_contrib_on_parent = not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))
+    if contributor.is_registered or is_contrib_on_parent:
         if email_template == 'preprint':
-            email_template, preprint_provider = find_preprint_provider(node)
-            if not email_template or not preprint_provider:
-                return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
-            if preprint_provider._id == 'osf':
-                logo = settings.OSF_PREPRINTS_LOGO
-            else:
-                logo = preprint_provider._id
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, node.provider)
+            logo = settings.OSF_PREPRINTS_LOGO if node.provider.is_default else node.provider._id
         elif email_template == 'draft_registration':
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION')
         elif email_template == 'access_request':
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
-        elif node.has_linked_published_preprints:
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST')
+        elif getattr(node, 'has_linked_published_preprints', False):
             # Project holds supplemental materials for a published preprint
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF')
             logo = settings.OSF_PREPRINTS_LOGO
         else:
             email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT')
-
-        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
-        if contributor_record:
-            timestamp = contributor_record.get('last_sent', None)
-            if timestamp:
-                if not throttle_period_expired(timestamp, throttle):
-                    return
-        else:
-            contributor.contributor_added_email_records[node._id] = {}
 
         mails.send_mail(
             contributor.username,
@@ -584,9 +581,9 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
             node=node,
             referrer_name=auth.user.fullname if auth else '',
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider,
+            branded_service=node.provider,
             can_change_preferences=False,
-            logo=logo if logo else settings.OSF_LOGO,
+            logo=logo,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
             published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         )
