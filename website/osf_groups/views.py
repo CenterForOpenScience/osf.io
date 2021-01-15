@@ -37,7 +37,6 @@ def notify_added_group_member(group, user, permission, auth=None, throttle=None,
         mails.send_mail(
             to_addr=user.username,
             mail=email_template,
-            mimetype='html',
             user=user,
             group_name=group.name,
             permission=permission,
@@ -71,7 +70,6 @@ def send_claim_member_email(email, user, group, permission, auth=None, throttle=
     mails.send_mail(
         to_addr=claimer_email,
         mail=email_template,
-        mimetype='html',
         user=user,
         group_name=group.name,
         referrer_name=auth.user.fullname if auth else '',
@@ -116,7 +114,6 @@ def notify_added_node_group_member(group, node, user, permission, auth, throttle
         mails.send_mail(
             to_addr=user.username,
             mail=email_template,
-            mimetype='html',
             user=user,
             node=node,
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(user),

@@ -77,7 +77,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
+        to_addr, mail, from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
         attachment_content=None, **context):
     """Send an email from the OSF.
@@ -113,7 +113,6 @@ def send_mail(
         to_addr=to_addr,
         subject=subject,
         message=message,
-        mimetype=mimetype,
         ttls=ttls,
         login=login,
         username=username,
@@ -216,8 +215,8 @@ INVITE_DEFAULT = Mail(
     'invite_default',
     subject='You have been added as a contributor to an OSF project.'
 )
-INVITE_PREPRINT = lambda template, provider: Mail(
-    'invite_preprints_{}'.format(template),
+INVITE_PREPRINT = lambda provider: Mail(
+    'invite_preprints',
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
@@ -225,7 +224,7 @@ CONTRIBUTOR_ADDED_DEFAULT = Mail(
     subject='You have been added as a contributor to an OSF project.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
-    'contributor_added_preprints_{}'.format(template),
+    'contributor_added_preprints'.format(template),
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
