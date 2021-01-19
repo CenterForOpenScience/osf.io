@@ -168,8 +168,8 @@ class TestCampaignsAuthViews(OsfTestCase):
         super(TestCampaignsAuthViews, self).setUp()
         self.campaigns = {
             'prereg': {
-                'title_register': 'OSF Preregistration',
-                'title_landing': 'Welcome to the OSF Preregistration!'
+                'title_register': 'GakuNin RDM Preregistration',
+                'title_landing': 'Welcome to the GakuNin RDM Preregistration!'
             },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
