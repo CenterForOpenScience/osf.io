@@ -110,7 +110,7 @@ class TestEscape(OsfTestCase):
         other_punctuation = '#$%,.;@_`'
         assert_equal(es_escape(other_punctuation), other_punctuation)
 
-        assert_equal(es_escape(string.letters), string.letters)
+        assert_equal(es_escape(string.ascii_letters), string.ascii_letters)
         assert_equal(es_escape(string.octdigits), string.octdigits)
         assert_equal(es_escape(string.whitespace), string.whitespace)
 
