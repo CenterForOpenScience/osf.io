@@ -1,5 +1,5 @@
 REG_CAMPAIGNS = {
-    'prereg': 'OSF Preregistration',
+    'prereg': 'GakuNin RDM Preregistration',
     'osf-registered-reports': 'Registered Report Protocol Preregistration',
 }
 
