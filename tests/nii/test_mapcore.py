@@ -5,6 +5,7 @@ import json
 import requests
 import string
 import random
+import base64
 from urllib.parse import urlencode
 from urllib.parse import urlparse
 
@@ -80,7 +81,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
         client_id = 'fake_clientid'
         entity_id = self.entity_id
         if next_url is not None:
-            state_str = (settings.MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
+            state_str = base64.b64encode((settings.MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8')).decode()
         else:
             state_str = settings.MAPCORE_AUTHCODE_MAGIC
         redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
@@ -132,7 +133,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mock_token.return_value = (ACCESS_TOKEN, REFRESH_TOKEN)
         next_url = u'http://nexturl.example.com/\u00c3\u00c3\u00c3'
         state = settings.MAPCORE_AUTHCODE_MAGIC + next_url
-        params = {'code': 'abc', 'state': state.encode('utf-8').encode('base64')}
+        params = {'code': 'abc', 'state': base64.b64encode(state.encode('utf-8')).decode()}
         assert_equal(self.me.map_profile, None)
         # set self.me.map_profile
         ret = mapcore_receive_authcode(self.me, params)
