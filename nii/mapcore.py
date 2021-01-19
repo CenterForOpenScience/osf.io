@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import requests
+import base64
 from urllib.parse import quote, urlencode
 import re
 from operator import attrgetter
@@ -200,7 +201,7 @@ def mapcore_request_authcode(user, params):
     logger.debug(pp(params))
     next_url = params.get('next_url')
     if next_url is not None:
-        state_str = (MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
+        state_str = base64.b64encode((MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8')).decode()
     else:
         state_str = MAPCORE_AUTHCODE_MAGIC
 
@@ -277,7 +278,7 @@ def mapcore_receive_authcode(user, params):
     """
 
     if params['state'] != MAPCORE_AUTHCODE_MAGIC:
-        s = params['state'].decode('base64').decode('utf-8')
+        s = base64.b64decode(params['state']).decode()
         return re.sub('^' + MAPCORE_AUTHCODE_MAGIC, '', s)  # next_url
     return DOMAIN   # redirect to home -> will redirect to dashboard
 
