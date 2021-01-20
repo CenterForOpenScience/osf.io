@@ -343,3 +343,7 @@ wb:
     - wb_tmp_vol:/tmp
   stdin_open: true
 ```
+
+### Running Collections
+
+To run collections, you must uncomment COLLECTIONS_ENABLED=true in docker-compose.yml under ember_osf_web, then recreate your ember and web containers.

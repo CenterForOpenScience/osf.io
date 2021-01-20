@@ -261,6 +261,8 @@ services:
       - api
       - web
     environment:
+      # Uncomment below to enable collections on ember
+      # - COLLECTIONS_ENABLED=true
       - BACKEND=local
     expose:
       - 4200
