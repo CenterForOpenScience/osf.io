@@ -40,6 +40,8 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/view_only_links/$', views.RegistrationViewOnlyLinksList.as_view(), name=views.RegistrationViewOnlyLinksList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.RegistrationViewOnlyLinkDetail.as_view(), name=views.RegistrationViewOnlyLinkDetail.view_name),
     url(r'^(?P<node_id>\w+)/wikis/$', views.RegistrationWikiList.as_view(), name=views.RegistrationWikiList.view_name),
+    url(r'^(?P<node_id>\w+)/actions/$', views.RegistrationActionList.as_view(), name=views.RegistrationActionList.view_name),
+    url(r'^(?P<node_id>\w+)/requests/$', views.RegistrationRequestList.as_view(), name=views.RegistrationRequestList.view_name),
 ]
 
 # Routes only active in local/staging environments

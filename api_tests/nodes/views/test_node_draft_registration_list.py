@@ -4,7 +4,7 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema
+from osf.models import RegistrationSchema, RegistrationProvider
 from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
@@ -16,6 +16,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+from website import settings
 
 OPEN_ENDED_SCHEMA_VERSION = 3
 SCHEMA_VERSION = 2
@@ -62,7 +63,7 @@ class DraftRegistrationTestCase:
         return project_public
 
     @pytest.fixture()
-    def prereg_metadata(self):
+    def metadata(self):
         def metadata(draft):
             test_metadata = {}
             json_schema = create_jsonschema_from_metaschema(
@@ -225,7 +226,14 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def provider(self):
-        return RegistrationProviderFactory(_id='osf')
+        return RegistrationProvider.get_default()
+
+    @pytest.fixture()
+    def non_default_provider(self, metaschema_open_ended):
+        non_default_provider = RegistrationProviderFactory()
+        non_default_provider.schemas.add(metaschema_open_ended)
+        non_default_provider.save()
+        return non_default_provider
 
     @pytest.fixture()
     def metaschema_open_ended(self):
@@ -250,6 +258,29 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                         'data': {
                             'type': 'registration-providers',
                             'id': provider._id,
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def payload_with_non_default_provider(self, metaschema_open_ended, non_default_provider):
+        return {
+            'data': {
+                'type': 'draft_registrations',
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': non_default_provider._id,
                         }
                     }
                 }
@@ -294,6 +325,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
+        assert f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/' in \
+               data['relationships']['provider']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
@@ -366,6 +399,42 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 403
+
+    def test_schema_validation(
+            self, app, user, provider, non_default_provider, payload, payload_with_non_default_provider, url_draft_registrations):
+        # Schema validation for a default provider without defined schemas with any schema is tested by `test_admin_can_create_draft`
+        # Schema validation for a non-default provider with the correct schema is tested by `test_create_draft_with_provider`
+
+        # Default provider with defined schemas does not accept everything
+        schema = RegistrationSchema.objects.get(
+            name='Prereg Challenge',
+            schema_version=SCHEMA_VERSION)
+        provider.schemas.add(schema)
+        provider.save()
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
+
+        payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user.auth)
+        assert res.status_code == 201
+
+        # Non-Default provider does not accept everything
+        payload_with_non_default_provider['data']['relationships']['registration_schema']['data']['id'] = schema._id
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload_with_non_default_provider,
+            auth=user.auth,
+            expect_errors=True)
+        assert res.status_code == 400
 
     def test_registration_supplement_errors(
             self, app, user, provider, url_draft_registrations):
@@ -492,7 +561,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     def test_required_metaschema_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata, url_draft_registrations):
+            self, app, user, provider, project_public, metadata, url_draft_registrations):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)
@@ -505,7 +574,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
         url = '{}&embed=initiator&embed=branched_from'.format(url_draft_registrations)
 
-        registration_metadata = prereg_metadata(prereg_draft_registration)
+        registration_metadata = metadata(prereg_draft_registration)
         del registration_metadata['q1']
         prereg_draft_registration.registration_metadata = registration_metadata
         prereg_draft_registration.save()
@@ -543,14 +612,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 201
         data = res.json['data']
-        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'Test response'
-        assert res.json['data']['attributes']['registration_responses']['q2'] == 'Test response'
         assert prereg_schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
     def test_required_registration_responses_questions_not_required_on_post(
-            self, app, user, provider, project_public, prereg_metadata):
+            self, app, user, provider, project_public):
         prereg_schema = RegistrationSchema.objects.get(
             name='Prereg Challenge',
             schema_version=SCHEMA_VERSION)

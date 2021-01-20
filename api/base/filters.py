@@ -275,7 +275,7 @@ class FilterMixin(object):
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id']:
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -518,10 +518,9 @@ class ListFilterMixin(FilterMixin):
                     if getattr(item, source_field_name, '') in options
                 ]
             else:
-                # TODO: What is {}.lower()? Possible bug
                 return_val = [
                     item for item in default_queryset
-                    if params['value'].lower() in getattr(item, source_field_name, {}).lower()
+                    if params['value'].lower() in getattr(item, source_field_name, '').lower()
                 ]
         elif isinstance(field, ser.ListField):
             return_val = [

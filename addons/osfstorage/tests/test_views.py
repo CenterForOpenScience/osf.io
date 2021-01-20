@@ -24,7 +24,6 @@ from addons.osfstorage.tests.utils import make_payload
 from framework.auth import signing
 from website.util import rubeus, api_url_for
 from framework.auth import cas
-from api.caching.utils import storage_usage_cache
 
 from osf import features
 from osf.models import Tag, QuickFilesNode
@@ -35,6 +34,7 @@ from addons.base.views import make_auth, addon_view_file
 from addons.osfstorage import settings as storage_settings
 from api_tests.utils import create_test_file, create_test_preprint_file
 from api.caching.settings import STORAGE_USAGE_KEY
+from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
@@ -218,6 +218,57 @@ class TestGetMetadataHook(HookTestCase):
         )
         assert_equal(res.status_code, 404)
 
+
+@pytest.mark.django_db
+class TestGetStorageQuotaHook(HookTestCase):
+    def test_no_storage_use(self):
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
+
+    def test_under_quota_storage_use(self):
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE - 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
+
+    def test_over_quota_storage_use(self):
+        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': self.node._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_true(res.json['over_quota'])
+
+    def test_preprint_storage_use(self):
+        preprint = PreprintFactory()
+        res = self.send_hook(
+            'osfstorage_get_storage_quota_status',
+            {'guid': preprint._id},
+            payload={},
+            target=None,
+            method='get'
+        )
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['over_quota'])
 
 @pytest.mark.django_db
 class TestUploadFileHook(HookTestCase):
@@ -440,28 +491,6 @@ class TestUploadFileHook(HookTestCase):
 
     # def test_upload_update_deleted(self):
     #     pass
-
-    def test_add_file_updates_cache(self):
-        name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.node_settings.get_root()
-        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
-        assert storage_usage_cache.get(key) is None
-
-        with override_flag(features.STORAGE_USAGE, active=True):
-            self.send_upload_hook(parent, payload=self.make_payload(name=name))
-        assert storage_usage_cache.get(key) == 123
-
-        # Don't update the cache for duplicate uploads
-        with override_flag(features.STORAGE_USAGE, active=True):
-            self.send_upload_hook(parent, payload=self.make_payload(name=name))
-        assert storage_usage_cache.get(key) == 123
-
-        # Do update the cache for new versions
-        payload = self.make_payload(name=name)
-        payload['metadata']['name'] = 'new hash'
-        with override_flag(features.STORAGE_USAGE, active=True):
-            self.send_upload_hook(parent, payload=payload)
-        assert storage_usage_cache.get(key) == 246
 
 
 @pytest.mark.django_db
@@ -978,25 +1007,6 @@ class TestDeleteHookNode(DeleteHook):
 
 
 @pytest.mark.django_db
-class TestDeleteHookProjectOnly(DeleteHook):
-
-    def test_delete_reduces_cache_size(self):
-        key = STORAGE_USAGE_KEY.format(target_id=self.node._id)
-
-        file = create_record_with_version('new file', self.node_settings, size=123)
-        assert self.node.storage_usage == 123
-
-        with override_flag(name=features.STORAGE_USAGE, active=True):
-            resp = self.delete(file)
-
-        assert_equal(resp.status_code, 200)
-        assert_equal(resp.json, {'status': 'success'})
-
-        assert storage_usage_cache.get(key) == 0
-        assert_is(self.node.storage_usage, 0)
-
-
-@pytest.mark.django_db
 class TestDeleteHookPreprint(TestDeleteHookNode):
 
     def setUp(self):
@@ -1353,46 +1363,6 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
         assert_equal(res.status_code, 200)
 
-    def test_move_hook_updates_cache_inter_target(self):
-        """
-        Moving from one target to another should update both targets
-        """
-
-        other_target = ProjectFactory()
-        other_root = other_target.get_addon('osfstorage').get_root()
-
-        file = create_record_with_version('new file', self.node_settings, size=123)
-        folder = other_root.append_folder('Nina Simone')
-
-        assert self.project.storage_usage == 123
-        assert other_target.storage_usage == 0
-
-        with override_flag(features.STORAGE_USAGE, active=True):
-            res = self.send_hook(
-                'osfstorage_move_hook',
-                {'guid': self.root_node.target._id},
-                payload={
-                    'source': file._id,
-                    'target': self.root_node._id,
-                    'user': self.user._id,
-                    'destination': {
-                        'parent': folder._id,
-                        'target': folder.target._id,
-                        'name': folder.name,
-                    }
-                },
-                target=self.node,
-                method='post_json',)
-
-        # both caches are updated
-        source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert storage_usage_cache.get(source_key) == 0
-
-        destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
-        assert storage_usage_cache.get(destination) == 123
-
-        assert_equal(res.status_code, 200)
-
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -1424,48 +1394,6 @@ class TestCopyHook(HookTestCase):
             target=self.project,
             method='post_json',
         )
-        assert_equal(res.status_code, 201)
-
-    @pytest.mark.enable_implicit_clean
-    def test_copy_hook_updates_cache(self):
-        """
-        Whether intra or inter copying the storage usage cache only has to re-calculate the destination, because if it's
-        a inter-copy the source hasn't changed, but if it's a intra the source IS the destination.
-       """
-
-        other_target = ProjectFactory()
-        other_root = other_target.get_addon('osfstorage').get_root()
-
-        file = create_record_with_version('new file', self.node_settings, size=123)
-        folder = other_root.append_folder('Nina Simone')
-
-        assert self.project.storage_usage == 123
-        assert other_target.storage_usage == 0
-
-        with override_flag(features.STORAGE_USAGE, active=True):
-            res = self.send_hook(
-                'osfstorage_copy_hook',
-                {'guid': self.root_node.target._id},
-                payload={
-                    'source': file._id,
-                    'target': self.root_node._id,
-                    'user': self.user._id,
-                    'destination': {
-                        'parent': folder._id,
-                        'target': folder.target._id,
-                        'name': folder.name,
-                    }
-                },
-                target=self.node,
-                method='post_json',)
-
-        # both caches are updated
-        source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert storage_usage_cache.get(source_key) == 123
-
-        destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
-        assert storage_usage_cache.get(destination) == 123
-
         assert_equal(res.status_code, 201)
 
 

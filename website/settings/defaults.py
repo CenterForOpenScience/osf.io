@@ -11,6 +11,7 @@ import hashlib
 import logging
 from datetime import timedelta
 from collections import OrderedDict
+import enum
 
 os_env = os.environ
 
@@ -54,6 +55,7 @@ INCORRECT_PASSWORD_ATTEMPTS_ALLOWED = 3
 
 # Seconds that must elapse before updating a user's date_last_login field
 DATE_LAST_LOGIN_THROTTLE = 60
+DATE_LAST_LOGIN_THROTTLE_DELTA = datetime.timedelta(seconds=DATE_LAST_LOGIN_THROTTLE)
 
 # Seconds that must elapse before change password attempts are reset(currently 1 hour)
 TIME_RESET_CHANGE_PASSWORD_ATTEMPTS = 3600
@@ -182,6 +184,9 @@ MAILGUN_API_KEY = None
 
 # Use Celery for file rendering
 USE_CELERY = True
+
+# Trashed File Retention
+PURGE_DELTA = timedelta(days=30)
 
 # TODO: Override in local.py in production
 DB_HOST = 'localhost'
@@ -345,10 +350,11 @@ CROSSREF_JSON_API_URL = 'https://api.crossref.org/'
 
 
 # Leave as `None` for production, test/staging/local envs must set
-SHARE_PREPRINT_PROVIDER_PREPEND = None
+SHARE_PROVIDER_PREPEND = None
 
+SHARE_ENABLED = True  # This should be False for most local development
 SHARE_REGISTRATION_URL = ''
-SHARE_URL = None
+SHARE_URL = 'https://share.osf.io/'
 SHARE_API_TOKEN = None  # Required to send project updates to SHARE
 
 CAS_SERVER_URL = 'http://localhost:8080'
@@ -400,18 +406,17 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.generate_prereg_csv',
         'scripts.analytics.run_keen_summaries',
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
-        'scripts.remove_after_use.end_prereg_challenge',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.international_user_metrics',
+        'osf.management.commands.update_institution_project_counts'
     }
 
     med_pri_modules = {
@@ -495,6 +500,9 @@ class CeleryConfig:
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
+        'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.update_institution_project_counts',
+        'osf.management.commands.correct_registration_moderation_states',
     )
 
     # Modules that need metrics and release requirements
@@ -635,6 +643,10 @@ class CeleryConfig:
             'check_crossref_doi': {
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
+            },
+            'update_institution_project_counts': {
+                'task': 'management.commands.update_institution_project_counts',
+                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
         }
 
@@ -1957,8 +1969,56 @@ DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
 
-# Region names
+# Region names for metrics data csv
 USA = 'United States'
 GERMANY = 'Germany - Frankfurt'
 CANADA = u'Canada - Montréal'
 AUSTRALIA = 'Australia - Sydney'
+
+STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
+STORAGE_LIMIT_PUBLIC = 50
+STORAGE_LIMIT_PRIVATE = 5
+
+GBs = 10 ** 9
+
+
+#  Needs to be here so the enum can be used in the admin template
+def forDjango(cls):
+    cls.do_not_call_in_templates = True
+    return cls
+
+@forDjango
+@enum.unique
+class StorageLimits(enum.IntEnum):
+    """
+    Values here are in GBs
+    """
+    NOT_CALCULATED = 0
+    DEFAULT = 1
+    APPROACHING_PRIVATE = 2
+    OVER_PRIVATE = 3
+    APPROACHING_PUBLIC = 4
+    OVER_PUBLIC = 5
+
+
+    @classmethod
+    def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
+
+        public_limit = public_limit or STORAGE_LIMIT_PUBLIC
+        private_limit = private_limit or STORAGE_LIMIT_PRIVATE
+
+        if usage_bytes is None:
+            return cls.NOT_CALCULATED
+        if usage_bytes >= float(public_limit) * GBs:
+            return cls.OVER_PUBLIC
+        elif usage_bytes >= float(public_limit) * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PUBLIC
+        elif usage_bytes >= float(private_limit) * GBs:
+            return cls.OVER_PRIVATE
+        elif usage_bytes >= float(private_limit) * STORAGE_WARNING_THRESHOLD * GBs:
+            return cls.APPROACHING_PRIVATE
+        else:
+            return cls.DEFAULT
+
+STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)

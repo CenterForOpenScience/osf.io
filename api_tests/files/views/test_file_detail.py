@@ -922,27 +922,6 @@ class TestPreprintFileView:
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
-    def test_orphaned_preprint_file(self, app, file_url, preprint, user, other_user):
-        preprint.primary_file = None
-        preprint.save()
-
-        # Unauthenticated
-        res = app.get(file_url, expect_errors=True)
-        assert res.status_code == 200
-
-        # Non contrib
-        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # Write contrib
-        preprint.add_contributor(other_user, WRITE, save=True)
-        res = app.get(file_url, auth=other_user.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # Admin contrib
-        res = app.get(file_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-
     def test_withdrawn_preprint_files(self, app, file_url, preprint, user, other_user):
         preprint.date_withdrawn = timezone.now()
         preprint.save()

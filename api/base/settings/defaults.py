@@ -185,6 +185,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': (
         'rest_framework.throttling.UserRateThrottle',
         'api.base.throttling.NonCookieAuthThrottle',
+        'api.base.throttling.BurstRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
         'user': '10000/day',
@@ -195,6 +196,7 @@ REST_FRAMEWORK = {
         'test-user': '2/hour',
         'test-anon': '1/hour',
         'send-email': '2/minute',
+        'burst': '10/second',
     },
 }
 
@@ -317,6 +319,7 @@ ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
 
 WAFFLE_CACHE_NAME = 'waffle_cache'
 STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+STORAGE_USAGE_MAX_ENTRIES = 10000000
 
 
 CACHES = {
@@ -326,6 +329,9 @@ CACHES = {
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'osf_cache_table',
+        'OPTIONS': {
+            'MAX_ENTRIES': STORAGE_USAGE_MAX_ENTRIES,
+        },
     },
     WAFFLE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -333,3 +339,10 @@ CACHES = {
 }
 
 SLOAN_ID_COOKIE_NAME = 'sloan_id'
+
+EGAP_PROVIDER_NAME = 'EGAP'
+
+MAX_SIZE_OF_ES_QUERY = 10000
+DEFAULT_ES_NULL_VALUE = 'N/A'
+
+TRAVIS_ENV = False

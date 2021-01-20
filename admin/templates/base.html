@@ -174,6 +174,19 @@
                   </ul>
               </div>
           {% endif %}
+          {% if perms.osf.view_brand %}
+              <li><a role="button" data-toggle="collapse" href="#collapseBrands">
+                  <i class='fa fa-caret-down'></i> Brands
+              </a></li>
+              <div class="collapse" id="collapseBrands">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'brands:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.modify_brand %}
+                      <li><a href="{% url 'brands:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_preprintprovider %}
               <li><a role="button" data-toggle="collapse" href="#collapsePreprintProviders">
                   <i class='fa fa-caret-down'></i> Preprint Providers
@@ -230,14 +243,14 @@
           {% if perms.osf.view_conference %}
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
-          {% if perms.osf.view_prereg %}
-            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
-            {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           {% endif %}
           {% if perms.osf.view_subject%}
             <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
+          {% endif %}
+          {% if perms.osf.view_management%}
+            <li><a href="{% url 'management:commands' %}"><i class='fa fa-link'></i> <span>Management Commands</span></a></li>
           {% endif %}
           {% if perms.osf.view_osf_groups %}
               <li><a role="button" data-toggle="collapse" href="#collapseOSFGroups">

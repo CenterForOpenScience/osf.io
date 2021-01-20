@@ -1,6 +1,8 @@
 import pytest
 import json
 
+from osf.models import RegistrationProvider
+
 from osf_tests.factories import SubjectFactory
 from admin.base.forms import ImportFileForm
 
@@ -46,7 +48,11 @@ class ProviderListMixinBase:
         view.object_list = view.get_queryset()
         res = view.get_context_data()
         assert isinstance(res, dict)
-        assert len(res['{}_providers'.format(provider_one.readable_type)]) == 2
+        if isinstance(provider_one, RegistrationProvider):
+            assert len(res[f'{provider_one.readable_type}_providers']) == 3  # 2 test providers + 1 for the default provider
+        else:
+            assert len(res[f'{provider_one.readable_type}_providers']) == 2
+
         assert isinstance(res['{}_providers'.format(provider_one.readable_type)][0], provider_class)
 
 
@@ -117,22 +123,6 @@ class ProcessCustomTaxonomyMixinBase:
 
         assert actual_provider_subjects == expected_subjects
         assert provider.subjects.get(text='Changed Subject Name').parent.text == subject_two.text
-
-    def test_process_taxonomy_invalid_returns_feedback(self, req, view, provider, subject_two, subject_two_a):
-        custom_taxonomy = {
-            'include': [],
-            'exclude': [],
-            'custom': {
-                'Changed Subject Name': {'parent': subject_two.text, 'bepress': subject_two_a.text},
-            }
-        }
-        req.POST = {
-            'custom_taxonomy_json': json.dumps(custom_taxonomy),
-            'provider_id': provider.id
-        }
-
-        with pytest.raises(AssertionError):
-            view.post(req)
 
 
 @pytest.mark.urls('admin.base.urls')

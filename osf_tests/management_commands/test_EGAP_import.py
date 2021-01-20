@@ -67,7 +67,7 @@ class TestEGAPImport:
     def test_ensure_egap_schema(self):
         ensure_egap_schema()
 
-        assert RegistrationSchema.objects.get(name='EGAP Registration')
+        assert RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
 
     def test_create_node_from_project_json(self, egap_assets_path, egap_project_name, greg):
         node = create_node_from_project_json(egap_assets_path, egap_project_name, greg)

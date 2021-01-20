@@ -266,7 +266,7 @@ def find_title_description_help_example(rs, question):
     title = question.get('title', '')
     description = strip_html(question.get('description', ''))
     help = strip_html(question.get('help', ''))
-    example = ''
+    example = strip_html(question.get('example', ''))
 
     schema_name = rs.schema.get('name', '')
     # Descriptions that contain any of these keywords

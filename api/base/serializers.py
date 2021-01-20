@@ -877,9 +877,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             related_class = resolved_url.func.view_class
             if issubclass(related_class, RetrieveModelMixin):
                 try:
-                    related_type = resolved_url.namespace
+                    related_type = resolved_url.namespace.split(':')[-1]
                     # TODO: change kwargs to preprint_provider_id and registration_id
-                    if related_type == 'preprint_providers':
+                    if related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type == 'registrations':
                         related_id = resolved_url.kwargs['node_id']
@@ -889,6 +889,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'users' and related_class.view_name == 'user_settings':
                         related_id = resolved_url.kwargs['user_id']
                         related_type = 'user-settings'
+                    elif related_type == 'institutions' and related_class.view_name == 'institution-summary-metrics':
+                        related_id = resolved_url.kwargs['institution_id']
+                        related_type = 'institution-summary-metrics'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -1524,7 +1527,17 @@ class JSONAPISerializer(BaseAPISerializer):
         Exclude 'type' and '_id' from validated_data.
 
         """
-        ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        try:
+            ret = super(JSONAPISerializer, self).is_valid(**kwargs)
+        except exceptions.ValidationError as e:
+
+            # The following is for special error handling for ListFields.
+            # Without the following, the error detail on the API response would be
+            # a list instead of a string.
+            for key in e.detail.keys():
+                if isinstance(e.detail[key], dict):
+                    e.detail[key] = next(iter(e.detail[key].values()))
+            raise e
 
         if clean_html is True:
             self._validated_data = self.sanitize_data()

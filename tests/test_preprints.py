@@ -4,51 +4,42 @@ import jwe
 import jwt
 import mock
 import furl
+import pytest
 import time
 from future.moves.urllib.parse import urlparse, urljoin
 import datetime
 from django.utils import timezone
-import pytest
 import pytz
 import itsdangerous
 
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from addons.osfstorage.models import OsfStorageFile
-from api_tests import utils as api_test_utils
-from framework.auth import Auth
-from framework.celery_tasks import handlers
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
-from framework.exceptions import PermissionsError
+from api.share.utils import format_preprint, format_user, update_share
 from website import settings, mails
-from website.preprints.tasks import format_preprint, update_preprint_share, on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
+from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.project.views.contributor import find_preprint_provider
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
-from website.util.share import format_user
-from framework.auth import Auth, cas, signing
+from framework.auth import signing
 from framework.celery_tasks import handlers
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue, postcommit_celery_queue
+from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, postcommit_celery_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
-from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError, PreprintProviderError
+from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes
-from osf_tests.utils import MockShareResponse
 from tests.base import assert_datetime_equal, OsfTestCase
 from tests.utils import assert_preprint_logs
 
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory,
     PreprintFactory,
-    NodeFactory,
     TagFactory,
     SubjectFactory,
     UserFactory,
@@ -122,12 +113,6 @@ class TestPreprintProperties:
 
         assert preprint.deleted is not None
         assert preprint.is_deleted is True
-
-    def test_is_preprint_orphan(self, preprint):
-        assert preprint.is_preprint_orphan is False
-        preprint.primary_file = None
-        preprint.save()
-        assert preprint.is_preprint_orphan is True
 
     def test_has_submitted_preprint(self, preprint):
         preprint.machine_state = 'initial'
@@ -948,6 +933,32 @@ class TestPreprintSpam:
                 preprint.set_privacy('private')
                 assert preprint.check_spam(user, None, None) is True
 
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
+    def test_confirm_ham_on_private_preprint_stays_private(self, preprint, user):
+        preprint.is_public = False
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                preprint.set_privacy('private')
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is False
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is False
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_confirm_ham_on_public_preprint_stays_public(self, preprint, user):
+        preprint.is_public = True
+        preprint.save()
+        with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
+            with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
+                assert preprint.check_spam(user, None, None) is True
+                assert preprint.is_public is True
+                preprint.confirm_ham()
+                assert preprint.is_spam is False
+                assert preprint.is_public is True
+
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -1469,6 +1480,23 @@ class TestSetPreprintFile(OsfTestCase):
         assert(self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
 
+    def test_cant_save_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=False)
+        self.preprint.primary_file = None
+
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
+    def test_cant_update_without_file(self):
+        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+        self.preprint.set_published(True, auth=self.auth, save=True)
+        self.preprint.primary_file = None
+        with assert_raises(ValidationError):
+            self.preprint.save()
+
 
 class TestPreprintPermissions(OsfTestCase):
     def setUp(self):
@@ -1922,7 +1950,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         # we can test that the queue is modified properly.
         first_subjects = [15]
         args = ()
-        kwargs = {'preprint_id': self.preprint._id, 'old_subjects': first_subjects, 'update_share': False, 'share_type': None, 'saved_fields': ['contributors']}
+        kwargs = {'preprint_id': self.preprint._id, 'old_subjects': first_subjects, 'update_share': False, 'saved_fields': ['contributors']}
         postcommit_celery_queue().update({'asdfasd': on_preprint_updated.si(*args, **kwargs)})
 
         second_subjects = [16, 17]
@@ -1941,7 +1969,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
     def test_format_preprint(self):
-        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        res = format_preprint(self.preprint)
 
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
@@ -2042,7 +2070,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert nodes == {}
 
     def test_format_thesis(self):
-        res = format_preprint(self.thesis, self.thesis.provider.share_publish_type)
+        res = format_preprint(self.thesis)
 
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'thesis', 'workrelation', 'creativework'}
 
@@ -2053,18 +2081,18 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
     def test_format_preprint_date_modified_node_updated(self):
         self.preprint.save()
-        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        res = format_preprint(self.preprint)
         nodes = dict(enumerate(res))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
 
     def test_format_preprint_nones(self):
-        self.preprint.tags = []
+        self.preprint.tags.clear()
         self.preprint.date_published = None
         self.preprint.article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.creator))
 
-        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        res = format_preprint(self.preprint)
 
         assert self.preprint.provider != 'osf'
         assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
@@ -2162,7 +2190,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             orig_val = getattr(target, key.split('.')[-1])
             setattr(target, key.split('.')[-1], value)
 
-            res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+            res = format_preprint(self.preprint)
 
             preprint = next(v for v in res if v['@type'] == 'preprint')
             assert preprint['is_deleted'] is is_deleted
@@ -2170,13 +2198,13 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             setattr(target, key.split('.')[-1], orig_val)
 
     def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
-        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        res = format_preprint(self.preprint)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is False
 
         self.preprint.add_tag('qatest', auth=self.auth, save=True)
 
-        res = format_preprint(self.preprint, self.preprint.provider.share_publish_type)
+        res = format_preprint(self.preprint)
         preprint = next(v for v in res if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
 
@@ -2202,108 +2230,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         node = format_user(user)
         assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url, user.profile_image_url()}
-
-
-class TestPreprintSaveShareHook(OsfTestCase):
-    def setUp(self):
-        super(TestPreprintSaveShareHook, self).setUp()
-        self.admin = AuthUserFactory()
-        self.auth = Auth(user=self.admin)
-        self.provider = PreprintProviderFactory(name='Lars Larson Snowmobiling Experience')
-        self.project = ProjectFactory(creator=self.admin, is_public=True)
-        self.subject = SubjectFactory()
-        self.subject_two = SubjectFactory()
-        self.file = api_test_utils.create_test_file(self.project, self.admin, 'second_place.pdf')
-        self.preprint = PreprintFactory(creator=self.admin, filename='second_place.pdf', provider=self.provider, subjects=[[self.subject._id]], project=self.project, is_published=False)
-
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_save_unpublished_not_called(self, mock_on_preprint_updated):
-        self.preprint.save()
-        assert not mock_on_preprint_updated.called
-
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_save_published_called(self, mock_on_preprint_updated):
-        self.preprint.set_published(True, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.called
-
-    # This covers an edge case where a preprint is forced back to unpublished
-    # that it sends the information back to share
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_save_unpublished_called_forced(self, mock_on_preprint_updated):
-        self.preprint.set_published(True, auth=self.auth, save=True)
-        self.preprint.is_published = False
-        self.preprint.save(**{'force_update': True})
-        assert_equal(mock_on_preprint_updated.call_count, 2)
-
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_save_published_subject_change_called(self, mock_on_preprint_updated):
-        self.preprint.is_published = True
-        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
-        assert mock_on_preprint_updated.called
-        call_args, call_kwargs = mock_on_preprint_updated.call_args
-        assert 'old_subjects' in mock_on_preprint_updated.call_args[1]
-        assert call_kwargs.get('old_subjects') == [self.subject.id]
-        assert [self.subject.id] in mock_on_preprint_updated.call_args[1].values()
-
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_save_unpublished_subject_change_not_called(self, mock_on_preprint_updated):
-        self.preprint.set_subjects([[self.subject_two._id]], auth=self.auth)
-        assert not mock_on_preprint_updated.called
-
-    @mock.patch('website.preprints.tasks.requests')
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'ima_real_website')
-    def test_send_to_share_is_true(self, mock_requests):
-        self.preprint.provider.access_token = 'Snowmobiling'
-        self.preprint.provider.save()
-        on_preprint_updated(self.preprint._id)
-
-        assert mock_requests.post.called
-
-    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
-    def test_preprint_contributor_changes_updates_preprints_share(self, mock_on_preprint_updated):
-        preprint = PreprintFactory(is_published=True, creator=self.admin)
-        assert mock_on_preprint_updated.call_count == 2
-
-        user = AuthUserFactory()
-        preprint.primary_file = self.file
-
-        preprint.add_contributor(contributor=user, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 5
-
-        preprint.move_contributor(contributor=user, index=0, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 7
-
-        data = [{'id': self.admin._id, 'permissions': ADMIN, 'visible': True},
-                {'id': user._id, 'permissions': WRITE, 'visible': False}]
-
-        preprint.manage_contributors(data, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 9
-
-        preprint.update_contributor(user, READ, True, auth=self.auth, save=True)
-        assert mock_on_preprint_updated.call_count == 11
-
-        preprint.remove_contributor(contributor=user, auth=self.auth)
-        assert mock_on_preprint_updated.call_count == 13
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_call_async_update_on_500_failure(self, requests, mock_async):
-        self.preprint.provider.access_token = 'Snowmobiling'
-        requests.post.return_value = MockShareResponse(501)
-        update_preprint_share(self.preprint)
-        assert mock_async.called
-
-    @mock.patch('website.preprints.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.preprints.tasks.send_desk_share_preprint_error')
-    @mock.patch('website.preprints.tasks._async_update_preprint_share.delay')
-    @mock.patch('website.preprints.tasks.requests')
-    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail):
-        self.preprint.provider.access_token = 'Snowmobiling'
-        requests.post.return_value = MockShareResponse(400)
-        update_preprint_share(self.preprint)
-        assert not mock_async.called
-        assert mock_mail.called
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
@@ -2335,6 +2261,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             provider_name=self.preprint.provider.name,
             no_future_emails=[],
             logo=settings.OSF_PREPRINTS_LOGO,
+            document_type=self.preprint.provider.preprint_word,
         )
         assert_equals(send_mail.call_count, 1)
 
@@ -2493,7 +2420,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
@@ -2502,7 +2429,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_missing_args(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth=None)
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, auth=None)
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2517,7 +2444,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_no_user(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, auth={'id': None})
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2532,7 +2459,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_log_bad_action(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path}, action='dance')
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path}, action='dance')
         nlogs = self.preprint.logs.count()
         res = self.app.put_json(
             url,
@@ -2607,7 +2534,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_file_osfstorage_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
@@ -2617,7 +2544,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
     def test_add_folder_osfstorage_log(self):
         path = 'pizza'
         url = self.preprint.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
+        payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()

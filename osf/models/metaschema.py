@@ -36,11 +36,9 @@ def allow_egap_admins(queryset, request):
     Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
     live.
     """
-    if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
-        return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
-    else:
-        return queryset
-
+    if hasattr(request, 'user') and not waffle.flag_is_active(request, EGAP_ADMINS):
+        return queryset.exclude(name='EGAP Registration')
+    return queryset
 
 class AbstractSchemaManager(models.Manager):
 
@@ -52,14 +50,17 @@ class AbstractSchemaManager(models.Manager):
         """
         return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, request=None):
+    def get_latest_versions(self, request=None, invisible=False):
         """
         Return the latest version of the given schema
 
         :param request: the request object needed for waffling
         :return: queryset
         """
-        queryset = self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
+        queryset = self.order_by('name', '-schema_version').distinct('name')
+
+        if not invisible:
+            queryset = queryset.filter(visible=True)
 
         if request:
             return allow_egap_admins(queryset, request)
@@ -89,6 +90,11 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 class RegistrationSchema(AbstractSchema):
     config = DateTimeAwareJSONField(blank=True, default=dict)
     description = models.TextField(null=True, blank=True)
+    providers = models.ManyToManyField(
+        'RegistrationProvider',
+        related_name='schemas',
+        blank=True
+    )
 
     @property
     def _config(self):
@@ -118,13 +124,6 @@ class RegistrationSchema(AbstractSchema):
     def absolute_api_v2_url(self):
         path = '/schemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
-
-    @classmethod
-    def get_prereg_schema(cls):
-        return cls.objects.get(
-            name='Prereg Challenge',
-            schema_version=2
-        )
 
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
         """

@@ -6,6 +6,7 @@ from api_tests.preprints.filters.test_filters import PreprintsListFilteringMixin
 from api_tests.preprints.views.test_preprint_list_mixin import PreprintIsPublishedListMixin, PreprintIsValidListMixin
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
 
+from osf.models.spam import SpamStatus
 from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
@@ -94,18 +95,15 @@ class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual
 
-        # exclude private preprints (expect this to be rare - legacy preprints)
-        preprint_one.is_public = False
+        # exclude deleted and spammy preprints
+        preprint_one.spam_status = SpamStatus.HAM
         preprint_one.save()
-        expected['pending'] -= 1
-        res = app.get(url, auth=user.auth)
-        actual = res.json['meta']['reviews_state_counts']
-        assert expected == actual
-
-        # exclude deleted preprints
         preprint_two.deleted = timezone.now()
         preprint_two.save()
         expected['pending'] -= 1
+        preprint_three.spam_status = SpamStatus.FLAGGED
+        preprint_three.save()
+        expected['accepted'] -= 1
         res = app.get(url, auth=user.auth)
         actual = res.json['meta']['reviews_state_counts']
         assert expected == actual

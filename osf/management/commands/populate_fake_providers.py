@@ -213,7 +213,7 @@ def populate_preprint_providers(*args):
         provider, created = PreprintProvider.objects.update_or_create(_id=_id, defaults=data)
 
         if licenses:
-            provider.licenses_acceptable.add(*licenses)
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = get_license(default_license)
         if custom_taxonomy and not provider.subjects.exists():
@@ -240,7 +240,7 @@ def populate_registration_providers(*args):
         provider, created = RegistrationProvider.objects.update_or_create(_id=_id, defaults=data)
 
         if licenses:
-            provider.licenses_acceptable.add(*licenses)
+            provider.licenses_acceptable.set(licenses)
         if default_license:
             provider.default_license = get_license(default_license)
         if created:
@@ -249,7 +249,7 @@ def populate_registration_providers(*args):
             logger.info('Updated registration provider: {}'.format(_id))
 
 def remove_registration_providers(*args):
-    providers = RegistrationProvider.objects.exclude(_id='osf')
+    providers = RegistrationProvider.objects.exclude(_id=RegistrationProvider.default__id)
     for provider in providers:
         logger.info('Removing registration provider: {}'.format(provider._id))
         provider.delete()
@@ -266,7 +266,7 @@ def populate_collection_providers(add_data):
         provider, created = CollectionProvider.objects.update_or_create(_id=_id, defaults=data)
 
         if licenses:
-            provider.licenses_acceptable.add(*licenses)
+            provider.licenses_acceptable.set(licenses)
 
         if default_license:
             provider.default_license = get_license(default_license)

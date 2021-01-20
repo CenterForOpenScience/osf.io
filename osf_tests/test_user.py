@@ -25,6 +25,7 @@ from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
 from osf.models import (
     AbstractNode,
@@ -1338,7 +1339,8 @@ class TestRecentlyAdded:
 
         assert len(list(user.get_recently_added())) == 15
 
-# New tests
+
+@pytest.mark.enable_implicit_clean
 class TestTagging:
     def test_add_system_tag(self, user):
         tag_name = fake.word()
@@ -1899,8 +1901,8 @@ class TestUserMerging(OsfTestCase):
         self.user.notifications_configured = {'abc12': True}
         other_user.notifications_configured = {'123ab': True}
 
-        self.user.external_accounts = [ExternalAccountFactory()]
-        other_user.external_accounts = [ExternalAccountFactory()]
+        self.user.external_accounts.add(ExternalAccountFactory())
+        other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
             'user': True,
@@ -2055,7 +2057,7 @@ class TestUserMerging(OsfTestCase):
         # TODO: test security_messages
         # TODO: test mailing_lists
 
-        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed'])
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', OsfSourceTags.Osf.value])
 
         # TODO: test emails
         # TODO: test external_accounts

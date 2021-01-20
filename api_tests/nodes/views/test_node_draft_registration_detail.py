@@ -118,20 +118,6 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
         errors = res.json['errors'][0]
         assert errors['detail'] == 'This draft registration is not created from the given node.'
 
-    def test_reviewer_can_see_draft_registration(
-            self, app, schema, draft_registration, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-        res = app.get(url_draft_registrations, auth=user.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
-        assert data['id'] == draft_registration._id
-        assert data['attributes']['registration_metadata'] == {}
-
     def test_draft_registration_serializer_usage(self, app, user, project_public, draft_registration):
         # Tests the usage of DraftRegistrationDetailSerializer for version 2.20
         url_draft_registrations = '/{}nodes/{}/draft_registrations/{}/?{}'.format(
@@ -188,9 +174,9 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metadata_registration(
-            self, prereg_metadata,
+            self, metadata,
             draft_registration_prereg):
-        return prereg_metadata(draft_registration_prereg)
+        return metadata(draft_registration_prereg)
 
     @pytest.fixture()
     def project_other(self, user):
@@ -238,10 +224,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 }
             }
         }
-
-    @pytest.fixture()
-    def administer_permission(self):
-        return Permission.objects.get(codename='administer_prereg')
 
     def test_id_required_in_payload(self, app, user, url_draft_registrations):
         payload = {
@@ -448,7 +430,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 'type': 'draft_registrations',
                 'attributes': {
                     'registration_metadata': {
-                        'q2': {
+                        'q3': {
                             'value': 'New response'
                         }
                     }
@@ -460,7 +442,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
+        assert res.json['data']['attributes']['registration_metadata']['q3']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
     def test_required_registration_responses_questions_not_required_on_update(
@@ -547,137 +529,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\' field' \
                                    ' is invalid, your response must be one of the provided options.'
 
-    def test_reviewer_can_update_draft_registration(
-            self, app, project_public,
-            draft_registration_prereg,
-            administer_permission):
-        user = AuthUserFactory()
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        payload = {
-            'data': {
-                'id': draft_registration_prereg._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_metadata': {
-                        'q2': {
-                            'comments': [{'value': 'This is incomplete.'}]
-                        }
-                    }
-                }
-            }
-        }
-
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
-
-        res = app.put_json_api(
-            url, payload,
-            auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q2']['comments'][0]['value'] == 'This is incomplete.'
-        assert 'q1' not in res.json['data']['attributes']['registration_metadata']
-
-    def test_reviewer_can_only_update_comment_fields_draft_registration(
-            self, app, project_public, draft_registration_prereg, administer_permission):
-        user = AuthUserFactory()
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        payload = {
-            'data': {
-                'id': draft_registration_prereg._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_metadata': {
-                        'q2': {
-                            'value': 'Test response'
-                        }
-                    }
-                }
-            }
-        }
-
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
-
-        res = app.put_json_api(
-            url, payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'For your registration your response to the \'Authors\' field is invalid.'
-
-    def test_reviewer_can_update_nested_comment_fields_draft_registration(
-            self, app, project_public, draft_registration_prereg, administer_permission):
-        user = AuthUserFactory()
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        payload = {
-            'data': {
-                'id': draft_registration_prereg._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_metadata': {
-                        'q7': {
-                            'value': {
-                                'question': {
-                                    'comments': [{'value': 'Add some clarity here.'}]
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
-
-        res = app.put_json_api(
-            url, payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q7'][
-            'value']['question']['comments'][0]['value'] == 'Add some clarity here.'
-
-    def test_reviewer_cannot_update_nested_value_fields_draft_registration(
-            self, app, project_public, draft_registration_prereg, administer_permission):
-        user = AuthUserFactory()
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        payload = {
-            'data': {
-                'id': draft_registration_prereg._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_metadata': {
-                        'q7': {
-                            'value': {
-                                'question': {
-                                    'value': 'This is the answer'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id)
-
-        res = app.put_json_api(
-            url, payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
-
 
 @pytest.mark.django_db
 class TestDraftRegistrationPatch(DraftRegistrationTestCase):
@@ -711,10 +562,8 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         )
 
     @pytest.fixture()
-    def metadata_registration(
-            self, prereg_metadata,
-            draft_registration_prereg):
-        return prereg_metadata(draft_registration_prereg)
+    def metadata_registration(self, metadata, draft_registration_prereg):
+        return metadata(draft_registration_prereg)
 
     @pytest.fixture()
     def project_other(self, user):

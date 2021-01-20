@@ -9,13 +9,17 @@ import pytz
 from django.utils import timezone
 
 import pytest
+
+from api.base.settings.defaults import API_BASE
+from api.providers.workflows import Workflows
+
 from nose.tools import *  # noqa PEP8 asserts
 from waffle.testutils import override_switch
-
 
 from framework.exceptions import HTTPError
 
 from osf import features
+from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
 from website.project.metadata.schemas import _name_to_id
@@ -23,9 +27,15 @@ from website.util import api_url_for
 from website.project.views import drafts as draft_views
 
 from osf_tests.factories import (
-    NodeFactory, AuthUserFactory, DraftRegistrationFactory, RegistrationFactory,
-    Auth, DraftRegistrationFactory
+    Auth,
+    AuthUserFactory,
+    DraftRegistrationFactory,
+    EmbargoFactory,
+    NodeFactory,
+    RegistrationFactory,
+    RegistrationProviderFactory
 )
+from tests.json_api_test_app import JSONAPITestApp
 from tests.test_registrations.base import RegistrationsTestBase
 
 from tests.base import get_default_metaschema
@@ -34,6 +44,7 @@ from osf.models import Registration
 SCHEMA_VERSION = 2
 
 
+@pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestRegistrationViews(RegistrationsTestBase):
 
@@ -100,72 +111,10 @@ class TestRegistrationViews(RegistrationsTestBase):
 @pytest.mark.enable_bookmark_creation
 class TestDraftRegistrationViews(RegistrationsTestBase):
 
-    def test_submit_draft_for_review(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.user.auth
-        )
-        assert_equal(res.status_code, http_status.HTTP_202_ACCEPTED)
-        data = res.json
-        assert_in('status', data)
-        assert_equal(data['status'], 'initiated')
-
-        self.draft.reload()
-        assert_is_not_none(self.draft.approval)
-        assert_equal(self.draft.approval.meta, {
-            u'registration_choice': 'embargo',
-            u'embargo_end_date': str(self.embargo_payload['data']['attributes']['lift_embargo'])
-        })
-
-    def test_submit_draft_for_review_invalid(self):
-        # invalid registrationChoice
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.invalid_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-
-        # submitted by a group admin fails
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.group_mem.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
-
-    def test_submit_draft_for_review_already_registered(self):
-        self.draft.register(Auth(self.user), save=True)
-
-        res = self.app.post_json(
-            self.draft_api_url('submit_draft_for_review'),
-            self.immediate_payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
-        assert_equal(res.json['message_long'], 'This draft has already been registered, if you wish to register it '
-                                               'again or submit it for review please create a new draft.')
-
     def test_draft_before_register_page(self):
         url = self.draft_url('draft_before_register_page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
-
-    def test_submit_draft_for_review_non_admin(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        res = self.app.post_json(
-            url,
-            self.embargo_payload,
-            auth=self.non_admin.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_get_draft_registration(self):
         url = self.draft_api_url('get_draft_registration')
@@ -292,6 +241,96 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         self.draft.reload()
         assert_equal(open_ended_schema, self.draft.registration_schema)
         assert_equal(metadata, self.draft.registration_metadata)
+
+    def test_update_draft_registration_special_filename(self):
+        # Metadata dict is copied from the PUT request to /project/<pid>/drafts/<draft_id>/
+        # when adding a file as a supplemental file to a draft registration
+        metadata = {
+            'summary': {
+                'value': None,
+                'comments': [],
+                'extra': []
+            },
+            'uploader': {
+                'value': 'Cafe&LunchMenu.pdf',
+                'comments': [],
+                'extra': [{
+                    'fileId': 'h8zsj',
+                    'data': {
+                        'id': 'osfstorage/5ea6ff395288ad0d931c17f5',
+                        'type': 'files',
+                        'links': {
+                            'move': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5',
+                            'upload': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5?kind=file',
+                            'delete': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5',
+                            'download': 'http://localhost:7777/v1/resources/vdbcr/providers/osfstorage/5ea6ff395288ad0d931c17f5'
+                        },
+                        'extra': {
+                            'guid': None,
+                            'version': 1,
+                            'downloads': 0,
+                            'checkout': None,
+                            'latestVersionSeen': {
+                                'user': 'bd53u',
+                                'seen': True
+                            },
+                            'hashes': {
+                                'md5': '2919727d545c2a93ea89c3442d2545c5',
+                                'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad'
+                            }
+                        },
+                        'kind': 'file',
+                        'name': 'Cafe&LunchMenu.pdf',
+                        'path': '/5ea6ff395288ad0d931c17f5',
+                        'provider': 'osfstorage',
+                        'materialized': '/Cafe&LunchMenu.pdf',
+                        'etag': 'c9248ce917b428c7cae6a7fd45a42b83952db882c4009f0bdf9603a43eab663b',
+                        'contentType': None,
+                        'modified': '2020-04-27T15:50:18.365664+00:00',
+                        'modified_utc': '2020-04-27T15:50:18.365664+00:00',
+                        'created_utc': '2020-04-27T15:50:18.365664+00:00',
+                        'size': 805847,
+                        'sizeInt': 805847,
+                        'resource': 'vdbcr',
+                        'permissions': {
+                            'view': True,
+                            'edit': True
+                        },
+                        'nodeId': 'vdbcr',
+                        'nodeUrl': '/vdbcr/',
+                        'nodeApiUrl': '/api/v1/project/vdbcr/',
+                        'accept': {
+                            'maxSize': 5120,
+                            'acceptedFiles': True
+                        },
+                        'waterbutlerURL': 'http://localhost:7777'
+                    },
+                    'selectedFileName': 'Cafe&LunchMenu.pdf',
+                    'nodeId': 'vdbcr',
+                    'viewUrl': '/project/vdbcr/files/osfstorage/5ea6ff395288ad0d931c17f5',
+                    'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad',
+                    'descriptionValue': ''
+                }]
+            }
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'Open-Ended Registration',
+            'schema_version': 2
+        }
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+
+        open_ended_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+
+        self.draft.reload()
+        assert_equal(open_ended_schema, self.draft.registration_schema)
+        assert_equal(metadata['uploader']['value'], self.draft.registration_metadata['uploader']['value'])
+        assert_equal(metadata['uploader']['extra'][0]['selectedFileName'], self.draft.registration_metadata['uploader']['extra'][0]['selectedFileName'])
+
 
     def test_update_draft_registration_non_admin(self):
         metadata = {
@@ -434,16 +473,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         except Exception:
             self.fail()
 
-    def test_check_draft_state_pending_review(self):
-        self.draft.submit_for_review(self.user, self.immediate_payload, save=True)
-        try:
-            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)):
-                draft_views.check_draft_state(self.draft)
-        except HTTPError as e:
-            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
-        else:
-            self.fail()
-
     def test_check_draft_state_approved(self):
         try:
             with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
@@ -472,15 +501,101 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
             except HTTPError:
                 self.fail()
 
-    def test_prereg_challenge_over(self):
-        url = self.draft_api_url('submit_draft_for_review')
-        with override_switch(features.OSF_PREREGISTRATION, active=True):
-            res = self.app.post_json(
-                url,
-                self.embargo_payload,
-                auth=self.user.auth,
-                expect_errors=True
-            )
-        assert_equal(res.status_code, http_status.HTTP_410_GONE)
-        data = res.json
-        assert_equal(data['message_short'], 'The Prereg Challenge has ended')
+
+@pytest.mark.django_db
+class TestModeratorRegistrationViews:
+
+    @pytest.fixture
+    def app(self):
+        return JSONAPITestApp()
+
+    @pytest.fixture
+    def moderator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def provider(self, moderator):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def embargoed_registration(self, provider):
+        embargo = EmbargoFactory()
+        registration = embargo.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+        return registration
+
+
+    # API paths for registrations that are not publically available on non-public Registrations
+    PROTECTED_REGISTRATION_SUB_ROUTES = [
+        '',
+        'bibliographic_contributors',
+        'children',
+        'comments',
+        'implicit_contributors',
+        'files',
+        'citation',
+        'forks',
+        'identifiers',
+        'institutions',
+        'linked_nodes',
+        'linked_registrations',
+        'linked_by_nodes',
+        'linked_by_registrations',
+        'logs',
+        'node_links',
+        'relationships/institutions',
+        'relationships/linked_nodes',
+        'relationships/linked_registrations',
+        'relationships/subjects',
+        'subjects',
+        'wikis',
+    ]
+    @pytest.fixture(params=PROTECTED_REGISTRATION_SUB_ROUTES)
+    def registration_subpath(self, request, embargoed_registration):
+        url = f'/{API_BASE}registrations/{embargoed_registration._id}/{request.param}'
+        if request.param:
+            url += '/'
+        return url
+
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_moderator_cannot_view_subpath_of_initial_registration(
+        self, app, embargoed_registration, moderator, registration_subpath):
+        # Moderators should not have non-standard access to a registration
+        # before it is submitted for moderation by its authors
+        assert embargoed_registration.moderation_state == 'initial'
+
+        resp = app.get(registration_subpath, auth=moderator.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_moderator_can_view_subpath_of_submitted_registration(
+        self, app, embargoed_registration, moderator, registration_subpath):
+        # Moderators may need to see details of the pending registration
+        # in order to determine whether to give approval
+        embargoed_registration.embargo.accept()
+        embargoed_registration.refresh_from_db()
+        assert embargoed_registration.moderation_state == 'pending'
+
+        resp = app.get(registration_subpath, auth=moderator.auth)
+        assert resp.status_code == 200
+
+    @pytest.mark.enable_quickfiles_creation
+    def test_moderator_can_viw_subpath_of_embargoed_registration(
+        self, app, embargoed_registration, moderator, registration_subpath):
+        # Moderators may need to see details of an embargoed registration
+        # to determine if there is a need to withdraw before it becomes public
+        embargoed_registration.embargo.accept()
+        embargoed_registration.embargo.accept(user=moderator)
+        embargoed_registration.refresh_from_db()
+        assert embargoed_registration.moderation_state == 'embargo'
+
+        resp = app.get(registration_subpath, auth=moderator.auth)
+        assert resp.status_code == 200

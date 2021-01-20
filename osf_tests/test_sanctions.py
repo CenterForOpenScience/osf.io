@@ -7,12 +7,14 @@ import datetime
 from django.utils import timezone
 from django.contrib.auth.models import Permission
 
-from osf.models import DraftRegistrationApproval, RegistrationSchema, NodeLog
+from nose.tools import assert_raises
+from transitions import MachineError
+
+from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
-
-from framework.auth import Auth
+from osf.utils import permissions
 
 
 @pytest.mark.django_db
@@ -20,13 +22,13 @@ class TestRegistrationApprovalHooks:
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4940
     @mock.patch('osf.models.node.AbstractNode.update_search')
-    def test_on_complete_sets_state_to_approved(self, mock_update_search):
+    def test_unmoderated_accept_sets_state_to_approved(self, mock_update_search):
         user = factories.UserFactory()
         registration = factories.RegistrationFactory(creator=user)
         registration.require_approval(user)
 
         assert registration.registration_approval.is_pending_approval is True  # sanity check
-        registration.registration_approval._on_complete(None)
+        registration.registration_approval.accept()
         assert registration.registration_approval.is_pending_approval is False
 
 
@@ -52,21 +54,21 @@ class TestNodeEmbargoTerminations:
 
     def test_request_embargo_termination_not_embargoed(self, user, not_embargoed):
         with pytest.raises(NodeStateError):
-            not_embargoed.request_embargo_termination(Auth(user))
+            not_embargoed.request_embargo_termination(user)
 
     def test_terminate_embargo_makes_registrations_public(self, registration, user):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
         for node in registration.node_and_primary_descendants():
             assert node.is_public is True
             assert node.is_embargoed is False
 
     def test_terminate_embargo_adds_log_to_registered_from(self, node, registration, user):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo()
         last_log = node.logs.first()
-        assert last_log.action == NodeLog.EMBARGO_TERMINATED
+        assert last_log.action == NodeLog.EMBARGO_COMPLETED
 
     def test_terminate_embargo_log_is_nouser(self, node, user, registration):
-        registration.terminate_embargo(Auth(user))
+        registration.terminate_embargo(forced=True)
         last_log = node.logs.first()
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
@@ -175,7 +177,7 @@ class TestDraftRegistrationApprovals:
             assert mock_on_complete.called
             assert approval.is_approved
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('osf.models.DraftRegistrationApproval._send_rejection_email')
     def test_on_reject(self, mock_send_mail):
         user = factories.UserFactory()
         approval = DraftRegistrationApproval(
@@ -195,3 +197,84 @@ class TestDraftRegistrationApprovals:
         approval._on_reject(user)
         assert approval.meta == {}
         assert mock_send_mail.call_count == 1
+
+@pytest.mark.django_db
+class TestRegistrationEmbargoTermination:
+
+    @pytest.fixture()
+    def user(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture()
+    def user2(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture()
+    def registration_with_contribs(self, user, user2):
+        proj = factories.NodeFactory(creator=user)
+        proj.add_contributor(user2, permissions.ADMIN)
+        embargo = factories.EmbargoFactory()
+        embargo.end_date = timezone.now() + datetime.timedelta(days=4)
+        return factories.RegistrationFactory(project=proj, creator=user, embargo=embargo)
+
+    @pytest.fixture()
+    def embargo_termination(self, registration_with_contribs, user):
+        return factories.EmbargoTerminationApprovalFactory(registration=registration_with_contribs, creator=user)
+
+    def test_reject_then_approve_stays_rejected(self, user, user2, embargo_termination):
+        user_1_tok = embargo_termination.token_for_user(user, 'rejection')
+        user_2_tok = embargo_termination.token_for_user(user2, 'approval')
+        embargo_termination.reject(user=user, token=user_1_tok)
+        with assert_raises(MachineError):
+            embargo_termination.approve(user=user2, token=user_2_tok)
+
+        assert embargo_termination.is_rejected
+
+    def test_single_approve_stays_unapproved(self, user, user2, embargo_termination):
+        user_1_tok = embargo_termination.token_for_user(user, 'approval')
+        embargo_termination.approve(user=user, token=user_1_tok)
+        assert embargo_termination.state == embargo_termination.UNAPPROVED
+
+
+@pytest.mark.django_db
+class TestSanctionEmailRendering:
+
+    @pytest.fixture
+    def contributor(self):
+        return factories.AuthUserFactory()
+
+    @pytest.fixture(
+        params=[
+            factories.EmbargoFactory,
+            factories.RegistrationApprovalFactory,
+            factories.RetractionFactory,
+            factories.EmbargoTerminationApprovalFactory,
+        ]
+    )
+    def registration(self, request, contributor):
+        sanction_factory = request.param
+        sanction = sanction_factory(end_date=timezone.now())
+        registration = sanction.target_registration
+        registration.add_contributor(contributor)
+        registration.save()
+        return registration
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    def test_render_admin_emails(self, registration, reviews_workflow):
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.sanction.ask([(registration.creator, registration)])
+        assert True  # mail rendered successfully
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
+    def test_render_non_admin_emails(self, registration, reviews_workflow, contributor):
+        provider = registration.provider
+        provider.reviews_workflow = reviews_workflow
+        provider.save()
+
+        registration.sanction.ask([(contributor, registration)])
+        assert True  # mail rendered successfully

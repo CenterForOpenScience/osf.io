@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.views.generic import UpdateView, DeleteView, ListView
 from django.utils import timezone
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
 from django.views.defaults import page_not_found
@@ -18,13 +18,13 @@ from osf.models.admin_log_entry import (
     PREPRINT_REMOVED,
     PREPRINT_RESTORED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     APPROVE_WITHDRAWAL,
     REJECT_WITHDRAWAL
 )
 
-from website.preprints.tasks import update_preprint_share
 from website.project.views.register import osf_admin_change_status_identifier
-from website import search
+from website import search, settings
 
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
@@ -32,6 +32,8 @@ from admin.nodes.templatetags.node_extras import reverse_preprint
 from admin.nodes.views import NodeDeleteBase, NodeRemoveContributorView, NodeConfirmSpamView, NodeConfirmHamView
 from admin.preprints.serializers import serialize_preprint, serialize_simple_user_and_preprint_permissions, serialize_withdrawal_request
 from admin.preprints.forms import ChangeProviderForm
+
+from api.share.utils import update_share
 
 
 class PreprintMixin(PermissionRequiredMixin):
@@ -135,7 +137,8 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()
-        update_preprint_share(preprint)
+        if settings.SHARE_ENABLED:
+            update_share(preprint)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,
@@ -376,22 +379,34 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
     template_name = 'preprints/flagged_spam_list.html'
 
     def delete(self, request, *args, **kwargs):
-        if not request.user.has_perm('auth.mark_spam'):
+        if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
-        preprint_ids = [
-            pid for pid in request.POST.keys()
-            if pid != 'csrfmiddlewaretoken'
-        ]
+        preprint_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_HAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_SPAM
+            elif key != 'csrfmiddlwaretoken':
+                preprint_ids.append(key)
+
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
             osf_admin_change_status_identifier(preprint)
-            preprint.confirm_spam(save=True)
+
+            if action == 'SPAM':
+                preprint.confirm_spam(save=True)
+            elif action == 'HAM':
+                preprint.confirm_ham(save=True)
+
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=pid,
                 object_repr='Preprint',
-                message='Confirmed SPAM: {}'.format(pid),
-                action_flag=CONFIRM_SPAM
+                message=f'Confirmed {action}: {pid}',
+                action_flag=action_flag
             )
         return redirect('preprints:flagged-spam')
 

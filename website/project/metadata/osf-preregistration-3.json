@@ -13,13 +13,6 @@
         "id": "page1",
         "title": "Study Information",
         "questions": [{
-            "qid": "q1",
-            "nav": "Authors",
-            "title": "Authors",
-            "type": "osf-author-import",
-            "format": "textarea",
-            "required": true
-        }, {
             "qid": "q2",
             "nav": "Hypotheses",
             "type": "string",

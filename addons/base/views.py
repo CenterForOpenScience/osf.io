@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
+from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -41,7 +42,7 @@ from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration, RegistrationSchema,
+                        NodeLog, DraftRegistration,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -215,23 +216,6 @@ def check_access(node, auth, action, cas_resp):
                     return True
                 parent = parent.parent_node
 
-        # Users with the prereg admin permission should be allowed to download files
-        # from prereg challenge draft registrations.
-        try:
-            prereg_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-            allowed_nodes = [node] + node.parents
-            prereg_draft_registration = DraftRegistration.objects.filter(
-                branched_from__in=allowed_nodes,
-                registration_schema=prereg_schema
-            )
-            if action == 'download' and \
-                        auth.user is not None and \
-                        prereg_draft_registration.count() > 0 and \
-                        auth.user.has_perm('osf.administer_prereg'):
-                return True
-        except RegistrationSchema.DoesNotExist:
-            pass
-
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
 def make_auth(user):
@@ -270,20 +254,19 @@ def get_metric_class_for_action(action, from_mfr):
 @collect_auth
 def get_auth(auth, **kwargs):
     cas_resp = None
-    if not auth.user:
-        # Central Authentication Server OAuth Bearer Token
-        authorization = request.headers.get('Authorization')
-        if authorization and authorization.startswith('Bearer '):
-            client = cas.get_client()
-            try:
-                access_token = cas.parse_auth_header(authorization)
-                cas_resp = client.profile(access_token)
-            except cas.CasError as err:
-                sentry.log_exception()
-                # NOTE: We assume that the request is an AJAX request
-                return json_renderer(err)
-            if cas_resp.authenticated:
-                auth.user = OSFUser.load(cas_resp.user)
+    # Central Authentication Server OAuth Bearer Token
+    authorization = request.headers.get('Authorization')
+    if authorization and authorization.startswith('Bearer '):
+        client = cas.get_client()
+        try:
+            access_token = cas.parse_auth_header(authorization)
+            cas_resp = client.profile(access_token)
+        except cas.CasError as err:
+            sentry.log_exception()
+            # NOTE: We assume that the request is an AJAX request
+            return json_renderer(err)
+        if cas_resp.authenticated and not getattr(auth, 'user'):
+            auth.user = OSFUser.load(cas_resp.user)
 
     try:
         data = jwt.decode(
@@ -532,6 +515,12 @@ def create_waterbutler_log(payload, **kwargs):
 
         else:
             node.create_waterbutler_log(auth, action, payload)
+
+    metadata = payload.get('metadata') or payload.get('destination')
+
+    target_node = AbstractNode.load(metadata.get('nid'))
+    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
+        update_storage_usage_with_size(payload)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
@@ -932,22 +921,12 @@ def addon_view_file(auth, node, file_node, version):
         'file_id': file_node._id,
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
-        'pre_reg_checkout': is_pre_reg_checkout(node, file_node),
         'version_names': list(version_names)
     })
 
     ret.update(rubeus.collect_addon_assets(node))
     return ret
 
-def is_pre_reg_checkout(node, file_node):
-    checkout_user = file_node.checkout
-    if not checkout_user:
-        return False
-    if checkout_user in node.contributors:
-        return False
-    if checkout_user.has_perm('osf.view_prereg'):
-        return node.draft_registrations_active.filter(registration_schema__name='Prereg Challenge').exists()
-    return False
 
 def get_archived_from_url(node, file_node):
     if file_node.copied_from:

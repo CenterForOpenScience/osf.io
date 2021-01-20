@@ -40,7 +40,6 @@ from osf.models import (
     RegistrationProvider, OSFGroup, NodeLicense,
 )
 from website.project import new_private_link
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
 
@@ -241,6 +240,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'contributors',
         'preprint',
         'subjects',
+        'reviews_state',
     ])
 
     # If you add a field to this serializer, be sure to add to this
@@ -281,6 +281,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'registration',
         'root',
         'settings',
+        'storage',
         'subjects',
         'tags',
         'template_from',
@@ -525,6 +526,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-preprints',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+
+    storage = RelationshipField(
+        related_view='nodes:node-storage',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
 
     @property
     def subjects_related_view(self):
@@ -1356,6 +1362,28 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
+class NodeStorageSerializer(JSONAPISerializer):
+    id = IDField(source='_id', required=True)
+    storage_limit_status = ser.CharField(source='storage_limit_status.name', read_only=True, allow_null=True)
+    storage_usage = ser.CharField(read_only=True, allow_null=True)
+
+    class Meta:
+        type_ = 'node-storage'
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'nodes:node-storage',
+            kwargs={
+                'node_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+
 class NodeStorageProviderSerializer(JSONAPISerializer):
     id = ser.SerializerMethodField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -1504,7 +1532,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def update_metadata(self, draft, metadata, reviewer, required_fields=False):
+    def update_metadata(self, draft, metadata, reviewer=False, required_fields=False):
         try:
             # Required fields are only required when creating the actual registration, not updating the draft.
             draft.validate_metadata(metadata=metadata, reviewer=reviewer, required_fields=required_fields)
@@ -1540,22 +1568,17 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
-
-        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
-        # TODO: this
-        # if not provider.schemas_acceptable.filter(id=schema.id).exists():
-        #     raise exceptions.ValidationError('Invalid schema for provider.')
+        provider = validated_data.pop('provider', None)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
-        draft = DraftRegistration.create_from_node(
-            node=node, user=initiator,
-            schema=schema, provider=provider, data=validated_data,
-        )
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
+        try:
+            draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
 
         if metadata:
-            self.update_metadata(draft, metadata, reviewer)
+            self.update_metadata(draft, metadata)
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
@@ -1597,12 +1620,11 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationLegacySerializer)
         """
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         if metadata:
-            self.update_metadata(draft, metadata, reviewer)
+            self.update_metadata(draft, metadata)
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
         return draft

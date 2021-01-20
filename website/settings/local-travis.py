@@ -104,4 +104,4 @@ logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
 
 DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
-TRAVIS_MODE = True
+SHARE_ENABLED = False

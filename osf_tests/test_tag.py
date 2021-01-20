@@ -41,6 +41,7 @@ class TestTag:
 
 
 # copied from tests/test_models.py
+@pytest.mark.enable_enqueue_task
 class TestTags:
 
     @pytest.fixture()
@@ -51,7 +52,8 @@ class TestTags:
     def auth(self, project):
         return Auth(project.creator)
 
-    @mock.patch('website.project.tasks.update_node_share')
+    @mock.patch('osf.models.node.update_share')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
     def test_add_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
@@ -67,7 +69,8 @@ class TestTags:
         with pytest.raises(DataError):
             project.add_tag('asdf' * 257, auth=auth)
 
-    @mock.patch('website.project.tasks.update_node_share')
+    @mock.patch('osf.models.node.update_share')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
     def test_remove_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
         mock_update_share.assert_called_once_with(project)

@@ -89,9 +89,9 @@ class TestCollectionsSearch(OsfTestCase):
         self.node_public = factories.NodeFactory(creator=self.user, title='Salif Keita: Yamore', is_public=True)
         self.node_one = factories.NodeFactory(creator=self.user, title='Salif Keita: Mandjou', is_public=True)
         self.node_two = factories.NodeFactory(creator=self.user, title='Salif Keita: Tekere', is_public=True)
-        self.reg_private = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=False)
-        self.reg_public = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True)
-        self.reg_one = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True)
+        self.reg_private = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=False, archive=True)
+        self.reg_public = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True, archive=True)
+        self.reg_one = factories.RegistrationFactory(title='Salif Keita: Madan', creator=self.user, is_public=True, archive=True)
         self.provider = factories.CollectionProviderFactory()
         self.reg_provider = factories.RegistrationProviderFactory()
         self.collection_one = factories.CollectionFactory(creator=self.user, is_public=True, provider=self.provider)
@@ -736,9 +736,8 @@ class TestRegistrationRetractions(OsfTestCase):
         )
         self.registration = factories.RegistrationFactory(project=self.project, is_public=True)
 
-    @mock.patch('website.project.tasks.update_node_share')
     @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_retraction_is_searchable(self, mock_registration_updated):
+    def test_retraction_is_searchable(self):
         self.registration.retract_registration(self.user)
         self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()
@@ -841,7 +840,7 @@ class TestPublicNodes(OsfTestCase):
                 creator=self.user,
                 is_public=True,
             )
-            self.registration.archive_job.target_addons = []
+            self.registration.archive_job.target_addons.clear()
             self.registration.archive_job.status = 'SUCCESS'
             self.registration.archive_job.save()
 

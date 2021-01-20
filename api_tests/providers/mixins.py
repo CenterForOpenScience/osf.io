@@ -6,7 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
 )
-from osf.models.licenses import NodeLicense
+from osf.models import NodeLicense, RegistrationProvider
 
 
 class ProviderMixinBase(object):
@@ -648,12 +648,18 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
-        assert len(res.json['data']) == 2
+        if isinstance(provider_one, RegistrationProvider):
+            assert len(res.json['data']) == 3  # 2 test provider +1 for default provider
+        else:
+            assert len(res.json['data']) == 2
 
         # Test length and auth
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 2
+        if isinstance(provider_one, RegistrationProvider):
+            assert len(res.json['data']) == 3  # 2 test provider +1 for default provider
+        else:
+            assert len(res.json['data']) == 2
 
     @pytest.mark.parametrize('filter_type,filter_value', [
         ('allow_submissions', True),
@@ -669,7 +675,10 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         res = app.get('{}?filter[{}]={}'.format(
             url, filter_type, filter_value))
         assert res.status_code == 200
-        assert len(res.json['data']) == 1
+        if isinstance(provider_one, RegistrationProvider) and filter_type == 'allow_submissions':
+            assert len(res.json['data']) == 2  # 1 test provider +1 for default provider
+        else:
+            assert len(res.json['data']) == 1
 
 class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
 
@@ -975,7 +984,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         return licenses[2]
 
     def test_provider_has_no_acceptable_licenses_and_no_default(self, app, provider, licenses, url, license_one):
-        provider.licenses_acceptable = []
+        provider.licenses_acceptable.clear()
         provider.default_license = None
         provider.save()
         res = app.get(url)
@@ -989,7 +998,7 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert res.json['data'][0]['id'] == license_one._id
 
     def test_provider_has_a_default_license_but_no_acceptable_licenses(self, app, provider, licenses, license_two, url):
-        provider.licenses_acceptable = []
+        provider.licenses_acceptable.clear()
         provider.default_license = license_two
         provider.save()
         res = app.get(url)

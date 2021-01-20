@@ -187,7 +187,7 @@ CONFIRM_EMAIL = Mail(
 )
 CONFIRM_EMAIL_PREREG = Mail(
     'confirm_prereg',
-    subject='OSF Account Verification, Preregistration Challenge'
+    subject='OSF Account Verification, OSF Preregistration'
 )
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
@@ -296,6 +296,10 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
     subject='Withdrawal pending for one of your projects.'
 )
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Withdrawal pending for one of your projects.'
+)
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
@@ -394,32 +398,7 @@ WELCOME_OSF4I = Mail(
     engagement=True
 )
 
-PREREG_CHALLENGE_REJECTED = Mail(
-    'prereg_challenge_rejected',
-    subject='Revisions required, your submission for the Preregistration Challenge is not yet registered'
-)
-
-PREREG_CHALLENGE_ACCEPTED = Mail(
-    'prereg_challenge_accepted',
-    subject='Your research plan has been registered and accepted for the Preregistration Challenge'
-)
-
-PREREG_CSV = Mail(
-    'prereg_csv',
-    subject='[auto] Updated Prereg CSV'
-)
-
 EMPTY = Mail('empty', subject='${subject}')
-
-SHARE_ERROR_DESK = Mail(
-    'send_data_share_error_desk',
-    subject='Share Error'
-)
-
-SHARE_PREPRINT_ERROR_DESK = Mail(
-    'send_data_share_preprint_error_desk',
-    subject='Share Error'
-)
 
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
@@ -446,9 +425,9 @@ CROSSREF_DOIS_PENDING = Mail(
     subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
-    'preprint_withdrawal_request_granted',
-    subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
+WITHDRAWAL_REQUEST_GRANTED = Mail(
+    'withdrawal_request_granted',
+    subject='Your ${document_type} has been withdrawn',
 )
 
 GROUP_MEMBER_ADDED = Mail(
@@ -466,7 +445,17 @@ GROUP_ADDED_TO_NODE = Mail(
     subject='Your group, ${group_name}, has been added to an OSF Project'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
-    'preprint_withdrawal_request_declined',
+WITHDRAWAL_REQUEST_DECLINED = Mail(
+    'withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
+)
+
+TOU_NOTIF = Mail(
+    'tou_notif',
+    subject='Updated Terms of Use for COS Websites and Services',
+)
+
+STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
+    'storage_cap_exceeded_announcement',
+    subject='Action Required to avoid disruption to your OSF project',
 )

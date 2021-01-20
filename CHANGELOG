@@ -2,6 +2,133 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+20.22.0 (2020-12-08)
+====================
+- Update emails for Registries Moderation
+
+20.21.0 (2020-11-24)
+====================
+- Miscellaneous fixes for Registries Moderation integration
+- Add Registries Moderation notification management
+
+20.20.0 (2020-11-03)
+====================
+- Add storage limits to nodes
+
+20.19.0 (2020-11-02)
+====================
+- Add four new registration forms
+- Fix missing case for storage caps in admin app
+- Add GET endpoints for registries moderation
+- Add admin app for registries moderation
+
+20.18.0 (2020-10-12)
+====================
+- Add admin panel for storage usage
+- Make scopes play better with files
+
+20.17.0 (2020-09-16)
+====================
+- Re-enable calculation of storage cache with more efficient updates
+- Add node storage limits to node model
+- Add registration moderation state machine
+- Update zotero requirements
+- Update QA notes in PR template
+
+20.16.0 (2020-09-09)
+====================
+- Fix bug in EGAP schema display on branded registries
+- Add script to purge deleted files
+
+20.15.0 (2020-09-01)
+====================
+- Fix OSF Provider not sending data to SHARE
+- Allow osf_admin to create Brand in admin app
+- Move SHARE fields from PreprintProvider to AbstractProvider
+- Models and API to associate a registration provider with schemas
+- Allow admin app to associate registration forms with providers
+- Enable API to create registration that belongs to a registration provider
+- Admin app permissions for branding
+- Allow EGAP schema in /v2/providers/registrations/<id>/schemas.
+- Handle 502s on admin app setup SHARE source
+- Prepend provider names in SHARE on staging/test
+- Send SHARE errors to sentry instead of desk
+- Management command to reindex OSF registrations in SHARE
+- Serialize branded_discovery_page boolean on Registration Provider
+- Prevent API from accepting registration form for a provider that doesn't support that form
+- Branded Registries admin app fixes
+
+20.14.0 (2020-07-13)
+====================
+- Add brands to registration providers
+- Index last login field
+- Skip probabilistic test failures on CI
+- Add limited-use raw ES6 metrics endpoint
+- Add management command to move EGAP registrations to EGAP provider
+
+20.13.0 (2020-06-30)
+====================
+- Fixes for EGAP migration
+- Add bulk ham-ify in admin app for preprints and users
+- Add bibliographic_contributors relationship to preprints
+- Replace missing admin functionality for preprint providers
+- Fix sparse node children endpoints
+
+20.12.0 (2020-06-24)
+====================
+- Fix EGAP form
+- Prevent forward addon from being checked for spam if it is not present
+
+20.11.0 (2020-06-17)
+====================
+- Add more tests for ending embargos
+- Fix filenames containing &s preventing registrations from registering
+- Ensure API complains when trying to embargo using deprecated methods
+- Modify EGAP form and add new form
+- Update EGAP import script to use new form
+- Remove Authors from registration forms
+- Ensure forks have region of forked-from node
+- Fix statistics for institutional dashboard node counts
+- Allow institutional dashboard to export user stats as CSV
+- Fix probabilistically failing tests
+
+20.10.0 (2020-06-04)
+====================
+- Use proper bibliographic status for registration creators
+- Fix Figshare Article Type 4 "Fileset" Deprecation
+- Add management command to add and remove waffle flags and switches
+
+20.9.0 (2020-06-02)
+===================
+- Update Django to 1.11.28
+- Fix to prevent preprints from getting into a bad state
+- Fix broken /v2/ endpoint in browsable API
+- Make institution metrics department ids unique
+- Serve institution dashboard route
+- Add meaningful error message to Sloan indicators
+- Sort and filter institution user metrics properly
+- Fix Sloan preprint API inconsistencies
+- Fix admin app preprint provider post-upgrade
+- Fix API filtering for non-root node giving 502
+
+20.8.0 (2020-05-12)
+===================
+- Fix permissions for draft registrations when branched from node
+- Add burst rate throttling
+- Fix institutional metrics user name
+- Fix type of summary_metrics relationship from institutions
+- Remove unused code from prereg challenge
+
+20.7.0 (2020-05-05)
+===================
+- Added Institutional Dashboard api and models
+- Normalized user tags
+- Updated email to tell people about Chronos
+
+20.6.0 (2020-05-01)
+===================
+- Additional fixes for Sloan Signals of Trust
+
 20.5.0 (2020-04-20)
 ===================
 - Fixes for Sloan Signals of Trust

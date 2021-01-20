@@ -4,7 +4,12 @@ from elasticsearch.exceptions import NotFoundError
 from elasticsearch_metrics import metrics
 from django.db import models
 from django.utils import timezone
+from osf.utils.workflows import RegistrationModerationTriggers, RegistrationModerationStates
 import pytz
+
+
+from api.base.settings import MAX_SIZE_OF_ES_QUERY, DEFAULT_ES_NULL_VALUE
+
 
 class MetricMixin(object):
 
@@ -180,3 +185,318 @@ class PreprintView(BasePreprintMetric):
 
 class PreprintDownload(BasePreprintMetric):
     pass
+
+
+class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
+    user_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    department = metrics.Keyword(index=True, doc_values=True, required=False)
+    public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+    private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def filter_institution(cls, institution):
+        return cls.search().filter('match', institution_id=institution._id)
+
+    @classmethod
+    def get_recent_datetime(cls, institution):
+        search = cls.filter_institution(institution).sort('-timestamp')
+
+        # Rounding to the nearest minute
+        results = search.execute()
+        if results:
+            return search.execute()[0].timestamp.replace(microsecond=0, second=0)
+        # If there are no results, assume yesterday.
+        return dt.datetime.now() - dt.timedelta(days=1)
+
+    @classmethod
+    def get_department_counts(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
+        search = cls.filter_institution(institution).sort('timestamp')
+        last_record_time = cls.get_recent_datetime(institution)
+
+        return search.update_from_dict({
+            'aggs': {
+                'date_range': {
+                    'filter': {
+                        'range': {
+                            'timestamp': {
+                                'gte': last_record_time,
+                            }
+                        }
+                    },
+                    'aggs': {
+                        'departments': {
+                            'terms': {
+                                'field': 'department',
+                                'missing': DEFAULT_ES_NULL_VALUE,
+                                'size': 250
+                            },
+                            'aggs': {
+                                'users': {
+                                    'terms': {
+                                        'field': 'user_id'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+    @classmethod
+    def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            user_id=user._id,
+            institution_id=institution._id,
+            department=getattr(user, 'department', DEFAULT_ES_NULL_VALUE),
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_current_user_metrics(cls, institution) -> list:
+        """
+        Gets the most recent document for every unique user.
+        :param institution: Institution
+        :return: list
+        """
+        last_record_time = cls.get_recent_datetime(institution)
+
+        search = cls.filter_institution(
+            institution
+        ).filter(
+            'range',
+            timestamp={
+                'gte': last_record_time
+            }
+        ).sort(
+            'user_id'
+        )
+        search.update_from_dict({
+            'size': MAX_SIZE_OF_ES_QUERY
+        })
+
+        return search
+
+
+class InstitutionProjectCounts(MetricMixin, metrics.Metric):
+    institution_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    user_count = metrics.Integer(index=True, doc_values=True, required=True)
+    public_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+    private_project_count = metrics.Integer(index=True, doc_values=True, required=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
+        return cls.record(
+            institution_id=institution._id,
+            user_count=institution.osfuser_set.count(),
+            public_project_count=public_project_count,
+            private_project_count=private_project_count,
+            **kwargs
+        )
+
+    @classmethod
+    def get_latest_institution_project_document(cls, institution):
+        search = cls.search().filter('match', institution_id=institution._id).sort('-timestamp')[:1]
+        response = search.execute()
+        if response:
+            return response[0]
+
+
+class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
+    registration_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    provider_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    trigger = metrics.Keyword(index=True, doc_values=True, required=True)
+    from_state = metrics.Keyword(index=True, doc_values=True, required=True)
+    to_state = metrics.Keyword(index=True, doc_values=True, required=True)
+    user_id = metrics.Keyword(index=True, doc_values=True, required=True)
+    comment = metrics.Keyword(index=True)
+
+    class Index:
+        settings = {
+            'number_of_shards': 1,
+            'number_of_replicas': 1,
+            'refresh_interval': '1s',
+        }
+
+    class Meta:
+        source = metrics.MetaField(enabled=True)
+
+    @classmethod
+    def record_transitions(cls, action):
+        return cls.record(
+            registration_id=action.target._id,
+            provider_id=action.target.provider._id,
+            from_state=action.from_state,
+            to_state=action.to_state,
+            trigger=action.trigger,
+            user_id=action.creator._id,
+            comment=action.comment,
+        )
+
+    @classmethod
+    def get_registries_info(cls) -> dict:
+        """
+        Gets metrics info for each registry
+        excpected output:
+        {
+            'doc_count_error_upper_bound': 0,
+            'sum_other_doc_count': 0,
+            'buckets': [{
+                'key': 'osf',
+                'doc_count': 6,
+                'rejected': {'doc_count': 0},
+                'submissions': {'doc_count': 3},
+                'not_embargoed_but_accepted': {'doc_count': 0},
+                'withdrawn': {'doc_count': 0},
+                'transitions_without_comments': {'doc_count': 1},
+                'embargoed': {'doc_count': 0},
+                'transitions_with_comments': {'doc_count': 5}
+            },
+            {
+                'key': 'provider2',
+               'doc_count': 4,
+               'rejected': {'doc_count': 1},
+               'submissions': {'doc_count': 1},
+               'not_embargoed_but_accepted': {'doc_count': 1},
+               'withdrawn': {'doc_count': 0},
+               'transitions_without_comments': {'doc_count': 0},
+               'embargoed': {'doc_count': 0},
+               'transitions_with_comments': {'doc_count': 4}
+               }]
+        }
+        :return: dict
+        """
+        search = cls.search()
+
+        return search.update_from_dict({
+            'aggs': {
+                'providers': {
+                    'terms': {
+                        'field': 'provider_id'
+                    },
+                    'aggs': {
+                        'transitions_without_comments': {
+                            'missing': {
+                                'field': 'comment'
+                            }
+                        },
+                        'transitions_with_comments': {
+                            'filter': {
+                                'exists': {
+                                    'field': 'comment'
+                                }
+                            }
+                        },
+                        'submissions': {
+                            'filter': {
+                                'match': {
+                                    'trigger': {
+                                        'query': RegistrationModerationTriggers.SUBMIT.db_name
+                                    }
+                                }
+                            }
+                        },
+                        'accepted_with_embargo': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.EMBARGO.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        'accepted_without_embargo': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.ACCEPTED.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.SUBMIT.db_name
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        'rejected': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.REJECTED.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        'withdrawn': {
+                            'filter': {
+                                'bool': {
+                                    'must': [
+                                        {
+                                            'match': {
+                                                'to_state': RegistrationModerationStates.WITHDRAWN.db_name
+                                            }
+                                        },
+                                        {
+                                            'match': {
+                                                'trigger': RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                    }
+                }
+            }
+        }).execute().aggregations['providers'].to_dict()

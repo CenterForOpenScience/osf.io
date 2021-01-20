@@ -3,6 +3,7 @@ from __future__ import print_function
 import logging
 
 import mock
+import responses
 import pytest
 from faker import Factory
 from website import settings as website_settings
@@ -144,3 +145,26 @@ def _es_marker(request, es6_client):
         teardown_es()
     else:
         yield
+
+
+@pytest.fixture
+def mock_share():
+    with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
+        with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
+            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                rsps.add(responses.POST, f'{website_settings.SHARE_URL}api/v2/normalizeddata/', status=200)
+                yield rsps
+
+
+@pytest.fixture
+def mock_akismet():
+    """
+    This should be used to mock our anti-spam service akismet.
+    Relevent endpoints:
+    'https://{api_key}.rest.akismet.com/1.1/submit-spam'
+    'https://{api_key}.rest.akismet.com/1.1/submit-ham'
+    'https://{api_key}.rest.akismet.com/1.1/comment-check'
+    """
+    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            yield rsps
