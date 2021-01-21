@@ -51,7 +51,10 @@ class GitLabClient(object):
         try:
             return self.gitlab.projects.get(repo_id)
         except gitlab.GitlabGetError as exc:
-            raise NotFoundError(exc.error_message)
+            if exc.response_code == 404:
+                raise NotFoundError(exc.error_message)
+            else:
+                raise exc
         except gitlab.GitlabAuthenticationError as exc:
             raise AuthError(exc.error_message)
 
