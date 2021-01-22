@@ -2073,6 +2073,7 @@ class TestAddingContributorViews(OsfTestCase):
             can_change_preferences=False,
             logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            is_initiator=False,
             published_preprints=[]
 
         )

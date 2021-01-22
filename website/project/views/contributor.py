@@ -581,6 +581,7 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
+            is_initiator=getattr(auth, 'user', False) == contributor,
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
             branded_service=node.provider,
             can_change_preferences=False,
