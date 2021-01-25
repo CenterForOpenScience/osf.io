@@ -23,6 +23,11 @@ RUN apk add --no-cache --virtual .run-deps \
     libevent \
     && yarn global add bower
 
+RUN apk add curl
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python3 get-pip.py --force-reinstall pip==21.0
+
+
 WORKDIR /code
 
 COPY ./requirements.txt ./
@@ -45,8 +50,6 @@ COPY ./addons/s3/requirements.txt ./addons/s3/
 COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
 #COPY ./addons/wiki/requirements.txt ./addons/wiki/
 COPY ./addons/zotero/requirements.txt ./addons/zotero/
-
-RUN pip3 install pip==21.0
 
 RUN set -ex \
     && mkdir -p /var/www \
