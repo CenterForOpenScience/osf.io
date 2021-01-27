@@ -6,13 +6,23 @@ import cachecontrol
 from requests.adapters import HTTPAdapter
 from rest_framework import status as http_status
 from framework.exceptions import HTTPError
-
+from contextlib import contextmanager
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
 
 # Initialize caches
 https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
+
+@contextmanager
+def catch_token_error():
+    try:
+        yield
+    except gitlab.GitlabAuthenticationError:
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+            'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
+                            'reconnect with a valid token <a href="/settings/addons/">here</a>.'
+        })
 
 class GitLabClient(object):
 
@@ -32,12 +42,14 @@ class GitLabClient(object):
             user if omitted
         :return dict: GitLab API response
         """
-        try:
-            self.gitlab.auth()
-        except gitlab.GitlabGetError as exc:
-            raise AuthError(exc.error_message)
+        with catch_token_error():
+            try:
+                self.gitlab.auth()
+            except gitlab.GitlabGetError as exc:
+                raise AuthError(exc.error_message)
 
-        return self.gitlab.users.get(self.gitlab.user.id)
+        with catch_token_error():
+            return self.gitlab.users.get(self.gitlab.user.id)
 
     def repo(self, repo_id):
         """Get a single GitLab repo's info.
@@ -48,24 +60,18 @@ class GitLabClient(object):
         :return: gitlab.Project a object representing the repo
         """
 
-        try:
-            return self.gitlab.projects.get(repo_id)
-        except gitlab.GitlabGetError as exc:
-            if exc.response_code == 404:
-                raise NotFoundError(exc.error_message)
-            else:
-                raise exc
-        except gitlab.GitlabAuthenticationError as exc:
-            raise AuthError(exc.error_message)
+        with catch_token_error():
+            try:
+                return self.gitlab.projects.get(repo_id)
+            except gitlab.GitlabGetError as exc:
+                if exc.response_code == 404:
+                    raise NotFoundError(exc.error_message)
+                else:
+                    raise exc
 
     def repos(self, all=False):
-        try:
+        with catch_token_error():
             return self.gitlab.projects.list(membership=True, all=all)
-        except gitlab.GitlabAuthenticationError:
-            raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-                'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
-                                'reconnect with a valid token <a href="/settings/addons/">here</a>.'
-            })
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -78,9 +84,11 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return gitlab.project.get(self.gitlab, repo_id).branches.get(branch)
+            with catch_token_error():
+                return gitlab.project.get(self.gitlab, repo_id).branches.get(branch)
 
-        return gitlab.project.get(self.gitlab, repo_id).branches.list()
+        with catch_token_error():
+            return gitlab.project.get(self.gitlab, repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
@@ -133,8 +141,8 @@ class GitLabClient(object):
     def _get_api_request(self, uri):
         headers = {'PRIVATE-TOKEN': '{}'.format(self.access_token)}
 
-        return requests.get('https://{0}/{1}/{2}'.format(self.host, 'api/v4', uri),
-                            verify=True, headers=headers)
+        with catch_token_error():
+            return requests.get(f'https://{self.host}/api/v4/{uri}', verify=True, headers=headers)
 
     def revoke_token(self):
         return False
