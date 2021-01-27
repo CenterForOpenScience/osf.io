@@ -77,6 +77,11 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         read_only=False,
     )
 
+    has_project = ser.SerializerMethodField()
+
+    def get_has_project(self, obj):
+        return obj.has_project
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
