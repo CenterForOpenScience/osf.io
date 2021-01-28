@@ -71,6 +71,11 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         related_view_kwargs={'draft_id': '<_id>'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='draft_registrations:draft-registration-bibliographic-contributor-detail',
+        related_view_kwargs={'draft_id': '<_id>'},
+    )
+
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
