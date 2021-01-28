@@ -200,10 +200,11 @@ class CollectionProvider(AbstractProvider):
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields() or []
-        ret = super(CollectionProvider, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
         if '_id' in saved_fields:
             from osf.models.collection import Collection
-            Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
+            if self.primary_collection:
+                Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
         return ret
 
 
