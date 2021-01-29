@@ -2,7 +2,7 @@ import json
 import pytest
 import responses
 
-from api.share.utils import format_registration
+from api.share.utils import serialize_registration
 from osf.models import CollectionSubmission, SpamStatus
 
 from osf_tests.factories import (
@@ -58,15 +58,23 @@ class TestNodeShare:
         return reg
 
     @pytest.fixture()
-    def component_registration(self, node):
-        NodeFactory(
-            creator=node.creator,
-            parent=node,
-            title='Title1',
+    def grandchild_registration(self):
+        root_node = NodeFactory(
+            title='Root',
         )
-        registration = RegistrationFactory(project=node)
+        child_node = NodeFactory(
+            creator=root_node.creator,
+            parent=root_node,
+            title='Child',
+        )
+        NodeFactory(
+            creator=root_node.creator,
+            parent=child_node,
+            title='Grandchild',
+        )
+        registration = RegistrationFactory(project=root_node)
         registration.refresh_from_db()
-        return registration.get_nodes()[0]
+        return registration.get_nodes()[0].get_nodes()[0]
 
     def test_update_node_share(self, mock_share, node, user):
 
@@ -74,15 +82,16 @@ class TestNodeShare:
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
 
         assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
-        assert graph[0]['creative_work']['@type'] == 'project'
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
+        assert identifier_node['creative_work']['@type'] == 'project'
 
     def test_update_registration_share(self, mock_share, registration, user):
         on_node_updated(registration._id, user._id, False, {'is_public'})
 
-        assert mock_share.calls[-1].request.headers['Authorization'] == f'Bearer mock-api-token'
+        assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graphs = data['data']['attributes']['data']['@graph']
@@ -113,7 +122,8 @@ class TestNodeShare:
 
             data = json.loads(mock_share.calls[i].request.body.decode())
             graph = data['data']['attributes']['data']['@graph']
-            assert graph[1]['is_deleted'] == case['is_deleted']
+            work_node = next(n for n in graph if n['@type'] == 'project')
+            assert work_node['is_deleted'] == case['is_deleted']
 
     def test_update_share_correctly_for_registrations(self, mock_share, registration, user):
         cases = [{
@@ -139,15 +149,47 @@ class TestNodeShare:
             payload = next((item for item in graph if 'is_deleted' in item.keys()))
             assert payload['is_deleted'] == case['is_deleted']
 
-    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, project, component_registration, user):
-        graph = format_registration(component_registration)
+    def test_serialize_registration_gets_parent_hierarchy_for_component_registrations(self, project, grandchild_registration):
+        res = serialize_registration(grandchild_registration)
 
-        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
-        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
+        graph = res['@graph']
 
-        # Both must exist to be valid
-        assert parent_relation
-        assert parent_work_identifier
+        # all three registrations are present...
+        registration_graph_nodes = [n for n in graph if n['@type'] == 'registration']
+        assert len(registration_graph_nodes) == 3
+        root = next(n for n in registration_graph_nodes if n['title'] == 'Root')
+        child = next(n for n in registration_graph_nodes if n['title'] == 'Child')
+        grandchild = next(n for n in registration_graph_nodes if n['title'] == 'Grandchild')
+
+        # ...with the correct 'ispartof' relationships among them (grandchild => child => root)
+        expected_ispartofs = [
+            {
+                '@type': 'ispartof',
+                'subject': {'@id': grandchild['@id'], '@type': 'registration'},
+                'related': {'@id': child['@id'], '@type': 'registration'},
+            }, {
+                '@type': 'ispartof',
+                'subject': {'@id': child['@id'], '@type': 'registration'},
+                'related': {'@id': root['@id'], '@type': 'registration'},
+            },
+        ]
+        actual_ispartofs = [n for n in graph if n['@type'] == 'ispartof']
+        assert len(actual_ispartofs) == 2
+        for expected_ispartof in expected_ispartofs:
+            actual_ispartof = [
+                n for n in actual_ispartofs
+                if expected_ispartof.items() <= n.items()
+            ]
+            assert len(actual_ispartof) == 1
+
+        # ...and each has an identifier
+        for registration_graph_node in registration_graph_nodes:
+            workidentifier_graph_nodes = [
+                n for n in graph
+                if n['@type'] == 'workidentifier'
+                and n['creative_work']['@id'] == registration_graph_node['@id']
+            ]
+            assert len(workidentifier_graph_nodes) == 1
 
     def test_update_share_correctly_for_projects_with_qa_tags(self, mock_share, node, user):
         node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
@@ -233,11 +275,13 @@ class TestNodeShare:
 
         data = json.loads(mock_share.calls[0].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
 
         data = json.loads(mock_share.calls[1].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
 
     def test_call_async_update_on_500_failure(self, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
@@ -250,11 +294,13 @@ class TestNodeShare:
         assert len(mock_share.calls) == 6  # first request and five retries
         data = json.loads(mock_share.calls[0].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
 
     def test_no_call_async_update_on_400_failure(self, mock_share, node, user):
         mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=400)
@@ -263,4 +309,5 @@ class TestNodeShare:
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graph = data['data']['attributes']['data']['@graph']
-        assert graph[0]['uri'] == f'{settings.DOMAIN}{node._id}/'
+        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
+        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
