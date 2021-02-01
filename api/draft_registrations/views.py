@@ -241,6 +241,6 @@ class DraftBibliographicContributorsList(DraftContributorsList):
         draft = self.get_draft()
         return draft.draftregistrationcontributor_set.filter(visible=True).include('user__guids')
 
-    # Read-only
+    # Override to prevent use DraftRegistrationContributorsCreateSerializer, this endpoint is read-only
     def get_serializer_class(self):
         return DraftRegistrationContributorDetailSerializer
