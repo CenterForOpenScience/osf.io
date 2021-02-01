@@ -8,21 +8,27 @@
     %>
     Hello ${user.fullname},<br>
     <br>
-
-    ${'You just started' if not referrer_name else referrer_name + ' just added you to'}  a new registration draft titled <a href="${node.absolute_url}">${node.title if node.title else 'new registration draft'}</a>
     <p>
-        It's important that you save or bookmark this email to return to your registration draft to make additional edits.
+        ${'You just started' if not referrer_name else referrer_name + ' just added you to'}
+        % if node.title == 'Untitled':
+            <a href="${node.absolute_url}">a new registration draft</a>
+        % else:
+            a new registration draft titled <a href="${node.absolute_url}"> + ${node.title} </a>
+        % endif
     </p>
     <p>
-        % if is_initiator or node.has_permission(contributor, 'admin'):
+        It's <b>important</b> that you save or bookmark this email to return to your registration draft to make additional edits.
+    </p>
+    % if is_initiator or node.has_permission(contributor, 'admin'):
+        <p>
             Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
-        % endif
-    </p>
-    <p>
-        % if not is_initiator:
+        </p>
+    % endif
+    % if not is_initiator:
+        <p>
             If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
-        % endif
-    </p>
+        </p>
+    % endif
     <p>
         Sincerely,
     </p>
@@ -33,7 +39,7 @@
         Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF, or <a href="https://cos.io/" >https://cos.io/</a> for information about its supporting organization, the Center for Open Science.
     </p>
     <p>
-        Questions? Email contact@osf.io
+        Questions? Email <a href="mailto: support@cos.io">support@cos.io</a>
     </p>
   </td>
 </tr>
