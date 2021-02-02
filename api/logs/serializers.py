@@ -15,6 +15,7 @@ from api.base.serializers import (
 from osf.models import OSFUser, AbstractNode, Preprint
 from osf.utils.names import impute_names_model
 from osf.utils import permissions as osf_permissions
+from website.util import sanitize
 
 
 class NodeLogIdentifiersSerializer(RestrictedDictSerializer):
@@ -83,7 +84,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     previous_institution = NodeLogInstitutionSerializer(read_only=True)
     source = NodeLogFileParamsSerializer(read_only=True)
     study = ser.CharField(read_only=True)
-    tag = ser.CharField(read_only=True)
+    tag = ser.SerializerMethodField(read_only=True)
     tags = ser.CharField(read_only=True)
     target = NodeLogFileParamsSerializer(read_only=True)
     template_node = ser.DictField(read_only=True)
@@ -194,6 +195,15 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
                 provider = preprint.provider
                 return {'url': provider.external_url, 'name': provider.name}
         return None
+
+    def get_tag(self, obj):
+        tag = obj.get('tag', None)
+        if tag:
+            tag = sanitize.escape_html(tag)
+            tag = sanitize.temp_ampersand_fixer(tag)
+            return tag
+        return None
+
 
 class NodeLogSerializer(JSONAPISerializer):
 
