@@ -2153,17 +2153,13 @@ class SpamOverrideMixin(SpamMixin):
         if settings.SPAM_THROTTLE_AUTOBAN:
             creator = self.creator
             yesterday = timezone.now() - timezone.timedelta(days=1)
-            node_spam_count = creator.all_nodes.filter(
-                models.Q(spam_status=SpamStatus.FLAGGED) | models.Q(spam_status=SpamStatus.SPAM), models.Q(created__gt=yesterday)).count()
-            preprint_spam_count = creator.preprints.filter(
-                models.Q(spam_status=SpamStatus.FLAGGED) | models.Q(spam_status=SpamStatus.SPAM), models.Q(created__gt=yesterday)).count()
+            node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+            preprint_spam_count = creator.preprints.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
 
             if (node_spam_count + preprint_spam_count) > settings.SPAM_CREATION_THROTTLE_LIMIT:
                 self.suspend_spam_user(creator)
 
     def suspend_spam_user(self, user):
-        self.set_privacy('private', log=False, save=False)
-
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
@@ -2180,12 +2176,12 @@ class SpamOverrideMixin(SpamMixin):
 
         # Make public nodes private from this contributor
         for node in user.all_nodes:
-            if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+            if len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                 node.set_privacy('private', log=False, save=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
-            if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+            if len(preprint.contributors) == 1 and preprint.is_public:
                 preprint.set_privacy('private', log=False, save=True)
 
 
