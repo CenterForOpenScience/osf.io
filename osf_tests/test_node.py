@@ -2397,6 +2397,7 @@ class TestNodeSpam:
                 assert project.is_public is True
 
     def test_flag_spam_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             project.flag_spam()
@@ -2404,6 +2405,7 @@ class TestNodeSpam:
         assert project.is_public is False
 
     def test_flag_spam_do_not_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
             project.flag_spam()
@@ -2411,6 +2413,7 @@ class TestNodeSpam:
         assert project.is_public
 
     def test_confirm_spam_makes_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         project.confirm_spam()
         assert project.is_spammy
