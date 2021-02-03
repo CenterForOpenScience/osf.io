@@ -97,6 +97,7 @@ pdfkit==0.6.1
 
 # Analytics requirements
 keen==0.5.1
+maxminddb==1.5.4
 maxminddb-geolite2==2018.308
 
 # OSF models
