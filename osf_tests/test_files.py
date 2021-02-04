@@ -83,6 +83,7 @@ def test_file_update_respects_region(project, user, create_test_file):
     node_settings.region = new_region
     node_settings.save()
     test_file.save()
+    test_file.reload()
 
     new_version = test_file.create_version(
         user, {
