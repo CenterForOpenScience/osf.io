@@ -78,9 +78,9 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return gitlab.project.get(self.gitlab, repo_id).branches.get(branch)
+            return self.gitlab.projects.get(repo_id).branches.get(branch)
 
-        return gitlab.project.get(self.gitlab, repo_id).branches.list()
+        return self.gitlab.projects.get(repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.
