@@ -6,7 +6,7 @@ import mock
 import furl
 import pytest
 import time
-from future.moves.urllib.parse import urlparse, urljoin
+from future.moves.urllib.parse import urljoin
 import datetime
 from django.utils import timezone
 import pytz
@@ -15,10 +15,9 @@ import itsdangerous
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from api.share.utils import format_preprint, format_user, update_share
+from api.share.utils import format_preprint, format_user
 from website import settings, mails
 from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
-from website.project.views.contributor import find_preprint_provider
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from framework.auth import signing
@@ -1792,13 +1791,6 @@ class TestPreprintProvider(OsfTestCase):
 
         assert_equal(self.preprint.provider, None)
 
-    def test_find_provider(self):
-        self.preprint.provider = self.provider
-        self.preprint.save()
-        self.preprint.reload()
-
-        assert ('branded', self.provider) == find_preprint_provider(self.preprint)
-
     def test_top_level_subjects(self):
         subj_a = SubjectFactory(provider=self.provider, text='A')
         subj_b = SubjectFactory(provider=self.provider, text='B')
@@ -2250,7 +2242,6 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             self.user.email,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             user=self.user,
-            mimetype='html',
             provider_url='{}preprints/{}'.format(domain, self.preprint.provider._id),
             domain=domain,
             provider_contact_email=settings.OSF_CONTACT_EMAIL,

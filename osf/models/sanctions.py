@@ -956,7 +956,6 @@ class DraftRegistrationApproval(Sanction):
             osf_url=osf_settings.DOMAIN,
             provider=draft.provider,
             can_change_preferences=False,
-            mimetype='html',
         )
 
     def approve(self, user):

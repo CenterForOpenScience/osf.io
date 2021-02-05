@@ -46,7 +46,6 @@ def _send_global_and_node_emails(send_type):
                     notification_nodes) == 1 else None
                 mails.send_mail(
                     to_addr=user.username,
-                    mimetype='html',
                     can_change_node_preferences=bool(node),
                     node=node,
                     mail=mails.DIGEST,
@@ -86,7 +85,6 @@ def _send_reviews_moderator_emails(send_type):
         if not user.is_disabled:
             mails.send_mail(
                 to_addr=user.username,
-                mimetype='html',
                 mail=mails.DIGEST_REVIEWS_MODERATORS,
                 name=user.fullname,
                 message=info,

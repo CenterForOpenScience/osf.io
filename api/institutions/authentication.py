@@ -277,7 +277,6 @@ class InstitutionAuthentication(BaseAuthentication):
             send_mail(
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
-                mimetype='html',
                 user=user,
                 domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL,
