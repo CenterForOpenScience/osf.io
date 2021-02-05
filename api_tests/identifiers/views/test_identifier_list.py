@@ -28,11 +28,6 @@ def user():
     return AuthUserFactory()
 
 
-@pytest.fixture()
-def all_identifiers():
-    return Identifier.objects.all()
-
-
 @pytest.mark.django_db
 class TestRegistrationIdentifierList:
 
@@ -72,11 +67,10 @@ class TestRegistrationIdentifierList:
     def test_identifier_list_returns_correct_number_and_referent(
             self, registration, identifier_registration,
             data_registration_identifiers, res_registration_identifiers,
-            all_identifiers
     ):
         # test_identifier_list_returns_correct_number
         total = res_registration_identifiers.json['links']['meta']['total']
-        assert total == all_identifiers.count()
+        assert total == Identifier.objects.filter(object_id=registration.id).count()
 
         # test_identifier_list_returns_correct_referent
         paths = [
@@ -87,16 +81,15 @@ class TestRegistrationIdentifierList:
         assert '/{}registrations/{}/'.format(API_BASE,
                                              registration._id) in paths
 
-    def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_registration_identifiers):
+    def test_identifier_list_returns_correct_categories_and_values(self, data_registration_identifiers):
         # test_identifier_list_returns_correct_categories
-        categories = [identifier.category for identifier in all_identifiers]
+        categories = [identifier.category for identifier in Identifier.objects.all()]
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_registration_identifiers]
         assert_equals(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
-        values = [identifier.value for identifier in all_identifiers]
+        values = [identifier.value for identifier in Identifier.objects.all()]
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_registration_identifiers]
         assert_equals(values_in_response, values)
@@ -188,11 +181,11 @@ class TestNodeIdentifierList:
 
     def test_identifier_list_returns_correct_number_and_referent(
             self, node, identifier_node, res_node_identifiers,
-            data_node_identifiers, all_identifiers
+            data_node_identifiers
     ):
         # test_identifier_list_returns_correct_number
         total = res_node_identifiers.json['links']['meta']['total']
-        assert total == all_identifiers.count()
+        assert total == Identifier.objects.all().count()
 
         # test_identifier_list_returns_correct_referent
         paths = [
@@ -203,15 +196,15 @@ class TestNodeIdentifierList:
         assert '/{}nodes/{}/'.format(API_BASE, node._id) in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_node_identifiers):
+            self, data_node_identifiers):
         # test_identifier_list_returns_correct_categories
-        categories = [identifier.category for identifier in all_identifiers]
+        categories = [identifier.category for identifier in Identifier.objects.all()]
         categories_in_response = [
             identifier['attributes']['category'] for identifier in data_node_identifiers]
         assert_equals(categories_in_response, categories)
 
         # test_identifier_list_returns_correct_values
-        values = [identifier.value for identifier in all_identifiers]
+        values = [identifier.value for identifier in Identifier.objects.all()]
         values_in_response = [
             identifier['attributes']['value'] for identifier in data_node_identifiers
         ]
@@ -305,21 +298,21 @@ class TestPreprintIdentifierList:
         assert '/{}preprints/{}/'.format(API_BASE, preprint._id) in paths
 
     def test_identifier_list_returns_correct_categories_and_values(
-            self, all_identifiers, data_preprint_identifier):
+            self, data_preprint_identifier):
         # test_identifier_list_returns_correct_categories
-        categories = all_identifiers.values_list('category', flat=True)
+        categories = Identifier.objects.all().values_list('category', flat=True)
         categories_in_response = [identifier['attributes']['category']
                                   for identifier in data_preprint_identifier]
         assert_equals(categories_in_response, list(categories))
 
         # test_identifier_list_returns_correct_values
-        values = all_identifiers.values_list('value', flat=True)
+        values = Identifier.objects.all().values_list('value', flat=True)
         values_in_response = [identifier['attributes']['value']
                               for identifier in data_preprint_identifier]
         assert_equals(values_in_response, list(values))
 
     def test_preprint_identifier_list_permissions_unpublished(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.is_published = False
         preprint.save()
 
@@ -349,7 +342,7 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_private(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.is_public = False
         preprint.save()
 
@@ -379,7 +372,7 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
     def test_preprint_identifier_list_permissions_deleted(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.deleted = timezone.now()
         preprint.save()
 
@@ -407,7 +400,7 @@ class TestPreprintIdentifierList:
         assert res.status_code == 404
 
     def test_preprint_identifier_list_permissions_abandoned(
-            self, app, all_identifiers, user, data_preprint_identifier, preprint, url_preprint_identifier):
+            self, app, user, data_preprint_identifier, preprint, url_preprint_identifier):
         preprint.machine_state = DefaultStates.INITIAL.value
         preprint.save()
 
@@ -488,7 +481,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                f'{settings.DATACITE_URL}/metadata',
+                client.base_url + f'/metadata/{client.build_doi(resource)}',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
@@ -530,11 +523,6 @@ class TestNodeIdentifierCreate:
         # read contributor cannot create identifier
         res = app.post_json_api(identifier_url, identifier_payload, auth=read_contributor.auth, expect_errors=True)
         assert res.status_code == 403
-
-        # cannot request a DOI when one already exists
-        res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'A DOI already exists for this resource.'
 
         # cannot request a DOI for a private resource
         resource.is_public = False

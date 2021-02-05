@@ -389,7 +389,7 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
             elif key == 'ham_confirm':
                 action = 'HAM'
                 action_flag = CONFIRM_SPAM
-            elif key != 'csrfmiddlwaretoken':
+            elif key != 'csrfmiddlewaretoken':
                 preprint_ids.append(key)
 
         for pid in preprint_ids:

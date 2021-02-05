@@ -9,6 +9,7 @@ from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 from datacite import DataCiteMDSClient, schema40
 from django.core.exceptions import ImproperlyConfigured
+from osf.metadata.utils import datacite_format_subjects, datacite_format_contributors, datacite_format_creators
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +38,8 @@ class DataCiteClient(AbstractIdentifierClient):
                 'identifier': self.build_doi(node),
                 'identifierType': 'DOI',
             },
-            'creators': [
-                {'creatorName': user.fullname,
-                 'givenName': user.given_name,
-                 'familyName': user.family_name} for user in node.visible_contributors
-            ],
+            'creators': datacite_format_creators([node.creator]),
+            'contributors': datacite_format_contributors(node.visible_contributors),
             'titles': [
                 {'title': node.title}
             ],
@@ -52,6 +50,16 @@ class DataCiteClient(AbstractIdentifierClient):
                 'resourceTypeGeneral': 'Text'
             }
         }
+
+        article_doi = node.article_doi
+        if article_doi:
+            data['relatedIdentifiers'] = [
+                {
+                    'relatedIdentifier': article_doi,
+                    'relatedIdentifierType': 'DOI',
+                    'relationType': 'IsSupplementTo'
+                }
+            ]
 
         if node.description:
             data['descriptions'] = [{
@@ -64,6 +72,8 @@ class DataCiteClient(AbstractIdentifierClient):
                 'rights': node.node_license.name,
                 'rightsURI': node.node_license.url
             }]
+
+        data['subjects'] = datacite_format_subjects(node)
 
         # Validate dictionary
         assert schema40.validate(data)
@@ -82,18 +92,20 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def create_identifier(self, node, category):
         if category == 'doi':
-            metadata = self.build_metadata(node)
-            resp = self._client.metadata_post(metadata)
-            # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
-            doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
-            if settings.DATACITE_MINT_DOIS:
+            if settings.DATACITE_ENABLED:
+                metadata = self.build_metadata(node)
+                resp = self._client.metadata_post(metadata)
+                # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
+                doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
                 self._client.doi_post(doi, node.absolute_url)
-            return {'doi': doi}
+                return {'doi': doi}
+            logger.info('TEST ENV: DOI built but not minted')
+            return {'doi': self.build_doi(node)}
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
     def update_identifier(self, node, category):
-        if not node.is_public or node.is_deleted:
+        if settings.DATACITE_ENABLED and not node.is_public or node.is_deleted:
             if category == 'doi':
                 doi = self.build_doi(node)
                 self._client.metadata_delete(doi)

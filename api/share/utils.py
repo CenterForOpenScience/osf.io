@@ -154,8 +154,9 @@ def format_preprint(preprint, old_subjects=None):
             'title': preprint.title,
             'description': preprint.description or '',
             'is_deleted': (
-                (not preprint.verified_publishable and not preprint.is_retracted) or
-                preprint.tags.filter(name='qatest').exists()
+                (not preprint.verified_publishable and not preprint.is_retracted)
+                or preprint.is_spammy
+                or is_qa_resource(preprint)
             ),
             'date_updated': preprint.modified.isoformat(),
             'date_published': preprint.date_published.isoformat() if preprint.date_published else None,
