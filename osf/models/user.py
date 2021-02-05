@@ -1082,7 +1082,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='html',
                 user=self,
                 can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL

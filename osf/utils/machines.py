@@ -169,7 +169,6 @@ class ReviewsMachine(BaseMachine):
             mails.send_mail(
                 contributor.username,
                 mails.WITHDRAWAL_REQUEST_GRANTED,
-                mimetype='html',
                 document_type=self.machineable.provider.preprint_word,
                 **context
             )
@@ -221,7 +220,6 @@ class NodeRequestMachine(BaseMachine):
                 admin.username,
                 mails.ACCESS_REQUEST_SUBMITTED,
                 admin=admin,
-                mimetype='html',
                 osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
@@ -240,7 +238,6 @@ class NodeRequestMachine(BaseMachine):
             mails.send_mail(
                 self.machineable.creator.username,
                 mails.ACCESS_REQUEST_DENIED,
-                mimetype='html',
                 osf_contact_email=OSF_CONTACT_EMAIL,
                 **context
             )
@@ -292,7 +289,6 @@ class PreprintRequestMachine(BaseMachine):
             mails.send_mail(
                 self.machineable.creator.username,
                 mails.WITHDRAWAL_REQUEST_DECLINED,
-                mimetype='html',
                 **context
             )
         else:

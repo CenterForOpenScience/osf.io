@@ -8,19 +8,39 @@
     %>
     Hello ${user.fullname},<br>
     <br>
-    ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the draft registration "${node.title}" on OSF: ${node.absolute_url}<br>
-    <br>
-    You will ${'not receive ' if all_global_subscriptions_none else 'be automatically subscribed to '}notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
-    <br>
-    If you are erroneously being associated with "${node.title}," then you may visit the draft registration and remove yourself as a contributor.<br>
-    <br>
-    Sincerely,<br>
-    <br>
-    OSF Robot<br>
-    <br>
-    Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or https://cos.io/ for information about its supporting organization, the Center for Open Science.<br>
-    <br>
-    Questions? Email ${osf_contact_email}<br>
-
+    <p>
+        ${'You just started' if not referrer_name else referrer_name + ' just added you to'}
+        % if node.title == 'Untitled':
+            <a href="${node.absolute_url}">a new registration draft</a>
+        % else:
+            a new registration draft titled <a href="${node.absolute_url}"> + ${node.title} </a>
+        % endif
+    </p>
+    <p>
+        It's <b>important</b> that you save or bookmark this email to return to your registration draft to make additional edits.
+    </p>
+    % if is_initiator or node.has_permission(contributor, 'admin'):
+        <p>
+            Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
+        </p>
+    % endif
+    % if not is_initiator:
+        <p>
+            If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
+        </p>
+    % endif
+    <p>
+        Sincerely,
+    </p>
+    <p>
+        The OSF Team
+    </p>
+    <p>
+        Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF, or <a href="https://cos.io/" >https://cos.io/</a> for information about its supporting organization, the Center for Open Science.
+    </p>
+    <p>
+        Questions? Email <a href="mailto: support@cos.io">support@cos.io</a>
+    </p>
+  </td>
 </tr>
 </%def>
