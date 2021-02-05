@@ -260,6 +260,18 @@ class TestCollectionsSearch(OsfTestCase):
             self.node_one.collecting_metadata_list[0].collection._id))
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
+    def test_search_updated_after_id_change(self):
+        self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
+        with run_celery_tasks():
+            self.node_one.save()
+        term = f'provider:{self.provider._id}'
+        docs = search.search(build_query(term), index=elastic_search.INDEX, raw=True)
+        assert_equal(len(docs['results']), 1)
+        self.provider._id = 'new_id'
+        self.provider.save()
+        docs = query(f'provider:new_id', raw=True)['results']
+        assert_equal(len(docs), 1)
+
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
