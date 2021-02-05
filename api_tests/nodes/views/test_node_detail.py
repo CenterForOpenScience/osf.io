@@ -2275,12 +2275,10 @@ class TestNodeUpdateLicense:
         assert node.node_license.copyright_holders == [
             'Mr. Monument', 'Princess OSF']
 
-    def test_cannot_update(
+    def test_update(
             self, user_write_contrib, user_read_contrib,
             user_non_contrib, node, make_payload,
             make_request, license_cc0, url_node):
-
-        # def test_rw_contributor_cannot_update_license(self):
         data = make_payload(
             node_id=node._id,
             license_id=license_cc0._id
@@ -2290,8 +2288,8 @@ class TestNodeUpdateLicense:
             url_node, data,
             auth=user_write_contrib.auth,
             expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+        assert res.status_code == 200
+        assert res.json['data']['id'] == node._id
 
     # def test_read_contributor_cannot_update_license(self):
         data = make_payload(

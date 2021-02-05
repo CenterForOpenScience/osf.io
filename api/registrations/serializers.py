@@ -40,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'is_pending_retraction',
         'is_public',
-        'license',
-        'license_type',
         'withdrawal_justification',
     ]
 
