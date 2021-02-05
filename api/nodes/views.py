@@ -23,6 +23,7 @@ from api.base.exceptions import (
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
+    PermanentlyMovedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -218,7 +219,9 @@ class DraftMixin(object):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
-                raise Gone(detail='This draft has already been registered.')
+                redirect_url = draft.registered_node.absolute_api_v2_url
+                self.headers['location'] = redirect_url
+                raise PermanentlyMovedError(detail='Draft has already been registered')
 
         if check_object_permissions:
             self.check_resource_permissions(draft)
