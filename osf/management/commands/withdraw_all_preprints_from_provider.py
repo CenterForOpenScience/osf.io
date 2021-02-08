@@ -33,7 +33,7 @@ def withdraw_all_preprints(provider_id, page_size, user_guid, comment=None):
     if not comment and not saved_comment:
         raise RuntimeError('Comment not provided!')
 
-    preprints = provider.preprints.filter(date_withdrawn=None)[:page_size]
+    preprints = provider.preprints.filter(date_withdrawn=None, is_published=True)[:page_size]
 
     preprints_withdrawn = 0
 
