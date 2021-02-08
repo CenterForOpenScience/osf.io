@@ -249,7 +249,8 @@ services:
     stdin_open: true
 
   cas:
-    image: yacchin1205/cas-overlay:nii-mergework-202007
+    # cas-overlay: Dummy Image
+    image: rcosdp/cas-overlay:master
     ports:
       - 8080:8080
     depends_on:
@@ -257,7 +258,6 @@ services:
       - caspostgres
     volumes:
       - ./etc/cas-overlay/cas.properties:/code/etc/cas.properties:ro
-      - ./etc/cas-overlay/services/rdm-institution-googledrive.json:/code/etc/services/rdm-institution-googledrive.json:ro
     stdin_open: true
 
   caspostgres:
