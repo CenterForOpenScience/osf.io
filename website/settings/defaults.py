@@ -1966,6 +1966,11 @@ STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users g
 STORAGE_LIMIT_PUBLIC = 50
 STORAGE_LIMIT_PRIVATE = 5
 
+# New tokens can be found at https://archive.org/account/s3.php
+IA_ARCHIVE_ENABLED = True
+IA_ACCESS_KEY = None
+IA_SECRET_KEY = None
+
 GBs = 10 ** 9
 
 

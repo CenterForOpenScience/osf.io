@@ -7,6 +7,7 @@ import responses
 import pytest
 from faker import Factory
 from website import settings as website_settings
+from framework import sentry
 
 from framework.celery_tasks import app as celery_app
 
@@ -160,7 +161,7 @@ def mock_share():
 def mock_akismet():
     """
     This should be used to mock our anti-spam service akismet.
-    Relevent endpoints:
+    Relevant endpoints:
     'https://{api_key}.rest.akismet.com/1.1/submit-spam'
     'https://{api_key}.rest.akismet.com/1.1/submit-ham'
     'https://{api_key}.rest.akismet.com/1.1/comment-check'
@@ -168,3 +169,30 @@ def mock_akismet():
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
             yield rsps
+
+
+@pytest.fixture
+def mock_pigeon():
+    """
+    This should be used to mock our archive.org registration archive tool.
+    Relevant endpoints:
+    'https://archive.org/metadata/{guid}'
+    """
+    import re
+    with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
+
+        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+            rsps.add(responses.POST, re.compile('https://archive.org/metadata/(.*)'), status=200)
+            rsps.add(responses.GET, re.compile('https://archive.org/metadata/(.*)'), body=b'{"metadata": { "mediatype": "data"}}', status=200)
+
+            yield rsps
+
+@pytest.fixture
+def mock_sentry():
+    """
+    This should be used to mock our error reporting tool sentry.
+    """
+    with mock.patch('framework.sentry.sentry.captureException') as mock_sentry:
+        sentry.enabled = True
+        yield mock_sentry
+        sentry.enabled = False

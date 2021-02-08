@@ -1,7 +1,9 @@
 import logging
+import requests
 import datetime
 import html
 from future.moves.urllib.parse import urljoin
+from osf_pigeon.pigeon import sync_metadata
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -16,6 +18,8 @@ from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from framework.sentry import log_exception
+
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
@@ -1374,3 +1378,24 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
                 visible=True,
             )
         instance.add_permission(initiator, ADMIN)
+
+
+@receiver(post_save, sender=Registration)
+def sync_internet_archive_metadata(sender, instance, **kwargs):
+    """
+    This ensures all our Internet Archive storage buckets are synced with our registrations.
+    """
+
+    if settings.PIGEON_ENABLED:
+        dirty_field_names = instance.get_dirty_fields().keys()
+        current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
+        if instance.is_public or current_fields.get('is_public'):
+            try:
+                sync_metadata(
+                    instance._id,
+                    current_fields.copy(),
+                    settings.IA_ACCESS_KEY,
+                    settings.IA_ACCESS_KEY
+                )
+            except:
+                log_exception()

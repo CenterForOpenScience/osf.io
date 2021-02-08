@@ -24,7 +24,7 @@ amqp==2.2.2
 vine==1.1.4
 itsdangerous==1.1.0
 lxml==4.6.2
-mailchimp==2.0.9
+mailchimp~=2.0.9
 nameparser==0.5.3
 bcrypt==3.1.4
 python-dateutil==2.6.1
@@ -57,7 +57,7 @@ sendgrid==1.5.13
 keyring==9.1
 
 requests>=2.21.0
-urllib3==1.22
+urllib3>=1.21.1
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
 raven==6.4.0
@@ -84,7 +84,7 @@ django-password-reset==1.0
 sendgrid-django==2.0.0
 
 # Analytics requirements
-keen==0.5.1
+keen==0.7.0
 maxminddb-geolite2==2018.308
 
 # OSF models
@@ -113,3 +113,5 @@ django-elasticsearch-metrics==5.0.0
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
+
+git+git://github.com/johnetordoff/osf-pigeon.git@pigeon-2

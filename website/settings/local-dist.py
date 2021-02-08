@@ -138,5 +138,11 @@ CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
 # Show sent emails in console
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
 
+# New tokens can be found at https://archive.org/account/s3.php
+IA_ARCHIVE_ENABLED = False
+IA_ACCESS_KEY = None
+IA_SECRET_KEY = None
+
+
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
