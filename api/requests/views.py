@@ -165,7 +165,7 @@ class PreprintRequestActionList(JSONAPIBaseView, generics.ListAPIView, PreprintR
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
-        return self.get_request().actions.all()
+        return self.get_request().actions.order_by('-created').all()
 
     # overrides ListAPIView
     def get_queryset(self):

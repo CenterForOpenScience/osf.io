@@ -485,7 +485,7 @@ def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
+    #travis_setup(ctx)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
@@ -494,7 +494,7 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run other half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
@@ -502,19 +502,19 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
