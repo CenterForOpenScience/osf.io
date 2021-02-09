@@ -349,11 +349,8 @@ class ImportProviderView(PermissionRequiredMixin, View):
             cleaned_result = {key: value for key, value in file_json['fields'].items() if key not in FIELDS_TO_NOT_IMPORT_EXPORT and key in current_fields}
             if provider_id:
                 cleaned_result['id'] = provider_id
-            try:
-                provider = self.provider_class.update_or_create_from_json(cleaned_result, request.user)
-            except ValidationError:
-                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
-                return redirect(f'{self.provider_namespaces[self.provider_class]}s:create')
+
+            provider = self.provider_class.update_or_create_from_json(cleaned_result, request.user)
 
             return redirect(
                 f'{self.provider_namespaces[self.provider_class]}s:detail',

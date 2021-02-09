@@ -68,15 +68,13 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         if provider_data.get('id'):  # <- determines if creating new or updating
             provider = cls.objects.get(id=provider_data.pop('id'))
         else:
-            try:
-                provider = RegistrationProvider(**provider_data)
-                provider.save()
-            except ValidationError as e:
-                if 'Abstract provider with this  id and Type already exists.' in str(e):
-                    provider_data.pop('_id')  # these must be unique
-                    provider = RegistrationProvider(**provider_data)
-                    provider.save()
-            provider._creator = user
+            provider = cls(**provider_data)
+            if provider._perform_unique_checks([(AbstractProvider, ('_id', 'type'))]):
+                provider_data.pop('_id')  # these must be unique, but catch and remove and allow for UX
+                provider = cls(**provider_data)
+                provider._creator = user
+
+        provider.save()
 
         if brand:
             provider.brand = brand
