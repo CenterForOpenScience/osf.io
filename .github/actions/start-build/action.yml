@@ -1,0 +1,30 @@
+name: 'Start Build'
+description: 'Last composite action before tests are run'
+runs:
+  using: "composite"
+  steps:
+  - name: Copy Settings
+    shell: bash
+    run: |
+      cp website/settings/local-travis.py website/settings/local.py
+      cp api/base/settings/local-travis.py api/base/settings/local.py
+  - name: PIP install
+    shell: bash
+    run: |
+      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+      python get-pip.py --force-reinstall pip==21.0.1
+      pip3 install invoke==0.13.0
+      pip3 install flake8==2.4.0 --force-reinstall --upgrade
+      pip3 install wheel
+      apt-get install -y python-setuptools
+      apt-get install -y python3-setuptools
+      pip3 install setuptools-rust
+      invoke wheelhouse --dev --addons
+  - name: Other installs
+    shell: bash
+    run: |
+      pip3 install psycopg2==2.7.3 --no-binary psycopg2
+      invoke travis_addon_settings
+      invoke requirements --dev --addons
+      pip uninstall uritemplate.py --yes
+      pip install uritemplate.py==0.3.0
