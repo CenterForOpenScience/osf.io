@@ -114,4 +114,4 @@ django-elasticsearch-metrics==5.0.0
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
 
-git+git://github.com/johnetordoff/osf-pigeon.git@pigeon-2
+git+https://github.com/johnetordoff/osf-pigeon.git@pigeon-2
