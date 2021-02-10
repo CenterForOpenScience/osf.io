@@ -1,5 +1,4 @@
 import logging
-import requests
 import datetime
 import html
 from future.moves.urllib.parse import urljoin
@@ -1386,7 +1385,7 @@ def sync_internet_archive_metadata(sender, instance, **kwargs):
     This ensures all our Internet Archive storage buckets are synced with our registrations.
     """
 
-    if settings.PIGEON_ENABLED:
+    if settings.IA_ARCHIVE_ENABLED:
         dirty_field_names = instance.get_dirty_fields().keys()
         current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
         if instance.is_public or current_fields.get('is_public'):
@@ -1397,5 +1396,6 @@ def sync_internet_archive_metadata(sender, instance, **kwargs):
                     settings.IA_ACCESS_KEY,
                     settings.IA_ACCESS_KEY
                 )
-            except:
+            except Exception as e:
                 log_exception()
+                raise e

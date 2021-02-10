@@ -4,8 +4,6 @@ import pytest
 import responses
 from urllib.parse import unquote, parse_qs
 
-from framework.auth.core import Auth
-
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 
 @pytest.mark.django_db
@@ -32,13 +30,13 @@ class TestPigeon:
         assert POST_metadata.request.url == f'https://archive.org/metadata/{registration._id}'
         assert POST_metadata.request.method == 'POST'
         parse_qs(unquote(mock_pigeon.calls[1].request.body))['-patch'] == [{
-            "op": "add",
-            "path": "/modified",
-            "value": mock.ANY
+            'op': 'add',
+            'path': '/modified',
+            'value': mock.ANY
         }, {
-            "op": "add",
-            "path": "/is_public",
-            "value": "True"
+            'op': 'add',
+            'path': '/is_public',
+            'value': True
         }]
 
         assert GET_metadata_again.request.url == f'https://archive.org/metadata/{registration._id}'
