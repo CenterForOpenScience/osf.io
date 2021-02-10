@@ -73,38 +73,28 @@ jobs:
 
   build-postgres:
     runs-on: ubuntu-latest
-    needs: build-cache
+
+    container: node:10.18-jessie
+
+    services:
+      postgres:
+        image: postgres
+
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-    - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
-    - id: Postgres-Step-1
-      run: |
-        cd ./cache/downloads
+      - name: Connect to postgresql
+        run: node client.js
+        env:
+          POSTGRES_HOST: postgres
+          POSTGRES_PORT: ${{ env.OSF_DB_PORT }}
 
-        if [ ! -f "${{ env.LIBXML2_DEB}}" ]; then
-          curl -SLO http://security.ubuntu.com/ubuntu/pool/main/libx/libxml2/${{ env.LIBXML2_DEB }}
-        fi
-
-        if [ ! -f "$POSTGRES_DEB" ]; then
-          curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.6/${{ env.POSTGRES_DEB }}
-        fi
-
-        dpkg -x ${{ env.LIBXML2_DEB }} /tmp/libxml2
-        dpkg -x ${{ env.POSTGRES_DEB}} /tmp/postgres
-    - id: Postgres-Step-2
-      run: |
-        export LD_LIBRARY_PATH=/tmp/libxml2/usr/lib/x86_64-linux-gnu
-        /tmp/postgres/usr/lib/postgresql/9.6/bin/initdb /tmp/postgres/data --nosync -U postgres
-        sed -i -e 's/#fsync.*/fsync = off/' /tmp/postgres/data/postgresql.conf
-        sed -i -e 's/#synchronous_commit.*/synchronous_commit = off/' /tmp/postgres/data/postgresql.conf
-        sed -i -e 's/#full_page_writes.*/full_page_writes = off/' /tmp/postgres/data/postgresql.conf
-        /tmp/postgres/usr/lib/postgresql/9.6/bin/postgres -k /tmp -D /tmp/postgres/data -p 54321 > /dev/null & export POSTGRES_PID=$!
 
   build-es6:
     runs-on: ubuntu-latest
