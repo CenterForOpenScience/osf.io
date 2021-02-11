@@ -5,6 +5,8 @@ VARNISH_SERVERS = ['http://127.0.0.1:8080']
 ENABLE_VARNISH = True
 ENABLE_ESI = False
 
+OSF_DB_PASSWORD = 'postgres'
+
 
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '1000000/second',
