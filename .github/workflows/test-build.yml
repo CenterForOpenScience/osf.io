@@ -3,11 +3,10 @@ name: OSF.io backend test build v0.1
 on: [push, pull_request]
 
 env:
-  WHEELHOUSE: /cache/wheelhouse
+  WHEELHOUSE: ~/.cache/wheelhouse
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
-  OSF_DB_PORT: 54321
-  CRYPTOGRAPHY_DONT_BUILD_RUST: 1
+  OSF_DB_PORT: 5432
 
 jobs:
   build-cache:
@@ -17,15 +16,14 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
-    - if: steps.cache-objects.outputs.cache-hit != 'true'
-      run: |
-        mkdir -p ./cache/downloads
-        mkdir -p ./cache/pip
-        mkdir -p ./cache/wheelhouse
-        mkdir -p ./cache/testmon
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs
+    - run: |
+        mkdir -p ~/.cache/downloads
+        mkdir -p ~/.cache/pip
+        mkdir -p ~/.cache/wheelhouse
+        mkdir -p ~/.cache/testmon
         rm -rf node_modules  ## TODO remove this later
 
   addons:
@@ -47,9 +45,9 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -62,7 +60,7 @@ jobs:
         python-version: 3.6
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: sudo invoke test_travis_addons -n 1
+      run: invoke test_travis_addons -n 1
 
   website:
     runs-on: ubuntu-latest
@@ -83,9 +81,9 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -98,7 +96,7 @@ jobs:
         python-version: 3.6
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: sudo invoke test_travis_website -n 1
+      run: invoke test_travis_website -n 1
 
   api1_and_js:
     runs-on: ubuntu-latest
@@ -119,9 +117,9 @@ jobs:
       - id: cache-objects
         uses: actions/cache@v2
         with:
-          path: ./cache
-          key: cached_node_modules_${{ hashFiles('**/cache/') }}
-          restore-keys: cached_node_modules_
+          path: ~/.cache
+          key: reqs_${{ hashFiles('**/requirements.txt') }}
+          restore-keys: reqs_
       - uses: ./.github/actions/build-es
         with:
           ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -141,7 +139,7 @@ jobs:
          export PATH=./.yarn/bin:$PATH
          travis_retry invoke assets --dev
       - name: Run test
-        run: sudo invoke test_travis_api1_and_js -n 1
+        run: invoke test_travis_api1_and_js -n 1
 
   api2:
     runs-on: ubuntu-latest
@@ -162,9 +160,9 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -177,7 +175,7 @@ jobs:
         python-version: 3.6
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: sudo invoke test_travis_api2 -n 1
+      run: invoke test_travis_api2 -n 1
 
   api3_and_osf:
     runs-on: ubuntu-latest
@@ -198,9 +196,9 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-        path: ./cache
-        key: cached_node_modules_${{ hashFiles('**/cache/') }}
-        restore-keys: cached_node_modules_
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -213,7 +211,5 @@ jobs:
         python-version: 3.6
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: sudo invoke test_travis_api3_and_osf -n 1
-
-
+      run: invoke test_travis_api3_and_osf -n 1
 

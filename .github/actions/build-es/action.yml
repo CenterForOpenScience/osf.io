@@ -9,7 +9,7 @@ runs:
   - id: ES-Step-1
     shell: bash
     run: |
-      cd ./cache/downloads
+      cd ~/.cache/downloads
       if [ ! -f "${{ inputs.ELASTICSEARCH_ARCHIVE }}" ]; then
         curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/${{ inputs.ELASTICSEARCH_ARCHIVE }}
       fi
