@@ -10,7 +10,7 @@ import logging
 from . import defaults
 import os
 
-DB_PORT = 54321
+DB_PORT = 5432
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
