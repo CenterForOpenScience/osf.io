@@ -7,6 +7,7 @@ env:
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
+  OSF_DB_PASSWORD: postgres
 
 jobs:
   build-cache:
@@ -54,9 +55,9 @@ jobs:
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    #- uses: ./.github/actions/build-es6
-    #  with:
-    #    ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+    - uses: ./.github/actions/build-es6
+      with:
+        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
@@ -93,9 +94,9 @@ jobs:
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    #- uses: ./.github/actions/build-es6
-    #  with:
-    #    ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+    - uses: ./.github/actions/build-es6
+      with:
+        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:
@@ -132,9 +133,9 @@ jobs:
       - uses: ./.github/actions/build-es
         with:
           ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-      #- uses: ./.github/actions/build-es6
-      #  with:
-      #    ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+      - uses: ./.github/actions/build-es6
+        with:
+          ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
         with:
@@ -217,9 +218,9 @@ jobs:
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    #- uses: ./.github/actions/build-es6
-    #  with:
-    #    ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+    - uses: ./.github/actions/build-es6
+      with:
+        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:

@@ -11,7 +11,7 @@ runs:
     run: |
       cd ~/.cache/downloads
       if [ ! -f "${{ inputs.ELASTICSEARCH6_ARCHIVE }}" ]; then
-        wget https://artifacts.elastic.co/downloads/elasticsearch/${{ inputs.ELASTICSEARCH6_ARCHIVE }}
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/${{ inputs.ELASTICSEARCH6_ARCHIVE }}
       fi
 
       mkdir -p /tmp/elasticsearch6
