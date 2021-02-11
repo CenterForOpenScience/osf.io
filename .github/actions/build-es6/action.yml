@@ -9,7 +9,7 @@ runs:
   - id: ES6-Step-1
     shell: bash
     run: |
-      cd ./cache/downloads
+      cd ~/.cache/downloads
       if [ ! -f "${{ inputs.ELASTICSEARCH6_ARCHIVE }}" ]; then
         wget https://artifacts.elastic.co/downloads/elasticsearch/${{ inputs.ELASTICSEARCH6_ARCHIVE }}
       fi

@@ -11,20 +11,19 @@ runs:
   - name: PIP install
     shell: bash
     run: |
-      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-      python get-pip.py --force-reinstall pip==21.0.1
-      pip3 install invoke==0.13.0
-      pip3 install flake8==2.4.0 --force-reinstall --upgrade
-      pip3 install wheel
-      apt-get install -y python-setuptools
-      apt-get install -y python3-setuptools
-      pip3 install setuptools-rust
+      pip install --upgrade pip
+      pip install invoke==0.13.0
+      pip install flake8==2.4.0 --force-reinstall --upgrade
+      pip install wheel
       invoke wheelhouse --dev --addons
   - name: Other installs
     shell: bash
     run: |
-      pip3 install psycopg2==2.7.3 --no-binary psycopg2
+      pip install psycopg2==2.7.3 --no-binary psycopg2
       invoke travis_addon_settings
       invoke requirements --dev --addons
       pip uninstall uritemplate.py --yes
       pip install uritemplate.py==0.3.0
+      sudo npm install -g bower
+      npm install @centerforopenscience/list-of-licenses@^1.1.0
+      bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"
