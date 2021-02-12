@@ -8,6 +8,8 @@ runs:
     run: |
       cp website/settings/local-travis.py website/settings/local.py
       cp api/base/settings/local-travis.py api/base/settings/local.py
+      mkdir -p ./preprints
+      touch ./preprints/index.html
   - name: PIP install
     shell: bash
     run: |
