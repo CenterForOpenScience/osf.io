@@ -143,11 +143,7 @@ jobs:
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: |
-         nvm install 8.6.0
-         nvm use 8.6.0
-         curl -o- -L https://yarnpkg.com/install.sh | bash
-         export PATH=./.yarn/bin:$PATH
-         travis_retry invoke assets --dev
+         invoke assets --dev
       - name: Run test
         run: invoke test_travis_api1_and_js -n 1
 
@@ -179,9 +175,9 @@ jobs:
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    #- uses: ./.github/actions/build-es6
-    #  with:
-    #    ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+    - uses: ./.github/actions/build-es6
+      with:
+        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
     - name: Set up Python 3.6
       uses: actions/setup-python@v2
       with:

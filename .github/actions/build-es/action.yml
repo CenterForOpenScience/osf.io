@@ -16,16 +16,18 @@ runs:
 
       mkdir -p /tmp/elasticsearch
       tar xzf ${{ inputs.ELASTICSEARCH_ARCHIVE }} -C /tmp/elasticsearch --strip-components=1
+      echo "ES started..."
   - id: ES-Step-2
     shell: bash
     run: /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
   - id: ES-Step-3
     shell: bash
     run: |
-     while true; do
-        sleep 5
-        curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow
-        if [ $? -eq 0 ]; then
-          break
-        fi
+     echo "Waiting for ES health..."
+     sleep 5
+     while [ ! $(curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow) ]; do
+        #curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow
+        echo "trying again...";
+        sleep 5;
      done
+     echo "ES started successfully!"
