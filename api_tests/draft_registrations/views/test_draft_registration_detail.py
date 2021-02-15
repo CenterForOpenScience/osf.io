@@ -139,6 +139,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
 
+    # Overwrites TestDraftRegistrationDetail
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        # Draft Registration permissions are no longer based on the branched from project
+
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(
             self, app, schema, draft_registration, url_draft_registrations):
