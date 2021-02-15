@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import logging
 
+import re
 import mock
 import responses
 import pytest
@@ -172,20 +173,33 @@ def mock_akismet():
 
 
 @pytest.fixture
-def mock_pigeon():
+def mock_ia():
     """
-    This should be used to mock our archive.org registration archive tool.
+    This should be used to mock our archive.org response.
     Relevant endpoints:
     'https://archive.org/metadata/{guid}'
     """
-    import re
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
-
         with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
             rsps.add(responses.POST, re.compile('https://archive.org/metadata/(.*)'), status=200)
             rsps.add(responses.GET, re.compile('https://archive.org/metadata/(.*)'), body=b'{"metadata": { "mediatype": "data"}}', status=200)
 
             yield rsps
+
+
+@pytest.fixture
+def mock_pigeon():
+    """
+    This should be used to mock our archive.org registration archive tool, osf-pigeon.
+    Relevant endpoints:
+    """
+    with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
+        with mock.patch.object(website_settings, 'IA_ACCESS_KEY', 'test_ia_access_key'):
+            with mock.patch.object(website_settings, 'IA_SECRET_KEY', 'test_ia_secret_key'):
+                with mock.patch.object(website_settings, 'DATACITE_USERNAME', 'test_datacite_username'):
+                    with mock.patch.object(website_settings, 'DATACITE_PASSWORD', 'test_datacite_password'):
+                        with mock.patch('website.archiver.listeners.IA_archiver') as mock_pigeon:
+                            yield mock_pigeon
 
 @pytest.fixture
 def mock_sentry():

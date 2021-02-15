@@ -9,6 +9,9 @@ from website.archiver import (
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from osf_pigeon.pigeon import main as IA_archiver
+
+from website import settings
 
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
@@ -72,3 +75,15 @@ def archive_fail(dst, errors):
         dst.root.registered_user,
         errors
     )
+
+
+@project_signals.after_registration_or_embargo_lifted.connect
+def after_registration_or_embargo_lifted(node):
+    if settings.IA_ARCHIVE_ENABLED:
+        IA_archiver(
+            node._id,
+            datacite_password=settings.DATACITE_PASSWORD,
+            datacite_username=settings.DATACITE_USERNAME,
+            ia_access_key=settings.IA_ACCESS_KEY,
+            ia_secret_key=settings.IA_ACCESS_KEY
+        )

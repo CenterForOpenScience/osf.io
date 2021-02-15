@@ -1,6 +1,7 @@
 import logging
 import datetime
 import html
+import requests
 from future.moves.urllib.parse import urljoin
 from osf_pigeon.pigeon import sync_metadata
 
@@ -1396,6 +1397,5 @@ def sync_internet_archive_metadata(sender, instance, **kwargs):
                     settings.IA_ACCESS_KEY,
                     settings.IA_ACCESS_KEY
                 )
-            except Exception as e:
+            except requests.exceptions.HTTPError:
                 log_exception()
-                raise e

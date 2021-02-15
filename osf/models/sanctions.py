@@ -15,6 +15,8 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website import settings as osf_settings
 from website import mails
+from website.project import signals
+
 from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
@@ -608,6 +610,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by), )
         self.save()
+        signals.after_registration_or_embargo_lifted.send(self._get_registration())
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
@@ -919,6 +922,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
         doi = registration.request_identifier('doi')
         registration.set_identifier_value('doi', doi)
+        signals.after_registration_or_embargo_lifted.send(registration)
 
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
