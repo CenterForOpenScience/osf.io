@@ -1473,9 +1473,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = self
             alternative_resource = None
 
-        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource, contributors=False)
-        registered.copy_contributors_from(draft_registration)
-        registered.copy_unclaimed_records(draft_registration)
+        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource, contributors=True)
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()
