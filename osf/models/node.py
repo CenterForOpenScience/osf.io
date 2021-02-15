@@ -1474,7 +1474,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = self
             alternative_resource = None
 
+<<<<<<< HEAD
         registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
+=======
+        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource, contributors=False)
+        registered.copy_contributors_from(draft_registration)
+        registered.copy_unclaimed_records(draft_registration)
+>>>>>>> Modifies contributor permissions for draft registrations to be based upon draft registration contributors rather than branched project contributors
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()
