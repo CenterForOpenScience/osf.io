@@ -198,6 +198,15 @@ class CollectionProvider(AbstractProvider):
         path = '/providers/collections/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def save(self, *args, **kwargs):
+        saved_fields = self.get_dirty_fields() or []
+        ret = super().save(*args, **kwargs)
+        if '_id' in saved_fields:
+            from osf.models.collection import Collection
+            if self.primary_collection:
+                Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
+        return ret
+
 
 class RegistrationProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'registrations'
