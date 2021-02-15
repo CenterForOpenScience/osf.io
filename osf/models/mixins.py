@@ -1071,7 +1071,6 @@ class TaxonomizableMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         DraftRegistration = apps.get_model('osf.DraftRegistration')
-        Node = apps.get_model('osf.Node')
 
         if isinstance(self, AbstractNode):
             if not self.has_permission(auth.user, ADMIN):
@@ -1079,9 +1078,6 @@ class TaxonomizableMixin(models.Model):
         elif isinstance(self, Preprint):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-        if isinstance(self, DraftRegistration) and isinstance(self.branched_from, Node):
-            if not self.branched_from.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have admin on parent node to update draft registration\'s subjects.')
         elif isinstance(self, DraftRegistration):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')

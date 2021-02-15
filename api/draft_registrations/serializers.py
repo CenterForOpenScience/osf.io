@@ -76,6 +76,11 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         related_view_kwargs={'draft_id': '<_id>'},
     )
 
+    current_user_permissions = ser.SerializerMethodField(
+        help_text='List of strings representing the permissions '
+        'for the current user on this draft registratione.',
+    )
+
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
