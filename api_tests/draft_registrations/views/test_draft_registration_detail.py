@@ -162,6 +162,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         # New workflows aren't accommodating old prereg challenge
         assert res.status_code == 403
 
+    def test_current_permissions_field(self, app, user_read_contrib,
+            user_write_contrib, user, draft_registration, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [READ]
+
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [WRITE, READ]
+
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [ADMIN, WRITE, READ]
+
 
 class TestUpdateEditableFieldsTestCase:
     @pytest.fixture()
