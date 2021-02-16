@@ -204,7 +204,8 @@ class CollectionProvider(AbstractProvider):
         if '_id' in saved_fields:
             from osf.models.collection import Collection
             if self.primary_collection:
-                Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
+                submissions = self.primary_collection.collectionsubmission_set.filter(deleted__isnull=True, is_public=True)
+                Collection.bulk_update_search(submissions)
         return ret
 
 
