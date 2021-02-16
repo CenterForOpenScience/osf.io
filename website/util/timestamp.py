@@ -936,7 +936,7 @@ def userkey_generation(guid):
     try:
         generation_date = datetime.datetime.now()
         generation_date_str = generation_date.strftime('%Y%m%d%H%M%S')
-        generation_date_hash = hashlib.md5(generation_date_str).hexdigest()
+        generation_date_hash = hashlib.md5(generation_date_str.encode('utf-8')).hexdigest()
         generation_pvt_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PRIVATE, api_settings.KEY_EXTENSION)
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(

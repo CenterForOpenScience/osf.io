@@ -323,7 +323,7 @@ class RemoveTemporaryAuthData(InstitutionalStorageBaseView, View):
         }, status=http_status.HTTP_200_OK)
 
 def external_acc_update(request, access_token):
-    if hashlib.sha512(SITE_KEY).hexdigest() != access_token.lower():
+    if hashlib.sha512(SITE_KEY.encode('utf-8')).hexdigest() != access_token.lower():
         return HttpResponse(
             json.dumps({'state': 'fail', 'error': 'access forbidden'}),
             content_type='application/json',
