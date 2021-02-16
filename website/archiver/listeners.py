@@ -10,6 +10,7 @@ from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 from osf_pigeon.pigeon import main as IA_archiver
+from framework.celery_tasks import app as celery_app
 
 from website import settings
 
@@ -78,12 +79,29 @@ def archive_fail(dst, errors):
 
 
 @project_signals.after_registration_or_embargo_lifted.connect
-def after_registration_or_embargo_lifted(node):
+def after_registration_or_embargo_lifted(registration):
+    from osf.models import Registration
+
     if settings.IA_ARCHIVE_ENABLED:
-        IA_archiver(
-            node._id,
-            datacite_password=settings.DATACITE_PASSWORD,
-            datacite_username=settings.DATACITE_USERNAME,
-            ia_access_key=settings.IA_ACCESS_KEY,
-            ia_secret_key=settings.IA_ACCESS_KEY
-        )
+        children = list(Registration.objects.get_children(registration, include_root=True))
+        for registration in children:
+            run_IA_archiver.delay(registration._id)
+
+
+@celery_app.task(name='website.archiver.listeners.run_IA_archiver', ignore_results=True)
+def run_IA_archiver(registration_guid):
+    from osf.models import Registration
+    registration = Registration.load(registration_guid)
+    registration.IA_url = IA_archiver(
+        registration._id,
+        datacite_password=settings.DATACITE_PASSWORD,
+        datacite_username=settings.DATACITE_USERNAME,
+        ia_access_key=settings.IA_ACCESS_KEY,
+        ia_secret_key=settings.IA_SECRET_KEY,
+        osf_files_url=settings.WATERBUTLER_URL + '/',
+        osf_api_url=settings.API_DOMAIN,
+        collection_name=settings.IA_ROOT_COLLECTION,
+        id_version=settings.IA_ID_VERSION,
+        datacite_url=settings.DATACITE_URL
+    )
+    registration.save()

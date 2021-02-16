@@ -199,6 +199,7 @@ def mock_pigeon():
                 with mock.patch.object(website_settings, 'DATACITE_USERNAME', 'test_datacite_username'):
                     with mock.patch.object(website_settings, 'DATACITE_PASSWORD', 'test_datacite_password'):
                         with mock.patch('website.archiver.listeners.IA_archiver') as mock_pigeon:
+                            mock_pigeon.return_value = 'http://briandawkinsongameday.com'
                             yield mock_pigeon
 
 @pytest.fixture

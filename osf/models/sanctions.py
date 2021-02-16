@@ -920,7 +920,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-        doi = registration.request_identifier('doi')
+        doi = registration.request_identifier('doi')['doi']
         registration.set_identifier_value('doi', doi)
         signals.after_registration_or_embargo_lifted.send(registration)
 

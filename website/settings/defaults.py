@@ -80,9 +80,9 @@ DEBUG_MODE = False
 SECURE_MODE = not DEBUG_MODE  # Set secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'
-DOMAIN = PROTOCOL + 'localhost:5000/'
+DOMAIN = PROTOCOL + '192.168.168.167:5000/'
 INTERNAL_DOMAIN = DOMAIN
-API_DOMAIN = PROTOCOL + 'localhost:8000/'
+API_DOMAIN = PROTOCOL + '192.168.168.167:8000/'
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
@@ -1968,8 +1968,10 @@ STORAGE_LIMIT_PRIVATE = 5
 
 # New tokens can be found at https://archive.org/account/s3.php
 IA_ARCHIVE_ENABLED = True
+IA_ROOT_COLLECTION = None
 IA_ACCESS_KEY = None
 IA_SECRET_KEY = None
+IA_ID_VERSION = 'v1'
 
 GBs = 10 ** 9
 
@@ -2014,3 +2016,4 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
+

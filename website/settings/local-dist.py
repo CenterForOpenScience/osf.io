@@ -140,9 +140,12 @@ logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
 
 # New tokens can be found at https://archive.org/account/s3.php
 IA_ARCHIVE_ENABLED = False
+IA_ROOT_COLLECTION = None
 IA_ACCESS_KEY = None
 IA_SECRET_KEY = None
+IA_ID_VERSION = 'v1'
 
 
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
+

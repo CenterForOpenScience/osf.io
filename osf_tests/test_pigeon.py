@@ -3,7 +3,7 @@ import mock
 import pytest
 import responses
 from urllib.parse import unquote, parse_qs
-
+from website import settings
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, RegistrationApprovalFactory
 
 @pytest.mark.django_db
@@ -31,11 +31,12 @@ class TestPigeon:
 
         GET_metadata, POST_metadata, GET_metadata_again = mock_ia.calls
 
-        assert GET_metadata.request.url == f'https://archive.org/metadata/{registration._id}'
+        ia_id = f'osf-registrations-{registration._id}-{registration.registered_date.strftime("%Y-%m-%dT%H-%M-%S.%f")}-{settings.IA_ID_VERSION}'
+        assert GET_metadata.request.url == f'https://archive.org/metadata/{ia_id}'
         assert GET_metadata.request.method == 'GET'
         assert GET_metadata.request.body is None
 
-        assert POST_metadata.request.url == f'https://archive.org/metadata/{registration._id}'
+        assert POST_metadata.request.url == f'https://archive.org/metadata/{ia_id}'
         assert POST_metadata.request.method == 'POST'
         parse_qs(unquote(POST_metadata.request.body))['-patch'] == [{
             'op': 'add',
@@ -47,7 +48,7 @@ class TestPigeon:
             'value': True
         }]
 
-        assert GET_metadata_again.request.url == f'https://archive.org/metadata/{registration._id}'
+        assert GET_metadata_again.request.url == f'https://archive.org/metadata/{ia_id}'
         assert GET_metadata_again.request.method == 'GET'
         assert GET_metadata_again.request.body is None
 
@@ -66,13 +67,24 @@ class TestPigeon:
     def test_pigeon_archive_immediately(self, user, mock_pigeon, mock_ia, registration_approval):
         token = registration_approval.approval_state[registration_approval.initiated_by._id]['approval_token']
         registration_approval.approve(user=registration_approval.initiated_by, token=token)
+        mock_ia.add(responses.POST, 'https://mds.test.datacite.org/metadata', status=200)
+
+        mock_ia.add(
+            responses.GET,
+            re.compile('https://archive.org/metadata/(.*)'),
+            status=500
+        )
 
         mock_pigeon.assert_called_with(
             registration_approval._get_registration()._id,
             datacite_password='test_datacite_password',
             datacite_username='test_datacite_username',
             ia_access_key='test_ia_access_key',
-            ia_secret_key='test_ia_access_key'
+            ia_secret_key='test_ia_secret_key',
+            osf_files_url=settings.WATERBUTLER_URL + '/',
+            osf_api_url=settings.API_DOMAIN,
+            collection_name=settings.IA_ROOT_COLLECTION,
+            id_version=settings.IA_ID_VERSION
         )
 
     def test_pigeon_archive_embargo(self, mock_sentry, mock_pigeon, embargo):
@@ -84,5 +96,12 @@ class TestPigeon:
             datacite_password='test_datacite_password',
             datacite_username='test_datacite_username',
             ia_access_key='test_ia_access_key',
-            ia_secret_key='test_ia_access_key'
+            ia_secret_key='test_ia_secret_key',
+            osf_files_url=settings.WATERBUTLER_URL + '/',
+            osf_api_url=settings.API_DOMAIN,
+            collection_name=settings.IA_ROOT_COLLECTION,
+            id_version=settings.IA_ID_VERSION
         )
+
+        embargo._get_registration().refresh_from_db()
+        assert embargo._get_registration().IA_url == 'http://briandawkinsongameday.com'

@@ -1,9 +1,11 @@
+from asyncio import events
+import requests
 import logging
 import datetime
 import html
-import requests
 from future.moves.urllib.parse import urljoin
 from osf_pigeon.pigeon import sync_metadata
+from internetarchive.exceptions import ItemLocateError
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -64,6 +66,7 @@ from osf.utils.workflows import (
 )
 
 import osf.utils.notifications as notify
+from framework.celery_tasks import app as celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +127,13 @@ class Registration(AbstractNode):
         max_length=30,
         choices=RegistrationModerationStates.char_field_choices(),
         default=RegistrationModerationStates.INITIAL.db_name
+    )
+
+
+    IA_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text='Where the archive.org data for the registration is stored'
     )
 
     @staticmethod
@@ -1380,22 +1390,31 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
         instance.add_permission(initiator, ADMIN)
 
 
+
+
 @receiver(post_save, sender=Registration)
 def sync_internet_archive_metadata(sender, instance, **kwargs):
     """
     This ensures all our Internet Archive storage buckets are synced with our registrations.
     """
-
     if settings.IA_ARCHIVE_ENABLED:
         dirty_field_names = instance.get_dirty_fields().keys()
         current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
         if instance.is_public or current_fields.get('is_public'):
-            try:
-                sync_metadata(
-                    instance._id,
-                    current_fields.copy(),
-                    settings.IA_ACCESS_KEY,
-                    settings.IA_ACCESS_KEY
-                )
-            except requests.exceptions.HTTPError:
-                log_exception()
+            date = instance.registered_date.strftime('%Y-%m-%dT%H-%M-%S.%f')
+            item_id = f'osf-registrations-{instance._id}-{date}-{settings.IA_ID_VERSION}'
+            run_sync_metadata.delay(item_id, current_fields)
+
+
+@celery_app.task(name='osf.models.registrations.run_sync_metadata', ignore_results=True)
+def run_sync_metadata(item_id, current_fields):
+    try:
+        sync_metadata(
+            item_id,
+            current_fields.copy(),
+            settings.IA_ACCESS_KEY,
+            settings.IA_SECRET_KEY
+        )
+    except (requests.exceptions.HTTPError, ItemLocateError) as e:
+        logger.info(e)
+        log_exception()
