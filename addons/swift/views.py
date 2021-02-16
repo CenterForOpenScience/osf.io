@@ -158,7 +158,7 @@ def swift_create_container(auth, node_addon, **kwargs):
         utils.create_container(node_addon, container_name)
     except swift_exceptions.ClientException as e:
         return {
-            'message': e.message,
+            'message': str(e),
             'title': "Problem creating container '{0}'".format(container_name),
         }, http_status.HTTP_400_BAD_REQUEST
 

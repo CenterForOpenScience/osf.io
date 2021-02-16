@@ -1621,7 +1621,10 @@ class TestFileViews(StorageTestCase):
         redirect = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert redirect.status_code == 400
 
-    def test_addon_view_file(self):
+    @mock.patch('website.util.timestamp.requests')
+    def test_addon_view_file(self, mock_requests):
+        mock_requests.get.return_value.status_code = 404
+
         file = create_test_file(target=self.node, user=self.user, filename='first_name')
         version = factories.FileVersionFactory()
         file.add_version(version)

@@ -48,7 +48,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_in(b'You are prohibited from using this add-on.', res.body)
 
     def test_oauth_finish(self):
         url = web_url_for(
@@ -75,7 +75,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
-        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_in(b'You are prohibited from using this add-on.', res.body)
 
     def test_delete_external_account(self):
         url = api_url_for(
