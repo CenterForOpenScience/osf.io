@@ -48,7 +48,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
             service_name=self.ADDON_SHORT_NAME
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == http.FORBIDDEN
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert_in('You are prohibited from using this add-on.', res.body)
 
     @mock.patch('website.oauth.views.session')
