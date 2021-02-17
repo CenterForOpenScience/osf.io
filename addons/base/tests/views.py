@@ -79,7 +79,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         ) + '?state=abc123'
         mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == http.FORBIDDEN
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert_in('You are prohibited from using this add-on.', res.body)
 
     def test_delete_external_account(self):
