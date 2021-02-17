@@ -48,7 +48,7 @@ def create_rdmfiletimestamptokenverifyresult(self, filename='test_file_timestamp
     ## create tmp_file (file_node)
     tmp_file = os.path.join(tmp_dir, filename)
     with open(tmp_file, 'wb') as fout:
-        fout.write('filename:{}, provider:{}, inspection_result_status_1(true:1 or false:3):{}'.format(filename, provider, inspection_result_status_1))
+        fout.write('filename:{}, provider:{}, inspection_result_status_1(true:1 or false:3):{}'.format(filename, provider, inspection_result_status_1).encode('utf-8'))
     if inspection_result_status_1:
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -123,7 +123,7 @@ class TestAddTimestamp(ApiTestCase):
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
         with open(download_file_path, 'wb') as fout:
-            fout.write('test_file_add_timestamp_context')
+            fout.write(b'test_file_add_timestamp_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -161,7 +161,7 @@ class TestAddTimestamp(ApiTestCase):
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
         with open(download_file_path, 'wb') as fout:
-            fout.write('test_file_add_timestamp_context')
+            fout.write(b'test_file_add_timestamp_context')
         ## add timestamp
         addTimestamp = AddTimestamp()
         file_data = {
@@ -201,7 +201,7 @@ class TestAddTimestamp(ApiTestCase):
         ## create tmp_file (file_node)
         download_file_path = os.path.join(tmp_dir, filename)
         with open(download_file_path, 'wb') as fout:
-            fout.write('test_file_add_timestamp_context')
+            fout.write(b'test_file_add_timestamp_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -277,7 +277,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
         with open(tmp_file, 'wb') as fout:
-            fout.write('test_file_timestamp_check_context')
+            fout.write(b'test_file_timestamp_check_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -341,7 +341,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
         with open(tmp_file, 'wb') as fout:
-            fout.write('test_timestamp_check_return_status_2.test_file_context')
+            fout.write(b'test_timestamp_check_return_status_2.test_file_context')
 
         ## add timestamp
         addTimestamp = AddTimestamp()
@@ -359,7 +359,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
 
         ## File(tmp_file) update from outside the system
         with open(tmp_file, 'wb') as fout:
-            fout.write('test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.')
+            fout.write(b'test_timestamp_check_return_status_2.test_file_context...File(tmp_file) update from outside the system.')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
@@ -409,7 +409,7 @@ class TestTimeStampTokenVerifyCheck(ApiTestCase):
         ## create tmp_file (file_node)
         tmp_file = os.path.join(tmp_dir, filename)
         with open(tmp_file, 'wb') as fout:
-            fout.write('test_file_timestamp_check_context')
+            fout.write(b'test_file_timestamp_check_context')
 
         ## verify timestamptoken
         verifyCheck = TimeStampTokenVerifyCheck()
