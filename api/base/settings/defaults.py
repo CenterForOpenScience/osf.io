@@ -197,6 +197,8 @@ REST_FRAMEWORK = {
         'test-anon': '1/hour',
         'send-email': '2/minute',
         'burst': '10/second',
+        'files': '75/minute',
+        'files-burst': '3/second',
     },
 }
 
