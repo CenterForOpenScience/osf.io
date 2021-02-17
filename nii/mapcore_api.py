@@ -180,7 +180,7 @@ class MAPCore(object):
             logger.info('MAPCore::refresh_token: Refreshing token failed: status_code=' + str(r.status_code) + ', user=' + str(self.user) + ', text=' + r.text)
             return False
 
-        j = r.json()
+        j = json.loads(r.content)
         if 'error' in j:
             logger.info('MAPCore::refresh_token: Refreshing token failed: ' + j['error'] + ', user=' + str(self.user))
             if 'error_description' in j:
@@ -486,8 +486,7 @@ class MAPCore(object):
             return False
 
         #logger.debug('result.encoding={}'.format(result.encoding))
-        j = result.json()
-        j = encode_recursive(j)
+        j = json.loads(result.content)
         if j['status']['error_code'] != 0:
             self.api_error_code = j['status']['error_code']
             self.error_message = j['status']['error_msg']

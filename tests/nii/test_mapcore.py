@@ -317,7 +317,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         create_group.status_code = requests.codes.ok
         create_group._content = '{"result": {"groups": [{"group_key": "fake_group_key"}]}, "status": {"error_code": 0} }'
         mock_post.return_value = create_group
-        mock_edit.return_value = create_group.json()
+        mock_edit.return_value = json.loads(create_group.content)
 
         mapcore_sync_map_new_group(self.me, self.project, use_raise=True)
         args, kwargs = mock_post.call_args
