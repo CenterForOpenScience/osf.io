@@ -1394,6 +1394,7 @@ BLACKLISTED_DOMAINS = [
     'mypacks.net',
     'mypartyclip.de',
     'myphantomemail.com',
+    'myrambler.ru',
     'mysamp.de',
     'myspaceinc.com',
     'myspaceinc.net',
