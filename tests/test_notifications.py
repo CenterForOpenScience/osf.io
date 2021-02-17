@@ -1839,7 +1839,6 @@ class TestSendDigest(OsfTestCase):
         args, kwargs = mock_send_mail.call_args
 
         assert_equal(kwargs['to_addr'], user.username)
-        assert_equal(kwargs['mimetype'], 'html')
         assert_equal(kwargs['mail'], mails.DIGEST)
         assert_equal(kwargs['name'], user.fullname)
         assert_equal(kwargs['can_change_node_preferences'], True)

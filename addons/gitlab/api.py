@@ -4,6 +4,8 @@ import requests
 import gitlab
 import cachecontrol
 from requests.adapters import HTTPAdapter
+from rest_framework import status as http_status
+from framework.exceptions import HTTPError
 
 from addons.gitlab.exceptions import NotFoundError, AuthError
 from addons.gitlab.settings import DEFAULT_HOSTS
@@ -47,15 +49,23 @@ class GitLabClient(object):
         """
 
         try:
-            return gitlab.Project(self.gitlab, repo_id)
+            return self.gitlab.projects.get(repo_id)
         except gitlab.GitlabGetError as exc:
             if exc.response_code == 404:
-                raise NotFoundError
+                raise NotFoundError(exc.error_message)
             else:
                 raise exc
+        except gitlab.GitlabAuthenticationError as exc:
+            raise AuthError(exc.error_message)
 
     def repos(self, all=False):
-        return self.gitlab.projects.list(membership=True, all=all)
+        try:
+            return self.gitlab.projects.list(membership=True, all=all)
+        except gitlab.GitlabAuthenticationError:
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
+                'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
+                                'reconnect with a valid token <a href="/settings/addons/">here</a>.'
+            })
 
     def branches(self, repo_id, branch=None):
         """List a repo's branches or get a single branch (in a list).
@@ -68,9 +78,9 @@ class GitLabClient(object):
         :return: List of branch dicts
         """
         if branch:
-            return gitlab.Project(self.gitlab, repo_id).branches.get(branch)
+            return self.gitlab.projects.get(repo_id).branches.get(branch)
 
-        return gitlab.Project(self.gitlab, repo_id).branches.list()
+        return self.gitlab.projects.get(repo_id).branches.list()
 
     def starball(self, user, repo, repo_id, ref='master'):
         """Get link for archive download.

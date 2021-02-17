@@ -570,7 +570,6 @@ def external_login_confirm_email_get(auth, uid, token):
         mails.send_mail(
             to_addr=user.username,
             mail=mails.WELCOME,
-            mimetype='html',
             user=user,
             domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
@@ -653,7 +652,6 @@ def confirm_email_get(token, auth=None, **kwargs):
         mails.send_mail(
             to_addr=user.username,
             mail=mails.WELCOME,
-            mimetype='html',
             user=user,
             domain=settings.DOMAIN,
             osf_support_email=settings.OSF_SUPPORT_EMAIL,

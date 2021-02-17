@@ -10,7 +10,8 @@ import logging
 from . import defaults
 import os
 
-DB_PORT = 54321
+DB_PORT = 5432
+OSF_DB_PASSWORD = 'postgres'
 
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
@@ -105,3 +106,4 @@ logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
 DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
 SHARE_ENABLED = False
+DATACITE_ENABLED = False

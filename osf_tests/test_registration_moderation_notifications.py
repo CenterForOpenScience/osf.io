@@ -30,6 +30,21 @@ from website.notifications import emails, tasks
 from website.reviews import listeners
 
 
+def get_moderator(provider):
+    user = AuthUserFactory()
+    provider.add_to_group(user, 'moderator')
+    return user
+
+
+def get_daily_moderator(provider):
+    user = AuthUserFactory()
+    provider.add_to_group(user, 'moderator')
+    for subscription_type in provider.DEFAULT_SUBSCRIPTIONS:
+        subscription = provider.notification_subscriptions.get(event_name=subscription_type)
+        subscription.add_user_to_subscription(user, 'email_digest')
+    return user
+
+
 # Set USE_EMAIL to true and mock out the default mailer for consistency with other mocked settings
 @mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.tasks.send_email', mock.MagicMock())
@@ -150,7 +165,6 @@ class TestRegistrationMachineNotification:
             draft_registration=registration.draft_registration.get(),
             is_creator=True,
             logo='osf_registries',
-            mimetype='html',
             no_future_emails=[],
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
@@ -170,7 +184,6 @@ class TestRegistrationMachineNotification:
             draft_registration=registration.draft_registration.get(),
             is_creator=False,
             logo='osf_registries',
-            mimetype='html',
             no_future_emails=[],
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,
@@ -522,12 +535,13 @@ class TestRegistrationMachineNotification:
 
     @pytest.mark.parametrize(
         'digest_type, expected_recipient',
-        [('email_transactional', moderator), ('email_digest', daily_moderator)]
+        [('email_transactional', get_moderator), ('email_digest', get_daily_moderator)]
     )
     def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider):
         # Invoke the fixture function to get the recipient because parametrize
-        expected_recipient = expected_recipient(self, provider)
-        notify_submit(registration, admin)
+        expected_recipient = expected_recipient(provider)
+        with mock.patch('website.reviews.listeners.mails.send_mail'):
+            notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
         # One user, one provider => one email

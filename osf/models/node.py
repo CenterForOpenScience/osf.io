@@ -974,7 +974,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat."""
         return self.registrations.all()
 
-    @property
+    @cached_property
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
@@ -2321,10 +2321,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return oauth_scopes.CoreScopes.NODE_FILE_WRITE
 
     def get_doi_client(self):
-        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
-            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
-        else:
-            return None
+        return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
 
     def update_custom_citation(self, custom_citation, auth):
         if not self.has_permission(auth.user, ADMIN):

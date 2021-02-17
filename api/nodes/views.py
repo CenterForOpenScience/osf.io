@@ -23,6 +23,7 @@ from api.base.exceptions import (
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
+    PermanentlyMovedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -38,6 +39,8 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
     BurstRateThrottle,
+    FilesRateThrottle,
+    FilesBurstRateThrottle,
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
@@ -218,7 +221,9 @@ class DraftMixin(object):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
-                raise Gone(detail='This draft has already been registered.')
+                redirect_url = draft.registered_node.absolute_api_v2_url
+                self.headers['location'] = redirect_url
+                raise PermanentlyMovedError(detail='Draft has already been registered')
 
         if check_object_permissions:
             self.check_resource_permissions(draft)
@@ -1028,10 +1033,10 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html', can_change_preferences=False)
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, can_change_preferences=False)
             raise exc
         else:
-            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, can_change_preferences=False)
 
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -1098,6 +1103,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle, )
 
     view_category = 'nodes'
     view_name = 'node-files'

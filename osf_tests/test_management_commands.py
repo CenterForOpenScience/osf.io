@@ -55,7 +55,6 @@ class TestDataStorageUsage(DbTestCase):
             'contentType': 'img/png'
         }).save()
 
-    @pytest.fixture()
     def project(self, creator, is_public=True, is_deleted=False, region=None, parent=None):
         if region is None:
             region = self.region_us
@@ -66,7 +65,6 @@ class TestDataStorageUsage(DbTestCase):
 
         return project
 
-    @pytest.fixture()
     def registration(self, project, creator, withdrawn=False):
         schema = RegistrationSchema.objects.first()
         draft_reg = DraftRegistrationFactory(branched_from=project)
