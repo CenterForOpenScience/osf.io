@@ -2497,11 +2497,11 @@ class TestUserSpam:
         assert spam_content == expected_content.strip()
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('osf.models.spam._get_client')
-    def test_do_check_spam(self, mock_get_client, user):
+    @mock.patch('osf.models.spam._get_akismet_client')
+    def test_do_check_spam(self, mock_get_akismet_client, user):
         new_mock = mock.MagicMock()
         new_mock.check_comment = mock.MagicMock(return_value=(True, None))
-        mock_get_client.return_value = new_mock
+        mock_get_akismet_client.return_value = new_mock
 
         suspicious_content = 'spam eggs sausage and spam'
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
