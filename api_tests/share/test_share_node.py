@@ -1,12 +1,14 @@
 import json
 import pytest
 import responses
+from unittest.mock import patch
 
 from api.share.utils import serialize_registration
 from osf.models import CollectionSubmission, SpamStatus
 
 from osf_tests.factories import (
     AuthUserFactory,
+    IdentifierFactory,
     NodeFactory,
     ProjectFactory,
     CollectionProviderFactory,
@@ -23,6 +25,11 @@ from framework.auth.core import Auth
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
 class TestNodeShare:
+
+    @pytest.fixture(scope='class', autouse=True)
+    def mock_request_identifier_update(self):
+        with patch('osf.models.identifiers.IdentifierMixin.request_identifier_update'):
+            yield
 
     @pytest.fixture()
     def user(self):
@@ -54,6 +61,7 @@ class TestNodeShare:
     @pytest.fixture()
     def registration(self, node):
         reg = RegistrationFactory(is_public=True)
+        IdentifierFactory(referent=reg, category='doi')
         reg.archive_jobs.clear()  # if reg.archiving is True it will skip updating SHARE
         return reg
 
@@ -95,9 +103,13 @@ class TestNodeShare:
 
         data = json.loads(mock_share.calls[-1].request.body.decode())
         graphs = data['data']['attributes']['data']['@graph']
-        data = [graph for graph in graphs if graph['@type'] == 'workidentifier'][0]
-        assert data['uri'] == f'{settings.DOMAIN}{registration._id}/'
-        assert data['creative_work']['@type'] == 'registration'
+        identifiers = [n for n in graphs if n['@type'] == 'workidentifier']
+        uris = {i['uri'] for i in identifiers}
+        assert uris == {
+            f'{settings.DOMAIN}{registration._id}/',
+            f'{settings.DOI_URL_PREFIX}{registration.get_identifier_value("doi")}',
+        }
+        assert all(i['creative_work']['@type'] == 'registration' for i in identifiers)
 
     def test_update_share_correctly_for_projects(self, mock_share, node, user):
         cases = [{

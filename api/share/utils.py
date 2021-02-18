@@ -249,8 +249,9 @@ def serialize_preprint(preprint, old_subjects=None):
         GraphNode('workidentifier', creative_work=preprint_graph, uri=urljoin(settings.DOMAIN, preprint._id + '/')),
     ]
 
-    if preprint.get_identifier('doi'):
-        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri='https://doi.org/{}'.format(preprint.get_identifier('doi').value)))
+    doi = preprint.get_identifier_value('doi')
+    if doi:
+        to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=f'{settings.DOI_URL_PREFIX}{doi}'))
 
     if preprint.provider.domain_redirect_enabled:
         to_visit.append(GraphNode('workidentifier', creative_work=preprint_graph, uri=preprint.absolute_url))
@@ -259,7 +260,7 @@ def serialize_preprint(preprint, old_subjects=None):
         # Article DOI refers to a clone of this preprint on another system and therefore does not qualify as an identifier for this preprint
         related_work = GraphNode('creativework')
         to_visit.append(GraphNode('workrelation', subject=preprint_graph, related=related_work))
-        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri='https://doi.org/{}'.format(preprint.article_doi)))
+        to_visit.append(GraphNode('workidentifier', creative_work=related_work, uri=f'{settings.DOI_URL_PREFIX}{preprint.article_doi}'))
 
     preprint_graph.attrs['tags'] = [
         GraphNode('throughtags', creative_work=preprint_graph, tag=GraphNode('tag', name=tag))
@@ -328,6 +329,10 @@ def serialize_osf_node(osf_node, additional_attrs=None):
         graph_node,
         GraphNode('workidentifier', creative_work=graph_node, uri=urljoin(settings.DOMAIN, osf_node.url)),
     ]
+
+    doi = osf_node.get_identifier_value('doi')
+    if doi:
+        to_visit.append(GraphNode('workidentifier', creative_work=graph_node, uri=f'{settings.DOI_URL_PREFIX}{doi}'))
 
     graph_node.attrs['tags'] = [
         GraphNode('throughtags', creative_work=graph_node, tag=GraphNode('tag', name=tag._id))
