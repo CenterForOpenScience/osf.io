@@ -63,7 +63,7 @@ def utf8(u):
 
 # utf-8 to unicode
 def utf8dec(s):
-    if isinstance(s, str):
+    if isinstance(s, bytes):
         return s.decode('utf-8')
     return s
 

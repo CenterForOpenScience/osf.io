@@ -90,7 +90,7 @@ def DEBUG(msg, obj=None):
 
 # FIXME: use Unicode in Python3
 def s2u(obj):
-    if isinstance(obj, str):
+    if isinstance(obj, bytes):
         return obj.decode('utf-8')
     if isinstance(obj, list):
         return [s2u(s) for s in obj]
@@ -99,8 +99,8 @@ def s2u(obj):
     return obj
 
 def u2s(obj):
-    if isinstance(obj, unicode):
-        return obj.encode('utf-8')
+    if isinstance(obj, str):
+        return obj
     if isinstance(obj, list):
         return [u2s(s) for s in obj]
     if isinstance(obj, dict):
