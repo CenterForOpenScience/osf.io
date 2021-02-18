@@ -139,3 +139,5 @@ CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
 
 SHARE_ENABLED = False
+
+OOPSPAM_CHECK_IP = False

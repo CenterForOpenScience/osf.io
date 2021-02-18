@@ -166,5 +166,18 @@ def mock_akismet():
     'https://{api_key}.rest.akismet.com/1.1/comment-check'
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            yield rsps
+        with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
+            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                yield rsps
+
+@pytest.fixture
+def mock_oopspam():
+    """
+    This should be used to mock our anti-spam service oopspam.
+    Relevent endpoints:
+    'https://oopspam.p.rapidapi.com/v1/spamdetection'
+    """
+    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+        with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
+            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                yield rsps
