@@ -5531,7 +5531,7 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         tmp_dir = tempfile.mkdtemp()
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as file:
-            file.write(str(uuid.uuid4()))
+            file.write(str(uuid.uuid4()).encode('utf-8'))
         version = file_node.get_version(1, required=True)
         addTimestamp = AddTimestamp()
         file_data = {

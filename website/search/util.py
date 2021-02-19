@@ -586,5 +586,5 @@ def unicode_normalize(text):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
-        normalized = normalized.encode('ascii', 'ignore')
+        normalized = normalized.encode('ascii', 'ignore').decode('utf-8')
     return normalized

@@ -988,7 +988,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
     return userkey_info
 
 def filename_formatter(file_name):
-    return file_name.encode('utf-8').replace(' ', '\\ ')
+    return file_name.replace(' ', '\\ ')
 
 def get_timestamp_verify_result(file_id, project_id, provider, path, inspection_result_status, user_id):
     res, created = RdmFileTimestamptokenVerifyResult.objects.get_or_create(

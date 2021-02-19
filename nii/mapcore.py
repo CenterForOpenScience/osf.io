@@ -58,7 +58,7 @@ def mapcore_disable_log(level=logging.CRITICAL):
 # unicode to utf-8
 def utf8(u):
     if isinstance(u, str):
-        return u.encode('utf-8')
+        return u
     return u
 
 # utf-8 to unicode
