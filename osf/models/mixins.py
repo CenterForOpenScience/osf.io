@@ -2229,7 +2229,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True, contributors=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2245,8 +2245,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         # Contributors will always come from "resource", as contributor constraints
         # will require contributors to be present on the resource
-        if contributors:
-            self.copy_contributors_from(resource)
+        self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
 

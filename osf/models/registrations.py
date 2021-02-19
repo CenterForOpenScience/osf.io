@@ -1126,7 +1126,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True, contributors=True)
+        draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
         return draft
 
