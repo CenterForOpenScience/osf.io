@@ -29,7 +29,7 @@ class OOPSpamClient(object):
 
     def check_content(self, user_ip, content):
         if not self.apikey:
-            return False
+            return False, ''
         payload = {}
         payload['checkForLength'] = False
         payload['content'] = content

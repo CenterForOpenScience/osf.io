@@ -1873,6 +1873,7 @@ RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
+AKISMET_ENABLED = False
 
 # OOPSpam options
 OOPSPAM_APIKEY = None

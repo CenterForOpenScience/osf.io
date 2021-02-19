@@ -3,6 +3,7 @@ import logging
 
 from django.db import models
 from django.utils import timezone
+from framework import sentry
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
@@ -214,10 +215,14 @@ class SpamMixin(models.Model):
             comment_author_email=author_email
         )
 
-        oopspam_is_spam, oopspam_details = oopspam_client.check_content(
-            user_ip=remote_addr,
-            content=content
-        )
+        try:
+            oopspam_is_spam, oopspam_details = oopspam_client.check_content(
+                user_ip=remote_addr,
+                content=content
+            )
+        except oopspam.OOPSpamClientError:
+            sentry.log_exception()
+            oopspam_is_spam = False
 
         if update:
             self.spam_pro_tip = pro_tip
