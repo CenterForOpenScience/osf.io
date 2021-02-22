@@ -1,3 +1,4 @@
+import requests
 import logging
 import datetime
 import html
@@ -120,6 +121,12 @@ class Registration(AbstractNode):
         max_length=30,
         choices=RegistrationModerationStates.char_field_choices(),
         default=RegistrationModerationStates.INITIAL.db_name
+    )
+
+    IA_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text='Where the archive.org data for the registration is stored'
     )
 
     @staticmethod
@@ -1374,3 +1381,18 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
                 visible=True,
             )
         instance.add_permission(initiator, ADMIN)
+
+
+@receiver(post_save, sender=Registration)
+def sync_internet_archive_metadata(sender, instance, **kwargs):
+    """
+    This ensures all our Internet Archive storage buckets are synced with our registrations.
+    """
+    if settings.IA_ARCHIVE_ENABLED:
+        dirty_field_names = instance.get_dirty_fields().keys()
+        current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
+        if instance.IA_url and (instance.is_public or current_fields.get('is_public')):
+            requests.post(
+                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
+                json=current_fields
+            )

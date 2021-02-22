@@ -2010,3 +2010,5 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
+
+OSF_PIGEON_URL = 'https://192.168.168.167:8001/'
