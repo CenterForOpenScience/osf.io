@@ -36,10 +36,21 @@ from osf.utils import sanitize
 from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
+from osf.utils.machines import (
+    ReviewsMachine,
+    NodeRequestMachine,
+    PreprintRequestMachine,
+)
+
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ReviewStates,
+    ReviewTriggers,
+)
+
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
 from website import settings, mails, language
@@ -947,6 +958,9 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
+    REVIEW_STATES = ReviewStates
+    STATE_FIELD_NAME = 'machine_state'
+
     groups = REVIEW_GROUPS
     group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
 
@@ -957,6 +971,8 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
+
     @property
     def is_reviewed(self):
         return self.reviews_workflow is not None
@@ -966,9 +982,19 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in ReviewStates}
-        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        qs = qs.filter(
+            deleted__isnull=True
+        ).exclude(
+            # Excluding Spammy values instead of filtering for non-Spammy ones
+            # because SpamStatus.UNKNOWN = None, which does not work with `IN`
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
+        ).values(
+            self.STATE_FIELD_NAME
+        ).annotate(count=models.Count('*'))
+        counts = {state.db_name: 0 for state in self.REVIEW_STATES}
+        counts.update({
+            row[self.STATE_FIELD_NAME]: row['count']
+            for row in qs if row[self.STATE_FIELD_NAME] in counts})
         return counts
 
     def get_request_state_counts(self):
@@ -986,13 +1012,9 @@ class ReviewProviderMixin(GuardianMixin):
 
     def add_to_group(self, user, group):
         # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
+            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+
         return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -1002,10 +1024,23 @@ class ReviewProviderMixin(GuardianMixin):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-            notification.remove_user_from_subscription(user, save=True)
+            for subscription in self.DEFAULT_SUBSCRIPTIONS:
+                self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
 
         return _group.user_set.remove(user)
+
+    def add_user_to_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+
+    def remove_user_from_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        notification.remove_user_from_subscription(user, save=True)
 
 
 class TaxonomizableMixin(models.Model):
@@ -2041,21 +2076,30 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if user.spam_status == SpamStatus.HAM:
             return False
+        host = ''
+        if request_headers:
+            host = request_headers.get('Host', '')
+        if host.startswith('admin') or ':8001' in host:
+            return False
+        if hasattr(self, 'conferences') and self.conferences.filter(auto_check_spam=False).exists():
+            return False
 
         content = self._get_spam_content(saved_fields)
         if not content:
             return
+
         is_spam = self.do_check_spam(
             user.fullname,
             user.username,
             content,
-            request_headers
+            request_headers,
         )
         logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
             self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
         if is_spam:
             self._check_spam_user(user)
+
         return is_spam
 
     def _check_spam_user(self, user):

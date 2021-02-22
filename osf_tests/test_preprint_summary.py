@@ -19,13 +19,11 @@ def preprint(preprint_provider):
     return PreprintFactory._build(Preprint, provider=preprint_provider)
 
 
-@pytest.fixture()
 def right_before_my_birthday():
     return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=23, minute=59, second=59, tzinfo=pytz.utc),
             'preprint_date_created': datetime.datetime(year=1991, month=9, day=25, hour=22, minute=59, second=59, tzinfo=pytz.utc)
             }
 
-@pytest.fixture()
 def my_birthday_at_midnight():
     return {'run_date': datetime.datetime(year=1991, month=9, day=25, hour=0, tzinfo=pytz.utc),
             'preprint_date_created': datetime.datetime(year=1991, month=9, day=24, hour=23, tzinfo=pytz.utc)

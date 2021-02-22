@@ -249,7 +249,7 @@ def populate_registration_providers(*args):
             logger.info('Updated registration provider: {}'.format(_id))
 
 def remove_registration_providers(*args):
-    providers = RegistrationProvider.objects.exclude(_id='osf')
+    providers = RegistrationProvider.objects.exclude(_id=RegistrationProvider.default__id)
     for provider in providers:
         logger.info('Removing registration provider: {}'.format(provider._id))
         provider.delete()

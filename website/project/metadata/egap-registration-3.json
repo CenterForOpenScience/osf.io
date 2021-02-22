@@ -75,7 +75,7 @@
 						"Registration prior to researcher analysis of outcome data",
 						"Registration after researcher analysis of outcome data",
 						"N/A",
-						"Other (descrbe in text box below)"
+						"Other (describe in text box below)"
 					],
 					"description": "Please choose one"
 				},
@@ -98,6 +98,15 @@
 						"No",
 						"N/A"
 					]
+				},
+				{
+					"qid": "q11",
+					"title": "Date of start of study",
+					"nav": "Date of start of study",
+					"type": "string",
+					"format": "text",
+					"description": "Understood as first date of treatment assignment or equivalent for observational study",
+					"help": "E.g., 06/02/2018"
 				},
 				{
 					"qid": "q13",

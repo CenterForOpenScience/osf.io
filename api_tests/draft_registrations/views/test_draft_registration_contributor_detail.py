@@ -266,3 +266,48 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
     def test_remove_contributor_osf_group_member_admin(self):
         # Overrides TestNodeContributorDelete - drafts don't have group members
         return
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+class TestDraftBibliographicContributorDetail():
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_biblio_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def draft_registration(self, user, user_non_biblio_contrib):
+        # Overrides TestNodeContributorDelete
+        project = DraftRegistrationFactory(creator=user)
+        project.add_contributor(
+            user,
+            permissions=permissions.ADMIN,
+            visible=True,
+            save=True
+        )
+        project.add_contributor(
+            user_non_biblio_contrib,
+            permissions=permissions.WRITE,
+            visible=False,
+            save=True
+        )
+        return project
+
+    @pytest.fixture()
+    def url_public(self, user, draft_registration):
+        return f'/{API_BASE}draft_registrations/{draft_registration._id}/bibliographic_contributors/'
+
+    # Overrides TestContributorDetail
+    def test_get_bibliographic_contributor_detail_valid_response(self, app, user, draft_registration, url_public):
+
+        #   test_get_public_contributor_detail
+        res = app.get(url_public, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['bibliographic']
+        assert res.json['data'][0]['relationships']['users']['data']['id'] == user._id

@@ -2067,13 +2067,13 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
-            mimetype='html',
             referrer_name=self.auth.user.fullname,
             all_global_subscriptions_none=False,
             branded_service=None,
             can_change_preferences=False,
             logo=settings.OSF_LOGO,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            is_initiator=False,
             published_preprints=[]
 
         )

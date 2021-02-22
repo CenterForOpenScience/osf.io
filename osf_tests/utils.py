@@ -5,6 +5,7 @@ import mock
 
 from framework.auth import Auth
 from django.utils import timezone
+from google.cloud.storage import Client, Bucket, Blob
 
 import blinker
 from website.signals import ALL_SIGNALS
@@ -150,19 +151,22 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
 
     if autoapprove:
         sanction = registration.sanction
-        sanction.state = Sanction.APPROVED
-        sanction.save()
-        sanction._on_complete(project.creator)
-        sanction.save()
+        sanction.mode = Sanction.ANY
+        sanction.approve(
+            user=project.creator,
+            token=sanction.token_for_user(project.creator, 'approval')
+        )
 
     if retraction:
         justification = justification or 'Because reasons'
         registration.refresh_from_db()
         retraction = registration.retract_registration(project.creator, justification=justification)
         if autoapprove_retraction:
-            retraction.state = Sanction.APPROVED
-            retraction._on_complete(project.creator)
-        retraction.save()
+            retraction.mode = Sanction.ANY
+            retraction.approve(
+                user=project.creator,
+                token=retraction.token_for_user(project.creator, 'approval')
+            )
         registration.save()
     yield registration
 
@@ -176,3 +180,21 @@ class MockShareResponse:
     def raise_for_status(self):
         if self.status_code >= 400:
             raise Exception
+
+def create_mock_blob():
+    mock_blob = mock.create_autospec(Blob)
+    mock_blob.delete.return_value = None
+    return mock_blob
+
+def create_mock_bucket():
+    mock_bucket = mock.create_autospec(Bucket)
+    mock_bucket.get_blob.return_value = create_mock_blob()
+    return mock_bucket
+
+def create_mock_gcs_client():
+    """
+    Create a mock GCS client.
+    """
+    mock_client = mock.create_autospec(Client)
+    mock_client.get_bucket.return_value = create_mock_bucket()
+    return mock_client
