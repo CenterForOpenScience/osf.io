@@ -11,7 +11,7 @@ logger = logging.getLogger(__file__)
 
 def populate_internet_archives_collections(version_id='v1', dry_run=False):
     for provider in RegistrationProvider.objects.all():
-        provider_id = f"collection-osf-registration-providers-{provider._id}-{version_id}"
+        provider_id = f'collection-osf-registration-providers-{provider._id}-{version_id}'
         if not dry_run:
             create_subcollection(
                 provider_id,
@@ -47,6 +47,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options['dry_run']
-        version_id = options.get('version_id', 'v1')
+        version_id = options.get('version_id', settings.IA_ID_VERSION)
 
         populate_internet_archives_collections(version_id, dry_run=dry_run)

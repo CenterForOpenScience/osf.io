@@ -1,4 +1,3 @@
-import requests
 import logging
 import datetime
 import html
@@ -59,6 +58,8 @@ from osf.utils.workflows import (
     SanctionStates,
     SanctionTypes
 )
+
+from osf.utils.requests import requests_retry_session
 
 import osf.utils.notifications as notify
 
@@ -1388,11 +1389,11 @@ def sync_internet_archive_metadata(sender, instance, **kwargs):
     """
     This ensures all our Internet Archive storage buckets are synced with our registrations.
     """
-    if settings.IA_ARCHIVE_ENABLED:
+    if settings.IA_ARCHIVE_ENABLED and instance.IA_url:
         dirty_field_names = instance.get_dirty_fields().keys()
         current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
-        if instance.IA_url and (instance.is_public or current_fields.get('is_public')):
-            requests.post(
+        if instance.is_public:
+            requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
             )

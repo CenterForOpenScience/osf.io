@@ -641,6 +641,12 @@ class CeleryConfig:
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
+            'archive_registrations_on_IA': {
+                'task': 'scripts.migration.archive_registrations_on_IA',
+                'schedule': crontab(minute=0, hour=5),  # Daily 4:00 a.m.
+                'kwargs': {'dry_run': False}
+            },
+
         }
 
         # Tasks that need metrics and release requirements
@@ -2011,4 +2017,5 @@ class StorageLimits(enum.IntEnum):
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
 
-OSF_PIGEON_URL = 'https://192.168.168.167:8001/'
+OSF_PIGEON_URL = None
+IA_ARCHIVE_ENABLED = True

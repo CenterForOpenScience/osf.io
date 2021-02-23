@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import logging
 
+import re
 import mock
 import responses
 import pytest
@@ -167,4 +168,20 @@ def mock_akismet():
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            yield rsps
+
+
+@pytest.fixture
+def mock_pigeon():
+    """
+    This should be used to mock our Internet Archive archiving microservice osf-pigeon.
+    Relevent endpoints:
+    '{settings.OSF_PIGEON_URL}/archive/{guid}'
+    '{settings.OSF_PIGEON_URL}/metadata/{guid}'
+
+    """
+    with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
+        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
+            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
             yield rsps

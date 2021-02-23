@@ -1,4 +1,3 @@
-import requests
 import celery
 
 from framework.celery_tasks import handlers
@@ -11,6 +10,7 @@ from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 
+from osf.utils.requests import requests_retry_session
 
 from website import settings
 
@@ -85,5 +85,4 @@ def after_registration_or_embargo_lifted(registration):
     if settings.IA_ARCHIVE_ENABLED:
         children = list(Registration.objects.get_children(registration, include_root=True))
         for registration in children:
-            requests.get(f'{settings.OSF_PIGEON_URL}archive/{registration._id}')
-
+            requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{registration._id}')
