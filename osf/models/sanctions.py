@@ -995,7 +995,7 @@ class DraftRegistrationApproval(Sanction):
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
         sanction(notify_initiator_on_complete=True)
 
-        doi = registration.request_identifier('doi')
+        doi = registration.request_identifier('doi')['doi']
         registration.set_identifier_value('doi', doi)
 
     def _on_reject(self, user, *args, **kwargs):

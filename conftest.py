@@ -181,7 +181,8 @@ def mock_pigeon():
 
     """
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
-            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
-            yield rsps
+        with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.osf.pigeon.io/'):
+            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
+                rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
+                yield rsps

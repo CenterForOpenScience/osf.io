@@ -11,7 +11,7 @@ logger = logging.getLogger(__file__)
 
 def populate_internet_archives_collections(version_id='v1', dry_run=False):
     for provider in RegistrationProvider.objects.all():
-        provider_id = f'collection-osf-registration-providers-{provider._id}-{version_id}'
+        provider_id = f'osf-registration-providers-{provider._id}-{version_id}'
         if not dry_run:
             create_subcollection(
                 provider_id,

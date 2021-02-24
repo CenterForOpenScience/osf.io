@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='scripts.migration.archive_registrations_on_IA')
-def run_main(dry_run=False):
+def archive_registrations_on_IA(dry_run=False):
     registrations = Registration.objects.filter(IA_url__isnull=True)[:100]
 
     logger.info(f'{registrations.count()} to be archived in batch')
@@ -25,4 +25,4 @@ def run_main(dry_run=False):
 
 
 if __name__ == '__main__':
-    run_main()
+    archive_registrations_on_IA()
