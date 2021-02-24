@@ -48,7 +48,6 @@ from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, Guar
                                EditableFieldsMixin)
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
-from osf.models.sanctions import RegistrationApproval
 from osf.models.private_link import PrivateLink
 from osf.models.tag import Tag
 from osf.models.user import OSFUser
@@ -81,6 +80,7 @@ from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
+from api.share.utils import update_share
 
 
 logger = logging.getLogger(__name__)
@@ -366,6 +366,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                         validators=[validate_doi],
                                         null=True, blank=True)
 
+    custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+    custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
@@ -389,6 +392,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if parent:
                 return parent
         return None
+
+    @property
+    def storage_limit_status(self):
+        """ This should indicate if a node is at or over a certain storage threshold indicating a status. If nodes have
+        a custom limit this should indicate that."""
+        return settings.StorageLimits.from_node_usage(
+            self.storage_usage,
+            self.custom_storage_usage_limit_private,
+            self.custom_storage_usage_limit_public
+        )
 
     @property
     def nodes(self):
@@ -961,7 +974,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """For v1 compat."""
         return self.registrations.all()
 
-    @property
+    @cached_property
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
@@ -1025,7 +1038,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1048,7 +1062,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
-            node_tasks.update_node_share(self)
+            if settings.SHARE_ENABLED:
+                update_share(self)
 
             return True
 
@@ -1059,7 +1074,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         super(AbstractNode, self).remove_tags(tags, auth, save)
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
         return True
 
@@ -1140,7 +1156,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
-        return self.SPAM_CHECK_FIELDS if self.is_public and 'is_public' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
+        check_fields = self.SPAM_CHECK_FIELDS.copy()
+        if not self.has_addon('forward'):
+            check_fields.remove('addons_forward_node_settings__url')
+        return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
             saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
@@ -1176,6 +1195,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         return self.is_contributor_or_group_member(auth.user)
 
+    def check_privacy_change_viability(self, auth=None):
+        if auth and isinstance(self, Node):
+            if self.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+                raise NodeStateError('This project\'s node storage usage could not be calculated. Please try again.')
+            elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
+                raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
+
     def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
@@ -1201,16 +1227,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
-                    self.request_embargo_termination(auth=auth)
+                    self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
-            else:
-                self.is_public = False
-                self.keenio_read_key = ''
+
+            self.check_privacy_change_viability(auth)
+
+            self.is_public = False
+            self.keenio_read_key = ''
         else:
             return False
 
@@ -1363,11 +1391,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
 
-        if not provider:
-            # Avoid circular import
-            from osf.models.provider import RegistrationProvider
-            provider = RegistrationProvider.load('osf')
-
         registered = original.clone()
         registered.recast('osf.registration')
 
@@ -1486,39 +1509,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def has_node_link_to(self, node):
         return self.node_relations.filter(child=node, is_node_link=True).exists()
-
-    def _initiate_approval(self, user, notify_initiator_on_complete=False):
-        end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
-        self.registration_approval = RegistrationApproval.objects.create(
-            initiated_by=user,
-            end_date=end_date,
-            notify_initiator_on_complete=notify_initiator_on_complete
-        )
-        self.save()  # Set foreign field reference Node.registration_approval
-        admins = self.get_admin_contributors_recursive(unique_users=True)
-        for (admin, node) in admins:
-            self.registration_approval.add_authorizer(admin, node=node)
-        self.registration_approval.save()  # Save approval's approval_state
-        return self.registration_approval
-
-    def require_approval(self, user, notify_initiator_on_complete=False):
-        if not self.is_registration:
-            raise NodeStateError('Only registrations can require registration approval')
-        if not self.is_admin_contributor(user):
-            raise PermissionsError('Only admins can initiate a registration approval')
-
-        approval = self._initiate_approval(user, notify_initiator_on_complete)
-
-        self.registered_from.add_log(
-            action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
-            params={
-                'node': self.registered_from._id,
-                'registration': self._id,
-                'registration_approval_id': approval._id,
-            },
-            auth=Auth(user),
-            save=True,
-        )
 
     def get_primary(self, node):
         return NodeRelation.objects.filter(parent=self, child=node, is_node_link=False).exists()
@@ -2331,10 +2321,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return oauth_scopes.CoreScopes.NODE_FILE_WRITE
 
     def get_doi_client(self):
-        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
-            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
-        else:
-            return None
+        return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
 
     def update_custom_citation(self, custom_citation, auth):
         if not self.has_permission(auth.user, ADMIN):
@@ -2365,7 +2352,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self._id)
 
         storage_usage_total = storage_usage_cache.get(key)
-        if storage_usage_total:
+        if storage_usage_total is not None:
             return storage_usage_total
         else:
             update_storage_usage(self)  # sets cache

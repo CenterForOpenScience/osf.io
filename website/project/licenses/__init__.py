@@ -26,12 +26,8 @@ def set_license(node, license_detail, auth, node_type='node'):
     ):
         return {}, False
 
-    if node_type == 'preprint':
-        if not node.has_permission(auth.user, permissions.WRITE):
-            raise framework_exceptions.PermissionsError('You need admin or write permissions to change a {}\'s license'.format(node_type))
-    else:
-        if not node.has_permission(auth.user, permissions.ADMIN):
-            raise framework_exceptions.PermissionsError('Only admins can change a {}\'s license'.format(node_type))
+    if not node.has_permission(auth.user, permissions.WRITE):
+        raise framework_exceptions.PermissionsError('You need admin or write permissions to change a {}\'s license'.format(node_type))
 
     try:
         node_license = NodeLicense.objects.get(license_id=license_id)

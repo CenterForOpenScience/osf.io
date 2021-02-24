@@ -1,0 +1,241 @@
+{
+   "name":"Real World Evidence Recommended Minimum Study Registration Template",
+   "version":1,
+   "config":{
+      "hasFiles":true
+   },
+   "description":"This template was created by ISPOR, NPC, Duke Margolis, and ISPE for the purpose of specifying studies that rely on secondary data and are analyzing causal inference of comparative effectiveness.",
+   "pages":[
+      {
+         "id":"page1",
+         "title":"Administrative Information",
+         "questions":[
+            {
+               "qid":"q1",
+               "type":"string",
+               "format":"textarea",
+               "title":"Research question",
+               "help":"The research question is essential to guide the research project and should pinpoint exactly what you are attempting to test. For hypothesis evaluating treatment effect or comparative effectiveness research the question should include the population of interest, exposure, comparator and outcome(s) to be evaluated.",
+               "example":"Does in-hospital zxxxxxnib improve pulmonary function compared to yxxxxxnib in patients treated with high-dose corticosteroids for moderate to severe SARS-CoV-2 pneumonia?\nWhat are the comparative risks for stroke or major bleeding in patients with non-valvular atrial fibrillation who initiate anticoagulant X versus anticoagulant Y?",
+               "required":true
+            },
+            {
+               "qid":"q2",
+               "type":"string",
+               "format":"text",
+               "title":"Funding source(s)",
+               "help":"Please include grant numbers and funding source, or company name",
+               "example":"Grant number: XYZ9999 source: PCORI, OR company: AbbPfir BioPharmaceutical",
+               "required":true
+            },
+            {
+               "qid":"q3",
+               "type":"string",
+               "format":"text",
+               "title":"Data source(s)",
+               "help":"Please list the databases or other source of data for this secondary data use study",
+               "example":"IBM Marketscan Claims and Encounters Database; Clinical Practice Research Datalink (CPRD)",
+               "required":true
+            },
+            {
+               "qid":"q4",
+               "type":"string",
+               "format":"text",
+               "title":"Extraction date",
+               "help":"This refers to either the extraction version number or the date of the final analytic dataset of extraction for the RWD database that will be used to implement the study protocol.",
+               "example":"This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
+               "required":true
+            },
+            {
+               "qid":"q5",
+               "type":"string",
+               "format":"text",
+               "title":"Study period(s)",
+               "help":"The calendar time boundaries for data used to create the analyzed study data set, including exposures, inclusion and exclusion criteria, covariates, outcome, and follow-up. This is the full window of data observation – from the date of the earliest data point to the date of the last data point, across all subjects.",
+               "example":"01/15/2010 to 09/22/2019 (can include a future date as well)",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page2",
+         "title":"Summary Design and Summary Specifications",
+         "questions":[
+            {
+               "qid":"q6",
+               "type":"choose",
+               "format":"singleselect",
+               "title":"Study Design",
+               "help":"Please choose one",
+               "options":[
+                  "Cohort",
+                  "Case-Control",
+                  "Self-controlled (e.g. pre-post)",
+                  "Cross-sectional",
+                  "Quasi-experimental",
+                  "Other (describe in text box below)"
+               ],
+               "example":"Cohort designs - A study design where one or more samples (called cohorts) are identified and patients categorized by treatment or exposure groups and followed for a defined period of time with subsequent status evaluations of the outcome(s) of interest. Cohort studies are conducted to determine the magnitude of treatment associations with the outcome. As the study is conducted, outcomes from participants in each cohort are measured and relationships with specific characteristics are determined. Within cohorts, one can apply sampling designs that oversample patient according to certain study parameters to increase study efficiency:\nCase-control sampling identifies patients according to their outcome status; case-cohort sampling identifies patients according to exposure status and pre-exposure patient characteristics; and two-stage sampling which does both. The efficiency gain with cohort sampling approaches is most relevant if some information critical to the study is difficult or costly to acquire.\nThe family of self-controlled designs use an individual’s experience at different times as their own control. We differentiate self-controlled designs by how patients are selected into the study, or the indexing event: the case-crossover design is indexed by the study outcome, while the self-controlled case series is typically exposure-indexed.\nQuasi-experimental: research that resembles experimental research but is not true experimental research. Often but not always a cohort design, it also involves a condition or analytical technique that proxies randomization of treatment assignment to some degree but is not true randomization.",
+               "required":true
+            },
+            {
+               "qid":"q7",
+               "type":"string",
+               "format":"textarea",
+               "title":"Other",
+               "required":false
+            },
+            {
+               "qid":"q8",
+               "type":"string",
+               "format":"textarea",
+               "title":"Study population",
+               "help":"The population under evaluation in the study",
+               "example":"Adults with sleep disordered breathing",
+               "required":true
+            },
+            {
+               "qid":"q9",
+               "type":"string",
+               "format":"text",
+               "title":"Cohort entry (index) date",
+               "help":"The cohort entry date could also be referred to as the ‘index’ date. This is the date from which the cohorts will be followed forward in time in the data set. This could be the first date of drug initiation or first prescription fill date, or the date of diagnosis of the disease of interest or perhaps the date of disease progression.",
+               "example":"The cohort entry date was defined by new initiation of SLEEPINATOR – XR (intervention) or melatonin (comparator).",
+               "required":true
+            },
+            {
+               "qid":"q10",
+               "type":"string",
+               "format":"textarea",
+               "title":"Specific Inclusion criteria",
+               "help":"A description of how exactly patients enter the study",
+               "example":"A prior diagnosis of condition X.",
+               "required":true
+            },
+            {
+               "qid":"q11",
+               "type":"string",
+               "format":"textarea",
+               "title":"Specific Exclusion criteria",
+               "help":"The population that you want to leave OUT of the study",
+               "example":"Adults with previous sleep disordered breathing-related surgery; Patients under 18 years of age",
+               "required":true
+            },
+            {
+               "qid":"q12",
+               "type":"string",
+               "format":"textarea",
+               "title":"Intervention",
+               "help":"The intervention or approach you are evaluating",
+               "example":"SLEEPINATOR – XR (oral formulation)",
+               "required":true
+            },
+            {
+               "qid":"q13",
+               "type":"string",
+               "format":"textarea",
+               "title":"Comparator",
+               "help":"The approach you’re comparing the intervention to. The comparator could be a placebo or a control group, but often it is a different type of medical treatment or the usual form of care",
+               "example":"Melatonin",
+               "required":true
+            },
+            {
+               "qid":"q14",
+               "type":"string",
+               "format":"textarea",
+               "title":"Outcome(s)",
+               "help":"Variables that are monitored during a study to document the impact that a given intervention has on the health of a given population.",
+               "example":"Hospitalization for injury based on a fall, acceptance of CPAP treatment, adherence to CPAP treatment, change in functional status or quality of life. Adverse effects or complications related to the use of SLEEPINATOR – XR and Melatonin.",
+               "required":true
+            },
+            {
+               "qid":"q15",
+               "type":"string",
+               "format":"textarea",
+               "title":"Patient Characteristics to be used in the analysis",
+               "help":"For HETE studies, to reduce confounding in the absence of baseline randomization one may want to identify pre-exposure patient characteristics that are associated/correlated with the study outcome.",
+               "example":"Age, sex, pre-existing dementia, BMI, Hb A1c measurement, …..",
+               "required":true
+            },
+            {
+               "qid":"q16",
+               "type":"string",
+               "format":"textarea",
+               "title":"Patient subgroups",
+               "help":"A subset of subjects from the overall study population defined by a variable (age or a certain co-morbidity) based on a reasonable supposition that one group or another might have a different response or outcome.",
+               "example":"Age >65; patients with low density lipoproteins (LDL) > 200 mg/dl",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page3",
+         "title":"Key Elements of Evaluation Period",
+         "questions":[
+            {
+               "qid":"q17",
+               "type":"string",
+               "format":"textarea",
+               "title":"Duration of treatment",
+               "help":"The text definition of how long you will follow a therapy for both the intervention and comparator, include any information about if or how - gaps in therapy will be calculated or accommodated, dose adjustments may influence the calculation if applicable, and define your date of censoring (end of therapy) criteria.",
+               "example":"Subjects’ duration of therapy will be counted from Day 1 (fill date) to the calculated end of first prescription (day 1 + days supplied). Any dose-adjusted prescriptions that occur prior to the calculated end of treatment based on first prescription will be added to the original treatment duration by adding day supplied from prescription 1 and 2 and subtracting overlapping days. The last day of that last prescription will be the end date of therapy.",
+               "required":true
+            },
+            {
+               "qid":"q18",
+               "type":"string",
+               "format":"textarea",
+               "title":"Follow-up definition",
+               "help":"The text definition of the full follow-up window inclusive of treatment for both intervention and comparator.",
+               "example":"Day 1 (fill date) through 100 days, the last day of the study period, death, or disenrollment.",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page4",
+         "title":"Data Handling Attestation at Time of Registration",
+         "questions":[
+            {
+               "qid":"q19",
+               "title":"Data handling attestation at time of registration",
+               "type":"choose",
+               "format":"singleselect",
+               "options":[
+                  "No data handling at this point",
+                  "Acquired access to the source data",
+                  "Conducted feasibility counts",
+                  "Created an analytic dataset for the study population of interest",
+                  "Conducted preliminary analyses, including descriptive statistics and observation of data distributions – but no analyses of association between treatment and outcome",
+                  "Study analysis in progress",
+                  "Statistical comparisons completed"
+               ],
+               "help":"Please choose the one best short description that best reflects the amount of data handling that you have had up until the date of registration for this study.",
+               "example":"If you have looked at the data to determine whether there are enough adults with sleep disordered breathing to at least satisfy requirements for your sample size, you should choose option 3 –conducted feasibility counts.",
+               "required":true
+            },
+            {
+               "qid":"q20",
+               "title":"Data handling",
+               "type":"string",
+               "format":"text",
+               "help":"Clarify the description chosen for data handling.",
+               "required":false
+            }
+         ]
+      },
+      {
+         "id":"page5",
+         "title":"Protocol Document",
+         "questions":[
+            {
+               "qid":"q21",
+               "title":"Upload protocol document",
+               "type":"osf-upload",
+               "format":"osf-upload-open",
+               "required":true
+            }
+         ]
+      }
+   ]
+}

@@ -71,7 +71,3 @@ class TestSchemaList:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert not [data for data in res.json['data'] if data['attributes']['name'] == 'EGAP Registration']
-
-        res = app.get(url, auth=egap_admin.auth)
-        assert res.status_code == 200
-        assert [data for data in res.json['data'] if data['attributes']['name'] == 'EGAP Registration']

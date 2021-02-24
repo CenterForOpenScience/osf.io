@@ -48,6 +48,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/relationships/subjects/$', views.NodeSubjectsRelationship.as_view(), name=views.NodeSubjectsRelationship.view_name),
     url(r'^(?P<node_id>\w+)/requests/$', views.NodeRequestListCreate.as_view(), name=views.NodeRequestListCreate.view_name),
     url(r'^(?P<node_id>\w+)/settings/$', views.NodeSettings.as_view(), name=views.NodeSettings.view_name),
+    url(r'^(?P<node_id>\w+)/storage/$', views.NodeStorage.as_view(), name=views.NodeStorage.view_name),
     url(r'^(?P<node_id>\w+)/subjects/$', views.NodeSubjectsList.as_view(), name=views.NodeSubjectsList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/$', views.NodeViewOnlyLinksList.as_view(), name=views.NodeViewOnlyLinksList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.NodeViewOnlyLinkDetail.as_view(), name=views.NodeViewOnlyLinkDetail.view_name),
