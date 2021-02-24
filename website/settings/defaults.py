@@ -1494,6 +1494,7 @@ BLACKLISTED_DOMAINS = [
     'qq.com',
     'quickinbox.com',
     'quickmail.nl',
+    'rambler.ru',
     'rainmail.biz',
     'rcpt.at',
     're-gister.com',
