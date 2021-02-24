@@ -31,6 +31,11 @@ class DraftNodeSerializer(JSONAPISerializer):
             },
         )
 
+    draft_registrations = RelationshipField(
+        related_view='draft_nodes:draft-node-draft-registrations',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
     files = RelationshipField(
         related_view='draft_nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},

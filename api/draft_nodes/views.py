@@ -4,11 +4,16 @@ from django.db.models import Q
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
 from api.draft_nodes.permissions import ContributorOnDraftRegistration
 from api.draft_nodes.serializers import DraftNodeSerializer, DraftNodeStorageProviderSerializer
-
+from api.draft_registrations.serializers import DraftRegistrationSerializer
+from api.nodes.permissions import IsAdminContributor
 from api.nodes.views import (
     NodeStorageProvidersList,
     NodeFilesList,
@@ -57,6 +62,28 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
     # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()
+
+
+class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, DraftNodeMixin):
+    permission_classes = (
+        IsAdminContributor,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationSerializer
+    view_category = 'draft_nodes'
+    view_name = 'draft-node-draft-registrations'
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        node = self.get_node()
+        return node.draft_registrations_active
 
 
 class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
