@@ -347,6 +347,8 @@ class SyncInfo(object):
 
 @receiver(pre_save, sender=Node)
 def node_pre_save(sender, instance, **kwargs):
+    if not hasattr(instance, 'is_deleted'):
+        return
     if instance.is_deleted:
         return
     try:
@@ -361,6 +363,8 @@ def node_pre_save(sender, instance, **kwargs):
 @receiver(post_save, sender=Node)
 def node_post_save(sender, instance, created, **kwargs):
     node = instance
+    if not hasattr(node, 'is_deleted'):
+        return
     if node.is_deleted:
         return
     if not hasattr(node, 'get_addon'):
@@ -409,6 +413,8 @@ def sync_title(node, target_addons=None, force=False):
 
 @project_signals.contributors_updated.connect
 def sync_contributors(node, target_addons=None):
+    if not hasattr(node, 'is_deleted'):
+        return
     if node.is_deleted:
         return
     if not hasattr(node, 'get_addon'):
