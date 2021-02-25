@@ -481,7 +481,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                client.base_url + f'/metadata/{client.build_doi(resource)}',
+                f'{settings.DATACITE_URL}/metadata/{client.build_doi(resource)}',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )

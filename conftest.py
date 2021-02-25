@@ -168,8 +168,9 @@ def mock_akismet():
     f'https://{api_key}.rest.akismet.com/1.1/comment-check'
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-            yield rsps
+        with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
+            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                yield rsps
 
 
 @pytest.fixture
@@ -180,7 +181,6 @@ def mock_datacite(registration):
     f'{DATACITE_URL}/metadata'
     f'{DATACITE_URL}/doi'
     f'{DATACITE_URL}/metadata/{doi}'
-
     Datacite url should be `https://mds.datacite.org' for production and `https://mds.test.datacite.org` for local
     testing
     """
@@ -198,3 +198,16 @@ def mock_datacite(registration):
         rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
         rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
         yield rsps
+
+
+@pytest.fixture
+def mock_oopspam():
+    """
+    This should be used to mock our anti-spam service oopspam.
+    Relevent endpoints:
+    'https://oopspam.p.rapidapi.com/v1/spamdetection'
+    """
+    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+        with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
+            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                yield rsps
