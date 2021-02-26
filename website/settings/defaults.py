@@ -328,7 +328,7 @@ DOI_FORMAT = '{prefix}/osf.io/{guid}'
 DATACITE_ENABLED = True
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
-DATACITE_URL = None
+DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 
 # crossref
