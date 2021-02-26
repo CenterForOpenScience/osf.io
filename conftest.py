@@ -192,12 +192,13 @@ def mock_datacite(registration):
         base_xml.find('{http://datacite.org/schema/kernel-4}identifier').text = doi
         data = ET.tostring(base_xml)
 
-    with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-        rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
-        rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
-        rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
-        rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
-        yield rsps
+    with mock.patch.object(website_settings, 'DATACITE_ENABLED', True):
+        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+            rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
+            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
+            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
+            rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
+            yield rsps
 
 
 @pytest.fixture

@@ -1394,6 +1394,7 @@ BLACKLISTED_DOMAINS = [
     'mypacks.net',
     'mypartyclip.de',
     'myphantomemail.com',
+    'myrambler.ru',
     'mysamp.de',
     'myspaceinc.com',
     'myspaceinc.net',
@@ -1491,6 +1492,7 @@ BLACKLISTED_DOMAINS = [
     'qq.com',
     'quickinbox.com',
     'quickmail.nl',
+    'rambler.ru',
     'rainmail.biz',
     'rcpt.at',
     're-gister.com',
@@ -1872,6 +1874,14 @@ RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
+AKISMET_ENABLED = False
+
+# OOPSpam options
+OOPSPAM_APIKEY = None
+OOPSPAM_SPAM_LEVEL = 3  # The minimum level (out of 6) that is flagged as spam.
+OOPSPAM_CHECK_IP = True  # Whether OOPSpam checks IP addresses. When testing locally, turn this off
+
+# spam options
 SPAM_CHECK_ENABLED = False
 SPAM_CHECK_PUBLIC_ONLY = True
 SPAM_ACCOUNT_SUSPENSION_ENABLED = False

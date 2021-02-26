@@ -39,6 +39,8 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
     BurstRateThrottle,
+    FilesRateThrottle,
+    FilesBurstRateThrottle,
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
@@ -1101,6 +1103,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle, )
 
     view_category = 'nodes'
     view_name = 'node-files'
