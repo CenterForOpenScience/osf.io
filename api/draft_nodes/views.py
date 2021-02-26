@@ -64,7 +64,7 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
         return self.get_node()
 
 
-class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, DraftNodeMixin):
+class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListAPIView, DraftNodeMixin):
     permission_classes = (
         IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
