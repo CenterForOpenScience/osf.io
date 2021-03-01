@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def sync_datacite_doi_metadata(dry_run=True):
     for registration in Registration.objects.all():
         if not dry_run:
-            doi = registration.request_identifier('doi')
+            doi = registration.request_identifier('doi')['doi']
             registration.set_identifier_value('doi', doi)
         logger.info(f'doi minting for {registration._id} complete')
 
