@@ -2,6 +2,7 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers
+from django.db.models import When, Case, Value, IntegerField, F
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.urls import reverse_lazy
@@ -15,7 +16,8 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from osf.models import RegistrationProvider, NodeLicense
+from website import settings as website_settings
+from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema, OSFUser
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -87,6 +89,7 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         registration_provider = self.get_object()
         registration_provider_attributes = model_to_dict(registration_provider)
         registration_provider_attributes['default_license'] = registration_provider.default_license.name if registration_provider.default_license else None
+        registration_provider_attributes['brand'] = registration_provider.brand.name if registration_provider.brand else None
 
         # compile html list of licenses_acceptable so we can render them as a list
         licenses_acceptable = list(registration_provider.licenses_acceptable.values_list('name', flat=True))
@@ -141,6 +144,9 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
 
         # set api key for tinymce
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
+
+        # this doesn't apply to reg providers so delete it and exclude from form
+        del kwargs['registration_provider']['reviews_comments_anonymous']
 
         return kwargs
 
@@ -355,3 +361,129 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
             }
         # Return a JsonResponse with the JSON error or the validation error if it's not doing an actual migration
         return JsonResponse(response_data)
+
+
+class ShareSourceRegistrationProvider(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_registrationprovider'
+    view_category = 'registration_providers'
+
+    def get(self, request, *args, **kwargs):
+        provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        home_page_url = provider.domain if provider.domain else f'{website_settings.DOMAIN}/registries/{provider._id}/'
+
+        try:
+            provider.setup_share_source(home_page_url)
+        except ValidationError as e:
+            messages.error(request, e.message)
+
+        return redirect(reverse_lazy('registration_providers:detail', kwargs={'registration_provider_id': provider.id}))
+
+
+class ChangeSchema(TemplateView):
+    permission_required = 'osf.change_registrationprovider'
+    template_name = 'registration_providers/change_schema.html'
+
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        ids = registration_provider.schemas.all().values_list('id', flat=True)
+        context = super().get_context_data(**kwargs)
+        context['registration_provider'] = registration_provider
+        context['schemas'] = RegistrationSchema.objects.all().annotate(
+            value=Case(
+                When(
+                    id__in=ids,
+                    then=Value(1),
+                ),
+                default=Value(0),
+                output_field=IntegerField()
+            ),
+            underscore_id=F('_id')  # django templates ban underscores for some reason...
+        ).order_by('name', 'schema_version')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        registration_provider.schemas.clear()
+        schemas = RegistrationSchema.objects.filter(id__in=list(data.keys()))
+        registration_provider.schemas.add(*schemas)
+
+        return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
+
+
+class AddAdminOrModerator(TemplateView):
+    permission_required = 'osf.change_registrationprovider'
+    template_name = 'registration_providers/edit_moderators.html'
+
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        context = super().get_context_data(**kwargs)
+        context['registration_provider'] = registration_provider
+        context['moderators'] = registration_provider.get_group('moderator').user_set.all()
+        context['admins'] = registration_provider.get_group('admin').user_set.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        target_user = OSFUser.load(data['add-moderators-form'][0])
+        if target_user is None:
+            messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
+            return redirect('registration_providers:add_admin_or_moderator', registration_provider_id=registration_provider.id)
+
+        if 'admin' in data:
+            registration_provider.add_to_group(target_user, 'admin')
+            target_type = 'admin'
+        else:
+            registration_provider.add_to_group(target_user, 'moderator')
+            target_type = 'moderator'
+
+        messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
+
+        return redirect('registration_providers:add_admin_or_moderator', registration_provider_id=registration_provider.id)
+
+
+class RemoveAdminsAndModerators(TemplateView):
+    permission_required = 'osf.change_registrationprovider'
+    template_name = 'registration_providers/edit_moderators.html'
+
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        context = super().get_context_data(**kwargs)
+        context['registration_provider'] = registration_provider
+        context['moderators'] = registration_provider.get_group('moderator').user_set.all()
+        context['admins'] = registration_provider.get_group('admin').user_set.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        to_be_removed = list(data.keys())
+        removed_admins = [admin.replace('Admin-', '') for admin in to_be_removed if 'Admin-' in admin]
+        removed_moderators = [moderator.replace('Moderator-', '') for moderator in to_be_removed if 'Moderator-' in moderator]
+        moderators = OSFUser.objects.filter(id__in=removed_moderators)
+        admins = OSFUser.objects.filter(id__in=removed_admins)
+        registration_provider.get_group('moderator').user_set.remove(*moderators)
+        registration_provider.get_group('admin').user_set.remove(*admins)
+
+        if moderators:
+            moderator_names = ' ,'.join(moderators.values_list('fullname', flat=True))
+            messages.success(request, f'The following moderators were successfully removed: {moderator_names}')
+
+        if admins:
+            admin_names = ' ,'.join(admins.values_list('fullname', flat=True))
+            messages.success(request, f'The following admins were successfully removed: {admin_names}')
+
+        return redirect('registration_providers:remove_admins_and_moderators', registration_provider_id=registration_provider.id)

@@ -28,7 +28,7 @@ class ContributorOrPublic(permissions.BasePermission):
         from api.nodes.views import NodeStorageProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, (NodeStorageProvider)):
+        if isinstance(obj, NodeStorageProvider):
             obj = obj.node
         if isinstance(obj, dict):
             obj = obj.get('self', None)
@@ -314,6 +314,15 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+
+class WriteAdmin(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        return obj.can_edit(auth)
 
 
 class ShowIfVersion(permissions.BasePermission):

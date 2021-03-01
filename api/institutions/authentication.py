@@ -24,6 +24,43 @@ from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 logger = logging.getLogger(__name__)
 
+# This map defines how to find the secondary institution IdP which uses the shared SSO of a primary
+# IdP. Each map entry has the following format.
+#
+#    '<ID of the primary institution A>': {
+#        'criteria': 'attribute',
+#        'attribute': '<the attribute name for identifying secondary institutions>',
+#        'institutions': {
+#            '<attribute value for identifying institution A1>': '<ID of secondary institution A1>',
+#            '<attribute value for identifying institution A2>': '<ID of secondary institution A2>',
+#            ...
+#        },
+#        ...
+#    }
+#
+# Currently, the only active criteria is "attribute", which the primary institution IdP releases to
+# OSF for us to identify the secondary institution. Another option is "emailDomain". For example:
+#
+#    '<ID of the primary institution B>': {
+#        'criteria': 'emailDomain',
+#        'institutions': {
+#            '<the email domain for identifying institution B1>': '<ID of secondary institution B1',
+#            '<the email domain for identifying institution B2>': '<ID of secondary institution B2',
+#            ...
+#        }
+#        ...
+#    }
+#
+INSTITUTION_SHARED_SSO_MAP = {
+    'brown': {
+        'criteria': 'attribute',
+        'attribute': 'isMemberOf',
+        'institutions': {
+            'thepolicylab': 'thepolicylab',
+        },
+    },
+}
+
 
 class InstitutionAuthentication(BaseAuthentication):
     """A dedicated authentication class for view ``InstitutionAuth``.
@@ -85,6 +122,49 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         department = provider['user'].get('department')
+
+        # Check secondary institutions which uses the SSO of primary ones
+        secondary_institution = None
+        if provider['id'] in INSTITUTION_SHARED_SSO_MAP:
+            switch_map = INSTITUTION_SHARED_SSO_MAP[provider['id']]
+            criteria_type = switch_map.get('criteria')
+            if criteria_type == 'attribute':
+                attribute_name = switch_map.get('attribute')
+                attribute_value = provider['user'].get(attribute_name)
+                if attribute_value:
+                    secondary_institution_id = switch_map.get(
+                        'institutions',
+                        {},
+                    ).get(attribute_value)
+                    logger.info(
+                        'Institution SSO: primary=[{}], secondary=[{}], '
+                        'user=[{}]'.format(provider['id'], secondary_institution_id, username),
+                    )
+                    secondary_institution = Institution.load(secondary_institution_id)
+                    if not secondary_institution:
+                        # Log warnings and inform Sentry but do not raise an exception if OSF fails
+                        # to load the secondary institution from database
+                        logger.warning(
+                            'Institution SSO warning: invalid secondary institution '
+                            '[{}]'.format(secondary_institution_id),
+                        )
+                        sentry.log_message(
+                            'Invalid secondary institution: primary=[{}], secondary=[{}], username='
+                            '[{}]'.format(secondary_institution_id, provider['id'], username),
+                        )
+                else:
+                    # SSO from primary institution only
+                    logger.info(
+                        'Institution SSO: primary=[{}], secondary=[None], '
+                        'user=[{}]'.format(provider['id'], username),
+                    )
+            else:
+                logger.warning('Institution SSO warning: criteria type [{}] '
+                               'invalid or not implemented'.format(criteria_type))
+                sentry.log_message(
+                    'Criteria type invalid or not implemented: criteria=[{}], primary=[{}], '
+                    'username=[{}]'.format(criteria_type, provider['id'], username),
+                )
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -197,16 +277,20 @@ class InstitutionAuthentication(BaseAuthentication):
             send_mail(
                 to_addr=user.username,
                 mail=WELCOME_OSF4I,
-                mimetype='html',
                 user=user,
                 domain=DOMAIN,
                 osf_support_email=OSF_SUPPORT_EMAIL,
                 storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
 
-        # Affiliate the user if not previously affiliated
+        # Affiliate the user to the primary institution if not previously affiliated
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
+            user.save()
+
+        # Affiliate the user to the secondary institution if not previously affiliated
+        if secondary_institution and not user.is_affiliated_with_institution(secondary_institution):
+            user.affiliated_institutions.add(secondary_institution)
             user.save()
 
         return user, None

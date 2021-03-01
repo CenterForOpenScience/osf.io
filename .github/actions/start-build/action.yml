@@ -1,0 +1,31 @@
+name: 'Start Build'
+description: 'Last composite action before tests are run'
+runs:
+  using: "composite"
+  steps:
+  - name: Copy Settings
+    shell: bash
+    run: |
+      cp website/settings/local-travis.py website/settings/local.py
+      cp api/base/settings/local-travis.py api/base/settings/local.py
+      mkdir -p ~/preprints
+      touch ~/preprints/index.html
+  - name: PIP install
+    shell: bash
+    run: |
+      pip install --upgrade pip
+      pip install invoke==0.13.0
+      pip install flake8==2.4.0 --force-reinstall --upgrade
+      pip install wheel
+      invoke wheelhouse --dev --addons
+  - name: Other installs
+    shell: bash
+    run: |
+      pip install psycopg2==2.7.3 --no-binary psycopg2
+      invoke travis_addon_settings
+      invoke requirements --dev --addons
+      pip uninstall uritemplate.py --yes
+      pip install uritemplate.py==0.3.0
+      sudo npm install -g bower
+      npm install @centerforopenscience/list-of-licenses@^1.1.0
+      bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"
