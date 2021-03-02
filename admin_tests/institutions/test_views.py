@@ -368,25 +368,25 @@ class TestGetUserListWithQuotaSorted(AdminTestCase):
         return view.get(request)
 
     def test_sort_username_asc(self):
-        expected = sorted(list(map(lambda u: u.username, self.users)), reverse=False)
+        expected = sorted(map(lambda u: u.username, self.users), reverse=False)
         response = self.view_get('order_by=username&status=asc')
         result = list(map(itemgetter('username'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_username_desc(self):
-        expected = sorted(list(map(lambda u: u.username, self.users)), reverse=True)
+        expected = sorted(map(lambda u: u.username, self.users), reverse=True)
         response = self.view_get('order_by=username&status=desc')
         result = list(map(itemgetter('username'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_fullname_asc(self):
-        expected = sorted(list(map(lambda u: u.fullname, self.users)), reverse=False)
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=False)
         response = self.view_get('order_by=fullname&status=asc')
         result = list(map(itemgetter('fullname'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_fullname_desc(self):
-        expected = sorted(list(map(lambda u: u.fullname, self.users)), reverse=True)
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=fullname&status=desc')
         result = list(map(itemgetter('fullname'), response.context_data['users']))
         nt.assert_equal(result, expected)
@@ -553,25 +553,25 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         return view.get(request)
 
     def test_sort_username_asc(self):
-        expected = sorted(list(map(lambda u: u.username, self.users)), reverse=False)
+        expected = sorted(map(lambda u: u.username, self.users), reverse=False)
         response = self.view_get('order_by=username&status=asc')
         result = list(map(itemgetter('username'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_username_desc(self):
-        expected = sorted(list(map(lambda u: u.username, self.users)), reverse=True)
+        expected = sorted(map(lambda u: u.username, self.users), reverse=True)
         response = self.view_get('order_by=username&status=desc')
         result = list(map(itemgetter('username'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_fullname_asc(self):
-        expected = sorted(list(map(lambda u: u.fullname, self.users)), reverse=False)
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=False)
         response = self.view_get('order_by=fullname&status=asc')
         result = list(map(itemgetter('fullname'), response.context_data['users']))
         nt.assert_equal(result, expected)
 
     def test_sort_fullname_desc(self):
-        expected = sorted(list(map(lambda u: u.fullname, self.users)), reverse=True)
+        expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=fullname&status=desc')
         result = list(map(itemgetter('fullname'), response.context_data['users']))
         nt.assert_equal(result, expected)

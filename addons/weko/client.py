@@ -252,7 +252,7 @@ def create_index(connection, title_ja=None, title_en=None, relation=None):
     indices = []
     for desc in root.findall('.//{%s}Description' % RDF_NAMESPACE):
         indices.append(parse_index(desc))
-    index_id = max(list(map(lambda i: int(i.identifier), indices))) + 1
+    index_id = max(map(lambda i: int(i.identifier), indices)) + 1
 
     target = None
     for collection in root.findall('.//{%s}collection' % APP_NAMESPACE):

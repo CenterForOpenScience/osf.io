@@ -393,7 +393,7 @@ def test_swift_connection(auth_version, auth_url, access_key, secret_key, tenant
             'Listing containers is required permission.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
-    if container not in list(map(lambda c: c['name'], containers)):
+    if container not in map(lambda c: c['name'], containers):
         return ({
             'message': 'Invalid container name.'
         }, http_status.HTTP_400_BAD_REQUEST)
