@@ -1,9 +1,8 @@
 import re
 import httplib
 
-from boto import exception, s3
-from boto import config as s3_config
-from boto.s3.connection import S3Connection, OrdinaryCallingFormat, NoHostProvided
+from boto import exception
+from boto.s3.connection import NoHostProvided
 from boto.s3.bucket import Bucket
 
 import boto3
@@ -51,9 +50,6 @@ class S3CompatB3Connection:
         if m is not None:
             host = m.group(1)
             port = int(m.group(2))
-        if not s3_config.get('s3', 'use-sigv4'):
-            s3_config.add_section('s3')
-            s3_config.set('s3', 'use-sigv4', 'True')
         region = host.split('.')[3]
         url = ('https://' if port == 443 else 'http://') + host
         self.conn = boto3.resource(
@@ -63,7 +59,6 @@ class S3CompatB3Connection:
             region_name=region,
             endpoint_url=url
         )
-
 
 
 def connect_s3compatb3(host=None, access_key=None, secret_key=None, node_settings=None):
@@ -78,9 +73,6 @@ def connect_s3compatb3(host=None, access_key=None, secret_key=None, node_setting
     if m is not None:
         host = m.group(1)
         port = int(m.group(2))
-    # if not s3_config.get('s3', 'use-sigv4'):
-    #    s3_config.add_section('s3')
-    #    s3_config.set('s3', 'use-sigv4', 'True')
     region = ''
     if host.endswith('.oraclecloud.com'):
         region = host.split('.')[-3]
@@ -146,12 +138,6 @@ def bucket_exists(host, access_key, secret_key, bucket_name):
 
     connection = connect_s3compatb3(host, access_key, secret_key)
 
-    if bucket_name != bucket_name.lower():
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
-
-    bucket = connection.Bucket(bucket_name)
     exists = True
     try:
         connection.meta.client.head_bucket(Bucket=bucket_name)
@@ -188,7 +174,7 @@ def get_user_info(host, access_key, secret_key):
     try:
         connection = connect_s3compatb3(host, access_key, secret_key)
         buckets = connection.buckets.all()
-        bucket_names = [bucket.name for bucket in buckets]
+        [bucket.name for bucket in buckets]
         identity = boto3.client('sts').get_caller_identity()
         return identity
     except ClientError:
