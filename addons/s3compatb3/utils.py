@@ -50,7 +50,9 @@ class S3CompatB3Connection:
         if m is not None:
             host = m.group(1)
             port = int(m.group(2))
-        region = host.split('.')[3]
+        region = ''
+        if host.endswith('.oraclecloud.com'):
+            region = host.split('.')[-3]
         url = ('https://' if port == 443 else 'http://') + host
         self.conn = boto3.resource(
             's3',
