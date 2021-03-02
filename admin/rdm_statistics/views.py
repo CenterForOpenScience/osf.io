@@ -156,9 +156,9 @@ class ProviderData(object):
         self.ext_list = np.unique(extentions)
         self.ext_list.sort()
         self.date_list = self.stat_data.values_list('date_acquired', flat=True)
-        self.x_tk = np.unique(map(lambda x: x.strftime('%Y/%m/%d'), self.date_list))
+        self.x_tk = np.unique(list(map(lambda x: x.strftime('%Y/%m/%d'), self.date_list)))
         self.x_tk.sort()
-        self.left = np.unique(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list))
+        self.left = np.unique(list(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list)))
         cols = ['left', 'height', 'type']
         self.size_df = pd.DataFrame(index=[], columns=cols)
         self.number_df = pd.DataFrame(index=[], columns=cols)
@@ -205,7 +205,7 @@ class ProviderData(object):
             size_sum_list = list(size_df_sum['height'].values.flatten())
             statistics_data.title = 'Subtotal of file sizes'
             statistics_data.y_label = 'File Sizes'
-            statistics_data.add('size', map(lambda x: approximate_size(x, True), size_sum_list))
+            statistics_data.add('size', list(map(lambda x: approximate_size(x, True), size_sum_list)))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
             statistics_data.image_string = create_image_string(statistics_data.provider, statistics_data=statistics_data)
