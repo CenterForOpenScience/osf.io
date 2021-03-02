@@ -15,7 +15,8 @@ var no_storage_name_providers = ['osfstorage'];
 var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py
 var preload_accounts_type2 = ['nextcloudinstitutions',
-			      's3compatinstitutions']
+                'ociinstitutions',
+                's3compatinstitutions']
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -116,6 +117,14 @@ $('#s3compatinstitutions_modal input').keyup(function () {
 
 $('#s3compatinstitutions_modal input').on('paste', function(e) {
     validateRequiredFields('s3compatinstitutions');
+});
+
+$('#ociinstitutions_modal input').keyup(function () {
+    validateRequiredFields('ociinstitutions');
+});
+
+$('#ociinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('ociinstitutions');
 });
 
 $('#swift_modal input').keyup(function () {

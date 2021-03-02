@@ -20,6 +20,7 @@ from addons.owncloud import settings as owncloud_settings
 from addons.nextcloud import settings as nextcloud_settings
 from addons.s3 import utils as s3_utils
 from addons.s3compat import utils as s3compat_utils
+from addons.s3compatb3 import utils as s3compatb3_utils
 from addons.swift import settings as swift_settings, utils as swift_utils
 from addons.swift.provider import SwiftProvider
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
@@ -28,6 +29,8 @@ from addons.nextcloudinstitutions import settings as nextcloudinstitutions_setti
 from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
+from addons.ociinstitutions.models import OCIInstitutionsProvider
+from addons.ociinstitutions import settings as ociinstitutions_settings
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
@@ -45,6 +48,7 @@ enabled_providers_forinstitutions_list = [
     'dropboxbusiness',
     'nextcloudinstitutions',
     's3compatinstitutions',
+    'ociinstitutions',
 ]
 
 enabled_providers_list = [
@@ -292,6 +296,60 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
         }
     }, httplib.OK)
 
+def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    if not (host and access_key and secret_key and bucket):
+        return ({
+            'message': 'All the fields above are required.'
+        }, httplib.BAD_REQUEST)
+
+    try:
+        user_info = s3compatb3_utils.get_user_info(host, access_key, secret_key)
+        e_message = ''
+    except Exception as e:
+        user_info = None
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    if not user_info:
+        return ({
+            'message': 'Unable to access account.\n'
+            'Check to make sure that the above credentials are valid, '
+            'and that they have permission to list buckets.',
+            'e_message': e_message
+        }, httplib.BAD_REQUEST)
+
+    try:
+        res = s3compatb3_utils.can_list(host, access_key, secret_key)
+        e_message = ''
+    except Exception as e:
+        res = False
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    if not res:
+        return ({
+            'message': 'Unable to list buckets.\n'
+            'Listing buckets is required permission that can be changed via IAM',
+            'e_message': e_message
+        }, httplib.BAD_REQUEST)
+
+    try:
+        res = s3compatb3_utils.bucket_exists(host, access_key, secret_key, bucket)
+        e_message = ''
+    except Exception as e:
+        res = False
+        e_message = traceback.format_exception_only(type(e), e)[0].rstrip('\n')
+    if not res:
+        return ({
+            'message': 'Invalid bucket.',
+            'e_message': e_message
+        }, httplib.BAD_REQUEST)
+
+    return ({
+        'message': 'Credentials are valid',
+        'data': {
+            'id': 'user_info.id',
+            'display_name': 'user_info.display_name',
+        }
+    }, httplib.OK)
+
 def test_box_connection(institution_id, folder_id):
     validation_result = oauth_validation('box', institution_id, folder_id)
     if isinstance(validation_result, tuple):
@@ -516,6 +574,39 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
             },
             'bucket': bucket,
             'provider': 's3compat',
+        }
+    }
+
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.remove_region_external_account(region)
+
+    return ({
+        'message': 'Saved credentials successfully!!'
+    }, httplib.OK)
+
+def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_key, secret_key,
+                              bucket):
+
+    test_connection_result = test_s3compatb3_connection(host_url, access_key, secret_key, bucket)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+
+    wb_credentials = {
+        'storage': {
+            'access_key': access_key,
+            'secret_key': secret_key,
+            'host': host,
+        }
+    }
+    wb_settings = {
+        'storage': {
+            'folder': {
+                'encrypt_uploads': True,
+            },
+            'bucket': bucket,
+            'provider': 's3compatb3',
         }
     }
 
@@ -805,6 +896,21 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
     return save_basic_storage_institutions_credentials_common(
         institution, storage_name, bucket, provider_name, provider, separator)
 
+def save_ociinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
+    host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
+    test_connection_result = test_s3compatb3_connection(
+        host, access_key, secret_key, bucket)
+    if test_connection_result[1] != httplib.OK:
+        return test_connection_result
+
+    separator = '\t'
+    provider = OCIInstitutionsProvider(
+        account=None, host=host,
+        username=access_key, password=secret_key, separator=separator)
+
+    return save_basic_storage_institutions_credentials_common(
+        institution, storage_name, bucket, provider_name, provider, separator)
+
 def get_credentials_common(institution, provider_name):
     clear_usermap_tmp(provider_name, institution)
     rdm_addon_option = get_rdm_addon_option(institution.id, provider_name,
@@ -860,6 +966,30 @@ def get_s3compatinstitutions_credentials(institution):
         bucket = None
     if not bucket:
         bucket = s3compatinstitutions_settings.DEFAULT_BASE_BUCKET
+    data = {}
+    data[provider_name + '_endpoint_url'] = host
+    data[provider_name + '_access_key'] = access_key
+    data[provider_name + '_secret_key'] = secret_key
+    data[provider_name + '_bucket'] = bucket
+    return data
+
+def get_ociinstitutions_credentials(institution):
+    provider_name = 'ociinstitutions'
+    res = get_credentials_common(institution, provider_name)
+    if res:
+        opt, exacc = res
+        provider = OCIInstitutionsProvider(exacc)
+        host = provider.host  # host:port
+        access_key = provider.username
+        secret_key = provider.password
+        bucket = opt.extended.get(KEYNAME_BASE_FOLDER)
+    else:
+        host = ''
+        access_key = ''
+        secret_key = ''
+        bucket = None
+    if not bucket:
+        bucket = ociinstitutions_settings.DEFAULT_BASE_BUCKET
     data = {}
     data[provider_name + '_endpoint_url'] = host
     data[provider_name + '_access_key'] = access_key
