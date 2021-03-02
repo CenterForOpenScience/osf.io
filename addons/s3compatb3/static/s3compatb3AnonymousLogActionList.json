@@ -1,0 +1,11 @@
+{
+    "s3compatb3_bucket_linked" : "A user linked an S3 Compatible Storage bucket to a project",
+    "s3compatb3_bucket_unlinked" : "A user unselected an S3 Compatible Storage bucket in a project",
+    "s3compatb3_file_added" : "A user added a file to an S3 Compatible Storage bucket in a project",
+    "s3compatb3_file_removed" : "A user removed a file in an S3 Compatible Storage bucket in a project",
+    "s3compatb3_file_updated" : "A user updated a file in an S3 Compatible Storage bucket in a project",
+    "s3compatb3_folder_created" : "A user created a folder in an S3 Compatible Storage in a project",
+    "s3compatb3_node_authorized" : "A user authorized the S3 Compatible Storage addon for a project",
+    "s3compatb3_node_deauthorized" : "A user deauthorized the S3 Compatible Storage addon for a project",
+    "s3compatb3_node_deauthorized_no_user" : "S3 Compatible Storage addon for a project deauthorized"
+}
