@@ -41,7 +41,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', request_post_response.content)
+        nt.assert_in('Provider is missing.', request_post_response.content.decode())
 
     def test_empty_keys(self):
         params = {
@@ -52,7 +52,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', request_post_response.content)
+        nt.assert_in('Provider is missing.', request_post_response.content.decode())
 
     def test_invalid_provider(self):
         params = {
@@ -63,7 +63,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid provider.', request_post_response.content)
+        nt.assert_in('Invalid provider.', request_post_response.content.decode())
 
     def test_empty_keys_with_provider(self):
         params = {
@@ -74,7 +74,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content)
+        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
 
     def test_empty_access_key(self):
         params = {
@@ -85,7 +85,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content)
+        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
 
     def test_empty_secret_key(self):
         params = {
@@ -96,7 +96,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content)
+        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
 
     def test_empty_bucket(self):
         params = {
@@ -107,7 +107,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('All the fields above are required.', request_post_response.content)
+        nt.assert_in('All the fields above are required.', request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.can_list', return_value=False)
     @mock.patch('addons.s3.views.utils.get_user_info', return_value=True)
@@ -120,7 +120,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Unable to list buckets.', request_post_response.content)
+        nt.assert_in('Unable to list buckets.', request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.bucket_exists', return_value=False)
     @mock.patch('addons.s3.views.utils.can_list', return_value=True)
@@ -134,7 +134,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid bucket', request_post_response.content)
+        nt.assert_in('Invalid bucket', request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.bucket_exists', return_value=True)
     @mock.patch('addons.s3.views.utils.can_list', return_value=True)
@@ -152,7 +152,7 @@ class TestConnection(AdminTestCase):
         }
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', request_post_response.content)
+        nt.assert_in('Credentials are valid', request_post_response.content.decode())
 
     @mock.patch('addons.s3.views.utils.get_user_info', return_value=None)
     def test_invalid_credentials(self, mock_uid):
@@ -166,7 +166,7 @@ class TestConnection(AdminTestCase):
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('Unable to access account.\\n'
                 'Check to make sure that the above credentials are valid,'
-                'and that they have permission to list buckets.', request_post_response.content)
+                'and that they have permission to list buckets.', request_post_response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -198,7 +198,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
+        nt.assert_in('Provider is missing.', response.content.decode())
 
     def test_invalid_provider(self):
         response = self.view_post({
@@ -210,7 +210,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid provider.', response.content)
+        nt.assert_in('Invalid provider.', response.content.decode())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_s3_connection')
     def test_success(self, mock_testconnection):
@@ -224,7 +224,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
         nt.assert_is_not_none(institution_storage)
@@ -251,5 +251,5 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content)
+        nt.assert_in('NG', response.content.decode())
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())

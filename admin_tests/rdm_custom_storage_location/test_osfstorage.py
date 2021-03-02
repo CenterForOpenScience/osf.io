@@ -38,7 +38,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Provider is missing.', response.content)
+        nt.assert_in('Provider is missing.', response.content.decode())
 
     def test_success(self):
         response = self.view_post({
@@ -46,7 +46,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('NII storage was set successfully', response.content)
+        nt.assert_in('NII storage was set successfully', response.content.decode())
 
     def test_success_cleanup_account(self):
         region = RegionFactory(_id=self.institution._id)
@@ -61,7 +61,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('NII storage was set successfully', response.content)
+        nt.assert_in('NII storage was set successfully', response.content.decode())
 
         nt.assert_false(RegionExternalAccount.objects.filter(region=region).exists())
         nt.assert_false(ExternalAccount.objects.filter(id=external_account.id).exists())

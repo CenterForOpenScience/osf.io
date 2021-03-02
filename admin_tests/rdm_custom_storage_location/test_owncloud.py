@@ -46,7 +46,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', response.content)
+        nt.assert_in('Credentials are valid', response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_success_nextcloud(self, mock_client):
@@ -58,7 +58,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'nextcloud',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Credentials are valid', response.content)
+        nt.assert_in('Credentials are valid', response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_connection_error(self, mock_client):
@@ -72,7 +72,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid ownCloud server.', response.content)
+        nt.assert_in('Invalid ownCloud server.', response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_unauthorized(self, mock_client):
@@ -87,7 +87,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_401_UNAUTHORIZED)
-        nt.assert_in('ownCloud Login failed.', response.content)
+        nt.assert_in('ownCloud Login failed.', response.content.decode())
 
     @mock.patch('owncloud.Client')
     def test_invalid_folder_id(self, mock_client):
@@ -102,7 +102,7 @@ class TestConnection(AdminTestCase):
             'provider_short_name': 'owncloud',
         })
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('Invalid folder.', response.content)
+        nt.assert_in('Invalid folder.', response.content.decode())
 
 
 class TestSaveCredentials(AdminTestCase):
@@ -138,7 +138,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content)
+        nt.assert_in('NG', response.content.decode())
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
@@ -155,7 +155,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
         nt.assert_is_not_none(institution_storage)
