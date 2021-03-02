@@ -1,4 +1,4 @@
-# Japanese translations for .
+># Japanese translations for .
 # Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-29 14:27+0000\n"
-"PO-Revision-Date: 2020-11-29 14:27+0000\n"
+"POT-Creation-Date: 2020-12-11 15:00+0000\n"
+"PO-Revision-Date: 2020-12-11 15:00+0000\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
@@ -2510,15 +2510,15 @@ msgstr ""
 "Password</a>の使用を<strong>強く推奨</strong>します。"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:60
-msgid "Connection URL for File Update Notification App"
+msgid "Connection URL for File Upload Notification App"
 msgstr "ファイル更新通知アプリの接続用URLに指定"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:66
-msgid "Connection ID for File Update Notification App"
+msgid "Connection ID for File Upload Notification App"
 msgstr "ファイル更新通知アプリの接続用IDに指定"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:72
-msgid "Connection common key from File Update Notifications App"
+msgid "Connection common key from File Upload Notification App"
 msgstr "ファイル更新通知アプリの接続用共通鍵を指定"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:79

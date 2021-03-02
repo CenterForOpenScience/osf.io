@@ -107,7 +107,7 @@ class MetadataClient(object):
 
 
 def get_timestamp(node_settings, path):
-    DEBUG(u'path: {}'.format(path))
+    DEBUG(u'get_timestamp: path={}'.format(path))
     provider = node_settings.provider
     external_account = provider.account
     url, username = external_account.provider_id.rsplit(':', 1)
@@ -124,7 +124,7 @@ def get_timestamp(node_settings, path):
             decoded_timestamp = None
         else:
             decoded_timestamp = base64.b64decode(timestamp)
-        DEBUG(u'get timestamp: {}'.format(timestamp))
+        # DEBUG(u'get timestamp: {}'.format(timestamp))
         timestamp_status = cli.get_attribute(res[0], settings.PROPERTY_KEY_TIMESTAMP_STATUS)
         try:
             timestamp_status = int(timestamp_status)
@@ -140,7 +140,7 @@ def get_timestamp(node_settings, path):
 
 
 def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context=None):
-    DEBUG(u'path: {}'.format(path))
+    DEBUG(u'set_timestamp: path={}'.format(path))
     if context is None:
         provider = node_settings.provider
         external_account = provider.account
@@ -151,7 +151,7 @@ def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context
         username = context['username']
         password = context['password']
     encoded_timestamp = base64.b64encode(timestamp_data)
-    DEBUG(u'set timestamp: {}'.format(encoded_timestamp))
+    # DEBUG(u'set timestamp: {}'.format(encoded_timestamp))
     attributes = {
         settings.PROPERTY_KEY_TIMESTAMP: encoded_timestamp,
         settings.PROPERTY_KEY_TIMESTAMP_STATUS: str(timestamp_status)
