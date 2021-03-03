@@ -117,7 +117,7 @@ class TimestampVerifyData(RdmPermissionMixin, View):
         return self.has_auth(institution_id)
 
     def post(self, request, *args, **kwargs):
-        json_data = dict(self.request.POST.iterlists())
+        json_data = dict(self.request.POST.lists())
         request_data = {}
         for key in json_data.keys():
             request_data.update({key: json_data[key]})
