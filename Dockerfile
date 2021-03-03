@@ -124,6 +124,8 @@ COPY ./addons/azureblobstorage/requirements.txt ./addons/azureblobstorage/
 COPY ./addons/weko/requirements.txt ./addons/weko/
 COPY ./addons/s3compat/requirements.txt ./addons/s3compat/
 COPY ./addons/s3compatinstitutions/requirements.txt ./addons/s3compatinstitutions/
+COPY ./addons/s3compatb3/requirements.txt ./addons/s3compatb3/
+COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/
 COPY ./addons/nextcloud/requirements.txt ./addons/nextcloud/
 COPY ./addons/nextcloudinstitutions/requirements.txt ./addons/nextcloudinstitutions/
 
@@ -191,6 +193,8 @@ COPY ./addons/weko/static/ ./addons/weko/static/
 COPY ./addons/jupyterhub/static/ ./addons/jupyterhub/static/
 COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/s3compatinstitutions/static/ ./addons/s3compatinstitutions/static/
+COPY ./addons/s3compatb3/static/ ./addons/s3compatb3/static/
+COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/

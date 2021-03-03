@@ -373,7 +373,7 @@ def serialize_addons(node, auth):
     addon_settings = []
     addons_available = [addon for addon in settings.ADDONS_AVAILABLE
                         if addon not in settings.SYSTEM_ADDED_ADDONS['node']
-                        and addon.short_name not in ('wiki', 'forward', 'twofactor')]
+                        and addon.short_name not in ('wiki', 'forward', 'twofactor', 's3compatb3')]
 
 ### forced Admin Settings
     from admin.rdm_addons.utils import update_with_rdm_addon_settings
