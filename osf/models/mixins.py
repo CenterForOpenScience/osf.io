@@ -1071,7 +1071,6 @@ class TaxonomizableMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         DraftRegistration = apps.get_model('osf.DraftRegistration')
-        Node = apps.get_model('osf.Node')
 
         if isinstance(self, AbstractNode):
             if not self.has_permission(auth.user, ADMIN):
@@ -1079,9 +1078,6 @@ class TaxonomizableMixin(models.Model):
         elif isinstance(self, Preprint):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-        if isinstance(self, DraftRegistration) and isinstance(self.branched_from, Node):
-            if not self.branched_from.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have admin on parent node to update draft registration\'s subjects.')
         elif isinstance(self, DraftRegistration):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
@@ -2233,7 +2229,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True, contributors=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2249,8 +2245,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         # Contributors will always come from "resource", as contributor constraints
         # will require contributors to be present on the resource
-        if contributors:
-            self.copy_contributors_from(resource)
+        self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
 
