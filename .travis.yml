@@ -44,6 +44,7 @@ env:
     - TEST_BUILD="api1_and_js"
     - TEST_BUILD="api2"
     - TEST_BUILD="api3_and_osf"
+    - TEST_BUILD="admin"
 
 before_install:
 
