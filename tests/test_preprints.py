@@ -1995,10 +1995,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
+            'name': 'BoJack Horseman',
+            'given_name': 'BoJack',
+            'family_name': 'Horseman',
         }, {
             '@type': 'person',
+            'name': self.preprint.creator.fullname,
             'given_name': self.preprint.creator.given_name,
             'family_name': self.preprint.creator.family_name,
         }], key=lambda x: x['given_name'])
@@ -2086,10 +2088,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
+            'name': 'BoJack Horseman',
+            'given_name': 'BoJack',
+            'family_name': 'Horseman',
         }, {
             '@type': 'person',
+            'name': self.preprint.creator.fullname,
             'given_name': self.preprint.creator.given_name,
             'family_name': self.preprint.creator.family_name,
         }], key=lambda x: x['given_name'])

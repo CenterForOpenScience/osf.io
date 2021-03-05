@@ -127,6 +127,7 @@ class GraphNode(object):
 def format_user(user):
     person = GraphNode(
         'person', **{
+            'name': user.fullname,
             'suffix': user.suffix,
             'given_name': user.given_name,
             'family_name': user.family_name,
