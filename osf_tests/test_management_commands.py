@@ -11,6 +11,7 @@ from addons.osfstorage import settings as osfstorage_settings
 from api_tests.utils import create_test_file
 from framework.auth import Auth
 from osf.management.commands.update_institution_project_counts import update_institution_project_counts
+from osf.management.commands.project_to_draft_registration_contributor_sync import retrieve_draft_registrations_to_sync, project_to_draft_registration_contributor_sync
 from osf.models import QuickFilesNode, RegistrationSchema
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf_tests.factories import (
@@ -18,10 +19,12 @@ from osf_tests.factories import (
     InstitutionFactory,
     PreprintFactory,
     ProjectFactory,
+    RegistrationFactory,
     RegionFactory,
     UserFactory,
     DraftRegistrationFactory,
 )
+from osf.utils.permissions import ADMIN, WRITE, READ
 from tests.base import DbTestCase
 from osf.management.commands.data_storage_usage import (
     process_usages,
@@ -392,3 +395,81 @@ class TestInstitutionMetricsUpdate:
 
         assert institution_results['public_project_count'] == 4
         assert institution_results['private_project_count'] == 14
+
+
+@pytest.mark.django_db
+class TestProjectDraftRegContributorSync:
+    @pytest.fixture()
+    def initiator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def draft_reg_contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_admin_contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project_read_contributor(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, initiator):
+        project = ProjectFactory(creator=initiator)
+        return project
+
+    @pytest.fixture()
+    def active_draft_registration(self, project, initiator):
+        return DraftRegistrationFactory(branched_from=project, initiator=initiator)
+
+    @pytest.fixture()
+    def inactive_draft_registration(self, project, initiator):
+        draft_reg = DraftRegistrationFactory(branched_from=project, initiator=initiator)
+        RegistrationFactory(draft_registration=draft_reg, creator=initiator)
+        return draft_reg
+
+    @pytest.fixture()
+    def active_draft_registration_multiple_contributor(self, project, initiator, draft_reg_contributor):
+        draft_reg = DraftRegistrationFactory(branched_from=project, initiator=initiator)
+        draft_reg.add_contributor(draft_reg_contributor, WRITE)
+        return draft_reg
+
+    def test_draft_reg_to_sync_retrieval(
+            self, app, active_draft_registration, inactive_draft_registration, active_draft_registration_multiple_contributor):
+        # Tests if the function used to retriev draft registrations to copy project contributors
+        # to is limited to those without registrations
+        active_unsynced_draft_regs = retrieve_draft_registrations_to_sync()
+        assert active_draft_registration in active_unsynced_draft_regs
+        assert inactive_draft_registration not in active_unsynced_draft_regs
+        assert active_draft_registration_multiple_contributor not in active_unsynced_draft_regs
+
+    def test_project_draft_reg_contributor_sync(
+            self, app, initiator, project_admin_contributor,
+            project_read_contributor, project, active_draft_registration):
+        # Contributors added to the project here because the draft registration should be created with a single contributor (the initiator)
+        project.add_contributor(project_admin_contributor, ADMIN)
+        project.add_contributor(project_read_contributor, READ)
+        # The removal of the initiator from the project ensures that contributors are copied from the
+        # project but without overwriting the draft registration contributor permission
+        project.remove_contributor(initiator, auth=project_admin_contributor.auth, log=False)
+        assert project_admin_contributor in project.contributors.all()
+        assert project_read_contributor in project.contributors.all()
+        assert initiator not in project.contributors.all()
+
+        assert active_draft_registration.contributors.count() == 1
+        assert initiator in active_draft_registration.contributors.all()
+        assert project_admin_contributor not in active_draft_registration.contributors.all()
+        assert project_read_contributor not in active_draft_registration.contributors.all()
+
+        project_to_draft_registration_contributor_sync()
+
+        assert initiator in active_draft_registration.contributors.all()
+        assert project_admin_contributor in active_draft_registration.contributors.all()
+        assert project_read_contributor in active_draft_registration.contributors.all()
+        assert active_draft_registration.contributors.count() == 3
+
+        assert active_draft_registration.has_permission(initiator, ADMIN)
+        assert active_draft_registration.has_permission(project_admin_contributor, ADMIN)
+        assert active_draft_registration.has_permission(project_read_contributor, READ)

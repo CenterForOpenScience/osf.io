@@ -9,11 +9,15 @@ from osf.models import DraftRegistration
 logger = logging.getLogger(__name__)
 
 
-def project_to_draft_registration_contributor_sync():
+def retrieve_draft_registrations_to_sync():
     # Retrieve all active draft registrations
     active_draft_registrations = DraftRegistration.objects.filter(Q(deleted__isnull=True) & (Q(registered_node=None) | Q(registered_node__is_deleted=True)))
     # Retrieve active draft registrations with only 1 contributor (the initiator)
     active_unsynced_draft_regs = active_draft_registrations.annotate(num_contributor=Count('_contributors')).filter(num_contributor=1)
+    return active_unsynced_draft_regs
+
+def project_to_draft_registration_contributor_sync():
+    active_unsynced_draft_regs = retrieve_draft_registrations_to_sync()
     logger.debug(f'A total of {active_unsynced_draft_regs.count()} draft registrations will be synced with the contributors from their projects.')
 
     for draft_reg in active_unsynced_draft_regs:
