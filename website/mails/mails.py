@@ -257,6 +257,10 @@ REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation R
 REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
 
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
+SPAM_FILES_DETECTED = Mail(
+    'spam_files_detected',
+    subject='[auto] Spam files audit'
+)
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
