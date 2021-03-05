@@ -5,6 +5,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
 )
+from osf.utils.permissions import WRITE
 
 
 @pytest.mark.django_db
@@ -15,10 +16,18 @@ class TestDraftNodeDraftRegistrationsList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def draft_registration(self, user):
-        return DraftRegistrationFactory(
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def draft_registration(self, user, user_write_contrib):
+        draft_reg = DraftRegistrationFactory(
             initiator=user
         )
+        draft_reg.add_contributor(
+            user_write_contrib,
+            permissions=WRITE)
+        return draft_reg
 
     @pytest.fixture()
     def draft_node(self, draft_registration):
@@ -31,7 +40,11 @@ class TestDraftNodeDraftRegistrationsList:
             API_BASE, draft_node._id)
 
     def test_draft_node_draft_registration_list(
-            self, app, user, draft_registration, draft_node, url_draft_node_draft_registrations):
+            self, app, user, user_write_contrib, draft_registration, draft_node, url_draft_node_draft_registrations):
+
+        # Un-authorized user does
+        res = app.get(url_draft_node_draft_registrations, auth=user_write_contrib.auth, expect_errors=True)
+        assert res.status_code == 403
 
         # Draft Node and Draft Registration contributor
         res = app.get(url_draft_node_draft_registrations, auth=user.auth)
