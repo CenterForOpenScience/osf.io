@@ -128,8 +128,8 @@ def validate_bucket_name(name):
 
 
 def create_bucket(node_settings, bucket_name, location=''):
-    return connect_s3compatb3(node_settings=node_settings).create_bucket(Bucket=bucket_name,
-        CreateBucketConfigurationlocation={'LocationConstraint': location})
+    return connect_s3compatb3(node_settings=node_settings).create_bucket(Bucket=bucket_name)
+    #     CreateBucketConfigurationlocation={'LocationConstraint': location})
 
 def bucket_exists(host, access_key, secret_key, bucket_name):
     """Tests for the existance of a bucket and if the user
@@ -193,6 +193,8 @@ def get_bucket_location_or_error(host, access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connection.get_bucket(bucket_name, validate=False).get_location()
+        # return connection.get_bucket(bucket_name, validate=False).get_location()
+        metadata = connection.meta.client.head_bucket(Bucket=bucket_name)
+        return metadata['ResponseMetadata']['HTTPHeaders']['x-amz-bucket-region']
     except exception.S3ResponseError:
         raise InvalidFolderError()

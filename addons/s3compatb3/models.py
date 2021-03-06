@@ -11,8 +11,7 @@ from addons.s3compatb3.serializer import S3CompatB3Serializer
 from addons.s3compatb3.settings import ENCRYPT_UPLOADS_DEFAULT
 from addons.s3compatb3.utils import (bucket_exists,
                                      get_bucket_location_or_error,
-                                     get_bucket_names,
-                                     find_service_by_host)
+                                     get_bucket_names)
 
 class S3CompatB3FileNode(BaseFileNode):
     _provider = 's3compatb3'
@@ -67,12 +66,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             folder_id
         )
         self.folder_location = bucket_location
-        try:
-            service = find_service_by_host(host)
-            bucket_location = service['bucketLocations'][bucket_location]['name']
-        except KeyError:
-            # Unlisted location, Default to the key.
-            pass
         if bucket_location is None or bucket_location == '':
             bucket_location = 'Default'
 
@@ -132,13 +125,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.has_auth:
             raise exceptions.AddonError('Cannot serialize credentials for S3 Compatible Storage addon')
         host = self.external_account.provider_id.split('\t')[0]
-        if self.folder_location is not None and len(self.folder_location) > 0:
-            try:
-                service = find_service_by_host(host)
-                host = service['bucketLocations'][self.folder_location]['host']
-            except KeyError:
-                # Unlisted location, use default host
-                pass
         return {
             'host': host,
             'access_key': self.external_account.oauth_key,

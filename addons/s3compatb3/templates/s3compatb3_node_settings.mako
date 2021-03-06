@@ -55,7 +55,6 @@
                     <button data-bind="click: togglePicker,
                                        css: {active: currentDisplay() === PICKER}" class="btn btn-primary">
                                        <span data-bind="text: toggleChangeText"></span></button>
-                    <button data-bind="visible: userIsOwner() && validCredentials(), click: openCreateBucket" class="btn btn-success" id="newBucket">${_("Create bucket")}</button>
                 </div>
                 <!-- Folder picker -->
                 <div class="m-t-sm addon-folderpicker-widget ${addon_short_name}-widget">

@@ -14,7 +14,7 @@ class S3CompatB3AddonAppConfig(BaseAddonAppConfig):
 
     name = 'addons.s3compatb3'
     label = 'addons_s3compatb3'
-    full_name = 'S3 Compatible Storage'
+    full_name = 'Oracle Cloud Infrastructure Object Storage'
     short_name = 's3compatb3'
     owners = ['user', 'node']
     configs = ['accounts', 'node']

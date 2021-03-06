@@ -1,21 +1,21 @@
 # Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
+# Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: 0.6.0\n"
-"Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-11-10 20:10+0900\n"
-"PO-Revision-Date: 2020-11-10 20:10+0900\n"
-"Last-Translator: Hiroki Ohashi\n"
-"Language-Team: RCOS <rocs-office@nii.ac.jp\n"
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2021-03-12 18:15+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.5.1\n"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
 msgid "Connect an Azure Blob Storage Account"
@@ -42,6 +42,8 @@ msgstr ""
 #: addons/s3/templates/s3_node_settings.mako:77
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:40
 #: addons/s3compat/templates/s3compat_node_settings.mako:77
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:44
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:76
 #: addons/swift/templates/swift_credentials_modal.mako:56
 #: addons/swift/templates/swift_node_settings.mako:77
 #: addons/weko/templates/weko_credentials_modal.mako:57
@@ -65,7 +67,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/nodes_privacy.mako:104
-#: website/templates/project/project.mako:568
+#: website/templates/project/project.mako:572
 #: website/templates/project/settings.mako:131
 #: website/templates/project/timestamp.mako:71
 #: website/templates/util/render_addon_widget.mako:98
@@ -89,6 +91,8 @@ msgstr ""
 #: addons/s3/templates/s3_node_settings.mako:79
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:43
 #: addons/s3compat/templates/s3compat_node_settings.mako:79
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:47
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:78
 #: addons/swift/templates/swift_credentials_modal.mako:59
 #: addons/swift/templates/swift_node_settings.mako:79
 #: addons/weko/templates/weko_node_settings.mako:83
@@ -109,7 +113,7 @@ msgstr ""
 #: website/templates/profile/personal_tokens_detail.mako:55
 #: website/templates/project/addon/node_settings_default.mako:74
 #: website/templates/project/addon/user_settings.mako:13
-#: website/templates/project/project.mako:570
+#: website/templates/project/project.mako:574
 #: website/templates/project/settings.mako:338
 msgid "Save"
 msgstr ""
@@ -130,6 +134,8 @@ msgstr ""
 #: addons/s3/templates/s3_user_settings.mako:18
 #: addons/s3compat/templates/s3compat_node_settings.mako:14
 #: addons/s3compat/templates/s3compat_user_settings.mako:18
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:14
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:18
 #: addons/swift/templates/swift_node_settings.mako:14
 #: addons/swift/templates/swift_user_settings.mako:18
 #: addons/weko/templates/weko_node_settings.mako:15
@@ -149,6 +155,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:22
 #: addons/s3/templates/s3_node_settings.mako:21
 #: addons/s3compat/templates/s3compat_node_settings.mako:21
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:21
 #: addons/swift/templates/swift_node_settings.mako:21
 #: addons/weko/templates/weko_node_settings.mako:22
 #: addons/zotero/templates/zotero_node_settings.mako:17
@@ -159,6 +166,7 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:28
 #: addons/s3/templates/s3_node_settings.mako:28
 #: addons/s3compat/templates/s3compat_node_settings.mako:28
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:28
 #: addons/swift/templates/swift_node_settings.mako:28
 #: addons/zotero/templates/zotero_node_settings.mako:24
 #: website/templates/project/addon/node_settings_default.mako:24
@@ -171,6 +179,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:29
 #: addons/s3/templates/s3_node_settings.mako:35
 #: addons/s3compat/templates/s3compat_node_settings.mako:35
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:35
 #: addons/swift/templates/swift_node_settings.mako:35
 #: addons/weko/templates/weko_node_settings.mako:29
 msgid "Connect  Account"
@@ -183,6 +192,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:47
 #: addons/s3/templates/s3_node_settings.mako:50
 #: addons/s3compat/templates/s3compat_node_settings.mako:50
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:50
 #: addons/swift/templates/swift_node_settings.mako:50
 #: addons/weko/templates/weko_node_settings.mako:49
 #: addons/zotero/templates/zotero_node_settings.mako:46
@@ -207,6 +217,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
 #: addons/s3/templates/s3_node_settings.mako:72
 #: addons/s3compat/templates/s3compat_node_settings.mako:72
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:71
 #: addons/swift/templates/swift_node_settings.mako:72
 #: addons/zotero/templates/zotero_node_settings.mako:122
 #: website/templates/project/addon/node_settings_default.mako:67
@@ -221,6 +232,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_user_settings.mako:12
 #: addons/s3/templates/s3_user_settings.mako:12
 #: addons/s3compat/templates/s3compat_user_settings.mako:12
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:12
 #: addons/swift/templates/swift_user_settings.mako:12
 #: addons/weko/templates/weko_user_settings.mako:12
 #: website/templates/profile/user_settings_default.mako:9
@@ -239,6 +251,7 @@ msgstr ""
 #: addons/owncloud/templates/owncloud_user_settings.mako:31
 #: addons/s3/templates/s3_user_settings.mako:32
 #: addons/s3compat/templates/s3compat_user_settings.mako:32
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:32
 #: addons/swift/templates/swift_user_settings.mako:32
 #: addons/weko/templates/weko_user_settings.mako:31
 #: website/templates/profile/user_settings_default.mako:28
@@ -248,32 +261,11 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
 #: addons/s3/templates/s3_user_settings.mako:36
 #: addons/s3compat/templates/s3compat_user_settings.mako:36
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
 #: addons/swift/templates/swift_user_settings.mako:36
 #: addons/weko/templates/weko_user_settings.mako:35
 #: website/templates/profile/user_settings_default.mako:32
 msgid "disconnect Project"
-msgstr ""
-
-#: addons/base/models.py:461
-msgid ""
-"Because you have not configured the {addon} add-on, your authentication "
-"will not be transferred to the forked {category}. You may authorize and "
-"configure the {addon} add-on in the new fork on the settings page."
-msgstr ""
-
-#: addons/base/models.py:469
-msgid ""
-"Because you have authorized the {addon} add-on for this {category}, "
-"forking it will also transfer your authentication to the forked "
-"{category}."
-msgstr ""
-
-#: addons/base/models.py:476
-msgid ""
-"Because the {addon} add-on has been authorized by a different user, "
-"forking it will not transfer authentication to the forked {category}. You"
-" may authorize and configure the {addon} add-on in the new fork on the "
-"settings page."
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
@@ -579,11 +571,13 @@ msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:17
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:21
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:25
 msgid "Access Key"
 msgstr ""
 
 #: addons/s3/templates/s3_credentials_modal.mako:21
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:25
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:29
 msgid "Secret Key"
 msgstr ""
 
@@ -598,6 +592,7 @@ msgstr ""
 
 #: addons/s3/templates/s3_user_settings.mako:24
 #: addons/s3compat/templates/s3compat_user_settings.mako:24
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:24
 #: addons/swift/templates/swift_user_settings.mako:24
 #: addons/weko/templates/weko_user_settings.mako:23
 #: website/templates/profile/user_settings_default.mako:20
@@ -605,6 +600,7 @@ msgid "Authorized by "
 msgstr ""
 
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:6
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:6
 msgid "Connect an S3 Compatible Storage Account"
 msgstr ""
 
@@ -613,7 +609,20 @@ msgid "S3 Compatible Service"
 msgstr ""
 
 #: addons/s3compat/templates/s3compat_node_settings.mako:45
+#: addons/s3compatb3/templates/s3compatb3_node_settings.mako:45
 msgid "Current Bucket:"
+msgstr ""
+
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:17
+msgid "Namespace"
+msgstr ""
+
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:21
+msgid "Region"
+msgstr ""
+
+#: addons/s3compatb3/templates/s3compatb3_credentials_modal.mako:22
+msgid "optionsText"
 msgstr ""
 
 #: addons/swift/templates/swift_credentials_modal.mako:6
@@ -863,7 +872,7 @@ msgstr ""
 #: addons/wiki/templates/edit.mako:126 addons/wiki/templates/edit.mako:134
 #: website/templates/include/profile/schools.mako:180
 #: website/templates/include/profile/social.mako:184
-#: website/templates/project/project.mako:539
+#: website/templates/project/project.mako:543
 msgid "Edit"
 msgstr ""
 
@@ -1683,7 +1692,7 @@ msgstr ""
 msgid "Registration"
 msgstr ""
 
-#: website/templates/project/project.mako:587
+#: website/templates/project/project.mako:591
 #: website/templates/project/view_file.mako:71
 #: website/templates/search.mako:377 website/templates/search_grdm.mako:472
 #: website/templates/search_grdm.mako:581
@@ -1830,7 +1839,7 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:96
 #: website/templates/project/modal_remove_contributor.mako:105
 #: website/templates/project/modal_remove_contributor.mako:114
-#: website/templates/project/project.mako:569
+#: website/templates/project/project.mako:573
 #: website/templates/project/settings.mako:498
 #: website/templates/project/settings.mako:501
 msgid "Remove"
@@ -1864,7 +1873,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:610
+#: website/templates/project/project.mako:614
 msgid "Start date"
 msgstr ""
 
@@ -1884,7 +1893,7 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:613
+#: website/templates/project/project.mako:617
 msgid "End date"
 msgstr ""
 
@@ -3135,83 +3144,83 @@ msgstr ""
 msgid "This {preprint_word} is not publicly available or searchable."
 msgstr ""
 
-#: website/templates/project/project.mako:461
+#: website/templates/project/project.mako:465
 #: website/templates/project/view_file.mako:52
 msgid "Loading files..."
 msgstr ""
 
-#: website/templates/project/project.mako:502
+#: website/templates/project/project.mako:506
 #: website/templates/util/render_addon_widget.mako:70
 msgid "Citation"
 msgstr ""
 
 #: website/templates/project/addon/citations_widget.mako:16
-#: website/templates/project/project.mako:514
+#: website/templates/project/project.mako:518
 #: website/templates/util/render_addon_widget.mako:136
 msgid "Loading citations..."
 msgstr ""
 
-#: website/templates/project/project.mako:519
+#: website/templates/project/project.mako:523
 msgid "Customize"
 msgstr ""
 
-#: website/templates/project/project.mako:527
+#: website/templates/project/project.mako:531
 msgid "Chicago"
 msgstr ""
 
-#: website/templates/project/project.mako:531
+#: website/templates/project/project.mako:535
 msgid "Get more citations"
 msgstr ""
 
-#: website/templates/project/project.mako:549
+#: website/templates/project/project.mako:553
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(textCustomCitation)s></span>"
 msgstr ""
 
-#: website/templates/project/project.mako:560
+#: website/templates/project/project.mako:564
 msgid "Enter custom citation"
 msgstr ""
 
-#: website/templates/project/project.mako:601
+#: website/templates/project/project.mako:605
 msgid "Recent Activity"
 msgstr ""
 
-#: website/templates/project/project.mako:602
+#: website/templates/project/project.mako:606
 msgid "Clear Filters"
 msgstr ""
 
-#: website/templates/project/project.mako:603
+#: website/templates/project/project.mako:607
 msgid "Refresh"
 msgstr ""
 
-#: website/templates/project/project.mako:635
+#: website/templates/project/project.mako:639
 msgid "Loading logs..."
 msgstr ""
 
-#: website/templates/project/project.mako:641
+#: website/templates/project/project.mako:645
 msgid "Download as file"
 msgstr ""
 
-#: website/templates/project/project.mako:642
+#: website/templates/project/project.mako:646
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr ""
 
-#: website/templates/project/project.mako:655
+#: website/templates/project/project.mako:659
 msgid "Components"
 msgstr ""
 
-#: website/templates/project/project.mako:659
+#: website/templates/project/project.mako:663
 msgid "Add Component"
 msgstr ""
 
-#: website/templates/project/project.mako:661
+#: website/templates/project/project.mako:665
 msgid "Link Projects"
 msgstr ""
 
-#: website/templates/project/project.mako:671
+#: website/templates/project/project.mako:675
 msgid "Add components to organize your project."
 msgstr ""
 

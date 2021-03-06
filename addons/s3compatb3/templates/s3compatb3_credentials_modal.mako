@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>${_("Connect an S3 Compatible Storage Account")}</h3>
+                <h3>Oracle Cloud Infrastructure: ${_("Connect an S3 Compatible Storage Account")}</h3>
             </div>
 
             <form>
@@ -19,11 +19,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="s3compatb3Addon">${_("Region")}</label>
-                                <input class="form-control" data-bind="value: region" name="region" ${'disabled' if disabled else ''} />
-                            </div>
-                            <div class="form-group">
-                                <label for="s3compatb3Addon">${_("host")}</label>
-                                https://<input class="form-control" data-bind="value: host" name="host" 'disabled' />
+                                <select class="form-control" data-bind="value: region, options: regions, optionsText: '${_("optionsText")}', optionssValue: 'id'" id="regionOptions" name="region" ${'disabled' if disabled else ''}></select>
                             </div>
                             <div class="form-group">
                                 <label for="s3compatb3Addon">${_("Access Key")}</label>

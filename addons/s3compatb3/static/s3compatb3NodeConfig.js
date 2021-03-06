@@ -8,29 +8,30 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 
-var s3compatb3b3Settings = require('json-loader!./settings.json');
+var s3compatb3Settings = require('json-loader!./settings.json');
 
 var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
 
-var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
+var s3compatb3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
         var self = this;
         // TODO: [OSF-7069]
         self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
         self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
         // Non-OAuth fields
-        self.availableServices = ko.observableArray(s3compatb3b3Settings['availableServices']);
-        self.selectedService = ko.observable(s3compatb3b3Settings['availableServices'][0]);
-        self.hostTemplate = ko.observable(s3compatb3Settings['hostTemplate'];
-        self.namespaceIndex = ko.observable(s3compatb3Settings['namespaceIndex'];
-        self.regionIndex = ko.observable(s3compatb3Settings['regionIndex'];
+        self.availableServices = ko.observableArray(s3compatb3Settings['availableServices']);
+        self.regions = ko.observableArray(s3compatb3Settings['regions']);
+        self.selectedService = ko.observable(s3compatb3Settings['availableServices'][0]);
+        self.hostTemplate = ko.observable(s3compatb3Settings['hostTemplate']);
+        self.namespaceIndex = ko.observable(s3compatb3Settings['namespaceIndex']);
+        self.regionIndex = ko.observable(s3compatb3Settings['regionIndex']);
         self.namespace = ko.observable('');
-        self.region = ko.observable('');
-        //self.host = ko.observable(s3compatb3Settings['hostTemplate'];
+        self.region = ko.observable(s3compatb3Settings['regions'].find(function(region) {return region['id'] == s3compatb3Settings['regionDefault']}));
+        // self.host = ko.observable(s3compatb3Settings['hostTemplate'];
         self.host = ko.computed(function() {
-            let dc = this.hostTemplate().split('.');
+            var dc = this.hostTemplate().split('.');
             dc[this.namespaceIndex()] = this.namespace();
-            dc[this.regionIndex()] = this.region();
+            dc[this.regionIndex()] = (this.region() || {})['id'];
             return dc.join('.');
         }, self);
         self.accessKey = ko.observable('');
@@ -116,7 +117,7 @@ var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         ).done(function(response) {
             $osf.unblock();
             self.clearModal();
-            $('#s3compatb3b3InputCredentials').modal('hide');
+            $('#s3compatb3InputCredentials').modal('hide');
             self.changeMessage('Successfully added S3 Compatible Storage credentials.', 'text-success', null, true);
             self.updateFromData(response);
             self.importAuth();
@@ -168,7 +169,9 @@ var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         var self = this;
         self.message('');
         self.messageClass('text-info');
-        self.selectedService(s3compatb3b3Settings['availableServices'][0]);
+        self.selectedService(s3compatb3Settings['availableServices'][0]);
+        self.namespace(null);
+        self.region(null);
         self.secretKey(null);
         self.accessKey(null);
     },
@@ -277,12 +280,6 @@ var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
                                         '<div>' +
                                             '<span id="bucketModalErrorMessage" ></span>' +
                                         '</div>'+
-                                    '</div>' +
-                                '</div>' +
-                                '<div class="form-group"> ' +
-                                    '<label class="col-md-4 control-label" for="bucketLocation">Bucket Location</label> ' +
-                                    '<div class="col-md-8"> ' +
-                                        generateBucketSelector() +
                                     '</div>' +
                                 '</div>' +
                             '</form>' +

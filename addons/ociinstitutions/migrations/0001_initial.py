@@ -14,7 +14,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('osf', '0178_auto_20210302_0148'),
     ]
 
     operations = [

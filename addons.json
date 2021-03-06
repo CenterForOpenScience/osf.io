@@ -33,7 +33,9 @@
     "addons_default": [
         "osfstorage",
         "nextcloudinstitutions",
-        "dropboxbusiness"
+        "dropboxbusiness",
+        "s3compatinstitutions",
+        "ociinstitutions"
     ],
     "addons_archivable": {
         "osfstorage": "full",
