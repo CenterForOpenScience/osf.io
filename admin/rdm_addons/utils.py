@@ -81,18 +81,15 @@ def get_rdm_addon_option(institution_id, addon_name, create=True):
             institution_id=institution_id, provider=addon_name)
     else:
         rdm_addon_option, created = RdmAddonNoInstitutionOption.objects.get_or_create(provider=addon_name)
-    if not created:
-        return rdm_addon_option
+    # if not created:
+    #     return rdm_addon_option
 
     app = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
     if app:
         # is_allowed_default is False when for_institutions is True
         for_institutions = getattr(app, 'for_institutions', False)
-        if for_institutions:
-            is_allowed_default = False
-        else:
-            is_allowed_default = getattr(app, 'is_allowed_default', True)
-        if is_allowed_default is False:
+        is_allowed_default = getattr(app, 'is_allowed_default', True)
+        if for_institutions or (is_allowed_default is False and created):
             rdm_addon_option.is_allowed = False
             rdm_addon_option.save()
     return rdm_addon_option

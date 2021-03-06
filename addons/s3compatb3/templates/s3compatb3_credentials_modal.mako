@@ -14,8 +14,16 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="s3compatb3Addon">${_("S3 Compatible Service")}</label>
-                                <select class="form-control" data-bind="value: selectedService, options: availableServices, optionsText: 'name'" id="selected_service" name="selected_service" ${'disabled' if disabled else ''}></select>
+                                <label for="s3compatb3Addon">${_("Namespace")}</label>
+                                <input class="form-control" data-bind="value: namespace" name="namespace" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="s3compatb3Addon">${_("Region")}</label>
+                                <input class="form-control" data-bind="value: region" name="region" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="s3compatb3Addon">${_("host")}</label>
+                                https://<input class="form-control" data-bind="value: host" name="host" 'disabled' />
                             </div>
                             <div class="form-group">
                                 <label for="s3compatb3Addon">${_("Access Key")}</label>

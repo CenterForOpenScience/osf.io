@@ -14,5 +14,8 @@
                            {"name": "RDM Minio",
                            "host": "minio.rdm.nii.ac.jp"}
                            ],
+    "hostTemplate": "namespace.compat.objectstorage.region.oraclecloud.com",
+    "namespaceIndex": 0,
+    "regionIndex": 3,
     "encryptUploads": true
 }

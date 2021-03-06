@@ -24,9 +24,21 @@ var $modal = $('#s3compatb3InputCredentials');
 function ViewModel(url) {
     var self = this;
 
-    self.properName = 'S3 Compatible Storage';
+    self.properName = 'SOracle Cloud Infrastructure Object Storage';
     self.availableServices = ko.observableArray(s3compatb3Settings['availableServices']);
     self.selectedService = ko.observable(s3compatb3Settings['availableServices'][0]);
+    self.hostTemplate = ko.observable(s3compatb3Settings['hostTemplate'];
+    self.namespaceIndex = ko.observable(s3compatb3Settings['namespaceIndex'];
+    self.regionIndex = ko.observable(s3compatb3Settings['regionIndex'];
+    self.namespace = ko.observable();
+    self.region = ko.observable();
+    //self.host = ko.observable(s3compatb3Settings['hostTemplate'];
+    self.host = ko.computed(function() {
+        let dc = this.hostTemplate().split('.');
+        dc[this.namespaceIndex()] = this.namespace();
+        dc[this.regionIndex()] = this.region();
+        return dc.join('.');
+    }, self);
     self.accessKey = ko.observable();
     self.secretKey = ko.observable();
     self.account_url = '/api/v1/settings/s3compatb3/accounts/';
@@ -39,6 +51,8 @@ function ViewModel(url) {
         self.message('');
         self.messageClass('text-info');
         self.selectedService(s3compatb3Settings['availableServices'][0]);
+        self.namespace(null);
+        self.region(null);
         self.accessKey(null);
         self.secretKey(null);
     };
@@ -59,12 +73,26 @@ function ViewModel(url) {
             self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
+        if( !self.namespace() && !self.region() ){
+            self.changeMessage('Please enter both an namespace and region.', 'text-danger');
+            return;
+        }
+
+        if (!self.namespace() ){
+            self.changeMessage('Please enter an namespace.', 'text-danger');
+            return;
+        }
+
+        if (!self.region() ){
+            self.changeMessage('Please enter an region.', 'text-danger');
+            return;
+        }
         return osfHelpers.postJSON(
             self.account_url,
             ko.toJS({
-                host: self.selectedService()['host'],
-                access_key: self.accessKey,
-                secret_key: self.secretKey,
+                host: self.host(),
+                access_key: self.accessKey(),
+                secret_key: self.secretKey(),
             })
         ).done(function() {
             self.clearModal();

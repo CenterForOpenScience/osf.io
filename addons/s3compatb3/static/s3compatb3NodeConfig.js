@@ -21,6 +21,18 @@ var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
         // Non-OAuth fields
         self.availableServices = ko.observableArray(s3compatb3b3Settings['availableServices']);
         self.selectedService = ko.observable(s3compatb3b3Settings['availableServices'][0]);
+        self.hostTemplate = ko.observable(s3compatb3Settings['hostTemplate'];
+        self.namespaceIndex = ko.observable(s3compatb3Settings['namespaceIndex'];
+        self.regionIndex = ko.observable(s3compatb3Settings['regionIndex'];
+        self.namespace = ko.observable('');
+        self.region = ko.observable('');
+        //self.host = ko.observable(s3compatb3Settings['hostTemplate'];
+        self.host = ko.computed(function() {
+            let dc = this.hostTemplate().split('.');
+            dc[this.namespaceIndex()] = this.namespace();
+            dc[this.regionIndex()] = this.region();
+            return dc.join('.');
+        }, self);
         self.accessKey = ko.observable('');
         self.secretKey = ko.observable('');
         // Treebeard config
@@ -79,11 +91,25 @@ var s3compatb3b3FolderPickerViewModel = oop.extend(OauthAddonFolderPicker, {
             self.changeMessage('Please enter an API secret key.', 'text-danger');
             return;
         }
+        if( !self.namespace() && !self.region() ){
+            self.changeMessage('Please enter both an namespace and region.', 'text-danger');
+            return;
+        }
+
+        if (!self.namespace() ){
+            self.changeMessage('Please enter an namespace.', 'text-danger');
+            return;
+        }
+
+        if (!self.region() ){
+            self.changeMessage('Please enter an region.', 'text-danger');
+            return;
+        }
         $osf.block();
 
         return $osf.postJSON(
             self.urls().create, {
-                host: self.selectedService()['host'],
+                host: self.host(),
                 secret_key: self.secretKey(),
                 access_key: self.accessKey()
             }
