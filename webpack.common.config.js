@@ -142,7 +142,7 @@ function logEntriesToJS(logs) {
             lines += 'var _ = require(\'js/rdmGettext\')._;\n';
             phase ++;
         }
-        lines += `var ${entry[0]} = _('${entry[1]}');\n`
+        lines += `var ${entry[0]} = _('${entry[1].replace(/'/g, "\\'")}');\n`
     });
     return lines;
 }
