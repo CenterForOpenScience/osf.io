@@ -28,6 +28,7 @@ from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
 
 from osf.models.validators import SwitchValidator
 
+
 def get_meta_type(serializer_class, request):
     meta = getattr(serializer_class, 'Meta', None)
     if meta is None:
@@ -1179,7 +1180,71 @@ class WaterbutlerLink(Link):
             return url
 
 
-class NodeFileHyperLinkField(RelationshipField):
+class RelatedLambdaRelationshipField(RelationshipField):
+    """
+    An extension of a RelationshipField which enables the use of a lambda
+    function to determine the related_view where the argument of the lambda
+    function is an attribute, distinct from the field name, on the serialized object.
+
+    e.g. (NodeFileHyperLinkField extends this class)
+    files = NodeFileHyperLinkField(
+        related_view=lambda node: 'draft_nodes:node-files' if getattr(node, 'type', False) == 'osf.draftnode' else 'nodes:node-files',
+        view_lambda_argument='target',
+        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
+        kind='folder',
+    )
+    In a standard RelationshipField, the lambda for the related_view would fail to evaluate because
+    the argument would be <serialized_object>.files while the lambda's argument should be <serialized_object.target>.
+    This class uses the `view_lambda_argument` to determine the attribute on the serialized object to use
+    as the argument for the lambda function.
+    """
+
+    def __init__(self, view_lambda_argument=None, **kws):
+        self.view_lambda_argument = view_lambda_argument
+        super().__init__(**kws)
+
+    def get_attribute(self, instance):
+        return instance
+
+    def get_url(self, obj, view_name, request, format):
+        urls = {}
+        for view_name, view in self.views.items():
+            if view is None:
+                urls[view_name] = {}
+            else:
+                kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
+                if kwargs is None:
+                    urls[view_name] = {}
+                else:
+                    if callable(view):
+                        view = view(getattr(obj, self.view_lambda_argument))
+                    if request.parser_context['kwargs'].get('version', False):
+                        kwargs.update({'version': request.parser_context['kwargs']['version']})
+                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    if self.filter:
+                        formatted_filters = self.format_filter(obj)
+                        if formatted_filters:
+                            for filter in formatted_filters:
+                                url = utils.extend_querystring_params(
+                                    url,
+                                    {'filter[{}]'.format(filter['field_name']): filter['value']},
+                                )
+                        else:
+                            url = None
+
+                    if url:
+                        url = utils.extend_querystring_if_key_exists(
+                            url, self.context['request'],
+                            'view_only',
+                        )
+                    urls[view_name] = url
+
+        if not urls['self'] and not urls['related']:
+            urls = None
+        return urls
+
+
+class NodeFileHyperLinkField(RelatedLambdaRelationshipField):
     def __init__(self, kind=None, never_embed=False, **kws):
         self.kind = kind
         self.never_embed = never_embed
