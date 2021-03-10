@@ -113,7 +113,7 @@ class StatisticsView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         ctx['current_date'] = current_date
         ctx['user'] = user
         ctx['provider_data_array'] = provider_data_array
-        digest = hashlib.sha512(SITE_KEY).hexdigest()
+        digest = hashlib.sha512(SITE_KEY.encode('utf-8')).hexdigest()
         ctx['token'] = digest.upper()
         return ctx
 
@@ -587,7 +587,7 @@ class GatherView(TemplateView):
                     self.count_project_files(provider=provider, node_id=node_id, path='/' + path, cookies=cookies)
 
 def simple_auth(access_token):
-    digest = hashlib.sha512(SITE_KEY).hexdigest()
+    digest = hashlib.sha512(SITE_KEY.encode('utf-8')).hexdigest()
     if digest == access_token.lower():
         return True
     else:
