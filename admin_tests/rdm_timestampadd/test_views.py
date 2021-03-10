@@ -212,7 +212,7 @@ class TestTimestampVerifyData(AdminTestCase):
 
         res = self.view.post(self, **kwargs)
         nt.assert_equal(res.status_code, 200)
-        nt.assert_in('test_get_timestamp_error_data', str(res))
+        nt.assert_in('test_get_timestamp_error_data', res.content.decode())
 
 
 class TestAddTimestampData(AdminTestCase):
