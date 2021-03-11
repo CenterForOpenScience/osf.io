@@ -19,7 +19,9 @@ runs:
       echo "ES started..."
   - id: ES-Step-2
     shell: bash
-    run: /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
+    run: |
+      sed -i "s| -XX:+UseParNewGC||" /tmp/elasticsearch/bin/elasticsearch.in.sh
+      /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
   - id: ES-Step-3
     shell: bash
     run: |
