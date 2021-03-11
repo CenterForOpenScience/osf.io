@@ -409,10 +409,12 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.update_institution_project_counts'
     }
 
@@ -498,8 +500,10 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.find_spammy_files',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
+        'osf.management.commands.sync_collection_provider_indices',
     )
 
     # Modules that need metrics and release requirements
