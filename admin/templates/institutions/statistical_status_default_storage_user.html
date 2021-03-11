@@ -8,14 +8,14 @@
         <tr>
             <th>GUID</th>
             <th>
-                {% trans "Username" %}
-                <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
                 {% trans "eduPersonPrincipleName" %}
                 <a href="?order_by=eppn&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
                 <span class="dropup"><a href="?order_by=eppn&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th>
+                {% trans "Username" %}
+                <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
             <th>
                 {% trans "Fullname" %}
@@ -53,8 +53,8 @@
                     {{ user.id }}
                 </a>
             </td>
-            <td>{{user.username}}</td>
             <td>{{user.eppn}}</td>
+            <td>{{user.username}}</td>
             <td>{{user.fullname}}</td>
             <td>{{user.ratio|floatformat:1}}%</td>
             <td>{{user.usage_value|floatformat:1}} {{user.usage_abbr}}</td>
