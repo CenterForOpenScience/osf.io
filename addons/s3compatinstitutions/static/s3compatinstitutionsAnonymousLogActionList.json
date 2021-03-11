@@ -1,0 +1,10 @@
+{
+    "s3compatinstitutions_file_added" : "A user added a file to S3compat (for Institutions) in a project",
+    "s3compatinstitutions_file_removed" : "A user removed a file from S3compat (for Institutions) in a project",
+    "s3compatinstitutions_file_updated" : "A user updated a file in S3compat (for Institutions) in a project",
+    "s3compatinstitutions_folder_created" : "A user created a folder in S3compat (for Institutions) in a project",
+    "s3compatinstitutions_folder_selected" : "A user linked a S3compat (for Institutions) folder in a project",
+    "s3compatinstitutions_node_authorized" : "A user authorized the S3compat (for Institutions) addon for a project",
+    "s3compatinstitutions_node_deauthorized" : "A user deauthorized the S3compat (for Institutions) addon for a project",
+    "s3compatinstitutions_node_deauthorized_no_user" : "S3compat (for Institutions) addon for a project deauthorized"
+}

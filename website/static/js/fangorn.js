@@ -1464,6 +1464,25 @@ function gotoFileEvent (item, toUrl) {
     }
 }
 
+function _createLinkEvent(event, item) {
+    var location = window.location;
+    var path = '/';
+    if (item.data.materialized !== undefined && item.data.materialized.length > 0) {
+        path = item.data.materialized;
+    }
+    var link = location.protocol + '//' + location.host + '/' + item.data.nodeId + '/files/dir/' + item.data.provider + path;
+    var encodedLink = encodeURI(link);
+    var container = $('#link_container');
+    var input = $('#link_container input');
+    input.val(encodedLink);
+    container.css('display', 'block');
+    input.focus();
+    input.select();
+    document.execCommand('copy');
+    container.css('display', 'none');
+    $osf.growl('Clipboard', gettext('Copied!'), 'success', 5000);
+}
+
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1509,7 +1528,7 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
 function _fangornTitleColumn(item, col) {
     var tb = this;
     if (item.data.nodeRegion && item.data.provider !== 'osfstorage') {
-        return _fangornTitleColumnHelper(tb, item, col, item.data.name + ' (' + item.data.nodeRegion + ')', '/', 'fg-file-links');
+        return _fangornTitleColumnHelper(tb, item, col, item.data.nodeRegion + ' (' + item.data.name + ')', '/', 'fg-file-links');
     }
     if (item.data.nodeRegion) {
         if (window.contextVars.isCustomStorageLocation) {
@@ -2063,6 +2082,15 @@ var FGItemButtons = {
                         icon: 'fa fa-pencil',
                         className: 'text-info'
                     }, gettext('Rename'))
+                );
+            }
+            if (window.File && window.FileReader && item.kind === 'folder' && item.data.permissions && item.data.permissions.edit) {
+                rowButtons.push(
+                    m.component(FGButton, {
+                        onclick: function (event) { _createLinkEvent.call(tb, event, item); },
+                        icon: 'fa fa-link',
+                        className: 'text-primary'
+                    }, gettext('copy link'))
                 );
             }
             return m('span', rowButtons);

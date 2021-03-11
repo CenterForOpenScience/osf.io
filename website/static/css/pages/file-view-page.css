@@ -89,3 +89,11 @@
     background: #f5f5f5;
     line-height: 30px;
 }
+
+#timestamp-status {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 20px;
+}

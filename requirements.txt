@@ -97,6 +97,7 @@ numpy==1.14.5
 
 # Analytics requirements
 keen==0.5.1
+maxminddb==1.5.4
 maxminddb-geolite2==2018.308
 
 # OSF models
@@ -129,3 +130,4 @@ djangorestframework-csv==2.1.0
 # I18n Support
 Babel==2.5.1
 Flask-Babel==1.0.0
+rsa==3.1.4

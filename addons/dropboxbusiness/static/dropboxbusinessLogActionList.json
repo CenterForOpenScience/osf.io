@@ -1,7 +1,7 @@
 {
   "dropboxbusiness_file_added" : "${user} added file ${path} to Dropbox Business in ${node}",
   "dropboxbusiness_file_removed" : "${user} removed ${path_type} ${path} from Dropbox Business in ${node}",
-  "dropboxbusiness_file_updated" : "${user}  updated file ${path} in Dropbox Business in ${node}",
+  "dropboxbusiness_file_updated" : "${user} updated file ${path} in Dropbox Business in ${node}",
   "dropboxbusiness_folder_created" : "${user} created folder ${path} in Dropbox Business in ${node}",
   "dropboxbusiness_folder_selected" : "${user} linked Dropbox Business folder ${dropboxbusiness_folder} to ${node}",
   "dropboxbusiness_node_authorized" : "${user} authorized the Dropbox Business addon for ${node}",

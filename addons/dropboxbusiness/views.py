@@ -63,6 +63,6 @@ def webhook_post():
             for dbtid in teams.keys():
                 DEBUG('dbtid={}'.format(dbtid))
                 team_ids.append(dbtid)
-    utils.celery_check_and_add_timestamp.delay(team_ids)
+    utils.celery_check_updated_files.delay(team_ids)
 
     return ''

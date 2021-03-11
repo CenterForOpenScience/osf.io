@@ -495,6 +495,10 @@ var LogPieces = {
                     var acceptableLinkedItems = ['osf_storage_file_added', 'osf_storage_file_updated', 'file_tag_added', 'file_tag_removed',
                     'github_file_added', 'github_file_updated', 'box_file_added', 'box_file_updated', 'dropbox_file_added', 'dropbox_file_updated',
                     's3_file_added', 's3_file_updated', 'figshare_file_added', 'checked_in', 'checked_out',
+                    'nextcloud_file_added', 'nextcloud_file_updated',
+                    'nextcloudinstitutions_file_added', 'nextcloudinstitutions_file_updated',
+                    'dropboxbusiness_file_added', 'dropboxbusiness_file_updated',
+                    's3compatinstitutions_file_added', 's3compatinstitutions_file_updated',
                     'timestamp_added'];
                     if (acceptableLinkedItems.indexOf(action) !== -1 && logObject.attributes.params.urls) {
                        return logObject.attributes.params.urls.view;

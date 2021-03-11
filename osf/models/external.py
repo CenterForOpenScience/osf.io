@@ -513,7 +513,7 @@ class BasicAuthProviderMixin(object):
         The password here is kept decrypted by default.
     """
 
-    def __init__(self, account=None, host=None, username=None, password=None):
+    def __init__(self, account=None, host=None, username=None, password=None, separator=':'):
         super(BasicAuthProviderMixin, self).__init__()
         if account:
             self.account = account
@@ -522,7 +522,7 @@ class BasicAuthProviderMixin(object):
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id='{}:{}'.format(host, username),
+                provider_id='{}{}{}'.format(host, separator, username),
                 profile_url=host,
                 provider=self.short_name,
                 provider_name=self.name

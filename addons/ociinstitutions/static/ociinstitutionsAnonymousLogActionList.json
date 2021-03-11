@@ -1,0 +1,10 @@
+{
+    "ociinstitutions_file_added" : "A user added a file to Oracle Cloud Infrastructure (for Institutions) in a project",
+    "ociinstitutions_file_removed" : "A user removed a file from Oracle Cloud Infrastructure (for Institutions) in a project",
+    "ociinstitutions_file_updated" : "A user updated a file in Oracle Cloud Infrastructure (for Institutions) in a project",
+    "ociinstitutions_folder_created" : "A user created a folder in Oracle Cloud Infrastructure (for Institutions) in a project",
+    "ociinstitutions_folder_selected" : "A user linked a Oracle Cloud Infrastructure (for Institutions) folder in a project",
+    "ociinstitutions_node_authorized" : "A user authorized the Oracle Cloud Infrastructure (for Institutions) addon for a project",
+    "ociinstitutions_node_deauthorized" : "A user deauthorized the Oracle Cloud Infrastructure (for Institutions) addon for a project",
+    "ociinstitutions_node_deauthorized_no_user" : "Oracle Cloud Infrastructure (for Institutions) addon for a project deauthorized"
+}

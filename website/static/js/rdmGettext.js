@@ -8,17 +8,27 @@ var defaultLanguage = 'en';
 var translationsBaseDir = 'translations';
 var osfLanguageProfileBaseName = 'osfLanguage';
 var getTextDomain = 'messages';
+var browserLanguage;
 
 var getBrowserLang = function() {
     var language = defaultLanguage;
-    var browserLanguage = (window.navigator.languages && window.navigator.languages[0]) ||
-                window.navigator.language ||
-                window.navigator.userLanguage ||
-                window.navigator.browserLanguage;
+    var langCode = defaultLanguage;
+    var applyLanguage = false;
+    var endIndex;
 
-    for(var i=0 ; i<acceptLanguages.length ; i++) {
-        if(browserLanguage === acceptLanguages[i]) {
-            language = browserLanguage;
+    if(window.navigator.languages){
+        for(var i=0 ; i<window.navigator.languages.length ; i++) {
+            browserLanguage = (window.navigator.languages && window.navigator.languages[i]);
+            langCode = browserLanguage.split('-')[0];
+
+            for(var j=0 ; j<acceptLanguages.length ; j++) {
+                if(langCode === acceptLanguages[j]) {
+                    language = langCode;
+                    applyLanguage = true;
+                    break;
+                }
+            }
+            if (applyLanguage) break;
         }
     }
     return language;
@@ -39,7 +49,7 @@ var OsfLanguage = function() {
     var defaultDomain = [].slice.call(arguments);
     this.languages = {};
     for(var i = 0; i < acceptLanguages.length; i++) {
-        var language = require('js/' + translationsBaseDir + '/' + osfLanguageProfileBaseName + '_' + acceptLanguages[i]);
+        var language = require('js/translations/' + osfLanguageProfileBaseName + '_' + acceptLanguages[i]);
         for(var j = 0; j < defaultDomain.length; j++) {
             language = language[defaultDomain[j]];
         }

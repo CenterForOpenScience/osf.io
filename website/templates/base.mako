@@ -151,11 +151,12 @@
     % if not user_id:
     <div id="cookieBanner" class="alert warningBanner">
         <div id="cookieText" class="warningBannerText">
-            ${_("The National Institute of Informatics (NII) uses cookies to operate the NII Research Data Cloud service and to improve your user experience. \
-                 If you intend to use the GakuNin RDM, please read our <a %(meatwikiUrl)s>Privacy Policy</a> and information on <a %(meatwikiUrl)s>NII use of cookies</a>. \
-                 By clicking Accept or continuing to use our website, you consent to the cookies use on this site. \
-                 If you do not agree with the cookies use, please change your browser settings to disable cookies or stop using our website. \
-                 Please be aware that you may not be able to use some functions on our website when you have cookies disabled.") % dict(meatwikiUrl="href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'") | n}
+            ${_("GakuNin RDM is a service provided by the National Institute of Informatics (NII) on trust from user organizations, \
+                 and the <a %(meatwikiTermsOfUse)s>terms of use</a> and <a %(meatwikiPrivacyPolicy)s>privacy policy</a> of each user organization are applied. \
+                 GakuNin RDM uses cookies to operate the service and improve the user experience. Users of GakuNin RDM are requested to read the information on our privacy policy. \
+                 By clicking \"I agree\" or continuing to use this site, you agree to our use of cookies. If you disagree, please disable cookies in your browser settings or discontinue using this site. \
+                 Please note that by not using cookies, you may not be able to use some of this website's functions.") % \
+                 dict(meatwikiTermsOfUse='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419"',meatwikiPrivacyPolicy="href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422'") | n}
         </div>
         <div class="warningBannerAcceptBtn">
             <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">${_("Accept")}</div>

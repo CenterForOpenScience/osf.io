@@ -198,6 +198,7 @@ def osfstorage_get_children(file_node, **kwargs):
                         , 'checkout', CHECKOUT_GUID
                         , 'md5', LATEST_VERSION.metadata ->> 'md5'
                         , 'sha256', LATEST_VERSION.metadata ->> 'sha256'
+                        , 'sha512', LATEST_VERSION.metadata ->> 'sha512'
                         , 'latestVersionSeen', SEEN_LATEST_VERSION.case
                     )
                 ELSE
