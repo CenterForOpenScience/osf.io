@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import httplib as http
+from rest_framework import status as http_status
 
 from boto.exception import S3ResponseError
 import mock
@@ -48,7 +48,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': '',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
     def test_s3compat_settings_input_empty_host(self):
@@ -58,7 +58,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'Non-empty-access-key',
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
     def test_s3compat_settings_input_empty_access_key(self):
@@ -68,7 +68,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': '',
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
     def test_s3compat_settings_input_empty_secret_key(self):
@@ -78,7 +78,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'Non-empty-access-key',
             'secret_key': ''
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('All the fields above are required.', rv.body)
 
     def test_s3compat_settings_input_unknown_host(self):
@@ -88,7 +88,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'Non-empty-access-key',
             'secret_key': 'Non-empty-secret-key'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('The host is not available.', rv.body)
 
     def test_s3compat_settings_rdm_addons_denied(self):
@@ -103,7 +103,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equal(rv.status_int, http.FORBIDDEN)
+        assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
         assert_in('You are prohibited from using this add-on.', rv.body)
 
     def test_s3compat_set_bucket_no_settings(self):
@@ -114,7 +114,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             url, {'s3compat_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     def test_s3compat_set_bucket_no_auth(self):
 
@@ -126,7 +126,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             url, {'s3compat_bucket': 'hammertofall'}, auth=user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_s3compat_set_bucket_registered(self):
         registration = self.project.register_node(
@@ -139,7 +139,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             expect_errors=True,
         )
 
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
     @mock.patch('addons.s3compat.views.utils.can_list', return_value=False)
     def test_user_settings_cant_list(self, mock_can_list):
@@ -149,7 +149,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
             'access_key': 'aldkjf',
             'secret_key': 'las'
         }, auth=self.user.auth, expect_errors=True)
-        assert_equals(rv.status_int, http.BAD_REQUEST)
+        assert_equals(rv.status_int, http_status.HTTP_400_BAD_REQUEST)
         assert_in('Unable to list buckets.', rv.body)
 
     def test_s3compat_remove_node_settings_owner(self):
@@ -202,7 +202,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
         res = self.app.put_json(url, {
             'selected': self.folder
         }, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.project.reload()
         self.node_settings.reload()
         assert_equal(
@@ -289,7 +289,7 @@ class TestCreateBucket(S3CompatAddonTestCase, OsfTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(ret.status_int, http.OK)
+        assert_equal(ret.status_int, http_status.HTTP_200_OK)
         assert_equal(ret.json, {})
 
     @mock.patch('addons.s3compat.views.utils.create_bucket')

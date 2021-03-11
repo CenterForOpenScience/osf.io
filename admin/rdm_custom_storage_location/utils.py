@@ -301,7 +301,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
     if not (host and access_key and secret_key and bucket):
         return ({
             'message': 'All the fields above are required.'
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         user_info = s3compatb3_utils.get_user_info(host, access_key, secret_key)
@@ -315,7 +315,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
             'Check to make sure that the above credentials are valid, '
             'and that they have permission to list buckets.',
             'e_message': e_message
-        }, httplib.BAD_REQUEST)
+        }, http_stataus.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compatb3_utils.can_list(host, access_key, secret_key)
@@ -328,7 +328,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM',
             'e_message': e_message
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compatb3_utils.bucket_exists(host, access_key, secret_key, bucket)
@@ -340,7 +340,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
         return ({
             'message': 'Invalid bucket.',
             'e_message': e_message
-        }, httplib.BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     return ({
         'message': 'Credentials are valid',
@@ -348,7 +348,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
             'id': 'user_info.id',
             'display_name': 'user_info.display_name',
         }
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def test_box_connection(institution_id, folder_id):
     validation_result = oauth_validation('box', institution_id, folder_id)
@@ -588,7 +588,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
                               bucket):
 
     test_connection_result = test_s3compatb3_connection(host_url, access_key, secret_key, bucket)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
@@ -615,7 +615,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
 
     return ({
         'message': 'Saved credentials successfully!!'
-    }, httplib.OK)
+    }, http_status.HTTP_200_OK)
 
 def save_box_credentials(user, storage_name, folder_id):
     institution_id = user.affiliated_institutions.first()._id
@@ -869,7 +869,7 @@ def save_nextcloudinstitutions_credentials(
         institution, storage_name, host_url, username, password, folder, notification_secret, provider_name):
     test_connection_result = test_owncloud_connection(
         host_url, username, password, folder, provider_name)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     host = use_https(host_url)
@@ -885,7 +885,7 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     test_connection_result = test_s3compat_connection(
         host, access_key, secret_key, bucket)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     separator = '\t'
@@ -900,7 +900,7 @@ def save_ociinstitutions_credentials(institution, storage_name, host_url, access
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     test_connection_result = test_s3compatb3_connection(
         host, access_key, secret_key, bucket)
-    if test_connection_result[1] != httplib.OK:
+    if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     separator = '\t'

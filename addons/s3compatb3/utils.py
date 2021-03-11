@@ -1,5 +1,5 @@
 import re
-import httplib
+from rest_framework import status as http_status
 
 from boto import exception
 from boto.s3.connection import NoHostProvided
@@ -92,7 +92,7 @@ def get_bucket_names(node_settings):
     try:
         buckets = connect_s3compatb3(node_settings=node_settings).buckets.all()
     except exception.NoAuthHandlerFound:
-        raise HTTPError(httplib.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     except exception.BotoServerError as e:
         raise HTTPError(e.status)
 

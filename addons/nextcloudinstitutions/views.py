@@ -1,5 +1,5 @@
 import logging
-import httplib as http
+from rest_framework import status as http_status
 import hmac
 from hashlib import sha256
 import json
@@ -26,7 +26,7 @@ def DEBUG(msg):
 def webhook_nextcloud_app():
     signature = request.headers.get('X-Nextcloud-File-Upload-Notification-Signature')
     if not signature:
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     DEBUG('signature: {}'.format(signature))
 
     try:
@@ -34,7 +34,7 @@ def webhook_nextcloud_app():
         provider_id = data.get('id')
     except Exception:
         logger.error('provider_id not found')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     try:
         ea = ExternalAccount.objects.get(
@@ -43,21 +43,21 @@ def webhook_nextcloud_app():
             provider=SHORT_NAME, external_accounts=ea)
     except Exception:
         logger.error('provider not found')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     if opt.extended is None:
         logger.error('secret not found')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     secret = opt.extended.get(KEYNAME_NOTIFICATION_SECRET)
     if secret is None:
         logger.error('secrets is empty')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     digest = hmac.new(secret.encode(), request.data, sha256).hexdigest()
     if not hmac.compare_digest(signature.encode('utf-8'), digest):
         logger.error('invalid signature')
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     DEBUG(pf(data))
 
