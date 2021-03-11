@@ -122,6 +122,8 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
+    additional_metadata = DateTimeAwareJSONField(blank=True, default=list)
+
     @staticmethod
     def find_failed_registrations():
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
@@ -288,6 +290,29 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    @property
+    def provider_specific_metadata(self):
+        if not self.provider or not self.provider.additional_metadata_fields:
+            return {}
+
+        provider_metadata = [
+            {'field_name': field, 'field_value': self.additional_metadata.get(field, '')}
+            for field in self.provider.additional_metadata_fields
+        ]
+
+        return provider_metadata
+
+    @provider_specific_metadata.setter
+    def provider_specific_metadata(self, values):
+        if not self.provider or not self.provider.additional_metadata_fields:
+            return
+
+        for entry in values:
+            key = entry['field_name']
+            value = entry['field_value']
+            if key in self.provider.additional_metadata_fields:
+                self.additional_metadata[key] = value
 
     def can_view(self, auth):
         if super().can_view(auth):

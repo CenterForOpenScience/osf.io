@@ -348,6 +348,8 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+#    provider_specific_metadata = ser.JSONField(source=provider_specific_metadata, required=False)
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -461,6 +463,14 @@ class RegistrationSerializer(NodeSerializer):
         except NodeStateError as err:
             raise Conflict(str(err))
 
+    def update_provider_specific_metadata(self, registration, updated_metadata, user):
+        if not registration.provider:
+            return
+        if not user.has_perm('accept_submissions', registration.provider):
+            raise exceptions.PermissionDenied('Only moderators can update provider-specific metadata')
+
+        registration.provider_metadata = updated_metadata
+
     def retract_registration(self, registration, validated_data, user):
         is_pending_retraction = validated_data.pop('is_pending_retraction', None)
         withdrawal_justification = validated_data.pop('withdrawal_justification', None)
@@ -507,6 +517,8 @@ class RegistrationSerializer(NodeSerializer):
         if 'is_public' in validated_data:
             if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        if 'provider_specific_metadata' in validated_data:
+            self.update_provider_specific_metadata(registration, validated_data.pop('provider_specific_metadata'), user)
 
         try:
             registration.update(validated_data, auth=auth)

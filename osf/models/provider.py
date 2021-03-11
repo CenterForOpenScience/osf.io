@@ -218,6 +218,8 @@ class RegistrationProvider(AbstractProvider):
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True, default=list)
+
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
         super().__init__(*args, **kwargs)

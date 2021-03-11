@@ -20,6 +20,7 @@ from osf_tests.factories import (
     NodeFactory,
     RegistrationFactory,
     RegistrationApprovalFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     UnregUserFactory,
     WithdrawnRegistrationFactory,
@@ -1160,3 +1161,50 @@ class TestUpdateRegistrationSubjects(UpdateSubjectsMixin):
             permissions=permissions.READ)
         registration.save()
         return registration
+
+
+@pytest.mark.django_db
+class TestProviderSpcecificMetadata():
+
+    @pytest.fixture
+    def moderator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def registration(self):
+        registration = RegistrationFactory()
+        registration.additional_metadata = {'foo': 'bar', 'fizz': 'buzz'}
+
+    @pytest.fixture()
+    def registration_detail_url(self, registration):
+        return f'/{API_BASE}registrations/{registration._id}/'
+
+    @pytest.fixture()
+    def base_payload(self, registration):
+        return {'id': registration._id, 'type': 'registrations'}
+
+    @pytest.mark.parametrize(
+        'supported_fields, expected_results',
+        [
+            ([], {}),
+            (['foo'], [{'field_name': 'foo', 'field_value': 'bar'}]),
+            (['fizz'], [{'field_name': 'fizz', 'field_value': 'buzz'}]),
+        ]
+    )
+    def test_get_provider_metadata(self, supported_fields, expected_results, app, registration, registration_detail_url):
+        provider = RegistrationProviderFactory()
+        provider.additional_metadata_fields = supported_fields
+        provider.save()
+        registration.provider = provider
+        registration.save()
+
+        resp = app.get(registration_detail_url)
+        assert resp['data']['attributes']['provider_metadata'] == expected_results
+
+    def test_set_provider_metadata(self, app, registration, registration_detail_url, base_payload, moderator):
+        base_payload['attributes'] = {
+            'provider_specific_metadata': [{'field_name': 'foo', 'field_value': 'buzz'}]
+        }
+
+        resp = app.put_json_api(registration_detail_url, base_payload, moderator.auth)
+        assert resp
