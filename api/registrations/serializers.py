@@ -75,6 +75,7 @@ class RegistrationSerializer(NodeSerializer):
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     date_modified = VersionedDateTimeField(source='last_logged', read_only=True)
     fork = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_fork'))
+    ia_url = HideIfWithdrawal(ser.URLField(read_only=True, source='IA_url'))
     collection = HideIfWithdrawal(ser.BooleanField(read_only=True, source='is_collection'))
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))

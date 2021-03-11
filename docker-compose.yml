@@ -502,3 +502,12 @@ services:
       - preprints_dist_vol:/preprints
       - reviews_dist_vol:/reviews
     stdin_open: true
+
+  pigeon:
+    image: quay.io/johntordoff/osf-pigeon
+    restart: unless-stopped
+    ports:
+      - 2020:2020
+    env_file:
+      - .docker-compose.env
+    stdin_open: true

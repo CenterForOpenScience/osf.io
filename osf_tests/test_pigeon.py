@@ -25,7 +25,7 @@ class TestPigeon:
 
     def test_pigeon_sync_metadata(self, mock_pigeon, registration):
         registration.is_public = True
-        registration.IA_url = 'http://archive.org/details/osf-registrations-guid0-v1'
+        registration.ia_url = 'http://archive.org/details/osf-registrations-guid0-v1'
         registration.title = 'Jefferies'
         registration.save()
 
@@ -36,7 +36,7 @@ class TestPigeon:
             'modified': mock.ANY,
             'title': 'Jefferies',
             'is_public': 'True',
-            'IA_url': 'http://archive.org/details/osf-registrations-guid0-v1'
+            'ia_url': 'http://archive.org/details/osf-registrations-guid0-v1'
         }
 
         registration.title = 'Private'
@@ -45,13 +45,17 @@ class TestPigeon:
 
         assert len(mock_pigeon.calls) == 1
 
-    def test_pigeon_archive_immediately(self, user, registration_approval, mock_pigeon):
+    def test_pigeon_archive_immediately(self, user, registration_approval, mock_datacite, mock_pigeon):
+        mock_pigeon._matches += mock_datacite._matches  # mock both of these together
         token = registration_approval.approval_state[registration_approval.initiated_by._id]['approval_token']
         registration_approval.approve(user=registration_approval.initiated_by, token=token)
         guid = registration_approval._get_registration()._id
 
-        assert len(mock_pigeon.calls) == 1
-        assert mock_pigeon.calls[0].request.url == f'{settings.OSF_PIGEON_URL}archive/{guid}'
+        assert len(mock_pigeon.calls) == 3
+        calls = [call.request.url for call in mock_pigeon.calls]
+        assert calls == [f'{settings.DATACITE_URL}/metadata',
+                        f'{settings.DATACITE_URL}/doi',
+                        f'{settings.OSF_PIGEON_URL}archive/{guid}']
 
     def test_pigeon_archive_embargo(self, embargo, mock_pigeon):
         token = embargo.approval_state[embargo.initiated_by._id]['approval_token']

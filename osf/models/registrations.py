@@ -124,7 +124,7 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    IA_url = models.URLField(
+    ia_url = models.URLField(
         blank=True,
         null=True,
         help_text='Where the archive.org data for the registration is stored'
@@ -1389,7 +1389,7 @@ def sync_internet_archive_metadata(sender, instance, **kwargs):
     """
     This ensures all our Internet Archive storage buckets are synced with our registrations.
     """
-    if settings.IA_ARCHIVE_ENABLED and instance.IA_url:
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
         dirty_field_names = instance.get_dirty_fields().keys()
         current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
         if instance.is_public:

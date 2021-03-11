@@ -229,3 +229,4 @@ def mock_pigeon():
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
                 rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
                 rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
+                yield rsps
