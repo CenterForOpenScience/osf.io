@@ -87,6 +87,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     )
     share_source = models.CharField(blank=True, default='', max_length=200)
     share_title = models.TextField(default='', blank=True)
+    doi_prefix = models.CharField(blank=True, null=True, max_length=32)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -256,7 +257,6 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (

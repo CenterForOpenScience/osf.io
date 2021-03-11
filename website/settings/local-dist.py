@@ -140,3 +140,5 @@ logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
 
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
+
+OOPSPAM_CHECK_IP = False

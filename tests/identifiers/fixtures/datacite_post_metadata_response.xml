@@ -1,5 +1,5 @@
 <resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.dat/metadata.xsd">
-  <identifier identifierType="DOI">10.70102/FK2osf.io/yvzp4</identifier>
+  <identifier identifierType="DOI"></identifier>
   <creators>
     <creator>
       <creatorName>John Tordoff</creatorName>

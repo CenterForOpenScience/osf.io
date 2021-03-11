@@ -3,17 +3,18 @@ import logging
 
 from django.db import models
 from django.utils import timezone
+from framework import sentry
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils import akismet
+from osf.utils import akismet, oopspam
 
 from website import settings
 
 logger = logging.getLogger(__name__)
 
 
-def _get_client():
+def _get_akismet_client():
     """
     AKISMET_APIKEY should be `None` for local testing.
     :return:
@@ -23,6 +24,13 @@ def _get_client():
         website=settings.DOMAIN,
         verify=bool(settings.AKISMET_APIKEY)
     )
+
+def _get_oopspam_client():
+    """
+    OOPSPAM_APIKEY should be `None` for local testing.
+    :return:
+    """
+    return oopspam.OOPSpamClient()
 
 
 def _validate_reports(value, *args, **kwargs):
@@ -148,7 +156,7 @@ class SpamMixin(models.Model):
             settings.SPAM_CHECK_ENABLED and
             self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
         ):
-            client = _get_client()
+            client = _get_akismet_client()
             client.submit_ham(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
                 user_agent=self.spam_data['headers'].get('User-Agent'),
@@ -168,7 +176,7 @@ class SpamMixin(models.Model):
             settings.SPAM_CHECK_ENABLED and
             self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]
         ):
-            client = _get_client()
+            client = _get_akismet_client()
             client.submit_spam(
                 user_ip=self.spam_data['headers']['Remote-Addr'],
                 user_agent=self.spam_data['headers'].get('User-Agent'),
@@ -193,11 +201,12 @@ class SpamMixin(models.Model):
         if self.is_spammy:
             return True
 
-        client = _get_client()
+        akismet_client = _get_akismet_client()
+        oopspam_client = _get_oopspam_client()
         remote_addr = request_headers['Remote-Addr']
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
-        is_spam, pro_tip = client.check_comment(
+        akismet_is_spam, pro_tip = akismet_client.check_comment(
             user_ip=remote_addr,
             user_agent=user_agent,
             referrer=referer,
@@ -205,6 +214,15 @@ class SpamMixin(models.Model):
             comment_author=author,
             comment_author_email=author_email
         )
+
+        try:
+            oopspam_is_spam, oopspam_details = oopspam_client.check_content(
+                user_ip=remote_addr,
+                content=content
+            )
+        except oopspam.OOPSpamClientError:
+            sentry.log_exception()
+            oopspam_is_spam = False
 
         if update:
             self.spam_pro_tip = pro_tip
@@ -216,6 +234,15 @@ class SpamMixin(models.Model):
             self.spam_data['content'] = content
             self.spam_data['author'] = author
             self.spam_data['author_email'] = author_email
-            if is_spam:
+            if akismet_is_spam and oopspam_is_spam:
                 self.flag_spam()
-        return is_spam
+                self.spam_data['who_flagged'] = 'both'
+                self.spam_data['oopspam_data'] = oopspam_details
+            elif akismet_is_spam:
+                self.flag_spam()
+                self.spam_data['who_flagged'] = 'akismet'
+            elif oopspam_is_spam:
+                self.flag_spam()
+                self.spam_data['who_flagged'] = 'oopspam'
+                self.spam_data['oopspam_data'] = oopspam_details
+        return akismet_is_spam or oopspam_is_spam
