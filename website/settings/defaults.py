@@ -647,7 +647,7 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
             'archive_registrations_on_IA': {
-                'task': 'scripts.migration.archive_registrations_on_IA',
+                'task': 'osf.management.commands.archive_registrations_on_IA',
                 'schedule': crontab(minute=0, hour=5),  # Daily 4:00 a.m.
                 'kwargs': {'dry_run': False}
             },
