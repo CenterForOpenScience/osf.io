@@ -261,7 +261,7 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
             'Check to make sure that the above credentials are valid, '
             'and that they have permission to list buckets.',
             'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compat_utils.can_list(host, access_key, secret_key)
@@ -274,7 +274,7 @@ def test_s3compat_connection(host_url, access_key, secret_key, bucket):
             'message': 'Unable to list buckets.\n'
             'Listing buckets is required permission that can be changed via IAM',
             'e_message': e_message
-        }, http_status.HTTP_400_BAD_REQUEST
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compat_utils.bucket_exists(host, access_key, secret_key, bucket)
@@ -315,7 +315,7 @@ def test_s3compatb3_connection(host_url, access_key, secret_key, bucket):
             'Check to make sure that the above credentials are valid, '
             'and that they have permission to list buckets.',
             'e_message': e_message
-        }, http_stataus.HTTP_400_BAD_REQUEST)
+        }, http_status.HTTP_400_BAD_REQUEST)
 
     try:
         res = s3compatb3_utils.can_list(host, access_key, secret_key)
