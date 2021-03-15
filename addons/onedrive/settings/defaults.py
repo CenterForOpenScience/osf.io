@@ -9,3 +9,6 @@ ONEDRIVE_API_URL = 'https://graph.microsoft.com/v1.0/'
 REFRESH_TIME = 30 * 60  # 30 minutes
 
 DEFAULT_ROOT_ID = 'root'  # id string to identify the root folder
+
+# Max file size permitted by frontend in megabytes
+MAX_UPLOAD_SIZE = 5 * 1024  # 5 GB

@@ -64,7 +64,6 @@ class OneDriveProvider(ExternalProvider):
         return {
             'provider_id': user_info['id'],
             'display_name': user_info['displayName'],
-            'profile_url': None  # ToDo: 該当するデータが無い？
         }
 
     def fetch_access_token(self, force_refresh=False):
