@@ -14,16 +14,11 @@ Mako==1.0.7
 Markdown==2.6.9
 WTForms==1.0.4
 beautifulsoup4==4.6.0
-# Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
-# which fixes a bug that was causing stuck registrations
-# Need to pin to 4.1.1 due to https://github.com/celery/celery/issues/4355
-# TODO: Remove usage of this fork when celery/celery#4355 is resolved
-git+https://github.com/cos-forks/celery@v4.1.1+cos0
-kombu==4.2.0
+celery==5.0.5
+kombu==5.0.0
 amqp==2.2.2
-vine==1.1.4
 itsdangerous==1.1.0
-lxml==4.6.2
+lxml>=3.5.0
 mailchimp==2.0.9
 nameparser==0.5.3
 bcrypt==3.1.4
@@ -49,14 +44,16 @@ ndg-httpsclient==0.3.0
 # Python markdown extensions for comment emails
 git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
-certifi==2020.12.5
+# Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
+# MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
+certifi==2015.4.28
 sendgrid==1.5.13
 
 # avoid dbus-python requirement from secretstorage dependency
 # https://github.com/jaraco/keyring/blob/9.1/setup.py
 keyring==9.1
 
-requests>=2.21.0
+requests==2.20.0
 urllib3==1.22
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
@@ -69,14 +66,11 @@ django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
 pyjwt==1.5.3
-django-celery-beat==1.1.1  # BSD 3 Clause
+django-celery-beat==2.2.0 # BSD 3 Clause
 django-celery-results==1.0.1
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.18
 pyjwe==1.0.0
-# Building wheel for cryptography 3.4.0 requires a Rust version incompatible with Docker base image.
-# Required by pyjwe and ndg-httpsclient
-cryptography==3.3.2
 jsonschema==2.6.0
 django-guardian==1.4.9
 
@@ -105,7 +99,7 @@ django-bulk-update==2.2.0
 ciso8601==1.0.5
 
 # Reviews requirements
-transitions==0.8.2
+transitions==0.6.1
 enum34==1.1.6
 
 # identifiers

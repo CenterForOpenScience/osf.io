@@ -63,7 +63,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_addons -n 1
@@ -104,7 +106,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_website -n 1
@@ -145,7 +149,9 @@ jobs:
         with:
           python-version: 3.6
       - name: Install lxml
-        run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-dev libxslt-dev python-dev
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: |
@@ -189,7 +195,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_api2 -n 1
@@ -230,7 +238,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt-get update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_api3_and_osf -n 1
