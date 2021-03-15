@@ -756,6 +756,10 @@ msgid "Institutional Storage > %(institution_name)s"
 msgstr "機関ストレージ > %(institution_name)s"
 
 #: .\admin\templates\institutions\statistical_status_default_storage_user.html:11
+msgid "eduPersonPrincipleName"
+msgstr "利用者ID"
+
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:16
 #: .\admin\templates\institutions\user_list_by_institute.html:11
 #: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:42
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:35
@@ -768,29 +772,29 @@ msgstr "機関ストレージ > %(institution_name)s"
 msgid "Username"
 msgstr "ユーザ名"
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:16
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:21
 #: .\admin\templates\institutions\user_list_by_institute.html:16
 #: .\admin\templates\rdm_keymanagement\user_list.html:11
 #: .\admin\templates\users\user_list.html:24
 msgid "Fullname"
 msgstr "氏名"
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:21
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:26
 #: .\admin\templates\institutions\user_list_by_institute.html:21
 msgid "Ratio"
 msgstr "比"
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:26
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:31
 #: .\admin\templates\institutions\user_list_by_institute.html:26
 msgid "Usage"
 msgstr "使用率"
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:31
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:36
 #: .\admin\templates\institutions\user_list_by_institute.html:31
 msgid "Remaining"
 msgstr "残り"
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:36
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:41
 #: .\admin\templates\institutions\user_list_by_institute.html:36
 msgid "Quota"
 msgstr "割当て"

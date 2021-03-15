@@ -752,6 +752,10 @@ msgid "Institutional Storage > %(institution_name)s"
 msgstr ""
 
 #: .\admin\templates\institutions\statistical_status_default_storage_user.html:11
+msgid "eduPersonPrincipleName"
+msgstr ""
+
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:16
 #: .\admin\templates\institutions\user_list_by_institute.html:11
 #: .\admin\templates\rdm_addons\addons\owncloud_credentials_modal.html:42
 #: .\admin\templates\rdm_custom_storage_location\providers\nextcloud_modal.html:35
@@ -764,29 +768,29 @@ msgstr ""
 msgid "Username"
 msgstr ""
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:16
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:21
 #: .\admin\templates\institutions\user_list_by_institute.html:16
 #: .\admin\templates\rdm_keymanagement\user_list.html:11
 #: .\admin\templates\users\user_list.html:24
 msgid "Fullname"
 msgstr ""
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:21
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:26
 #: .\admin\templates\institutions\user_list_by_institute.html:21
 msgid "Ratio"
 msgstr ""
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:26
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:31
 #: .\admin\templates\institutions\user_list_by_institute.html:26
 msgid "Usage"
 msgstr ""
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:31
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:36
 #: .\admin\templates\institutions\user_list_by_institute.html:31
 msgid "Remaining"
 msgstr ""
 
-#: .\admin\templates\institutions\statistical_status_default_storage_user.html:36
+#: .\admin\templates\institutions\statistical_status_default_storage_user.html:41
 #: .\admin\templates\institutions\user_list_by_institute.html:36
 msgid "Quota"
 msgstr ""
