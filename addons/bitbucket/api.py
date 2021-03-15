@@ -72,18 +72,19 @@ class BitbucketClient(BaseClient):
 
         API docs::
 
-        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories/%7Busername%7D
+        * https://developer.atlassian.com/bitbucket/api/2/reference/resource/repositories
 
         :rtype:
         :return: list of repository objects
         """
         query_params = {
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.full_name'
         }
         res = self._make_request(
             'GET',
-            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories', self.username),
+            self._build_url(settings.BITBUCKET_V2_API_URL, 'repositories'),
             expects=(200, ),
             throws=HTTPError(401),
             params=query_params
@@ -106,7 +107,7 @@ class BitbucketClient(BaseClient):
         """
 
         query_params = {
-            'role': 'member',
+            'role': 'contributor',
             'pagelen': 100,
             'fields': 'values.links.repositories.href'
         }

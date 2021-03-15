@@ -271,6 +271,15 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     draft.save(update_fields=['deleted'])
     return None, http_status.HTTP_204_NO_CONTENT
 
+
+def order_schemas(schema):
+    """ Schemas not specified in METASCHEMA_ORDERING get sent to the bottom of the list."""
+    try:
+        return METASCHEMA_ORDERING.index(schema.name)
+    except ValueError:
+        return len(METASCHEMA_ORDERING)
+
+
 def get_metaschemas(*args, **kwargs):
     """
     List metaschemas with which a draft registration may be created. Only fetch the newest version for each schema.
@@ -285,7 +294,7 @@ def get_metaschemas(*args, **kwargs):
     if include == 'latest':
         meta_schemas = RegistrationSchema.objects.get_latest_versions()
 
-    meta_schemas = sorted(meta_schemas, key=lambda x: METASCHEMA_ORDERING.index(x.name))
+    meta_schemas = sorted(meta_schemas, key=order_schemas)
 
     return {
         'meta_schemas': [

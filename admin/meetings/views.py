@@ -77,6 +77,7 @@ class MeetingFormView(PermissionRequiredMixin, FormView):
         self.conf.location = data.get('location')
         self.conf.start_date = data.get('start_date')
         self.conf.end_date = data.get('end_date')
+        self.conf.auto_check_spam = data.get('auto_check_spam')
         self.conf.field_names.update(custom_fields)
         self.conf.save()
         return super(MeetingFormView, self).form_valid(form)

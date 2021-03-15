@@ -6,7 +6,14 @@ from django.db import models
 from include import IncludeManager
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ReviewStates,
+    ReviewTriggers,
+    RegistrationModerationTriggers,
+    RegistrationModerationStates
+)
 from osf.utils import permissions
 
 
@@ -52,3 +59,14 @@ class NodeRequestAction(BaseAction):
 
 class PreprintRequestAction(BaseAction):
     target = models.ForeignKey('PreprintRequest', related_name='actions', on_delete=models.CASCADE)
+
+
+class RegistrationAction(BaseAction):
+    target = models.ForeignKey('Registration', related_name='actions', on_delete=models.CASCADE)
+
+    trigger = models.CharField(
+        max_length=31, choices=RegistrationModerationTriggers.char_field_choices())
+    from_state = models.CharField(
+        max_length=31, choices=RegistrationModerationStates.char_field_choices())
+    to_state = models.CharField(
+        max_length=31, choices=RegistrationModerationStates.char_field_choices())

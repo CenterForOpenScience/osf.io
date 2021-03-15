@@ -1,5 +1,6 @@
 from future.moves.urllib.parse import urlparse
 from django.db import connection
+from django.db.models import Sum
 
 import requests
 import logging
@@ -131,7 +132,7 @@ def update_storage_usage_cache(target_id, target_guid, per_page=500000):
             offset += count
 
     key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_guid)
-    storage_usage_cache.set(key, storage_usage_total, cache_settings.FIVE_MIN_TIMEOUT)
+    storage_usage_cache.set(key, storage_usage_total, settings.STORAGE_USAGE_CACHE_TIMEOUT)
 
 
 def update_storage_usage(target):
@@ -139,3 +140,64 @@ def update_storage_usage(target):
 
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
         enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id,), {}, celery=True)
+
+def update_storage_usage_with_size(payload):
+    BaseFileNode = apps.get_model('osf.basefilenode')
+    AbstractNode = apps.get_model('osf.abstractnode')
+
+    metadata = payload.get('metadata') or payload.get('destination')
+
+    if not metadata.get('nid'):
+        return
+    target_node = AbstractNode.load(metadata['nid'])
+
+    if target_node.is_quickfiles:
+        return
+
+    action = payload['action']
+    provider = metadata.get('provider', 'osfstorage')
+
+    target_file_id = metadata['path'].replace('/', '')
+    target_file_size = metadata.get('sizeInt', 0)
+
+    if target_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+        return update_storage_usage(target_node)
+
+    current_usage = target_node.storage_usage
+    target_file = BaseFileNode.load(target_file_id)
+
+    if target_file and action in ['copy', 'delete', 'move']:
+
+        target_file_size = target_file.versions.aggregate(Sum('size'))['size__sum'] or target_file_size
+
+    if action in ['create', 'update', 'copy'] and provider == 'osfstorage':
+        current_usage += target_file_size
+
+    elif action == 'delete' and provider == 'osfstorage':
+        current_usage = max(current_usage - target_file_size, 0)
+
+    elif action in 'move':
+        source_node = AbstractNode.load(payload['source']['nid'])  # Getting the 'from' node
+
+        source_provider = payload['source']['provider']
+        if target_node == source_node and source_provider == provider:
+            return  # Its not going anywhere.
+        if source_provider == 'osfstorage' and not source_node.is_quickfiles:
+            if source_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+                return update_storage_usage(source_node)
+
+            source_node_usage = source_node.storage_usage
+            source_node_usage = max(source_node_usage - target_file_size, 0)
+
+            key = cache_settings.STORAGE_USAGE_KEY.format(target_id=source_node._id)
+            storage_usage_cache.set(key, source_node_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+
+        current_usage += target_file_size
+
+        if provider != 'osfstorage':
+            return  # We don't want to update the destination node if the provider isn't osfstorage
+    else:
+        return
+
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=target_node._id)
+    storage_usage_cache.set(key, current_usage, settings.STORAGE_USAGE_CACHE_TIMEOUT)

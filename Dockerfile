@@ -6,6 +6,10 @@ RUN set -x \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
+    gcc \
+    g++ \
+    python3-dev \
+    libxslt-dev \
     su-exec \
     bash \
     python3 \
@@ -21,6 +25,10 @@ RUN apk add --no-cache --virtual .run-deps \
     libev \
     libevent \
     && yarn global add bower
+
+RUN apk add curl
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN python3 get-pip.py --force-reinstall pip==21.0
 
 WORKDIR /code
 
@@ -65,7 +73,7 @@ RUN set -ex \
         /code/requirements/release.txt \
         /code/addons/*/requirements.txt \
     ; do \
-        pip3 install --no-cache-dir -c /code/requirements/constraints.txt -r "$reqs_file" \
+        pip3 install --no-cache-dir -r "$reqs_file" \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \

@@ -3,7 +3,7 @@ from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q
 
-from osf.models import OSFUser, Node, BlacklistedEmailDomain
+from osf.models import OSFUser, Node, BlacklistedEmailDomain, NodeLicense
 
 
 def list_displayable_fields(cls):
@@ -34,6 +34,11 @@ class OSFUserAdmin(admin.ModelAdmin):
             for group in groups_to_preserve:
                 form.instance.groups.add(group)
 
+
+class LicenseAdmin(admin.ModelAdmin):
+    fields = list_displayable_fields(NodeLicense)
+
+
 class BlacklistedEmailDomainAdmin(admin.ModelAdmin):
     fields = list_displayable_fields(BlacklistedEmailDomain)
     ordering = ('domain', )
@@ -41,3 +46,4 @@ class BlacklistedEmailDomainAdmin(admin.ModelAdmin):
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
 admin.site.register(BlacklistedEmailDomain, BlacklistedEmailDomainAdmin)
+admin.site.register(NodeLicense, LicenseAdmin)

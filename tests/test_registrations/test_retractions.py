@@ -427,12 +427,9 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
-    def test_approval_retracts_descendant_nodes(self, mock_update_share, mock_format_registration, mock_format_node):
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch('api.share.utils.send_share_json')
+    def test_approval_retracts_descendant_nodes(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -455,8 +452,6 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
 
         assert mock_update_share.called
-        assert mock_format_registration.called
-        assert not mock_format_node.called
 
     def test_disapproval_cancels_retraction_on_descendant_nodes(self):
         # Initiate retraction for parent registration
@@ -483,9 +478,8 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_false(node.is_pending_retraction)
             assert_false(node.is_retracted)
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch('api.share.utils.send_share_json')
     def test_approval_cancels_pending_embargoes_on_descendant_nodes(self, mock_update_share):
         # Initiate embargo for registration
         self.registration.embargo_registration(
@@ -522,9 +516,8 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         assert mock_update_share.called
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch('api.share.utils.send_share_json')
     def test_approval_cancels_active_embargoes_on_descendant_nodes(self, mock_update_share):
         # Initiate embargo for registration
         self.registration.embargo_registration(
@@ -577,12 +570,9 @@ class RegistrationRetractionShareHook(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    @mock.patch('website.project.tasks.format_node')
-    @mock.patch('website.project.tasks.format_registration')
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
-    def test_approval_calls_share_hook(self, mock_update_share, mock_format_registration, mock_format_node):
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch('api.share.utils.send_share_json')
+    def test_approval_calls_share_hook(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -592,12 +582,9 @@ class RegistrationRetractionShareHook(OsfTestCase):
         self.registration.retraction.approve_retraction(self.user, approval_token)
         assert_true(self.registration.is_retracted)
         assert mock_update_share.called
-        assert mock_format_registration.called
-        assert not mock_format_node.called
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'ima_real_website')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'totaly_real_token')
-    @mock.patch('website.project.tasks.send_share_node_data')
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    @mock.patch('api.share.utils.send_share_json')
     def test_disapproval_does_not_call_share_hook(self, mock_update_share):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
@@ -640,7 +627,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
-        self.registration.retraction.reject(self.user, self.rejection_token)
+        self.registration.retraction.reject(user=self.user, token=self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
         self.registration.retraction.save()
 
@@ -690,7 +677,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
 
     def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
-        self.registration.retraction.reject(self.user, self.rejection_token)
+        self.registration.retraction.reject(user=self.user, token=self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
         self.registration.retraction.save()
 
@@ -865,7 +852,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_embargo)
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
-        self.registration.embargo.approve(self.user, approval_token)
+        self.registration.embargo.approve(user=self.user, token=approval_token)
         assert_true(self.registration.embargo_end_date)
 
         res = self.app.post_json(

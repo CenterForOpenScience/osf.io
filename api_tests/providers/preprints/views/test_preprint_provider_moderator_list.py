@@ -9,19 +9,8 @@ from osf_tests.factories import (
 from osf.utils import permissions
 
 
-@pytest.mark.django_db
-class TestPreprintProviderModeratorList:
-
-    @pytest.fixture()
-    def provider(self):
-        pp = PreprintProviderFactory(name='ModArxiv')
-        pp.update_group_permissions()
-        return pp
-
-    @pytest.fixture(params=['/{}preprint_providers/{}/moderators/', '/{}providers/preprints/{}/moderators/'])
-    def url(self, provider, request):
-        url = request.param
-        return url.format(API_BASE, provider._id)
+@pytest.mark.enable_quickfiles_creation
+class ProviderModeratorListTestClass:
 
     @pytest.fixture()
     def admin(self, provider):
@@ -157,3 +146,18 @@ class TestPreprintProviderModeratorList:
         assert res.json['data'][0]['id'] == admin._id
         assert res.json['data'][1]['id'] == moderator._id
         assert res.json['data'][2]['id'] == new_mod._id
+
+
+@pytest.mark.django_db
+class TestPreprintProviderModeratorList(ProviderModeratorListTestClass):
+
+    @pytest.fixture()
+    def provider(self):
+        pp = PreprintProviderFactory(name='ModArxiv')
+        pp.update_group_permissions()
+        return pp
+
+    @pytest.fixture(params=['/{}preprint_providers/{}/moderators/', '/{}providers/preprints/{}/moderators/'])
+    def url(self, provider, request):
+        url = request.param
+        return url.format(API_BASE, provider._id)

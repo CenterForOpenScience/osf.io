@@ -40,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'is_pending_retraction',
         'is_public',
-        'license',
-        'license_type',
         'withdrawal_justification',
     ]
 
@@ -69,6 +67,7 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
+    reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
@@ -116,6 +115,7 @@ class RegistrationSerializer(NodeSerializer):
         source='is_retracted', read_only=True,
         help_text='The registration has been withdrawn.',
     )
+    has_project = ser.SerializerMethodField()
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
@@ -338,6 +338,16 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    review_actions = RelationshipField(
+        related_view='registrations:registration-actions-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    requests = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-requests-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -349,6 +359,9 @@ class RegistrationSerializer(NodeSerializer):
         return 'registrations:registration-relationships-subjects'
 
     links = LinksField({'html': 'get_absolute_html_url'})
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

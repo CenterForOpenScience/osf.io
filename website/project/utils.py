@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """Various node-related utilities."""
+from string import ascii_lowercase, digits
+
 from django.apps import apps
 from django.db.models import Q
 
@@ -32,32 +34,37 @@ def get_keen_activity():
         read_key=settings.KEEN['public']['read_key'],
     )
 
-    node_pageviews = client.count(
-        event_collection='pageviews',
-        timeframe='this_7_days',
-        group_by='node.id',
-        filters=[
-            {
-                'property_name': 'node.id',
-                'operator': 'exists',
-                'property_value': True
-            }
-        ]
-    )
+    node_pageviews = []
+    node_visits = []
+    for character in list(digits + ascii_lowercase):
+        partial_node_pageviews = client.count(
+            event_collection='pageviews-{}'.format(character),
+            timeframe='this_7_days',
+            group_by='node.id',
+            filters=[
+                {
+                    'property_name': 'node.id',
+                    'operator': 'exists',
+                    'property_value': True
+                }
+            ]
+        )
+        node_pageviews += partial_node_pageviews
 
-    node_visits = client.count_unique(
-        event_collection='pageviews',
-        target_property='anon.id',
-        timeframe='this_7_days',
-        group_by='node.id',
-        filters=[
-            {
-                'property_name': 'node.id',
-                'operator': 'exists',
-                'property_value': True
-            }
-        ]
-    )
+        partial_node_visits = client.count_unique(
+            event_collection='pageviews-{}'.format(character),
+            target_property='anon.id',
+            timeframe='this_7_days',
+            group_by='node.id',
+            filters=[
+                {
+                    'property_name': 'node.id',
+                    'operator': 'exists',
+                    'property_value': True
+                }
+            ]
+        )
+        node_visits += partial_node_visits
 
     return {'node_pageviews': node_pageviews, 'node_visits': node_visits}
 
@@ -111,3 +118,54 @@ def sizeof_fmt(num, suffix='B'):
             return '%3.1f%s%s' % (num, unit, suffix)
         num /= 1000.0
     return '%.1f%s%s' % (num, 'Y', suffix)
+
+
+def get_storage_limits_css(node):
+    from osf.models import Node
+
+    if not isinstance(node, Node):
+        return None
+    status = node.storage_limit_status
+
+    if status is settings.StorageLimits.APPROACHING_PRIVATE:
+        return {
+            'text': 'approaching',
+            'class': 'btn-warning storage-warning',
+            'disableUploads': False,
+            'canMakePrivate': True
+        }
+    elif status is settings.StorageLimits.OVER_PRIVATE and not node.is_public:
+        return {
+            'text': 'over',
+            'class': 'btn-danger  storage-warning',
+            'disableUploads': True,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.OVER_PRIVATE and node.is_public:
+        return {
+            'text': None,
+            'class': None,
+            'disableUploads': False,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.APPROACHING_PUBLIC:
+        return {
+            'text': 'approaching',
+            'class': 'btn-warning  storage-warning',
+            'disableUploads': False,
+            'canMakePrivate': False
+
+        }
+    elif status is settings.StorageLimits.OVER_PUBLIC:
+        return {
+            'text': 'over',
+            'class': 'btn-danger  storage-warning',
+            'disableUploads': True,
+            'canMakePrivate': False
+        }
+    elif status is settings.StorageLimits.DEFAULT:
+        return None
+    elif status is settings.StorageLimits.NOT_CALCULATED:
+        return None
+    else:
+        raise NotImplementedError()

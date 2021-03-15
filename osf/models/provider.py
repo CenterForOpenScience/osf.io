@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import requests
+
 from django.apps import apps
 from django.contrib.postgres import fields
+from django.core.exceptions import ValidationError
 from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
@@ -15,19 +18,37 @@ from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
-from osf.models.notifications import NotificationSubscription
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
 from functools import reduce
+from osf.models.notifications import NotificationSubscription
 
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
         unique_together = ('_id', 'type')
         permissions = REVIEW_PERMISSIONS
+
+    PUSH_SHARE_TYPE_CHOICES = (
+        ('Preprint', 'Preprint'),
+        ('Thesis', 'Thesis'),
+        ('Registration', 'Registration'),
+    )
+    PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
+
+    default__id = 'osf'
+
+    @classmethod
+    def get_default(cls):
+        return cls.objects.get(_id=cls.default__id)
+
+    @property
+    def is_default(self):
+        return self._id == self.default__id
 
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
@@ -50,6 +71,23 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                                         null=True, blank=True, on_delete=models.CASCADE)
     allow_submissions = models.BooleanField(default=True)
     allow_commenting = models.BooleanField(default=False)
+    access_token = EncryptedTextField(null=True, blank=True)
+
+    brand = models.ForeignKey('Brand', related_name='providers', null=True, blank=True, on_delete=models.SET_NULL)
+
+    branded_discovery_page = models.BooleanField(default=True)
+    advertises_on_discovery = models.BooleanField(default=True)
+    has_landing_page = models.BooleanField(default=False)
+
+    share_publish_type = models.CharField(
+        choices=PUSH_SHARE_TYPE_CHOICES,
+        help_text=PUSH_SHARE_TYPE_HELP,
+        default='Thesis',
+        max_length=32
+    )
+    share_source = models.CharField(blank=True, default='', max_length=200)
+    share_title = models.TextField(default='', blank=True)
+    doi_prefix = models.CharField(blank=True, null=True, max_length=32)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -103,6 +141,46 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
         except ProviderAssetFile.DoesNotExist:
             return None
 
+    def setup_share_source(self, provider_home_page):
+        if self.access_token:
+            raise ValidationError('Cannot update access_token because one or the other already exists')
+        if not settings.SHARE_ENABLED or not settings.SHARE_URL:
+            raise ValidationError('SHARE_ENABLED is set to false')
+        if not self.get_asset_url('square_color_no_transparent'):
+            raise ValidationError('Unable to find "square_color_no_transparent" icon for provider')
+
+        if settings.SHARE_PROVIDER_PREPEND:
+            share_provider_name = f'{settings.SHARE_PROVIDER_PREPEND}_{self.name}'
+        else:
+            share_provider_name = self.name
+
+        resp = requests.post(
+            f'{settings.SHARE_URL}api/v2/sources/',
+            json={
+                'data': {
+                    'type': 'Source',
+                    'attributes': {
+                        'homePage': provider_home_page,
+                        'longTitle': share_provider_name,
+                        'iconUrl': self.get_asset_url('square_color_no_transparent')
+                    }
+                }
+            },
+            headers={
+                'Authorization': f'Bearer {settings.SHARE_API_TOKEN}',
+                'Content-Type': 'application/vnd.api+json'
+            }
+        )
+        resp.raise_for_status()
+        resp_json = resp.json()
+
+        self.share_source = resp_json['data']['attributes']['longTitle']
+        for data in resp_json['included']:
+            if data['type'] == 'ShareUser':
+                self.access_token = data['attributes']['token']
+
+        self.save()
+
 
 class CollectionProvider(AbstractProvider):
 
@@ -124,8 +202,27 @@ class CollectionProvider(AbstractProvider):
         path = '/providers/collections/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def save(self, *args, **kwargs):
+        saved_fields = self.get_dirty_fields() or []
+        ret = super().save(*args, **kwargs)
+        if '_id' in saved_fields:
+            from osf.models.collection import Collection
+            if self.primary_collection:
+                Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
+        return ret
+
 
 class RegistrationProvider(AbstractProvider):
+    REVIEWABLE_RELATION_NAME = 'registrations'
+    REVIEW_STATES = RegistrationModerationStates
+    STATE_FIELD_NAME = 'moderation_state'
+
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('share_publish_type').default = 'Registration'
+        super().__init__(*args, **kwargs)
+
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
@@ -144,22 +241,22 @@ class RegistrationProvider(AbstractProvider):
         path = '/providers/registrations/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def validate_schema(self, schema):
+        if not self.schemas.filter(id=schema.id).exists():
+            raise ValidationError('Invalid schema for provider.')
+
+
 class PreprintProvider(AbstractProvider):
-    PUSH_SHARE_TYPE_CHOICES = (('Preprint', 'Preprint'),
-                               ('Thesis', 'Thesis'),)
+
+    def __init__(self, *args, **kwargs):
+        self._meta.get_field('share_publish_type').default = 'Preprint'
+        super().__init__(*args, **kwargs)
+
     PUSH_SHARE_TYPE_HELP = 'This SHARE type will be used when pushing publications to SHARE'
 
     REVIEWABLE_RELATION_NAME = 'preprints'
 
-    share_publish_type = models.CharField(choices=PUSH_SHARE_TYPE_CHOICES,
-                                          default='Preprint',
-                                          help_text=PUSH_SHARE_TYPE_HELP,
-                                          max_length=32)
-    share_source = models.CharField(blank=True, max_length=200)
-    share_title = models.TextField(default='', blank=True)
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    access_token = EncryptedTextField(null=True, blank=True)
-    doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (
@@ -242,18 +339,23 @@ def rules_to_subjects(rules):
 
 
 @receiver(post_save, sender=PreprintProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
 
+
 @receiver(post_save, sender=PreprintProvider)
+@receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
-        NotificationSubscription.objects.get_or_create(
-            _id='{provider_id}_new_pending_submissions'.format(provider_id=instance._id),
-            event_name='new_pending_submissions',
-            provider=instance
-        )
+        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
+            NotificationSubscription.objects.get_or_create(
+                _id=f'{instance._id}_{subscription}',
+                event_name=subscription,
+                provider=instance
+            )
+
 
 @receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=RegistrationProvider)

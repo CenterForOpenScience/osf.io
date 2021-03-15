@@ -38,6 +38,8 @@ VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
+        if hasattr(patt, 'name') and patt.name == 'raw-metrics-view':
+            continue
         if hasattr(patt, 'url_patterns'):
             # Namespaced list of patterns
             for subpatt in patt.url_patterns:
