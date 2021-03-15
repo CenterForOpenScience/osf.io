@@ -932,6 +932,111 @@ class TestForgotPassword(OsfTestCase):
         assert_not_in_html('If there is an OSF account', res)
 
 
+class TestForgotPasswordInstitution(OsfTestCase):
+
+    def setUp(self):
+        super(TestForgotPasswordInstitution, self).setUp()
+        self.user = UserFactory()
+        self.auth_user = AuthUserFactory()
+        self.get_url = web_url_for('redirect_unsupported_institution')
+        self.post_url = web_url_for('forgot_password_institution_post')
+        self.user.verification_key_v2 = {}
+        self.user.save()
+
+    # log users out before they land on institutional forgot password page
+    def test_forgot_password_logs_out_user(self):
+        # visit forgot password link while another user is logged in
+        res = self.app.get(self.get_url, auth=self.auth_user.auth)
+        # check redirection to CAS logout
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('campaign=unsupportedinstitution', location)
+        assert_in('logout?service=', location)
+
+    # test that institutional forgot password page redirects to CAS unsupported
+    # institution page
+    def test_get_forgot_password(self):
+        res = self.app.get(self.get_url)
+        assert_equal(res.status_code, 302)
+        location = res.headers.get('Location')
+        assert_in('campaign=unsupportedinstitution', location)
+
+    # test that user from disabled institution can receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_can_receive_reset_password_email(self, mock_send_mail):
+        # submit email to institutional forgot-password page
+        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+
+        # check mail was sent
+        assert_true(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is set
+        self.user.reload()
+        assert_not_equal(self.user.verification_key_v2, {})
+
+    # test that non-existing user cannot receive reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+        # load forgot password page and submit email
+        res = self.app.post(self.post_url, {'forgot_password-email': 'fake' + self.user.username})
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword-institution
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+
+    # test that non-existing user cannot receive institutional reset password email
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+        self.user.disable_account()
+        self.user.save()
+
+        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+
+        # check mail was not sent
+        assert_false(mock_send_mail.called)
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check request URL is /forgotpassword-institution
+        assert_equal(res.request.path, self.post_url)
+        # check push notification
+        assert_in_html('If there is an OSF account', res)
+        assert_not_in_html('Please wait', res)
+
+        # check verification_key_v2 is not set
+        self.user.reload()
+        assert_equal(self.user.verification_key_v2, {})
+
+    # test that user cannot submit forgot password request too quickly
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+        # submit institutional forgot-password request in rapid succession
+        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+        res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})
+
+        # check http 200 response
+        assert_equal(res.status_code, 200)
+        # check push notification
+        assert_in_html('Please wait', res)
+        assert_not_in_html('If there is an OSF account', res)
+
+
 @unittest.skip('Public projects/components are dynamically loaded now.')
 class TestAUserProfile(OsfTestCase):
 

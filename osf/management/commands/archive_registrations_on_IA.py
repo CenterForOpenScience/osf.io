@@ -26,8 +26,6 @@ def archive_registrations_on_IA(dry_run=False):
         else:
             logger.info(f'DRY RUN for archiving {registration._id}')
 
-
-
 class Command(BaseCommand):
     """
     Nightly task to take a number of Registrations and gradually archive them on archive.org via our archiving service
