@@ -263,6 +263,9 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
         node = self.get_node(check_object_permissions=False)
         return node.contributor_set.all().include('user__guids')
 
+    def get_resource(self):
+        return self.get_node(check_object_permissions=False)
+
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
