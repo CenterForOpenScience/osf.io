@@ -50,6 +50,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
+from osf.models.licenses import NodeLicenseRecord
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
@@ -1385,15 +1386,37 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
 
 
 @receiver(post_save, sender=Registration)
-def sync_internet_archive_metadata(sender, instance, **kwargs):
+def sync_internet_archive_attributes(sender, instance, **kwargs):
     """
-    This ensures all our Internet Archive storage buckets are synced with our registrations.
+    This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
+    `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
     """
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
-        dirty_field_names = instance.get_dirty_fields().keys()
-        current_fields = {key: str(getattr(instance, key)) for key in dirty_field_names}
+        internet_archive_metadata = {"title", "description", "category"}.intersection(instance.get_dirty_fields().keys())
+        current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
         if instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
+            )
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.tags.through)
+def sync_internet_archive_tags(sender, instance, action, reverse, model, pk_set, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+        if instance.is_public:
+            requests_retry_session().post(
+                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
+                json={'tags': list(instance.tags.all().values_list('name', flat=True))}
+            )
+
+
+@receiver(post_save, sender=NodeLicenseRecord)
+def sync_internet_archive_license(sender, instance, **kwargs):
+    node = instance.nodes.first()
+    if settings.IA_ARCHIVE_ENABLED and getattr(node, 'ia_url'):
+        if node.is_public:
+            requests_retry_session().post(
+                f'{settings.OSF_PIGEON_URL}metadata/{node._id}',
+                json={'license': instance.node_license.url}
             )
