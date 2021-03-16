@@ -1,5 +1,6 @@
 {
     "project_created":  "${user} created ${node}",
+    "project_created_from_draft_reg": "${node} was created from a draft registration",
     "project_registered": "${user} registered ${node}",
     "project_registered_no_user": "${node} registered",
     "prereg_registration_initiated": "${user} submitted for review to the Preregistration Challenge a registration of ${node}",
