@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0208_update_EGAP_schema'),
+        ('osf', '0226_auto_20210224_1610'),
     ]
 
     operations = [
