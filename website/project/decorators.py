@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup
+from osf.models import AbstractNode, Guid, Preprint, OSFGroup, Registration
 from osf.utils.permissions import WRITE
 from website import language
 from website.util import web_url_for
@@ -239,6 +239,9 @@ def check_can_access(node, user, key=None, api_node=None, include_groups=True):
                 template='request_access.mako',
                 data=data
             )
+
+        if isinstance(node, Registration):
+            return node.provider.get_group('moderator').user_set.filter(id=user.id).exists()
 
         raise HTTPError(
             http_status.HTTP_403_FORBIDDEN,

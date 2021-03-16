@@ -41,7 +41,7 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
         osfstorage_file = record.file
         target = osfstorage_file.target
         doc = {
-            'creators': utils.datacite_format_contributors(target.visible_contributors),
+            'creators': utils.datacite_format_creators(target.visible_contributors),
             'titles': [
                 {
                     'title': osfstorage_file.name
@@ -74,9 +74,8 @@ class DataciteMetadataRecordSerializer(MetadataRecordSerializer):
             ]
 
         subject_list = []
-        subjects_from_target = target.subjects.all().select_related('bepress_subject')
-        if subjects_from_target.exists():
-            subject_list = utils.datacite_format_subjects(subjects_from_target)
+        if target.subjects.all().exists():
+            subject_list = utils.datacite_format_subjects(target)
         tags_on_file = osfstorage_file.tags.values_list('name', flat=True)
         for tag_name in tags_on_file:
             subject_list.append({'subject': tag_name})

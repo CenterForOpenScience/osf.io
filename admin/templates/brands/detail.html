@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% load user_extras %}
+{% load spam_extras %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Brands</title>
+{% endblock title %}
+
+{% block content %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+            {{ message }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if form.errors %}
+        {% for field in form %}
+            {% for error in field.errors %}
+                <div class="alert alert-danger">
+                    <strong>{{ error }}</strong>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+    {{ form.non_field_errors }}
+    {% csrf_token %}
+    <div class="col-md-7">
+        <form action= {% url 'brands:detail' brand.id %} method="post">
+            {% csrf_token %}
+            {{ change_form.as_p }}
+            <input class="form-button" type="submit" value="Submit" />
+
+        </form>
+    </div>
+    <br>
+    {% for hidden in form.hidden_fields %}
+        {{ hidden }}
+    {% endfor %}
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'brands' %}
+{% endblock %}

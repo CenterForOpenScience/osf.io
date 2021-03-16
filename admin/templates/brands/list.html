@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% block title %}
+    <title>List of Brands</title>
+{% endblock title %}
+{% block content %}
+    <h2>List of Brands</h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for brand in brands %}
+    <tr>
+        <td><a href="{% url 'brands:detail' brand_id=brand.id %}">{{ brand.name }}</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}

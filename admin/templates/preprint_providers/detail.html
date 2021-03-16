@@ -1,15 +1,18 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
+{% load node_extras %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Preprint Providers</title>
+{% endblock title %}
 {% block top_includes %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
     <script src="/static/js/preprint_providers/preprintProviders.js"></script>
     <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
 {% endblock %}
-{% load user_extras %}
-{% load spam_extras %}
-{% block title %}
-    <title>Preprint Provider</title>
-{% endblock title %}
 {% block content %}
 <div class="container-fluid">
     <div class="row">
@@ -39,7 +42,7 @@
                 {% if show_taxonomies %}
                     <a class="btn btn-primary" href={% url 'preprint_providers:process_custom_taxonomy' preprint_provider.id %}>Modify Custom Taxonomy</a>
                 {% else %}
-                    <a class="btn btn-primary disabled">Modify Custom Taxonomy</a>
+                    <a class="btn btn-primary" href={% url 'preprint_providers:process_custom_taxonomy' preprint_provider.id %}>View Custom Taxonomy</a>
                 {% endif %}
                 {% endif %}
             </div>
