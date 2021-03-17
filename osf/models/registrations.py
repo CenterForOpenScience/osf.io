@@ -1392,22 +1392,12 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
     """
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
-        internet_archive_metadata = {'title', 'description', 'category'}.intersection(instance.get_dirty_fields().keys())
+        internet_archive_metadata = {'title', 'description', 'category', 'modified', 'article_doi'}.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
         if instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
-            )
-
-
-@receiver(models.signals.m2m_changed, sender=Registration.tags.through)
-def sync_internet_archive_tags(sender, instance, action, reverse, model, pk_set, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
-        if instance.is_public:
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
-                json={'tags': list(instance.tags.all().values_list('name', flat=True))}
             )
 
 
@@ -1419,4 +1409,34 @@ def sync_internet_archive_license(sender, instance, **kwargs):
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{node._id}',
                 json={'license': instance.node_license.url}
+            )
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.tags.through)
+def sync_internet_archive_tags(sender, instance, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+        if instance.is_public:
+            requests_retry_session().post(
+                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
+                json={'tags': list(instance.tags.all().values_list('name', flat=True))}
+            )
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
+def sync_internet_archive_institutions(sender, instance, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+        if instance.is_public:
+            requests_retry_session().post(
+                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
+                json={'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))}
+            )
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.subjects.through)
+def sync_internet_archive_subjects(sender, instance, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+        if instance.is_public:
+            requests_retry_session().post(
+                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
+                json={'subjects': list(instance.subjects.all().values_list('text', flat=True))}
             )

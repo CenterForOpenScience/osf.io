@@ -35,8 +35,6 @@ class TestPigeon:
         assert data == {
             'modified': mock.ANY,
             'title': 'Jefferies',
-            'is_public': 'True',
-            'ia_url': 'http://archive.org/details/osf-registrations-guid0-v1'
         }
 
         registration.title = 'Private'
