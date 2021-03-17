@@ -1495,8 +1495,9 @@ class TestMergingUsers:
             assert mock_signals.signals_sent() == set([user_merged])
 
     @pytest.mark.enable_enqueue_task
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
