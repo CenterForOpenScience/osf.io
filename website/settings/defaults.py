@@ -328,7 +328,7 @@ DOI_FORMAT = '{prefix}/osf.io/{guid}'
 DATACITE_ENABLED = True
 DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
-DATACITE_URL = None
+DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 
 # crossref
@@ -409,10 +409,12 @@ class CeleryConfig:
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.update_institution_project_counts'
     }
 
@@ -498,8 +500,10 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
+        'osf.management.commands.find_spammy_files',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
+        'osf.management.commands.sync_collection_provider_indices',
     )
 
     # Modules that need metrics and release requirements
@@ -1394,6 +1398,7 @@ BLACKLISTED_DOMAINS = [
     'mypacks.net',
     'mypartyclip.de',
     'myphantomemail.com',
+    'myrambler.ru',
     'mysamp.de',
     'myspaceinc.com',
     'myspaceinc.net',
@@ -1491,6 +1496,7 @@ BLACKLISTED_DOMAINS = [
     'qq.com',
     'quickinbox.com',
     'quickmail.nl',
+    'rambler.ru',
     'rainmail.biz',
     'rcpt.at',
     're-gister.com',
@@ -1872,6 +1878,14 @@ RECAPTCHA_VERIFY_URL = 'https://recaptcha.net/recaptcha/api/siteverify'
 
 # akismet spam check
 AKISMET_APIKEY = None
+AKISMET_ENABLED = False
+
+# OOPSpam options
+OOPSPAM_APIKEY = None
+OOPSPAM_SPAM_LEVEL = 3  # The minimum level (out of 6) that is flagged as spam.
+OOPSPAM_CHECK_IP = True  # Whether OOPSpam checks IP addresses. When testing locally, turn this off
+
+# spam options
 SPAM_CHECK_ENABLED = False
 SPAM_CHECK_PUBLIC_ONLY = True
 SPAM_ACCOUNT_SUSPENSION_ENABLED = False

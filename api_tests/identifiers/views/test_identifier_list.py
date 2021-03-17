@@ -20,8 +20,8 @@ from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
 from tests.utils import assert_equals
 from website.identifiers.clients import DataCiteClient
-from website import settings
 
+from website import settings
 
 @pytest.fixture()
 def user():
@@ -472,8 +472,8 @@ class TestNodeIdentifierCreate:
         }
 
     @pytest.fixture()
-    def client(self):
-        return DataCiteClient(base_url='https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
+    def client(self, resource):
+        return DataCiteClient(resource)
 
     @responses.activate
     def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,
@@ -481,7 +481,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                client.base_url + f'/metadata/{client.build_doi(resource)}',
+                f'{settings.DATACITE_URL}/metadata/{client.build_doi(resource)}',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )
@@ -489,7 +489,7 @@ class TestNodeIdentifierCreate:
         responses.add(
             responses.Response(
                 responses.POST,
-                client.base_url + '/doi',
+                f'{settings.DATACITE_URL}/doi',
                 body='OK (10.70102/FK2osf.io/dp438)',
                 status=201,
             )

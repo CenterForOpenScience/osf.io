@@ -18,6 +18,8 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'test-anon': '1/hour',
     'send-email': '2/minute',
     'burst': '1000000/second',
+    'files': '1000000/second',
+    'files-burst': '1000000/second',
 }
 
 ALLOWED_HOSTS.append('localhost')

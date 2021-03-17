@@ -247,6 +247,7 @@ FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
+FORGOT_PASSWORD_INSTITUTION = Mail('forgot_password_institution', subject='Set Password')
 PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
@@ -257,6 +258,10 @@ REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation R
 REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
 
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
+SPAM_FILES_DETECTED = Mail(
+    'spam_files_detected',
+    subject='[auto] Spam files audit'
+)
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',

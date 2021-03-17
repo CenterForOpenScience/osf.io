@@ -128,8 +128,7 @@ def get_or_add_license_to_serializer_context(serializer, node):
         if license_context:
             license_context[node._id] = license
         else:
-            serializer.context['licenses'] = {}
-            serializer.context['licenses'][node._id] = license
+            serializer.context['licenses'] = {node._id: license}
         return license
 
 

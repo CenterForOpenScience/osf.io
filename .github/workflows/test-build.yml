@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-cache:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - id: cache-objects
@@ -28,7 +28,7 @@ jobs:
         rm -rf node_modules  ## TODO remove this later
 
   addons:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build-cache
     services:
       postgres:
@@ -63,13 +63,15 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_addons -n 1
 
   website:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build-cache
     services:
       postgres:
@@ -104,13 +106,15 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_website -n 1
 
   api1_and_js:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build-cache
     services:
       postgres:
@@ -145,7 +149,9 @@ jobs:
         with:
           python-version: 3.6
       - name: Install lxml
-        run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+        run: |
+          sudo apt update
+          sudo apt-get install libxml2-dev libxslt-dev python-dev
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: |
@@ -154,7 +160,7 @@ jobs:
         run: invoke test_travis_api1_and_js -n 1
 
   api2:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build-cache
     services:
       postgres:
@@ -189,13 +195,15 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_api2 -n 1
 
   api3_and_osf:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs: build-cache
     services:
       postgres:
@@ -230,7 +238,9 @@ jobs:
       with:
         python-version: 3.6
     - name: Install lxml
-      run: sudo apt-get install libxml2-dev libxslt-dev python-dev
+      run: |
+        sudo apt update
+        sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_api3_and_osf -n 1
