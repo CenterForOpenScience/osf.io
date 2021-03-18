@@ -9,7 +9,7 @@ import pytest
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, InstitutionFactory, DraftRegistrationFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
@@ -130,7 +130,7 @@ class TestS3CompatViews(S3CompatAddonTestCase, OAuthAddonConfigViewsTestCaseMixi
 
     def test_s3compat_set_bucket_registered(self):
         registration = self.project.register_node(
-            get_default_metaschema(), Auth(self.user), '', ''
+            get_default_metaschema(), Auth(self.user), DraftRegistrationFactory(branched_from=self.project), ''
         )
 
         url = registration.api_url_for('s3compat_set_config')
