@@ -1,0 +1,15 @@
+<form class="well" method="post" action="{% url 'nodes:adjust-storage-usage' guid=guid %}">
+    {% csrf_token %}
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">x</button>
+        <h3>Adjusting the storage caps for {{ id }}</h3>
+    </div>
+    <b>Public cap:</b> <input name='public-cap-input' type="text" value={{ public_cap }} /> GB<br>
+    <b>Private cap: </b><input name='private-cap-input' type="text" value={{ private_cap }} /> GB
+    <div class="modal-footer">
+        <input class="btn btn-danger" type="submit" value="Save" />
+        <button type="button" class="btn btn-default" data-dismiss="modal">
+            Cancel
+        </button>
+    </div>
+</form>

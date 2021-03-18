@@ -77,6 +77,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['title'] == project_public.title
         assert attributes['description'] == project_public.description
         assert attributes['category'] == project_public.category
+        assert attributes['has_project']
 
         res.json['data']['links']['self'] == url_draft_registrations
 
@@ -100,6 +101,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['description'] == ''
         assert attributes['category'] == ''
         assert attributes['node_license'] is None
+        assert not attributes['has_project']
 
         res.json['data']['links']['self'] == url
         relationships = res.json['data']['relationships']

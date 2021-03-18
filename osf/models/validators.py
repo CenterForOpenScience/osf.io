@@ -115,10 +115,6 @@ def validate_subject_hierarchy_length(parent):
     if parent and len(parent.hierarchy) >= 3:
         raise DjangoValidationError('Invalid hierarchy')
 
-def validate_subject_provider_mapping(provider, mapping):
-    if not mapping and provider._id != 'osf':
-        raise DjangoValidationError('Invalid PreprintProvider / Subject alias mapping.')
-
 def validate_subjects(subject_list):
     """
     Asserts all subjects in subject_list are valid subjects

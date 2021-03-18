@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime as dt
 from rest_framework import status as http_status
 from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
@@ -171,7 +170,7 @@ def before_request():
                     OSFUser.objects
                     .filter(guids___id__isnull=False, guids___id=user_session.data['auth_user_id'])
                     # Throttle updates
-                    .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - dt.timedelta(seconds=settings.DATE_LAST_LOGIN_THROTTLE)))
+                    .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - settings.DATE_LAST_LOGIN_THROTTLE_DELTA))
                 ).update(date_last_login=timezone.now())
             set_session(user_session)
         else:

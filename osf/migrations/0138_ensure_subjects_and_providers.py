@@ -17,6 +17,7 @@ OSF_PREPRINTS_DATA = {
     'type': 'osf.preprintprovider',
     'name': 'Open Science Framework',
     'domain': DOMAIN,
+    'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
     'default_license': 'CC0 1.0 Universal',
     'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
@@ -26,6 +27,7 @@ OSF_REGISTRIES_DATA = {
     'type': 'osf.registrationprovider',
     'name': 'OSF Registries',
     'domain': DOMAIN,
+    'share_publish_type': 'Registration',
     'domain_redirect_enabled': False,
     'default_license': 'CC0 1.0 Universal',
     'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
@@ -51,17 +53,17 @@ def _create_provider(cls, data, state):
     provider.save()
 
 def create_osf_preprints(state, schema):
-    AbstractProvider = state.get_model('osf.abstractprovider')
-    if not AbstractProvider.objects.filter(_id=OSF_PREPRINTS_DATA['_id'], type=OSF_PREPRINTS_DATA['type']).exists():
+    PreprintProvider = state.get_model('osf.preprintprovider')
+    if not PreprintProvider.objects.filter(_id=OSF_PREPRINTS_DATA['_id'], type=OSF_PREPRINTS_DATA['type']).exists():
         logger.info('Creating PreprintProvider "osf"')
-        _create_provider(AbstractProvider, OSF_PREPRINTS_DATA, state)
+        _create_provider(PreprintProvider, OSF_PREPRINTS_DATA, state)
 
 def create_subjects(state, schema):
     Subject = state.get_model('osf.subject')
-    AbstractProvider = state.get_model('osf.abstractprovider')
+    PreprintProvider = state.get_model('osf.preprintprovider')
     if not Subject.objects.exists():
         logger.info('Populating Subjects')
-        bepress_provider = AbstractProvider.objects.get(type=OSF_PREPRINTS_DATA['type'], _id=OSF_PREPRINTS_DATA['_id'])
+        bepress_provider = PreprintProvider.objects.get(type=OSF_PREPRINTS_DATA['type'], _id=OSF_PREPRINTS_DATA['_id'])
         # Flat taxonomy is stored locally, read in here
         with open(
             os.path.join(
@@ -85,13 +87,11 @@ def create_subjects(state, schema):
                     subject.save()
 
 def create_osf_registries(state, schema):
-    AbstractProvider = state.get_model('osf.abstractprovider')
-    if not AbstractProvider.objects.filter(_id=OSF_REGISTRIES_DATA['_id'], type=OSF_REGISTRIES_DATA['type']).exists():
+    RegistrationProvider = state.get_model('osf.registrationprovider')
+    if not RegistrationProvider.objects.filter(_id=OSF_REGISTRIES_DATA['_id'], type=OSF_REGISTRIES_DATA['type']).exists():
         logger.info('Creating RegistrationProvider "osf"')
-        _create_provider(AbstractProvider, OSF_REGISTRIES_DATA, state)
+        _create_provider(RegistrationProvider, OSF_REGISTRIES_DATA, state)
 
-def noop(*args, **kwargs):
-    pass
 
 class Migration(migrations.Migration):
 
@@ -99,8 +99,10 @@ class Migration(migrations.Migration):
         ('osf', '0137_auto_20181012_1756'),
     ]
 
-    operations = [] if getattr(settings, 'TEST_ENV', False) else [
-        migrations.RunPython(create_osf_preprints, noop),
-        migrations.RunPython(create_subjects, noop),
-        migrations.RunPython(create_osf_registries, noop),
+    operations = [
+        migrations.RunPython(create_osf_registries, migrations.RunPython.noop),
+    ] if getattr(settings, 'TEST_ENV', False) else [
+        migrations.RunPython(create_osf_preprints, migrations.RunPython.noop),
+        migrations.RunPython(create_subjects, migrations.RunPython.noop),
+        migrations.RunPython(create_osf_registries, migrations.RunPython.noop),
     ]

@@ -46,6 +46,7 @@ switches = {
     'SLOAN_COI_INPUT': 'sloan_coi_input',
     'SLOAN_DATA_INPUT': 'sloan_data_input',
     'SLOAN_PREREG_INPUT': 'sloan_prereg_input',
+    'ENABLE_RAW_METRICS': 'enable_raw_metrics',
 }
 
 locals().update(flags)
