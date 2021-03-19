@@ -122,6 +122,7 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
+    # A dictrionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True, default=list)
 
     @staticmethod
@@ -293,6 +294,11 @@ class Registration(AbstractNode):
 
     @property
     def provider_specific_metadata(self):
+        """Surfaces the additional_metadata fields supported by the provider.
+
+        Also formats the reults to inherit any additional field descriptors defined
+        by the provider and to simplify consumpption by the APIt.
+        """
         if not self.provider or not self.provider.additional_metadata_fields:
             return []
 
@@ -308,6 +314,11 @@ class Registration(AbstractNode):
 
     @provider_specific_metadata.setter
     def provider_specific_metadata(self, values):
+        """Updates additional_metadata fields supported by the provider.
+
+        Fields listed in values that are not supported by the current provider will be ignored.
+        Fields supported by the provider that are not listed in values will not be altered.
+        """
         if not self.provider or not self.provider.additional_metadata_fields:
             return
 

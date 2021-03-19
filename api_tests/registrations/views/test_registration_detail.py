@@ -1214,6 +1214,7 @@ class TestProviderSpcecificMetadata():
                     {'field_name': 'fizz', 'field_value': 'buzz'},
                 ]
             ),
+            (['baz'], [{'field_name': 'baz', 'field_value': ''}]),
         ]
     )
     def test_get_provider_metadata(self, supported_fields, expected_results, app,

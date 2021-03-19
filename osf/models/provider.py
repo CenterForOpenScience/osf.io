@@ -219,6 +219,12 @@ class RegistrationProvider(AbstractProvider):
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
+    # A list of dictionaries describing new fields that providers want to surface on their registrations
+    # Each entry must provide a 'field_name' key. In the future, other keys may be supported to enable
+    # better i18n, validation, or other helpful things.
+    #
+    # Ex:
+    # [{'field_name': 'foo'}, {'field_name': 'bar'}]
     additional_metadata_fields = DateTimeAwareJSONField(blank=True, default=list)
 
     def __init__(self, *args, **kwargs):
