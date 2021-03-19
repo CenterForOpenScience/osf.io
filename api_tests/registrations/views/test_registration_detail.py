@@ -588,7 +588,9 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'affiliated_institutions',
             'article_doi',
             'custom_citation',
-            'category']
+            'category',
+            'provider_specific_metadata',
+        ]
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
@@ -611,8 +613,9 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'affiliated_institutions',
             'article_doi',
             'custom_citation',
-            'category']
-
+            'category',
+            'provider_specific_metadata',
+        ]
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
             if field not in writeable_fields:
