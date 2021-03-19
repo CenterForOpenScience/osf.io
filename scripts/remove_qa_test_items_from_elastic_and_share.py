@@ -8,7 +8,7 @@ django.setup()
 from website.app import init_app
 from django.db.models import Q
 from osf.models import AbstractNode
-from website.project.tasks import update_node_share
+from api.share.utils import update_share
 from website.search.elastic_search import update_node
 from website.settings import DO_NOT_INDEX_LIST
 from framework.database import paginated
@@ -35,7 +35,7 @@ def remove_search_index(dry_run=True):
     else:
         for node in nodes:
             update_node(node, bulk=False, async=True)
-            update_node_share(node)
+            update_share(node)
 
 if __name__ == '__main__':
     dry_run = '--dry' in sys.argv

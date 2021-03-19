@@ -1,0 +1,15 @@
+{% if resource.storage_limit_status is STORAGE_LIMITS.NOT_CALCULATED.value %}
+    <span class="label label-warning">Storage limit not calculated, refresh or click Recalculate node storage usage button</span>
+{% elif not resource.is_public and resource.storage_limit_status is STORAGE_LIMITS.APPROACHING_PRIVATE.value %}
+    <span class="label label-warning">Approaching storage limit for private nodes</span>
+{% elif resource.is_public and resource.storage_limit_status is STORAGE_LIMITS.APPROACHING_PUBLIC.value %}
+    <span class="label label-warning">Approaching storage limit for public nodes</span>
+{% elif resource.is_public and resource.storage_limit_status is STORAGE_LIMITS.OVER_PUBLIC.value %}
+    <span class="label label-danger">Node is over storage limit for public nodes</span>
+{% elif not resource.is_public and resource.storage_limit_status is STORAGE_LIMITS.OVER_PRIVATE.value %}
+    <span class="label label-danger">Node is over storage limit for private nodes</span>
+{% elif not resource.is_public and not resource.storage_limit_status is STORAGE_LIMITS.DEFAULT.value %}
+    <span class="label label-danger">Node is over storage limit for private nodes</span>
+{% else %}
+	<span class="label label-default">No storage concern</span>
+{% endif %}

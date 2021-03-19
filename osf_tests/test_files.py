@@ -1,15 +1,17 @@
 import pytest
 
 from django.contrib.contenttypes.models import ContentType
+from nose.tools import assert_raises
 
 from addons.osfstorage.models import NodeSettings
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import BaseFileNode, Folder, File
+from osf.models import BaseFileNode, Folder, File, FileVersion
 from osf_tests.factories import (
     UserFactory,
     ProjectFactory,
     RegionFactory
 )
+from osf_tests.utils import create_mock_gcs_client
 
 pytestmark = pytest.mark.django_db
 
@@ -39,6 +41,7 @@ def create_test_file(fake):
             'object': '06d80e',
             'service': 'cloud',
             osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+            'bucket': 'bucket'
         }, {
             'size': 1337,
             'contentType': 'img/png'
@@ -80,6 +83,7 @@ def test_file_update_respects_region(project, user, create_test_file):
     node_settings.region = new_region
     node_settings.save()
     test_file.save()
+    test_file.reload()
 
     new_version = test_file.create_version(
         user, {
@@ -92,3 +96,106 @@ def test_file_update_respects_region(project, user, create_test_file):
     )
     assert new_region != original_region
     assert new_version.region == new_region
+
+def test_file_purged(project, create_test_file):
+    test_file = create_test_file(target=project)
+    version = test_file.versions.first()
+    mock_client = create_mock_gcs_client()
+
+    # Sanity
+    assert test_file.purged is None
+    assert version.purged is None
+
+    # False attempt
+    with assert_raises(AttributeError):
+        freed = test_file._purge(client=mock_client)
+
+    version.refresh_from_db()
+    assert test_file.purged is None
+    assert version.purged is None
+
+    # Trash file
+    test_file.delete()
+    # Erroneous call
+    freed = test_file._purge()
+
+    version.refresh_from_db()
+    assert freed == 0
+    assert test_file.purged is None
+    assert version.purged is None
+
+    # Successful call
+    freed = test_file._purge(client=mock_client)
+
+    version.refresh_from_db()
+    assert freed == version.size
+    assert test_file.purged is not None
+    assert version.purged is not None
+
+def test_file_dupe_purged(project, create_test_file):
+    test_file_0 = create_test_file(target=project)
+    version_0 = test_file_0.versions.first()
+    version_0.location['object'] = 'deadbeef'
+    version_0.save()
+    test_file_1 = create_test_file(target=project)
+    version_1 = test_file_1.versions.first()
+    version_1.location['object'] = 'deadbeef'
+    version_1.save()
+    mock_client = create_mock_gcs_client()
+
+    # Sanity
+    assert version_0.id != version_1.id
+    assert version_0.location['object'] == version_1.location['object']
+    assert FileVersion.objects.filter(location__object='deadbeef').count() == 2
+
+    # Trash file_0
+    test_file_0.delete()
+
+    freed = test_file_0._purge(client=mock_client)
+
+    version_0.refresh_from_db()
+    assert freed == 0
+    assert test_file_0.purged is not None
+    assert version_0.purged is None
+
+    # Trash file_1
+    test_file_1.delete()
+
+    freed = test_file_1._purge(client=mock_client)
+
+    version_1.refresh_from_db()
+    assert freed == version_1.size
+    assert test_file_1.purged is not None
+    assert version_1.purged is not None
+
+def test_file_shared_purged(project, create_test_file):
+    test_file_0 = create_test_file(target=project)
+    version_0 = test_file_0.versions.first()
+    version_0.location['object'] = 'deadbeef'
+    version_0.save()
+    test_file_1 = create_test_file(target=project)
+    test_file_1.add_version(version_0)
+    mock_client = create_mock_gcs_client()
+
+    # Sanity
+    assert test_file_1 in version_0.basefilenode_set.all()
+
+    # Trash file_0
+    test_file_0.delete()
+
+    freed = test_file_0._purge(client=mock_client)
+
+    version_0.refresh_from_db()
+    assert freed == 0
+    assert test_file_0.purged is not None
+    assert version_0.purged is None
+
+    # Trash file_1
+    test_file_1.delete()
+
+    freed = test_file_1._purge(client=mock_client)
+
+    version_0.refresh_from_db()
+    assert freed == sum(list(test_file_1.versions.values_list('size', flat=True)))
+    assert test_file_1.purged is not None
+    assert version_0.purged is not None

@@ -122,8 +122,8 @@
   - `$ docker-compose up -d mfr wb fakecas sharejs`
 5. Run migrations and create preprint providers
   - When starting with an empty database you will need to run migrations and populate preprint providers. See the [Running arbitrary commands](#running-arbitrary-commands) section below for instructions.
-6. Start the OSF Web, API Server, Preprints, and Registries (Detached)
-  - `$ docker-compose up -d worker web api admin preprints registries ember_osf_web`
+6. Start the OSF Web, API Server, and Preprints (Detached)
+  - `$ docker-compose up -d worker web api admin preprints ember_osf_web`
 7. View the OSF at [http://localhost:5000](http://localhost:5000).
 
 
@@ -132,7 +132,7 @@
 - Once the requirements have all been installed, you can start the OSF in the background with
 
   ```bash
-  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints registries ember_osf_web
+  $ docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker web api admin preprints ember_osf_web
   ```
 
 - To view the logs for a given container:
@@ -343,3 +343,7 @@ wb:
     - wb_tmp_vol:/tmp
   stdin_open: true
 ```
+
+### Running Collections
+
+To run collections, you must uncomment COLLECTIONS_ENABLED=true in docker-compose.yml under ember_osf_web, then recreate your ember and web containers.

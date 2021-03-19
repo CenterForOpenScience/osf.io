@@ -4,6 +4,8 @@ from nose.tools import *  # noqa:
 from django.utils import timezone
 from api.base.settings.defaults import API_BASE, MAX_PAGE_SIZE
 from api.base.utils import default_node_permission_queryset
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
@@ -28,6 +30,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
 from tests.utils import assert_equals
 from website.views import find_bookmark_collection
+from website import settings
 from osf.utils.workflows import DefaultStates
 
 
@@ -57,10 +60,6 @@ class TestNodeList:
         return ProjectFactory(is_public=True, creator=user)
 
     @pytest.fixture()
-    def sparse_url(self, user):
-        return '/{}sparse/nodes/'.format(API_BASE)
-
-    @pytest.fixture()
     def url(self, user):
         return '/{}nodes/'.format(API_BASE)
 
@@ -75,13 +74,11 @@ class TestNodeList:
     def draft_node(self, user):
         return DraftNodeFactory(creator=user)
 
-    @pytest.mark.parametrize('is_sparse', [True, False])
     def test_return(
             self, app, user, non_contrib, deleted_project, draft_node,
-            private_project, public_project, url, sparse_url, is_sparse):
+            private_project, public_project, url):
 
         #   test_only_returns_non_deleted_public_projects
-        url = sparse_url if is_sparse else url
         res = app.get(url)
         node_json = res.json['data']
 
@@ -163,9 +160,7 @@ class TestNodeList:
             ) is not None for each in res.json['data']]
         )
 
-    @pytest.mark.parametrize('is_sparse', [True, False])
-    def test_node_list_has_proper_root(self, app, user, url, sparse_url, is_sparse):
-        url = sparse_url if is_sparse else url
+    def test_node_list_has_proper_root(self, app, user, url):
         project_one = ProjectFactory(title='Project One', is_public=True)
         ProjectFactory(parent=project_one, is_public=True)
 
@@ -175,9 +170,7 @@ class TestNodeList:
             project = AbstractNode.load(project_json['id'])
             assert project_json['embeds']['root']['data']['id'] == project.root._id
 
-    @pytest.mark.parametrize('is_sparse', [True, False])
-    def test_node_list_sorting(self, app, url, sparse_url, is_sparse):
-        url = sparse_url if is_sparse else url
+    def test_node_list_sorting(self, app, url):
         res = app.get('{}?sort=-created'.format(url))
         assert res.status_code == 200
 
@@ -211,9 +204,7 @@ class TestNodeList:
         # Preprint author can see that the node is a supplemental node for a private preprint
         assert res.json['data'][0]['attributes']['preprint'] is True
 
-    @pytest.mark.parametrize('is_sparse', [True, False])
-    def test_default_node_permission_queryset(self, app, url, private_project, user, sparse_url, is_sparse):
-        url = sparse_url if is_sparse else url
+    def test_default_node_permission_queryset(self, app, url, private_project, user):
         # Node admin contributor
         qs = default_node_permission_queryset(user, Node)
         assert qs.count() == 1
@@ -414,20 +405,14 @@ class TestNodeFiltering:
         return find_bookmark_collection(user_one)
 
     @pytest.fixture()
-    def sparse_url(self, user):
-        return '/{}sparse/nodes/'.format(API_BASE)
-
-    @pytest.fixture()
     def url(self, user):
         return '/{}nodes/'.format(API_BASE)
 
-    @pytest.mark.parametrize('is_sparse', [True, False])
     def test_filtering(
             self, app, user_one, public_project_one,
             public_project_two, public_project_three,
             user_one_private_project, user_two_private_project,
-            preprint, url, sparse_url, is_sparse):
-        url = sparse_url if is_sparse else url
+            preprint, url):
 
         #   test_filtering_by_id
         filter_url = '{}?filter[id]={}'.format(
@@ -501,32 +486,31 @@ class TestNodeFiltering:
         assert public_project_three.description in descriptions
         assert user_one_private_project.description in descriptions
 
-        if not is_sparse:
-            #   test_filtering_on_preprint
-            filter_url = '{}?filter[preprint]=true'.format(url)
-            res = app.get(filter_url, auth=user_one.auth)
-            assert res.status_code == 200
-            data = res.json['data']
-            ids = [each['id'] for each in data]
+        #   test_filtering_on_preprint
+        filter_url = '{}?filter[preprint]=true'.format(url)
+        res = app.get(filter_url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        ids = [each['id'] for each in data]
 
-            assert len(data) == 1
-            assert preprint.node._id in ids
-            assert public_project_one._id not in ids
-            assert public_project_two._id not in ids
-            assert public_project_three._id not in ids
+        assert len(data) == 1
+        assert preprint.node._id in ids
+        assert public_project_one._id not in ids
+        assert public_project_two._id not in ids
+        assert public_project_three._id not in ids
 
-            #   test_filtering_out_preprint
-            filter_url = '{}?filter[preprint]=false'.format(url)
-            res = app.get(filter_url, auth=user_one.auth)
-            assert res.status_code == 200
-            data = res.json['data']
+        #   test_filtering_out_preprint
+        filter_url = '{}?filter[preprint]=false'.format(url)
+        res = app.get(filter_url, auth=user_one.auth)
+        assert res.status_code == 200
+        data = res.json['data']
 
-            ids = [each['id'] for each in data]
+        ids = [each['id'] for each in data]
 
-            assert preprint.node._id not in ids
-            assert public_project_one._id in ids
-            assert public_project_two._id in ids
-            assert public_project_three._id in ids
+        assert preprint.node._id not in ids
+        assert public_project_one._id in ids
+        assert public_project_two._id in ids
+        assert public_project_three._id in ids
 
     def test_filtering_by_category(self, app, user_one):
         project_one = ProjectFactory(creator=user_one, category='hypothesis')
@@ -1405,10 +1389,6 @@ class TestNodeCreate:
         return '/{}nodes/'.format(API_BASE)
 
     @pytest.fixture()
-    def sparse_url(self):
-        return '/{}sparse/nodes/'.format(API_BASE)
-
-    @pytest.fixture()
     def title(self):
         return 'Rheisen is bored'
 
@@ -1466,9 +1446,7 @@ class TestNodeCreate:
             }
         }
 
-    def test_create_node_errors(
-            self, app, user_one, public_project,
-            private_project, url, sparse_url):
+    def test_create_node_errors(self, app, user_one, public_project, private_project, url):
 
         #   test_node_create_invalid_data
         res = app.post_json_api(
@@ -1494,14 +1472,6 @@ class TestNodeCreate:
         res = app.post_json_api(url, private_project, expect_errors=True)
         assert res.status_code == 401
         assert 'detail' in res.json['errors'][0]
-
-    #   test_does_not_create_project_on_sparse_endpoint
-        public_project['data']['type'] = 'sparse-nodes'
-        res = app.post_json_api(
-            sparse_url, public_project,
-            expect_errors=True,
-            auth=user_one.auth)
-        assert res.status_code == 405
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
@@ -2817,12 +2787,16 @@ class TestNodeBulkPartialUpdate:
 
     @pytest.fixture()
     def public_project_one(self, user, title, description, category):
-        return ProjectFactory(
+        project = ProjectFactory(
             title=title,
             description=description,
             category=category,
             is_public=True,
             creator=user)
+        # Sets public project storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
 
     @pytest.fixture()
     def public_project_two(self, user, title, description, category):

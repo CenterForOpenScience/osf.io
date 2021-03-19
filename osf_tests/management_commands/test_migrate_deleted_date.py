@@ -18,7 +18,6 @@ class TestMigrateDeletedDate(DbTestCase):
         super(TestMigrateDeletedDate, self).setUp()
         self.region_us = RegionFactory(_id='US', name='United States')
 
-    @pytest.fixture()
     def project(self, user, is_public=True, is_deleted=False, region=None, parent=None):
         if region is None:
             region = self.region_us

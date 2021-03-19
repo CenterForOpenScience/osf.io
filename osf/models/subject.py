@@ -9,7 +9,7 @@ from include import IncludeQuerySet
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.validators import validate_subject_hierarchy_length, validate_subject_provider_mapping, validate_subject_highlighted_count
+from osf.models.validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
 
 class SubjectQuerySet(IncludeQuerySet):
     def include_children(self):
@@ -78,7 +78,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields() or []
-        validate_subject_provider_mapping(self.provider, self.bepress_subject)
         validate_subject_highlighted_count(self.provider, bool('highlighted' in saved_fields and self.highlighted))
         if 'text' in saved_fields and self.pk and (self.preprints.exists() or self.abstractnodes.exists()):
             raise ValidationError('Cannot edit a used Subject')
