@@ -40,6 +40,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             'DropboxBusinessAddonAppConfig',
             'NextcloudInstitutionsAddonAppConfig',
             'S3CompatInstitutionsAddonAppConfig',
+            'OCIInstitutionsAddonAppConfig',
         ]
 
     def test_admin_login(self):
