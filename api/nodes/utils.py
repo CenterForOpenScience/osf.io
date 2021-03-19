@@ -8,7 +8,8 @@ from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.status import is_server_error
 import requests
 
-from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, NodeSettings, Region
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, NodeSettings
+from osf.models.region import Region
 from addons.wiki.models import NodeSettings as WikiNodeSettings
 from osf.models import AbstractNode, Preprint, Guid, NodeRelation, Contributor
 from osf.models.node import NodeGroupObjectPermission

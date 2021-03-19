@@ -40,7 +40,7 @@ from osf.models import (
     DraftRegistrationContributor,
 )
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage.models import Region
+from osf.models.region import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model

@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 
-from addons.osfstorage.models import Region
+from osf.models.region import Region
 from framework import forms, sentry, status
 from framework import auth as framework_auth
 from framework.auth import exceptions

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-from django.db.utils import ProgrammingError
 
 logger = logging.getLogger(__file__)
 
@@ -66,7 +65,7 @@ def get_admin_write_permissions():
 
 
 def update_admin_permissions(verbosity=0):
-    from django.contrib.auth.models import Group, Permission
+    from django.contrib.auth.models import Group
     should_log = verbosity > 0
     # Create and add permissions for the read only group
     group, created = Group.objects.get_or_create(name='read_only')
@@ -87,39 +86,14 @@ def update_admin_permissions(verbosity=0):
     if should_log:
         logger.info('Administrator permissions added to admin group')
 
-    # Add a metrics_only Group and permissions
-    metrics_group, created = Group.objects.get_or_create(name='metrics_only')
-    if created and should_log:
-        logger.info('Metrics only group created')
-    metrics_permission = Permission.objects.get(codename='view_metrics')
-    metrics_group.permissions.add(metrics_permission)
-    metrics_group.save()
-
-    # Add a view_prereg Group and permissions
-    prereg_view_group, created = Group.objects.get_or_create(name='prereg_view')
-    if created and should_log:
-        logger.info('Prereg view group created')
-    prereg_view_permission = Permission.objects.get(codename='view_prereg')
-    prereg_view_group.permissions.add(prereg_view_permission)
-    prereg_view_group.save()
-
-
 def update_provider_auth_groups(verbosity=0):
     # TODO: determine efficient way to only do this if perms change
     from osf.models.provider import AbstractProvider
-    from django.db import transaction
     for subclass in AbstractProvider.__subclasses__():
-        # The exception handling here allows us to make model changes to providers while also checking their permissions
-        savepoint_id = transaction.savepoint()
-        try:
-            for obj in subclass.objects.all():
-                obj.update_group_permissions()
-                if verbosity > 0:
-                    logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
-        except ProgrammingError:
-            logger.info('Schema change for AbstractProvider detected, passing.')
-            transaction.savepoint_rollback(savepoint_id)
-
+        for obj in subclass.objects.all():
+            obj.update_group_permissions()
+            if verbosity > 0:
+                logger.info('Updated perms for {} {}'.format(obj.type, obj._id))
 
 def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':

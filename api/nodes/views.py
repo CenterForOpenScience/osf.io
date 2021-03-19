@@ -140,7 +140,7 @@ from osf.models import OSFGroup
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
 from osf.models.files import File, Folder
-from addons.osfstorage.models import Region
+from osf.models.region import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 

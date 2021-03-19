@@ -44,7 +44,8 @@ from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
-from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
+from addons.osfstorage.models import OsfStorageFolder, BaseFileNode, OsfStorageFile
+from osf.models.region import Region
 
 from framework.sentry import log_exception
 from osf.exceptions import (

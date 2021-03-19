@@ -791,7 +791,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(blank=True, default=dict)
     location = DateTimeAwareJSONField(default=None, blank=True, null=True, validators=[validate_location])
     seen_by = models.ManyToManyField('OSFUser', through=FileVersionUserMetadata, related_name='versions_seen')
-    region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
+    region = models.ForeignKey('osf.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     purged = NonNaiveDateTimeField(blank=True, null=True)
 

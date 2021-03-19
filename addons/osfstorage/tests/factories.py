@@ -8,8 +8,7 @@ from factory.django import DjangoModelFactory
 from osf_tests.factories import AuthUserFactory
 
 from osf import models
-from addons.osfstorage.models import Region
-
+from osf.models.region import Region
 
 settings = apps.get_app_config('addons_osfstorage')
 

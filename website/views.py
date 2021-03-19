@@ -24,7 +24,7 @@ from website.institutions.views import serialize_institution
 
 from osf import features
 from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration
-from addons.osfstorage.models import Region
+from osf.models.region import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active

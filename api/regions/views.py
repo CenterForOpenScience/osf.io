@@ -9,7 +9,7 @@ from api.base.pagination import MaxSizePagination
 from framework.auth.oauth_scopes import CoreScopes
 from api.regions.serializers import RegionSerializer
 
-from addons.osfstorage.models import Region
+from osf.models.region import Region
 from osf.models import Node
 
 

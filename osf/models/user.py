@@ -560,7 +560,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def osfstorage_region(self):
-        from addons.osfstorage.models import Region
+        from osf.models.region import Region
         osfs_settings = self._settings_model('osfstorage')
         region_subquery = osfs_settings.objects.get(owner=self.id).default_region_id
         return Region.objects.get(id=region_subquery)

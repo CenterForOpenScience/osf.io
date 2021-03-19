@@ -977,7 +977,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @cached_property
     def osfstorage_region(self):
-        from addons.osfstorage.models import Region
+        from .region import Region
         osfs_settings = self._settings_model('osfstorage')
         region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
         return Region.objects.get(id=region_subquery)

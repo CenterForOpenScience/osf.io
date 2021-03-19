@@ -29,7 +29,8 @@ from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
-from addons.osfstorage.models import OsfStorageFile, Region
+from addons.osfstorage.models import OsfStorageFile
+from osf.models.region import Region
 
 fake = Factory.create()
 
@@ -94,17 +95,6 @@ class UserFactory(DjangoModelFactory):
         for key, value in parsed.items():
             setattr(self, key, value)
 
-    @factory.post_generation
-    def set_emails(self, create, extracted):
-        if not self.emails.filter(address=self.username).exists():
-            if not self.id:
-                if create:
-                    # Perform implicit save to populate M2M
-                    self.save(clean=False)
-                else:
-                    # This might lead to strange behavior
-                    return
-            self.emails.create(address=str(self.username).lower())
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.

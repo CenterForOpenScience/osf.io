@@ -9,7 +9,8 @@ from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
-
+from django.contrib.auth.models import Permission
+from guardian.ctypes import get_content_type
 from include import IncludeQuerySet
 
 from api.providers.workflows import Workflows, PUBLIC_STATES
@@ -947,6 +948,7 @@ class GuardianMixin(models.Model):
             for p in to_remove:
                 remove_perm(p, group, self)
             for p in group_permissions:
+                p, created = Permission.objects.get_or_create(codename=p, content_type=get_content_type(self))
                 assign_perm(p, group, self)
 
     def get_permissions(self, user):
