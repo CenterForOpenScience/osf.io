@@ -294,25 +294,32 @@ class Registration(AbstractNode):
     @property
     def provider_specific_metadata(self):
         if not self.provider or not self.provider.additional_metadata_fields:
-            return {}
+            return []
 
-        provider_metadata = [
-            {'field_name': field, 'field_value': self.additional_metadata.get(field, '')}
-            for field in self.provider.additional_metadata_fields
-        ]
+        provider_supported_metadata = []
+        for field_desc in self.provider.additional_metadata_fields:
+            metadata_field = {
+                'field_value': self.additional_metadata.get(field_desc['field_name'], '')
+            }
+            metadata_field.update(field_desc)
+            provider_supported_metadata.append(metadata_field)
 
-        return provider_metadata
+        return provider_supported_metadata
 
     @provider_specific_metadata.setter
     def provider_specific_metadata(self, values):
         if not self.provider or not self.provider.additional_metadata_fields:
             return
 
+        provider_supported_fields = {
+            entry['field_name'] for entry in self.provider.additional_metadata_fields
+        }
         for entry in values:
             key = entry['field_name']
             value = entry['field_value']
-            if key in self.provider.additional_metadata_fields:
+            if key in provider_supported_fields:
                 self.additional_metadata[key] = value
+        self.save()
 
     def can_view(self, auth):
         if super().can_view(auth):
