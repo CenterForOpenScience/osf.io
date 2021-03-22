@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.01.0 (2021-3-17)
+====================
+- Updates to Datacite integration
+- Give WRITE users more permissions on Draft Registrations
+- Scripts for purging files for withdrawn/failed registrations
+- Various bug fixes
+
 20.22.0 (2020-12-08)
 ====================
 - Update emails for Registries Moderation
