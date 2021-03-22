@@ -73,7 +73,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         AdminDeletePermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

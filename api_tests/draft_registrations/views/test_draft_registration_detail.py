@@ -43,14 +43,14 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(
             url_draft_registrations,
             auth=user_read_contrib.auth,
-            expect_errors=True)
+            expect_errors=False)
         assert res.status_code == 200
 
         #   test_read_write_contributor_can_view_draft
         res = app.get(
             url_draft_registrations,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=False)
         assert res.status_code == 200
 
     def test_cannot_view_draft(
@@ -128,27 +128,27 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         project_public.add_contributor(node_admin, ADMIN)
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False
-        res = app.get(url_draft_registrations, auth=node_admin.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
+        assert res.status_code == 403
 
         # Admin on draft but not node
         draft_admin = AuthUserFactory()
         draft_registration.add_contributor(draft_admin, ADMIN)
         assert project_public.has_permission(draft_admin, ADMIN) is False
         assert draft_registration.has_permission(draft_admin, ADMIN) is True
-        res = app.get(url_draft_registrations, auth=draft_admin.auth, expect_errors=True)
-        assert res.status_code == 403
+        res = app.get(url_draft_registrations, auth=draft_admin.auth)
+        assert res.status_code == 200
 
     # Overwrites TestDraftRegistrationDetail
     def test_can_view_after_added(
             self, app, schema, draft_registration, url_draft_registrations):
-        # Draft Registration permissions are based on the branched from node
+        # Draft Registration permissions are no longer based on the branched from project
 
         user = AuthUserFactory()
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
-        res = app.get(url_draft_registrations, auth=user.auth)
-        assert res.status_code == 200
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
 
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(
@@ -161,6 +161,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
         # New workflows aren't accommodating old prereg challenge
         assert res.status_code == 403
+
+    def test_current_permissions_field(self, app, user_read_contrib,
+            user_write_contrib, user, draft_registration, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [READ]
+
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [WRITE, READ]
+
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [ADMIN, WRITE, READ]
 
 
 class TestUpdateEditableFieldsTestCase:

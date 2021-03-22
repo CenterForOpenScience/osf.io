@@ -1169,7 +1169,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True, contributors=False)
+        draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
         return draft
 
@@ -1274,8 +1274,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
-
-        self.copy_contributors_from(node)
 
         if save:
             self.save()

@@ -881,7 +881,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     # TODO: change kwargs to preprint_provider_id and registration_id
                     if related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
                         related_id = resolved_url.kwargs['provider_id']
-                    elif related_type == 'registrations':
+                    elif related_type in ('registrations', 'draft_nodes'):
                         related_id = resolved_url.kwargs['node_id']
                     elif related_type == 'schemas' and related_class.view_name == 'registration-schema-detail':
                         related_id = resolved_url.kwargs['schema_id']

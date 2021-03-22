@@ -6,6 +6,7 @@ app_name = 'osf'
 
 urlpatterns = [
     url(r'^(?P<node_id>\w+)/$', views.DraftNodeDetail.as_view(), name=views.DraftNodeDetail.view_name),
+    url(r'^(?P<node_id>\w+)/draft_registrations/$', views.DraftNodeDraftRegistrationsList.as_view(), name=views.DraftNodeDraftRegistrationsList.view_name),
     url(r'^(?P<node_id>\w+)/files/$', views.DraftNodeStorageProvidersList.as_view(), name=views.DraftNodeStorageProvidersList.view_name),
     url(r'^(?P<node_id>\w+)/files/providers/(?P<provider>\w+)/?$', views.DraftNodeStorageProviderDetail.as_view(), name=views.DraftNodeStorageProviderDetail.view_name),
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/(?:.*/)?)$', views.DraftNodeFilesList.as_view(), name=views.DraftNodeFilesList.view_name),

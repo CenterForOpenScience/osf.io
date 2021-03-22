@@ -39,18 +39,16 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
         # test_read_only_contributor_can_view_draft_list
         res = app.get(
             url_draft_registrations,
-            auth=user_read_contrib.auth,
-            expect_errors=True)
+            auth=user_read_contrib.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
         #   test_read_write_contributor_can_view_draft_list
         res = app.get(
             url_draft_registrations,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
+            auth=user_write_contrib.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 0
+        assert len(res.json['data']) == 1
 
         #   test_logged_in_non_contributor_can_view_draft_list
         res = app.get(
