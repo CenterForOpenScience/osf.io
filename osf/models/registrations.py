@@ -786,9 +786,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_id():
-    from django.apps import apps
-    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
-    return RegistrationProvider.get_default().id
+    return RegistrationProvider.get_default_id()
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
