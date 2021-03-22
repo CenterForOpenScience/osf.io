@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     # 0213 now depends on 0228, so this is a skip-level dependency
     dependencies = [
-        ('osf', '0212_registrationschema_providers'),
+        ('osf', '0213_auto_20200728_1609'),
     ]
 
     operations = [
