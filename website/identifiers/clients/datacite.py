@@ -46,7 +46,7 @@ class DataCiteClient(AbstractIdentifierClient):
             'publisher': 'Open Science Framework',
             'publicationYear': str(datetime.datetime.now().year),
             'resourceType': {
-                'resourceType': 'Registration',
+                'resourceType': 'Pre-registration' if node.type == 'osf.registration' else 'Project',
                 'resourceTypeGeneral': 'Text'
             },
             'dates': [
