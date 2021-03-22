@@ -9,7 +9,6 @@ import osf.models.registrations
 
 class Migration(migrations.Migration):
 
-    # This migration must run after all fields are added to AbstractProvider
     dependencies = [
         ('osf', '0212_registrationschema_providers'),
     ]
