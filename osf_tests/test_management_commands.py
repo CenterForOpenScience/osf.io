@@ -436,13 +436,18 @@ class TestProjectDraftRegContributorSync:
         draft_reg.add_contributor(draft_reg_contributor, WRITE)
         return draft_reg
 
+    @pytest.fixture()
+    def no_project_draft_registration(self, initiator):
+        return DraftRegistrationFactory()
+
     def test_draft_reg_to_sync_retrieval(
-            self, app, active_draft_registration, inactive_draft_registration, active_draft_registration_multiple_contributor):
-        # Tests if the function used to retriev draft registrations to copy project contributors
+            self, app, active_draft_registration, inactive_draft_registration, active_draft_registration_multiple_contributor, no_project_draft_registration):
+        # Tests if the function used to retrieve draft registrations to copy project contributors
         # to is limited to those without registrations
         active_unsynced_draft_regs = retrieve_draft_registrations_to_sync()
         assert active_draft_registration in active_unsynced_draft_regs
         assert inactive_draft_registration not in active_unsynced_draft_regs
+        assert no_project_draft_registration not in active_unsynced_draft_regs
         assert active_draft_registration_multiple_contributor not in active_unsynced_draft_regs
 
     def test_project_draft_reg_contributor_sync(
