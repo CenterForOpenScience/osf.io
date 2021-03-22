@@ -46,9 +46,19 @@ class DataCiteClient(AbstractIdentifierClient):
             'publisher': 'Open Science Framework',
             'publicationYear': str(datetime.datetime.now().year),
             'resourceType': {
-                'resourceType': 'Project',
+                'resourceType': 'Registration',
                 'resourceTypeGeneral': 'Text'
-            }
+            },
+            'dates': [
+                {
+                    'date': node.created.isoformat(),
+                    'dateType': 'Created'
+                },
+                {
+                    'date': node.modified.isoformat(),
+                    'dateType': 'Updated'
+                },
+            ]
         }
 
         article_doi = node.article_doi

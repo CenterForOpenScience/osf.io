@@ -87,7 +87,7 @@ class TestDataCiteClient:
         assert pub_year.text == str(registration.registered_date.year)
 
         resource_type = root.find('{%s}resourceType' % schema40.ns[None])
-        assert resource_type.text == 'Project'
+        assert resource_type.text == 'Registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
 
     def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
