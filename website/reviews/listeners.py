@@ -53,7 +53,6 @@ def reviews_submit_notification(self, recipients, context):
         mails.send_mail(
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
-            mimetype='html',
             user=recipient,
             **context
         )

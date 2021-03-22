@@ -981,10 +981,10 @@ class TestChangePassword:
         user = UserFactory()
         user.set_password('password')
         user.save()
-        with pytest.raises(ChangePasswordError) as excinfo:
+        with pytest.raises(ChangePasswordError, match=error_message):
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in str(excinfo)
+
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -1495,8 +1495,9 @@ class TestMergingUsers:
             assert mock_signals.signals_sent() == set([user_merged])
 
     @pytest.mark.enable_enqueue_task
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()

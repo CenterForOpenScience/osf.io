@@ -14,6 +14,7 @@ from django.apps import apps
 from django_bulk_update.helper import bulk_update
 from django.contrib.auth.models import AnonymousUser, Permission
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
 from django.urls import reverse
 from django.db import models, connection
@@ -2321,10 +2322,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return oauth_scopes.CoreScopes.NODE_FILE_WRITE
 
     def get_doi_client(self):
-        if settings.DATACITE_URL and settings.DATACITE_PREFIX:
-            return DataCiteClient(base_url=settings.DATACITE_URL, prefix=settings.DATACITE_PREFIX)
-        else:
-            return None
+        try:
+            return DataCiteClient(self)
+        except ImproperlyConfigured:
+            pass
 
     def update_custom_citation(self, custom_citation, auth):
         if not self.has_permission(auth.user, ADMIN):

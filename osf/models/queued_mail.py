@@ -56,7 +56,7 @@ class QueuedMail(ObjectIDMixin, BaseModel):
         )
         self.data['osf_url'] = osf_settings.DOMAIN
         if presend and self.user.is_active and self.user.osf_mailing_lists.get(osf_settings.OSF_HELP_LIST):
-            send_mail(self.to_addr or self.user.username, mail, mimetype='html', **(self.data or {}))
+            send_mail(self.to_addr or self.user.username, mail, **(self.data or {}))
             self.sent_at = timezone.now()
             self.save()
             return True

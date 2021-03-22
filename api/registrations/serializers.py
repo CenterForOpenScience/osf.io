@@ -40,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'is_pending_retraction',
         'is_public',
-        'license',
-        'license_type',
         'withdrawal_justification',
     ]
 
@@ -117,6 +115,7 @@ class RegistrationSerializer(NodeSerializer):
         source='is_retracted', read_only=True,
         help_text='The registration has been withdrawn.',
     )
+    has_project = ser.SerializerMethodField()
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
@@ -360,6 +359,9 @@ class RegistrationSerializer(NodeSerializer):
         return 'registrations:registration-relationships-subjects'
 
     links = LinksField({'html': 'get_absolute_html_url'})
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()

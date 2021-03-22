@@ -46,6 +46,10 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     def get_default(cls):
         return cls.objects.get(_id=cls.default__id)
 
+    @property
+    def is_default(self):
+        return self._id == self.default__id
+
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
     name = models.CharField(null=False, max_length=128)  # max length on prod: 22
@@ -83,7 +87,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     )
     share_source = models.CharField(blank=True, default='', max_length=200)
     share_title = models.TextField(default='', blank=True)
-    access_token = EncryptedTextField(null=True, blank=True)
+    doi_prefix = models.CharField(blank=True, null=True, max_length=32)
 
     def __repr__(self):
         return ('(name={self.name!r}, default_license={self.default_license!r}, '
@@ -226,10 +230,6 @@ class RegistrationProvider(AbstractProvider):
         )
 
     @property
-    def is_default(self):
-        return self._id == self.default__id
-
-    @property
     def readable_type(self):
         return 'registration'
 
@@ -257,7 +257,6 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    doi_prefix = models.CharField(blank=True, max_length=32)
     in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (

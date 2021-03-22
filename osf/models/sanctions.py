@@ -887,18 +887,18 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
 
-        register = self._get_registration()
-        if register.is_spammy:
+        registration = self._get_registration()
+        if registration.is_spammy:
             raise NodeStateError('Cannot approve a spammy registration')
 
         super()._on_complete(event_data)
         self.save()
-        registered_from = register.registered_from
+        registered_from = registration.registered_from
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
         # to disapprove the registration by this point)
-        register.set_privacy('public', auth=None, log=False)
-        for child in register.get_descendants_recursive(primary_only=True):
+        registration.set_privacy('public', auth=None, log=False)
+        for child in registration.get_descendants_recursive(primary_only=True):
             child.set_privacy('public', auth=None, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
@@ -906,16 +906,19 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
                 'node': registered_from._id,
-                'registration': register._id,
+                'registration': registration._id,
                 'registration_approval_id': self._id,
             },
             auth=auth,
         )
-        for node in register.root.node_and_primary_descendants():
+        for node in registration.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
 
         self.save()
+
+        doi = registration.request_identifier('doi')['doi']
+        registration.set_identifier_value('doi', doi)
 
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
@@ -953,7 +956,6 @@ class DraftRegistrationApproval(Sanction):
             osf_url=osf_settings.DOMAIN,
             provider=draft.provider,
             can_change_preferences=False,
-            mimetype='html',
         )
 
     def approve(self, user):
@@ -988,6 +990,9 @@ class DraftRegistrationApproval(Sanction):
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
         sanction(notify_initiator_on_complete=True)
+
+        doi = registration.request_identifier('doi')['doi']
+        registration.set_identifier_value('doi', doi)
 
     def _on_reject(self, user, *args, **kwargs):
         DraftRegistration = apps.get_model('osf.DraftRegistration')

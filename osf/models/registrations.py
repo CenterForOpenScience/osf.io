@@ -131,6 +131,10 @@ class Registration(AbstractNode):
         return stuck_regs
 
     @property
+    def has_project(self):
+        return isinstance(self.registered_from, Node)
+
+    @property
     def registration_schema(self):
         # For use in RegistrationResponseMixin
         if self.registered_schema.exists():
@@ -876,6 +880,10 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             return self.branched_from.__class__.__name__
         else:
             raise DraftRegistrationStateError
+
+    @property
+    def has_project(self):
+        return isinstance(self.branched_from, Node)
 
     @property
     def url(self):
