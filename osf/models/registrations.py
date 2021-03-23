@@ -315,8 +315,7 @@ class Registration(AbstractNode):
 
         return provider_supported_metadata
 
-    @provider_specific_metadata.setter
-    def provider_specific_metadata(self, values):
+    def update_provider_specific_metadata(self, values):
         """Updates additional_metadata fields supported by the provider.
 
         Fields listed in values that are not supported by the current provider will be ignored.
@@ -324,6 +323,9 @@ class Registration(AbstractNode):
         """
         if not self.provider or not self.provider.additional_metadata_fields:
             return
+
+        if not self.additional_metadata:
+            self.additional_metadata = {}
 
         provider_supported_fields = {
             entry['field_name'] for entry in self.provider.additional_metadata_fields

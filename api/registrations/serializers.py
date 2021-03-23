@@ -532,7 +532,9 @@ class RegistrationSerializer(NodeSerializer):
             if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
         if 'provider_specific_metadata' in validated_data:
-            registration.provider_specific_metadata = validated_data.pop('provider_specific_metadata')
+            registration.update_provider_specific_metadata(
+                validated_data.pop('provider_specific_metadata'),
+            )
 
         try:
             registration.update(validated_data, auth=auth)
