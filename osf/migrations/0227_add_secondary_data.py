@@ -1,20 +1,58 @@
 import logging
 
-from django.db import migrations
+from math import ceil
 
 logger = logging.getLogger(__file__)
 from osf.models import RegistrationSchema
 from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
-from api.base import settings
 from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
 from django.db import models
+
+from django.db import migrations, connection
+
+logger = logging.getLogger(__name__)
+
+increment = 500000
 
 def add_schema(apps, schema_editor):
     schema = ensure_schema_structure(from_json('secondary-data.json'))
 
     RegistrationSchema.objects.filter(name=schema['name']).update(visible=False, active=True)
+
+def add_records_to_files_sql(state, schema):
+    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
+    datacite_schema_id = FileMetadataSchema.objects.filter(_id='datacite').values_list('id', flat=True)[0]
+    OsfStorageFile = state.get_model('osf', 'osfstoragefile')
+    max_fid = getattr(OsfStorageFile.objects.last(), 'id', 0)
+
+    sql = """
+        INSERT INTO osf_filemetadatarecord (created, modified, _id, metadata, file_id, schema_id)
+        SELECT NOW(), NOW(), generate_object_id(), '{{}}', OSF_FILE.id, %d
+            FROM osf_basefilenode OSF_FILE
+                WHERE (OSF_FILE.type = 'osf.osfstoragefile'
+                       AND OSF_FILE.provider = 'osfstorage'
+                       AND OSF_FILE.id > {}
+                       AND OSF_FILE.id <= {}
+                );
+    """ % (datacite_schema_id)
+
+    total_pages = int(ceil(max_fid / float(increment)))
+    page_start = 0
+    page_end = 0
+    page = 0
+    while page_end <= (max_fid):
+        page += 1
+        page_end += increment
+        if page <= total_pages:
+            logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
+        with connection.cursor() as cursor:
+            cursor.execute(sql.format(
+                page_start,
+                page_end
+            ))
+        page_start = page_end
 
 
 class Migration(migrations.Migration):
@@ -95,4 +133,5 @@ class Migration(migrations.Migration):
                 """
             ]
         ),
+        migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop)
     ]

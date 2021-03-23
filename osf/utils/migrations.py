@@ -1,15 +1,12 @@
 from past.builtins import basestring
 import os
-import itertools
 import builtins
 import json
 import logging
 import warnings
-from math import ceil
 
 from contextlib import contextmanager
 from django.apps import apps
-from django.db import connection
 from django.db.migrations.operations.base import Operation
 
 from osf.models.base import generate_object_id
@@ -40,16 +37,6 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-xl', 'string'): 'long-text-input',
 }
 
-def get_osf_models():
-    """
-    Helper function to retrieve all osf related models.
-
-    Example usage:
-        with disable_auto_now_fields(models=get_osf_models()):
-            ...
-    """
-    return list(itertools.chain(*[app.get_models() for app in apps.get_app_configs() if app.label.startswith('addons_') or app.label.startswith('osf')]))
-
 @contextmanager
 def disable_auto_now_fields(models=None):
     """
@@ -74,29 +61,6 @@ def disable_auto_now_fields(models=None):
             if hasattr(field, 'auto_now') and not field.auto_now:
                 field.auto_now = True
 
-@contextmanager
-def disable_auto_now_add_fields(models=None):
-    """
-    Context manager to disable auto_now_add field updates.
-    If models=None, updates for all auto_now_add fields on *all* models will be disabled.
-
-    :param list models: Optional list of models for which auto_now_add field updates should be disabled.
-    """
-    if not models:
-        models = apps.get_models()
-
-    changed = []
-    for model in models:
-        for field in model._meta.get_fields():
-            if hasattr(field, 'auto_now_add') and field.auto_now_add:
-                field.auto_now_add = False
-                changed.append(field)
-    try:
-        yield
-    finally:
-        for field in changed:
-            if hasattr(field, 'auto_now_add') and not field.auto_now_add:
-                field.auto_now_add = True
 
 def ensure_licenses(*args, **kwargs):
     """Upsert the licenses in our database based on a JSON file.
@@ -576,25 +540,3 @@ class DeleteWaffleSwitches(Operation):
 
     def describe(self):
         return 'Removes waffle switches: {}'.format(', '.join(self.switch_names))
-
-def batch_node_migrations(state, migrations):
-    AbstractNode = state.get_model('osf', 'abstractnode')
-    max_nid = getattr(AbstractNode.objects.last(), 'id', 0)
-
-    for migration in migrations:
-        total_pages = int(ceil(max_nid / float(increment)))
-        page_start = 0
-        page_end = 0
-        page = 0
-        logger.info('{}'.format(migration['description']))
-        while page_end <= (max_nid):
-            page += 1
-            page_end += increment
-            if page <= total_pages:
-                logger.info('Updating page {} / {}'.format(page_end / increment, total_pages))
-            with connection.cursor() as cursor:
-                cursor.execute(migration['sql'].format(
-                    start=page_start,
-                    end=page_end
-                ))
-            page_start = page_end
