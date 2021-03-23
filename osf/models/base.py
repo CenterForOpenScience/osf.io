@@ -46,20 +46,7 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class QuerySetExplainMixin:
-    def explain(self, *args):
-        extra_arguments = ''
-        for item in args:
-            extra_arguments = '{} {}'.format(extra_arguments, item) if isinstance(item, basestring) else extra_arguments
-        cursor = connections[self.db].cursor()
-        query, params = self.query.sql_with_params()
-        cursor.execute('explain analyze verbose %s' % query, params)
-        return '\n'.join(r[0] for r in cursor.fetchall())
-
-QuerySet = type('QuerySet', (QuerySetExplainMixin, QuerySet), dict(QuerySet.__dict__))
-
-
-class BaseModel(TimeStampedModel, QuerySetExplainMixin):
+class BaseModel(TimeStampedModel, QuerySet):
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()

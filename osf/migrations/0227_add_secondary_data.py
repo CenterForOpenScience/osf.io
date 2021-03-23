@@ -1,5 +1,6 @@
 import logging
 
+import json
 from math import ceil
 
 logger = logging.getLogger(__file__)
@@ -21,8 +22,32 @@ def add_schema(apps, schema_editor):
 
     RegistrationSchema.objects.filter(name=schema['name']).update(visible=False, active=True)
 
+def add_datacite_schema(state=None, schema=None):
+    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
+    with open('osf/metadata/schemas/datacite.json') as f:
+        jsonschema = json.load(f)
+    _, created = FileMetadataSchema.objects.get_or_create(
+        _id='datacite',
+        schema_version=1,
+        defaults={
+            'name': 'datacite',
+            'schema': jsonschema
+        }
+
+    )
+    if created:
+        logger.info('Added datacite schema to the database')
+
+
+def remove_datacite_schema(state, schema):
+    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
+    FileMetadataSchema.objects.get(_id='datacite').delete()
+    logger.info('Removed datacite schema from the database')
+
+
 def add_records_to_files_sql(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
+    add_datacite_schema()
     datacite_schema_id = FileMetadataSchema.objects.filter(_id='datacite').values_list('id', flat=True)[0]
     OsfStorageFile = state.get_model('osf', 'osfstoragefile')
     max_fid = getattr(OsfStorageFile.objects.last(), 'id', 0)
