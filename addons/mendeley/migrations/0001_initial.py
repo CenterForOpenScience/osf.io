@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            bases=(models.Model, osf.models.base.QuerySet),
         ),
         migrations.CreateModel(
             name='UserSettings',
@@ -47,6 +47,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            bases=(models.Model, osf.models.base.QuerySet),
         ),
     ]

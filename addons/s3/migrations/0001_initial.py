@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin, addons.base.models.BaseStorageAddon),
+            bases=(models.Model, osf.models.base.QuerySet, addons.base.models.BaseStorageAddon),
         ),
         migrations.CreateModel(
             name='UserSettings',
@@ -50,6 +50,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            bases=(models.Model, osf.models.base.QuerySet),
         ),
     ]

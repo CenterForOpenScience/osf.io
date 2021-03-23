@@ -32,6 +32,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            bases=(models.Model, osf.models.base.QuerySet),
         ),
     ]
