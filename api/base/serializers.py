@@ -578,6 +578,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_kwargs = self_view_kwargs
         self.views = {'related': related_view, 'self': self_view}
         self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
+        # The view_lambda_argument field should only be set for the RelatedLambdaRelationshipField child class
+        self.view_lambda_argument = None
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
@@ -751,7 +753,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     urls[view_name] = {}
                 else:
                     if callable(view):
-                        view = view(getattr(obj, self.field_name))
+                        if self.view_lambda_argument:
+                            view = view(getattr(obj, self.view_lambda_argument))
+                        else:
+                            view = view(getattr(obj, self.field_name))
                     if request.parser_context['kwargs'].get('version', False):
                         kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
@@ -1200,60 +1205,23 @@ class RelatedLambdaRelationshipField(RelationshipField):
     """
 
     def __init__(self, view_lambda_argument=None, **kws):
-        self.view_lambda_argument = view_lambda_argument
         super().__init__(**kws)
+        self.view_lambda_argument = view_lambda_argument
 
     def get_attribute(self, instance):
         return instance
-
-    def get_url(self, obj, view_name, request, format):
-        urls = {}
-        for view_name, view in self.views.items():
-            if view is None:
-                urls[view_name] = {}
-            else:
-                kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
-                if kwargs is None:
-                    urls[view_name] = {}
-                else:
-                    if callable(view):
-                        view = view(getattr(obj, self.view_lambda_argument))
-                    if request.parser_context['kwargs'].get('version', False):
-                        kwargs.update({'version': request.parser_context['kwargs']['version']})
-                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
-                    if self.filter:
-                        formatted_filters = self.format_filter(obj)
-                        if formatted_filters:
-                            for filter in formatted_filters:
-                                url = utils.extend_querystring_params(
-                                    url,
-                                    {'filter[{}]'.format(filter['field_name']): filter['value']},
-                                )
-                        else:
-                            url = None
-
-                    if url:
-                        url = utils.extend_querystring_if_key_exists(
-                            url, self.context['request'],
-                            'view_only',
-                        )
-                    urls[view_name] = url
-
-        if not urls['self'] and not urls['related']:
-            urls = None
-        return urls
 
 
 class NodeFileHyperLinkField(RelatedLambdaRelationshipField):
     def __init__(self, kind=None, never_embed=False, **kws):
         self.kind = kind
         self.never_embed = never_embed
-        super(NodeFileHyperLinkField, self).__init__(**kws)
+        super().__init__(**kws)
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
             raise SkipField
-        return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
+        return super().get_url(obj, view_name, request, format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
