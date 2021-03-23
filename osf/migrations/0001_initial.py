@@ -641,7 +641,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet, osf.utils.machines.SanctionStateMachine),
+            bases=(models.Model, osf.utils.machines.SanctionStateMachine),
         ),
         migrations.CreateModel(
             name='DraftRegistrationContributor',
@@ -728,7 +728,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model, osf.models.base.QuerySet, osf.utils.machines.SanctionStateMachine),
+            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model, osf.utils.machines.SanctionStateMachine),
         ),
         migrations.CreateModel(
             name='EmbargoTerminationApproval',
@@ -748,7 +748,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet, osf.utils.machines.SanctionStateMachine),
+            bases=(models.Model, osf.utils.machines.SanctionStateMachine),
         ),
         migrations.CreateModel(
             name='ExternalAccount',
@@ -1422,7 +1422,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model, osf.models.base.QuerySet, osf.utils.machines.SanctionStateMachine),
+            bases=(osf.models.sanctions.SanctionCallbackMixin, models.Model, osf.utils.machines.SanctionStateMachine),
         ),
         migrations.CreateModel(
             name='RegistrationSchema',
@@ -1483,7 +1483,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet, osf.utils.machines.SanctionStateMachine),
+            bases=(models.Model, osf.utils.machines.SanctionStateMachine),
         ),
         migrations.CreateModel(
             name='ReviewAction',
@@ -1556,7 +1556,7 @@ class Migration(migrations.Migration):
                 'permissions': (('view_subject', 'Can view subject details'),),
                 'base_manager_name': 'objects',
             },
-            bases=(models.Model, osf.models.base.QuerySet, dirtyfields.dirtyfields.DirtyFieldsMixin),
+            bases=(models.Model, dirtyfields.dirtyfields.DirtyFieldsMixin),
         ),
         migrations.CreateModel(
             name='Tag',

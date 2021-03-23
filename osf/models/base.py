@@ -46,7 +46,7 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
-class BaseModel(TimeStampedModel, QuerySet):
+class BaseModel(TimeStampedModel):
     migration_page_size = 50000
 
     objects = models.QuerySet.as_manager()

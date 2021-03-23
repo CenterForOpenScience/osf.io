@@ -22,7 +22,7 @@ def add_schema(apps, schema_editor):
 
     RegistrationSchema.objects.filter(name=schema['name']).update(visible=False, active=True)
 
-def add_datacite_schema(state=None, schema=None):
+def add_datacite_schema(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
     with open('osf/metadata/schemas/datacite.json') as f:
         jsonschema = json.load(f)
@@ -47,7 +47,6 @@ def remove_datacite_schema(state, schema):
 
 def add_records_to_files_sql(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
-    add_datacite_schema()
     datacite_schema_id = FileMetadataSchema.objects.filter(_id='datacite').values_list('id', flat=True)[0]
     OsfStorageFile = state.get_model('osf', 'osfstoragefile')
     max_fid = getattr(OsfStorageFile.objects.last(), 'id', 0)
@@ -158,5 +157,6 @@ class Migration(migrations.Migration):
                 """
             ]
         ),
-        migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop)
+        migrations.RunPython(add_datacite_schema, migrations.RunPython.noop),
+        migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
     ]
