@@ -578,8 +578,6 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_kwargs = self_view_kwargs
         self.views = {'related': related_view, 'self': self_view}
         self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
-        # The view_lambda_argument field should only be set for the RelatedLambdaRelationshipField child class
-        self.view_lambda_argument = None
         self.related_meta = related_meta
         self.self_meta = self_meta
         self.always_embed = always_embed
@@ -741,6 +739,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             kwargs_retrieval[lookup_url_kwarg] = lookup_value
         return kwargs_retrieval
 
+    def _handle_callable_view(self, obj, view):
+        return view(getattr(obj, self.field_name))
+
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
@@ -753,10 +754,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     urls[view_name] = {}
                 else:
                     if callable(view):
-                        if self.view_lambda_argument:
-                            view = view(getattr(obj, self.view_lambda_argument))
-                        else:
-                            view = view(getattr(obj, self.field_name))
+                        view = self._handle_callable_view(obj, view)
                     if request.parser_context['kwargs'].get('version', False):
                         kwargs.update({'version': request.parser_context['kwargs']['version']})
                     url = self.reverse(view, kwargs=kwargs, request=request, format=format)
@@ -1205,11 +1203,14 @@ class RelatedLambdaRelationshipField(RelationshipField):
     """
 
     def __init__(self, view_lambda_argument=None, **kws):
-        super().__init__(**kws)
         self.view_lambda_argument = view_lambda_argument
+        super().__init__(**kws)
 
     def get_attribute(self, instance):
         return instance
+
+    def _handle_callable_view(self, obj, view):
+        return view(getattr(obj, self.view_lambda_argument))
 
 
 class NodeFileHyperLinkField(RelatedLambdaRelationshipField):
