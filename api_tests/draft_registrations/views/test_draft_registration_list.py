@@ -17,7 +17,9 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
+from tests.base import capture_signals
 from website import settings
+from website.project.signals import contributor_added
 
 @pytest.mark.django_db
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
@@ -250,7 +252,11 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
             self, app, user, project_public, url_draft_registrations,
             payload, metaschema_open_ended):
         url = '{}embed=branched_from&embed=initiator'.format(url_draft_registrations)
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_signals() as mock_signals:
+            res = app.post_json_api(url, payload, auth=user.auth)
+
+        assert contributor_added in mock_signals.signals_sent()
+
         assert res.status_code == 201
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
