@@ -43,7 +43,8 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('asist-hypothesis-capability-registration.json')),
     ensure_schema_structure(from_json('asist-results-registration.json')),
     ensure_schema_structure(from_json('real-world-evidence.json')),
-    ensure_schema_structure(from_json('qualitative-research.json'))
+    ensure_schema_structure(from_json('qualitative-research.json')),
+    ensure_schema_structure(from_json('secondary-data.json'))
 ]
 
 METASCHEMA_ORDERING = (
@@ -53,6 +54,7 @@ METASCHEMA_ORDERING = (
     'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
+    'OSF-Secondary Data Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",

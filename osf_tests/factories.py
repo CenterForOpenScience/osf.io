@@ -95,6 +95,18 @@ class UserFactory(DjangoModelFactory):
         for key, value in parsed.items():
             setattr(self, key, value)
 
+    @factory.post_generation
+    def set_emails(self, create, extracted):
+        if not self.emails.filter(address=self.username).exists():
+            if not self.id:
+                if create:
+                    # Perform implicit save to populate M2M
+                    self.save(clean=False)
+                else:
+                    # This might lead to strange behavior
+                    return
+            self.emails.create(address=str(self.username).lower())
+
 
 class AuthUserFactory(UserFactory):
     """A user that automatically has an api key, for quick authentication.
