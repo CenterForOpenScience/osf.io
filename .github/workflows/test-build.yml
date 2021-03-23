@@ -32,7 +32,7 @@ jobs:
     needs: build-cache
     services:
       postgres:
-        image: postgres
+        image: postgres:9.6
 
         env:
           POSTGRES_PASSWORD: postgres
@@ -75,7 +75,7 @@ jobs:
     needs: build-cache
     services:
       postgres:
-        image: postgres
+        image: postgres:9.6
 
         env:
           POSTGRES_PASSWORD: postgres
@@ -118,7 +118,7 @@ jobs:
     needs: build-cache
     services:
       postgres:
-        image: postgres
+        image: postgres:9.6
 
         env:
           POSTGRES_PASSWORD: postgres
@@ -164,7 +164,7 @@ jobs:
     needs: build-cache
     services:
       postgres:
-        image: postgres
+        image: postgres:9.6
 
         env:
           POSTGRES_PASSWORD: postgres
@@ -207,7 +207,7 @@ jobs:
     needs: build-cache
     services:
       postgres:
-        image: postgres
+        image: postgres:9.6
 
         env:
           POSTGRES_PASSWORD: postgres
