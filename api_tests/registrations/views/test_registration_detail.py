@@ -1168,7 +1168,7 @@ class TestUpdateRegistrationSubjects(UpdateSubjectsMixin):
 
 
 @pytest.mark.django_db
-class TestProviderSpcecificMetadata():
+class TestProviderSpecificMetadata():
 
     @pytest.fixture
     def registration_admin(self):
@@ -1230,6 +1230,29 @@ class TestProviderSpcecificMetadata():
 
         resp = app.get(registration_detail_url)
         assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_results
+
+    def test_get_provider_metadata_additinoal_metadata_fields_never_set(self, app):
+        provider = RegistrationProviderFactory()
+        registration = RegistrationFactory()
+        registration.provider = provider
+        registration.is_public = True
+        registration.additional_metadata_fields = {'foo': 'bar'}
+        registration.save()
+
+        resp = app.get(self.registration_detail_url(registration))
+
+        assert resp.json['data']['attributes']['provider_specific_metadata'] == []
+
+    def test_get_provider_metadata_additional_metadata_never_set(self, app, provider):
+        registration = RegistrationFactory()
+        registration.provider = provider
+        registration.is_public = True
+        registration.save()
+
+        resp = app.get(self.registration_detail_url(registration))
+
+        expected_metadata = [{'field_name': 'foo', 'field_value': ''}]
+        assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_metadata
 
     def test_moderator_can_set_provider_metadata(self, app, registration, registration_detail_url,
             put_payload, moderator):

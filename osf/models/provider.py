@@ -226,7 +226,7 @@ class RegistrationProvider(AbstractProvider):
     #
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
-    additional_metadata_fields = DateTimeAwareJSONField(blank=True, default=list)
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'

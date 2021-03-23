@@ -16,11 +16,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='additional_metadata',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=list, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
         ),
         migrations.AddField(
             model_name='abstractprovider',
             name='additional_metadata_fields',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=list, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True),
         ),
     ]

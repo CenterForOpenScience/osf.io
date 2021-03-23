@@ -124,7 +124,7 @@ class Registration(AbstractNode):
     )
 
     # A dictrionary of key: value pairs to store additional metadata defined by third-party sources
-    additional_metadata = DateTimeAwareJSONField(blank=True, default=list)
+    additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
     def find_failed_registrations():
@@ -300,13 +300,15 @@ class Registration(AbstractNode):
         Also formats the reults to inherit any additional field descriptors defined
         by the provider and to simplify consumpption by the APIt.
         """
+        additional_metadata = self.additional_metadata or {}
+
         if not self.provider or not self.provider.additional_metadata_fields:
             return []
 
         provider_supported_metadata = []
         for field_desc in self.provider.additional_metadata_fields:
             metadata_field = {
-                'field_value': self.additional_metadata.get(field_desc['field_name'], '')
+                'field_value': additional_metadata.get(field_desc['field_name'], '')
             }
             metadata_field.update(field_desc)
             provider_supported_metadata.append(metadata_field)
