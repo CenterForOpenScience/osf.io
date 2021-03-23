@@ -1196,13 +1196,11 @@ class TestProviderSpecificMetadata():
         registration.save()
         return registration
 
-    @pytest.fixture()
-    def registration_detail_url(self, registration):
+    def get_registration_detail_url(self, registration):
         return f'/{API_BASE}registrations/{registration._id}/'
 
-    @pytest.fixture()
-    def put_payload(self, registration):
-        return {'data': {'id': registration._id, 'type': 'registrations'}}
+    def make_payload(self, registration, attributes):
+        return {'data': {'id': registration._id, 'type': 'registrations', 'attributes': attributes}}
 
     @pytest.mark.parametrize(
         'supported_fields, expected_results',
@@ -1220,15 +1218,14 @@ class TestProviderSpecificMetadata():
             (['baz'], [{'field_name': 'baz', 'field_value': ''}]),
         ]
     )
-    def test_get_provider_metadata(self, supported_fields, expected_results, app,
-            registration, registration_detail_url):
+    def test_get_provider_metadata(self, supported_fields, expected_results, app, registration):
         # provider_specific_metadata should only surface
         # additional_metadata fields supported by the provider.
         provider = registration.provider
         provider.additional_metadata_fields = [{'field_name': field} for field in supported_fields]
         provider.save()
 
-        resp = app.get(registration_detail_url)
+        resp = app.get(self.get_registration_detail_url(registration))
         assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_results
 
     def test_get_provider_metadata_additional_metadata_fields_never_set(self, app):
@@ -1239,7 +1236,7 @@ class TestProviderSpecificMetadata():
         registration.additional_metadata_fields = {'foo': 'bar'}
         registration.save()
 
-        resp = app.get(self.registration_detail_url(registration))
+        resp = app.get(self.get_registration_detail_url(registration))
 
         assert resp.json['data']['attributes']['provider_specific_metadata'] == []
 
@@ -1249,7 +1246,7 @@ class TestProviderSpecificMetadata():
         registration.is_public = True
         registration.save()
 
-        resp = app.get(self.registration_detail_url(registration))
+        resp = app.get(self.get_registration_detail_url(registration))
 
         expected_metadata = [{'field_name': 'foo', 'field_value': ''}]
         assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_metadata
@@ -1261,54 +1258,65 @@ class TestProviderSpecificMetadata():
         registration.is_public = True
         registration.save()
 
-        resp = app.get(self.registration_detail_url(registration))
+        resp = app.get(self.get_registration_detail_url(registration))
 
         assert resp.json['data']['attributes']['provider_specific_metadata'] == []
 
-    def test_moderator_can_set_provider_metadata(self, app, registration, registration_detail_url,
-            put_payload, moderator):
+    def test_moderator_can_set_provider_metadata(self, app, registration, moderator):
         updated_metadata = [{'field_name': 'foo', 'field_value': 'buzz'}]
-        put_payload['data']['attributes'] = {'provider_specific_metadata': updated_metadata}
+        payload = self.make_payload(registration, {'provider_specific_metadata': updated_metadata})
 
-        resp = app.put_json_api(registration_detail_url, put_payload, auth=moderator.auth)
+        resp = app.put_json_api(
+            self.get_registration_detail_url(registration),
+            payload,
+            auth=moderator.auth
+        )
         assert resp.status_code == 200
 
         registration.refresh_from_db()
         # Only previder-relevant metadata should be changed
         assert registration.additional_metadata == {'foo': 'buzz', 'fizz': 'buzz'}
 
-        resp = app.get(registration_detail_url)
+        resp = app.get(self.get_registration_detail_url(registration))
         assert resp.json['data']['attributes']['provider_specific_metadata'] == updated_metadata
 
     def test_put_provider_specific_metadata_additional_metadata_is_uninitialized(self, app,
-            provider, put_payload, moderator):
+            provider, moderator):
         registration = RegistrationFactory()
         registration.provider = provider
         registration.save()
         assert not registration.additional_metadata
 
-        put_payload = self.put_payload(registration)
-        put_payload['data']['attributes'] = {
-            'provider_specific_metadata': [{'field_name': 'foo', 'field_value': 'bar'}]
-        }
+        payload = self.make_payload(
+            registration,
+            attributes={
+                'provider_specific_metadata': [{'field_name': 'foo', 'field_value': 'bar'}]
+            }
+        )
 
         app.put_json_api(
-            self.registration_detail_url(registration),
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=moderator.auth
         )
 
         registration.refresh_from_db()
         assert registration.additional_metadata == {'foo': 'bar'}
 
-    def test_put_unsupported_provider_metadata_is_noop(self, app, registration, registration_detail_url,
-            put_payload, moderator):
+    def test_put_unsupported_provider_metadata_is_noop(self, app, registration, moderator):
         initial_metadata = registration.additional_metadata
-        put_payload['data']['attributes'] = {
-            'provider_specific_metadata': [{'field_name': 'fizz', 'field_value': 'bar'}]
-        }
+        payload = self.make_payload(
+            registration,
+            attributes={
+                'provider_specific_metadata': [{'field_name': 'fizz', 'field_value': 'bar'}]
+            }
+        )
 
-        resp = app.put_json_api(registration_detail_url, put_payload, auth=moderator.auth)
+        resp = app.put_json_api(
+            self.get_registration_detail_url(registration),
+            payload,
+            auth=moderator.auth
+        )
         assert resp.status_code == 200
 
         registration.refresh_from_db()
@@ -1341,7 +1349,7 @@ class TestProviderSpecificMetadata():
         ]
     )
     def test_put_with_multiple_provider_supported_fields(self, updated_fields, expected_results,
-            app, registration, registration_detail_url, put_payload, provider, moderator):
+            app, registration, provider, moderator):
 
         provider.additional_metadata_fields.append({'field_name': 'fizz'})
         provider.save()
@@ -1349,11 +1357,14 @@ class TestProviderSpecificMetadata():
         updated_metadata = [
             {'field_name': key, 'field_value': val} for key, val in updated_fields.items()
         ]
-        put_payload['data']['attributes'] = {'provider_specific_metadata': updated_metadata}
+        payload = self.make_payload(
+            registration,
+            attributes={'provider_specific_metadata': updated_metadata}
+        )
 
         resp = app.put_json_api(
-            registration_detail_url,
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=moderator.auth,
         )
         assert resp.status_code == 200
@@ -1361,18 +1372,20 @@ class TestProviderSpecificMetadata():
         registration.refresh_from_db()
         assert registration.provider_specific_metadata == expected_results
 
-    def test_put_with_supported_and_unsupported_fields(self, app, registration,
-            registration_detail_url, put_payload, moderator):
+    def test_put_with_supported_and_unsupported_fields(self, app, registration, moderator):
         updated_metadata = [
             {'field_name': 'foo', 'field_value': 'buzz'},
             {'field_name': 'fizz', 'field_value': 'bar'}
         ]
 
-        put_payload['data']['attributes'] = {'provider_specific_metadata': updated_metadata}
+        payload = self.make_payload(
+            registration,
+            attributes={'provider_specific_metadata': updated_metadata}
+        )
 
         resp = app.put_json_api(
-            registration_detail_url,
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=moderator.auth,
         )
         assert resp.status_code == 200
@@ -1380,14 +1393,16 @@ class TestProviderSpecificMetadata():
         registration.refresh_from_db()
         assert registration.additional_metadata == {'foo': 'buzz', 'fizz': 'buzz'}
 
-    def test_admin_cannot_set_provider_metadata(self, app, registration_detail_url,
-            put_payload, registration_admin):
+    def test_admin_cannot_set_provider_metadata(self, app, registration, registration_admin):
         updated_metadata = [{'field_name': 'foo', 'field_value': 'buzz'}]
-        put_payload['data']['attributes'] = {'provider_specific_metadata': updated_metadata}
+        payload = self.make_payload(
+            registration,
+            attributes={'provider_specific_metadata': updated_metadata}
+        )
 
         resp = app.put_json_api(
-            registration_detail_url,
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=registration_admin.auth,
             expect_errors=True
         )
@@ -1405,13 +1420,12 @@ class TestProviderSpecificMetadata():
             ('article_doi', '192.168.1.1'),
         ]
     )
-    def test_moderator_cannot_set_other_fields(self, updated_field, updated_value, app, registration_detail_url,
-            put_payload, moderator):
-
-        put_payload['data']['attributes'] = {updated_field: updated_value}
+    def test_moderator_cannot_set_other_fields(self, updated_field, updated_value, app,
+            registration, moderator):
+        payload = self.make_payload(registration, attributes={updated_field: updated_value})
         resp = app.put_json_api(
-            registration_detail_url,
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=moderator.auth,
             expect_errors=True
         )
@@ -1419,17 +1433,17 @@ class TestProviderSpecificMetadata():
         assert resp.status_code == 403
 
     def test_moderator_admin_can_set_provider_fields_and_writeable_fields(self, app,
-            registration_detail_url, put_payload, provider, registration, registration_admin):
+            provider, registration, registration_admin):
         provider.get_group('moderator').user_set.add(registration_admin)
         provider.save()
         updated_attributes = {
             'description': 'Setting all of the things',
             'provider_specific_metadata': [{'field_name': 'foo', 'field_value': 'baz'}],
         }
-        put_payload['data']['attributes'] = updated_attributes
+        payload = self.make_payload(registration, attributes=updated_attributes)
         resp = app.put_json_api(
-            registration_detail_url,
-            put_payload,
+            self.get_registration_detail_url(registration),
+            payload,
             auth=registration_admin.auth
         )
 
