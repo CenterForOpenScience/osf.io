@@ -43,6 +43,8 @@ volumes:
     external: false
   osf_admin_bower_components_vol:
     external: false
+  cas_postgres_data_vol:
+    external: false
 
 services:
 
@@ -244,6 +246,36 @@ services:
       - 8080:8080
     depends_on:
       - postgres
+    stdin_open: true
+
+  cas:
+    # cas-overlay: Dummy Image
+    image: rcosdp/cas-overlay:master
+    ports:
+      - 8080:8080
+    depends_on:
+      - postgres
+      - caspostgres
+    volumes:
+      - ./etc/cas-overlay/cas.properties:/code/etc/cas.properties:ro
+    stdin_open: true
+
+  caspostgres:
+    image: postgres:9.6
+    command:
+      - /bin/bash
+      - -c
+      - echo "$$POSTGRES_INITDB" > /docker-entrypoint-initdb.d/commands.sh &&
+        chmod +x /docker-entrypoint-initdb.d/commands.sh &&
+        /docker-entrypoint.sh postgres
+    environment:
+      POSTGRES_DB: cas
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_INITDB: |
+        sed -i -e 's/max_connections.*/max_connections = 5000/' /var/lib/postgresql/data/postgresql.conf
+        sed -i -e 's/#log_min_duration_statement = .*/log_min_duration_statement = 0/' /var/lib/postgresql/data/postgresql.conf
+    volumes:
+      - "${CAS_POSTGRES_DATA_VOL:-cas_postgres_data_vol}:/var/lib/postgresql/data/"
     stdin_open: true
 
 
