@@ -76,7 +76,7 @@ NODE_LIST_SQL = """
         FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_osfstorage_region region ON version.region_id = region.id
         LEFT JOIN osf_abstractnode node ON node.id = file.target_object_id
         LEFT JOIN osf_preprint preprint ON preprint.node_id = node.id
         LEFT JOIN osf_guid guid ON (node.id = guid.object_id AND guid.content_type_id = %s)
@@ -115,7 +115,7 @@ REGIONAL_NODE_SIZE_SUM_SQL = """
         FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_osfstorage_region region ON version.region_id = region.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
         AND obfnv.id >= %s AND obfnv.id <= %s
         GROUP BY region.name
@@ -196,7 +196,7 @@ PREPRINT_LIST_SQL = """
         FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_osfstorage_region region ON version.region_id = region.id
         LEFT JOIN osf_preprint preprint ON preprint.id = file.target_object_id
         LEFT JOIN osf_guid guid ON (preprint.id = guid.object_id AND guid.content_type_id = %s)
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
@@ -223,7 +223,7 @@ REGIONAL_PREPRINT_SIZE_SUM_SQL = """
         FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN addons_osfstorage_region region ON version.region_id = region.id
+        LEFT JOIN osf_osfstorage_region region ON version.region_id = region.id
         WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
           AND obfnv.id >= %s AND obfnv.id <= %s
         GROUP BY region.name

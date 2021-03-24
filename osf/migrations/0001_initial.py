@@ -2624,4 +2624,12 @@ class Migration(migrations.Migration):
             name='filemetadatarecord',
             unique_together=set([('file', 'schema')]),
         ),
+        migrations.AlterUniqueTogether(
+            name='noderequest',
+            unique_together=set([('target', 'creator')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='preprintrequest',
+            unique_together=set([('target', 'creator')]),
+        ),
     ]

@@ -29,8 +29,16 @@ class NodeRequest(AbstractRequest, NodeRequestableMixin):
     """
     target = models.ForeignKey('AbstractNode', related_name='requests', on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('target', 'creator')
+
+
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
     """ Request for Preprint Withdrawal
     """
     target = models.ForeignKey('Preprint', related_name='requests', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('target', 'creator')
+

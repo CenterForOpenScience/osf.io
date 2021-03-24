@@ -10,6 +10,7 @@ from website.project.metadata.schemas import ensure_schema_structure, from_json
 from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
 
+from scripts.parse_citation_styles import main as parse_citation_styles
 from django.db import migrations, connection
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,6 @@ def populate_blacklisted_domains(state, *args, **kwargs):
 def remove_blacklisted_domains(state, *args, **kwargs):
     BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
     BlacklistedEmailDomain.objects.all().delete()
-
-
 
 def add_schema(apps, schema_editor):
     schema = ensure_schema_structure(from_json('secondary-data.json'))
@@ -100,7 +99,6 @@ class Migration(migrations.Migration):
 
     operations = [
         UpdateRegistrationSchemasAndSchemaBlocks(),
-        migrations.RunPython(add_schema, ensure_schemas),
         migrations.RunSQL([
             'CREATE INDEX nodelog__node_id_date_desc on osf_nodelog (node_id, date DESC);',
             # 'VACUUM ANALYZE osf_nodelog;'  # Run this manually, requires ~3 min downtime
@@ -145,15 +143,15 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             [
                 """
-                CREATE UNIQUE INDEX osf_basefilenode_non_trashed_unique_index
-                ON public.osf_basefilenode
-                (target_object_id, name, parent_id, type, _path)
-                WHERE type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder');
-                """,
+                CREATE UNIQUE INDEX active_file_node_path_name_type_unique_index
+                ON public.osf_basefilenode (target_object_id, _path, name, type)
+                WHERE (type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder')
+                  AND parent_id IS NULL);
+                """
             ],
             [
                 """
-                DROP INDEX public.osf_basefilenode_non_trashed_unique_index RESTRICT;
+                DROP INDEX IF EXISTS active_file_node_path_name_type_unique_index RESTRICT;
                 """
             ]
         ),
@@ -180,5 +178,6 @@ class Migration(migrations.Migration):
                 """,
                           migrations.RunPython.noop),
         migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
+        #migrations.RunPython(parse_citation_styles, migrations.RunPython.noop),
         migrations.RunPython(populate_blacklisted_domains, remove_blacklisted_domains),
     ]
