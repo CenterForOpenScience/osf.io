@@ -9,132 +9,79 @@
         "id": "page1",
         "title": "Study Information",
         "questions": [{
+            "qid": "q1",
+            "nav": "Research Questions",
+            "type": "string",
+            "format": "textarea",
+            "title": "Research Questions",
+            "description": "List each research question included in this study. When specifying your research questions, it is good practice to use only two new concepts per research question. For example, split up your questions into a simple format: 'Does X lead to Y?' and 'Is the relationship between X and Y moderated by Z?'. By splitting up the research questions here, you can more easily describe the statistical test for each research question later.",
+            "help": "Example: RQ1 = Are more religious people more prosocial than less religious people? RQ2 = Does the relationship between religiosity and prosociality differ for people with different religious affiliations?",
+            "required": true
+        }, {
             "qid": "q2",
             "nav": "Hypotheses",
             "type": "string",
             "format": "textarea",
             "title": "Hypotheses",
-            "description": "List specific, concise, and testable hypotheses. Please state if the hypotheses are directional or non-directional. If directional, state the direction. A predicted effect is also appropriate here. If a specific interaction or moderation is important to your research, you can list that as a separate hypothesis.",
-            "help": "If taste affects preference, then mean preference indices will be higher with higher concentrations of sugar.",
+            "description": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A ≠ B). If directional, state the direction. You may also provide a rationale for each hypothesis.",
+            "help": "We expect that religiosity is associated with prosocial behavior in our sample as well. To assessthis prediction, we will use the following hypotheses:H0(1) = In men and women who graduated from Wisconsin high schools in 1957, there is no association between religiosity and prosocialityH1(1) = In men and women who graduated from Wisconsin high schools in 1957, there is an association between religiosity and prosociality.It is possible that these mechanisms are stronger for some religions than for others.  and prosocial behavior differs for the different religions in our sample. To answer this question, we will test the following hypotheses: H0(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 does not differ for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants) H1(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 differs for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants).",
             "required": true
         }]
     }, {
         "id": "page2",
-        "title": "Design Plan",
-        "description": "Remember that this research plan is designed to register a single study, so if you have multiple experiments or rounds of data collection you may complete a separate preregistration for each.",
+        "title": "Data Description",
         "questions": [{
             "qid": "q3",
-            "nav": "Study type",
-            "title": "Study type",
-            "description": "Please check one of the following statements",
-            "type": "choose",
-            "format": "singleselect",
-            "options": [
-                "Experiment - A researcher randomly assigns treatments to study subjects, this includes field or lab experiments. This is also known as an intervention experiment and includes randomized controlled trials.",
-                "Observational Study - Data is collected from study subjects that are not randomly assigned to a treatment. This includes surveys, “natural experiments,” and regression discontinuity designs.",
-                "Meta-Analysis - A systematic review of published studies.",
-                "Other"
-            ],
+            "nav": "Datasets used",
+            "title": "Datasets used",
+            "description": "Name and briefly describe the dataset(s), and if applicable, the subsets of the data you plan to use.Useful information to include here is the type of data (e.g., cross-sectional or longitudinal), the general content of the questions, and some details about the respondents. In the case of longitudinal data, information about the survey’s waves is useful as well. Mention the most relevant information so that readers do not have to search for the information themselves.",
+            "type": "string",
+            "help": "To answer our research questions we will use a dataset from the Wisconsin Longitudinal Study (WLS; Herd, Carr, & Roan, 2014). The WLS provides long-term data on a random sample of all the men and women who graduated from Wisconsin high schools in 1957. The WLS involves twelve waves of data. Six waves were collected from the original participants or their parents (1957, 1964, 1975, 1992, 2004, and 2011), four were collected from a selected sibling (1977, 1994, 2005, and 2011), one from the spouse of the original participant (2004), and one from the spouse of the selected sibling (2006). The questions vary across waves and are related to domains as diverse as socio-economic background, physical and mental health, and psychological makeup. We will use the subset consisting of the 1957 graduates who completed the follow-up 2003-2005 wave of the WLS dataset because it includes specific modules on religiosity and volunteering.",
+            "format": "textarea",
             "required": true
         }, {
             "qid": "q4",
-            "nav": "Blinding",
-            "title": "Blinding",
-            "description": "Blinding describes who is aware of the experimental manipulations within a study. Mark all that apply.",
+            "nav": "Data availability",
+            "title": "Data availability",
+            "description": "Specify the degree to which the datasets are open or publicly available.",
             "type": "choose",
             "format": "multiselect",
             "options": [
-                "No blinding is involved in this study.",
-                "For studies that involve human subjects, they will not know the treatment group to which they have been assigned.",
-                "Personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments. (Commonly known as “double blind”)",
-                "Personnel who analyze the data collected from the study are not aware of the treatment applied to any given group."
+                "The dataset is publicly available",
+                "The dataset is available through protected access",
+                "The dataset is not publicly available"
             ],
             "required": true
         }, {
             "qid": "q5",
-            "nav": "Blinding",
-            "title": "Is there any additional blinding in this study?",
-            "description": "Blinding (Other)",
+            "nav": "Data access",
+            "title": "Data access",
+            "description": "If there are any restrictions to accessing the dataset, please describe this here.",
             "type": "string",
-            "format": "textarea"
+            "format": "text"
         }, {
             "qid": "q6",
-            "nav": "Study design",
-            "type": "object",
-            "title": "Study design",
-            "description": "Describe your study design. The key is to be as detailed as is necessary given the specific parameters of the design. There may be some overlap between this question and the following questions. That is OK, as long as sufficient detail is given in one of the areas to provide all of the requested information. Examples include two-group, factorial, randomized block, and repeated measures. Is it a between (unpaired), within-subject (paired), or mixed design? Describe any counterbalancing required.",
-            "help": "Between subjects design with 1 factor (sugar by mass) and 4 levels (none, 1 gram, 10 grams, and 100 grams).  ",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
+            "nav": "Data identifiers",
+            "type": "string",
+            "format": "text",
+            "title": "Data identifiers",
+            "description": "Please provide a URL, DOI, or other persistent, unique identifier of the dataset."
         }, {
             "qid": "q7",
-            "nav": "Randomization",
-            "title": "Randomization",
-            "description": "If you are doing a randomized study, state how you will randomize, and at what level. Typical randomization techniques include: simple, block, stratified, and adaptive covariate randomization. If randomization is required for the study, the method should be specified here, not simply the source of random numbers.",
-            "help": "We will use block randomization, where each participant will be randomly assigned to one of the four equally sized, predetermined blocks. The random number list used to create these four blocks will be created using the web applications available at http://random.org.",
+            "nav": "Access date",
+            "title": "Access date",
+            "description": "Specify the download or data access date. If the data were accessed multiple times by different team members, specify the download date for that data that will be used in the statistical analysis.",
+            "help": "Downloaded 12 February 2019",
             "type": "string",
-            "format": "textarea"
-        }]
-    }, {
-        "id": "page3",
-        "title": "Sampling Plan",
-        "description": "In this section, you will be asked to describe how you plan to collect samples, as well as the number of samples you plan to collect and rationale for this decision. Please keep in mind that the data described in this section should be the actual data used for analysis, so if you are using a subset of a larger dataset, please describe that specific subset.",
-        "questions": [{
-            "qid": "q8",
-            "nav": "Existing Data",
-            "title": "Existing Data",
-            "description": "Preregistration is designed to make clear the distinction between confirmatory tests, specified prior to seeing the data, and exploratory analyses conducted after observing the data. Therefore, creating a research plan in which existing data will be used presents unique challenges. Please select the description that best describes your situation. See https://cos.io/prereg for more information.",
-            "type": "choose",
-            "format": "singleselect",
-            "options": [
-                {
-                    "text": "Registration prior to creation of data",
-                    "tooltip": "As of the date of submission of this research plan for preregistration, the data have not yet been collected, created, or realized."
-                },
-                {
-                    "text": "Registration prior to any human observation of the data",
-                    "tooltip": "As of the date of submission, the data exist but have not yet been quantified, constructed, observed, or reported by anyone - including individuals that are not associated with the proposed study."
-                },
-                {
-                    "text": "Registration prior to accessing the data",
-                    "tooltip": "As of the date of submission, the data exist, but have not been accessed by you or your collaborators. This includes data collected by another researcher or institution."
-                },
-                {
-                    "text": "Registration prior to analysis of the data",
-                    "tooltip": "As of the date of submission, the data exist and you have accessed it, though no analysis has been conducted related to the research plan (including calculation of summary statistics). This might mean a large dataset exists that is used for many different studies, or a data set is randomly split into samples for exploratory analyses and later confirmatory analysis."
-                },
-                {
-                    "text": "Registration following analysis of the data",
-                    "tooltip": "TAKE NOTE As of the date of submission, you have analyzed some of the relevant data. This includes preliminary analysis of variables, calculation of descriptive statistics, and observation of data distributions. This may affect the interpretability of your results and likely prevent you from describing this as a preregistration."
-                }
-            ],
+            "format": "text",
             "required": true
         }, {
-            "qid": "q9",
-            "nav": "Explanation",
-            "type": "string",
-            "format": "textarea",
-            "title": "Explanation of existing data",
-            "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study.",
-            "help": ""
-        }, {
-            "qid": "q10",
+            "qid": "q8",
             "nav": "Data collection procedures",
             "type": "object",
             "title": "Data collection procedures",
-            "description": "Please describe the process by which you will collect your data and your inclusion and exclusion criteria. If you are using human subjects, this should include the population from which you obtain subjects, recruitment efforts, payment for participation, how subjects will be selected for eligibility from the initial pool, and your study timeline. For studies that don't include human subjects, include information about how you will collect samples, duration of data gathering efforts, source or location of samples, or batch numbers you will use.",
-            "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to participate (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.",
+            "description": "If the data collection procedure is well documented, provide a link to that information. If the data collection procedure is not well documented, describe, to the best of your ability, how data were collected. Describe the representativeness of the sample and any possible biases stemming from the data collection.",
+            "help": "The WLS data was collected by the University of Wisconsin Survey Center for use by the research community. The origins of the WLS can be traced back to a state-sponsored questionnaire administered during the spring of 1957 at all Wisconsin high school to students in their final year. Therefore, the dataset constitutes a specific sample not necessarily representative of the United States as a whole. Most panel members were born in 1939, and thesample is broadly representative of white, non-Hispanic American men and women who completed at least a high school education. A flowchart for the data collection can be found here: https://www.ssc.wisc.edu/wlsresearch/about/flowchart/cor459d7.pdf",
             "properties": [
                 {
                     "id": "question",
@@ -149,41 +96,36 @@
                 }
             ]
         }, {
-            "qid": "q11",
-            "nav": "Sample size",
-            "type": "string",
-            "format": "textarea",
-            "title": "Sample size",
-            "description": "Describe the sample size of your study. How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, describe how many units are you collecting at each level of the analysis. This might be the number of samples or a range, minimum, or maximum.",
-            "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task.",
-            "required": true
-        }, {
-            "qid": "q12",
-            "nav": "Sample size rationale",
-            "type": "string",
-            "format": "textarea",
-            "title": "Sample size rationale",
-            "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
-            "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability."
-        }, {
-            "qid": "q13",
-            "nav": "Stopping rule",
-            "title": "Stopping rule",
-            "type": "string",
-            "format": "textarea",
-            "description": "If your data collection procedures do not give you full control over your exact sample size, specify how you will decide when to terminate your data collection. If you are using sequential analysis, include your pre-specified thresholds.",
-            "help": "We will post participant sign-up slots by week on the preceding Friday night, with 20 spots posted per week. We will post 20 new slots each week if, on that Friday night, we are below 320 participants."
+            "qid": "q10",
+            "nav": "Codebook",
+            "type": "object",
+            "title": "Codebook",
+            "description": "Some studies offer codebooks to describe their data. If such a codebook is publicly available, link, cite, or upload the document. If not, provide other available documentation. Also provide guidance on what parts of the codebook or other documentation are most relevant.",
+            "help": "The codebook for the dataset we use can be found here: https://www.ssc.wisc.edu/wlsresearch/documentation/waves/?wave=grad2k. We will mainly use questions from the mail survey about religion and spirituality, and the phone survey on volunteering, but will also use some questions from other modules.",
+            "properties": [
+                {
+                    "id": "question",
+                    "type": "string",
+                    "format": "textarea",
+                    "required": true
+                },
+                {
+                    "id": "uploader",
+                    "type": "osf-upload",
+                    "format": "osf-upload-toggle"
+                }
+            ]
         }]
     }, {
-        "id": "page4",
+        "id": "page3",
         "title": "Variables",
         "description": "In this section you can describe all variables (both manipulated and measured variables) that will later be used in your confirmatory analysis plan. In your analysis plan, you will have the opportunity to describe how each variable will be used. If you have variables that you are measuring for exploratory analyses, you are not required to list them.",
         "questions": [{
-            "qid": "q14",
-            "nav": "Manipulated",
+            "qid": "q12",
+            "nav": "Manipulated variables",
             "type": "object",
             "title": "Manipulated variables",
-            "description": "Precisely define all variables you plan to manipulate and the levels or treatment arms of each variable. This is not applicable to any observational study.",
+            "description": "If you are going to use any manipulated variables from the study variables, identify them here. Describe the variables and the levels or treatment arms of each variable. Note that this is not applicable for observational studies and meta-analyses. If you are collapsing groups across variables this should be explicitly stated, including the relevant formula. If your further analysis iscontingent on a manipulation check, describe your decisions rules here.",
             "help": "We manipulated the percentage of sugar by mass added to brownies. The four levels of this categorical variable are: 15%, 20%, 25%, or 40% cane sugar by mass.",
             "properties": [
                 {
@@ -198,120 +140,123 @@
                 }
             ]
         }, {
-            "qid": "q15",
-            "nav": "Measured",
-            "type": "object",
-            "title": "Measured variables",
-            "description": "Precisely define each variable that you will measure. This will include outcome measures, as well as any measured predictors or covariates.",
-            "help": "The single outcome variable will be the perceived tastiness of the single brownie each participant will eat. We will measure this by asking participants ‘How much did you enjoy eating the brownie’ (on a scale of 1-7, 1 being ‘not at all’, 7 being ‘a great deal’) and ‘How good did the brownie taste’ (on a scale of 1-7, 1 being ‘very bad’, 7 being ‘very good’).",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
-        }, {
-            "qid": "q16",
-            "nav": "Indices",
-            "type": "object",
-            "title": "Indices",
-            "description": "If applicable, please define how measures will be combined into an index (or even a mean) and what measures will be used. Include either a formula or a precise description of the method. If you are using a more complicated statistical method to combine measures (e.g. a factor analysis), please note that here but describe the exact method in the analysis plan section.",
-            "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
-        }]
-    }, {
-        "id": "page5",
-        "title": "Analysis Plan",
-        "type": "object",
-        "description": "In this section, you will describe one or more confirmatory analysis. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating. A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent).",
-        "questions": [{
-            "qid": "q17",
-            "nav": "Statistical models",
-            "type": "object",
-            "title": "Statistical models",
-            "description": "What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, RMANOVA, MANOVA, multiple regression, SEM, etc) and the specification of the model. This includes each variable that will be included, all interactions, subgroup analyses, pairwise or complex contrasts, and any follow-up tests from omnibus tests. If you plan on using any positive controls, negative controls, or manipulation checks you may mention that here. Provide enough detail so that another person could run the same analysis with the information provided. Remember that in your final article any test not included here must be noted as exploratory and that you must report the results of all tests.",
-            "help": "We will use a  2 X 3 repeated measures ANOVA (RMANOVA) with both factors within subjects to analyze our results.  This is perhaps the most important and most complicated question within the preregistration. Ask yourself: is enough detail provided to run the same analysis again with the information provided by the user? Be aware for instances where the statistical models appear specific, but actually leave openings for the precise test.",
-            "properties": [
-                {
-                    "id": "question",
-                    "type": "string",
-                    "format": "textarea",
-                    "required": true
-                },
-                {
-                    "id": "uploader",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
-                }
-            ]
-        }, {
-            "qid": "q18",
-            "nav": "Transformations",
-            "title": "Transformations",
-            "description": "If you plan on transforming, centering, recoding the data, or requiring a coding scheme for categorical variables, please describe that process.",
-            "help": "The “Effect of sugar on brownie tastiness” does not require any additional transformations. However, if it were using a regression analysis and each level of sweet had been categorically described (e.g. not sweet, somewhat sweet, sweet, and very sweet), ‘sweet’ could be dummy coded with ‘not sweet’ as the reference category. <br><br> If any categorical predictors are included in a regression, indicate how those variables will be coded (e.g. dummy coding, summation coding, etc.) and what the reference category will be.",
+            "qid": "q14",
+            "nav": "Measured variables",
             "type": "string",
+            "title": "Measured variables",
+            "description": "Describe both outcome measures as well as predictors and covariates and label them accordingly. If you are using a scale or an index, state the construct the scale/index represents, which items the scale/index will consist of, and how these items will be aggregated. When the aggregation is based on exploratory factor analysis (EFA) or confirmatory factor analysis (CFA),also specify the relevant details (EFA: rotation, how the number of factors will be determined, how best fit will be selected, CFA: how loadings will be specified, how fit will be assessed, which residuals variance terms will be correlated). If you are using any categorical variables, state howyou will code them in the statistical analyses.",
+            "help": "The following example is shortened. Please see https://psyarxiv.com/hvfmr/ for complete details. Religiosity (IV): Religiosity is measured using a newly created scale with a subset of items from the Religion and Spirituality module of the 2004 mail survey. The scale includes general questions about how religious/spiritual the individual is and how important religion/spirituality is to them. The specific variables are as follows: il001rer: How religious are you? il002rer: How spiritual are you? il003rer: How important is religion in your life? il004rer: How important is spirituality in your life? il005rer: How important was it, or would it have been if you had children, to send your children for religious or spiritual instruction? il006rer: How closely do you identify with being a member of a religious group? The levels of all of these variables are indicated by a Likert scale with the following options: (1) Not at all; (2) Not very; (3) Somewhat; (4) Very; (5) Extremely, as well as ‘System Missing’ (the participant did not provide an answer) and ‘Refused’ (the participant refused to answer the question). Variable il006rer additionally includes the option ‘Don’t know’ (the participant stated that they did not know how to answer the question). We will use the average score (after omitting non-numeric and ‘Don’t know’ responses) on the variables as a measure of religiosity.  Prosociality (DV): We will use three measures of prosociality that measure three aspects of engagement in other oriented activities. The prosociality variables come from the Volunteering module of the 2004 phone survey.  gv103re: Did the graduate do volunteer work in the last 12 months?  This dichotomous variable assesses whether or not the participant has engaged in any volunteering activities in the last 12 months. The levels of this variable are yes/no. Yes will be coded as ‘1’, no will be coded as ‘0’.",
+            "required": true,
             "format": "textarea"
         }, {
-            "qid": "q19",
-            "nav": "Inference criteria",
-            "title": "Inference criteria",
-            "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. specify the p-values, Bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
-            "help": "We will use the standard p<.05 criteria for determining if the ANOVA and the post hoc test suggest that the results are significantly different from those expected if the null hypothesis were correct. The post-hoc Tukey-Kramer test adjusts for multiple comparisons.",
+            "qid": "q15",
+            "nav": "Unit of analysis",
             "type": "string",
+            "title": "Unit of analysis",
+            "description": "What do you know about missing data in the dataset (i.e., overall missingness rate, information about differential dropout)? How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will usein the statistical analyses. Based on this information, provide a new expected sample size.",
+            "help": "Initially, the WLS consisted of 10,317 participants. As we are not interested in a specific group of Wisconsin people, we will not exclude any participants from our analyses. However, only 7,265 participants filled out the questions on prosociality and the number of siblings in the phone survey and only 6,845 filled out the religiosity items in the mail survey (Herd et al., 2014).This corresponds to a response rate of 73% and 69% respectively. Because we do not know whether the participants that did the mail survey also did the phone survey, our minimum expected sample size is 10,317 * 0.73 * 0.69 = 5,297.",
+            "required": false,
+            "format": "textarea"
+        }, {
+            "qid": "q16",
+            "nav": "Missing data",
+            "type": "string",
+            "title": "Missing data",
+            "description": "Which units of analysis (respondents, cases, etc.) will be included or excluded in your study? Taking these inclusion and exclusion criteria into account, indicate the expected sample size of the data you’ll be using for your statistical analyses. If you have a research question about a certain group you may need to exclude participants based on one or more characteristics. Be very specific when describing these characteristics so that readers will be able to redo your moves easily.",
+            "help": "The WLS provides a documented set of missing codes. Reasons for missing data include: ‘System missing’ refers to the number of participants that did not or could not complete the questionnaire. ‘Partial interview’ refers to the number of participants that did not get that particular question because they were only partially interviewed. The rest of the codes include ‘inappropriate,’ ‘refused,’ and ‘could not code.’",
+            "required": false,
+            "format": "textarea"
+        }, {
+            "qid": "q17",
+            "nav": "Statistical outliers",
+            "type": "string",
+            "title": "Statistical outliers",
+            "description": "How will you define what a statistical outlier is in your data and what will you do when you encounter them? If you plan to remove outliers, provide a new expected sample size. If you expect to remove many outliers or if you are unsure about your outlier handling strategy, it is good practice to preregister analyses including and excluding outliers. Note that this will be the definitive expected sample size for your study and you will use this number to do any power analyses.",
+            "help": "The dataset probably does not involve any invalid data since the dataset has been previously cleaned by the WLS data controllers and any clearly unreasonably low or high values have been removed from the dataset. However, to be sure we will create a box and whisker plot for all continuous variables (the dependent variables gv109re and gv111re, the covariate gk067ss, and the scale for religiosity) and remove any data point that appears to be more than 1.5 times the IQR away from the 25th and 75th percentile. Based on normally distributed data, we expect that 2.1% of the data points will be removed this way, leaving 1,358 out of 1,387 participants for the binary regression with gv103re as the outcome variable and 1,086 out of 1,109 participants, and 1,041 out of 1,063 participants for the linear regressions with gv109re and gv111re as the outcome variables, respectively.",
+            "required": false,
+            "format": "textarea"
+        }, {
+            "qid": "q18",
+            "nav": "Sampling weights",
+            "type": "string",
+            "title": "Sampling weights",
+            "description": "Are there sampling weights available with this dataset? If so, are you using them or are you using your own sampling weights? Sampling weights can be useful in secondary data analysis because the sample may not be entirely representative of the population you are interested in.",
+            "help": "The WLS dataset does not include sampling weights and we will not use our own sampling weights as we do not seek to make any claims that are generalizable to the national population.",
+            "required": false,
+            "format": "textarea"
+        }]
+    }, {
+        "id": "page4",
+        "title": "Knowledge of Data",
+        "questions": [{
+            "qid": "q19",
+            "nav": "Prior Publication/Dissemination",
+            "type": "string",
+            "title": "Prior Publication/Dissemination",
+            "description": "List the publications, working papers, and conference presentations you have worked on that are based on the dataset you will use. For each work, list the variables you analyzed, but limit yourself to variables that are relevant to the proposed analysis. If the dataset is longitudinal, also state which wave of the dataset you analyzed. Specify the previous works for each co-author separately.",
+            "help": "Both authors (PS and JC) have previously used the Graduates 2003-2005 wave to assess the link between Big Five personality traits and prosociality. The variables we used to measure the Big Five personality traits were ih001rei (extraversion), ih009rei (agreeableness), ih017rei (conscientiousness), ih025rei (neuroticism), and ih032rei (openness). The variables we used to measure prosociality were ih013rer (“To what extent do you agree that you see yourself as someone who is generally trusting?”), ih015rer (“To what extent do you agree that you see yourself as someone who is considerate to almost everyone?”), and ih016rer (“To what extent do you agree that you see yourself as someone who likes to cooperate with others?). We presented the results at the ARP conference in St. Louis in 2013 and we are currently finalizing a manuscript based on these results.",
+            "required": false,
             "format": "textarea"
         }, {
             "qid": "q20",
-            "nav": "Data exclusion",
-            "title": "Data exclusion",
-            "description": "How will you determine which data points or samples if any to exclude from your analyses? How will outliers be handled? Will you use any awareness check?",
-            "help": "We will verify that each subject answered each of the three tastiness indices. Outliers will be included in the analysis.",
+            "nav": "Prior knowledge",
             "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q21",
-            "nav": "Missing data",
-            "title": "Missing data",
-            "description": "How will you deal with incomplete or missing data?",
-            "help": "If a subject does not complete any of the three indices of tastiness, that subject will not be included in the analysis.",
-            "type": "string",
-            "format": "textarea"
-        }, {
-            "qid": "q22",
-            "nav": "Exploratory analysis",
-            "title": "Exploratory analysis",
-            "description": "If you plan to explore your data to look for unspecified differences or relationships, you may include those plans here. If you list an exploratory test here, you are not obligated to report its results. But if you do report it you are obligated to describe it as an exploratory result.",
-            "help": "We expect that certain demographic traits may be related to taste preferences. Therefore, we will look for relationships between demographic variables (age, gender, income, and marital status) and the primary outcome measures of taste preferences.",
-            "type": "string",
+            "title": "Prior knowledge",
+            "description": "Disclose any prior knowledge you may have about the dataset that is relevant for the proposed analysis. If you do not have any prior knowledge of it, please state so. Your prior knowledge could stem from working with the data first-hand, from reading previously published research, or from codebooks. Provide prior knowledge for every author separately. Indirect knowledge about the hypothesized association does not preclude a confirmatory analysis but should be transparently reported in this section. However, direct knowledge about the association between the variables in your hypothesis may indicate that you are unable to make unbiased analytic decisions to test this hypothesis.",
+            "help": "In a previous study (mentioned in Q17) we used three prosociality variables (ih013rer, ih015rer, and ih016rer) that may be related to the prosociality variables we use in this study. We found that ih013rer, ih015rer, and ih016rer are positively associated with agreeableness (ih009rec). Because previous research (on other datasets) shows a positive association between agreeableness and religiosity (Saroglou, 2002) there may be an effect of the agreeableness variable on our hypothesized association between religiosity and prosociality. To account for this effect we will include agreeableness in our analysis as a control variable. We did not find any associations between prosociality and the other Big Five variables.",
+            "required": true,
             "format": "textarea"
         }]
     }, {
-        "id": "page6",
-        "title": "Other",
-        "type": "object",
+        "id": "page5",
+        "title": "Analyses",
         "questions": [{
+            "qid": "q21",
+            "nav": "Statistical models",
+            "type": "string",
+            "title": "Statistical models",
+            "description": "For each hypothesis, describe the statistical model you will use to test the hypothesis. Include the type of model (e.g., ANOVA, multiple regression, SEM) and the specification of the model. Specify any interactions and post-hoc analyses and remember that any test not included here must be labeled as an exploratory test in the final paper.",
+            "help": "Our first hypothesis will be tested using three analyses since we use three variables to measureprosociality. For each, we will run a directional null hypothesis significance test to see whether apositive effect exists of religiosity on prosociality. For the first outcome (gv103re: Did the graduate do volunteer work in the last 12 months?) we will run a logistic regression with religiosity, the number of siblings, agreeableness, religious affiliation, and the interaction between religiosity and religious affiliation as predictors. For the second and third outcomes (gv109re: Number of graduate’s other volunteer activities in the past 12 months; gv111re: How many hours did the graduate volunteer during a typical month in the last 12 months?) we will run two separate linear regressions with religiosity, the number of siblings, agreeableness, religious affiliation, and the interaction between religiosity and religious affiliation as predictors. If the regression coefficient of the interaction between religiosity and religious affiliation is statistically significant from zero in any of the regressions, we will also carry out subgroup analyses for those particular regressions in line with our second hypothesis. This subgroup analysis involves running the regressions separately for each of the following groups: Roman Catholics, Lutherans, Methodists, Presbyterians, and followers of the United Church of Christ. The code we will use for all these analyses can be found at https://osf.io/e3htr",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q22",
+            "nav": "Statistical power",
+            "title": "Statistical power",
+            "description": "Present the statistical power available to detect the predicted effect size or the smallest effect size of interest. Use the sample size after updating for missing data and outliers.",
+            "help": "The sample size after updating for missing data and outliers is 1,358 for the logistic regression with gv103re as the outcome variable, and 1,086 and 1,041 for the linear regressions with gv109re and gv111re as the outcome variables, respectively. For all three analyses this corresponds to a statistical power of approximately 1.00 when assuming our minimum effect sizes of interest. For the linear regressions we additionally assumed the variance explained by the predictor to be 0.2 and the residual variance to be 1.0. For the logistic regression we assumed intercept of -1.56 corresponding to a situation where half of the participants have donevolunteer work in the last year (see the R-code for the full power analysis at https://osf.io/f96rn).",
+            "type": "string",
+            "format": "textarea"
+        }, {
             "qid": "q23",
-            "nav": "Other",
-            "title": "Other",
-            "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other helpful context would be appropriate here.",
+            "nav": "Inference criteria",
+            "title": "Inference criteria",
+            "description": "What criteria will you use to make inferences? Describe the information you will use (e.g. specify the p-values, effect sizes, confidence intervals, Bayes factors, specific model fit indices),as well as cut-off criteria, where appropriate. Will you be using one-or two-tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this, and if so, how?",
+            "help": "We will make inferences about the association between religiosity and prosociality based on thep-values and the size of the regression coefficients of the religiosity variable in the three main regressions. We will conclude that a regression analysis supports our hypothesis if both the p-value is smaller than .01 and the regression coefficient is larger than our minimum effect size of interest. With regard to the second research question, we will conclude that religious groups differ in the association between religiosity and prosociality if we find a statistically significant coefficient using a two-tailed test of religious affiliation in at least one of the regressions. We will not use any inference criteria about the follow-up analyses per religious group because we are not going to draw any conclusions based on these analyses.",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q24",
+            "nav": "Assumption Violation/ Model Non-Convergence",
+            "title": "Assumption Violation/ Model Non-Convergence",
+            "description": "What will you do should your data violate assumptions, your model not converge, or some otheranalytic problem arises?",
+            "help": "When the distribution of the number of volunteering hours (gv111re) is significantly non-normal according to the Kolmogorov-Smirnov test and/or (b) the linearity assumption is violated (i.e., the points are asymmetrically distributed around the diagonal line when plotting observed versus the predicted values), we will log-transform the variable.",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q25",
+            "nav": "Reliability and Robustness Testing",
+            "title": "Missing data",
+            "description": "Provide a series of decisions or tests about evaluating the strength, reliability, or robustness of your finding. This may include within-study replication attempts, additional covariates, cross-validation, applying weights, selectively applying constraints in an SEM context (e.g., comparingmodel fit statistics), overfitting adjustment techniques used, or some other simulation/sampling/bootstrapping method.",
+            "help": "To assess the sensitivity of our results to our selection criterion for outliers, we will run an additional analysis without removing any outliers.",
+            "type": "string",
+            "format": "textarea"
+        }, {
+            "qid": "q26",
+            "nav": "Exploratory analysis",
+            "title": "Exploratory analysis",
+            "description": "If you plan to explore your dataset to look for unexpected differences or relationships, describe those tests here. If reported, add them to the final paper under a heading that clearly differentiates this exploratory part of your study from the confirmatory part.",
+            "help": "As an exploratory analysis, we will test the relationship between scores on the religiosity scale and prosociality after adjusting for a variety of social, educational, and cognitive covariates that are available in the dataset. We have no specific hypotheses about which covariates will attenuate the religiosity-prosociality relation most substantially, but we will use this exploratory analysis to generate hypotheses to test in other, independent datasets.",
             "type": "string",
             "format": "textarea"
         }]
