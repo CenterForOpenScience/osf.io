@@ -1113,11 +1113,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         else:
             provider.validate_schema(schema)
 
-        add_initiator = False
         if not node:
             # If no node provided, a DraftNode is created for you
             node = DraftNode.objects.create(creator=user, title='Untitled')
-            add_initiator = True
 
         if not (isinstance(node, Node) or isinstance(node, DraftNode)):
             raise DraftRegistrationStateError()
@@ -1133,7 +1131,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
 
-        if add_initiator:
+        if node.type == 'osf.draftnode':
             initiator_permissions = draft.contributor_set.get(user=user).permission
             signals.contributor_added.send(
                 draft,
