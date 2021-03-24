@@ -1,6 +1,6 @@
 import logging
 from django.core.management.base import BaseCommand
-from osf.utils.migrations import (ensure_schemas, map_schemas_to_schemablocks)
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 
 logger = logging.getLogger(__name__)
 
