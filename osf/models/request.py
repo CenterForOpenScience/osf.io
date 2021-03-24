@@ -33,7 +33,6 @@ class NodeRequest(AbstractRequest, NodeRequestableMixin):
         unique_together = ('target', 'creator')
 
 
-
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
     """ Request for Preprint Withdrawal
     """
@@ -41,4 +40,3 @@ class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
 
     class Meta:
         unique_together = ('target', 'creator')
-

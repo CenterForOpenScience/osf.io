@@ -7,7 +7,6 @@ import osf.models.admin_log_entry
 from osf.models.region import Region
 from osf.models import RegistrationProvider
 from addons.osfstorage.settings import DEFAULT_REGION_ID
-from osf.utils.migrations import ensure_licenses, remove_licenses
 import django
 from django.db import models
 
@@ -38,9 +37,7 @@ class Migration(migrations.Migration):
                 ('objects', osf.models.admin_log_entry.AdminLogEntryManager()),
             ],
         ),
-        migrations.RunPython(add_default_region, migrations.RunPython.noop),
         migrations.RunPython(add_default_registration_provider, migrations.RunPython.noop),
-        migrations.RunPython(ensure_licenses, remove_licenses),
         migrations.AddField(
             model_name='draftregistration',
             name='provider',
@@ -48,5 +45,4 @@ class Migration(migrations.Migration):
                                     on_delete=django.db.models.deletion.CASCADE, related_name='draft_registrations',
                                     to='osf.RegistrationProvider'),
         ),
-
     ]

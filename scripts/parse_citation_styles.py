@@ -28,7 +28,7 @@ from website.app import setup_django
 setup_django()
 from osf.models.citation import CitationStyle
 
-def main():
+def main(*arg, **kwargs):
 
     # drop all styles
     CitationStyle.objects.all().delete()

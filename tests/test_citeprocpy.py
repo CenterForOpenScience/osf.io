@@ -18,47 +18,6 @@ class Node:
     visible_contributors = ''
 
 
-class TestCiteprocpy(OsfTestCase):
-
-    def setUp(self):
-        super(TestCiteprocpy, self).setUp()
-        self.user = UserFactory(fullname='Henrique Harman')
-
-    def test_failing_citations(self):
-        node = Node()
-        node.visible_contributors = OSFUser.objects.filter(fullname='Henrique Harman')
-        url_data_path = os.path.join(os.path.dirname(__file__), '../website/static/citeprocpy_test_data.json')
-        with open(url_data_path) as url_test_data:
-            data = json.load(url_test_data)['fails']
-        matches = []
-        for k, v in data.items():
-            try:
-                citeprocpy = render_citation(node, k)
-            except (TypeError, AttributeError):
-                citeprocpy = ''
-            if citeprocpy == v:
-                matches.append(k)
-        assert(len(matches) == 0)
-
-    def test_passing_citations(self):
-        node = Node()
-        node.visible_contributors = OSFUser.objects.filter(fullname='Henrique Harman')
-        url_data_path = os.path.join(os.path.dirname(__file__), '../website/static/citeprocpy_test_data.json')
-        with open(url_data_path) as url_test_data:
-            data = json.load(url_test_data)['passes']
-        not_matches = []
-        citation = []
-        for k, v in data.items():
-            try:
-                citeprocpy = render_citation(node, k)
-            except (TypeError, AttributeError):
-                citeprocpy = ''
-            if citeprocpy != v:
-                not_matches.append(k)
-                citation.append(citeprocpy)
-        assert(len(not_matches) == 0)
-
-
 class TestCiteprocpyMLA(OsfTestCase):
     MLA_DATE_FORMAT = '%-d {month} %Y'
 

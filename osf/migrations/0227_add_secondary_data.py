@@ -2,21 +2,29 @@ import logging
 
 import json
 from math import ceil
-
 logger = logging.getLogger(__file__)
-from osf.models import RegistrationSchema
-from osf.utils.migrations import ensure_schemas
-from website.project.metadata.schemas import ensure_schema_structure, from_json
+from osf.models import RegistrationProvider
 from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
+from osf.utils.migrations import ensure_licenses, remove_licenses
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 
-from scripts.parse_citation_styles import main as parse_citation_styles
 from django.db import migrations, connection
+
+from osf.models.region import Region
 
 logger = logging.getLogger(__name__)
 from website import settings
 
 increment = 500000
+
+
+def add_default_region(state, schema):
+    Region(_id=DEFAULT_REGION_ID).save()
+
+def add_default_registration_provider(state, schema):
+    RegistrationProvider(_id='osf').save()
+
 
 def populate_blacklisted_domains(state, *args, **kwargs):
     BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
@@ -29,10 +37,6 @@ def remove_blacklisted_domains(state, *args, **kwargs):
     BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
     BlacklistedEmailDomain.objects.all().delete()
 
-def add_schema(apps, schema_editor):
-    schema = ensure_schema_structure(from_json('secondary-data.json'))
-
-    RegistrationSchema.objects.filter(name=schema['name']).update(visible=False, active=True)
 
 def add_datacite_schema(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
@@ -98,7 +102,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        UpdateRegistrationSchemasAndSchemaBlocks(),
         migrations.RunSQL([
             'CREATE INDEX nodelog__node_id_date_desc on osf_nodelog (node_id, date DESC);',
             # 'VACUUM ANALYZE osf_nodelog;'  # Run this manually, requires ~3 min downtime
@@ -177,7 +180,10 @@ class Migration(migrations.Migration):
                 $$ LANGUAGE PLPGSQL;
                 """,
                           migrations.RunPython.noop),
+        migrations.RunPython(add_default_region, migrations.RunPython.noop),
+        migrations.RunPython(ensure_licenses, remove_licenses),
         migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
-        #migrations.RunPython(parse_citation_styles, migrations.RunPython.noop),
         migrations.RunPython(populate_blacklisted_domains, remove_blacklisted_domains),
+        UpdateRegistrationSchemasAndSchemaBlocks(),
+
     ]

@@ -236,6 +236,12 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         return non_default_provider
 
     @pytest.fixture()
+    def inactive_schema(self, metaschema_open_ended):
+        schema = RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1, active=False)
+        schema.save()
+        return schema
+
+    @pytest.fixture()
     def metaschema_open_ended(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
@@ -437,7 +443,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
 
     def test_registration_supplement_errors(
-            self, app, user, provider, url_draft_registrations):
+            self, app, user, provider, inactive_schema, url_draft_registrations):
 
         #   test_registration_supplement_not_found
         draft_data = {
@@ -467,8 +473,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -477,7 +481,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': schema._id
+                            'id': inactive_schema._id
                         }
                     },
                     'provider': {
@@ -497,8 +501,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
     #   test_registration_supplement_must_be_active
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', schema_version=2)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -507,7 +509,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
                     'registration_schema': {
                         'data': {
                             'type': 'registration_schema',
-                            'id': schema._id
+                            'id': inactive_schema._id
                         }
                     },
                     'provider': {
