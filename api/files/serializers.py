@@ -7,7 +7,7 @@ import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, OSFUser, Comment, Preprint, AbstractNode
+from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -190,7 +190,8 @@ class BaseFileSerializer(JSONAPISerializer):
         help_text='The folder in which this file exists',
     )
     files = NodeFileHyperLinkField(
-        related_view='nodes:node-files',
+        related_view=lambda node: 'draft_nodes:node-files' if getattr(node, 'type', False) == 'osf.draftnode' else 'nodes:node-files',
+        view_lambda_argument='target',
         related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
         kind='folder',
     )
@@ -366,6 +367,8 @@ class FileSerializer(BaseFileSerializer):
         target_type = 'node'
         if isinstance(obj, Preprint):
             target_type = 'preprint'
+        if isinstance(obj, DraftNode):
+            target_type = 'draft_node'
         return target_type
 
 
