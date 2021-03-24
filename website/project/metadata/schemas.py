@@ -1,5 +1,6 @@
 import os
 import json
+from osf.models import FileMetadataSchema
 
 def _id_to_name(id):
     return ' '.join(id.split('_'))
@@ -18,6 +19,21 @@ here = os.path.split(os.path.abspath(__file__))[0]
 def from_json(fname):
     with open(os.path.join(here, fname)) as f:
         return json.load(f)
+
+
+def ensure_file_metadata_schema(jsonschema):
+    FileMetadataSchema.objects.create(
+        _id=jsonschema['_id'],
+        schema_version=1,
+        name=jsonschema['_id'],
+        schema=jsonschema
+    )
+
+
+FILEMETADATA_SCHEMAS = [
+    from_json('datacite.json')
+]
+
 
 OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-open-ended-2.json')),

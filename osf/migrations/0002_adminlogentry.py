@@ -4,17 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 import osf.models.admin_log_entry
-from osf.models.region import Region
-from osf.models import RegistrationProvider
-from addons.osfstorage.settings import DEFAULT_REGION_ID
-import django
-from django.db import models
 
-def add_default_region(state, schema):
-    Region(_id=DEFAULT_REGION_ID).save()
-
-def add_default_registration_provider(state, schema):
-    RegistrationProvider(_id='osf').save()
 
 class Migration(migrations.Migration):
 
@@ -36,13 +26,5 @@ class Migration(migrations.Migration):
             managers=[
                 ('objects', osf.models.admin_log_entry.AdminLogEntryManager()),
             ],
-        ),
-        migrations.RunPython(add_default_registration_provider, migrations.RunPython.noop),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='provider',
-            field=models.ForeignKey(default=osf.models.registrations.get_default_id,
-                                    on_delete=django.db.models.deletion.CASCADE, related_name='draft_registrations',
-                                    to='osf.RegistrationProvider'),
         ),
     ]

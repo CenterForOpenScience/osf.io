@@ -49,7 +49,13 @@ class TestDeprecatedMetaSchemaDetail:
 @pytest.mark.django_db
 class TestRegistrationSchemaDetail:
 
-    def test_schemas_detail_visibility(self, app, user, schema):
+    @pytest.fixture()
+    def inactive_schema(self):
+        reg_schema = RegistrationSchema(name='Test Schema (Inactive)', schema_version=1, active=False)
+        reg_schema.save()
+        return reg_schema
+
+    def test_schemas_detail_visibility(self, app, user, schema, inactive_schema):
         # test_pass_authenticated_user_can_retrieve_schema
         url = '/{}schemas/registrations/{}/'.format(API_BASE, schema._id)
         res = app.get(url, auth=user.auth)
@@ -64,12 +70,10 @@ class TestRegistrationSchemaDetail:
         assert res.status_code == 200
 
         # test_inactive_metaschema_returned
-        inactive_schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
         url = '/{}schemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['name'] == 'Election Research Preacceptance Competition'
+        assert res.json['data']['attributes']['name'] == 'Test Schema (Inactive)'
         assert res.json['data']['attributes']['active'] is False
 
         # test_invalid_metaschema_not_found

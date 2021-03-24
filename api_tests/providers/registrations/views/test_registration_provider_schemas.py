@@ -83,7 +83,7 @@ class TestRegistrationProviderSchemas:
     def egap_admin(self):
         user = AuthUserFactory()
         user.save()
-        flag = Flag.objects.get(name=EGAP_ADMINS)
+        flag = Flag.objects.create(name=EGAP_ADMINS, everyone=None)
         group = Group.objects.create(name=EGAP_ADMINS)  # Just using the same name for convenience
         flag.groups.add(group)
         group.user_set.add(user)

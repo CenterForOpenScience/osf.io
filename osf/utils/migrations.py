@@ -12,7 +12,7 @@ from django.db.migrations.operations.base import Operation
 from osf.models.base import generate_object_id
 from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
-from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.schemas import OSF_META_SCHEMAS, FILEMETADATA_SCHEMAS, ensure_file_metadata_schema
 
 
 logger = logging.getLogger(__file__)
@@ -405,6 +405,24 @@ class UpdateRegistrationSchemas(Operation):
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):
         warnings.warn('Reversing UpdateRegistrationSchemas is a noop')
+
+    def describe(self):
+        return 'Updated registration schemas'
+
+class UpdateFileMetadataSchemas(Operation):
+    """Custom migration operation to update registration schemas
+    """
+    reversible = True
+
+    def state_forwards(self, app_label, state):
+        pass
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        for schema in FILEMETADATA_SCHEMAS:
+            ensure_file_metadata_schema(schema)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        warnings.warn('Reversing UpdateFileMetadataSchemas is a noop')
 
     def describe(self):
         return 'Updated registration schemas'

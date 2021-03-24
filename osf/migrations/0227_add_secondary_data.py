@@ -1,22 +1,17 @@
 import logging
 
-import json
 from math import ceil
 logger = logging.getLogger(__file__)
-from osf.models import RegistrationProvider
-from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
+from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks, UpdateRegistrationSchemas, UpdateFileMetadataSchemas
 from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
 from osf.utils.migrations import ensure_licenses, remove_licenses
+import django
+from django.db import models
+
+import osf.models
+from osf.models import RegistrationProvider
 from addons.osfstorage.settings import DEFAULT_REGION_ID
-
-from django.db import migrations, connection
-
 from osf.models.region import Region
-
-logger = logging.getLogger(__name__)
-from website import settings
-
-increment = 500000
 
 
 def add_default_region(state, schema):
@@ -24,6 +19,13 @@ def add_default_region(state, schema):
 
 def add_default_registration_provider(state, schema):
     RegistrationProvider(_id='osf').save()
+
+from django.db import migrations, connection
+
+logger = logging.getLogger(__name__)
+from website import settings
+
+increment = 500000
 
 
 def populate_blacklisted_domains(state, *args, **kwargs):
@@ -36,30 +38,6 @@ def populate_blacklisted_domains(state, *args, **kwargs):
 def remove_blacklisted_domains(state, *args, **kwargs):
     BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
     BlacklistedEmailDomain.objects.all().delete()
-
-
-def add_datacite_schema(state, schema):
-    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
-    with open('osf/metadata/schemas/datacite.json') as f:
-        jsonschema = json.load(f)
-    _, created = FileMetadataSchema.objects.get_or_create(
-        _id='datacite',
-        schema_version=1,
-        defaults={
-            'name': 'datacite',
-            'schema': jsonschema
-        }
-
-    )
-    if created:
-        logger.info('Added datacite schema to the database')
-
-
-def remove_datacite_schema(state, schema):
-    FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
-    FileMetadataSchema.objects.get(_id='datacite').delete()
-    logger.info('Removed datacite schema from the database')
-
 
 def add_records_to_files_sql(state, schema):
     FileMetadataSchema = state.get_model('osf', 'filemetadataschema')
@@ -102,6 +80,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(add_default_registration_provider, migrations.RunPython.noop),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='provider',
+            field=models.ForeignKey(default=osf.models.registrations.get_default_id,
+                                    on_delete=django.db.models.deletion.CASCADE, related_name='draft_registrations',
+                                    to='osf.RegistrationProvider'),
+        ),
+
         migrations.RunSQL([
             'CREATE INDEX nodelog__node_id_date_desc on osf_nodelog (node_id, date DESC);',
             # 'VACUUM ANALYZE osf_nodelog;'  # Run this manually, requires ~3 min downtime
@@ -147,7 +134,7 @@ class Migration(migrations.Migration):
             [
                 """
                 CREATE UNIQUE INDEX active_file_node_path_name_type_unique_index
-                ON public.osf_basefilenode (target_object_id, _path, name, type)
+                ON public.osf_basefilenode (target_object_id, target_content_type_id, _path, name, type)
                 WHERE (type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder')
                   AND parent_id IS NULL);
                 """
@@ -158,7 +145,6 @@ class Migration(migrations.Migration):
                 """
             ]
         ),
-        migrations.RunPython(add_datacite_schema, migrations.RunPython.noop),
         migrations.RunSQL("""
                 -- Borrowed from https://gist.github.com/jamarparris/6100413
                 CREATE OR REPLACE FUNCTION generate_object_id() RETURNS varchar AS $$
@@ -182,8 +168,10 @@ class Migration(migrations.Migration):
                           migrations.RunPython.noop),
         migrations.RunPython(add_default_region, migrations.RunPython.noop),
         migrations.RunPython(ensure_licenses, remove_licenses),
+        UpdateFileMetadataSchemas(),
         migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
         migrations.RunPython(populate_blacklisted_domains, remove_blacklisted_domains),
         UpdateRegistrationSchemasAndSchemaBlocks(),
+        UpdateRegistrationSchemas(),
 
     ]

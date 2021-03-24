@@ -10,6 +10,7 @@ from osf import features
 from django.contrib.auth.models import Group
 from waffle.models import Flag
 
+
 @pytest.mark.django_db
 class TestSchemaList:
 
@@ -29,6 +30,7 @@ class TestSchemaList:
     def egap_admin(self):
         user = AuthUserFactory()
         user.save()
+        Flag.objects.create(name=features.EGAP_ADMINS, everyone=None)
         flag = Flag.objects.get(name=features.EGAP_ADMINS)
         group = Group.objects.create(name=features.EGAP_ADMINS)  # Just using the same name for convenience
         flag.groups.add(group)
@@ -38,9 +40,8 @@ class TestSchemaList:
         return user
 
     def test_schemas_list_crud(self, app, url, user, egap_admin, factory_request):
-
+        factory_request.user = user
         # test_pass_authenticated_user_can_view_schemas
-
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions(factory_request).count()

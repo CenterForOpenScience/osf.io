@@ -73,7 +73,7 @@ class TestSloanStudyWaffling:
 
     @pytest.fixture(autouse=True)
     def flags(self, user):
-        Flag.objects.filter(name__in=SLOAN_FLAGS, percent=50).update(everyone=None)
+        return [Flag.objects.create(name=flag, percent=50, everyone=None) for flag in SLOAN_FLAGS]
 
     @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
