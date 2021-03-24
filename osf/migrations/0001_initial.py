@@ -95,7 +95,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_osfuser', 'Can view user details'),),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='AbstractNode',
@@ -144,7 +144,7 @@ class Migration(migrations.Migration):
                 'permissions': (('view_node', 'Can view node details'), ('read_node', 'Can read the node'), ('write_node', 'Can edit the node'), ('admin_node', 'Can manage the node')),
                 'base_manager_name': 'objects',
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, osf.models.mixins.CommentableMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, osf.models.mixins.CommentableMixin, models.Model),
         ),
         migrations.CreateModel(
             name='AbstractProvider',
@@ -189,7 +189,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('set_up_moderation', 'Can set up moderation for this provider'), ('view_submissions', 'Can view all submissions to this provider'), ('accept_submissions', 'Can accept submissions to this provider'), ('reject_submissions', 'Can reject submissions to this provider'), ('withdraw_submissions', 'Can withdraw submissions from this provider'), ('edit_review_comments', 'Can edit comments on actions for this provider'), ('view_actions', 'Can view actions on submissions to this provider'), ('add_moderator', 'Can add other users as moderators for this provider'), ('update_moderator', 'Can elevate or lower other moderators/admins'), ('remove_moderator', 'Can remove moderators from this provider. Implicitly granted to self'), ('edit_reviews_settings', 'Can edit reviews settings for this provider'), ('add_reviewer', 'Can add other users as reviewers for this provider'), ('assign_reviewer', 'Can assign reviewers to review specific submissions to this provider'), ('view_assigned_submissions', 'Can view submissions to this provider which have been assigned to this user'), ('review_assigned_submissions', 'Can submit reviews for submissions to this provider which have been assigned to this user')),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='AbstractProviderGroupObjectPermission',
@@ -246,7 +246,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ApiOAuth2PersonalToken',
@@ -263,7 +263,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ApiOAuth2Scope',
@@ -280,7 +280,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ArchiveJob',
@@ -298,7 +298,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ArchiveTarget',
@@ -315,7 +315,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='BannerImage',
@@ -353,7 +353,7 @@ class Migration(migrations.Migration):
             options={
                 'base_manager_name': 'objects',
             },
-            bases=(osf.models.mixins.CommentableMixin, models.Model, osf.models.base.QuerySet),
+            bases=(osf.models.mixins.CommentableMixin, models.Model),
         ),
         migrations.CreateModel(
             name='BaseFileVersionsThrough',
@@ -374,7 +374,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='BlackListGuid',
@@ -387,7 +387,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Brand',
@@ -405,7 +405,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_brand', 'Can view brand details'), ('modify_brand', 'Can modify brands')),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ChronosJournal',
@@ -421,7 +421,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ChronosSubmission',
@@ -435,7 +435,7 @@ class Migration(migrations.Migration):
                 ('submission_url', models.TextField()),
                 ('journal', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.ChronosJournal')),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='CitationStyle',
@@ -454,7 +454,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ['_id'],
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Collection',
@@ -479,7 +479,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('read_collection', 'Read Collection'), ('write_collection', 'Write Collection'), ('admin_collection', 'Admin Collection')),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='CollectionGroupObjectPermission',
@@ -507,7 +507,7 @@ class Migration(migrations.Migration):
                 ('collection', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Collection')),
                 ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='CollectionUserObjectPermission',
@@ -544,7 +544,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(osf.models.mixins.CommentableMixin, models.Model, osf.models.base.QuerySet),
+            bases=(osf.models.mixins.CommentableMixin, models.Model),
         ),
         migrations.CreateModel(
             name='Conference',
@@ -573,7 +573,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_conference', 'Can view conference details in the admin app.'),),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Contributor',
@@ -598,7 +598,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created'],
                 'get_latest_by': 'created',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='DraftRegistration',
@@ -623,7 +623,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('read_draft_registration', 'Can read the draft registration'), ('write_draft_registration', 'Can edit the draft registration'), ('admin_draft_registration', 'Can manage the draft registration')),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='DraftRegistrationApproval',
@@ -681,7 +681,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created'],
                 'get_latest_by': 'created',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='DraftRegistrationUserObjectPermission',
@@ -707,7 +707,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Embargo',
@@ -769,7 +769,7 @@ class Migration(migrations.Migration):
                 ('display_name', osf.utils.fields.EncryptedTextField(blank=True, null=True)),
                 ('profile_url', osf.utils.fields.EncryptedTextField(blank=True, null=True)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='FileMetadataRecord',
@@ -780,7 +780,7 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='FileMetadataSchema',
@@ -799,7 +799,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='FileVersion',
@@ -820,7 +820,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('-created',),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
             managers=[
                 ('includable_objects', django.db.models.manager.Manager()),
             ],
@@ -834,7 +834,7 @@ class Migration(migrations.Migration):
                 ('file_version', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.FileVersion')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Guid',
@@ -850,7 +850,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created'],
                 'get_latest_by': 'created',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Identifier',
@@ -865,7 +865,7 @@ class Migration(migrations.Migration):
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('content_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Institution',
@@ -890,7 +890,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_institution', 'Can view institution details'), ('view_institutional_metrics', 'Can access metrics endpoints for their Institution')),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='InstitutionalContributor',
@@ -914,7 +914,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='MaintenanceState',
@@ -951,7 +951,7 @@ class Migration(migrations.Migration):
                 ('url', models.URLField(blank=True, help_text="The license's url for example: <i>http://opensource.org/licenses/BSD-3-Clause</i>")),
                 ('properties', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=128), blank=True, default=list, help_text="The custom elements in a license's text surrounded with curly brackets for example: <i>{year,copyrightHolders}</i>", size=None)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeLicenseRecord',
@@ -967,7 +967,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeLog',
@@ -989,7 +989,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-date'],
                 'get_latest_by': 'date',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeRelation',
@@ -1002,7 +1002,7 @@ class Migration(migrations.Migration):
                 ('child', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='_parents', to='osf.AbstractNode')),
                 ('parent', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='node_relations', to='osf.AbstractNode')),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeRequest',
@@ -1021,7 +1021,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeRequestAction',
@@ -1044,7 +1044,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NodeUserObjectPermission',
@@ -1076,7 +1076,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='NotificationSubscription',
@@ -1092,7 +1092,7 @@ class Migration(migrations.Migration):
                 ('provider', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.AbstractProvider')),
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to=settings.AUTH_USER_MODEL)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='OSFGroup',
@@ -1108,7 +1108,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_group', 'Can view group details'), ('member_group', 'Has group membership'), ('manage_group', 'Can manage group membership')),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='OSFGroupGroupObjectPermission',
@@ -1139,7 +1139,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created'],
                 'get_latest_by': 'created',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='OSFGroupUserObjectPermission',
@@ -1171,7 +1171,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Preprint',
@@ -1214,7 +1214,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_preprint', 'Can view preprint details in the admin app'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint')),
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
             name='PreprintContributor',
@@ -1255,7 +1255,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-created'],
                 'get_latest_by': 'created',
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='PreprintRequest',
@@ -1274,7 +1274,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='PreprintRequestAction',
@@ -1295,7 +1295,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='PreprintUserObjectPermission',
@@ -1327,7 +1327,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ProviderAssetFile',
@@ -1342,7 +1342,7 @@ class Migration(migrations.Migration):
             options={
                 'permissions': (('view_providerassetfile', 'Can view provider asset files'),),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='QueuedMail',
@@ -1361,7 +1361,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='RecentlyAddedContributor',
@@ -1402,7 +1402,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='RegistrationApproval',
@@ -1443,7 +1443,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='RegistrationSchemaBlock',
@@ -1461,7 +1461,7 @@ class Migration(migrations.Migration):
                 ('required', models.BooleanField(default=False)),
                 ('schema', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='schema_blocks', to='osf.RegistrationSchema')),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Retraction',
@@ -1504,7 +1504,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='ScheduledBanner',
@@ -1537,7 +1537,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='Subject',
@@ -1570,7 +1570,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('name',),
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='UserActivityCounter',
@@ -1586,7 +1586,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='WhitelistedSHAREPreprintProvider',
@@ -1599,7 +1599,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.AlterUniqueTogether(
             name='tag',

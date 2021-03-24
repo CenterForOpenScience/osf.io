@@ -48,6 +48,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
     ]

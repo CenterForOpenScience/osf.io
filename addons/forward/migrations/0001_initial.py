@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySet),
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
     ]

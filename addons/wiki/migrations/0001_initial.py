@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='WikiPage',
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('page_name', models.CharField(max_length=200, validators=[addons.wiki.models.validate_page_name])),
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True)),
             ],
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
         migrations.CreateModel(
             name='WikiVersion',
@@ -58,6 +58,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(models.Model, osf.models.base.QuerySet),
+            bases=(models.Model, ),
         ),
     ]

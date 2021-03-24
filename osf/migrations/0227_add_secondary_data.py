@@ -9,7 +9,6 @@ from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import ensure_schema_structure, from_json
 from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERSE_SQL
-from django.db import models
 
 from django.db import migrations, connection
 
@@ -113,19 +112,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RunSQL(
             [
-                'ALTER TABLE "osf_abstractnode" ALTER COLUMN "access_requests_enabled" SET DEFAULT TRUE',
-                'ALTER TABLE "osf_abstractnode" ALTER COLUMN "access_requests_enabled" DROP DEFAULT;',
-            ],
-            state_operations=[
-                migrations.AlterField(
-                    model_name='abstractnode',
-                    name='access_requests_enabled',
-                    field=models.NullBooleanField(default=True, db_index=True),
-                )
-            ],
-        ),
-        migrations.RunSQL(
-            [
                 """
                 CREATE INDEX osf_abstractnode_registered_date_index ON public.osf_abstractnode (registered_date DESC);
                 CREATE INDEX osf_abstractnode_registration_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.registration';
@@ -158,5 +144,26 @@ class Migration(migrations.Migration):
             ]
         ),
         migrations.RunPython(add_datacite_schema, migrations.RunPython.noop),
+        migrations.RunSQL("""
+                -- Borrowed from https://gist.github.com/jamarparris/6100413
+                CREATE OR REPLACE FUNCTION generate_object_id() RETURNS varchar AS $$
+                DECLARE
+                    time_component bigint;
+                    machine_id bigint := FLOOR(random() * 16777215);
+                    process_id bigint;
+                    seq_id bigint := FLOOR(random() * 16777215);
+                    result varchar:= '';
+                BEGIN
+                    SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp())) INTO time_component;
+                    SELECT pg_backend_pid() INTO process_id;
+                    result := result || lpad(to_hex(time_component), 8, '0');
+                    result := result || lpad(to_hex(machine_id), 6, '0');
+                    result := result || lpad(to_hex(process_id), 4, '0');
+                    result := result || lpad(to_hex(seq_id), 6, '0');
+                    RETURN result;
+                END;
+                $$ LANGUAGE PLPGSQL;
+                """,
+                          migrations.RunPython.noop),
         migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
     ]

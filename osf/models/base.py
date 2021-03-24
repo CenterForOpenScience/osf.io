@@ -7,9 +7,8 @@ from django.contrib.contenttypes.fields import (GenericForeignKey,
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import connections, models
+from django.db import models
 from django.db.models import ForeignKey
-from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
@@ -48,8 +47,6 @@ def generate_object_id():
 
 class BaseModel(TimeStampedModel):
     migration_page_size = 50000
-
-    objects = models.QuerySet.as_manager()
 
     class Meta:
         abstract = True
