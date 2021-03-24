@@ -13,8 +13,22 @@ from osf.management.commands.migrate_pagecounter_data import FORWARD_SQL, REVERS
 from django.db import migrations, connection
 
 logger = logging.getLogger(__name__)
+from website import settings
 
 increment = 500000
+
+def populate_blacklisted_domains(state, *args, **kwargs):
+    BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
+    BlacklistedEmailDomain.objects.bulk_create([
+        BlacklistedEmailDomain(domain=domain)
+        for domain in settings.BLACKLISTED_DOMAINS
+    ])
+
+def remove_blacklisted_domains(state, *args, **kwargs):
+    BlacklistedEmailDomain = state.get_model('osf', 'BlacklistedEmailDomain')
+    BlacklistedEmailDomain.objects.all().delete()
+
+
 
 def add_schema(apps, schema_editor):
     schema = ensure_schema_structure(from_json('secondary-data.json'))
@@ -166,4 +180,5 @@ class Migration(migrations.Migration):
                 """,
                           migrations.RunPython.noop),
         migrations.RunPython(add_records_to_files_sql, migrations.RunPython.noop),
+        migrations.RunPython(populate_blacklisted_domains, remove_blacklisted_domains),
     ]

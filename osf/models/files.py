@@ -796,6 +796,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     purged = NonNaiveDateTimeField(blank=True, null=True)
 
     includable_objects = IncludeManager()
+    objects = models.QuerySet.as_manager()
 
     @property
     def location_hash(self):
