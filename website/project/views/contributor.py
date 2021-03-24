@@ -561,7 +561,9 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
     contrib_on_parent_node = isinstance(node, (Preprint, DraftRegistration)) or \
                              (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))
     if contrib_on_parent_node:
-        if email_template == 'preprint' and not node.provider.is_default:
+        if email_template == 'preprint':
+            if node.provider.is_default:
+                return
             email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
             logo = node.provider._id
         elif email_template == 'draft_registration':
