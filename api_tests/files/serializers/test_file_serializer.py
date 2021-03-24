@@ -10,6 +10,7 @@ from osf_tests.factories import (
     UserFactory,
     PreprintFactory,
     NodeFactory,
+    DraftNodeFactory
 )
 from tests.utils import make_drf_request_with_version
 from website import settings
@@ -33,8 +34,20 @@ class TestFileSerializer:
         return NodeFactory(creator=user)
 
     @pytest.fixture()
+    def draft_node(self, user):
+        return DraftNodeFactory(creator=user)
+
+    @pytest.fixture()
     def file_one(self, node, user):
         return utils.create_test_file(node, user, create_guid=False)
+
+    @pytest.fixture()
+    def node_folder(self, node):
+        return node.get_addon('osfstorage').get_root()
+
+    @pytest.fixture()
+    def draft_node_folder(self, draft_node):
+        return draft_node.get_addon('osfstorage').get_root()
 
     @pytest.fixture()
     def preprint(self, user):
@@ -44,7 +57,7 @@ class TestFileSerializer:
     def primary_file(self, preprint):
         return preprint.primary_file
 
-    def test_file_serializer(self, file_one, node):
+    def test_file_serializer(self, file_one, node, node_folder):
         created = file_one.versions.last().created
         modified = file_one.versions.first().created
         created_tz_aware = created.replace(tzinfo=utc)
@@ -108,6 +121,10 @@ class TestFileSerializer:
         assert 'download' not in data['links']
         assert 'html' not in data['links']
 
+        # Ensure that the files relationship link is pointing to the correct root endpoint
+        data = FileSerializer(node_folder, context={'request': req}).data['data']
+        assert 'draft_nodes' not in data['relationships']['files']['links']['related']['href']
+
     def test_serialize_preprint_file(self, preprint, primary_file):
         req = make_drf_request_with_version(version='2.2')
         data = FileSerializer(primary_file, context={'request': req}).data['data']
@@ -159,3 +176,9 @@ class TestFileSerializer:
         req_2_8 = make_drf_request_with_version(version='2.8')
         data_2_8 = FileSerializer(file_one, context={'request': req_2_8}).data['data']
         assert 'node' not in data_2_8['relationships'].keys()
+
+    def test_draft_node_relationships(self, draft_node, draft_node_folder):
+        # Ensure that the files relationship link is pointing to the correct root endpoint
+        req = make_drf_request_with_version()
+        data = FileSerializer(draft_node_folder, context={'request': req}).data['data']
+        assert 'draft_nodes' in data['relationships']['files']['links']['related']['href']
