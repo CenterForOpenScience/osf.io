@@ -462,9 +462,13 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
-        if email_template == 'preprint' and not node.provider.is_default:
-            mail_tpl = mails.INVITE_PREPRINT(node.provider)
-            logo = node.provider._id
+        if email_template == 'preprint':
+            if node.provider.is_default:
+                mail_tpl = mails.INVITE_OSF_PREPRINT
+                logo = settings.OSF_PREPRINTS_LOGO
+            else:
+                mail_tpl = mails.INVITE_PREPRINT(node.provider)
+                logo = node.provider._id
         else:
             mail_tpl = mails.INVITE_DEFAULT
 
@@ -561,9 +565,13 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
     contrib_on_parent_node = isinstance(node, (Preprint, DraftRegistration)) or \
                              (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))
     if contrib_on_parent_node:
-        if email_template == 'preprint' and not node.provider.is_default:
-            email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
-            logo = node.provider._id
+        if email_template == 'preprint':
+            if node.provider.is_default:
+                email_template = mails.CONTRIBUTOR_ADDED_OSF_PREPRINT
+                logo = settings.OSF_PREPRINTS_LOGO
+            else:
+                email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
+                logo = node.provider._id
         elif email_template == 'draft_registration':
             email_template = mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
         elif email_template == 'access_request':
