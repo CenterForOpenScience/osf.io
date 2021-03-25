@@ -36,14 +36,7 @@ def decrypt_string(value, prefix='jwe:::'):
     if value:
         value = ensure_bytes(value)
         if value.startswith(prefix):
-            try:
-                value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
-            except InvalidTag:
-                # Allow use of an encrypted DB locally without decrypting fields
-                if settings.DEBUG_MODE:
-                    pass
-                else:
-                    raise
+            value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
     return value
 
 class LowercaseCharField(models.CharField):

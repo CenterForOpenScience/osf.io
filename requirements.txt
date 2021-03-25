@@ -44,10 +44,6 @@ git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 certifi==2020.12.5
 sendgrid==1.5.13
 
-# avoid dbus-python requirement from secretstorage dependency
-# https://github.com/jaraco/keyring/blob/9.1/setup.py
-keyring==9.1
-
 requests>=2.21.0
 urllib3==1.22
 oauthlib==2.0.6
