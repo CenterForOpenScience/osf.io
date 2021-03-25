@@ -13,7 +13,6 @@ gevent==1.2.2
 Mako==1.0.7
 Markdown==2.6.9
 WTForms==1.0.4
-beautifulsoup4==4.6.0
 # Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
 # which fixes a bug that was causing stuck registrations
 # Need to pin to 4.1.1 due to https://github.com/celery/celery/issues/4355
