@@ -20,7 +20,6 @@ beautifulsoup4==4.6.0
 # TODO: Remove usage of this fork when celery/celery#4355 is resolved
 git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
-amqp==2.2.2
 vine==1.1.4
 itsdangerous==1.1.0
 lxml==4.6.2
