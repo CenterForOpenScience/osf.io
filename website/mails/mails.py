@@ -215,6 +215,10 @@ INVITE_DEFAULT = Mail(
     'invite_default',
     subject='You have been added as a contributor to an OSF project.'
 )
+INVITE_OSF_PREPRINT = Mail(
+    'invite_preprints_osf',
+    subject='You have been added as a contributor to an OSF preprint.'
+)
 INVITE_PREPRINT = lambda provider: Mail(
     'invite_preprints',
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
@@ -222,6 +226,10 @@ INVITE_PREPRINT = lambda provider: Mail(
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
     subject='You have been added as a contributor to an OSF project.'
+)
+CONTRIBUTOR_ADDED_OSF_PREPRINT = Mail(
+    'contributor_added_preprints_osf',
+    subject='You have been added as a contributor to an OSF preprint.'
 )
 CONTRIBUTOR_ADDED_PREPRINT = lambda provider: Mail(
     'contributor_added_preprints',
