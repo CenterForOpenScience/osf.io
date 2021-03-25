@@ -134,6 +134,10 @@ class MeetingForm(forms.Form):
         label='Mail attachment message',
         widget=forms.TextInput(attrs={'size': '60'}),
     )
+    auto_check_spam = forms.BooleanField(
+        label='Automatically check spam?',
+        required=False,
+    )
 
     def clean_start_date(self):
         date = self.cleaned_data.get('start_date')

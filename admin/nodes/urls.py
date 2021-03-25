@@ -40,4 +40,10 @@ urlpatterns = [
         name='remove-stuck-registrations'),
     url(r'^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$',
         views.NodeRemoveContributorView.as_view(), name='remove_user'),
+    url(r'^(?P<guid>[a-z0-9]+)/modify_storage_usage/$',
+        views.NodeModifyStorageUsage.as_view(), name='adjust-storage-usage'),
+    url(r'^(?P<guid>[a-z0-9]+)/recalculate_node_storage/$',
+        views.NodeRecalculateStorage.as_view(), name='recalculate-node-storage'),
+    url(r'^(?P<guid>[a-z0-9]+)/make_private/$',
+        views.NodeMakePrivate.as_view(), name='make-node-private'),
 ]

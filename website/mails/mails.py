@@ -77,7 +77,7 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        to_addr, mail, mimetype='html', from_addr=None, mailer=None, celery=True,
+        to_addr, mail, from_addr=None, mailer=None, celery=True,
         username=None, password=None, callback=None, attachment_name=None,
         attachment_content=None, **context):
     """Send an email from the OSF.
@@ -113,7 +113,6 @@ def send_mail(
         to_addr=to_addr,
         subject=subject,
         message=message,
-        mimetype=mimetype,
         ttls=ttls,
         login=login,
         username=username,
@@ -216,17 +215,25 @@ INVITE_DEFAULT = Mail(
     'invite_default',
     subject='You have been added as a contributor to an OSF project.'
 )
-INVITE_PREPRINT = lambda template, provider: Mail(
-    'invite_preprints_{}'.format(template),
+INVITE_OSF_PREPRINT = Mail(
+    'invite_preprints_osf',
+    subject='You have been added as a contributor to an OSF preprint.'
+)
+INVITE_PREPRINT = lambda provider: Mail(
+    'invite_preprints',
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
     subject='You have been added as a contributor to an OSF project.'
 )
-CONTRIBUTOR_ADDED_PREPRINT = lambda template, provider: Mail(
-    'contributor_added_preprints_{}'.format(template),
-    subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
+CONTRIBUTOR_ADDED_OSF_PREPRINT = Mail(
+    'contributor_added_preprints_osf',
+    subject='You have been added as a contributor to an OSF preprint.'
+)
+CONTRIBUTOR_ADDED_PREPRINT = lambda provider: Mail(
+    'contributor_added_preprints',
+    subject=f'You have been added as a contributor to {get_english_article(provider.name)} {provider.name} {provider.preprint_word}.'
 )
 CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
@@ -248,6 +255,7 @@ FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
+FORGOT_PASSWORD_INSTITUTION = Mail('forgot_password_institution', subject='Set Password')
 PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
 PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
@@ -258,6 +266,10 @@ REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation R
 REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
 
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
+SPAM_FILES_DETECTED = Mail(
+    'spam_files_detected',
+    subject='[auto] Spam files audit'
+)
 
 CONFERENCE_SUBMITTED = Mail(
     'conference_submitted',
@@ -290,6 +302,10 @@ TRANSACTIONAL = Mail(
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
+    subject='Withdrawal pending for one of your projects.'
+)
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
     subject='Withdrawal pending for one of your projects.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
@@ -396,16 +412,6 @@ WELCOME_OSF4I = Mail(
 
 EMPTY = Mail('empty', subject='${subject}')
 
-SHARE_ERROR_DESK = Mail(
-    'send_data_share_error_desk',
-    subject='Share Error'
-)
-
-SHARE_PREPRINT_ERROR_DESK = Mail(
-    'send_data_share_preprint_error_desk',
-    subject='Share Error'
-)
-
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(
     'reviews_submission_confirmation',
     subject='Confirmation of your submission to ${provider_name}'
@@ -431,9 +437,9 @@ CROSSREF_DOIS_PENDING = Mail(
     subject='There are ${pending_doi_count} preprints with crossref DOI pending.'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_GRANTED = Mail(
-    'preprint_withdrawal_request_granted',
-    subject='Your ${reviewable.provider.preprint_word} has been withdrawn',
+WITHDRAWAL_REQUEST_GRANTED = Mail(
+    'withdrawal_request_granted',
+    subject='Your ${document_type} has been withdrawn',
 )
 
 GROUP_MEMBER_ADDED = Mail(
@@ -451,7 +457,17 @@ GROUP_ADDED_TO_NODE = Mail(
     subject='Your group, ${group_name}, has been added to an OSF Project'
 )
 
-PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
-    'preprint_withdrawal_request_declined',
+WITHDRAWAL_REQUEST_DECLINED = Mail(
+    'withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
+)
+
+TOU_NOTIF = Mail(
+    'tou_notif',
+    subject='Updated Terms of Use for COS Websites and Services',
+)
+
+STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
+    'storage_cap_exceeded_announcement',
+    subject='Action Required to avoid disruption to your OSF project',
 )

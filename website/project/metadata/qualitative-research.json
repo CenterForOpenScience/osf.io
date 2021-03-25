@@ -1,0 +1,194 @@
+{
+   "name":"Qualitative Preregistration",
+   "version":1,
+   "description":"This template was created by researchers from the qualitative community for preregistration of qualitative research",
+   "config":{
+      "hasFiles":true
+   },
+   "pages":[
+      {
+         "id":"page1",
+         "title":"Study Information",
+         "questions":[
+            {
+               "qid":"q1",
+               "type":"string",
+               "format":"textarea",
+               "title":"Research Aims",
+               "help":"Please specify the overall purposes, objectives or aims of the research.\n\nIf relevant, please reflect on whether your aim is different across different domains (e.g. knowledge generation, policy development, community resourcing). If so, specify your aim for each domain that is relevant for your study.",
+               "required":true
+            },
+            {
+               "qid":"q2",
+               "type":"choose",
+               "format":"singleselect",
+               "description":"If helpful, please select the type of aim (non-exhaustive list):",
+               "options":[
+                  "Exploring",
+                  "Describing",
+                  "Theory evaluating",
+                  "Comparing",
+                  "Understanding"
+               ]
+            },
+            {
+               "qid":"q3",
+               "type":"string",
+               "format":"textarea",
+               "title":"Research question(s)",
+               "help":"Please specify your research question or questions as they are guiding your research now. If relevant, you may also specify here any hypotheses to be assessed. The research questions may break down your aim into smaller, distinct inquiries.\n\nIf relevant, you may distinguish between primary and secondary research questions or hypotheses.",
+               "example":"For example, if it is your aim to explore the attitudes of caregivers towards Alzheimer patients in a local ward, your research questions could specify precisely what you plan to study; for instance, how ward staff tries to treat the patients with dignity or how the relationship between the patient and their family members or loved ones evolved since that patient was admitted to the ward.",
+               "required":true
+            },
+            {
+               "qid":"q4",
+               "type":"string",
+               "format":"textarea",
+               "title":"Anticipated Duration",
+               "help":"Please indicate the estimated project start date (mm/yyyy) and estimated project end date (mm/yyyy).",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page2",
+         "title":"Design Plan",
+         "questions":[
+            {
+               "qid":"q5",
+               "type":"string",
+               "format":"textarea",
+               "title":"Study design",
+               "help":"Please provide a brief, overarching characterisation of the study design.\n\nYour response might consist of a succinct label (e.g., “case study” or “ethnography”) and/or a brief elaboration of that label’s meaning.\n\nA study may involve a combination of different designs, including a mix of quantitative and qualitative methods",
+               "required":true
+            },
+            {
+               "qid":"q6",
+               "type":"string",
+               "format":"textarea",
+               "title":"Sampling and case selection strategy",
+               "help":"Please describe your sampling or recruitment strategy (examples include, but are not limited to: purposive, snowball, theoretical, and maximum variation sampling) and/or your case selection strategy (examples include, but are not limited to: typical case, most similar case, most different case, diverse case, and deviant case).\n\nPlease provide a short rationale for why you selected this type of strategy.",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page3",
+         "title":"Data Collection",
+         "questions":[
+            {
+               "qid":"q7",
+               "type":"string",
+               "format":"textarea",
+               "title":"Data source(s) and data type(s)",
+               "help":"Please describe the type(s) of data you will be using. In describing the data, distinguish between data that existed prior to your study (e.g. archival documents, newspaper articles, [social] media, secondary literature, or data collected for a different purpose than the current study) and original data (i.e. data that will be collected/generated for the current study).",
+               "required":true
+            },
+            {
+               "qid":"q8",
+               "type":"string",
+               "format":"textarea",
+               "title":"Data collection methods",
+               "help":"Please describe your method of data collection or data generation. Examples of methods include (but are not restricted to) interviews, focus groups, enabling techniques, self-reports, field notes, diaries, (participative) observation, archival research, or mixed methods. Please provide a brief rationale for why you plan to use this particular data collection/generation method in your study.",
+               "required":true
+            },
+            {
+               "qid":"q9",
+               "type":"string",
+               "format":"textarea",
+               "title":"Data collection tools, instruments or plans",
+               "help":"Please describe or upload the tools, instruments or plans you will use in collecting or generating your data. Examples could be (but are not limited to): topic guide, interview questionnaire, focus group guide, observation scheme, creative tools (e.g. photos, videos, musical pieces, paintings, etc.), or a description of your archival search plans.",
+               "required":true
+            },
+            {
+               "qid":"q9a",
+               "type":"osf-upload",
+               "format":"osf-upload-open",
+               "required":false
+            },
+            {
+               "qid":"q10",
+               "type":"string",
+               "format":"textarea",
+               "title":"Stopping criteria",
+               "help":"Please describe the criteria or rationale behind when you will stop data generation or collection. Possible criteria include (but are not restricted to): data saturation*, when inclusion criteria are satisfied, resource constraints (e.g. time/funding), or when the analysis has produced an enriching answer to the research question(s).",
+               "example":"* We follow Fusch & Ness (2005) and interpret saturation to be reached when there is enough information to replicate the study, the ability to obtain new information has been attained, and further coding is no longer feasible.",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page4",
+         "title":"Analysis Plan",
+         "questions":[
+            {
+               "qid":"q11",
+               "type":"string",
+               "format":"textarea",
+               "title":"Data analysis approach",
+               "help":"Please specify the type and details of your data analysis approach. Examples of approaches include (but are not limited to): narrative analysis, phenomenological analysis, thematic analysis, content analysis, psychoanalytic analysis, grounded theory, process tracing, comparative analysis, or discourse analysis.\n\nIf multiple interpretations of your approach exist, please specify the version you will be using.\n\nPlease provide a rationale for why your selected data analytic approach is appropriate given your study’s aim(s).",
+               "example":"For example, if you indicated ‘phenomenological analysis’, you may want to specify the theorist whose approach you are following, e.g. “We use a phenomenological approach as explained by Colaizzi (1978)”; or if you indicated ‘content analysis’, a specification could be: “We apply inductive content analysis as described in Elo & Kyngäs (2008)”.",
+               "required":true
+            },
+            {
+               "qid":"q12",
+               "type":"string",
+               "format":"textarea",
+               "title":"Data analysis process",
+               "help":"Please describe what your process of data analysis will look like. Questions to keep in mind could be (but are not limited to):\n* who will be involved in the data analysis, and in what role?\n* if relevant, indicate any procedures that will be used to turn “raw” data into analyzable form (e.g., a coding scheme)\n* if relevant, indicate any evidentiary criteria that will be used to assess any hypotheses (e.g., what evidence will count as consistent or inconsistent with a given proposition)\n* if relevant, what software or analytic tools will you use and how will you use them?",
+               "required":true
+            },
+            {
+               "qid":"q13",
+               "title":"Credibility strategies",
+               "type":"choose",
+               "format":"multiselect",
+               "options":[
+                  "Member checking",
+                  "Triangulation with other data sources",
+                  "Bringing in different perspectives",
+                  "Have different researchers analyse the data",
+                  "Consensus building among team members or 'interrater reliability'",
+                  "Negative case analysis",
+                  "Peer debriefing",
+                  "Cross-checks for rivalling explanations",
+                  "Bring in an 'auditor'",
+                  "Reflexitivity",
+                  "Verisimilitude",
+                  "Emotionality",
+                  "Personal Responsibility",
+                  "An ethic of caring",
+                  "Political praxis",
+                  "Multivoiced texts",
+                  "Dialogues with subjects",
+                  "Other (please explain)"
+               ],
+               "help":"Please specify the strategies, actions or measures you will employ to assure methodological integrity. Examples include (but are not limited to):",
+               "required":true
+            },
+            {
+               "qid":"q14",
+               "type":"string",
+               "format":"textarea",
+               "title":"Please provide a short rationale for why you selected particular strategies and how they are appropriate given your study’s aim(s) and approach, or specify your credibility strategies if not on the above list.",
+               "required":true
+            }
+         ]
+      },
+      {
+         "id":"page4",
+         "title":"Miscellaneous",
+         "questions":[
+            {
+               "qid":"q15",
+               "type":"string",
+               "format":"textarea",
+               "title":"Reflection on your positionality (optional)",
+               "help":"Feel free to reflect on your relation to or association with the studied phenomenon and your position in the research setting/field, including your academic/personal standpoints, assumptions and values. In addition, if there is a potential conflict of interest [whether you have a previous relationship with the studied phenomenon, and if you consider that there are previous positions or assumptions that may influence the present study] that can arise, you may want to report that here.",
+               "example":"For example, if you study the lives of detained immigrants, you might want to talk about your political viewpoints, experience working with detained immigrants, relevant policy work, or perhaps your own experience as a detained immigrant.",
+               "required":false
+            }
+         ]
+      }
+   ]
+}

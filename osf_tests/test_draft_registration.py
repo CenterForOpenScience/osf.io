@@ -7,7 +7,8 @@ from framework.exceptions import PermissionsError
 from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError, NodeStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
 from osf.utils.permissions import ADMIN, READ, WRITE
-from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeLicenses, TestNodeSubjects
+from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
+from osf_tests.test_node_license import TestNodeLicenses
 
 from website import settings
 

@@ -1,0 +1,32 @@
+name: 'Build ElasticSearch6'
+description: 'Building and starting the ElasticSearch6 service'
+inputs:
+  ELASTICSEARCH6_ARCHIVE:
+    description: 'Where ES6 archive is located'
+runs:
+  using: "composite"
+  steps:
+  - id: ES6-Step-1
+    shell: bash
+    run: |
+      cd ~/.cache/downloads
+      if [ ! -f "${{ inputs.ELASTICSEARCH6_ARCHIVE }}" ]; then
+        curl -SLO https://artifacts.elastic.co/downloads/elasticsearch/${{ inputs.ELASTICSEARCH6_ARCHIVE }}
+      fi
+
+      mkdir -p /tmp/elasticsearch6
+      tar -xzf ${{ inputs.ELASTICSEARCH6_ARCHIVE }} -C /tmp/elasticsearch6 --strip-components=1
+      echo "ES6 started..."
+  - id: ES6-Step-2
+    shell: bash
+    run: /tmp/elasticsearch6/bin/elasticsearch > /dev/null & export ELASTICSEARCH6_PID=$!
+  - id: ES6-Step-3
+    shell: bash
+    run: |
+      echo "Waiting for ES6 health..."
+      sleep 5
+      while [ ! $(curl -sf http://localhost:9201/_cluster/health?wait_for_status=yellow) ]; do
+          echo "trying again...";
+          sleep 5;
+      done
+      echo "ES6 started successfully!"

@@ -71,11 +71,21 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         related_view_kwargs={'draft_id': '<_id>'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='draft_registrations:draft-registration-bibliographic-contributor-detail',
+        related_view_kwargs={'draft_id': '<_id>'},
+    )
+
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False,
     )
+
+    has_project = ser.SerializerMethodField()
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     @property
     def subjects_related_view(self):

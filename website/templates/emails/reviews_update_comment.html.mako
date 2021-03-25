@@ -2,13 +2,13 @@
 <div style="margin: 40px;">
     <p>Hello ${recipient.fullname},</p>
     <p>
-        Your ${reviewable.provider.preprint_word} "<a href="${reviewable.absolute_url}">${reviewable.title}</a>" has an updated comment by the moderator:<br/>
+        Your ${document_type} "<a href="${reviewable.absolute_url}">${reviewable.title}</a>" has an updated comment by the moderator:<br/>
         ${comment}
     </p>
     <p>
         You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future notification emails
-        for this ${reviewable.provider.preprint_word}. Each ${reviewable.provider.preprint_word} is associated with a
-        project on the Open Science Framework for managing the ${reviewable.provider.preprint_word}. To change your
+        for this ${document_type}. Each ${document_type} is associated with a
+        project on the Open Science Framework for managing the ${document_type}. To change your
         email notification preferences, visit your <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
     </p>
     <p>

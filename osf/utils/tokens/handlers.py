@@ -6,6 +6,7 @@ import markupsafe
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError, PermissionsError
 from framework import status
+from transitions import MachineError
 
 from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
@@ -86,7 +87,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
         registration = sanction.registrations.get()
         registered_from = registration.registered_from
         try:
-            do_action(auth.user, encoded_token)
+            do_action(user=auth.user, token=encoded_token)
         except TokenError as e:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': e.message_short,
@@ -96,6 +97,11 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
             raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
                 'message_long': str(e)
+            })
+        except MachineError as e:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                'message_short': 'Operation not allowed at this time',
+                'message_long': e.value
             })
         sanction.save()
         return {

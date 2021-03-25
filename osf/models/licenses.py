@@ -36,16 +36,39 @@ class NodeLicenseManager(models.Manager):
 
 
 class NodeLicense(ObjectIDMixin, BaseModel):
-    license_id = models.CharField(max_length=128, null=False, unique=True)
-    name = models.CharField(max_length=256, null=False, unique=True)
-    text = models.TextField(null=False)
-    url = models.URLField(blank=True)
-    properties = ArrayField(models.CharField(max_length=128), default=list, blank=True)
+    license_id = models.CharField(
+        max_length=128,
+        null=False,
+        unique=True,
+        help_text='A unique id for the license. for example'
+    )
+    name = models.CharField(
+        max_length=256,
+        null=False,
+        unique=True,
+        help_text='The name of the license'
+    )
+    text = models.TextField(
+        null=False,
+        help_text='The text of the license with custom properties surround by curly brackets, for example: '
+                  '<i>Copyright (c) {{year}}, {{copyrightHolders}} All rights reserved.</i>'
+    )
+    url = models.URLField(
+        blank=True,
+        help_text='The license\'s url for example: <i>http://opensource.org/licenses/BSD-3-Clause</i>'
+    )
+    properties = ArrayField(
+        models.CharField(max_length=128),
+        default=list,
+        blank=True,
+        help_text='The custom elements in a license\'s text surrounded with curly brackets for example: '
+                  '<i>{year,copyrightHolders}</i>'
+    )
 
     objects = NodeLicenseManager()
 
-    def __unicode__(self):
-        return '(license_id={}, name={})'.format(self.license_id, self.name)
+    def __str__(self):
+        return f'{self.name} ({self.license_id})'
 
     class Meta:
         unique_together = ['_id', 'license_id']

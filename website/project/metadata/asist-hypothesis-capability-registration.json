@@ -1,0 +1,32 @@
+{
+   "name":"ASIST Hypothesis/Capability Preregistration",
+   "version":1,
+   "config":{
+      "hasFiles":true
+   },
+   "description":"This preregistration template is part of the DARPA Artificial Social Intelligence for Successful Teams (ASIST) program. This template is intended to formally register performer hypothesis and AI capability preregistrations throughout the ASIST program.",
+   "pages":[
+      {
+         "id":"page1",
+         "title":"Preregistration Information",
+         "questions":[
+            {
+               "qid":"q1",
+               "type":"string",
+               "format":"text",
+               "title":"Study preregistration link",
+               "description":"Please provide a link to the study preregistration this study relies upon.",
+               "required":true
+            },
+            {
+               "qid":"q2",
+               "title":"Hypothesis/Capability preregistration",
+               "type":"osf-upload",
+               "format":"osf-upload-open",
+               "description":"Please attach the preregistration file containing your hypothesis/capability preregistration details.",
+               "required":true
+            }
+         ]
+      }
+   ]
+}

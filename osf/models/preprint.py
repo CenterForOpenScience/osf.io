@@ -631,7 +631,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.is_public):
+        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
             request, user_id = get_request_and_user_id()
             request_headers = string_type_request_headers(request)
             user = OSFUser.load(user_id)
@@ -689,12 +689,12 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             'is_creator': True,
             'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
             'logo': logo,
+            'document_type': self.provider.preprint_word
         }
 
         mails.send_mail(
             recipient.username,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
-            mimetype='html',
             user=recipient,
             **context
         )

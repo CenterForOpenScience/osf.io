@@ -90,7 +90,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-12 table-responsive">
                 <table class="table table-striped">
                 <thead>
                     <tr>
@@ -255,7 +255,7 @@
                     <tr>
                         <td>SPAM Data</td>
                         <td>
-                            <pre>{{ serialized_preprint.spam_data }}</pre>
+                            <pre style="white-space:pre-wrap;">{{ serialized_preprint.spam_data }}</pre>
                         </td>
                     </tr>
                     {% if perms.osf.change_preprintrequest %}
