@@ -22,6 +22,7 @@ from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
+from website.project import signals
 
 from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
@@ -759,7 +760,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
@@ -889,7 +890,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def url(self):
         return self.URL_TEMPLATE.format(
-            node_id=self.branched_from._id,
             draft_id=self._id
         )
 
@@ -1129,6 +1129,17 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
+
+        if node.type == 'osf.draftnode':
+            initiator_permissions = draft.contributor_set.get(user=user).permission
+            signals.contributor_added.send(
+                draft,
+                contributor=user,
+                auth=None,
+                email_template='draft_registration',
+                permissions=initiator_permissions
+            )
+
         return draft
 
     def get_root(self):

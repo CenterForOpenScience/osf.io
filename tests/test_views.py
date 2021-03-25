@@ -2063,8 +2063,8 @@ class TestAddingContributorViews(OsfTestCase):
         project.save()
         assert_true(send_mail.called)
         send_mail.assert_called_with(
-            contributor.username,
-            mails.CONTRIBUTOR_ADDED_DEFAULT,
+            to_addr=contributor.username,
+            mail=mails.CONTRIBUTOR_ADDED_DEFAULT,
             user=contributor,
             node=project,
             referrer_name=self.auth.user.fullname,
