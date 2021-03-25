@@ -1,81 +1,66 @@
 # -*- coding: utf-8 -*-
-import os
-import mock
 import lxml
 import pytest
 import responses
-from nose.tools import *  # noqa
 
 from datacite import schema40
+from tests.base import OsfTestCase
+
 
 from framework.auth import Auth
 
-from website import settings
-from website.identifiers.clients import DataCiteClient
 from website.identifiers.utils import request_identifiers
 
-from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
-from osf_tests.factories import AuthUserFactory, RegistrationFactory, ProjectFactory
-
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-FIXTURES = os.path.join(HERE, 'fixtures')
-
-@pytest.fixture(autouse=True)
-def override_doi_settings():
-    settings.DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
-
-@pytest.fixture()
-def datacite_client(registration):
-    class MockDataciteClient(object):
-        def __init__(self, *arg, **kwargs):
-            pass
-
-        url = 'https://mds.fakedatacite.org'
-        metadata_get = mock.Mock(return_value=datacite_metadata_response())
-        metadata_post = mock.Mock(return_value='OK (10.70102/FK2osf.io/{})'.format(registration._id))
-        doi_post = mock.Mock(return_value='OK (10.70102/FK2osf.io/{})'.format(registration._id))
-        metadata_delete = mock.Mock(return_value='OK heeeeeeey')
-
-    return DataCiteClient(
-        base_url = 'https://mds.fake.datacite.org',
-        prefix=settings.DATACITE_PREFIX,
-        client=MockDataciteClient()
-    )
-
-@pytest.fixture()
-def registration():
-    return RegistrationFactory(is_public=True)
-
-@pytest.fixture()
-def datacite_metadata_response():
-    with open(os.path.join(FIXTURES, 'datacite_post_metadata_response.xml'), 'r') as fp:
-        return fp.read()
+from osf_tests.factories import AuthUserFactory, RegistrationFactory
+from website import settings
+from website.identifiers.clients import DataCiteClient
 
 
 @pytest.mark.django_db
 class TestDataCiteClient:
 
-    def test_datacite_create_identifiers(self, registration, datacite_client):
+    @pytest.fixture()
+    def datacite_client(self, registration):
+        return registration.get_doi_client()
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def registration(self, user):
+        return RegistrationFactory(is_public=True, creator=user)
+
+    def test_datacite_create_identifiers(self, registration, datacite_client, mock_datacite):
         identifiers = datacite_client.create_identifier(node=registration, category='doi')
-        datacite_node_metadata = datacite_client.build_metadata(node=registration)
-
         assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
-        datacite_client._client.metadata_post.assert_called_with(datacite_node_metadata)
 
-    def test_datacite_update_doi_public_registration(self, registration, datacite_client):
+        assert len(mock_datacite.calls) == 2
+        datacite_metadata = mock_datacite.calls[0].request.body.decode()
+        assert datacite_metadata == datacite_client.build_metadata(node=registration)
+        doi_body = mock_datacite.calls[1].request.body
+        assert doi_body == f'doi={identifiers["doi"]}\r\nurl=http://localhost:5000/{registration._id}/'.encode()
+
+    def test_datacite_update_doi_public_registration(self, registration, datacite_client, mock_datacite):
         identifiers = datacite_client.update_identifier(registration, category='doi')
-        datacite_node_metadata = datacite_client.build_metadata(registration)
-
         assert identifiers['doi'] == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
-        datacite_client._client.metadata_post.assert_called_with(datacite_node_metadata)
 
-    def test_datacite_update_doi_status_unavailable(self, datacite_client):
-        node = ProjectFactory(is_public=False)
-        datacite_client.update_identifier(node, category='doi')
+        assert len(mock_datacite.calls) == 2
+        datacite_metadata = mock_datacite.calls[0].request.body.decode()
+        assert datacite_metadata == datacite_client.build_metadata(node=registration)
+        doi_body = mock_datacite.calls[1].request.body
+        assert doi_body == f'doi={identifiers["doi"]}\r\nurl=http://localhost:5000/{registration._id}/'.encode()
 
-        assert datacite_client._client.metadata_delete.called
+    def test_datacite_update_doi_status_unavailable(self, registration, datacite_client, mock_datacite):
+        registration.is_public = False
+        registration.save()
+        identifiers = datacite_client.update_identifier(registration, category='doi')
+
+        assert len(mock_datacite.calls) == 1
+        assert mock_datacite.calls[0].request.body is None
+        assert mock_datacite.calls[0].request.method == 'DELETE'
+        assert mock_datacite.calls[0].request.url == f'{settings.DATACITE_URL}/metadata/{identifiers["doi"]}'
 
     def test_datacite_build_doi(self, registration, datacite_client):
         assert datacite_client.build_doi(registration) == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
@@ -102,7 +87,7 @@ class TestDataCiteClient:
         assert pub_year.text == str(registration.registered_date.year)
 
         resource_type = root.find('{%s}resourceType' % schema40.ns[None])
-        assert resource_type.text == 'Project'
+        assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
 
     def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
@@ -140,14 +125,14 @@ class TestDataCiteViews(OsfTestCase):
         super(TestDataCiteViews, self).setUp()
         self.user = AuthUserFactory()
         self.node = RegistrationFactory(creator=self.user, is_public=True)
-        self.client = DataCiteClient(base_url = 'https://mds.fake.datacite.org', prefix=settings.DATACITE_PREFIX)
+        self.client = DataCiteClient(self.node)
 
     @responses.activate
     def test_datacite_create_identifiers_not_exists(self):
         responses.add(
             responses.Response(
                 responses.POST,
-                self.client.base_url + '/metadata',
+                settings.DATACITE_URL + '/metadata',
                 body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
             )
@@ -155,17 +140,15 @@ class TestDataCiteViews(OsfTestCase):
         responses.add(
             responses.Response(
                 responses.POST,
-                self.client.base_url + '/doi',
+                settings.DATACITE_URL + '/doi',
                 body='OK (10.70102/FK2osf.io/cq695)',
                 status=201,
             )
         )
-        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
-            mock_get_doi.return_value = self.client
-            res = self.app.post(
-                self.node.api_url_for('node_identifiers_post'),
-                auth=self.user.auth,
-            )
+        res = self.app.post(
+            self.node.api_url_for('node_identifiers_post'),
+            auth=self.user.auth,
+        )
         self.node.reload()
         assert res.json['doi'] == self.node.get_identifier_value('doi')
         assert res.status_code == 201
@@ -175,16 +158,13 @@ class TestDataCiteViews(OsfTestCase):
         self.node.set_identifier_value('doi', 'FK424601')
         self.node.set_identifier_value('ark', 'fk224601')
 
-        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
-            mock_get_doi.return_value = self.client
-
-            res_doi = self.app.get(
-                self.node.web_url_for(
-                    'get_referent_by_identifier',
-                    category='doi',
-                    value=self.node.get_identifier_value('doi'),
-                ),
-            )
+        res_doi = self.app.get(
+            self.node.web_url_for(
+                'get_referent_by_identifier',
+                category='doi',
+                value=self.node.get_identifier_value('doi'),
+            ),
+        )
 
         assert res_doi.status_code == 302
         assert_urls_equal(res_doi.headers['Location'], self.node.absolute_url)
@@ -192,16 +172,14 @@ class TestDataCiteViews(OsfTestCase):
     @responses.activate
     def test_datacite_get_by_identifier_not_found(self):
         self.node.set_identifier_value('doi', 'FK424601')
-        with mock.patch('osf.models.Registration.get_doi_client') as mock_get_doi:
-            mock_get_doi.return_value = self.client
-            res = self.app.get(
-                self.node.web_url_for(
-                    'get_referent_by_identifier',
-                    category='doi',
-                    value='fakedoi',
-                ),
-                expect_errors=True,
-            )
+        res = self.app.get(
+            self.node.web_url_for(
+                'get_referent_by_identifier',
+                category='doi',
+                value='fakedoi',
+            ),
+            expect_errors=True,
+        )
         assert res.status_code == 404
 
     def test_qatest_doesnt_make_dois(self):

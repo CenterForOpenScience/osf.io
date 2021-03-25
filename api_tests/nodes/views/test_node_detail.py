@@ -7,6 +7,8 @@ from nose.tools import *  # noqa:
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
@@ -35,6 +37,7 @@ from rest_framework import exceptions
 from tests.base import fake
 from tests.utils import assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
+from website import settings
 
 
 @pytest.fixture()
@@ -673,13 +676,17 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def project_public(self, user, title, description, category):
-        return ProjectFactory(
+        project = ProjectFactory(
             title=title,
             description=description,
             category=category,
             is_public=True,
             creator=user
         )
+        # Sets public project storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return project
 
     @pytest.fixture()
     def project_private(self, user, title, description, category):
@@ -703,10 +710,6 @@ class NodeCRUDTestCase:
         return '/{}nodes/{}/'.format(API_BASE, project_public._id)
 
     @pytest.fixture()
-    def sparse_url_public(self, project_public):
-        return '/{}sparse/nodes/{}/'.format(API_BASE, project_public._id)
-
-    @pytest.fixture()
     def url_private(self, project_private):
         return '/{}nodes/{}/'.format(API_BASE, project_private._id)
 
@@ -722,24 +725,6 @@ class NodeCRUDTestCase:
                 'data': {
                     'id': node._id,
                     'type': 'nodes',
-                    'attributes': attributes,
-                }
-            }
-
-            if relationships:
-                payload_data['data']['relationships'] = relationships
-
-            return payload_data
-        return payload
-
-    @pytest.fixture()
-    def make_sparse_node_payload(self):
-        def payload(node, attributes, relationships=None):
-
-            payload_data = {
-                'data': {
-                    'id': node._id,
-                    'type': 'sparse-nodes',
                     'attributes': attributes,
                 }
             }
@@ -843,10 +828,63 @@ class TestNodeUpdate(NodeCRUDTestCase):
             project_private.reload()
             assert project_private.is_public
 
+    def test_make_project_private_uncalculated_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.delete(key)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This project\'s node storage usage could not be calculated. Please try again.'
+
+    def test_make_project_private_over_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        # If the public node exceeds the the private storage limit
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'This project exceeds private project storage limits and thus cannot be converted into a private project.'
+
+    def test_make_project_private_under_storage_limit(
+        self, app, url_public, project_public, user
+    ):
+        # If the public node does not exceed the private storage limit
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
+        storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE - 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        res = app.patch_json_api(url_public, {
+            'data': {
+                'type': 'nodes',
+                'id': project_public._id,
+                'attributes': {
+                    'public': False
+                }
+            }
+        }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['public'] is False
+
     def test_update_errors(
             self, app, user, user_two, title_new, description_new,
             category_new, project_public, project_private,
-            url_public, url_private, sparse_url_public, make_sparse_node_payload):
+            url_public, url_private):
 
         #   test_update_project_properties_not_nested
         res = app.put_json_api(url_public, {
@@ -860,15 +898,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Request must include /data.'
         assert res.json['errors'][0]['source']['pointer'] == '/data'
-
-        #   test_cannot_update_sparse
-        res = app.patch_json_api(
-            sparse_url_public,
-            make_sparse_node_payload(project_public, {'public': False}),
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 405
 
         #   test_update_invalid_id
         res = app.put_json_api(url_public, {
@@ -1427,7 +1456,7 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_node_errors(
             self, app, user, user_two, project_public,
             project_private, url_public, url_private,
-            url_fake, sparse_url_public):
+            url_fake):
 
         #   test_deletes_public_node_logged_out
         res = app.delete(url_public, expect_errors=True)
@@ -1441,16 +1470,6 @@ class TestNodeDelete(NodeCRUDTestCase):
             expect_errors=True)
         project_public.reload()
         assert res.status_code == 403
-        assert project_public.is_deleted is False
-        assert 'detail' in res.json['errors'][0]
-
-    #   test_deletes_from_sparse_fails
-        res = app.delete_json_api(
-            sparse_url_public,
-            auth=user.auth,
-            expect_errors=True)
-        project_public.reload()
-        assert res.status_code == 405
         assert project_public.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
@@ -1745,6 +1764,9 @@ class TestNodeTags:
             user_admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         project_private.add_contributor(
             user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
+        # Sets private project storage cache to avoid need for retries in tests updating public status
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_private._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         return project_private
 
     @pytest.fixture()
@@ -2253,12 +2275,10 @@ class TestNodeUpdateLicense:
         assert node.node_license.copyright_holders == [
             'Mr. Monument', 'Princess OSF']
 
-    def test_cannot_update(
+    def test_update(
             self, user_write_contrib, user_read_contrib,
             user_non_contrib, node, make_payload,
             make_request, license_cc0, url_node):
-
-        # def test_rw_contributor_cannot_update_license(self):
         data = make_payload(
             node_id=node._id,
             license_id=license_cc0._id
@@ -2268,8 +2288,8 @@ class TestNodeUpdateLicense:
             url_node, data,
             auth=user_write_contrib.auth,
             expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
+        assert res.status_code == 200
+        assert res.json['data']['id'] == node._id
 
     # def test_read_contributor_cannot_update_license(self):
         data = make_payload(

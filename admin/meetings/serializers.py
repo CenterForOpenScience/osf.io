@@ -29,4 +29,5 @@ def serialize_meeting(meeting):
         'mail_message_body': meeting.field_names.get('mail_message_body', DEFAULT_FIELD_NAMES.get('mail_message_body', '')),
         'mail_attachment': meeting.field_names.get('mail_attachment', DEFAULT_FIELD_NAMES.get('mail_attachment', '')),
         'is_meeting': is_meeting,
+        'auto_check_spam': meeting.auto_check_spam,
     }

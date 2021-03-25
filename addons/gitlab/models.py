@@ -172,7 +172,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
             valid_credentials = True
             try:
-                repos = [repo.attributes for repo in connection.repos()]
+                repos = [repo.attributes for repo in connection.repos(all=True)]
             except GitLabError:
                 valid_credentials = False
 

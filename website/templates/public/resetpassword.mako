@@ -1,14 +1,24 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Reset Password</%def>
+<%def name="title()">
+  % if isInstitutional:
+    Set Password
+  % else:
+    Reset Password
+  % endif
+</%def>
 <%def name="content()">
+% if isInstitutional:
+<h1 class="page-header text-center">Set Password</h1>
+% else:
 <h1 class="page-header text-center">Reset Password</h1>
+% endif
 <div>
     <div class="row">
         <form class="form col-md-8 col-md-offset-2 m-t-xl"
                 id="resetPasswordForm"
                 name="resetPasswordForm"
                 method="POST"
-                action="/resetpassword/${uid}/${token}/"
+                action="/${resetPath}/${uid}/${token}/"
                 >
 
             <div class="help-block" >
@@ -98,7 +108,7 @@
 
 <%def name="javascript()">
     <script type="text/javascript">
-        history.replaceState({}, document.title, "/resetpassword/")
+        history.replaceState({}, document.title, "/${resetPath}/")
     </script>
 </%def>
 

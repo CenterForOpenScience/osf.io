@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% load user_extras %}
+{% load spam_extras %}
+{% block title %}
+    <title>Preprint Providers</title>
+{% endblock title %}
+{% block top_includes %}
+    <script>
+        window.templateVars = {
+            'importUrl': '{% url 'preprint_providers:import' %}',
+            'getSubjectsUrl': '{% url 'preprint_providers:get_subjects' %}',
+            'getDescendantsUrl': '{% url 'preprint_providers:get_descendants' %}',
+            'rulesToSubjectsUrl': '{% url 'preprint_providers:rules_to_subjects' %}',
+            'originalSubjects': {{ subject_ids | escapejs }}
+        };
+    </script>
+    {% if show_taxonomies %}
+        <script>
+            window.templateVars.processCustomTaxonomyUrl = "{% url 'preprint_providers:process_custom_taxonomy' preprint_provider_id %}",
+        </script>
+    {% endif %}
+
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+    <script src="/static/js/preprint_providers/preprintProviders.js"></script>
+    <script src="https://cloud.tinymce.com/stable/tinymce.min.js?apiKey={{ tinymce_apikey }}"></script>
+    <script>
+            var TINYMCE_BASE_CONFIG = {
+                branding: false,
+                entity_encoding: 'raw',
+                link_context_toolbar: true,
+            };
+
+            var DESCRIPTION_CONFIG = $.extend({
+                selector:'textarea[name=description]',
+                valid_elements: '*[*]',
+                plugins: 'link preview code',
+                end_container_on_empty_block: true,
+                toolbar: 'bold italic underline | undo redo | link | code | preview',
+                forced_root_block: ''
+            }, TINYMCE_BASE_CONFIG);
+
+            var ADVISORY_BOARD_CONFIG = $.extend({
+                selector:'textarea[name=advisory_board]',
+                content_css: 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
+                valid_elements: '*[*]',
+                style_formats: [
+                    {title: 'two column', block: 'div', classes: 'col-xs-6', wrapper: true, exact: false},
+                ],
+                style_formats_merge: true,
+                end_container_on_empty_block: true,
+                plugins: 'link lists advlist preview code',
+                toolbar: 'bold italic underline | undo redo | link | bullist | code | preview'
+            }, TINYMCE_BASE_CONFIG);
+
+            var FOOTER_LINKS_CONFIG = $.extend({
+                selector:'textarea[name=footer_links]',
+                content_css: [
+                    'https://netdna.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css',
+                ],
+                valid_elements : "@[id|class|style|title],a[name|href|target|title|class],#p[class],#span[class|style],u,strong/b,em/i,br,-div",
+                style_formats: [
+                    {title: 'vertical-align', selector: 'span', styles: {'vertical-align': 'middle'}},
+                    {title: 'fontawesome 2x', selector: 'span.fa', classes: 'fa-2x'},
+                ],
+                style_formats_merge: true,
+                end_container_on_empty_block: true,
+                plugins: 'link image preview code fontawesome',
+                toolbar: 'bold italic underline | undo redo | link | image | fontawesome | code | preview ',
+                external_plugins: {
+                    'fontawesome': 'https://cdn.rawgit.com/josh18/TinyMCE-FontAwesome-Plugin/3f94be18/fontawesome/plugin.min.js'
+                }
+            }, TINYMCE_BASE_CONFIG);
+
+            tinymce.init(DESCRIPTION_CONFIG);
+            tinymce.init(ADVISORY_BOARD_CONFIG);
+            tinymce.init(FOOTER_LINKS_CONFIG);
+
+    </script>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-9">
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    {%  if field.label != 'Toplevel subjects' %}
+                        <div class="fieldWrapper">
+                            {{ field.errors }}
+                            <p>
+                                {{ field.label_tag }}
+                                {{ field }}
+                            </p>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                {% if show_taxonomies %}
+                <div class="row" id="subjects">
+                    <div class="col-md-4">
+                        <div class="firstlevel_subjects">
+                            <ul style="list-style-type:none">
+                                {% for subject in form.toplevel_subjects %}
+                                    <li>{{ subject }} <i class="subject-icon first-level glyphicon glyphicon-menu-right"></i></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="secondlevel_subjects">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div id="thirdlevel_subjects">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <input class="btn btn-success form-button" type="submit" value="Save" />
+                <a id="discard" class="btn btn-danger form-button">Discard</a>
+            </form>
+        </div>
+        <div class="col-md-3">
+            <div>
+                <h4>Import from JSON</h4>
+                <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
+                    pre-populate the Preprint Provider change form with those details.</p>
+                {% if preprint_provider %}
+                    <form action = {% url 'preprint_providers:import' preprint_provider_id=preprint_provider.id %} method="post" enctype="multipart/form-data" >
+                {% else %}
+                    <form action = {% url 'preprint_providers:import' %} method="post" enctype="multipart/form-data" >
+                {% endif %}
+                    {% csrf_token %}
+                    {{ import_form.as_p }}
+                    <input class="form-button" type="submit" value="Import" />
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+ {% endblock content %}
+

@@ -20,13 +20,13 @@ parser.add_argument('-d', '--dry', action='store_true', help='Dry run: Have the 
 
 schema_to_spreadsheet_mapping = [
     {'q1': 'TITLE'},
-    {'q2': 'B2 AUTHORS'},
     {'q3': 'ID'},
     {'q4': 'POST DATE'},
     {'q5': 'B3 ACKNOWLEDGEMENTS'},
     {'q6': 'B4 FACULTY MEMBER?'},
     {'q8': 'B5 PROSPECTIVE OR RETROSPECTIVE?'},
     {'q10': 'B6 EXPERIMENTAL STUDY?'},
+    {'q11': 'B7 DATE OF START OF STUDY'},
     {'q12': 'B8 GATE DATE'},
     {'q13': 'B9 PRESENTED AT EGAP MEETING?'},
     {'q14': 'B10 PRE-ANALYSIS PLAN WITH REGISTRATION?'},
@@ -175,9 +175,18 @@ def make_registration_dict(row, normalized_header_row, project_id):
         if value['value'] == '':
             continue
         validated_qid, other_response = validate_response(qid, value)
-        registration[validated_qid] = value
-        if other_response:
+
+        if other_response == 'q26':
+            if other_response:
+                responses = []
+                if value['value'][0].startswith('Researchers,'):
+                    responses.append('Researchers')
+                responses.append('Third party (describe in text box below)')
+                registration[other_response] = build_nested_response(responses)
+                value['value'] = value['value'][0]
+        elif other_response:
             registration[other_response] = build_nested_response('Other (describe in text box below)')
+        registration[validated_qid] = value
     # q35 and q36 are required questions at the end of the schema, certification and
     # confirmation questions. Just marking as agree -
     registration['q35'] = build_nested_response('Agree')
@@ -205,6 +214,8 @@ def build_question_response(header_row, row, question_key, column_title):
     index = header_row.index(column_title)
     value = clean_value(row[index])
     # Spreadsheet has these as comma-separated values, but looking for array
+    if question_key == 'q26':
+        value = [value]
     if question_key in ['q33', 'q34']:
         value = value.split(', ')
     return build_nested_response(value)
@@ -494,7 +505,7 @@ def validate_response(qid, value):
     """
     temporary_check = {}
     temporary_check[qid] = value
-    egap_schema = ensure_schema_structure(from_json('egap-registration.json'))
+    egap_schema = ensure_schema_structure(from_json('egap-registration-3.json'))
     schema = create_jsonschema_from_metaschema(egap_schema,
         required_fields=False,
         is_reviewer=False)
@@ -509,7 +520,7 @@ def validate_response(qid, value):
     return qid, None
 
 def validate_all_responses(value, project_id):
-    egap_schema = ensure_schema_structure(from_json('egap-registration.json'))
+    egap_schema = ensure_schema_structure(from_json('egap-registration-3.json'))
     schema = create_jsonschema_from_metaschema(egap_schema,
         required_fields=True,
         is_reviewer=False)

@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
+from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
@@ -253,20 +254,19 @@ def get_metric_class_for_action(action, from_mfr):
 @collect_auth
 def get_auth(auth, **kwargs):
     cas_resp = None
-    if not auth.user:
-        # Central Authentication Server OAuth Bearer Token
-        authorization = request.headers.get('Authorization')
-        if authorization and authorization.startswith('Bearer '):
-            client = cas.get_client()
-            try:
-                access_token = cas.parse_auth_header(authorization)
-                cas_resp = client.profile(access_token)
-            except cas.CasError as err:
-                sentry.log_exception()
-                # NOTE: We assume that the request is an AJAX request
-                return json_renderer(err)
-            if cas_resp.authenticated:
-                auth.user = OSFUser.load(cas_resp.user)
+    # Central Authentication Server OAuth Bearer Token
+    authorization = request.headers.get('Authorization')
+    if authorization and authorization.startswith('Bearer '):
+        client = cas.get_client()
+        try:
+            access_token = cas.parse_auth_header(authorization)
+            cas_resp = client.profile(access_token)
+        except cas.CasError as err:
+            sentry.log_exception()
+            # NOTE: We assume that the request is an AJAX request
+            return json_renderer(err)
+        if cas_resp.authenticated and not getattr(auth, 'user'):
+            auth.user = OSFUser.load(cas_resp.user)
 
     try:
         data = jwt.decode(
@@ -515,6 +515,12 @@ def create_waterbutler_log(payload, **kwargs):
 
         else:
             node.create_waterbutler_log(auth, action, payload)
+
+    metadata = payload.get('metadata') or payload.get('destination')
+
+    target_node = AbstractNode.load(metadata.get('nid'))
+    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
+        update_storage_usage_with_size(payload)
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)

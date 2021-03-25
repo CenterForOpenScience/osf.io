@@ -2,7 +2,7 @@
 <div style="margin: 40px;">
     <p>Hello ${recipient.fullname},</p>
         <p>
-            The ${reviewable.provider.preprint_word}
+            The ${document_type}
             <a href="${reviewable.absolute_url}">${reviewable.title}</a>
             has been successfully re-submitted to ${reviewable.provider.name}.
         </p>
@@ -16,11 +16,11 @@
         </p>
         <p>
             You will ${'not receive ' if no_future_emails else 'be automatically subscribed to '}future
-            notification emails for this ${reviewable.provider.preprint_word}.
+            notification emails for this ${document_type}.
         </p>
         <p>
             If you have been erroneously associated with "${reviewable.title}", then you
-            may visit the ${reviewable.provider.preprint_word}'s "Edit" page and remove yourself as a contributor.
+            may visit the ${document_type}'s "Edit" page and remove yourself as a contributor.
         </p>
         <p>
             For more information about ${reviewable.provider.name}, visit

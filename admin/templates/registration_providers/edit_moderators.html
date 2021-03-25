@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Registration Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ registration_provider.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <form id="add-moderators-form" action="{% url 'registration_providers:add_admin_or_moderator' registration_provider.id %}" method="post">
+                    {% csrf_token %}
+                    <label>Add moderator by guid: </label>
+                    <input type="text" name="add-moderators-form">
+                    <input type="submit" name="mod" value="Add Moderator" class="form-button btn btn-success">
+                    <input type="submit" name="admin" value="Add Admin" class="form-button btn btn-success">
+                </form>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
+                <form id="remove-moderators-form" action="{% url 'registration_providers:remove_admins_and_moderators' registration_provider.id %}" method="post">
+                    {% csrf_token %}
+                    <table class="table table-striped">
+                        <th></th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        {% for moderator in moderators %}
+                            <tr>
+                                <td><input type='checkbox' name="Moderator-{{moderator.id}}"></td>
+                                <td>{{ moderator.fullname }} ({{moderator.username}})</td>
+                                <td>Moderator</td>
+                            </tr>
+                        {% endfor %}
+                        {% for admin in admins %}
+                            <tr>
+                                <td><input type='checkbox' name="Admin-{{admin.id}}"></td>
+                                <td>{{ admin.fullname }} ({{admin.username}})</td>
+                                <td>Admin</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    <input class="form-button btn btn-danger" type="submit" value="Remove Moderators/Admins" />
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'registration-provider-page' %}
+{% endblock %}

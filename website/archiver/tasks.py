@@ -25,6 +25,7 @@ from website.archiver import utils
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
+from website.project.tasks import update_share
 from website import settings
 from website.app import init_addons
 from osf.models import (
@@ -316,3 +317,6 @@ def archive_success(dst_pk, job_pk):
         job.sent = True
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
+
+    if settings.SHARE_ENABLED:
+        update_share(dst)

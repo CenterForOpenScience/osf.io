@@ -196,7 +196,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'subjects',
             'wiki_enabled']
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'children', 'groups']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups']
 
         for field in NodeSerializer._declared_fields:
             assert_in(field, RegistrationSerializer._declared_fields)
