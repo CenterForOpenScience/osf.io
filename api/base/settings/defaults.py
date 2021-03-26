@@ -370,6 +370,9 @@ ADDONS_OAUTH.append('s3compatb3')
 INSTALLED_APPS += ('addons.nextcloud',)
 ADDONS_FOLDER_CONFIGURABLE.append('nextcloud')
 ADDONS_OAUTH.append('nextcloud')
+INSTALLED_APPS += ('addons.googledriveinstitutions',)
+ADDONS_FOLDER_CONFIGURABLE.append('googledriveinstitutions')
+ADDONS_OAUTH.append('googledriveinstitutions')
 
 TST_COMMAND_DELIMITER = ' '
 # RSA key generation settings
