@@ -238,7 +238,7 @@ def serialize_preprint(preprint, old_subjects=None):
             'description': preprint.description or '',
             'is_deleted': (
                 (not preprint.verified_publishable and not preprint.is_retracted)
-                or preprint.is_spammy
+                or preprint.is_spam
                 or is_qa_resource(preprint)
             ),
             'date_updated': preprint.modified.isoformat(),
@@ -319,7 +319,7 @@ def serialize_osf_node(osf_node, additional_attrs=None):
             'is_deleted': (
                 not osf_node.is_public
                 or osf_node.is_deleted
-                or osf_node.is_spammy
+                or osf_node.is_spam
                 or is_qa_resource(osf_node)
             ),
             **(additional_attrs or {}),
