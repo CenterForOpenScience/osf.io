@@ -89,7 +89,6 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
 
         mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                                     mimetype='html',
                                      storage_flag_is_active=False,
                                      to_addr=user.username,
                                      domain=settings.DOMAIN,
@@ -182,7 +181,6 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(empty, ())
         assert_equal(kwargs, {
             'user': user,
-            'mimetype': 'html',
             'mail': mails.PASSWORD_RESET,
             'to_addr': user.username,
             'can_change_preferences': False,
@@ -236,7 +234,6 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'html'
         ))
 
         self.app.post_json(url, sign_up_data)
@@ -245,7 +242,6 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(args, (
             'caesar@romanempire.com',
             mails.INITIAL_CONFIRM_EMAIL,
-            'html'
         ))
 
 

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @app.task
-def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True,
+def send_email(from_addr, to_addr, subject, message, ttls=True, login=True,
                 username=None, password=None, categories=None, attachment_name=None, attachment_content=None):
     """Send email to specified destination.
     Email is sent from the email specified in FROM_EMAIL settings in the
@@ -39,7 +39,6 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype=mimetype,
             categories=categories,
             attachment_name=attachment_name,
             attachment_content=attachment_content,
@@ -50,7 +49,6 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
             to_addr=to_addr,
             subject=subject,
             message=message,
-            mimetype=mimetype,
             ttls=ttls,
             login=login,
             username=username,
@@ -58,7 +56,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
         )
 
 
-def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=True, login=True, username=None, password=None):
+def _send_with_smtp(from_addr, to_addr, subject, message, ttls=True, login=True, username=None, password=None):
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
 
@@ -66,7 +64,7 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
         logger.error('Mail username and password not set; skipping send.')
         return
 
-    msg = MIMEText(message, mimetype, _charset='utf-8')
+    msg = MIMEText(message, 'html', _charset='utf-8')
     msg['Subject'] = subject
     msg['From'] = from_addr
     msg['To'] = to_addr
@@ -87,15 +85,14 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
     return True
 
 
-def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', categories=None, attachment_name=None, attachment_content=None, client=None):
+def _send_with_sendgrid(from_addr, to_addr, subject, message, categories=None, attachment_name=None, attachment_content=None, client=None):
     if (settings.SENDGRID_WHITELIST_MODE and to_addr in settings.SENDGRID_EMAIL_WHITELIST) or settings.SENDGRID_WHITELIST_MODE is False:
         client = client or sendgrid.SendGridClient(settings.SENDGRID_API_KEY)
         mail = sendgrid.Mail()
         mail.set_from(from_addr)
         mail.add_to(to_addr)
         mail.set_subject(subject)
-        if mimetype == 'html':
-            mail.set_html(message)
+        mail.set_html(message)
 
         if categories:
             mail.set_categories(categories)
@@ -109,7 +106,7 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, mimetype='html', c
                 'from_addr:  {}\n'.format(from_addr) +
                 'to_addr:  {}\n'.format(to_addr) +
                 'subject:  {}\n'.format(subject) +
-                'mimetype:  {}\n'.format(mimetype) +
+                'mimetype:  html\n' +
                 'message:  {}\n'.format(message[:30]) +
                 'categories:  {}\n'.format(categories) +
                 'attachment_name:  {}\n'.format(attachment_name)

@@ -89,7 +89,7 @@ class TestSpamListView(AdminTestCase):
             self.comment_2._id,
             self.comment_1._id
         ]
-        nt.assert_list_equal(should_be, response_list)
+        nt.assert_equal(set(should_be), set(response_list))
 
     def test_get_context_data(self):
         self.view.object_list = self.view.get_queryset()

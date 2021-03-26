@@ -33,7 +33,6 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
         user=user,
         src=src,
         can_change_preferences=False,
-        mimetype='html',
     )
 
 
@@ -54,7 +53,6 @@ def send_archiver_copy_error_mails(src, user, results, url):
         src=src,
         results=results,
         can_change_preferences=False,
-        mimetype='html',
     )
 
 def send_archiver_file_not_found_mails(src, user, results, url):
@@ -74,7 +72,6 @@ def send_archiver_file_not_found_mails(src, user, results, url):
         src=src,
         results=results,
         can_change_preferences=False,
-        mimetype='html',
     )
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
@@ -94,7 +91,6 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         src=src,
         results=results,
         can_change_preferences=False,
-        mimetype='html',
     )
 
 
@@ -198,9 +194,10 @@ def _memoize_get_file_map(func):
 
     @functools.wraps(func)
     def wrapper(node):
+        from osf.models import OSFUser
         if node._id not in cache:
             osf_storage = node.get_addon('osfstorage')
-            file_tree = osf_storage._get_file_tree(user=node.creator)
+            file_tree = osf_storage._get_file_tree(user=OSFUser.load(list(node.admin_contributor_or_group_member_ids)[0]))
             cache[node._id] = _do_get_file_map(file_tree)
         return func(node, cache[node._id])
     return wrapper

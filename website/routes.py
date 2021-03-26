@@ -705,6 +705,22 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
         ),
 
+        # reset password get - institution
+        Rule(
+            '/resetpassword-institution/<uid>/<token>/',
+            'get',
+            auth_views.reset_password_institution_get,
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
+        ),
+
+        # reset password post - institution
+        Rule(
+            '/resetpassword-institution/<uid>/<token>/',
+            'post',
+            auth_views.reset_password_institution_post,
+            OsfWebRenderer('public/resetpassword.mako', render_mako_string, trust=False)
+        ),
+
         # resend confirmation get
         Rule(
             '/resend/',
@@ -786,6 +802,22 @@ def make_url_map(app):
             '/forgotpassword/',
             'post',
             auth_views.forgot_password_post,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+
+        # forgot password get - institutional
+        Rule(
+            '/forgotpassword-institution/',
+            'get',
+            auth_views.redirect_unsupported_institution,
+            notemplate
+        ),
+
+        # forgot password post - instutitional
+        Rule(
+            '/forgotpassword-institution/',
+            'post',
+            auth_views.forgot_password_institution_post,
             OsfWebRenderer('public/forgot_password.mako', trust=False)
         ),
 

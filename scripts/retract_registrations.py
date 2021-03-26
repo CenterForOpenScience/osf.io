@@ -40,21 +40,8 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with transaction.atomic():
-                    retraction.state = Retraction.APPROVED
                     try:
-                        parent_registration.registered_from.add_log(
-                            action=NodeLog.RETRACTION_APPROVED,
-                            params={
-                                'node': parent_registration.registered_from._id,
-                                'registration': parent_registration._id,
-                                'retraction_id': parent_registration.retraction._id,
-                            },
-                            auth=None,
-                        )
-                        retraction.save()
-                        parent_registration.update_search()
-                        for node in parent_registration.get_descendants_recursive():
-                            node.update_search()
+                        retraction.accept()
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when retracting '

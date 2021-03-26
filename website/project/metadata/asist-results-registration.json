@@ -1,0 +1,67 @@
+{
+   "name":"ASIST Results Registration",
+   "version":1,
+   "config":{
+      "hasFiles":true
+   },
+   "description":"This results registration template is part of the DARPA Artificial Social Intelligence for Successful Teams (ASIST) program. This template is intended to formally register the results of preregistered hypothesis and AI capability preregistrations from the ASIST program.",
+   "pages":[
+      {
+         "id":"page1",
+         "title":"Results Registration Information",
+         "questions":[
+            {
+               "qid":"q1",
+               "type":"string",
+               "format":"textarea",
+               "title":"Results summary",
+               "description":"Please provide a brief summary of the results enclosed in your results registration document. This includes results of analyses set forth in the preregistration and results of any post hoc analyses.",
+               "example":"Hypothesis #1 was confirmed: Navigation skill determines search strategy (p = 0.023). Hypothesis was not confirmed: H2 was not confirmed: Triage is more efficient before anticipated death of high value victims than after (p = .273).",
+               "required":true
+            },
+            {
+               "qid":"q2",
+               "type":"string",
+               "format":"text",
+               "title":"Study preregistration link",
+               "description":"Please provide a link to the study preregistration this study relies upon.",
+               "required":true
+            },
+            {
+               "qid":"q3",
+               "type":"string",
+               "format":"text",
+               "title":"Preregistration link",
+               "description":"Please provide a link to the preregistration this results registration is following upon.",
+               "required":true
+            },
+            {
+               "qid":"q4",
+               "type":"string",
+               "format":"text",
+               "title":"Testbed used",
+               "description":"Please provide the name of and link to the latest testbed version used in gathering the data for the preregistered experiment.",
+               "example":"Last version of the testbed used: 1.0.n https://gitlab.asist.aptima.com/XXXX",
+               "required":true
+            },
+            {
+               "qid":"q5",
+               "type":"string",
+               "format":"text",
+               "title":"Dataset used",
+               "description":"Please link to the datasets used in running your the preregistered plans/analyses.",
+               "example":"The following datasets were used in running our preregistered analyses: https://console.cloud.google.com/XXXX",
+               "required":true
+            },
+            {
+               "qid":"q6",
+               "title":"Results registration",
+               "type":"osf-upload",
+               "format":"osf-upload-open",
+               "description":"Please attach the file containing your hypothesis/capability preregistration and results.",
+               "required":true
+            }
+         ]
+      }
+   ]
+}

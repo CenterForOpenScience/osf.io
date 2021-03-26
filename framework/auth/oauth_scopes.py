@@ -148,10 +148,15 @@ class CoreScopes(object):
     PREPRINT_REQUESTS_READ = 'preprint_requests_read'
     PREPRINT_REQUESTS_WRITE = 'preprint_requests_write'
 
+    REGISTRATION_REQUESTS_READ = 'registration_request_read'
+    REGISTRATION_REQUESTS_WRITE = 'registration_request_write'
+
     PROVIDERS_WRITE = 'providers_write'
 
     CHRONOS_SUBMISSION_READ = 'chronos_submission_read'
     CHRONOS_SUBMISSION_WRITE = 'chronos_submission_write'
+
+    NODE_REGISTRATIONS_READ = 'node.registrations_read'
 
     WAFFLE_READ = 'waffle_read'
 
@@ -232,11 +237,13 @@ class ComposedScopes(object):
     NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
-                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ)
+                          CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ,
+                          CoreScopes.REGISTRATION_REQUESTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
-                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                     CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE,
+                     CoreScopes.REGISTRATION_REQUESTS_WRITE)
 
     # Preprints collection
     # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps

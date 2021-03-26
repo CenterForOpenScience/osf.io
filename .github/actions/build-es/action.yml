@@ -1,0 +1,35 @@
+name: 'Build ElasticSearch'
+description: 'Building and starting the ElasticSearch Service'
+inputs:
+  ELASTICSEARCH_ARCHIVE:
+    description: 'Where ES archive is located'
+runs:
+  using: "composite"
+  steps:
+  - id: ES-Step-1
+    shell: bash
+    run: |
+      cd ~/.cache/downloads
+      if [ ! -f "${{ inputs.ELASTICSEARCH_ARCHIVE }}" ]; then
+        curl -SLO https://download.elasticsearch.org/elasticsearch/elasticsearch/${{ inputs.ELASTICSEARCH_ARCHIVE }}
+      fi
+
+      mkdir -p /tmp/elasticsearch
+      tar xzf ${{ inputs.ELASTICSEARCH_ARCHIVE }} -C /tmp/elasticsearch --strip-components=1
+      echo "ES started..."
+  - id: ES-Step-2
+    shell: bash
+    run: |
+      sed -i "s| -XX:+UseParNewGC||" /tmp/elasticsearch/bin/elasticsearch.in.sh
+      /tmp/elasticsearch/bin/elasticsearch > /dev/null & export ELASTICSEARCH_PID=$!
+  - id: ES-Step-3
+    shell: bash
+    run: |
+     echo "Waiting for ES health..."
+     sleep 5
+     while [ ! $(curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow) ]; do
+        #curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow
+        echo "trying again...";
+        sleep 5;
+     done
+     echo "ES started successfully!"

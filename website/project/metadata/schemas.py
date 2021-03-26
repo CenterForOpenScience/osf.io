@@ -23,7 +23,13 @@ OSF_META_SCHEMA_FILES = [
     'osf-preregistration-3.json',
     'egap-registration.json',
     'egap-registration-3.json'
+    'asist-hypothesis-capability-registration.json',
+    'asist-results-registration.json',
+    'real-world-evidence.json',
+    'qualitative-research.json',
+    'secondary-data.json',
 ]
+
 
 METASCHEMA_ORDERING = (
     'Prereg Challenge',
@@ -32,6 +38,7 @@ METASCHEMA_ORDERING = (
     'Preregistration Template from AsPredicted.org',
     'Registered Report Protocol Preregistration',
     'OSF-Standard Pre-Data Collection Registration',
+    'OSF-Secondary Data Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',
     'Replication Recipe (Brandt et al., 2013): Post-Completion',
     "Pre-Registration in Social Psychology (van 't Veer & Giner-Sorolla, 2016): Pre-Registration",
@@ -39,16 +46,24 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
     'EGAP Registration',
+    'Qualitative Preregistration',
+    'Real World Evidence in Health Outcomes Minimum Recommended Form',
+    'Qualitative Preregistration',
+    'ASIST Results Registration',
+    'ASIST Hypothesis/Capability Registration'
 )
 
 
 here = os.path.split(os.path.abspath(__file__))[0]
 
+
 def _id_to_name(id):
     return ' '.join(id.split('_'))
 
+
 def _name_to_id(name):
     return '_'.join(name.split(' '))
+
 
 def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
@@ -60,6 +75,7 @@ def ensure_schema_structure(schema):
 def from_json(fname):
     with open(os.path.join(here, fname)) as f:
         return json.load(f)
+
 
 def get_osf_meta_schemas():
     """Returns the current contents of all known schema files."""

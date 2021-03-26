@@ -68,3 +68,16 @@ class TestApproveEmbargoTerminations(OsfTestCase):
             assert_true(node.is_public)
             assert_equal(node.embargo_termination_approval.state, Sanction.APPROVED)
             assert_false(node.is_embargoed)
+
+    def test_main_removes_embargo_termination_approvals_for_completed_embargos(self):
+        self.registration2.embargo.mark_as_completed()
+        main()
+        self.registration2.refresh_from_db()
+        assert self.registration2.embargo_termination_approval is None
+
+    def test_main_removes_embargo_termination_approvals_For_removed_embargos(self):
+        self.registration2.embargo = None
+        self.registration2.save()
+        main()
+        self.registration2.refresh_from_db()
+        assert self.registration2.embargo_termination_approval is None

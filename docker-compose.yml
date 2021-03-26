@@ -17,8 +17,6 @@ volumes:
     external: false
   preprints_dist_vol:
     external: false
-  registries_dist_vol:
-    external: false
   reviews_dist_vol:
     external: false
   mfr_requirements_vol:
@@ -263,6 +261,8 @@ services:
       - api
       - web
     environment:
+      # Uncomment below to enable collections on ember
+      # - COLLECTIONS_ENABLED=true
       - BACKEND=local
     expose:
       - 4200
@@ -300,33 +300,6 @@ services:
       - 41954:41954
     volumes:
       - preprints_dist_vol:/code/dist
-    stdin_open: true
-
-  ##############
-  # Registries #
-  ##############
-
-  registries:
-    image: quay.io/centerforopenscience/osf-registries:develop-local
-    command:
-      - /bin/bash
-      - -c
-      - yarn --frozen-lockfile &&
-       yarn start --host 0.0.0.0 --port 4202 --live-reload-port 41955
-    restart: unless-stopped
-    depends_on:
-      - api
-      - web
-    environment:
-      - BACKEND=local
-    expose:
-      - 4202
-      - 41955
-    ports:
-      - 4202:4202
-      - 41955:41955
-    volumes:
-      - registries_dist_vol:/code/dist
     stdin_open: true
 
   ###########
@@ -527,6 +500,5 @@ services:
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web
       - preprints_dist_vol:/preprints
-      - registries_dist_vol:/registries
       - reviews_dist_vol:/reviews
     stdin_open: true

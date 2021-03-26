@@ -458,7 +458,6 @@ class TestNodeForkCreate:
                 mails.FORK_COMPLETED,
                 title=public_project.title,
                 guid=res.json['data']['id'],
-                mimetype='html',
                 can_change_preferences=False)
 
     def test_send_email_failed(
@@ -477,5 +476,4 @@ class TestNodeForkCreate:
                         mails.FORK_FAILED,
                         title=public_project.title,
                         guid=public_project._id,
-                        mimetype='html',
                         can_change_preferences=False)

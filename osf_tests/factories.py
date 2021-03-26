@@ -43,6 +43,7 @@ def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return models.RegistrationSchema.objects.first()
 
+
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
@@ -330,10 +331,13 @@ class CollectionProviderFactory(DjangoModelFactory):
         obj.save()
         return obj
 
+
 class RegistrationProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    access_token = factory.Faker('bs')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.RegistrationProvider
@@ -350,6 +354,8 @@ class RegistrationProviderFactory(DjangoModelFactory):
                 pass
             else:
                 raise e
+        if _id and _id != 'osf':
+            obj._id = _id
 
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
@@ -400,7 +406,13 @@ class RegistrationFactory(BaseNodeFactory):
 
         # Default registration parameters
         schema = schema or get_default_metaschema()
-        draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, initator=user, registration_schema=schema)
+        if not draft_registration:
+            draft_registration = DraftRegistrationFactory(
+                branched_from=project,
+                initator=user,
+                registration_schema=schema,
+                provider=provider
+            )
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
@@ -430,11 +442,14 @@ class RegistrationFactory(BaseNodeFactory):
                 archive_job = reg.archive_job
                 archive_job.status = ARCHIVER_SUCCESS
                 archive_job.done = True
+                archive_job.save()
                 reg.sanction.state = Sanction.APPROVED
                 reg.sanction.save()
         if is_public:
             reg.is_public = True
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
+        draft_registration.registered_node = reg
+        draft_registration.save()
         reg.save()
         return reg
 
@@ -506,7 +521,7 @@ class EmbargoTerminationApprovalFactory(DjangoModelFactory):
             else:
                 registration = RegistrationFactory(creator=user, user=user, embargo=embargo)
         with mock.patch('osf.models.sanctions.EmailApprovableSanction.ask', mock.Mock()):
-            approval = registration.request_embargo_termination(Auth(user))
+            approval = registration.request_embargo_termination(user)
             return approval
 
 
@@ -525,9 +540,10 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
+        provider.schemas.add(registration_schema)
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
             user=initiator,
@@ -616,6 +632,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.PreprintProvider
@@ -972,6 +989,9 @@ class NodeRequestFactory(DjangoModelFactory):
     class Meta:
         model = models.NodeRequest
 
+    creator = factory.SubFactory(AuthUserFactory)
+    target = factory.SubFactory(NodeFactory)
+
     comment = factory.Faker('text')
 
 class PreprintRequestFactory(DjangoModelFactory):
@@ -1084,7 +1104,9 @@ class BrandFactory(DjangoModelFactory):
     class Meta:
         model = models.Brand
 
-    name = factory.Faker('company')
+    # just limiting it to 30 chars
+    name = factory.LazyAttribute(lambda n: fake.company()[:29])
+
     hero_logo_image = factory.Faker('url')
     topnav_logo_image = factory.Faker('url')
     hero_background_image = factory.Faker('url')

@@ -8,7 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
 from addons.osfstorage.models import OsfStorageFolder
@@ -23,6 +23,7 @@ from api.base.exceptions import (
     RelationshipPostMakesNoChanges,
     EndpointNotImplementedError,
     InvalidQueryStringError,
+    PermanentlyMovedError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
@@ -38,6 +39,8 @@ from api.base.throttling import (
     NonCookieAuthThrottle,
     AddContributorThrottle,
     BurstRateThrottle,
+    FilesRateThrottle,
+    FilesBurstRateThrottle,
 )
 from api.base.utils import default_node_list_permission_queryset
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
@@ -73,6 +76,7 @@ from api.nodes.permissions import (
     IsAdminContributor,
     IsPublic,
     AdminOrPublic,
+    WriteAdmin,
     ContributorOrPublic,
     AdminContributorOrPublic,
     RegistrationAndPermissionCheckForPointers,
@@ -104,6 +108,7 @@ from api.nodes.serializers import (
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
     NodeSettingsUpdateSerializer,
+    NodeStorageSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
     NodeGroupsSerializer,
@@ -137,7 +142,7 @@ from osf.models import BaseFileNode
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
-from website import mails
+from website import mails, settings
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -216,7 +221,9 @@ class DraftMixin(object):
                 raise PermissionDenied('This draft has already been approved and cannot be modified.')
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
-                raise Gone(detail='This draft has already been registered.')
+                redirect_url = draft.registered_node.absolute_api_v2_url
+                self.headers['location'] = redirect_url
+                raise PermanentlyMovedError(detail='Draft has already been registered')
 
         if check_object_permissions:
             self.check_resource_permissions(draft)
@@ -1026,10 +1033,10 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, mimetype='html', can_change_preferences=False)
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, can_change_preferences=False)
             raise exc
         else:
-            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, mimetype='html', can_change_preferences=False)
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, can_change_preferences=False)
 
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
@@ -1096,6 +1103,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    throttle_classes = (FilesBurstRateThrottle, FilesRateThrottle, )
 
     view_category = 'nodes'
     view_name = 'node-files'
@@ -1723,6 +1732,35 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
+
+
+class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
+    """The documentation for this endpoint should be found [here](https://developer.osf.io/#operation/node_storage)
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        WriteAdmin,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'nodes'
+    view_name = 'node-storage'
+
+    serializer_class = NodeStorageSerializer
+
+    def get_object(self):
+        return self.get_node()
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        if instance.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+            return Response(serializer.data, status=HTTP_202_ACCEPTED)
+        else:
+            return Response(serializer.data)
 
 
 class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):

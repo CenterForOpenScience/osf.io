@@ -81,7 +81,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None):
+def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True):
     if not request:
         # for backwards compat with existing get_object_or_error usages
         raise TypeError('request is a required argument')
@@ -136,7 +136,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False):
+    if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False)):
         if display_name is None:
             raise Gone
         else:
