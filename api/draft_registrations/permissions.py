@@ -2,7 +2,6 @@ from rest_framework import permissions
 
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import (
-    Node,
     DraftRegistration,
     AbstractNode,
     DraftRegistrationContributor,
@@ -26,9 +25,6 @@ class IsContributorOrAdminContributor(permissions.BasePermission):
         if not auth:
             return False
 
-        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
-            obj = obj.branched_from
-
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor(auth.user)
         else:
@@ -49,9 +45,6 @@ class IsAdminContributor(permissions.BasePermission):
         auth = get_user_auth(request)
         if not auth.user:
             return False
-
-        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
-            obj = obj.branched_from
 
         if request.method in permissions.SAFE_METHODS:
             return obj.is_contributor(auth.user)
