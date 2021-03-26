@@ -466,10 +466,10 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
     conn = sqlite3.connect(db_path)
     tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
-    ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
+    ctx.run('echo {} failures purged from citest cache'.format(tests_decached))
 
 @task
-def travis_setup(ctx):
+def citest_setup(ctx):
     ctx.run('npm install -g bower', echo=True)
 
     with open('package.json', 'r') as fobj:
@@ -481,47 +481,42 @@ def travis_setup(ctx):
         ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
-def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_citest_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
-    Run half of the tests to help travis go faster.
+    Run half of the tests to help citest go faster.
     """
-    #travis_setup(ctx)
+    #citest_setup(ctx)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
+def test_citest_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
-    Run other half of the tests to help travis go faster.
+    Run other half of the tests to help citest go faster.
     """
-    #travis_setup(ctx)
+    #citest_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
-    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
-    # karma(ctx)
-    #travis_setup(ctx)
+def test_citest_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
-    #travis_setup(ctx)
+def test_citest_api2(ctx, numprocesses=None, coverage=False, testmon=False):
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
-def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
-    #travis_setup(ctx)
+def test_citest_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
-def karma(ctx, travis=False):
+def karma(ctx, citest=False):
     """Run JS tests with Karma. Requires Chrome to be installed."""
-    if travis:
-        return ctx.run('yarn test-travis', echo=True)
+    if citest:
+        return ctx.run('yarn test-citest', echo=True)
     ctx.run('yarn test', echo=True)
 
 
@@ -571,13 +566,13 @@ def addon_requirements(ctx):
 
 
 @task
-def travis_addon_settings(ctx):
+def citest_addon_settings(ctx):
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
             try:
-                open(os.path.join(path, 'local-travis.py'))
-                ctx.run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
+                open(os.path.join(path, 'local-citest.py'))
+                ctx.run('cp {path}/local-citest.py {path}/local.py'.format(path=path))
             except IOError:
                 pass
 

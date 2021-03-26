@@ -86,7 +86,7 @@
   },
   "scripts": {
     "test": "karma start --single-run --browsers ChromeHeadless",
-    "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
+    "test-citest": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
   }

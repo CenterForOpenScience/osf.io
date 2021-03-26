@@ -6,8 +6,8 @@ runs:
   - name: Copy Settings
     shell: bash
     run: |
-      cp website/settings/local-travis.py website/settings/local.py
-      cp api/base/settings/local-travis.py api/base/settings/local.py
+      cp website/settings/local-citest.py website/settings/local.py
+      cp api/base/settings/local-citest.py api/base/settings/local.py
       mkdir -p ~/preprints
       touch ~/preprints/index.html
   - name: PIP install
@@ -22,7 +22,7 @@ runs:
     shell: bash
     run: |
       pip install psycopg2==2.7.3 --no-binary psycopg2
-      invoke travis_addon_settings
+      invoke citest_addon_settings
       invoke requirements --dev --addons
       pip uninstall uritemplate.py --yes
       pip install uritemplate.py==0.3.0
