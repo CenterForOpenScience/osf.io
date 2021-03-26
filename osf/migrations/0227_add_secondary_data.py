@@ -10,12 +10,12 @@ from django.db import models
 
 import osf.models
 from osf.models import RegistrationProvider
-from addons.osfstorage.settings import DEFAULT_REGION_ID
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from osf.models.region import Region
 
 
 def add_default_region(state, schema):
-    Region(_id=DEFAULT_REGION_ID).save()
+    Region(name=DEFAULT_REGION_NAME, _id=DEFAULT_REGION_ID).save()
 
 def add_default_registration_provider(state, schema):
     RegistrationProvider(_id='osf').save()
