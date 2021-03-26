@@ -255,7 +255,7 @@ class TestDraftRegistrations:
         project = factories.ProjectFactory()
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
-        assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)
+        assert draft.url == settings.DOMAIN + 'registries/drafts/{}'.format(draft._id)
 
     def test_create_from_node_existing(self, user):
         node = factories.ProjectFactory(creator=user)

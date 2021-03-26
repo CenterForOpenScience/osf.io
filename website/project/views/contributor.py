@@ -584,8 +584,8 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
             email_template = mails.CONTRIBUTOR_ADDED_DEFAULT
 
         mails.send_mail(
-            contributor.username,
-            email_template,
+            to_addr=contributor.username,
+            mail=email_template,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
