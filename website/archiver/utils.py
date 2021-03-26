@@ -194,9 +194,10 @@ def _memoize_get_file_map(func):
 
     @functools.wraps(func)
     def wrapper(node):
+        from osf.models import OSFUser
         if node._id not in cache:
             osf_storage = node.get_addon('osfstorage')
-            file_tree = osf_storage._get_file_tree(user=node.creator)
+            file_tree = osf_storage._get_file_tree(user=OSFUser.load(list(node.admin_contributor_or_group_member_ids)[0]))
             cache[node._id] = _do_get_file_map(file_tree)
         return func(node, cache[node._id])
     return wrapper
