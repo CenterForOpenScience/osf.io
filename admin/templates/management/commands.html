@@ -3,6 +3,11 @@
 {% block content %}
 <h1> Management Commands </h1>
     <section class="content">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <p> Use the buttons below to manually run management commands. </p>
         <div class="row">
             <h4> <u>Update Waffle Flags and Switches </u>
