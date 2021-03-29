@@ -28,19 +28,33 @@ class OneDriveClient(BaseClient):
         """
 
         if folder_id is None or folder_id == DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID, 'children')
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID)
         else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
-                                  folder_id, 'children')
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id)
+        url = url + '?$expand=children($filter=folder%20ne%20null)'
 
-        res = self._make_request(
+        resp = self._make_request(
             'GET',
             url,
-            params={'filter': 'folder ne null'},
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()['value']
+        data = resp.json()
+        res = data['children']
+
+        next_url = data.get('children@odata.nextLink', None)
+        while next_url is not None:
+            next_resp = self._make_request(
+                'GET',
+                next_url,
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            next_data = next_resp.json()
+            res.extend(next_data['value'])
+            next_url = next_data.get('@odata.nextLink', None)
+
+        return res
 
     def user_info(self):
         """Get information about the token's owner.
