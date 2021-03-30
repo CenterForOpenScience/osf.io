@@ -1461,6 +1461,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
         registered.root = None  # Recompute root on save
+
+        if self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
+            registered.branched_from_node = False
+        else:
+            registered.branched_from_node = True
+
         registered.save()
 
         # Copying over editable fields as the last step so the root is accurate
@@ -1474,9 +1480,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = self
             alternative_resource = None
 
-        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource, contributors=False)
-        registered.copy_contributors_from(self)
-        registered.copy_unclaimed_records(self)
+        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()

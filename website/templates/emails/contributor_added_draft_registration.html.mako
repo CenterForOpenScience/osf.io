@@ -13,7 +13,7 @@
         % if node.title == 'Untitled':
             <a href="${node.absolute_url}">a new registration draft</a>
         % else:
-            a new registration draft titled <a href="${node.absolute_url}"> + ${node.title} </a>
+            a new registration draft titled <a href="${node.absolute_url}"> ${node.title} </a>
         % endif
     </p>
     <p>

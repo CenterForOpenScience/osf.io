@@ -416,7 +416,8 @@ class CeleryConfig:
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
         'osf.management.commands.sync_collection_provider_indices',
-        'osf.management.commands.update_institution_project_counts'
+        'osf.management.commands.update_institution_project_counts',
+        'osf.management.commands.populate_branched_from'
     }
 
     med_pri_modules = {
@@ -629,6 +630,10 @@ class CeleryConfig:
             # 'addon_deleted_date': {
             #   'task': 'management.commands.addon_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
+            # },
+            # 'populate_branched_from': {
+            #   'task': 'management.commands.populate_branched_from',
+            #   'schedule': crontab(minute=0, hour=3),
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
