@@ -2,6 +2,7 @@ import os
 
 from addons.base.apps import BaseAddonAppConfig
 from website.util import rubeus
+from addons.nextcloudinstitutions.settings import MAX_UPLOAD_SIZE
 
 FULL_NAME = 'Nextcloud for Institutions'
 SHORT_NAME = 'nextcloudinstitutions'
@@ -43,6 +44,7 @@ class NextcloudInstitutionsAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
+    max_file_size = MAX_UPLOAD_SIZE
 
     user_settings_template = os.path.join(
         TEMPLATE_PATH, 'nextcloudinstitutions_user_settings.mako')

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-02 20:20+0900\n"
+"POT-Creation-Date: 2020-11-10 11:10+0000\n"
 "PO-Revision-Date: 2020-07-02 20:20+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: en\n"
@@ -824,8 +824,8 @@ msgstr ""
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
-#: website/templates/search_grdm.mako:405
-#: website/templates/search_grdm.mako:581
+#: website/templates/search_grdm.mako:397
+#: website/templates/search_grdm.mako:574
 msgid "Wiki"
 msgstr ""
 
@@ -924,10 +924,10 @@ msgstr ""
 #: addons/wiki/templates/edit.mako:310
 #: addons/wiki/templates/wiki-bar-modal-help.mako:14
 #: website/templates/profile/modal_change_avatar.mako:20
-#: website/templates/project/view_file.mako:117
-#: website/templates/project/view_file.mako:137
-#: website/templates/project/view_file.mako:157
-#: website/templates/project/view_file.mako:177
+#: website/templates/project/view_file.mako:112
+#: website/templates/project/view_file.mako:132
+#: website/templates/project/view_file.mako:152
+#: website/templates/project/view_file.mako:172
 #: website/templates/search_bar_help_modal.mako:18
 msgid "Close"
 msgstr ""
@@ -944,9 +944,9 @@ msgstr ""
 
 #: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
 #: addons/wiki/templates/edit.mako:360
-#: website/templates/project/view_file.mako:133
-#: website/templates/project/view_file.mako:153
-#: website/templates/project/view_file.mako:173
+#: website/templates/project/view_file.mako:128
+#: website/templates/project/view_file.mako:148
+#: website/templates/project/view_file.mako:168
 msgid "Changes will not be saved until you press the \"Save\" button."
 msgstr ""
 
@@ -961,12 +961,12 @@ msgid ""
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:355
-#: website/templates/project/view_file.mako:168
+#: website/templates/project/view_file.mako:163
 msgid "Browser unsupported"
 msgstr ""
 
 #: addons/wiki/templates/edit.mako:359
-#: website/templates/project/view_file.mako:172
+#: website/templates/project/view_file.mako:167
 msgid ""
 "Your browser does not support collaborative editing. You may continue to "
 "make edits."
@@ -1032,16 +1032,17 @@ msgstr ""
 #: website/templates/base.mako:154
 #, python-format
 msgid ""
-"The National Institute of Informatics (NII) uses cookies to operate the "
-"NII Research Data Cloud service and to improve your user experience."
-"                  If you intend to use the GakuNin RDM, please read our "
-"<a %(meatwikiUrl)s>Privacy Policy</a> and information on <a "
-"%(meatwikiUrl)s>NII use of cookies</a>.                  By clicking "
-"Accept or continuing to use our website, you consent to the cookies use "
-"on this site.                  If you do not agree with the cookies use, "
-"please change your browser settings to disable cookies or stop using our "
-"website.                  Please be aware that you may not be able to use"
-" some functions on our website when you have cookies disabled."
+"GakuNin RDM is a service provided by the National Institute of Informatics "
+"(NII) on trust from user organizations,                  and the <a "
+"%(meatwikiTermsOfUse)s>terms of use</a> and <a "
+"%(meatwikiPrivacyPolicy)s>privacy policy</a> of each user organization are "
+"applied.                  GakuNin RDM uses cookies to operate the service "
+"and improve the user experience. Users of GakuNin RDM are requested to read "
+"the information on our privacy policy.                  By clicking "
+"\"I agree\" or continuing to use this site, you agree to our use of cookies. "
+"If you disagree, please disable cookies in your browser settings or "
+"discontinue using this site.                  Please note that by not using "
+"cookies, you may not be able to use some of this website's functions."
 msgstr ""
 
 #: website/templates/base.mako:172
@@ -1598,8 +1599,8 @@ msgid "Next Page"
 msgstr ""
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:552
-#: website/templates/search_grdm.mako:555
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Withdrawn "
 msgstr ""
 
@@ -1627,35 +1628,35 @@ msgid ""
 " %(nodeUrlAndTitle)s></a>"
 msgstr ""
 
-#: website/templates/search.mako:240 website/templates/search_grdm.mako:367
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:359
 msgid " Contributors"
 msgstr ""
 
-#: website/templates/search.mako:262 website/templates/search_grdm.mako:389
-#: website/templates/search_grdm.mako:461
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:381
+#: website/templates/search_grdm.mako:458
 msgid "Affiliated institutions"
 msgstr ""
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
-#: website/templates/search_grdm.mako:403
-#: website/templates/search_grdm.mako:579
+#: website/templates/search_grdm.mako:395
+#: website/templates/search_grdm.mako:572
 msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
 #: website/templates/search.mako:280 website/templates/search.mako:372
-#: website/templates/search_grdm.mako:407
-#: website/templates/search_grdm.mako:583
+#: website/templates/search_grdm.mako:399
+#: website/templates/search_grdm.mako:576
 msgid "Files</a>"
 msgstr ""
 
-#: website/templates/search.mako:291 website/templates/search_grdm.mako:502
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:495
 msgid "(Preprint)"
 msgstr ""
 
 #: website/templates/search.mako:292 website/templates/search.mako:348
-#: website/templates/search_grdm.mako:440
-#: website/templates/search_grdm.mako:503
-#: website/templates/search_grdm.mako:559
+#: website/templates/search_grdm.mako:432
+#: website/templates/search_grdm.mako:496
+#: website/templates/search_grdm.mako:552
 msgid "Description"
 msgstr ""
 
@@ -1665,30 +1666,30 @@ msgstr ""
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 #: website/templates/search.mako:295 website/templates/search.mako:352
-#: website/templates/search_grdm.mako:446
-#: website/templates/search_grdm.mako:506
-#: website/templates/search_grdm.mako:563
+#: website/templates/search_grdm.mako:438
+#: website/templates/search_grdm.mako:499
+#: website/templates/search_grdm.mako:556
 msgid "Contributors"
 msgstr ""
 
-#: website/templates/search.mako:314 website/templates/search_grdm.mako:525
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:518
 msgid "Managers"
 msgstr ""
 
-#: website/templates/search.mako:327 website/templates/search_grdm.mako:538
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:531
 msgid "Members"
 msgstr ""
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:552
-#: website/templates/search_grdm.mako:555
+#: website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Registration"
 msgstr ""
 
 #: website/templates/project/project.mako:587
-#: website/templates/project/view_file.mako:76
-#: website/templates/search.mako:377 website/templates/search_grdm.mako:475
-#: website/templates/search_grdm.mako:588
+#: website/templates/project/view_file.mako:71
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:472
+#: website/templates/search_grdm.mako:581
 msgid "Tags"
 msgstr ""
 
@@ -1724,7 +1725,7 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:16
 #: website/templates/search_grdm.mako:143
-#: website/templates/search_grdm.mako:317
+#: website/templates/search_grdm.mako:313
 msgid "Project"
 msgstr ""
 
@@ -1732,30 +1733,28 @@ msgstr ""
 msgid "Folder"
 msgstr ""
 
-#: website/templates/search_grdm.mako:160
-#: website/templates/search_grdm.mako:339
-#: website/templates/search_grdm.mako:492
-msgid "Comment"
-msgstr ""
-
-#: website/templates/search_grdm.mako:196
+#: website/templates/search_grdm.mako:192
 msgid "Employment@search"
 msgstr "Employment"
 
-#: website/templates/search_grdm.mako:206
+#: website/templates/search_grdm.mako:202
 msgid "Education@search"
 msgstr "Education"
 
-#: website/templates/search_grdm.mako:327
+#: website/templates/search_grdm.mako:323
 msgid "Body of Wiki"
 msgstr ""
 
-#: website/templates/search_grdm.mako:602
+#: website/templates/search_grdm.mako:595
 msgid "Modified by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:605
+#: website/templates/search_grdm.mako:598
 msgid "Created by"
+msgstr ""
+
+#: website/templates/search_grdm.mako:604
+msgid "Comment"
 msgstr ""
 
 #: website/templates/search_nav_grdm.mako:65
@@ -3140,7 +3139,7 @@ msgid "This {preprint_word} is not publicly available or searchable."
 msgstr ""
 
 #: website/templates/project/project.mako:461
-#: website/templates/project/view_file.mako:57
+#: website/templates/project/view_file.mako:52
 msgid "Loading files..."
 msgstr ""
 
@@ -3595,20 +3594,19 @@ msgstr ""
 msgid "Version:"
 msgstr ""
 
-#: website/templates/project/view_file.mako:34
-#: website/templates/project/view_file.mako:36
-msgid "Timestamp verification:"
+#: website/templates/project/view_file.mako:32
+msgid "Timestamp verification is in progress ..."
 msgstr ""
 
-#: website/templates/project/view_file.mako:52
+#: website/templates/project/view_file.mako:47
 msgid "No files"
 msgstr ""
 
-#: website/templates/project/view_file.mako:107
+#: website/templates/project/view_file.mako:102
 msgid "Connected to collaborative file editing"
 msgstr ""
 
-#: website/templates/project/view_file.mako:111
+#: website/templates/project/view_file.mako:106
 msgid ""
 "This page is currently connected to collaborative file editing. All edits"
 " made will be visible to          contributors with write permission in "
@@ -3616,21 +3614,21 @@ msgid ""
 "click the \"Save\" button."
 msgstr ""
 
-#: website/templates/project/view_file.mako:128
+#: website/templates/project/view_file.mako:123
 msgid "Connecting to collaborative file editing"
 msgstr ""
 
-#: website/templates/project/view_file.mako:132
+#: website/templates/project/view_file.mako:127
 msgid ""
 "This page is currently attempting to connect to collaborative file "
 "editing. You may continue to make edits."
 msgstr ""
 
-#: website/templates/project/view_file.mako:148
+#: website/templates/project/view_file.mako:143
 msgid "Collaborative file editing is unavailable"
 msgstr ""
 
-#: website/templates/project/view_file.mako:152
+#: website/templates/project/view_file.mako:147
 msgid ""
 "Collaborative file editing is currently unavailable. You may continue to "
 "make edits."
@@ -3772,3 +3770,7 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
+
+#~ msgid "Timestamp verification:"
+#~ msgstr ""
+

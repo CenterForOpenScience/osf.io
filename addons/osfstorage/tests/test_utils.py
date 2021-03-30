@@ -44,6 +44,7 @@ class TestSerializeRevision(StorageTestCase):
             'downloads': 2,
             'md5': None,
             'sha256': None,
+            'sha512': None,
         }
         observed = utils.serialize_revision(
             self.project,
@@ -68,6 +69,7 @@ class TestSerializeRevision(StorageTestCase):
             'downloads': 0,
             'md5': None,
             'sha256': None,
+            'sha512': None,
         }
         observed = utils.serialize_revision(
             self.project,

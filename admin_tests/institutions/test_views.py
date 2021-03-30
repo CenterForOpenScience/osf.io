@@ -73,7 +73,7 @@ class TestInstitutionUserList(AdminTestCase):
     def test_get_queryset(self):
         institutions_returned = list(self.view.get_queryset())
         inst_list = [self.institution1, self.institution2]
-        nt.assert_items_equal(institutions_returned, inst_list)
+        nt.assert_equals(set(institutions_returned), set(inst_list))
         nt.assert_is_instance(institutions_returned[0], Institution)
 
     def test_context_data(self):

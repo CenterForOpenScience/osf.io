@@ -1,5 +1,6 @@
 import os
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.nextcloud.settings import MAX_UPLOAD_SIZE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(
@@ -19,6 +20,7 @@ class NextcloudAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
+    max_file_size = MAX_UPLOAD_SIZE
     node_settings_template = os.path.join(TEMPLATE_PATH, 'nextcloud_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'nextcloud_user_settings.mako')
 

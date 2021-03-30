@@ -8,11 +8,15 @@ var bootbox = require('bootbox');
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
 
+var clipboard = require('js/clipboard');
+
 var no_storage_name_providers = ['osfstorage'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py
-var preload_accounts_type2 = ['nextcloudinstitutions']
+var preload_accounts_type2 = ['nextcloudinstitutions',
+                'ociinstitutions',
+                's3compatinstitutions']
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -107,6 +111,22 @@ $('#s3compat_modal input').on('paste', function(e) {
     validateRequiredFields('s3compat');
 });
 
+$('#s3compatinstitutions_modal input').keyup(function () {
+    validateRequiredFields('s3compatinstitutions');
+});
+
+$('#s3compatinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('s3compatinstitutions');
+});
+
+$('#ociinstitutions_modal input').keyup(function () {
+    validateRequiredFields('ociinstitutions');
+});
+
+$('#ociinstitutions_modal input').on('paste', function(e) {
+    validateRequiredFields('ociinstitutions');
+});
+
 $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
 });
@@ -153,6 +173,36 @@ $('#box_modal input').keyup(function () {
 
 $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
+});
+
+function strip_last_slash(s) {
+    return s.replace(/\/+$/g, '');
+}
+
+function nextcloudinstitutions_host() {
+    // url.rstrip('/') in admin/rdm_custom_storage_location/utils.py
+    return 'https://' + strip_last_slash($('#nextcloudinstitutions_host').val());
+}
+
+function update_nextcloudinstitutions_notification_connid() {
+    var connid = nextcloudinstitutions_host() + ':' + $('#nextcloudinstitutions_username').val();
+    $('#nextcloudinstitutions_notification_connid').attr('value', connid);
+    clipboard('#copy_button_connid');
+}
+
+function update_nextcloudinstitutions_notification_url() {
+    var osf_domain = strip_last_slash($('#osf_domain').val());
+    var url = osf_domain + '/api/v1/addons/nextcloudinstitutions/webhook/';
+    $('#nextcloudinstitutions_notification_url').attr('value', url);
+    clipboard('#copy_button_url');
+}
+
+$('#nextcloudinstitutions_host').on('keyup paste', function () {
+    update_nextcloudinstitutions_notification_connid();
+    update_nextcloudinstitutions_notification_url();
+});
+$('#nextcloudinstitutions_username').on('keyup paste', function () {
+    update_nextcloudinstitutions_notification_connid();
 });
 
 $('#csv_file').on('change', function() {
@@ -250,7 +300,7 @@ function ajaxCommon(type, params, providerShortName, route, callback) {
         data: params,
         contentType: 'application/json; charset=utf-8',
         custom: providerShortName,
-        timeout: 30000,
+        timeout: 120000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
             if (callback) {
@@ -447,6 +497,11 @@ function setParameters(provider_short_name, data) {
             $(e).val(val);
         }
     });
+
+    if (provider_short_name === 'nextcloudinstitutions') {
+	update_nextcloudinstitutions_notification_connid();
+	update_nextcloudinstitutions_notification_url();
+    }
 }
 
 function setParametersFailed(provider_short_name, message) {

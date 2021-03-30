@@ -1429,6 +1429,16 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/api/v1/<guid>/files/timestamp/<provider>/<path:path>',
+                '/api/v1/project/<pid>/files/timestamp/<provider>/<path:path>',
+                '/api/v1/project/<pid>/node/<nid>/files/timestamp/<provider>/<path:path>',
+            ],
+            'get',
+            addon_views.verify_timestamp,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/files/deleted/<trashed_id>/',
                 '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
             ],
@@ -1523,6 +1533,20 @@ def make_url_map(app):
             ['post'],
             project_views.timestamp.verify_timestamp_token,
             json_renderer,
+        ),
+
+        # directory
+        Rule(
+            [
+                '/<pid>/files/dir/<provider>/',
+                '/<pid>/files/dir/<provider>/<path:path>/',
+                '/project/<pid>/files/dir/<provider>/<path:path>/',
+                '/project/<pid>/node/<nid>/files/dir/<provider>/<path:path>/',
+            ],
+            'get',
+            project_views.file.open_directory_link,
+            OsfWebRenderer('project/files.mako', trust=False),
+            view_kwargs={'mode': 'page'},
         )
     ])
 

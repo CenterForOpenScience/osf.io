@@ -1,0 +1,10 @@
+{
+    "s3compatinstitutions_file_added" : "${user} added file ${path} to S3 Compatible Storage for Institutions in ${node}",
+    "s3compatinstitutions_file_removed" : "${user} removed ${path_type} ${path} from S3 Compatible Storage for Institutions in ${node}",
+    "s3compatinstitutions_file_updated" : "${user} updated file ${path} in S3 Compatible Storage for Institutions in ${node}",
+    "s3compatinstitutions_folder_created" : "${user} created folder ${path} in S3 Compatible Storage for Institutions in ${node}",
+    "s3compatinstitutions_folder_selected" : "${user} linked S3 Compatible Storage for Institutions folder ${folder} to ${node}",
+    "s3compatinstitutions_node_authorized" : "${user} authorized the S3 Compatible Storage for Institutions addon for ${node}",
+    "s3compatinstitutions_node_deauthorized" : "${user} deauthorized the S3 Compatible Storage for Institutions addon for ${node}",
+    "s3compatinstitutions_node_deauthorized_no_user" : "S3 Compatible Storage for Institutions addon for ${node} deauthorized"
+}

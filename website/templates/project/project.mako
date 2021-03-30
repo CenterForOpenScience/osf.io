@@ -453,6 +453,10 @@
             %else:
                <div class="panel-body">
             %endif
+                    <div id="link_container" style="display: none;">
+                        <input type="text"/>
+                    </div>
+
                     <div id="treeGrid">
                         <div class="spinner-loading-wrapper">
                             <div class="ball-scale ball-scale-blue">

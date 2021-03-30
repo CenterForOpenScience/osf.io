@@ -7,9 +7,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-07-02 20:20+0900\n"
-"PO-Revision-Date: 2020-07-02 20:20+0900\n"
-"Last-Translator: Shunta Nishikawa\n"
+"POT-Creation-Date: 2020-11-10 20:10+0900\n"
+"PO-Revision-Date: 2020-11-10 20:10+0900\n"
+"Last-Translator: Hiroki Ohashi\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
@@ -294,7 +294,7 @@ msgid ""
 "deauthorizing and reauthorizing %(addonName)s on your                <a "
 "href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 <a "
 "href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:78
@@ -305,7 +305,7 @@ msgid ""
 " addon credentials                may no longer be valid. Contact "
 "%(authOsfName)s to verify."
 msgstr ""
-"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 "
+"現在、%(addonName)s 設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 "
 "%(authOsfName)sに連絡して確認してください。"
 
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:6
@@ -437,7 +437,7 @@ msgid ""
 "deauthorizing and reauthorizing %(addonName)s on your                    "
 "<a href=\"%(addonsUrl)s\">account settings page</a>."
 msgstr ""
-"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。 <a "
+"現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。 <a "
 "href=\"%(addonsUrl)s\">アカウント設定ページ</a>で%(addonName)sの認証解除と再認証を試してください。"
 
 #: addons/gitlab/templates/gitlab_node_settings.mako:84
@@ -446,7 +446,7 @@ msgid ""
 "Could not retrieve %(addonName)s settings at this time. The %(addonName)s"
 " addon credentials                    may no longer be valid. Contact "
 "%(authOsfName)s to verify."
-msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの資格情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
+msgstr "現在、%(addonName)s設定を取得できませんでした。%(addonName)sアドオンの認証情報が無効になる場合があります。%(authOsfName)sに連絡して確認してください。"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
 #: addons/wiki/templates/edit.mako:34
@@ -530,7 +530,7 @@ msgid ""
 "encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
-"これらの資格情報は暗号化されます。 ただし、<a "
+"これらの認証情報は暗号化されます。 ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
@@ -580,7 +580,7 @@ msgid ""
 "encourage</strong> using a <a %(openWithNewWindow)s> Device (or App) "
 "Password</a>."
 msgstr ""
-"これらの資格情報は暗号化されます。 ただし、<a "
+"これらの認証情報は暗号化されます。 ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
 #: addons/owncloud/templates/owncloud_node_settings.mako:42
@@ -841,8 +841,8 @@ msgstr "削除"
 #: website/templates/project/settings.mako:36
 #: website/templates/project/settings.mako:257
 #: website/templates/search.mako:278 website/templates/search.mako:370
-#: website/templates/search_grdm.mako:405
-#: website/templates/search_grdm.mako:581
+#: website/templates/search_grdm.mako:397
+#: website/templates/search_grdm.mako:574
 msgid "Wiki"
 msgstr "Wiki"
 
@@ -944,10 +944,10 @@ msgstr ""
 #: addons/wiki/templates/edit.mako:310
 #: addons/wiki/templates/wiki-bar-modal-help.mako:14
 #: website/templates/profile/modal_change_avatar.mako:20
-#: website/templates/project/view_file.mako:117
-#: website/templates/project/view_file.mako:137
-#: website/templates/project/view_file.mako:157
-#: website/templates/project/view_file.mako:177
+#: website/templates/project/view_file.mako:112
+#: website/templates/project/view_file.mako:132
+#: website/templates/project/view_file.mako:152
+#: website/templates/project/view_file.mako:172
 #: website/templates/search_bar_help_modal.mako:18
 msgid "Close"
 msgstr "閉じる"
@@ -965,9 +965,9 @@ msgstr "このページは現在、共同ウィキに接続しようとしてい
 # Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
 #: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
 #: addons/wiki/templates/edit.mako:360
-#: website/templates/project/view_file.mako:133
-#: website/templates/project/view_file.mako:153
-#: website/templates/project/view_file.mako:173
+#: website/templates/project/view_file.mako:128
+#: website/templates/project/view_file.mako:148
+#: website/templates/project/view_file.mako:168
 msgid "Changes will not be saved until you press the \"Save\" button."
 msgstr "[保存]ボタンを押すまで、変更は保存されません。"
 
@@ -982,12 +982,12 @@ msgid ""
 msgstr "共同ウィキは現在利用できません。 引き続き編集を行うことができます。"
 
 #: addons/wiki/templates/edit.mako:355
-#: website/templates/project/view_file.mako:168
+#: website/templates/project/view_file.mako:163
 msgid "Browser unsupported"
 msgstr "サポートされていないブラウザ"
 
 #: addons/wiki/templates/edit.mako:359
-#: website/templates/project/view_file.mako:172
+#: website/templates/project/view_file.mako:167
 msgid ""
 "Your browser does not support collaborative editing. You may continue to "
 "make edits."
@@ -1055,21 +1055,23 @@ msgstr "同意する"
 #: website/templates/base.mako:154
 #, python-format
 msgid ""
-"The National Institute of Informatics (NII) uses cookies to operate the "
-"NII Research Data Cloud service and to improve your user experience."
-"                  If you intend to use the GakuNin RDM, please read our "
-"<a %(meatwikiUrl)s>Privacy Policy</a> and information on <a "
-"%(meatwikiUrl)s>NII use of cookies</a>.                  By clicking "
-"Accept or continuing to use our website, you consent to the cookies use "
-"on this site.                  If you do not agree with the cookies use, "
-"please change your browser settings to disable cookies or stop using our "
-"website.                  Please be aware that you may not be able to use"
-" some functions on our website when you have cookies disabled."
+"GakuNin RDM is a service provided by the National Institute of Informatics "
+"(NII) on trust from user organizations,                  and the <a "
+"%(meatwikiTermsOfUse)s>terms of use</a> and <a "
+"%(meatwikiPrivacyPolicy)s>privacy policy</a> of each user organization are "
+"applied.                  GakuNin RDM uses cookies to operate the service "
+"and improve the user experience. Users of GakuNin RDM are requested to read "
+"the information on our privacy policy.                  By clicking "
+"\"I agree\" or continuing to use this site, you agree to our use of cookies. "
+"If you disagree, please disable cookies in your browser settings or "
+"discontinue using this site.                  Please note that by not using "
+"cookies, you may not be able to use some of this website's functions."
 msgstr ""
-"国立情報学研究所では、NII Research Data "
-"Cloudサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin RDMをご利用されるお客様には、<a "
-"%(meatwikiUrl)s>プライバシーポリシー</a>、および<a "
-"%(meatwikiUrl)s>クッキー使用に関する情報</a>をご覧ください。「同意する」をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
+"GakuNin RDMは、利用機関の委託を受けて国立情報学研究所（NII）がサービスを提供しているものであり、利用にあたっての<a "
+"%(meatwikiTermsOfUse)s>利用規約</a>や<a "
+"%(meatwikiPrivacyPolicy)s>プライバシーポリシー</a>等については、利用機関が定めた規程が適用されます。また、GakuNin "
+"RDMではサービスの運営およびユーザ体験の向上を目的にクッキーを利用しております。GakuNin "
+"RDMをご利用されるお客様は、プライバシーポリシーに関する情報をご覧ください。「同意する」をクリックまたは当サイトの利用を継続されることで、弊所がクッキーを使用することにご同意いただいたものとさせていただきます。ご同意いただけない場合には、お客様のブラウザ設定でクッキーを無効化していただくか、または当サイトの利用を中止して下さい。クッキーを利用しないことで、当サイトの一部の機能がご利用いただけない可能性がございますがご了承ください。"
 
 #: website/templates/base.mako:172
 msgid "Start managing your projects on the GakuNin RDM today."
@@ -1167,7 +1169,7 @@ msgstr "続ける"
 
 #: website/templates/claim_account_registered.mako:9
 msgid "Please enter your credentials to continue."
-msgstr "続行するには資格情報を入力してください。"
+msgstr "続行するには認証情報を入力してください。"
 
 #: website/templates/claim_account_registered.mako:23
 #, python-format
@@ -1655,8 +1657,8 @@ msgid "Next Page"
 msgstr "次のページ"
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:552
-#: website/templates/search_grdm.mako:555
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Withdrawn "
 msgstr "取り下げられた"
 
@@ -1686,36 +1688,36 @@ msgstr ""
 "<a %(nodeUrlAndTitle)s></a> <span %(parentTitle)s><span "
 "%(textParentTitle)s></span> /</span>より"
 
-#: website/templates/search.mako:240 website/templates/search_grdm.mako:367
+#: website/templates/search.mako:240 website/templates/search_grdm.mako:359
 msgid " Contributors"
 msgstr "メンバー"
 
-#: website/templates/search.mako:262 website/templates/search_grdm.mako:389
-#: website/templates/search_grdm.mako:461
+#: website/templates/search.mako:262 website/templates/search_grdm.mako:381
+#: website/templates/search_grdm.mako:458
 msgid "Affiliated institutions"
 msgstr "所属機関"
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
-#: website/templates/search_grdm.mako:403
-#: website/templates/search_grdm.mako:579
+#: website/templates/search_grdm.mako:395
+#: website/templates/search_grdm.mako:572
 msgid "<p><strong>Jump to:</strong>"
 msgstr "<p>"
 
 # コードの都合上、[Jump to:]の翻訳を組み込む
 #: website/templates/search.mako:280 website/templates/search.mako:372
-#: website/templates/search_grdm.mako:407
-#: website/templates/search_grdm.mako:583
+#: website/templates/search_grdm.mako:399
+#: website/templates/search_grdm.mako:576
 msgid "Files</a>"
 msgstr "ファイル</a>へ移動"
 
-#: website/templates/search.mako:291 website/templates/search_grdm.mako:502
+#: website/templates/search.mako:291 website/templates/search_grdm.mako:495
 msgid "(Preprint)"
 msgstr "(プレプリント)"
 
 #: website/templates/search.mako:292 website/templates/search.mako:348
-#: website/templates/search_grdm.mako:440
-#: website/templates/search_grdm.mako:503
-#: website/templates/search_grdm.mako:559
+#: website/templates/search_grdm.mako:432
+#: website/templates/search_grdm.mako:496
+#: website/templates/search_grdm.mako:552
 msgid "Description"
 msgstr "説明"
 
@@ -1725,30 +1727,30 @@ msgstr "説明"
 #: website/templates/project/project.mako:163
 #: website/templates/project/project_header.mako:72
 #: website/templates/search.mako:295 website/templates/search.mako:352
-#: website/templates/search_grdm.mako:446
-#: website/templates/search_grdm.mako:506
-#: website/templates/search_grdm.mako:563
+#: website/templates/search_grdm.mako:438
+#: website/templates/search_grdm.mako:499
+#: website/templates/search_grdm.mako:556
 msgid "Contributors"
 msgstr "メンバー"
 
-#: website/templates/search.mako:314 website/templates/search_grdm.mako:525
+#: website/templates/search.mako:314 website/templates/search_grdm.mako:518
 msgid "Managers"
 msgstr "マネージャ"
 
-#: website/templates/search.mako:327 website/templates/search_grdm.mako:538
+#: website/templates/search.mako:327 website/templates/search_grdm.mako:531
 msgid "Members"
 msgstr "グループメンバー"
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:552
-#: website/templates/search_grdm.mako:555
+#: website/templates/search_grdm.mako:545
+#: website/templates/search_grdm.mako:548
 msgid "Registration"
 msgstr "登録"
 
 #: website/templates/project/project.mako:587
-#: website/templates/project/view_file.mako:76
-#: website/templates/search.mako:377 website/templates/search_grdm.mako:475
-#: website/templates/search_grdm.mako:588
+#: website/templates/project/view_file.mako:71
+#: website/templates/search.mako:377 website/templates/search_grdm.mako:472
+#: website/templates/search_grdm.mako:581
 msgid "Tags"
 msgstr "タグ"
 
@@ -1786,7 +1788,7 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:16
 #: website/templates/search_grdm.mako:143
-#: website/templates/search_grdm.mako:317
+#: website/templates/search_grdm.mako:313
 msgid "Project"
 msgstr "プロジェクト"
 
@@ -1794,31 +1796,29 @@ msgstr "プロジェクト"
 msgid "Folder"
 msgstr "フォルダ"
 
-#: website/templates/search_grdm.mako:160
-#: website/templates/search_grdm.mako:339
-#: website/templates/search_grdm.mako:492
-msgid "Comment"
-msgstr "コメント"
-
-#: website/templates/search_grdm.mako:196
+#: website/templates/search_grdm.mako:192
 msgid "Employment@search"
 msgstr "所属(勤務先)"
 
-#: website/templates/search_grdm.mako:206
+#: website/templates/search_grdm.mako:202
 msgid "Education@search"
 msgstr "所属(学校)"
 
-#: website/templates/search_grdm.mako:327
+#: website/templates/search_grdm.mako:323
 msgid "Body of Wiki"
 msgstr "Wiki本文"
 
-#: website/templates/search_grdm.mako:602
+#: website/templates/search_grdm.mako:595
 msgid "Modified by"
 msgstr "更新者"
 
-#: website/templates/search_grdm.mako:605
+#: website/templates/search_grdm.mako:598
 msgid "Created by"
 msgstr "作成者"
+
+#: website/templates/search_grdm.mako:604
+msgid "Comment"
+msgstr "コメント"
 
 #: website/templates/search_nav_grdm.mako:65
 msgid "Page"
@@ -3239,7 +3239,7 @@ msgid "This {preprint_word} is not publicly available or searchable."
 msgstr "この{preprint_word}は一般公開も検索もできません。"
 
 #: website/templates/project/project.mako:461
-#: website/templates/project/view_file.mako:57
+#: website/templates/project/view_file.mako:52
 msgid "Loading files..."
 msgstr "ファイルをロード中"
 
@@ -3712,21 +3712,20 @@ msgstr "タイムスタンプの検証"
 msgid "Version:"
 msgstr "バージョン:"
 
-#: website/templates/project/view_file.mako:34
-#: website/templates/project/view_file.mako:36
-msgid "Timestamp verification:"
-msgstr "タイムスタンプの検証："
+#: website/templates/project/view_file.mako:32
+msgid "Timestamp verification is in progress ..."
+msgstr "タイムスタンプ検証中 ..."
 
-#: website/templates/project/view_file.mako:52
+#: website/templates/project/view_file.mako:47
 msgid "No files"
 msgstr "ファイルなし"
 
-#: website/templates/project/view_file.mako:107
+#: website/templates/project/view_file.mako:102
 msgid "Connected to collaborative file editing"
 msgstr "共有ファイル編集に接続しました"
 
 # Notice: ”Save" は別のmsgid "Save"への参照なので文言を揃える
-#: website/templates/project/view_file.mako:111
+#: website/templates/project/view_file.mako:106
 msgid ""
 "This page is currently connected to collaborative file editing. All edits"
 " made will be visible to          contributors with write permission in "
@@ -3736,21 +3735,21 @@ msgstr ""
 "このページは現在、共有ファイル編集に接続されています。 行われたすべての編集は、書き込み許可を持つメンバーにリアルタイムで表示されます。 "
 "変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
-#: website/templates/project/view_file.mako:128
+#: website/templates/project/view_file.mako:123
 msgid "Connecting to collaborative file editing"
 msgstr "共有ファイル編集へ接続しています"
 
-#: website/templates/project/view_file.mako:132
+#: website/templates/project/view_file.mako:127
 msgid ""
 "This page is currently attempting to connect to collaborative file "
 "editing. You may continue to make edits."
 msgstr "このページは現在、共有ファイル編集に接続しようとしています。 引き続き編集を行うことができます。"
 
-#: website/templates/project/view_file.mako:148
+#: website/templates/project/view_file.mako:143
 msgid "Collaborative file editing is unavailable"
 msgstr "共有ファイル編集は利用できません"
 
-#: website/templates/project/view_file.mako:152
+#: website/templates/project/view_file.mako:147
 msgid ""
 "Collaborative file editing is currently unavailable. You may continue to "
 "make edits."
