@@ -509,5 +509,5 @@ services:
     ports:
       - 2020:2020
     env_file:
-      - .docker-compose.env
+      - .osf-pigeon.env
     stdin_open: true
