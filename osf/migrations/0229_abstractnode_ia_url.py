@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0226_auto_20210224_1610'),
+        ('osf', '0228_abstractnode_branched_from_node'),
     ]
 
     operations = [
