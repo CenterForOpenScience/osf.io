@@ -123,7 +123,7 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    # A dictrionary of key: value pairs to store additional metadata defined by third-party sources
+    # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
@@ -315,26 +315,33 @@ class Registration(AbstractNode):
 
         return provider_supported_metadata
 
-    def update_provider_specific_metadata(self, values):
+    def update_provider_specific_metadata(self, updated_values):
         """Updates additional_metadata fields supported by the provider.
 
         Fields listed in values that are not supported by the current provider will be ignored.
         Fields supported by the provider that are not listed in values will not be altered.
         """
         if not self.provider or not self.provider.additional_metadata_fields:
-            return
+            raise ValueError('This registration does not support provider-specific metadata')
 
         if not self.additional_metadata:
             self.additional_metadata = {}
 
+        updated_fields = {entry['field_name'] for entry in updated_values}
         provider_supported_fields = {
             entry['field_name'] for entry in self.provider.additional_metadata_fields
         }
-        for entry in values:
+        unsupported_fields = updated_fields - provider_supported_fields
+        if unsupported_fields:
+            raise ValueError(
+                'The provider for this registration does not support some of '
+                f'the provided fields: {unsupported_fields}'
+            )
+
+        for entry in updated_values:
             key = entry['field_name']
             value = entry['field_value']
-            if key in provider_supported_fields:
-                self.additional_metadata[key] = value
+            self.additional_metadata[key] = value
         self.save()
 
     def can_view(self, auth):
