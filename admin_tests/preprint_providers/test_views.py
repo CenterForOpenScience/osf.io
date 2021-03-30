@@ -192,7 +192,7 @@ class TestPreprintProviderChangeForm(AdminTestCase):
 
         stripped_advisory_board = '<div><ul><li>Bill Nye</li></ul></div>'
         stripped_description = '<span>Open Preprints Open Science</span>'
-        stripped_footer_links = '<p>Xiv: Support | </p>Contact | <a href=""><span class="fa fa-facebook"></span></a><p></p>'
+        stripped_footer_links = '<p>Xiv: Support | Contact | <a href=""><span class="fa fa-facebook"></span></a></p>'
 
         form = PreprintProviderForm(data=new_data)
         nt.assert_true(form.is_valid())
