@@ -127,5 +127,5 @@ class BurstRateThrottle(UserRateThrottle):
 class FilesRateThrottle(UserRateThrottle):
     scope = 'files'
 
-class FilesBurstRateThrottle(UserRateThrottle):
+class FilesBurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'files-burst'
