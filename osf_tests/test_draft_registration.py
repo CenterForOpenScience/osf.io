@@ -255,7 +255,7 @@ class TestDraftRegistrations:
         project = factories.ProjectFactory()
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
-        assert draft.url == settings.DOMAIN + 'project/{}/drafts/{}'.format(project._id, draft._id)
+        assert draft.url == settings.DOMAIN + 'registries/drafts/{}'.format(draft._id)
 
     def test_create_from_node_existing(self, user):
         node = factories.ProjectFactory(creator=user)
@@ -308,12 +308,12 @@ class TestDraftRegistrations:
         assert draft.description == description
         assert draft.category == category
         assert user in draft.contributors.all()
-        assert write_contrib not in draft.contributors.all()
+        assert write_contrib in draft.contributors.all()
         assert member not in draft.contributors.all()
         assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
-        assert draft.get_permissions(write_contrib) == []
+        assert draft.get_permissions(write_contrib) == [READ, WRITE]
 
         assert draft.node_license.license_id == GPL3.license_id
         assert draft.node_license.name == GPL3.name

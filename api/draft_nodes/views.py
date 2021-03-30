@@ -4,11 +4,16 @@ from django.db.models import Q
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
-from api.draft_nodes.permissions import ContributorOnDraftRegistration
+from api.nodes.permissions import ContributorOrPublic
 from api.draft_nodes.serializers import DraftNodeSerializer, DraftNodeStorageProviderSerializer
-
+from api.draft_registrations.serializers import DraftRegistrationSerializer
+from api.nodes.permissions import IsAdminContributor
 from api.nodes.views import (
     NodeStorageProvidersList,
     NodeFilesList,
@@ -43,7 +48,7 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -59,10 +64,32 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
         return self.get_node()
 
 
+class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListAPIView, DraftNodeMixin):
+    permission_classes = (
+        IsAdminContributor,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
+
+    serializer_class = DraftRegistrationSerializer
+    view_category = 'draft_nodes'
+    view_name = 'draft-node-draft-registrations'
+
+    # overrides ListCreateAPIView
+    def get_queryset(self):
+        node = self.get_node()
+        return node.draft_registrations_active
+
+
 class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -73,7 +100,7 @@ class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
 class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -84,7 +111,7 @@ class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
 class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOnDraftRegistration, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.TokenHasScope,
     )
     view_category = 'draft_nodes'
@@ -93,7 +120,7 @@ class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
 class DraftNodeFileDetail(DraftNodeMixin, NodeFileDetail):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOnDraftRegistration, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.TokenHasScope,
     )
 
