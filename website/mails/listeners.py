@@ -31,7 +31,7 @@ def queue_first_public_project_email(node, auth, meeting_creation):
     """
     from osf.models.queued_mail import queue_mail, QueuedMail, NEW_PUBLIC_PROJECT_TYPE, NEW_PUBLIC_PROJECT
 
-    if auth and node.type == 'osf.project' and not meeting_creation:
+    if auth and node.type in ('osf.project', 'osf.node') and not meeting_creation:
         user = auth.user
         sent_mail = QueuedMail.objects.filter(user=user, email_type=NEW_PUBLIC_PROJECT_TYPE)
         if not sent_mail.exists():
