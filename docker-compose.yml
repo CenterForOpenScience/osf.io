@@ -504,10 +504,12 @@ services:
     stdin_open: true
 
   pigeon:
-    image: quay.io/johntordoff/osf-pigeon
+    image: quay.io/centerforopenscience/osf-pigeon
     restart: unless-stopped
     ports:
       - 2020:2020
     env_file:
       - .osf-pigeon.env
     stdin_open: true
+    volumes:
+      - /srv

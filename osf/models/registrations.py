@@ -135,7 +135,6 @@ class Registration(AbstractNode):
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
-
     @staticmethod
     def find_failed_registrations():
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
