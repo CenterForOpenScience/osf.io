@@ -3,7 +3,7 @@ from addons.s3compatb3.serializer import S3CompatB3Serializer
 class S3CompatB3Provider(object):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
-    name = 'S3 Compatible Storage'
+    name = 'Oracle Cloud Infrastructure Object Storage'
     short_name = 's3compatb3'
     serializer = S3CompatB3Serializer
 

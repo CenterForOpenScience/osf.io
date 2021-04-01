@@ -88,13 +88,9 @@ def get_rdm_addon_option(institution_id, addon_name, create=True):
     if app:
         # is_allowed_default is False when for_institutions is True
         for_institutions = getattr(app, 'for_institutions', False)
-        if for_institutions:
-            is_allowed_default = False
-        else:
-            is_allowed_default = getattr(app, 'is_allowed_default', True)
-        if is_allowed_default is False:
-            rdm_addon_option.is_allowed = False
-            rdm_addon_option.save()
+        is_allowed_default = getattr(app, 'is_allowed_default', True) and not for_institutions
+        rdm_addon_option.is_allowed = is_allowed_default
+        rdm_addon_option.save()
     return rdm_addon_option
 
 def update_with_rdm_addon_settings(addon_setting, user):

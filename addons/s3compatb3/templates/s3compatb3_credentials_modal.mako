@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>${_("Connect an S3 Compatible Storage Account")}</h3>
+                <h3>Oracle Cloud Infrastructure: ${_("Connect an S3 Compatible Storage Account")}</h3>
             </div>
 
             <form>
@@ -14,8 +14,12 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="s3compatb3Addon">${_("S3 Compatible Service")}</label>
-                                <select class="form-control" data-bind="value: selectedService, options: availableServices, optionsText: 'name'" id="selected_service" name="selected_service" ${'disabled' if disabled else ''}></select>
+                                <label for="s3compatb3Addon">${_("Namespace")}</label>
+                                <input class="form-control" data-bind="value: namespace" name="namespace" ${'disabled' if disabled else ''} />
+                            </div>
+                            <div class="form-group">
+                                <label for="s3compatb3Addon">${_("Region")}</label>
+                                <select class="form-control" data-bind="value: region, options: regions, optionsText: '${_("optionsText")}', optionssValue: 'id'" id="regionOptions" name="region" ${'disabled' if disabled else ''}></select>
                             </div>
                             <div class="form-group">
                                 <label for="s3compatb3Addon">${_("Access Key")}</label>
