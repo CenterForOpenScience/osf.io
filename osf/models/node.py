@@ -1267,8 +1267,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
         if save:
             self.save()
-        if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+        if permissions == 'public':
+            project_signals.privacy_set_public.send(self, auth=auth, meeting_creation=meeting_creation)
         return True
 
     def generate_keenio_read_key(self):

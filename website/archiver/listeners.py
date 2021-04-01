@@ -78,11 +78,7 @@ def archive_fail(dst, errors):
     )
 
 
-@project_signals.after_registration_or_embargo_lifted.connect
-def after_registration_or_embargo_lifted(registration):
-    from osf.models import Registration
-
-    if settings.IA_ARCHIVE_ENABLED:
-        children = list(Registration.objects.get_children(registration, include_root=True))
-        for registration in children:
-            requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{registration._id}')
+@project_signals.privacy_set_public.connect
+def send_to_pigeon(node, *args, **kwargs):
+    if node.type == 'osf.registration' and settings.IA_ARCHIVE_ENABLED:
+        requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{node._id}')

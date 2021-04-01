@@ -17,7 +17,9 @@ class TestPigeon:
 
     @pytest.fixture()
     def embargo(self):
-        return EmbargoFactory()
+        embargo = EmbargoFactory()
+        embargo.accept()
+        return embargo
 
     @pytest.fixture()
     def registration_approval(self, user):
@@ -46,18 +48,19 @@ class TestPigeon:
     def test_pigeon_archive_immediately(self, user, registration_approval, mock_datacite, mock_pigeon):
         mock_pigeon._matches += mock_datacite._matches  # mock both of these together
         token = registration_approval.approval_state[registration_approval.initiated_by._id]['approval_token']
-        registration_approval.approve(user=registration_approval.initiated_by, token=token)
+        registration_approval.approve(user=user, token=token)
         guid = registration_approval._get_registration()._id
 
         assert len(mock_pigeon.calls) == 3
         calls = [call.request.url for call in mock_pigeon.calls]
-        assert calls == [f'{settings.DATACITE_URL}/metadata',
-                        f'{settings.DATACITE_URL}/doi',
-                        f'{settings.OSF_PIGEON_URL}archive/{guid}']
+        assert calls == [
+            f'{settings.OSF_PIGEON_URL}archive/{guid}',
+            f'{settings.DATACITE_URL}/metadata',
+            f'{settings.DATACITE_URL}/doi',
+        ]
 
     def test_pigeon_archive_embargo(self, embargo, mock_pigeon):
-        token = embargo.approval_state[embargo.initiated_by._id]['approval_token']
-        embargo.approve(user=embargo.initiated_by, token=token)
+        embargo._get_registration().terminate_embargo()
         guid = embargo._get_registration()._id
 
         assert len(mock_pigeon.calls) == 1

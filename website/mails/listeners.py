@@ -25,12 +25,14 @@ def queue_no_addon_email(user):
     )
 
 @project_signals.privacy_set_public.connect
-def queue_first_public_project_email(user, node, meeting_creation):
+def queue_first_public_project_email(node, auth, meeting_creation):
     """Queue and email after user has made their first
     non-OSF4M project public.
     """
     from osf.models.queued_mail import queue_mail, QueuedMail, NEW_PUBLIC_PROJECT_TYPE, NEW_PUBLIC_PROJECT
-    if not meeting_creation:
+
+    if auth and node.type == 'osf.project' and not meeting_creation:
+        user = auth.user
         sent_mail = QueuedMail.objects.filter(user=user, email_type=NEW_PUBLIC_PROJECT_TYPE)
         if not sent_mail.exists():
             queue_mail(

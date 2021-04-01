@@ -1404,7 +1404,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
         internet_archive_metadata = {'title', 'description', 'category', 'modified', 'article_doi'}.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
-        if instance.is_public:
+        if current_fields and instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
