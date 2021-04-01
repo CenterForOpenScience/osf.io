@@ -183,12 +183,10 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         """
         draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
         draft = self.get_draft(draft_id)
-        node = draft.branched_from
         user = get_user_auth(self.request).user
 
-        # A user must be an admin contributor on the node (not group member), and have
-        # admin perms on the draft to register
-        if node.is_admin_contributor(user) and draft.has_permission(user, ADMIN):
+        # A user have admin perms on the draft to register
+        if draft.has_permission(user, ADMIN):
             try:
                 serializer.save(draft=draft)
             except ValidationError as e:
@@ -196,7 +194,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
                 raise e
         else:
             raise PermissionDenied(
-                'You must be an admin contributor on both the project and the draft registration to create a registration.',
+                'You must be an admin contributor on the draft registration to create a registration.',
             )
 
     def check_branched_from(self, draft):
