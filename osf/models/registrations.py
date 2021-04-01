@@ -132,6 +132,9 @@ class Registration(AbstractNode):
         null=True,
         help_text='Where the archive.org data for the registration is stored'
     )
+    # A dictionary of key: value pairs to store additional metadata defined by third-party sources
+    additional_metadata = DateTimeAwareJSONField(blank=True)
+
 
     @staticmethod
     def find_failed_registrations():
@@ -299,6 +302,57 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    @property
+    def provider_specific_metadata(self):
+        """Surfaces the additional_metadata fields supported by the provider.
+
+        Also formats the reults to inherit any additional field descriptors defined
+        by the provider and to simplify consumpption by the APIt.
+        """
+        additional_metadata = self.additional_metadata or {}
+
+        if not self.provider or not self.provider.additional_metadata_fields:
+            return []
+
+        provider_supported_metadata = []
+        for field_desc in self.provider.additional_metadata_fields:
+            metadata_field = {
+                'field_value': additional_metadata.get(field_desc['field_name'], '')
+            }
+            metadata_field.update(field_desc)
+            provider_supported_metadata.append(metadata_field)
+
+        return provider_supported_metadata
+
+    def update_provider_specific_metadata(self, updated_values):
+        """Updates additional_metadata fields supported by the provider.
+
+        Fields listed in values that are not supported by the current provider will be ignored.
+        Fields supported by the provider that are not listed in values will not be altered.
+        """
+        if not self.provider or not self.provider.additional_metadata_fields:
+            raise ValueError('This registration does not support provider-specific metadata')
+
+        if not self.additional_metadata:
+            self.additional_metadata = {}
+
+        updated_fields = {entry['field_name'] for entry in updated_values}
+        provider_supported_fields = {
+            entry['field_name'] for entry in self.provider.additional_metadata_fields
+        }
+        unsupported_fields = updated_fields - provider_supported_fields
+        if unsupported_fields:
+            raise ValueError(
+                'The provider for this registration does not support some of '
+                f'the provided fields: {unsupported_fields}'
+            )
+
+        for entry in updated_values:
+            key = entry['field_name']
+            value = entry['field_value']
+            self.additional_metadata[key] = value
+        self.save()
 
     def can_view(self, auth):
         if super().can_view(auth):
@@ -753,9 +807,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_id():
-    from django.apps import apps
-    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
-    return RegistrationProvider.get_default().id
+    return RegistrationProvider.get_default_id()
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,

@@ -124,8 +124,8 @@ class SendEmailDeactivationThrottle(SendEmailThrottle):
 class BurstRateThrottle(UserRateThrottle):
     scope = 'burst'
 
-class FilesRateThrottle(UserRateThrottle):
+class FilesRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'files'
 
-class FilesBurstRateThrottle(UserRateThrottle):
+class FilesBurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'files-burst'

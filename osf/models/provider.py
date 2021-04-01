@@ -4,6 +4,7 @@ import requests
 from django.apps import apps
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
+from django.db import connection
 from typedmodels.models import TypedModel
 from api.taxonomies.utils import optimize_subject_query
 from django.db import models
@@ -219,6 +220,14 @@ class RegistrationProvider(AbstractProvider):
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
+    # A list of dictionaries describing new fields that providers want to surface on their registrations
+    # Each entry must provide a 'field_name' key. In the future, other keys may be supported to enable
+    # better i18n, validation, or other helpful things.
+    #
+    # Ex:
+    # [{'field_name': 'foo'}, {'field_name': 'bar'}]
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
         super().__init__(*args, **kwargs)
@@ -228,6 +237,20 @@ class RegistrationProvider(AbstractProvider):
             # custom permissions for use in the OSF Admin App
             ('view_registrationprovider', 'Can view registration provider details'),
         )
+
+    @classmethod
+    def get_default_id(cls):
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id FROM osf_abstractprovider
+                WHERE _id = %s
+                AND type = 'osf.registrationprovider';
+                """,
+                [cls.default__id]
+            )
+            default_id = cursor.fetchone()[0]
+        return default_id
 
     @property
     def readable_type(self):
