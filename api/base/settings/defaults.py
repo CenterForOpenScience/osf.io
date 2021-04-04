@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     'addons.nextcloudinstitutions',
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
+    'addons.binderhub',
 )
 
 # local development using https

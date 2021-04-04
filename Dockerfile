@@ -168,6 +168,7 @@ COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
+COPY ./addons/binderhub/static/ ./addons/binderhub/static/
 RUN \
     # OSF
     yarn install --frozen-lockfile \

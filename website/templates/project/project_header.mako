@@ -43,7 +43,7 @@
                         <!-- Add-on tabs  -->
                         % for addon in addons_enabled:
 
-                            % if addons[addon]['has_page']:
+                            % if addon != 'binderhub' and addons[addon]['has_page']:
                                 <li>
                                     <a href="${node['url']}${addons[addon]['short_name']}">
 
@@ -55,6 +55,17 @@
                                 </li>
                             % endif
                         % endfor
+
+                        % if 'binderhub' in addons_enabled and addons['binderhub']['has_page']:
+                            <li>
+                                <a href="${node['url']}${addons['binderhub']['short_name']}">
+                                    % if addons['binderhub']['icon'] and addons['binderhub']['has_page_icon']:
+                                        <img src="${addons['binderhub']['icon']}" class="addon-logo"/>
+                                    % endif
+                                    ${addons['binderhub']['full_name']}
+                                </a>
+                            </li>
+                        % endif
 
                         % if project_analytics:
                         % if node['is_public'] or user['is_contributor_or_group_member']:
