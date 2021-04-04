@@ -24,26 +24,26 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         assert_equals(res.json['binder_url'], settings.DEFAULT_BINDER_URL)
 
     def test_binder_url(self):
-        self.node_settings.set_binder_url('PARAM_1')
+        self.node_settings.set_binder_url('URL_1')
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_config'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.json['binder_url'], 'PARAM_1')
+        assert_equals(res.json['binder_url'], 'URL_1')
 
     def test_ember_empty_binder_url(self):
         self.node_settings.set_binder_url('')
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.json['data']['id'], self.node_settings._id)
+        assert_equals(res.json['data']['id'], self.project._id)
         assert_equals(res.json['data']['type'], 'binderhub-config')
-        assert_equals(res.json['data']['attributes']['binder_url'], settings.DEFAULT_BINDER_URL)
+        assert_equals(res.json['data']['attributes']['binderhub']['url'], settings.DEFAULT_BINDER_URL)
 
     def test_ember_binder_url(self):
-        self.node_settings.set_binder_url('PARAM_1')
+        self.node_settings.set_binder_url('URL_1')
         self.node_settings.save()
         url = self.project.api_url_for('{}_get_config_ember'.format(SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.json['data']['id'], self.node_settings._id)
+        assert_equals(res.json['data']['id'], self.project._id)
         assert_equals(res.json['data']['type'], 'binderhub-config')
-        assert_equals(res.json['data']['attributes']['binder_url'], 'PARAM_1')
+        assert_equals(res.json['data']['attributes']['binderhub']['url'], 'URL_1')
