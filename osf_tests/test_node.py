@@ -1925,6 +1925,24 @@ class TestRegisterNode:
         assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_copies_contributors_from_draft_registration(self, mock_signal):
+        creator = UserFactory()
+        draft_reg_user = UserFactory()
+        node_user = UserFactory()
+
+        node = NodeFactory(creator=creator)
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+
+        draft_reg.add_contributor(draft_reg_user, permissions.WRITE, save=True)
+        node.add_contributor(node_user, permissions.WRITE, save=True)
+
+        registration = node.register_node(get_default_metaschema(), Auth(creator), draft_reg, None)
+
+        assert registration.has_permission(creator, permissions.ADMIN) is True
+        assert registration.has_permission(draft_reg_user, permissions.WRITE) is True
+        assert registration.has_permission(node_user, permissions.WRITE) is False
+
+    @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_does_not_copy_group_members(self, mock_signal):
         user = UserFactory()
         node = NodeFactory(creator=user)

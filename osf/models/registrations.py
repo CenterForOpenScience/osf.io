@@ -22,6 +22,7 @@ from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
+from website.project import signals
 
 from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
@@ -115,12 +116,16 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
+    branched_from_node = models.NullBooleanField(blank=True, null=True)
 
     moderation_state = models.CharField(
         max_length=30,
         choices=RegistrationModerationStates.char_field_choices(),
         default=RegistrationModerationStates.INITIAL.db_name
     )
+
+    # A dictionary of key: value pairs to store additional metadata defined by third-party sources
+    additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
     def find_failed_registrations():
@@ -288,6 +293,57 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    @property
+    def provider_specific_metadata(self):
+        """Surfaces the additional_metadata fields supported by the provider.
+
+        Also formats the reults to inherit any additional field descriptors defined
+        by the provider and to simplify consumpption by the APIt.
+        """
+        additional_metadata = self.additional_metadata or {}
+
+        if not self.provider or not self.provider.additional_metadata_fields:
+            return []
+
+        provider_supported_metadata = []
+        for field_desc in self.provider.additional_metadata_fields:
+            metadata_field = {
+                'field_value': additional_metadata.get(field_desc['field_name'], '')
+            }
+            metadata_field.update(field_desc)
+            provider_supported_metadata.append(metadata_field)
+
+        return provider_supported_metadata
+
+    def update_provider_specific_metadata(self, updated_values):
+        """Updates additional_metadata fields supported by the provider.
+
+        Fields listed in values that are not supported by the current provider will be ignored.
+        Fields supported by the provider that are not listed in values will not be altered.
+        """
+        if not self.provider or not self.provider.additional_metadata_fields:
+            raise ValueError('This registration does not support provider-specific metadata')
+
+        if not self.additional_metadata:
+            self.additional_metadata = {}
+
+        updated_fields = {entry['field_name'] for entry in updated_values}
+        provider_supported_fields = {
+            entry['field_name'] for entry in self.provider.additional_metadata_fields
+        }
+        unsupported_fields = updated_fields - provider_supported_fields
+        if unsupported_fields:
+            raise ValueError(
+                'The provider for this registration does not support some of '
+                f'the provided fields: {unsupported_fields}'
+            )
+
+        for entry in updated_values:
+            key = entry['field_name']
+            value = entry['field_value']
+            self.additional_metadata[key] = value
+        self.save()
 
     def can_view(self, auth):
         if super().can_view(auth):
@@ -742,9 +798,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_id():
-    from django.apps import apps
-    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
-    return RegistrationProvider.get_default().id
+    return RegistrationProvider.get_default_id()
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
@@ -758,7 +812,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
@@ -888,7 +942,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def url(self):
         return self.URL_TEMPLATE.format(
-            node_id=self.branched_from._id,
             draft_id=self._id
         )
 
@@ -1126,8 +1179,19 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True, contributors=False)
+        draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
+
+        if node.type == 'osf.draftnode':
+            initiator_permissions = draft.contributor_set.get(user=user).permission
+            signals.contributor_added.send(
+                draft,
+                contributor=user,
+                auth=None,
+                email_template='draft_registration',
+                permissions=initiator_permissions
+            )
+
         return draft
 
     def get_root(self):
@@ -1231,8 +1295,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
-
-        self.copy_contributors_from(node)
 
         if save:
             self.save()
