@@ -3,6 +3,11 @@
 {% block content %}
 <h1> Management Commands </h1>
     <section class="content">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <p> Use the buttons below to manually run management commands. </p>
         <div class="row">
             <h4> <u>Update Waffle Flags and Switches </u>
@@ -13,6 +18,19 @@
                 <br>
                 <form method="post"
                       action="{% url 'management:waffle_flag'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Update Registration Schemas and Schema Blocks </u>
+            </h4>
+            <ul>
+                Use this management command to update the schemas and schma blocks
+                for Registrations to match values in website/project/metadata
+                <br>
+                <form method="post"
+                      action="{%url 'management:update_registration_schemas'%}">
                     {% csrf_token %}
                     <input class="btn btn-success" type="submit"
                            value="Run" />
