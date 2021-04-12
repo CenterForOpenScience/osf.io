@@ -44,6 +44,14 @@ def queue_first_public_project_email(user, node, meeting_creation):
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
 
+
+@project_signals.privacy_set_public.connect
+def create_doi_for_registration(user, node, *args, **kwargs):
+    if node.type == 'osf.registration':
+        doi = node.request_identifier('doi')['doi']
+        node.set_identifier_value('doi', doi)
+
+
 @conference_signals.osf4m_user_created.connect
 def queue_osf4m_welcome_email(user, conference, node):
     """Queue an email once a new user is created for OSF Meetings"""

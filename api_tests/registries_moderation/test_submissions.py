@@ -313,6 +313,7 @@ class TestRegistriesModerationSubmissions:
         assert resp.status_code == 200
 
     @pytest.mark.enable_quickfiles_creation
+    @pytest.mark.enable_enqueue_task
     def test_registries_moderation_post_accept(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
