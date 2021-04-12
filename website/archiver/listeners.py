@@ -78,7 +78,7 @@ def archive_fail(dst, errors):
     )
 
 
-@project_signals.privacy_set_public.connect
-def send_to_pigeon(node, *args, **kwargs):
+@project_signals.registration_to_accepted.connect
+def send_to_pigeon(node):
     if node.type == 'osf.registration' and settings.IA_ARCHIVE_ENABLED:
         requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{node._id}')
