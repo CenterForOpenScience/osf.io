@@ -15,7 +15,7 @@ import itsdangerous
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 
-from api.share.utils import format_preprint, format_user
+from api.share.utils import serialize_preprint, format_user
 from website import settings, mails
 from website.preprints.tasks import on_preprint_updated, update_or_create_preprint_identifiers, update_or_enqueue_on_preprint_updated
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
@@ -1960,13 +1960,14 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert 'contributors' in  updated_task.kwargs['saved_fields']
         assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
-    def test_format_preprint(self):
-        res = format_preprint(self.preprint)
+    def test_serialize_preprint(self):
+        res = serialize_preprint(self.preprint)
 
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
+        assert set(gn['@type'] for gn in res['@graph']) == {'creator', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'preprint', 'workrelation', 'creativework'}
 
-        nodes = dict(enumerate(res))
+        nodes = dict(enumerate(res['@graph']))
         preprint = nodes.pop(next(k for k, v in iter(nodes.items()) if v['@type'] == 'preprint'))
+        assert res['central_node_id'] == preprint['@id']
         assert preprint['title'] == self.preprint.title
         assert preprint['description'] == self.preprint.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.is_public or self.preprint.is_preprint_orphan)
@@ -1994,14 +1995,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
+            'name': 'BoJack Horseman',
+            'given_name': 'BoJack',
+            'family_name': 'Horseman',
         }, {
             '@type': 'person',
-            'given_name': self.user.given_name,
-            'family_name': self.user.family_name,
-        }, {
-            '@type': 'person',
+            'name': self.preprint.creator.fullname,
             'given_name': self.preprint.creator.given_name,
             'family_name': self.preprint.creator.family_name,
         }], key=lambda x: x['given_name'])
@@ -2027,22 +2026,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        contributors = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'contributor']
-        assert contributors == [{
-            '@id': contributors[0]['@id'],
-            '@type': 'contributor',
-            'cited_as': u'{}'.format(self.user.fullname),
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }]
-
         agentidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'agentidentifier'}
-        assert agentidentifiers == set([
-            'mailto:' + self.user.username,
-            'mailto:' + self.preprint.creator.username,
-            self.user.profile_image_url(),
-            self.preprint.creator.profile_image_url(),
-        ]) | set(user.absolute_url for user in self.preprint.contributors)
+        assert agentidentifiers == set(user.absolute_url for user in self.preprint.visible_contributors)
 
         related_work = next(nodes.pop(k) for k, v in nodes.items() if v['@type'] == 'creativework')
         assert set(related_work.keys()) == {'@id', '@type'}  # Empty except @id and @type
@@ -2062,35 +2047,38 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert nodes == {}
 
     def test_format_thesis(self):
-        res = format_preprint(self.thesis)
+        res = serialize_preprint(self.thesis)
 
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'thesis', 'workrelation', 'creativework'}
+        assert set(gn['@type'] for gn in res['@graph']) == {'creator', 'throughsubjects', 'subject', 'throughtags', 'tag', 'workidentifier', 'agentidentifier', 'person', 'thesis', 'workrelation', 'creativework'}
 
-        nodes = dict(enumerate(res))
+        nodes = dict(enumerate(res['@graph']))
         thesis = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'thesis'))
+        assert res['central_node_id'] == thesis['@id']
         assert thesis['title'] == self.thesis.title
         assert thesis['description'] == self.thesis.description
 
-    def test_format_preprint_date_modified_node_updated(self):
+    def test_serialize_preprint_date_modified_node_updated(self):
         self.preprint.save()
-        res = format_preprint(self.preprint)
-        nodes = dict(enumerate(res))
+        res = serialize_preprint(self.preprint)
+        nodes = dict(enumerate(res['@graph']))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert res['central_node_id'] == preprint['@id']
         assert preprint['date_updated'] == self.preprint.modified.isoformat()
 
-    def test_format_preprint_nones(self):
+    def test_serialize_preprint_nones(self):
         self.preprint.tags.clear()
         self.preprint.date_published = None
         self.preprint.article_doi = None
         self.preprint.set_subjects([], auth=Auth(self.preprint.creator))
 
-        res = format_preprint(self.preprint)
+        res = serialize_preprint(self.preprint)
 
         assert self.preprint.provider != 'osf'
-        assert set(gn['@type'] for gn in res) == {'creator', 'contributor', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
+        assert set(gn['@type'] for gn in res['@graph']) == {'creator', 'workidentifier', 'agentidentifier', 'person', 'preprint'}
 
-        nodes = dict(enumerate(res))
+        nodes = dict(enumerate(res['@graph']))
         preprint = nodes.pop(next(k for k, v in nodes.items() if v['@type'] == 'preprint'))
+        assert res['central_node_id'] == preprint['@id']
         assert preprint['title'] == self.preprint.title
         assert preprint['description'] == self.preprint.description
         assert preprint['is_deleted'] == (not self.preprint.is_published or not self.preprint.is_public or self.preprint.is_preprint_orphan or (self.preprint.deleted or False))
@@ -2100,14 +2088,12 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         people = sorted([nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'person'], key=lambda x: x['given_name'])
         expected_people = sorted([{
             '@type': 'person',
-            'given_name': u'BoJack',
-            'family_name': u'Horseman',
+            'name': 'BoJack Horseman',
+            'given_name': 'BoJack',
+            'family_name': 'Horseman',
         }, {
             '@type': 'person',
-            'given_name': self.user.given_name,
-            'family_name': self.user.family_name,
-        }, {
-            '@type': 'person',
+            'name': self.preprint.creator.fullname,
             'given_name': self.preprint.creator.given_name,
             'family_name': self.preprint.creator.family_name,
         }], key=lambda x: x['given_name'])
@@ -2133,22 +2119,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
         }]
 
-        contributors = [nodes.pop(k) for k, v in list(nodes.items()) if v['@type'] == 'contributor']
-        assert contributors == [{
-            '@id': contributors[0]['@id'],
-            '@type': 'contributor',
-            'cited_as': self.user.fullname,
-            'agent': {'@id': [p['@id'] for p in people if p['given_name'] == self.user.given_name][0], '@type': 'person'},
-            'creative_work': {'@id': preprint['@id'], '@type': preprint['@type']},
-        }]
-
         agentidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'agentidentifier'}
-        assert agentidentifiers == set([
-            'mailto:' + self.user.username,
-            'mailto:' + self.preprint.creator.username,
-            self.user.profile_image_url(),
-            self.preprint.creator.profile_image_url(),
-        ]) | set(user.absolute_url for user in self.preprint.contributors)
+        assert agentidentifiers == set(user.absolute_url for user in self.preprint.visible_contributors)
 
         workidentifiers = {nodes.pop(k)['uri'] for k, v in list(nodes.items()) if v['@type'] == 'workidentifier'}
         # URLs should *always* be osf.io/guid/
@@ -2156,7 +2128,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
 
         assert nodes == {}
 
-    def test_format_preprint_is_deleted(self):
+    def test_serialize_preprint_is_deleted(self):
         self.file = OsfStorageFile.create(
             target=self.preprint,
             path='/panda.txt',
@@ -2182,22 +2154,23 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
             orig_val = getattr(target, key.split('.')[-1])
             setattr(target, key.split('.')[-1], value)
 
-            res = format_preprint(self.preprint)
+            res = serialize_preprint(self.preprint)
 
-            preprint = next(v for v in res if v['@type'] == 'preprint')
+            preprint = next(v for v in res['@graph'] if v['@type'] == 'preprint')
+            assert res['central_node_id'] == preprint['@id']
             assert preprint['is_deleted'] is is_deleted
 
             setattr(target, key.split('.')[-1], orig_val)
 
-    def test_format_preprint_is_deleted_true_if_qatest_tag_is_added(self):
-        res = format_preprint(self.preprint)
-        preprint = next(v for v in res if v['@type'] == 'preprint')
+    def test_serialize_preprint_is_deleted_true_if_qatest_tag_is_added(self):
+        res = serialize_preprint(self.preprint)
+        preprint = next(v for v in res['@graph'] if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is False
 
         self.preprint.add_tag('qatest', auth=self.auth, save=True)
 
-        res = format_preprint(self.preprint)
-        preprint = next(v for v in res if v['@type'] == 'preprint')
+        res = serialize_preprint(self.preprint)
+        preprint = next(v for v in res['@graph'] if v['@type'] == 'preprint')
         assert preprint['is_deleted'] is True
 
     def test_unregistered_users_guids(self):
@@ -2213,7 +2186,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         user.save()
 
         node = format_user(user)
-        assert {x.attrs['uri'] for x in node.get_related()} == {'fake-orcid', user.absolute_url, user.profile_image_url()}
+        assert {x.attrs['uri'] for x in node.get_related()} == {'fake-orcid', user.absolute_url}
 
     def test_unverified_orcid(self):
         user = UserFactory.build(is_registered=True)
@@ -2221,7 +2194,7 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         user.save()
 
         node = format_user(user)
-        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url, user.profile_image_url()}
+        assert {x.attrs['uri'] for x in node.get_related()} == {user.absolute_url}
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):

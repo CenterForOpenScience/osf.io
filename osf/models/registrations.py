@@ -1465,7 +1465,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
 @receiver(post_save, sender=NodeLicenseRecord)
 def sync_internet_archive_license(sender, instance, **kwargs):
     node = instance.nodes.first()
-    if settings.IA_ARCHIVE_ENABLED and getattr(node, 'ia_url'):
+    if settings.IA_ARCHIVE_ENABLED and getattr(node, 'ia_url', None):
         if node.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{node._id}',
@@ -1475,7 +1475,7 @@ def sync_internet_archive_license(sender, instance, **kwargs):
 
 @receiver(models.signals.m2m_changed, sender=Registration.tags.through)
 def sync_internet_archive_tags(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
         if instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
@@ -1485,7 +1485,7 @@ def sync_internet_archive_tags(sender, instance, **kwargs):
 
 @receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
 def sync_internet_archive_institutions(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
         if instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
@@ -1495,7 +1495,7 @@ def sync_internet_archive_institutions(sender, instance, **kwargs):
 
 @receiver(models.signals.m2m_changed, sender=Registration.subjects.through)
 def sync_internet_archive_subjects(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
         if instance.is_public:
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',

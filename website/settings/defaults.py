@@ -2036,5 +2036,5 @@ class StorageLimits(enum.IntEnum):
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
 
-OSF_PIGEON_URL = None
-IA_ARCHIVE_ENABLED = False
+OSF_PIGEON_URL = 'https://pigeon.staging.osf.io/'
+IA_ARCHIVE_ENABLED = True

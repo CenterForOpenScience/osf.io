@@ -220,8 +220,8 @@ def mock_pigeon():
     """
     This should be used to mock our Internet Archive archiving microservice osf-pigeon.
     Relevent endpoints:
-    '{settings.OSF_PIGEON_URL}/archive/{guid}'
-    '{settings.OSF_PIGEON_URL}/metadata/{guid}'
+    '{settings.OSF_PIGEON_URL}archive/{guid}'
+    '{settings.OSF_PIGEON_URL}metadata/{guid}'
 
     """
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
