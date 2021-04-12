@@ -1,21 +1,25 @@
 # Translations template for PROJECT.
-# Copyright (C) 2020 ORGANIZATION
+# Copyright (C) 2021 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-11-23 09:25+0000\n"
+"POT-Creation-Date: 2021-03-16 09:33+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.7.0\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: addons/jupyterhub/static/files.js:93
+msgid "Launch"
+msgstr ""
 
 #: addons/twofactor/static/twoFactorUserConfig.js:148
 #: addons/twofactor/static/twoFactorUserConfig.js:190
@@ -201,10 +205,6 @@ msgstr ""
 msgid "Autocomplete"
 msgstr ""
 
-#: addons/jupyterhub/static/files.js:92
-msgid "Launch"
-msgstr ""
-
 #: admin/static/js/collection_providers/collectionProviders.js:9
 msgid "Hide Form"
 msgstr ""
@@ -229,7 +229,7 @@ msgid ""
 msgstr ""
 
 #: admin/static/js/rdm_addons/rdm-addons-page.js:67
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:436
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:445
 msgid "Type the following to continue: <strong>%1$s</strong><br><br>"
 msgstr ""
 
@@ -282,7 +282,7 @@ msgstr ""
 #: admin/static/js/rdm_addons/dataverse/dataverseRdmConfig.js:155
 #: admin/static/js/rdm_addons/figshare/rdm-cfg.js:34
 #: admin/static/js/rdm_addons/s3/s3RdmConfig.js:124
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:452
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:461
 #: website/static/js/addonSettings.js:130
 #: website/static/js/folderPickerNodeConfig.js:562
 msgid "Disconnect"
@@ -437,48 +437,52 @@ msgid ""
 "account."
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:83
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:84
 msgid "Are you sure you want to change institutional storage?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:84
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:85
 msgid ""
 "<p>The previous storage will no longer be available to all contributors "
 "on the project.</p>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:88
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:89
 #: website/static/js/folderPickerNodeConfig.js:100
 #: website/static/js/folderPickerNodeConfig.js:102
 #: website/static/js/folderPickerNodeConfig.js:594
 msgid "Change"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:305
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:537
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:672
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:314
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:546
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:681
 msgid "Some errors occurred"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:352
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:361
 msgid "Institutional Storage set successfully"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:432
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:441
 #: website/static/js/addonSettings.js:118
 msgid "Disconnect Account?"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:434
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:443
 msgid ""
 "Are you sure you want to disconnect the %1$s account "
 "<strong>%2$s</strong>?<br>"
 msgstr ""
 
-#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:435
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:444
 msgid ""
 "This will revoke access to %1$s for all projects using this "
 "account.<br><br>"
+msgstr ""
+
+#: admin/static/vendor/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.min.js:8
+msgid "'"
 msgstr ""
 
 #: scripts/translations/messages_addonsJson.js:3
@@ -1539,6 +1543,75 @@ msgstr ""
 msgid ""
 "\n"
 "\n"
+"<h3>Oracle Cloud Infrastructure Object Storage Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Permissions</td>\n"
+"                <td>Making a GakuNin RDM project public or private is "
+"independent of making an Oracle Cloud Infrastructure Object Storage "
+"bucket public or private. The GakuNin RDM does not alter the permissions "
+"of linked Oracle Cloud Infrastructure Object Storage buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The Oracle Cloud Infrastructure Object Storage add-on"
+" supports file versions if versioning is enabled for your Oracle Cloud "
+"Infrastructure Object Storage buckets.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>Adding/updating files in the project via GakuNin RDM "
+"will be reflected in Oracle Cloud Infrastructure Object Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"success\">\n"
+"                <td>Delete files</td>\n"
+"                <td>Files deleted via GakuNin RDM will be deleted in "
+"Oracle Cloud Infrastructure Object Storage.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Logs</td>\n"
+"                <td>The GakuNin RDM keeps track of changes you make to "
+"your Oracle Cloud Infrastructure Object Storage buckets through the "
+"GakuNin RDM, but not for changes made using Oracle Cloud Infrastructure "
+"Object Storage directly.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component does not copy Oracle "
+"Cloud Infrastructure Object Storage authorization unless the user forking"
+" the project is the same user who authorized the Oracle Cloud "
+"Infrastructure Object Storage add-on in the source project being "
+"forked.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
+#: scripts/translations/messages_addonsJson.js:39
+msgid ""
+"\n"
+"\n"
 "<h3>WEKO Add-on Terms</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
@@ -1588,7 +1661,7 @@ msgid ""
 "</ul>\n"
 msgstr ""
 
-#: scripts/translations/messages_addonsJson.js:39
+#: scripts/translations/messages_addonsJson.js:41
 msgid ""
 "\n"
 "\n"
@@ -1650,7 +1723,7 @@ msgid ""
 "</ul>\n"
 msgstr ""
 
-#: scripts/translations/messages_addonsJson.js:41
+#: scripts/translations/messages_addonsJson.js:43
 msgid ""
 "\n"
 "\n"
@@ -6759,3 +6832,42 @@ msgstr ""
 #: website/static/js/pages/wiki-edit-page.js:110
 msgid "Could not GET wiki menu pages"
 msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/config/AM_HTMLorMML-full.js:55
+#: website/static/vendor/bower_components/MathJax/config/Accessible-full.js:77
+#: website/static/vendor/bower_components/MathJax/config/MML_HTMLorMML-full.js:55
+#: website/static/vendor/bower_components/MathJax/config/TeX-AMS-MML_HTMLorMML-full.js:69
+#: website/static/vendor/bower_components/MathJax/config/TeX-MML-AM_HTMLorMML-full.js:75
+#: website/static/vendor/bower_components/MathJax/jax/output/CommonHTML/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/HTML-CSS/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/NativeMML/jax.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/SVG/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/CommonHTML/autoload/mglyph.js:55
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/HTML-CSS/autoload/mglyph.js:47
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/HTML-CSS/autoload/mglyph.js:66
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/NativeMML/jax.js:201
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/SVG/autoload/mglyph.js:79
+msgid "MathML"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/extensions/HelpDialog.js:19
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/HelpDialog.js:165
+msgid "HelpDialog"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/MathMenu.js:1084
+msgid "CloseAboutDialog"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/MathMenu.js:1182
+msgid "NoOriginalForm"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:82
+msgid "UnknownNodeType"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:345
+msgid "CantCreateXMLParser"
+msgstr ""
+

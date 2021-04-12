@@ -14,5 +14,33 @@
                            {"name": "RDM Minio",
                            "host": "minio.rdm.nii.ac.jp"}
                            ],
+    "hostTemplate": "namespace.compat.objectstorage.region.oraclecloud.com",
+    "namespaceIndex": 0,
+    "regionIndex": 3,
+    "regions": [
+        {"id": "ap-sydney-1", "optionsText": "Sydney, Australia", "optionsTextJa": "シドニー(オーストラリア)"},
+        {"id": "ap-melbourne-1", "optionsText": "Melbourne, Australia", "optionsTextJa": "メルボルン(オーストラリア)"},
+        {"id": "sa-saopaulo-1", "optionsText": "Sao Paulo, Brazil", "optionsTextJa": "サンパウロ(ブラジル)"},
+        {"id": "ca-montreal-1", "optionsText": "Montreal, Canada", "optionsTextJa": "モントリオール(カナダ)"},
+        {"id": "ca-toronto-1", "optionsText": "Toronto, Canada", "optionsTextJa": "トロント(カナダ)"},
+        {"id": "sa-santiago-1", "optionsText": "Santiago, Chile", "optionsTextJa": "サンティエゴ(チリ)"},
+        {"id": "eu-frankfurt-1", "optionsText": "Frankfurt, Germany", "optionsTextJa": "フランクフルト(ドイツ)"},
+        {"id": "ap-hyderabad-1", "optionsText": "Hyderabad, India", "optionsTextJa": "ハイデラバード(インド)"},
+        {"id": "ap-mumbai-1", "optionsText": "Mumbai, India", "optionsTextJa": "ムンバイ(インド)"},
+        {"id": "ap-osaka-1", "optionsText": "Osaka, Japan", "optionsTextJa": "大阪(日本)"},
+        {"id": "ap-tokyo-1", "optionsText": "Tokyo, Japan", "optionsTextJa": "東京(日本)"},
+        {"id": "eu-amsterdam-1", "optionsText": "Amsterdam, Netherlands", "optionsTextJa": "アムステルダム(オランダ)"},
+        {"id": "me-jeddah-1", "optionsText": "Jeddah, Saudi Arabia", "optionsTextJa": "ジッダ(サウジアラビア)"},
+        {"id": "ap-seoul-1", "optionsText": "Seoul, South Korea", "optionsTextJa": "ソウル(韓国)"},
+        {"id": "ap-chuncheon-1", "optionsText": "Chuncheon, South Korea", "optionsTextJa": "春川(韓国)"},
+        {"id": "eu-zurich-1", "optionsText": "Zurich, Switzerland", "optionsTextJa": "チューリッヒ(スイス)"},
+        {"id": "me-dubai-1", "optionsText": "Dubai, UAE", "optionsTextJa": "ドバイ(UAE)"},
+        {"id": "uk-london-1", "optionsText": "London, United Kingdom", "optionsTextJa": "ロンドン(英国)"},
+        {"id": "uk-cardiff-1", "optionsText": "Newport, United Kingdom", "optionsTextJa": "ニューポート(英国)"},
+        {"id": "us-ashburn-1", "optionsText": "Ashburn, VA", "optionsTextJa": "アッシュバーン(米国)"},
+        {"id": "us-phoenix-1", "optionsText": "Phoenix, AZ ", "optionsTextJa": "フェニックス(米国)"},
+        {"id": "us-sanjose-1", "optionsText": "San Jose, CA ", "optionsTextJa": "サンノゼ(米国)"}
+    ],
+    "regionDefault": "ap-tokyo-1",
     "encryptUploads": true
 }
