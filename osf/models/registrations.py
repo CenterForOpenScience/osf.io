@@ -61,6 +61,10 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
+from framework.celery_tasks import send_to_pigeon
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+
+
 from osf.utils.requests import requests_retry_session
 
 import osf.utils.notifications as notify
@@ -682,9 +686,6 @@ class Registration(AbstractNode):
 
         self._write_registration_action(from_state, to_state, initiated_by, comment)
         self.moderation_state = to_state.db_name
-
-        if self.moderation_state is RegistrationModerationStates.ACCEPTED:
-            signals.registration_to_accepted.send(self)
         self.save()
 
     def _write_registration_action(self, from_state, to_state, initiated_by, comment):
@@ -1465,11 +1466,14 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
             'moderation_state'
         }.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
-        if current_fields and instance.is_public:
+        if current_fields and (instance.is_public or current_fields.get('moderation_state') ==  RegistrationModerationStates.WITHDRAWN.db_name):
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
             )
+    elif settings.IA_ARCHIVE_ENABLED:
+        enqueue_postcommit_task(send_to_pigeon, (instance._id,), {}, celery=True)
+
 
 
 @receiver(post_save, sender=NodeLicenseRecord)

@@ -15,4 +15,3 @@ after_create_registration = signals.signal('post-create-registration')
 archive_callback = signals.signal('archive-callback')
 
 privacy_set_public = signals.signal('privacy_set_public')
-registration_to_accepted = signals.signal('registration_to_accepted')

@@ -15,7 +15,6 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website import settings as osf_settings
 from website import mails
-
 from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,

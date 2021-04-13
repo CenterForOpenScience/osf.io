@@ -10,10 +10,6 @@ from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
 
-from osf.utils.requests import requests_retry_session
-
-from website import settings
-
 @project_signals.after_create_registration.connect
 def after_register(src, dst, user):
     """Blinker listener for registration initiations. Enqueqes a chain
@@ -76,9 +72,3 @@ def archive_fail(dst, errors):
         dst.root.registered_user,
         errors
     )
-
-
-@project_signals.registration_to_accepted.connect
-def send_to_pigeon(node):
-    if node.type == 'osf.registration' and settings.IA_ARCHIVE_ENABLED:
-        requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{node._id}')
