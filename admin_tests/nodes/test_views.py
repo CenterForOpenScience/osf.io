@@ -290,7 +290,9 @@ class TestNodeReindex(AdminTestCase):
                     view.delete(self.request)
                     data = json.loads(rsps.calls[-1].request.body.decode())
 
-                    assert data['data']['attributes']['data']['@graph'][0]['creative_work']['@type'] == 'project'
+                    share_graph = data['data']['attributes']['data']['@graph']
+                    identifier_node = next(n for n in share_graph if n['@type'] == 'workidentifier')
+                    assert identifier_node['creative_work']['@type'] == 'project'
                     nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reindex_registration_share(self):

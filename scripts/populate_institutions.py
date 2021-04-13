@@ -1659,6 +1659,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'umd',
+                'name': 'University of Maryland [Test]',
+                'description': 'Here goes the description of your institution.',
+                'banner_name': 'umd-banner.png',
+                'logo_name': 'umd-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': ['umd.edu'],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'ugent',
                 'name': 'Universiteit Gent [Test]',
                 'description': None,

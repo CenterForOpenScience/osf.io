@@ -22,6 +22,7 @@ from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from website.util import api_v2_url
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
+from website.project import signals
 
 from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
@@ -123,7 +124,7 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
-    # A dictrionary of key: value pairs to store additional metadata defined by third-party sources
+    # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
@@ -315,26 +316,33 @@ class Registration(AbstractNode):
 
         return provider_supported_metadata
 
-    def update_provider_specific_metadata(self, values):
+    def update_provider_specific_metadata(self, updated_values):
         """Updates additional_metadata fields supported by the provider.
 
         Fields listed in values that are not supported by the current provider will be ignored.
         Fields supported by the provider that are not listed in values will not be altered.
         """
         if not self.provider or not self.provider.additional_metadata_fields:
-            return
+            raise ValueError('This registration does not support provider-specific metadata')
 
         if not self.additional_metadata:
             self.additional_metadata = {}
 
+        updated_fields = {entry['field_name'] for entry in updated_values}
         provider_supported_fields = {
             entry['field_name'] for entry in self.provider.additional_metadata_fields
         }
-        for entry in values:
+        unsupported_fields = updated_fields - provider_supported_fields
+        if unsupported_fields:
+            raise ValueError(
+                'The provider for this registration does not support some of '
+                f'the provided fields: {unsupported_fields}'
+            )
+
+        for entry in updated_values:
             key = entry['field_name']
             value = entry['field_value']
-            if key in provider_supported_fields:
-                self.additional_metadata[key] = value
+            self.additional_metadata[key] = value
         self.save()
 
     def can_view(self, auth):
@@ -804,7 +812,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
@@ -934,7 +942,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def url(self):
         return self.URL_TEMPLATE.format(
-            node_id=self.branched_from._id,
             draft_id=self._id
         )
 
@@ -1174,6 +1181,17 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
+
+        if node.type == 'osf.draftnode':
+            initiator_permissions = draft.contributor_set.get(user=user).permission
+            signals.contributor_added.send(
+                draft,
+                contributor=user,
+                auth=None,
+                email_template='draft_registration',
+                permissions=initiator_permissions
+            )
+
         return draft
 
     def get_root(self):

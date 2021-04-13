@@ -41,7 +41,7 @@ from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
-                        OSFUser, AbstractNode, Preprint,
+                        OSFUser, AbstractNode, DraftNode, Preprint,
                         NodeLog, DraftRegistration,
                         Guid, FileVersionUserMetadata, FileVersion)
 from osf.metrics import PreprintView, PreprintDownload
@@ -174,6 +174,10 @@ def check_access(node, auth, action, cas_resp):
     permission = permission_map.get(action, None)
     if permission is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+    # Permissions for DraftNode should be based upon the draft registration
+    if isinstance(node, DraftNode):
+        node = node.registered_draft.first()
 
     if cas_resp:
         if permission == permissions.READ:

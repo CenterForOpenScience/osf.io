@@ -10,7 +10,7 @@ from api.base.parsers import (
 )
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
-from api.draft_nodes.permissions import ContributorOnDraftRegistration
+from api.nodes.permissions import ContributorOrPublic
 from api.draft_nodes.serializers import DraftNodeSerializer, DraftNodeStorageProviderSerializer
 from api.draft_registrations.serializers import DraftRegistrationSerializer
 from api.nodes.permissions import IsAdminContributor
@@ -48,7 +48,7 @@ class DraftNodeDetail(JSONAPIBaseView, generics.RetrieveAPIView, DraftNodeMixin)
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -89,7 +89,7 @@ class DraftNodeDraftRegistrationsList(JSONAPIBaseView, generics.ListAPIView, Dra
 class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -100,7 +100,7 @@ class DraftNodeStorageProvidersList(DraftNodeMixin, NodeStorageProvidersList):
 class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOnDraftRegistration,
+        ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -111,7 +111,7 @@ class DraftNodeStorageProviderDetail(DraftNodeMixin, NodeStorageProviderDetail):
 class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOnDraftRegistration, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.TokenHasScope,
     )
     view_category = 'draft_nodes'
@@ -120,7 +120,7 @@ class DraftNodeFilesList(DraftNodeMixin, NodeFilesList):
 class DraftNodeFileDetail(DraftNodeMixin, NodeFileDetail):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.PermissionWithGetter(ContributorOnDraftRegistration, 'target'),
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'target'),
         base_permissions.TokenHasScope,
     )
 

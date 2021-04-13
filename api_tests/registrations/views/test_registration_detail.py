@@ -1303,8 +1303,7 @@ class TestProviderSpecificMetadata():
         registration.refresh_from_db()
         assert registration.additional_metadata == {'foo': 'bar'}
 
-    def test_put_unsupported_provider_metadata_is_noop(self, app, registration, moderator):
-        initial_metadata = registration.additional_metadata
+    def test_put_unsupported_provider_metadata_is_400(self, app, registration, moderator):
         payload = self.make_payload(
             registration,
             attributes={
@@ -1315,12 +1314,30 @@ class TestProviderSpecificMetadata():
         resp = app.put_json_api(
             self.get_registration_detail_url(registration),
             payload,
-            auth=moderator.auth
+            auth=moderator.auth,
+            expect_errors=True
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 400
+        assert 'fizz' in resp.json['errors'][0]['detail']
 
-        registration.refresh_from_db()
-        assert registration.additional_metadata == initial_metadata
+    def test_put_no_supported_metadata_is_400(self, app, provider, registration, moderator):
+        provider.additional_metadata_fields = None
+        provider.save()
+        payload = self.make_payload(
+            registration,
+            attributes={
+                'provider_specific_metadata': [{'field_name': 'foo', 'field_value': 'buzz'}]
+            }
+        )
+
+        resp = app.put_json_api(
+            self.get_registration_detail_url(registration),
+            payload,
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 400
+        assert 'detail' in resp.json['errors'][0]
 
     @pytest.mark.parametrize(
         'updated_fields, expected_results',
@@ -1387,11 +1404,10 @@ class TestProviderSpecificMetadata():
             self.get_registration_detail_url(registration),
             payload,
             auth=moderator.auth,
+            expect_errors=True
         )
-        assert resp.status_code == 200
-
-        registration.refresh_from_db()
-        assert registration.additional_metadata == {'foo': 'buzz', 'fizz': 'buzz'}
+        assert resp.status_code == 400
+        assert 'fizz' in resp.json['errors'][0]['detail']
 
     def test_admin_cannot_set_provider_metadata(self, app, registration, registration_admin):
         updated_metadata = [{'field_name': 'foo', 'field_value': 'buzz'}]

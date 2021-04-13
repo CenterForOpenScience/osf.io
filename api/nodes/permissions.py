@@ -6,6 +6,7 @@ from addons.base.models import BaseAddonSettings
 from osf.models import (
     AbstractNode,
     Contributor,
+    DraftNode,
     DraftRegistration,
     Institution,
     Node,
@@ -30,6 +31,8 @@ class ContributorOrPublic(permissions.BasePermission):
             obj = obj.owner
         if isinstance(obj, NodeStorageProvider):
             obj = obj.node
+        if isinstance(obj, DraftNode):
+            obj = obj.registered_draft.first()
         if isinstance(obj, dict):
             obj = obj.get('self', None)
         assert_resource_type(obj, self.acceptable_models)
