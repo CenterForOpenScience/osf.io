@@ -1,6 +1,6 @@
 {
 	"name": "EGAP Registration",
-	"version": 3,
+	"version": 4,
 	"config": {
         "hasFiles": true
     },
@@ -15,20 +15,6 @@
 					"format": "text",
 					"title": "Title of Study",
 					"description": "Provide the working title of your study.",
-					"required": true
-				},
-				{
-					"qid": "q3",
-					"nav": "EGAP Registration ID",
-					"title": "EGAP Registration ID",
-					"format": "textarea",
-					"required": true
-				},
-				{
-					"qid": "q4",
-					"nav": "Timestamp",
-					"title": "Timestamp of original registration",
-					"format": "textarea",
 					"required": true
 				},
 				{
