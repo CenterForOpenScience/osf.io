@@ -15,7 +15,7 @@ from django.core.management.base import BaseCommand
 
 @celery_app.task(name='osf.management.commands.archive_registrations_on_IA')
 def archive_registrations_on_IA(dry_run=False):
-    registrations = Registration.objects.filter(IA_url__isnull=True, is_public=True)[:100]
+    registrations = Registration.objects.filter(ia_url__isnull=True, is_public=True)[:100]
 
     logger.info(f'{registrations.count()} to be archived in batch')
 

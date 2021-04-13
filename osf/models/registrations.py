@@ -1456,7 +1456,14 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
     """
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
-        internet_archive_metadata = {'title', 'description', 'category', 'modified', 'article_doi'}.intersection(instance.get_dirty_fields().keys())
+        internet_archive_metadata = {
+            'title',
+            'description',
+            'category',
+            'modified',
+            'article_doi',
+            'moderation_state'
+        }.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
         if current_fields and instance.is_public:
             requests_retry_session().post(
