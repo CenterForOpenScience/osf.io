@@ -89,5 +89,8 @@
     "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
+  },
+  "resolutions": {
+    "font-awesome-webpack/css-loader": "1.0.1"
   }
 }
