@@ -1471,7 +1471,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
             )
-    elif settings.IA_ARCHIVE_ENABLED:
+    elif settings.IA_ARCHIVE_ENABLED and instance.is_public:
         enqueue_postcommit_task(send_to_pigeon, (instance._id,), {}, celery=True)
 
 
