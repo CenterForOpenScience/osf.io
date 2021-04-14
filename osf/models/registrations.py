@@ -1466,7 +1466,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
             'moderation_state'
         }.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
-        if current_fields and (instance.is_public or current_fields.get('moderation_state') ==  RegistrationModerationStates.WITHDRAWN.db_name):
+        if current_fields and (instance.is_public or instance.moderation_state ==  RegistrationModerationStates.WITHDRAWN.db_name):
             requests_retry_session().post(
                 f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
                 json=current_fields
