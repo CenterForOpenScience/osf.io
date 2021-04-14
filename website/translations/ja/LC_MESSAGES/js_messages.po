@@ -3198,7 +3198,7 @@ msgstr "無効化リクエストをキャンセルする"
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "export request."
-msgstr "GakuNin RDM管理者から、エクスポート要求を確認するためにすぐに連絡があります。"
+msgstr "GakuNin RDM管理者から、エクスポートリクエストを確認するためにすぐに連絡があります。"
 
 #: website/static/js/accountSettings.js:520
 msgid "Export request failed. Please contact %1$s if the problem persists."
