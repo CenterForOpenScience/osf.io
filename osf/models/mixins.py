@@ -2096,21 +2096,20 @@ class SpamOverrideMixin(SpamMixin):
         if is_spam:
             self._check_spam_user(user)
 
-        # Auto-banning for IP blocks
-        if settings.SPAM_AUTOBAN_IP_BLOCK and is_spam and self.spam_data.get('oopspam_data', None):
-            if self.spam_data['oopspam_data']['Details']['isIPBlocked']:
-                self.suspend_spam_user(user)
-
         return is_spam
 
     def _check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ) or (
+            settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
+            and self.spam_data['oopspam_data']['Details']['isIPBlocked']
         ):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user):
+        self.set_privacy('private', log=False, save=False)
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
