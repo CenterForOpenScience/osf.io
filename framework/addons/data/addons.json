@@ -160,12 +160,12 @@
                 "text": "OneDrive files and their versions can be viewed/downloaded via GakuNin RDM.  OneNote files are unexportable and cannot be downloaded or viewed."
             },
             "Add / update files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in OneDrive."
             },
             "Delete files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
             },
             "Logs": {
                 "status": "partial",
