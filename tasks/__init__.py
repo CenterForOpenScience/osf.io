@@ -29,7 +29,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
-CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
 NO_TESTS_COLLECTED = 5
 ns = Collection()
 
@@ -305,21 +304,21 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
         ctx.run(
-            pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+            pip_install(req_file),
             echo=True
         )
     else:
         if dev:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'dev.txt')
             ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(req_file),
                 echo=True
             )
 
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(req_file),
                 echo=True
             )
     # fix URITemplate name conflict h/t @github
@@ -582,12 +581,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = (
-                        'pip3 wheel --use-deprecated=legacy-resolver '
-                        '--find-links={} -r {} --wheel-dir={} -c {} '
-                    ).format(
-                        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
-                    )
+                    cmd = ('pip3 wheel --find-links={} -r {} --wheel-dir={} ').format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
                     ctx.run(cmd, pty=pty)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -595,12 +589,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = (
-        'pip3 wheel --use-deprecated=legacy-resolver '
-        '--find-links={} -r {} --wheel-dir={} -c {} '
-    ).format(
-        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
-    )
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} '.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     ctx.run(cmd, pty=pty)
 
 
@@ -614,7 +603,7 @@ def addon_requirements(ctx):
         if os.path.isdir(path) and os.path.isfile(requirements_file):
             print('Installing requirements for {0}'.format(directory))
             ctx.run(
-                pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(requirements_file),
                 echo=True
             )
 
