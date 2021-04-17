@@ -9,7 +9,7 @@ var ChangeMessageMixin = require('js/changeMessage');
 var SaveManager = require('js/saveManager');
 
 var SHORT_NAME = 'binderhub';
-var logPrefix = `[${SHORT_NAME}] `;
+var logPrefix = '[' + SHORT_NAME + '] ';
 
 
 function NodeSettings() {
@@ -46,5 +46,5 @@ function NodeSettings() {
 $.extend(NodeSettings.prototype, ChangeMessageMixin.prototype);
 
 var settings = new NodeSettings();
-osfHelpers.applyBindings(settings, `#${SHORT_NAME}Scope`);
+osfHelpers.applyBindings(settings, '#' + SHORT_NAME + 'Scope');
 settings.loadConfig();
