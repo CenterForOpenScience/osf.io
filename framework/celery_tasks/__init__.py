@@ -3,11 +3,12 @@
 from celery import Celery
 from celery.utils.log import get_task_logger
 from osf.utils.requests import requests_retry_session
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 
 from raven import Client
 from raven.contrib.celery import register_signal
 
-from website.settings import SENTRY_DSN, VERSION, CeleryConfig, IA_ARCHIVE_ENABLED, OSF_PIGEON_URL
+from website.settings import SENTRY_DSN, VERSION, CeleryConfig, OSF_PIGEON_URL
 
 app = Celery()
 app.config_from_object(CeleryConfig)
@@ -38,5 +39,27 @@ def error_handler(task_id, task_name):
 
 
 @app.task(max_retries=5, default_retry_delay=60)
-def send_to_pigeon(node_id):
+def _archive_to_ia(node_id):
     requests_retry_session().post(f'{OSF_PIGEON_URL}archive/{node_id}')
+
+def archive_to_ia(node):
+    enqueue_postcommit_task(_archive_to_ia, (node._id,), {}, celery=True)
+
+@app.task(max_retries=5, default_retry_delay=60)
+def _update_ia_metadata(node_id, data):
+    requests_retry_session().post(f'{OSF_PIGEON_URL}metadata/{node_id}', json=data)
+
+def update_ia_metadata(node, data):
+    """
+    This debounces/throttles requests by grabbing a pending task and overriding it instead of making a new one every
+    pre-commit m2m change.
+    """
+    if getattr(node, 'ia_url', None) and node.is_public:
+        task = get_task_from_postcommit_queue(
+            'framework.celery_tasks._update_ia_metadata',
+            predicate=lambda task: task.args[0] == node._id and data.keys() == task.args[1].keys()
+        )
+        if task:
+            task.args = (node._id, data, )
+        else:
+            enqueue_postcommit_task(_update_ia_metadata, (node._id, data), {}, celery=True)

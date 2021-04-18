@@ -15,7 +15,12 @@ from django.core.management.base import BaseCommand
 
 @celery_app.task(name='osf.management.commands.archive_registrations_on_IA')
 def archive_registrations_on_IA(dry_run=False):
-    registrations = Registration.objects.filter(ia_url__isnull=True, is_public=True)[:100]
+    registrations = Registration.objects.filter(
+        ia_url__isnull=True,
+        is_public=True
+    ).exclude(
+        moderation_state='withdrawn',
+    )[:100]
 
     logger.info(f'{registrations.count()} to be archived in batch')
 
@@ -32,7 +37,7 @@ class Command(BaseCommand):
     osf-pigeon
     """
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

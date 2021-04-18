@@ -61,11 +61,7 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
-from framework.celery_tasks import send_to_pigeon
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-
-
-from osf.utils.requests import requests_retry_session
+from framework.celery_tasks import archive_to_ia, update_ia_metadata
 
 import osf.utils.notifications as notify
 
@@ -1456,7 +1452,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
     `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
     """
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url:
+    if settings.IA_ARCHIVE_ENABLED and instance.ia_url and instance.is_public:
         internet_archive_metadata = {
             'title',
             'description',
@@ -1466,52 +1462,38 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
             'moderation_state'
         }.intersection(instance.get_dirty_fields().keys())
         current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
-        if current_fields and (instance.is_public or instance.moderation_state ==  RegistrationModerationStates.WITHDRAWN.db_name):
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
-                json=current_fields
-            )
+        if current_fields:
+            update_ia_metadata(instance, current_fields)
     elif settings.IA_ARCHIVE_ENABLED and instance.is_public:
-        enqueue_postcommit_task(send_to_pigeon, (instance._id,), {}, celery=True)
-
+        archive_to_ia(instance)
 
 
 @receiver(post_save, sender=NodeLicenseRecord)
 def sync_internet_archive_license(sender, instance, **kwargs):
-    node = instance.nodes.first()
-    if settings.IA_ARCHIVE_ENABLED and getattr(node, 'ia_url', None):
-        if node.is_public:
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{node._id}',
-                json={'license': instance.node_license.url}
-            )
+    if settings.IA_ARCHIVE_ENABLED:
+        update_ia_metadata(instance.nodes.first(), {'license': instance.node_license.url})
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.tags.through)
-def sync_internet_archive_tags(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
-        if instance.is_public:
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
-                json={'tags': list(instance.tags.all().values_list('name', flat=True))}
-            )
+def sync_internet_archive_tags(sender, instance, action, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED:
+        update_ia_metadata(instance, {'tags': list(instance.tags.all().values_list('name', flat=True))})
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
-def sync_internet_archive_institutions(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
-        if instance.is_public:
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
-                json={'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))}
-            )
+def sync_internet_archive_institutions(sender, instance, action, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED:
+        institutions = list(instance.affiliated_institutions.all().values_list('name', flat=True))
+        update_ia_metadata(
+            instance,
+            {
+                'affiliated_institutions': institutions
+            }
+        )
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.subjects.through)
-def sync_internet_archive_subjects(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED and getattr(instance, 'ia_url', None):
-        if instance.is_public:
-            requests_retry_session().post(
-                f'{settings.OSF_PIGEON_URL}metadata/{instance._id}',
-                json={'subjects': list(instance.subjects.all().values_list('text', flat=True))}
-            )
+def sync_internet_archive_subjects(sender, instance, action, **kwargs):
+    if settings.IA_ARCHIVE_ENABLED:
+        subjects = list(instance.subjects.all().values_list('text', flat=True))
+        update_ia_metadata(instance, {'subjects': subjects})
