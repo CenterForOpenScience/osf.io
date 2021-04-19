@@ -31,6 +31,7 @@ from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.ociinstitutions.models import OCIInstitutionsProvider
 from addons.ociinstitutions import settings as ociinstitutions_settings
+from addons.onedrive.client import OneDriveClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
@@ -49,6 +50,7 @@ enabled_providers_forinstitutions_list = [
     'nextcloudinstitutions',
     's3compatinstitutions',
     'ociinstitutions',
+    'onedrivebusiness',
 ]
 
 enabled_providers_list = [
@@ -57,7 +59,7 @@ enabled_providers_list = [
 ]
 enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
-no_storage_name_providers = ['osfstorage']
+no_storage_name_providers = ['osfstorage', 'onedrivebusiness']
 
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
@@ -523,6 +525,48 @@ def test_dropboxbusiness_connection(institution):
             'message': 'Invalid tokens.'
         }, http_status.HTTP_400_BAD_REQUEST)
 
+def get_onedrivebusiness_folder_id(client, folder_path, parent='root'):
+    folder_path_parts = folder_path.rstrip('/').split('/', maxsplit=1)
+    folder_name = folder_path_parts[0]
+    folders = [f for f in client.folders(parent) if f['name'] == folder_name]
+    if len(folders) == 0:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    if len(folder_path_parts) == 1:
+        return folders[0]['id']
+    return get_onedrivebusiness_folder_id(
+        client, folder_path_parts[1], parent=folders[0]['id']
+    )
+
+def validate_onedrivebusiness_connection(institution_id, folder_id_or_path):
+    validation_result = oauth_validation('onedrivebusiness', institution_id, folder_id_or_path)
+    if isinstance(validation_result, tuple):
+        return validation_result, None
+
+    access_token = ExternalAccountTemporary.objects.get(
+        _id=institution_id, provider='onedrivebusiness'
+    ).oauth_key
+    client = OneDriveClient(access_token)
+
+    if folder_id_or_path.startswith('/'):
+        try:
+            folder_id = get_onedrivebusiness_folder_id(client, folder_id_or_path[1:])
+        except HTTPError:
+            return ({
+                'message': 'Invalid folder Path.'
+            }, http_status.HTTP_400_BAD_REQUEST), None
+    else:
+        try:
+            client.folders(folder_id_or_path)
+            folder_id = folder_id_or_path
+        except HTTPError:
+            return ({
+                'message': 'Invalid folder ID.'
+            }, http_status.HTTP_400_BAD_REQUEST), None
+
+    return ({
+        'message': 'Credentials are valid'
+    }, http_status.HTTP_200_OK), folder_id
+
 def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
@@ -785,6 +829,23 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
 
     return ({
         'message': 'Saved credentials successfully!!'
+    }, http_status.HTTP_200_OK)
+
+def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id_or_path):
+    institution_id = user.affiliated_institutions.first()._id
+
+    test_connection_result, folder_id = validate_onedrivebusiness_connection(institution_id, folder_id_or_path)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    account = transfer_to_external_account(user, institution_id, 'onedrivebusiness')
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    wb_settings['root_folder_id'] = folder_id
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(region, account)
+
+    return ({
+        'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
 def wd_info_for_institutions(provider_name):
