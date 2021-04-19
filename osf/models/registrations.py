@@ -61,6 +61,8 @@ from osf.utils.workflows import (
 )
 
 import osf.utils.notifications as notify
+from api.share.utils import update_share
+
 
 logger = logging.getLogger(__name__)
 
@@ -128,11 +130,15 @@ class Registration(AbstractNode):
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
-    def find_failed_registrations():
-        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+    def find_failed_registrations(include_deleted=False, days_stuck=None):
+        expired_if_before = timezone.now() - (days_stuck or settings.ARCHIVE_TIMEOUT_TIMEDELTA)
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
-        stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+        stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id)
+
+        if not include_deleted:
+            stuck_regs = stuck_regs.filter(deleted__isnull=True)
+
         return stuck_regs
 
     @property
@@ -740,6 +746,52 @@ class Registration(AbstractNode):
             super(Registration, self).remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def withdraw(self):
+        self.registered_from.add_log(
+            action=NodeLog.RETRACTION_APPROVED,
+            params={
+                'node': self.registered_from._id,
+                'retraction_id': self.retraction._id,
+                'registration': self._id
+            },
+            auth=Auth(self.retraction.initiated_by),
+        )
+
+        if self.embargo_end_date or self.is_pending_embargo:
+            # Alter embargo state to make sure registration doesn't accidentally get published
+            self.embargo.state = self.retraction.REJECTED
+            self.embargo.approval_stage = (
+                SanctionStates.MODERATOR_REJECTED if self.is_moderated
+                else SanctionStates.REJECTED
+            )
+
+            self.registered_from.add_log(
+                action=NodeLog.EMBARGO_CANCELLED,
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                    'embargo_id': self.embargo._id,
+                },
+                auth=Auth(self.retraction.initiated_by),
+            )
+            self.embargo.save()
+
+        # Ensure retracted registration is public
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
+        for node in self.get_descendants_recursive(primary_only=True):
+            node.set_privacy('public', auth=None, log=False)
+            node.update_search()
+
+        # force a save before sending data to share or retraction will not be updated
+        self.set_privacy('public', auth=None, log=False)
+        self.update_search()
+        self.save()
+
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

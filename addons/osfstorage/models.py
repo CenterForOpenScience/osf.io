@@ -161,10 +161,10 @@ class OsfStorageFileNode(BaseFileNode):
             not getattr(self.target, 'is_deleted', None)
         )
 
-    def delete(self, user=None, parent=None, **kwargs):
+    def delete(self, user=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
+        return super().delete(user=user) if self._check_delete_allowed() else None
 
     def update_region_from_latest_version(self, destination_parent):
         raise NotImplementedError
@@ -383,11 +383,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 self.save()
             return True
 
-    def delete(self, user=None, parent=None, **kwargs):
+    def delete(self, user=None, **kwargs):
         from website.search import search
 
         search.update_file(self, delete=True)
-        return super(OsfStorageFile, self).delete(user, parent, **kwargs)
+        return super().delete(user, **kwargs)
 
     def save(self, skip_search=False, *args, **kwargs):
         from website.search import search

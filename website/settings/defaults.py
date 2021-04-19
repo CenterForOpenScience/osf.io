@@ -364,6 +364,7 @@ ARCHIVE_PROVIDER = 'osfstorage'
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
+STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x days are marked as deleted.
 
 ENABLE_ARCHIVER = True
 
@@ -408,6 +409,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
+        'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
@@ -649,6 +651,15 @@ class CeleryConfig:
             'update_institution_project_counts': {
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+            },
+            'delete_withdrawn_or_failed_registration_files': {
+                'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {
+                    'dry_run': False,
+                    'batch_size_withdrawn': 10,
+                    'batch_size_stuck': 10
+                }
             },
         }
 
