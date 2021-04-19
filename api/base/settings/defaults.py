@@ -53,7 +53,6 @@ AUTHENTICATION_BACKENDS = (
 # SECURITY WARNING: don't run with debug turned on in production!
 DEV_MODE = osf_settings.DEV_MODE
 DEBUG = osf_settings.DEBUG_MODE
-DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
 SESSION_COOKIE_NAME = 'api'
@@ -302,9 +301,6 @@ SELECT_FOR_UPDATE_ENABLED = True
 
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
-
-# If set to True, automated tests with extra queries will fail.
-NPLUSONE_RAISE = False
 
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
