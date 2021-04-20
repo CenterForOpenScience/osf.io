@@ -38,6 +38,7 @@ def mark_failed_registration_files_as_deleted(batch_size, dry_run=False):
         files_to_be_deleted = reg.files.all()
         logger.info(f'{"[DRY-RUN]" if dry_run else ""} There are {files_to_be_deleted.count()} files deleted from stuck registration ({reg._id})')
         for file in files_to_be_deleted:
+            if not dry_run:
                 file.delete()
 
 
