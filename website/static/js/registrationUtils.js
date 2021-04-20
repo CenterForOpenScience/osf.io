@@ -953,7 +953,7 @@ RegistrationEditor.prototype.init = function(draft) {
 
     // Set currentPage to the first page
     var pages = self.draft().pages();
-    var index = history.getState().data.page || 0;
+    var index = history.state.page || 0;
     if (index > pages.length) {
         index = 0;
     }
