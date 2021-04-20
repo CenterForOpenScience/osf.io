@@ -1228,6 +1228,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
+        draft.affiliated_institutions.set(user.affiliated_institutions.all())
         draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
 
