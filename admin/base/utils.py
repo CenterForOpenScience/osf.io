@@ -109,7 +109,7 @@ def get_nodelicense_choices():
 def get_defaultlicense_choices():
     no_default = ('', '---------')
     licenses = NodeLicense.objects.exclude(license_id='OTHER')
-    return [no_default] + [(lic.id, lic.__unicode__) for lic in licenses]
+    return [no_default] + [(lic.id, lic.__str__) for lic in licenses]
 
 def get_brand_choices():
     no_default = ('', '---------')
