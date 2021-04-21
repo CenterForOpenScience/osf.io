@@ -12,7 +12,6 @@ var moment = require('moment');
 var lodashHas = require('lodash.has');
 var lodashSet = require('lodash.set');
 var lodashIncludes = require('lodash.includes');
-var History = require('exports-loader?History!history');
 
 require('js/koHelpers');
 
@@ -810,7 +809,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
             page.active(false);
         });
         currentPage.active(true);
-        History.replaceState({page: self.pages().indexOf(currentPage)});
+        history.replaceState({page: self.pages().indexOf(currentPage)});
     });
 
     self.onLastPage = ko.computed(function() {
@@ -954,7 +953,7 @@ RegistrationEditor.prototype.init = function(draft) {
 
     // Set currentPage to the first page
     var pages = self.draft().pages();
-    var index = History.getState().data.page || 0;
+    var index = history.state.page || 0;
     if (index > pages.length) {
         index = 0;
     }
