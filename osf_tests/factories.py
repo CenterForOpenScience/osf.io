@@ -385,7 +385,7 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
-                provider=None,
+                provider=None, copy_institutions_from_creator=None,
                 *args, **kwargs):
         user = None
         if project:
@@ -408,10 +408,11 @@ class RegistrationFactory(BaseNodeFactory):
         schema = schema or get_default_metaschema()
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
+                copy_institutions=copy_institutions_from_creator in [None, True],
                 branched_from=project,
                 initator=user,
                 registration_schema=schema,
-                provider=provider
+                provider=provider,
             )
         auth = Auth(user=user)
         register = lambda: project.register_node(
@@ -551,6 +552,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
+            copy_institutions=kwargs.pop('copy_institutions', True)
         )
         if title:
             draft.title = title

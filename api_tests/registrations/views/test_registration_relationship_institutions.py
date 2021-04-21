@@ -15,7 +15,7 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
     @pytest.fixture()
     def node(self, user, write_contrib, read_contrib):
         # Overrides TestNodeRelationshipInstitutions
-        registration = RegistrationFactory(creator=user)
+        registration = RegistrationFactory(copy_institutions_from_creator=False, creator=user)
         registration.add_contributor(
             write_contrib,
             permissions=permissions.WRITE)

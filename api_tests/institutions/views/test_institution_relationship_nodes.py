@@ -414,22 +414,22 @@ class TestInstitutionRelationshipRegistrations:
 
     @pytest.fixture()
     def registration_no_owner(self):
-        return RegistrationFactory(is_public=True)
+        return RegistrationFactory(copy_institutions_from_creator=False, is_public=True)
 
     @pytest.fixture()
     def registration_no_affiliation(self, admin):
-        return RegistrationFactory(creator=admin)
+        return RegistrationFactory(copy_institutions_from_creator=False, creator=admin)
 
     @pytest.fixture()
     def registration_pending(self, admin, institution):
-        registration = RegistrationFactory(creator=admin)
+        registration = RegistrationFactory(copy_institutions_from_creator=False, creator=admin)
         registration.affiliated_institutions.add(institution)
         registration.save()
         return registration
 
     @pytest.fixture()
     def registration_public(self, admin, institution):
-        registration = RegistrationFactory(creator=admin, is_public=True)
+        registration = RegistrationFactory(copy_institutions_from_creator=False, creator=admin, is_public=True)
         registration.affiliated_institutions.add(institution)
         registration.save()
         return registration
@@ -503,7 +503,7 @@ class TestInstitutionRelationshipRegistrations:
         assert res.status_code == 403
 
         # User is admin but not affiliated
-        registration = RegistrationFactory(creator=user)
+        registration = RegistrationFactory(copy_institutions_from_creator=False, creator=user)
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration._id),
@@ -657,7 +657,7 @@ class TestInstitutionRelationshipRegistrations:
 
     def test_delete_user_is_admin_but_not_affiliated_with_inst(
             self, user, institution, app, url_institution_registrations):
-        registration = RegistrationFactory(creator=user)
+        registration = RegistrationFactory(copy_institutions_from_creator=False, creator=user)
         registration.affiliated_institutions.add(institution)
         registration.save()
         assert institution in registration.affiliated_institutions.all()

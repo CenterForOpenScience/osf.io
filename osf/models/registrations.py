@@ -1202,7 +1202,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @classmethod
-    def create_from_node(cls, user, schema, node=None, data=None, provider=None):
+    def create_from_node(cls, user, schema, node=None, data=None, provider=None, copy_institutions=True):
         if not provider:
             provider = RegistrationProvider.get_default()
 
@@ -1228,7 +1228,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.affiliated_institutions.set(user.affiliated_institutions.all())
+        if copy_institutions:
+            draft.affiliated_institutions.set(user.affiliated_institutions.all())
         draft.copy_editable_fields(node, Auth(user), save=True)
         draft.update(data)
 
