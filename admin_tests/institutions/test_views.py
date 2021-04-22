@@ -642,4 +642,3 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         response = self.view_get('order_by=eppn&status=desc')
         result = list(map(itemgetter('eppn'), response.context_data['users']))
         nt.assert_equal(result, expected)
-
