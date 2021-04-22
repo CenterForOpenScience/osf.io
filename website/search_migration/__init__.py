@@ -427,18 +427,18 @@ FROM osf_basefilenode AS F
   LEFT JOIN LATERAL (
             SELECT created, creator_id
             FROM osf_fileversion
-            INNER JOIN osf_basefilenode_versions
-            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
-            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            INNER JOIN osf_basefileversionsthrough
+            ON (osf_fileversion.id = osf_basefileversionsthrough.fileversion_id)
+            WHERE osf_basefileversionsthrough.basefilenode_id = F.id
             ORDER BY osf_fileversion.created ASC
             LIMIT 1
             ) FIRST ON TRUE
   LEFT JOIN LATERAL (
             SELECT created, creator_id
             FROM osf_fileversion
-            INNER JOIN osf_basefilenode_versions
-            ON (osf_fileversion.id = osf_basefilenode_versions.fileversion_id)
-            WHERE osf_basefilenode_versions.basefilenode_id = F.id
+            INNER JOIN osf_basefileversionsthrough
+            ON (osf_fileversion.id = osf_basefileversionsthrough.fileversion_id)
+            WHERE osf_basefileversionsthrough.basefilenode_id = F.id
             ORDER BY osf_fileversion.created DESC
             LIMIT 1
             ) LAST ON TRUE

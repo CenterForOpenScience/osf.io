@@ -49,7 +49,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
-        nt.assert_in('NG', response.content)
+        nt.assert_in('NG', response.content.decode())
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
 
     @mock.patch('admin.rdm_custom_storage_location.utils.test_owncloud_connection')
@@ -66,7 +66,7 @@ class TestSaveCredentials(AdminTestCase):
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
-        nt.assert_in('Saved credentials successfully!!', response.content)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
 
         institution_storage = Region.objects.filter(_id=self.institution._id).first()
         nt.assert_is_not_none(institution_storage)

@@ -76,6 +76,9 @@ django-celery-results==1.0.1
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.18
 pyjwe==1.0.0
+# Building wheel for cryptography 3.4.0 requires a Rust version incompatible with Docker base image.
+# Required by pyjwe and ndg-httpsclient
+cryptography==3.3.2
 jsonschema==2.6.0
 django-guardian==1.4.9
 
@@ -86,7 +89,6 @@ django-password-reset==1.0
 sendgrid-django==2.0.0
 python-redmine==2.0.2
 pyfcm==1.4.3
-#facebook-sdk==3.0.0a0
 git+https://github.com/mobolic/facebook-sdk.git@09b281b97ff3192d8d78edca393c753d11b0eb99#egg=facebook-sdk
 tweepy==3.5.0
 pandas==1.0.0
@@ -94,9 +96,11 @@ matplotlib==2.1.1
 seaborn==0.8.1
 reportlab==3.4.0
 pdfkit==0.6.1
+numpy==1.14.5
 
 # Analytics requirements
 keen==0.5.1
+maxminddb==1.5.4
 maxminddb-geolite2==2018.308
 
 # OSF models
@@ -129,3 +133,4 @@ djangorestframework-csv==2.1.0
 # I18n Support
 Babel==2.5.1
 Flask-Babel==1.0.0
+rsa==3.1.4

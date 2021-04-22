@@ -1760,6 +1760,8 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
             ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
             # timestamp_pattern create
             for data in self.request.data['data']:
+                if 'node_id' not in kwargs:
+                    continue
                 institution_id = Institution.objects.get(_id=data['id']).id
                 guid = kwargs['node_id']
                 timestampPattern, _ = RdmTimestampGrantPattern.objects.get_or_create(

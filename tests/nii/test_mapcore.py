@@ -5,7 +5,8 @@ import json
 import requests
 import string
 import random
-import urllib
+import base64
+from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 from django.utils import timezone
@@ -80,7 +81,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
         client_id = 'fake_clientid'
         entity_id = self.entity_id
         if next_url is not None:
-            state_str = (settings.MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
+            state_str = base64.b64encode((settings.MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8')).decode()
         else:
             state_str = settings.MAPCORE_AUTHCODE_MAGIC
         redirect_uri = settings.DOMAIN + web_url_for('mapcore_oauth_complete')[1:]
@@ -89,7 +90,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
                     'client_id': client_id,
                     'state': state_str}
         url = settings.MAPCORE_HOSTNAME + settings.MAPCORE_AUTHCODE_PATH
-        target = url + '?' + urllib.urlencode(next_params)
+        target = url + '?' + urlencode(next_params)
 
         params = {'next_url': next_url}
         redirect_url = mapcore_request_authcode(self.me, params)
@@ -132,7 +133,7 @@ class TestOAuthOfMAPCore(OsfTestCase):
         mock_token.return_value = (ACCESS_TOKEN, REFRESH_TOKEN)
         next_url = u'http://nexturl.example.com/\u00c3\u00c3\u00c3'
         state = settings.MAPCORE_AUTHCODE_MAGIC + next_url
-        params = {'code': 'abc', 'state': state.encode('utf-8').encode('base64')}
+        params = {'code': 'abc', 'state': base64.b64encode(state.encode('utf-8')).decode()}
         assert_equal(self.me.map_profile, None)
         # set self.me.map_profile
         ret = mapcore_receive_authcode(self.me, params)
@@ -317,7 +318,7 @@ class TestFuncOfMAPCore(OsfTestCase):
         create_group.status_code = requests.codes.ok
         create_group._content = '{"result": {"groups": [{"group_key": "fake_group_key"}]}, "status": {"error_code": 0} }'
         mock_post.return_value = create_group
-        mock_edit.return_value = create_group.json()
+        mock_edit.return_value = json.loads(create_group.content)
 
         mapcore_sync_map_new_group(self.me, self.project, use_raise=True)
         args, kwargs = mock_post.call_args

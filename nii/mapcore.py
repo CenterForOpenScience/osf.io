@@ -8,7 +8,8 @@ import logging
 import os
 import sys
 import requests
-import urllib
+import base64
+from urllib.parse import quote, urlencode
 import re
 from operator import attrgetter
 from pprint import pformat as pp
@@ -57,18 +58,18 @@ def mapcore_disable_log(level=logging.CRITICAL):
 # unicode to utf-8
 def utf8(u):
     if isinstance(u, str):
-        return u.encode('utf-8')
+        return u
     return u
 
 # utf-8 to unicode
 def utf8dec(s):
-    if isinstance(s, str):
+    if isinstance(s, bytes):
         return s.decode('utf-8')
     return s
 
 ### Do not import from scripts.populate_institutions
 def encode_uri_component(val):
-    return urllib.quote(val, safe='~()*!.\'')
+    return quote(val, safe='~()*!.\'')
 
 def add_log(action, node, user, exc, save=False):
     if node.logs.count() >= 1:
@@ -200,7 +201,7 @@ def mapcore_request_authcode(user, params):
     logger.debug(pp(params))
     next_url = params.get('next_url')
     if next_url is not None:
-        state_str = (MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8').encode('base64')
+        state_str = base64.b64encode((MAPCORE_AUTHCODE_MAGIC + next_url).encode('utf-8')).decode()
     else:
         state_str = MAPCORE_AUTHCODE_MAGIC
 
@@ -213,7 +214,7 @@ def mapcore_request_authcode(user, params):
               'client_id': MAPCORE_CLIENTID,
               'state': state_str}
 
-    target = url + '?' + urllib.urlencode(next_params)
+    target = url + '?' + urlencode(next_params)
     entity_ids = user.get_idp_entity_ids()
     if len(entity_ids) == 1:
         query = '{}/Shibboleth.sso/DS?entityID={}&target={}'.format(
@@ -277,7 +278,7 @@ def mapcore_receive_authcode(user, params):
     """
 
     if params['state'] != MAPCORE_AUTHCODE_MAGIC:
-        s = params['state'].decode('base64').decode('utf-8')
+        s = base64.b64decode(params['state']).decode()
         return re.sub('^' + MAPCORE_AUTHCODE_MAGIC, '', s)  # next_url
     return DOMAIN   # redirect to home -> will redirect to dashboard
 
@@ -296,7 +297,7 @@ def mapcore_get_accesstoken(authcode, redirect):
         'redirect_uri': redirect,
         'code': authcode
     }
-    param = urllib.urlencode(param)
+    param = urlencode(param)
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
     }
@@ -332,7 +333,7 @@ def mapcore_get_accesstoken(authcode, redirect):
 #         'grant_type': 'refresh_token',
 #         'refresh_token': user.map_profile.oauth_refresh_token
 #     }
-#     param = urllib.urlencode(param)
+#     param = urlencode(param)
 #     headers = {
 #         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8'
 #     }
@@ -511,7 +512,6 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
 
     # maintain the order and remove duplicated users
     first_e = None
-    first_tb = None  # for sys.exc_info()
     for candidate in sorted(set(candidates), key=candidates.index):
         if candidate.is_disabled:
             continue
@@ -527,14 +527,12 @@ def _mapcore_api_with_switching_token(access_user, node, group_key, func, **kwar
                 raise
             if first_e is None:
                 first_e = e
-                first_tb = sys.exc_info()
         except Exception as e:
             if first_e is None:
                 first_e = e
-                first_tb = sys.exc_info()
     if first_e is None:
         raise Exception('No user have mAP access token')
-    raise first_e.__class__(first_e, first_tb[2])
+    raise first_e
 
 def _get_group_by_key(mapcore, node, group_key, **kwargs):
     return mapcore.get_group_by_key(group_key)

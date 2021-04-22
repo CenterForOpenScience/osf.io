@@ -73,6 +73,8 @@ def _send_with_smtp(from_addr, to_addr, subject, message, mimetype='html', ttls=
         logger.error('Mail username and password not set; skipping send.')
         return
 
+    message = message.encode(_charset, 'replace')
+
     msg = MIMEText(message, mimetype, _charset)
     msg['Subject'] = subject
     msg['From'] = from_addr

@@ -209,10 +209,10 @@ class TestIQBRIMSNodeReceiver(unittest.TestCase):
         self.node.save(force_update=True)
 
         assert_equal(mock_get_folder_info.call_count, 1)
-        assert_items_equal(mock_get_folder_info.call_args, ((), {'folder_id': self.folder_id}))
+        assert_equal(mock_get_folder_info.call_args, ((), {'folder_id': self.folder_id}))
 
         assert_equal(mock_rename_folder.call_count, 1)
-        assert_items_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
+        assert_equal(mock_rename_folder.call_args[0], (self.folder_id, new_folder_title))
 
     @mock.patch.object(IQBRIMSClient, 'rename_folder')
     def test_update_management_node_folder(self, mock_rename_folder):

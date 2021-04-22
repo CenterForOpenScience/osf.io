@@ -404,7 +404,7 @@ class TestGatherView(AdminTestCase):
         self.tmp_dir = tempfile.mkdtemp()
         self.tmp_file = os.path.join(self.tmp_dir, self.file_node.name)
         with open(self.tmp_file, 'wb') as file:
-            file.write(str(uuid.uuid4()))
+            file.write(str(uuid.uuid4()).encode('utf-8'))
         self.request = RequestFactory().get('/fake_path')
         self.view = views.GatherView()
         self.view = setup_user_view(self.view, self.request, user=self.user)

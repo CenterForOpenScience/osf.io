@@ -21,6 +21,27 @@ def collect_file_trees(auth, node, **kwargs):
     serialized = _view_project(node, auth, primary=True)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
+
+    return serialized
+
+@must_be_contributor_or_public
+def open_directory_link(auth, node, provider, **kwargs):
+    path = '/'
+    if kwargs.get('path'):
+        path = path + kwargs['path']
+
+    serialized = _view_project(node, auth, primary=True)
+    # Add addon static assets
+    serialized.update(rubeus.collect_addon_assets(node))
+
+    serialized.update({
+        'directory': {
+            'provider': provider,
+            'path': path,
+            'materializedPath': path,
+        }
+    })
+
     return serialized
 
 @must_be_contributor_or_public
@@ -31,9 +52,10 @@ def grid_data(auth, node, **kwargs):
     ret = rubeus.to_hgrid(node, auth, **data)
     if NodeSettings.objects.filter(owner_id=node.id).exists() and ret[0]['children']:
         for _, child in enumerate(ret[0]['children']):
-            if child.get('provider') == 'osfstorage' and \
-                    'nodeRegion' in child and \
-                    child['nodeRegion'] not in ['NII Storage', 'United States']:
-                child['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
-                child['addonFullname'] = child['nodeRegion']
+            if child.get('provider') == 'osfstorage' and 'nodeRegion' in child:
+                if child['nodeRegion'] in ['NII Storage', 'United States']:
+                    child['nodeRegion'] = 'NII Storage'
+                else:
+                    child['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
+                    child['addonFullname'] = child['nodeRegion']
     return {'data': ret}

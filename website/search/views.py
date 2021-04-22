@@ -166,8 +166,8 @@ def _private_search(doc_type, auth, raw=False):
             es_dsl = build_private_search_query(user, qs, start, size, sort, highlight)
         except Exception as e:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
-                'message_short': e.message,
-                'message_long': e.message
+                'message_short': str(e),
+                'message_long': str(e)
             })
         results = search.search(es_dsl, doc_type=doc_type,
                                 private=True, ext=ext, raw=raw)

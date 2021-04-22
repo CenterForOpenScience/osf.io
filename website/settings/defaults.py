@@ -2064,6 +2064,7 @@ BABEL_TRANSLATION_DIRECTORIES = os.path.join(BASE_PATH, 'translations')
 BABEL_DOMAIN = 'messages'
 BABEL_LANGUAGES = {
     'en': 'English',
-    'ja': '日本語'
+    'ja': '日本語',
+    'ja_jp': '日本語'
 }
 BABEL_DEFAULT_LOCALE = 'ja'

@@ -102,7 +102,7 @@ def es_escape(text):
 
 def _is_delimiter(char):
     # FIXME: re.UNICODE is unnecessary in Python3
-    return re.match(r'\s\Z', char, flags=re.UNICODE) or char in [u'(', u')']
+    return re.match(r'\s\Z', char) or char in [u'(', u')']
 
 
 def quote(string):
@@ -117,7 +117,7 @@ def quote(string):
     #   bat pattern 2: "abc*" -> equivalent "abc " -> match "abc" only
 
     # FIXME: flags=re.ASCII is necessary in Python3
-    if re.match(r'[\w\*\?]+\Z', string):
+    if re.match(r'[\w\*\?]+\Z', string, flags=re.ASCII):
         return (string, False)
     else:
         return (u'"{}"'.format(string), True)  # quoted
@@ -586,5 +586,5 @@ def unicode_normalize(text):
         text = text.decode('utf-8')
     normalized = unicodedata.normalize('NFKD', text)
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
-        normalized = normalized.encode('ascii', 'ignore')
+        normalized = normalized.encode('ascii', 'ignore').decode('utf-8')
     return normalized

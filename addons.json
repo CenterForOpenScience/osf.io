@@ -22,6 +22,9 @@
         "weko",
         "jupyterhub",
         "s3compat",
+        "s3compatinstitutions",
+        "s3compatb3",
+        "ociinstitutions",
         "nextcloud",
         "nextcloudinstitutions",
         "iqbrims",
@@ -30,7 +33,9 @@
     "addons_default": [
         "osfstorage",
         "nextcloudinstitutions",
-        "dropboxbusiness"
+        "dropboxbusiness",
+        "s3compatinstitutions",
+        "ociinstitutions"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -51,6 +56,9 @@
         "azureblobstorage": "partial",
         "weko": "partial",
         "s3compat": "partial",
+        "s3compatinstitutions": "partial",
+        "s3compatb3": "partial",
+        "ociinstitutions": "partial",
         "nextcloud": "partial",
         "nextcloudinstitutions": "partial",
         "iqbrims": "partial",
@@ -74,6 +82,9 @@
         "azureblobstorage",
         "weko",
         "s3compat",
+        "s3compatinstitutions",
+        "s3compatb3",
+        "ociinstitutions",
         "nextcloud",
         "nextcloudinstitutions",
         "iqbrims",
@@ -110,6 +121,9 @@
         "weko": "WEKO is an application server to share, archive data.",
         "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from Jupyter",
         "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
+        "s3compatinstitutions": "S3 Compatible Storage for Institutions is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
+        "s3compatb3": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
+        "ociinstitutions": "Oracle Cloud Infrastructure for Institutions is a file storage add-on. Connect your Oracle Cloud Infrastructure Object Storage account to a GakuNin RDM project to interact with files hosted on Oracle Cloud Infrastructure Object Storage via the GakuNin RDM.",
         "nextcloud": "Nextcloud is an open source, self-hosted file sync and share app platform. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
         "iqbrims": "IQB-RIMS is a file storage add-on. Connect your Google Drive account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
         "nextcloudinstitutions": "Nextcloud for Institutions is a file storage add-on for Institutions. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
@@ -134,6 +148,7 @@
         "weko": "https://weko.at.nii.ac.jp/",
         "jupyterhub": "https://jupyterhub.readthedocs.io/",
         "s3compat": "https://aws.amazon.com/s3/",
+        "s3compatb3": "https://aws.amazon.com/s3/",
         "nextcloud": "https://nextcloud.com/",
         "iqbrims": "https://drive.google.com",
         "dropboxbusiness": "http://www.dropbox.com"

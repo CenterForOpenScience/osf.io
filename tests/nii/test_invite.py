@@ -49,7 +49,7 @@ class TestInvite(OsfTestCase):
             token='faketoken',
         )
         res = self.app.get(url, auth=self.referrer.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_in('This URL does not support LOGIN_BY_EPPN=False', res.text)
 
     def _common_redirect_to_claim_user_login_by_eppn(self, user2):
@@ -70,7 +70,7 @@ class TestInvite(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(verify_url, res.headers.get('Location'))
         res2 = res.follow(auth=user2.auth)
-        assert_equal(res2.status_code, http.OK)
+        assert_equal(res2.status_code, http_status.HTTP_200_OK)
         if user2.have_email:  # existing user
             assert_in(user2.username, res2.text)
             assert_in(user2.fullname, res2.text)
@@ -105,7 +105,7 @@ class TestInvite(OsfTestCase):
             token='badtoken',
         )
         res = self.app.get(url, auth=self.referrer.auth, expect_errors=400)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_in('The token in the URL is invalid or has expired.', res.text)
 
     @mock.patch('website.project.views.contributor.LOGIN_BY_EPPN', True)
@@ -123,7 +123,7 @@ class TestInvite(OsfTestCase):
             auth=contrib.auth,
             expect_errors=True,
         )
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_in('The logged-in user is already a contributor to this ', res.text)
 
     def _common_posting_to_claim_user_login_by_eppn(self, user2, send_mail, existing_user):
@@ -165,7 +165,7 @@ class TestInvite(OsfTestCase):
 
         user2_auth = Auth(OSFUser.objects.get(username=user2.username))
         res3 = res2.follow(auth=user2_auth)
-        assert_equal(res3.status_code, http.OK)
+        assert_equal(res3.status_code, http_status.HTTP_200_OK)
 
         self.project.reload()
         self.user.reload()

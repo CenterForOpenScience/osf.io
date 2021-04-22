@@ -49,7 +49,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
-        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_in(b'You are prohibited from using this add-on.', res.body)
 
     @mock.patch('website.oauth.views.session')
     def test_oauth_finish(self, mock_session):
@@ -80,7 +80,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
-        assert_in('You are prohibited from using this add-on.', res.body)
+        assert_in(b'You are prohibited from using this add-on.', res.body)
 
     def test_delete_external_account(self):
         url = api_url_for(

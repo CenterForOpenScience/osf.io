@@ -17,8 +17,6 @@ logger = logging.getLogger(__name__)
 
 # Silence some 3rd-party logging and some "loud" internal loggers
 SILENT_LOGGERS = [
-    'addons.dropboxbusiness.models',
-    'addons.base.institutions_utils',
     'osf.models.user',
     'api.base.rdmlogger',
     'api.caching.tasks',
@@ -41,6 +39,10 @@ SILENT_LOGGERS = [
     'transitions.core',
     'MARKDOWN',
     'elasticsearch',
+    'addons.base.institutions_utils',
+    'addons.dropboxbusiness.models',
+    'addons.nextcloudinstitutions.models',
+    'addons.s3compatinstitutions.models',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

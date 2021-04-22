@@ -1,0 +1,46 @@
+{% load i18n %}
+<div class="modal fade" id="s3compatinstitutions_modal" tabindex="-1" role="dialog" aria-labelledby="s3compatinstitutions_modal_label">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h3 id="s3compatinstitutions_modal_label">{% trans "Connect a S3 Compatible Storage Account" %} (S3 Compatible Storage for Institutions)</h3>
+            </div>
+            <div class="modal-body">
+                <div class='row'>
+                    <div class='col-sm-3'>
+                    </div>
+                    <div class='col-sm-6'>
+                        <div class="form-group">
+                            <label for="s3compatinstitutions_endpoint_url">{% trans "Endpoint URL" %}</label>
+                            <input type="text" class="form-control s3compatinstitutions-params" id="s3compatinstitutions_endpoint_url" placeholder="s3compat.example.org[:PORT]" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="s3compatinstitutions_access_key">{% trans "Access Key" %}</label>
+                            <input type="text" class="form-control s3compatinstitutions-params" id="s3compatinstitutions_access_key" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="s3compatinstitutions_secret_key">{% trans "Secret Key" %}</label>
+                            <input type="password" class="form-control s3compatinstitutions-params" id="s3compatinstitutions_secret_key" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="s3compatinstitutions_bucket">{% trans "Bucket" %}</label>
+                            <input type="text" class="form-control s3compatinstitutions-params" id="s3compatinstitutions_bucket" required>
+                        </div>
+                        <div class="help-block">
+                            <p id='s3compatinstitutions_message' class='text-danger'></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-success test-connection" id="s3compatinstitutions_connect" disabled>{% trans "Connect" %}</button>
+                <button type="button" class="btn btn-default save-credentials" id="s3compatinstitutions_save" disabled>{% trans "Save" %}</button>
+            </div>
+        </div>
+    </div>
+</div>

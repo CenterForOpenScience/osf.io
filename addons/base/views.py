@@ -545,9 +545,23 @@ def create_waterbutler_log(payload, **kwargs):
             # [GRDM-13530, 15698, 17045, 17065]
             # (MultipleObjectsReturned may occur when creation of
             #  BaseFileNode is called in long transaction.)
-            BaseFileNode.resolve_class(
+            file_node = BaseFileNode.resolve_class(
                 provider, BaseFileNode.FILE
             ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
+            if file_node:
+                func_hash = getattr(file_node, 'get_hash_for_timestamp', None)
+                if func_hash:
+                    extras = {}
+                    # collect new metadata from waterbutler
+                    # and update external hashes of the file_node
+                    # to update timestamp by file hash
+                    file_node.touch(
+                        request.headers.get('Authorization'),
+                        **dict(
+                            extras,
+                            cookie=user.get_or_create_cookie()
+                        )
+                    )
 
     if file_created_or_updated:
         prepare_file_node(metadata['provider'])
@@ -735,6 +749,45 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
         ret = {'error': error_msg}
 
     return ret, http_status.HTTP_410_GONE
+
+
+@must_be_contributor_or_public
+def verify_timestamp(auth, path, provider, **kwargs):
+    extras = request.args.to_dict()
+    extras.pop('_', None)  # Clean up our url params a bit
+    guid = kwargs.get('guid')
+    guid_target = getattr(Guid.load(guid), 'referent', None)
+    target = guid_target or kwargs.get('node') or kwargs['project']
+    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
+
+    version = file_node.touch(
+        request.headers.get('Authorization'),
+        **dict(
+            extras,
+            cookie=request.cookies.get(settings.COOKIE_NAME)
+        )
+    )
+
+    # Verify file
+    verify_result = None
+    cookie = auth.user.get_or_create_cookie()
+    file_info = timestamp.get_file_info(cookie, file_node, version)
+    if file_info is not None:
+        verify_result = timestamp.check_file_timestamp(auth.user.id, target, file_info)
+    else:
+        verify_result = {
+            'verify_result': '',
+            'verify_result_title': '',
+            'use_hash': False,
+            'external_timestamp': False,
+        }
+
+    return {
+        'timestamp_verify_result': verify_result['verify_result'],
+        'timestamp_verify_result_title': verify_result['verify_result_title'],
+        'use_hash': verify_result['use_hash'],
+        'external_timestamp': verify_result['external_timestamp'],
+    }
 
 
 @must_be_contributor_or_public
@@ -941,18 +994,6 @@ def addon_view_file(auth, node, file_node, version):
         })
     )
 
-    # Verify file
-    verify_result = None
-    cookie = auth.user.get_or_create_cookie()
-    file_info = timestamp.get_file_info(cookie, file_node, version)
-    if file_info is not None:
-        verify_result = timestamp.check_file_timestamp(auth.user.id, node, file_info)
-    else:
-        verify_result = {
-            'verify_result': '',
-            'verify_result_title': ''
-        }
-
     mfr_url = get_mfr_url(node, file_node.provider)
     render_url = furl.furl(mfr_url).set(
         path=['render'],
@@ -990,8 +1031,6 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'version_names': list(version_names),
-        'timestamp_verify_result': verify_result['verify_result'],
-        'timestamp_verify_result_title': verify_result['verify_result_title']
     })
 
     ret.update(rubeus.collect_addon_assets(node))

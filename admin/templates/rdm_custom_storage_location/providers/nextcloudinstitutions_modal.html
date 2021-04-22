@@ -9,7 +9,7 @@
                 </div>
                 <div class="modal-body">
                     <div class='row'>
-                        <div class="col-sm-6">
+                        <div class="col-md-6">
                             <!-- Custom input -->
                             <div id="nextcloudinstitutions_custom_host_div">
                                 <label>{% trans "Host URL" %}</label>
@@ -17,7 +17,7 @@
                                     <div class="input-group-addon">https://</div>
                                     <input type="text" class="form-control nextcloudinstitutions-params" id='nextcloudinstitutions_host'  placeholder="nextcloud.example.org" required>
                                 </div>
-                                <div class="text-muted" style="text-align: center">
+                                <div class="text-muted" style="text-align: left">
                                     <em>{% blocktrans %}Only Nextcloud instances supporting <a
                                             href="https://doc.nextcloud.org/server/9.1/user_manual/files/access_webdav.html"
                                             target="_blank">WebDAV</a> and <a
@@ -32,6 +32,8 @@
                                 <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_folder"
                                     placeholder="/GRDM" required>
                             </div>
+                        </div>
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nextcloudinstitutions_username">{% trans "Username" %}</label>
                                 <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_username" placeholder="username" required>
@@ -41,7 +43,7 @@
                                 <input type="password" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_password"
                                     placeholder="********" required>
                             </div>
-                            <div class="text-muted" style="text-align: center">
+                            <div class="text-muted" style="text-align: left">
                                 <em>{% blocktrans %} These credentials will be encrypted. However, we <strong>strongly
                                         encourage</strong> using a <a
                                         href="https://doc.nextcloud.org/server/9.1/user_manual/session_management.html#managing-devices"
@@ -49,8 +51,30 @@
                                 </em>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="col-sm-6">
+                    <div id="options" class="row collapse">
+                        <div class="col-md-6">
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_url">{% trans "Connection URL for File Upload Notification App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-notif-app-params" id="nextcloudinstitutions_notification_url" readonly>
+                                <div class="text-right"><button id="copy_button_url" class="btn btn-default" data-clipboard-target="#nextcloudinstitutions_notification_url"><div class="fa fa-copy"></div></button></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_connid">{% trans "Connection ID for File Upload Notification App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-notif-app-params" id="nextcloudinstitutions_notification_connid" readonly>
+                                <div class="text-right"><button id="copy_button_connid" class="btn btn-default" data-clipboard-target="#nextcloudinstitutions_notification_connid"><div class="fa fa-copy"></div></button></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="nextcloudinstitutions_notification_secret">{% trans "Connection common key from File Upload Notification App" %}</label>
+                                <input type="text" class="form-control nextcloudinstitutions-params" id="nextcloudinstitutions_notification_secret">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>{% trans "Download User Mapping file" %}</label><br/>
                                 <button type="button" class="btn btn-default download-csv" id="csv_download">{% trans "Download" %}</button>
@@ -69,8 +93,8 @@
                                     <em>
 {% blocktrans %}Example of User Mapping file{% endblocktrans %}:<br/>
 #User_GUID(or ePPN),External_UserID,Fullname(ignored)<br/>
-eppn_user1@idp.example.com,external_user1,User1<br/>
-ABCDE,external_user2,User2<br/>
+eppn_user1@idp.example.com,ext_user1,User1<br/>
+ABCDE,ext_user2,User2<br/>
                                     </em>
                                 </div>
                                 <div id="csv_usermap" hidden></div>
@@ -79,12 +103,13 @@ ABCDE,external_user2,User2<br/>
                             </div>
                         </div>
                     </div>
-                    <div class="help-block">
-                        <p id="nextcloudinstitutions_message" class="text-danger"></p>
-                    </div>
 
                 </div>
                 <div class="modal-footer">
+                    <div class="help-block">
+                        <p id="nextcloudinstitutions_message" class="text-danger"></p>
+                    </div>
+                    <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#options" style="margin: 0.8em;">{%trans "Options" %}</button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
                     <button type="button" class="btn btn-success test-connection" id="nextcloudinstitutions_connect" disabled>{% trans "Connect" %}</button>
                     <button type="button" class="btn btn-default save-credentials" id="nextcloudinstitutions_save" disabled>{% trans "Save" %}</button>

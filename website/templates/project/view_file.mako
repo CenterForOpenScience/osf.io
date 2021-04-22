@@ -28,15 +28,10 @@
 </div>
 <div class="row">
   <div class="col-sm-5">
-% if timestamp_verify_result_title:
-    <h4 class="break-word">
-    % if timestamp_verify_result_title == 'OK':
-      <font color="green"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
-    % else:
-      <font color="red"><b>${_("Timestamp verification:")}${ timestamp_verify_result_title | h}</b></font>
-    % endif
+    <h4 class="break-word" id="timestamp-status">
+      <font><b>${_("Timestamp verification is in progress ...")}</b></font>
+      <div class="fa fa-spinner fa-lg fa-spin"></div>
     </h4>
-% endif
   </div>
 </div>
 <hr>

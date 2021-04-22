@@ -1,0 +1,11 @@
+{
+  "s3compatb3_bucket_linked" : "${user} linked the Oracle Cloud Infrastructure Object Storage bucket ${bucket} to ${node}",
+  "s3compatb3_bucket_unlinked" : "${user} unselected the Oracle Cloud Infrastructure Object Storage bucket ${bucket} in ${node}",
+  "s3compatb3_file_added" : "${user} added file ${path} to Oracle Cloud Infrastructure Object Storage bucket ${bucket} in ${node}",
+  "s3compatb3_file_removed" : "${user} removed ${path} in Oracle Cloud Infrastructure Object Storage bucket ${bucket} in ${node}",
+  "s3compatb3_file_updated" : "${user} updated file ${path} in Oracle Cloud Infrastructure Object Storage bucket ${bucket} in ${node}",
+  "s3compatb3_folder_created" : "${user} created folder ${path} in Oracle Cloud Infrastructure Object Storage bucket ${bucket} in ${node}",
+  "s3compatb3_node_authorized" : "${user} authorized the Oracle Cloud Infrastructure Object Storage addon for ${node}",
+  "s3compatb3_node_deauthorized" : "${user} deauthorized the Oracle Cloud Infrastructure Object Storage addon for ${node}",
+  "s3compatb3_node_deauthorized_no_user" : "Oracle Cloud Infrastructure Object Storage addon for ${node} deauthorized"
+}

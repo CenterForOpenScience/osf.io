@@ -43,15 +43,21 @@ def DEBUG(msg):
     if ENABLE_DEBUG:
         logger.error(u'DEBUG: ' + msg)
 
-RESULT_MESSAGE = {
+TIMESTAMP_MSG_MAP = {
+    # api_settings.TIME_STAMP_TOKEN_UNCHECKED:
+    #    'unchecked',  # unkown status -> not inspected
+    api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS:
+        api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG,
     api_settings.TIME_STAMP_TOKEN_CHECK_NG:
         api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,
-    api_settings.TIME_STAMP_TOKEN_NO_DATA:
-        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,
     api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND:
         api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,
+    api_settings.TIME_STAMP_TOKEN_NO_DATA:
+        api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,
     api_settings.FILE_NOT_EXISTS:
         api_settings.FILE_NOT_EXISTS_MSG,
+    api_settings.FILE_NOT_FOUND:
+        api_settings.FILE_NOT_FOUND_MSG,
     api_settings.TIME_STAMP_VERIFICATION_ERR:
         api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
     api_settings.TIME_STAMP_STORAGE_DISCONNECTED:
@@ -59,6 +65,16 @@ RESULT_MESSAGE = {
     api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE:
         api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE_MSG,
 }
+
+RESULT_MESSAGE = TIMESTAMP_MSG_MAP
+
+STATUS_NO_ERROR = [
+    api_settings.TIME_STAMP_TOKEN_UNCHECKED,  # or no error
+    api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS,
+]
+
+def STATUS_IS_NO_ERROR(status):
+    return (status in STATUS_NO_ERROR)
 
 STATUS_NOT_ACCESSIBLE = [
     api_settings.FILE_NOT_EXISTS,
@@ -221,7 +237,7 @@ def get_full_list(uid, pid, node):
 
     api_url = util.api_v2_url('nodes/{}/files'.format(pid))
     headers = {'content-type': 'application/json'}
-    cookies = {settings.COOKIE_NAME: cookie}
+    cookies = {settings.COOKIE_NAME: str(cookie)}
 
     file_res = requests.get(api_url, headers=headers, cookies=cookies)
     provider_json_res = file_res.json()
@@ -570,7 +586,7 @@ def get_file_info(cookie, file_node, version):
     file_data_request = requests.get(
         file_node.generate_waterbutler_url(
             version=version.identifier, meta='', _internal=True
-        ), headers=headers, cookies={settings.COOKIE_NAME: cookie}
+        ), headers=headers, cookies={settings.COOKIE_NAME: str(cookie)}
     )
     if file_data_request.status_code == 200:
         file_data = file_data_request.json().get('data')
@@ -590,6 +606,8 @@ def get_file_info(cookie, file_node, version):
     return None
 
 def file_created_or_updated(node, metadata, user_id, created_flag):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     if metadata['provider'] != 'osfstorage':
         file_node = BaseFileNode.resolve_class(
             metadata['provider'], BaseFileNode.FILE
@@ -632,6 +650,8 @@ def file_created_or_updated(node, metadata, user_id, created_flag):
     verify_data.save()
 
 def file_node_moved(uid, project_id, src_provider, dest_provider, src_path, dest_path, metadata, src_metadata=None):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     src_path = src_path if src_path[0] == '/' else '/' + src_path
     dest_path = dest_path if dest_path[0] == '/' else '/' + dest_path
     target_object_id = Guid.objects.get(_id=project_id,
@@ -830,6 +850,8 @@ def file_node_overwitten(project_id, target_object_id, addon_name, src_path):
             file_node.delete()
 
 def file_node_deleted(project_id, addon_name, src_path):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     src_path = src_path if src_path[0] == '/' else '/' + src_path
 
     tst_status = api_settings.FILE_NOT_EXISTS
@@ -844,6 +866,8 @@ def file_node_deleted(project_id, addon_name, src_path):
     ).update(inspection_result_status=tst_status)
 
 def file_node_gone(project_id, addon_name, src_path):
+    if not settings.ENABLE_TIMESTAMP:
+        return
     if project_id is None or addon_name is None or src_path is None:
         return
 
@@ -928,7 +952,7 @@ def userkey_generation(guid):
     try:
         generation_date = datetime.datetime.now()
         generation_date_str = generation_date.strftime('%Y%m%d%H%M%S')
-        generation_date_hash = hashlib.md5(generation_date_str).hexdigest()
+        generation_date_hash = hashlib.md5(generation_date_str.encode('utf-8')).hexdigest()
         generation_pvt_key_name = api_settings.KEY_NAME_FORMAT.format(
             guid, generation_date_hash, api_settings.KEY_NAME_PRIVATE, api_settings.KEY_EXTENSION)
         generation_pub_key_name = api_settings.KEY_NAME_FORMAT.format(
@@ -980,7 +1004,7 @@ def create_rdmuserkey_info(user_id, key_name, key_kind, date):
     return userkey_info
 
 def filename_formatter(file_name):
-    return file_name.encode('utf-8').replace(' ', '\\ ')
+    return file_name.replace(' ', '\\ ')
 
 def get_timestamp_verify_result(file_id, project_id, provider, path, inspection_result_status, user_id):
     res, created = RdmFileTimestamptokenVerifyResult.objects.get_or_create(
@@ -998,18 +1022,6 @@ def get_timestamp_verify_result(file_id, project_id, provider, path, inspection_
         res.save()
     return res
 
-
-TIMESTAMP_MSG_MAP = {
-    api_settings.TIME_STAMP_TOKEN_UNCHECKED: api_settings.TIME_STAMP_TOKEN_CHECK_SUCCESS_MSG,
-    api_settings.TIME_STAMP_TOKEN_CHECK_NG: api_settings.TIME_STAMP_TOKEN_CHECK_NG_MSG,
-    api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND: api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND_MSG,
-    api_settings.TIME_STAMP_TOKEN_NO_DATA: api_settings.TIME_STAMP_TOKEN_NO_DATA_MSG,
-    api_settings.FILE_NOT_EXISTS: api_settings.FILE_NOT_EXISTS_MSG,
-    api_settings.FILE_NOT_FOUND: api_settings.FILE_NOT_FOUND_MSG,
-    api_settings.TIME_STAMP_VERIFICATION_ERR: api_settings.TIME_STAMP_VERIFICATION_ERR_MSG,
-    api_settings.TIME_STAMP_STORAGE_DISCONNECTED: api_settings.TIME_STAMP_STORAGE_DISCONNECTED_MSG,
-    api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE: api_settings.TIME_STAMP_STORAGE_NOT_ACCESSIBLE_MSG
-}
 
 class AddTimestamp:
     #1 create tsq (timestamp request) from file, and keyinfo
@@ -1149,22 +1161,19 @@ class TimeStampTokenVerifyCheck:
 
     @classmethod
     def _timestamp_check_external(cls, ext_info, file_info, project_id, userid):
-        if ext_info.verify_external_only:
+        ret = None
+        if ext_info.has_timestamp:
             ret = ext_info.timestamp_status
             if ret is not None:
                 verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
                 if verify_result_title is None:  # unknown status
                     ret = None
-            if ret is None:
+        if ret is None:  # no status or unknown status
+            if ext_info.verify_external_only:
+                # not inspected
                 ret = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
-                verify_result_title = api_settings.TIME_STAMP_TOKEN_CHECK_FILE_NOT_FOUND
-        else:
-            verify_result_title = None
-            if ext_info.has_timestamp:
-                ret = ext_info.timestamp_status
-                if ret:
-                    verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
-            if verify_result_title is None:  # no status or unknown status
+                verify_result_title = TIMESTAMP_MSG_MAP.get(ret)
+            else:
                 verify_result_local = None
                 return cls._timestamp_check_local(
                     file_info, verify_result_local,
@@ -1180,6 +1189,7 @@ class TimeStampTokenVerifyCheck:
             file_id, project_id, provider, path, ret, userid)
 
         DEBUG(u'use external timestamp: path={}'.format(path))
+        DEBUG(u'use external timestamp: ret={}, verify_result_title={}'.format(ret, verify_result_title))
         baseFileNode = None  # for osfstorage, (not used in this method)
         return ret, baseFileNode, verify_result_local, verify_result_title
 
@@ -1194,7 +1204,7 @@ class TimeStampTokenVerifyCheck:
         For example, if the file has been deleted, it can set the status
         immediately.
         """
-        ret = 0
+        ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED  # initial status
         baseFileNode = None  # for osfstorage
         verify_result_title = None
 
@@ -1257,7 +1267,7 @@ class TimeStampTokenVerifyCheck:
         ret, baseFileNode, verify_result, verify_result_title = \
             self.timestamp_check_switch(None, file_info, verify_result, project_id, userid)
 
-        if ret == 0:
+        if STATUS_IS_NO_ERROR(ret):
             if not api_settings.USE_UPKI:
                 timestamptoken_file = user_guid + '.tsr'
                 timestamptoken_file_path = os.path.join(tmp_dir, timestamptoken_file)
@@ -1323,12 +1333,18 @@ class TimeStampTokenVerifyCheck:
                     logger.error('upki verify error({}):{}'.format(file_name.encode('utf-8'), err))
 
             verify_result.inspection_result_status = ret
+        # else: verify_result.inspection_result_status is not updated
+
+        use_hash = False
+        external_timestamp = False
+
         return self.generate_verify_result(
             baseFileNode, file_info, userid,
-            verify_result, verify_result_title, ret)
+            verify_result, verify_result_title,
+            use_hash, external_timestamp, ret)
 
     @classmethod
-    def generate_verify_result(cls, baseFileNode, file_info, userid, verify_result, verify_result_title, ret):
+    def generate_verify_result(cls, baseFileNode, file_info, userid, verify_result, verify_result_title, use_hash, external_timestamp, ret):
         file_created_at = file_info.get('created')
         file_modified_at = file_info.get('modified')
         file_size = file_info.get('size')
@@ -1357,10 +1373,22 @@ class TimeStampTokenVerifyCheck:
         else:
             filepath = file_info['provider'] + file_info['file_path']
 
+        if ENABLE_DEBUG:
+            if use_hash:
+                verify_result_title += ' (Hash from external storage)'
+            else:
+                verify_result_title += ' (Hash by download)'
+            if external_timestamp:
+                verify_result_title += ' (Timestamp from external storage)'
+            else:
+                verify_result_title += ' (Timestamp from local DB)'
+
         return {
             'timestamp_token': verify_result.timestamp_token,
             'verify_result': ret,
             'verify_result_title': verify_result_title,  # TODO use TIMESTAMP_MSG_MAP
+            'use_hash': use_hash,
+            'external_timestamp': external_timestamp,
             'filepath': filepath
         }
 
@@ -1381,6 +1409,7 @@ class AddTimestampHash:
             verify_data.inspection_result_status = ext_info.timestamp_status
         else:
             ext_info.timestamp_status = verify_data.inspection_result_status
+        # update local timestamp
         verify_data.save()
 
         result = TimeStampTokenVerifyCheckHash.timestamp_check(
@@ -1396,7 +1425,7 @@ class AddTimestampHash:
     def _generate_timestamp(cls, ext_info):
         try:
             if not api_settings.USE_UPKI:
-                req_out = cls.gen_timestamp_request(ext_info)
+                req_out = cls._gen_timestamp_request(ext_info)
                 tsa_response = cls._gen_timestamp_response(req_out)
             else:
                 tsa_response = cls._gen_timestamp_upki(ext_info)
@@ -1464,7 +1493,7 @@ class TimeStampTokenVerifyCheckHash:
             fout.write(select_timestamp_token(verify_result, ext_info))
         DEBUG('TIMESTAMP TOKEN filesize={}'.format(os.path.getsize(timestamptoken_file_path)))
         digest = ext_info.hash_value
-        ret = 0
+        ret = api_settings.TIME_STAMP_TOKEN_UNCHECKED
         if not api_settings.USE_UPKI:
             digest_type = hash_type_to_openssl_digest_type(ext_info.hash_type)
             fmt = api_settings.SSL_GET_TIMESTAMP_HASH_RESPONSE
@@ -1527,13 +1556,6 @@ class TimeStampTokenVerifyCheckHash:
                 logger.error('upki verify error:{}'.format(err))
         verify_result.inspection_result_status = ret
 
-        if ENABLE_DEBUG:
-            verify_result_title += ' (remote hash)'
-            if ext_info.has_timestamp:
-                verify_result_title += ' (remote timestamp)'
-            else:
-                verify_result_title += ' (local timestamp)'
-
         return verify_result, verify_result_title, ret
 
     @classmethod
@@ -1543,7 +1565,7 @@ class TimeStampTokenVerifyCheckHash:
             TimeStampTokenVerifyCheck.timestamp_check_switch(
                 ext_info, file_info, verify_result, project_id, user_id)
 
-        if ret == 0:  # OK
+        if STATUS_IS_NO_ERROR(ret):
             tmp_dir = tempfile.mkdtemp()
             try:
                 verify_result, verify_result_title, ret = cls._verify(
@@ -1552,9 +1574,14 @@ class TimeStampTokenVerifyCheckHash:
                 shutil.rmtree(tmp_dir)
                 raise
             shutil.rmtree(tmp_dir)
+
+        use_hash = True
+        external_timestamp = ext_info.has_timestamp
+
         return TimeStampTokenVerifyCheck.generate_verify_result(
             baseFileNode, file_info, user_id,
-            verify_result, verify_result_title, ret)
+            verify_result, verify_result_title,
+            use_hash, external_timestamp, ret)
 
 
 HASH_TYPE_SHA256 = 'sha256'

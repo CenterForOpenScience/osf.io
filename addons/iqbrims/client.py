@@ -278,7 +278,7 @@ class IQBRIMSClient(BaseClient):
 
     def create_folder_if_not_exists(self, folder_id, title):
         items = self.folders(folder_id)
-        exists = filter(lambda item: item['title'] == title, items)
+        exists = [item for item in items if item['title'] == title]
 
         if len(exists) > 0:
             return False, exists[0]
@@ -306,7 +306,7 @@ class IQBRIMSClient(BaseClient):
 
     def create_spreadsheet_if_not_exists(self, folder_id, title):
         items = self.files(folder_id)
-        exists = filter(lambda item: item['title'] == title, items)
+        exists = [item for item in items if item['title'] == title]
 
         if len(exists) > 0:
             return False, exists[0]
@@ -334,7 +334,7 @@ class IQBRIMSClient(BaseClient):
 
     def copy_file_if_not_exists(self, src_file_id, folder_id, title):
         items = self.files(folder_id)
-        exists = filter(lambda item: item['title'] == title, items)
+        exists = [item for item in items if item['title'] == title]
 
         if len(exists) > 0:
             return False, exists[0]

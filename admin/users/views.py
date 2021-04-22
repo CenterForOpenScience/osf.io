@@ -784,7 +784,7 @@ class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
             'username': user.username,
             'name': user.fullname,
             'id': user._id,
-            'nodes': map(serialize_simple_node, user.contributor_to),
+            'nodes': list(map(serialize_simple_node, user.contributor_to)),
             'quota': max_quota
         }
 

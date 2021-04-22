@@ -1,0 +1,89 @@
+from framework.routing import Rule, json_renderer
+
+from addons.s3compatb3 import views
+
+
+api_routes = {
+    'rules': [
+        Rule(
+            [
+                '/settings/s3compatb3/accounts/',
+            ],
+            'post',
+            views.s3compatb3_add_user_account,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/settings/s3compatb3/accounts/',
+            ],
+            'get',
+            views.s3compatb3_account_list,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/settings/',
+                '/project/<pid>/node/<nid>/s3compatb3/settings/',
+            ],
+            'put',
+            views.s3compatb3_set_config,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/settings/',
+                '/project/<pid>/node/<nid>/s3compatb3/settings/',
+            ],
+            'get',
+            views.s3compatb3_get_config,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/user-auth/',
+                '/project/<pid>/node/<nid>/s3compatb3/user-auth/',
+            ],
+            'put',
+            views.s3compatb3_import_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/user-auth/',
+                '/project/<pid>/node/<nid>/s3compatb3/user-auth/',
+            ],
+            'delete',
+            views.s3compatb3_deauthorize_node,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/buckets/',
+                '/project/<pid>/node/<nid>/s3compatb3/buckets/',
+            ],
+            'get',
+            views.s3compatb3_folder_list,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/attached/',
+                '/project/<pid>/node/<nid>/s3compatb3/attached/',
+            ],
+            'get',
+            views.s3compatb3_attached_service,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3compatb3/newbucket/',
+                '/project/<pid>/node/<nid>/s3compatb3/newbucket/',
+            ],
+            'post',
+            views.s3compatb3_create_bucket,
+            json_renderer
+        ),
+    ],
+    'prefix': '/api/v1',
+}

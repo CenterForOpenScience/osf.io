@@ -952,8 +952,8 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
             assert_in('state', creds)
 
             # The URL to which the user would be redirected
-            parsed = urlparse.urlparse(url)
-            params = urlparse.parse_qs(parsed.query)
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
 
             # check parameters
             assert_equal(
@@ -1051,10 +1051,10 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         req = RequestFactory().get('http://localhost:8001/customstoragelocation/external_acc_update/')
         res = customstoragelocation_update.external_acc_update(req,access_token='d610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
         assert_equal(res.status_code,200)
-        assert_equal(res.content, 'Done')
+        assert_equal(res.content.decode(), 'Done')
         res = customstoragelocation_update.external_acc_update(req,access_token='b610ef95f0b0f5868f13919b8ed64070b9acb9c19b8da9f2c514ed938203ec3e236c9cad4f4146bdf22b4e79cf0d92f6d4f4c996d236c6b0ee79a1336b26afb7')
         assert_equal(res.status_code,200)
-        assert_not_equal(res.content, 'Done')
+        assert_not_equal(res.content.decode(), 'Done')
 
     @responses.activate
     def test_provider_down(self):

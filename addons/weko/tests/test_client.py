@@ -292,7 +292,7 @@ def etree_to_dict(t):
 
 class MockResponse:
     def __init__(self, content, status_code):
-        self.content = content
+        self.content = content.encode('utf8')
         self.status_code = status_code
 
 

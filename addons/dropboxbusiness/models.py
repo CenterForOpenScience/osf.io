@@ -144,7 +144,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         related_name='dropboxbusiness_management_option',
         on_delete=models.CASCADE)
     _admin_dbmid = models.CharField(null=True, blank=True, max_length=255)
-    list_cursor = models.TextField(null=True, blank=True)
+    list_cursor = models.TextField(null=True, blank=True)  # unused
     team_folder_id = models.CharField(null=True, blank=True, max_length=255)
     group_id = models.CharField(null=True, blank=True, max_length=255)
 
@@ -283,10 +283,14 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     # Required
     def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-            path=metadata['path'].strip('/'),
-            provider='dropboxbusiness'
-        )
+        ### url_for() of flask cannot be used in celery.
+        # url = self.owner.web_url_for('addon_view_or_download_file',
+        #     path=metadata['path'].strip('/'),
+        #     provider='dropboxbusiness'
+        # )
+        url = u'/project/{}/files/{}/{}/'.format(self.owner._id,  # GUID
+                                                 'dropboxbusiness',
+                                                 metadata['path'].strip('/'))
         self.owner.add_log(
             'dropboxbusiness_{0}'.format(action),
             auth=auth,

@@ -1,0 +1,11 @@
+{
+    "s3compatb3_bucket_linked" : "A user linked an Oracle Cloud Infrastructure Object Storage bucket to a project",
+    "s3compatb3_bucket_unlinked" : "A user unselected an Oracle Cloud Infrastructure Object Storage bucket in a project",
+    "s3compatb3_file_added" : "A user added a file to an Oracle Cloud Infrastructure Object Storage bucket in a project",
+    "s3compatb3_file_removed" : "A user removed a file in an Oracle Cloud Infrastructure Object Storage bucket in a project",
+    "s3compatb3_file_updated" : "A user updated a file in an Oracle Cloud Infrastructure Object Storage bucket in a project",
+    "s3compatb3_folder_created" : "A user created a folder in an Oracle Cloud Infrastructure Object Storage in a project",
+    "s3compatb3_node_authorized" : "A user authorized the Oracle Cloud Infrastructure Object Storage addon for a project",
+    "s3compatb3_node_deauthorized" : "A user deauthorized the Oracle Cloud Infrastructure Object Storage addon for a project",
+    "s3compatb3_node_deauthorized_no_user" : "Oracle Cloud Infrastructure Object Storage addon for a project deauthorized"
+}

@@ -4419,7 +4419,7 @@ class TestFileViews(OsfTestCase):
         set_project_storage_type(self.project)
         url = self.project.api_url_for('grid_data')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(res.status_code, http.OK)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
         expected = rubeus.to_hgrid(self.project, auth=Auth(self.user))
         data = res.json['data']
         assert_equal(len(data), len(expected))
@@ -5347,16 +5347,19 @@ class TestTimestampView(OsfTestCase):
         assert 'osfstorage_test_file2.status_3' in res
         assert 'Unknown' in res
 
+    @mock.patch('addons.osfstorage.models.OsfStorageFile._hashes',
+                new_callable=mock.PropertyMock)
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult.ready')
     @mock.patch('celery.contrib.abortable.AbortableTask.is_aborted')
     @mock.patch('website.project.views.node.find_bookmark_collection')
     @mock.patch('website.util.waterbutler.shutil')
     @mock.patch('requests.get')
-    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection, mock_aborted, mock_ready):
+    def test_add_timestamp_token(self, mock_get, mock_shutil, mock_collection, mock_aborted, mock_ready, mock_hashes):
         mock_get.return_value.content = ''
         mock_get.return_value.status_code = 200
         mock_aborted.return_value = False
         mock_ready.return_value = True
+        mock_hashes.return_value = None
 
         url_timestamp = self.project.url + 'timestamp/'
         res = self.app.get(url_timestamp, auth=self.user.auth)
@@ -5531,7 +5534,7 @@ class TestAddonFileViewTimestampFunc(OsfTestCase):
         tmp_dir = tempfile.mkdtemp()
         tmp_file = os.path.join(tmp_dir, file_node.name)
         with open(tmp_file, 'wb') as file:
-            file.write(str(uuid.uuid4()))
+            file.write(str(uuid.uuid4()).encode('utf-8'))
         version = file_node.get_version(1, required=True)
         addTimestamp = AddTimestamp()
         file_data = {

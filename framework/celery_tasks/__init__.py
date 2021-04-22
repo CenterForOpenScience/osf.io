@@ -10,11 +10,8 @@ from raven.contrib.celery import register_signal
 
 from website.settings import SENTRY_DSN, VERSION, CeleryConfig
 from website.settings import RECURSION_LIMIT
-from addons.dropboxbusiness import lock as dbbiz_lock
 
 sys.setrecursionlimit(RECURSION_LIMIT)  # [GRDM-9050, GRDM-16889]
-
-dbbiz_lock.init_celery_lock()
 
 app = Celery()
 app.config_from_object(CeleryConfig)

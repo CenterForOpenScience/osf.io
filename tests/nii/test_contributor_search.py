@@ -110,17 +110,17 @@ class TestEscape(OsfTestCase):
         other_punctuation = '#$%,.;@_`'
         assert_equal(es_escape(other_punctuation), other_punctuation)
 
-        assert_equal(es_escape(string.letters), string.letters)
+        assert_equal(es_escape(string.ascii_letters), string.ascii_letters)
         assert_equal(es_escape(string.octdigits), string.octdigits)
         assert_equal(es_escape(string.whitespace), string.whitespace)
 
-        hiragana = ''.join([unichr(i) for i in range(12353, 12436)])
+        hiragana = ''.join([chr(i) for i in range(12353, 12436)])
         assert_equal(es_escape(hiragana), hiragana)
 
-        katakana = ''.join([unichr(i) for i in range(12449, 12533)])
+        katakana = ''.join([chr(i) for i in range(12449, 12533)])
         assert_equal(es_escape(katakana), katakana)
 
-        zenkaku_hankaku = ''.join([unichr(i) for i in range(65281, 65440)])
+        zenkaku_hankaku = ''.join([chr(i) for i in range(65281, 65440)])
         assert_equal(es_escape(zenkaku_hankaku), zenkaku_hankaku)
 
 

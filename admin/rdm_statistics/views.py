@@ -8,7 +8,7 @@ import pytz
 import re
 import json
 import requests
-import urllib
+from urllib.parse import quote
 import csv
 import pandas as pd
 import numpy as np
@@ -113,7 +113,7 @@ class StatisticsView(RdmPermissionMixin, UserPassesTestMixin, TemplateView):
         ctx['current_date'] = current_date
         ctx['user'] = user
         ctx['provider_data_array'] = provider_data_array
-        digest = hashlib.sha512(SITE_KEY).hexdigest()
+        digest = hashlib.sha512(SITE_KEY.encode('utf-8')).hexdigest()
         ctx['token'] = digest.upper()
         return ctx
 
@@ -156,9 +156,9 @@ class ProviderData(object):
         self.ext_list = np.unique(extentions)
         self.ext_list.sort()
         self.date_list = self.stat_data.values_list('date_acquired', flat=True)
-        self.x_tk = np.unique(map(lambda x: x.strftime('%Y/%m/%d'), self.date_list))
+        self.x_tk = np.unique(list(map(lambda x: x.strftime('%Y/%m/%d'), self.date_list)))
         self.x_tk.sort()
-        self.left = np.unique(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list))
+        self.left = np.unique(list(map(lambda x: x.strftime('%Y-%m-%d'), self.date_list)))
         cols = ['left', 'height', 'type']
         self.size_df = pd.DataFrame(index=[], columns=cols)
         self.number_df = pd.DataFrame(index=[], columns=cols)
@@ -205,7 +205,7 @@ class ProviderData(object):
             size_sum_list = list(size_df_sum['height'].values.flatten())
             statistics_data.title = 'Subtotal of file sizes'
             statistics_data.y_label = 'File Sizes'
-            statistics_data.add('size', map(lambda x: approximate_size(x, True), size_sum_list))
+            statistics_data.add('size', list(map(lambda x: approximate_size(x, True), size_sum_list)))
             statistics_data.graphstyle = 'whitegrid'
             statistics_data.background = '#EEFFEE'
             statistics_data.image_string = create_image_string(statistics_data.provider, statistics_data=statistics_data)
@@ -283,7 +283,7 @@ def create_image_string(provider, statistics_data):
     canvas = FigureCanvasAgg(fig)
     png_output = BytesIO()
     canvas.print_png(png_output)
-    img_data = urllib.quote(png_output.getvalue())
+    img_data = quote(png_output.getvalue())
     plt.close()
     return img_data
 
@@ -587,7 +587,7 @@ class GatherView(TemplateView):
                     self.count_project_files(provider=provider, node_id=node_id, path='/' + path, cookies=cookies)
 
 def simple_auth(access_token):
-    digest = hashlib.sha512(SITE_KEY).hexdigest()
+    digest = hashlib.sha512(SITE_KEY.encode('utf-8')).hexdigest()
     if digest == access_token.lower():
         return True
     else:
