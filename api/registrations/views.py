@@ -44,7 +44,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
 )
-from api.registrations.permissions import ContributorOrModerator
+from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -207,7 +207,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ContributorOrModeratorOrPublic,
         base_permissions.TokenHasScope,
     )
 
