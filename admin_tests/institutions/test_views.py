@@ -526,12 +526,9 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         self.us.save()
 
         self.users = []
-        # self.users.append(self.add_user(100, 80 * api_settings.SIZE_UNIT_GB))
-        # self.users.append(self.add_user(200, 90 * api_settings.SIZE_UNIT_GB))
-        # self.users.append(self.add_user(10, 10 * api_settings.SIZE_UNIT_GB))
-        self.users.append(self.add_user("test001-eppn", 100, 80 * api_settings.SIZE_UNIT_GB))
-        self.users.append(self.add_user("test002-eppn", 200, 90 * api_settings.SIZE_UNIT_GB))
-        self.users.append(self.add_user("test003-eppn", 10, 10 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test001-eppn', 100, 80 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test002-eppn', 200, 90 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test003-eppn', 10, 10 * api_settings.SIZE_UNIT_GB))
 
     def add_user(self, eppn, max_quota, used):
         user = AuthUserFactory()
