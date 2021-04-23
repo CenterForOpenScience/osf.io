@@ -1283,10 +1283,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def private_links_active(self):
+        if self.is_spammy:
+            return PrivateLink.objects.none()
         return self.private_links.filter(is_deleted=False)
 
     @property
     def private_link_keys_active(self):
+        if self.is_spammy:
+            return set()
         return self.private_links.filter(is_deleted=False).values_list('key', flat=True)
 
     @property
