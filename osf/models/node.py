@@ -9,6 +9,7 @@ from rest_framework import status as http_status
 
 import bson
 from django.db.models import Q
+from django.db.models.query import EmptyQuerySet
 from dirtyfields import DirtyFieldsMixin
 from django.apps import apps
 from django_bulk_update.helper import bulk_update
@@ -1283,10 +1284,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def private_links_active(self):
+        if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+            return PrivateLink.objects.none()
         return self.private_links.filter(is_deleted=False)
 
     @property
     def private_link_keys_active(self):
+        if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+            return EmptyQuerySet()
         return self.private_links.filter(is_deleted=False).values_list('key', flat=True)
 
     @property
