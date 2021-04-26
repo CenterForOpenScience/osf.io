@@ -162,9 +162,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'user-list'
 
     def get_default_queryset(self):
-        if self.request.version >= '2.3':
-            return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
-        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True)
+        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
