@@ -684,7 +684,9 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
     serializer_class = RegistrationSchemaSerializer
 
     def get_default_queryset(self):
-        return self.get_provider().schemas.get_latest_versions(request=self.request, invisible=True).filter(active=True)
+        provider = self.get_provider()
+        default_schema_id = provider.default_schema.id if provider.default_schema else None
+        return provider.schemas.get_latest_versions(request=self.request, invisible=True, default_schema_id=default_schema_id)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
