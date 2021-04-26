@@ -1,7 +1,7 @@
 import logging
-import string
 from django.core.cache import cache
 
+from framework.exceptions import HTTPError
 from osf.models import RdmAddonOption
 from osf.models.region_external_account import RegionExternalAccount
 from addons.osfstorage.models import Region
@@ -13,6 +13,11 @@ from addons.onedrivebusiness import settings
 
 logger = logging.getLogger(__name__)
 
+
+def parse_root_folder_id(root_folder_id):
+    if '\t' not in root_folder_id:
+        return None, root_folder_id
+    return tuple(root_folder_id.split('\t', maxsplit=1))
 
 def get_region_external_account(node):
     user = node.creator
@@ -55,6 +60,21 @@ def get_sheet_values(sheet, column_ids):
         values.append(v)
     return values
 
+def get_user_item(region_client, folder_id, values):
+    eppn, msaccount = values
+    user_info = cache.get('{}:{}'.format(folder_id, msaccount))
+    if user_info is not None:
+        return (eppn, user_info)
+    try:
+        user = region_client.get_user(msaccount)
+        logger.debug('User: {}'.format(user))
+        user_info = {'userPrincipalName': msaccount, 'id': user['id'], 'mail': user['mail']}
+        cache.set('{}:{}'.format(folder_id, msaccount), user_info, settings.TEAM_MEMBER_USER_CACHE_TIMEOUT)
+        return (eppn, user_info)
+    except HTTPError:
+        logger.warning('Cannot get user details for {}'.format(msaccount))
+    return (eppn, {'userPrincipalName': msaccount, 'id': None})
+
 def get_user_map(region_client, folder_id, filename=None, sheet_name=None):
     user_map = cache.get(folder_id)
     if user_map is not None:
@@ -65,6 +85,7 @@ def get_user_map(region_client, folder_id, filename=None, sheet_name=None):
     column_texts = ['ePPN', 'MicrosoftAccount']
     column_ids = [get_column_id(sheet, text) for text in column_texts]
     logger.debug('column_ids: {}'.format(column_ids))
-    user_map = dict([tuple(v) for v in get_sheet_values(sheet, column_ids)])
+    user_map = dict([get_user_item(region_client, folder_id, v)
+                     for v in get_sheet_values(sheet, column_ids)])
     cache.set(folder_id, user_map, settings.TEAM_MEMBER_LIST_CACHE_TIMEOUT)
     return user_map

@@ -1,7 +1,6 @@
+from oauthlib.oauth2 import InvalidGrantError
 from addons.base.serializer import StorageAddonSerializer
 from addons.onedrivebusiness import SHORT_NAME
-from addons.onedrivebusiness import settings
-from addons.onedrivebusiness import utils
 from website.util import web_url_for
 
 

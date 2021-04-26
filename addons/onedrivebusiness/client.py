@@ -4,7 +4,7 @@ import logging
 
 from framework.exceptions import HTTPError
 
-from addons.onedrive import settings # using base settings
+from addons.onedrive import settings  # using base settings
 from addons.onedrive.client import OneDriveClient
 from addons.onedrivebusiness import settings as own_settings
 
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 class OneDriveBusinessClient(OneDriveClient):
 
-    def __init__(self, access_token=None):
-        super(OneDriveBusinessClient, self).__init__(access_token=access_token)
+    def __init__(self, access_token=None, drive_id=None):
+        super(OneDriveBusinessClient, self).__init__(access_token=access_token, drive_id=drive_id)
 
     def files(self, folder_id=None):
         """Get list of files of the folder with id ``folder_id``
@@ -31,8 +31,7 @@ class OneDriveBusinessClient(OneDriveClient):
 
         if folder_id is None:
             raise ValueError('Root folder must be specified')
-        url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id, 'children')
-        #url = url + '?$expand=children($filter=folder%20eq%20null)'
+        url = self._build_url(self._drive_url, 'items', folder_id, 'children')
 
         resp = self._make_request(
             'GET',
@@ -72,7 +71,7 @@ class OneDriveBusinessClient(OneDriveClient):
 
         if parent_folder_id is None:
             raise ValueError('Root folder must be specified')
-        url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
+        url = self._build_url(self._drive_url, 'items',
                               parent_folder_id + ':', name + ':', 'content')
 
         res = self._make_request(
@@ -94,7 +93,7 @@ class OneDriveBusinessClient(OneDriveClient):
         :return: a bytes array of the content of file
         """
 
-        url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
+        url = self._build_url(self._drive_url, 'items',
                               file_id, 'content')
 
         res = self._make_request(
@@ -116,12 +115,7 @@ class OneDriveBusinessClient(OneDriveClient):
         :return: a metadata object representing the new folder
         """
 
-        if parent_folder_id is None or parent_folder_id == settings.DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', settings.DEFAULT_ROOT_ID, 'children')
-        else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
-                                  parent_folder_id, 'children')
-
+        url = self._build_url(self._drive_url, 'items', parent_folder_id, 'children')
         res = self._make_request(
             'POST',
             url,
@@ -146,16 +140,83 @@ class OneDriveBusinessClient(OneDriveClient):
         :return: a metadata object representing the folder
         """
 
-        if folder_id is None or folder_id == settings.DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', settings.DEFAULT_ROOT_ID)
-        else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id)
-
+        url = self._build_url(self._drive_url, 'items', folder_id)
         res = self._make_request(
             'PATCH',
             url,
             json={
                 'name': name,
+            },
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def get_user(self, msaccount):
+        url = self._build_url(settings.ONEDRIVE_API_URL, 'users', msaccount)
+        res = self._make_request(
+            'GET',
+            url,
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def get_drive(self, me=False):
+        if me:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'me', 'drive')
+        else:
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive')
+        res = self._make_request(
+            'GET',
+            url,
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def get_permissions(self, item_id):
+        url = self._build_url(self._drive_url, 'items', item_id, 'permissions')
+        res = self._make_request(
+            'GET',
+            url,
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def invite_user(self, item_id, recipient_email, roles):
+        url = self._build_url(self._drive_url, 'items', item_id, 'invite')
+        res = self._make_request(
+            'POST',
+            url,
+            json={
+                'recipients': [{'email': recipient_email}],
+                'requireSignIn': True,
+                'sendInvitation': False,
+                'roles': roles,
+            },
+            expects=(200,),
+            throws=HTTPError(401)
+        )
+        return res.json()
+
+    def remove_permission(self, item_id, permission_id):
+        url = self._build_url(self._drive_url, 'items', item_id, 'permissions', permission_id)
+        self._make_request(
+            'DELETE',
+            url,
+            expects=(200, 204),
+            throws=HTTPError(401)
+        )
+
+    def update_permission(self, item_id, permission_id, roles):
+        url = self._build_url(self._drive_url, 'items', item_id, 'permissions', permission_id)
+        res = self._make_request(
+            'PATCH',
+            url,
+            json={
+                'roles': roles,
             },
             expects=(200,),
             throws=HTTPError(401)

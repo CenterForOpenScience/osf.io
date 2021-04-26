@@ -31,7 +31,7 @@ from addons.s3compatinstitutions.models import S3CompatInstitutionsProvider
 from addons.s3compatinstitutions import settings as s3compatinstitutions_settings
 from addons.ociinstitutions.models import OCIInstitutionsProvider
 from addons.ociinstitutions import settings as ociinstitutions_settings
-from addons.onedrive.client import OneDriveClient
+from addons.onedrivebusiness.client import OneDriveBusinessClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
@@ -528,12 +528,28 @@ def test_dropboxbusiness_connection(institution):
 def get_onedrivebusiness_folder_id(client, folder_path, parent='root'):
     folder_path_parts = folder_path.rstrip('/').split('/', maxsplit=1)
     folder_name = folder_path_parts[0]
+    if folder_name == 'shared':
+        return _get_onedrivebusiness_folder_id(client, folder_path_parts[1], parent=parent)
+    drive = client.get_drive(me=True)
+    drive_client = OneDriveBusinessClient(client.access_token, drive['id'])
+    folders = [f for f in drive_client.folders(parent) if f['name'] == folder_name]
+    if len(folders) == 0:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    if len(folder_path_parts) == 1:
+        return drive['id'] + '\t' + folders[0]['id']
+    return drive['id'] + '\t' + _get_onedrivebusiness_folder_id(
+        drive_client, folder_path_parts[1], parent=folders[0]['id']
+    )
+
+def _get_onedrivebusiness_folder_id(client, folder_path, parent='root'):
+    folder_path_parts = folder_path.rstrip('/').split('/', maxsplit=1)
+    folder_name = folder_path_parts[0]
     folders = [f for f in client.folders(parent) if f['name'] == folder_name]
     if len(folders) == 0:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if len(folder_path_parts) == 1:
         return folders[0]['id']
-    return get_onedrivebusiness_folder_id(
+    return _get_onedrivebusiness_folder_id(
         client, folder_path_parts[1], parent=folders[0]['id']
     )
 
@@ -545,7 +561,7 @@ def validate_onedrivebusiness_connection(institution_id, folder_id_or_path):
     access_token = ExternalAccountTemporary.objects.get(
         _id=institution_id, provider='onedrivebusiness'
     ).oauth_key
-    client = OneDriveClient(access_token)
+    client = OneDriveBusinessClient(access_token)
 
     if folder_id_or_path.startswith('/'):
         try:
