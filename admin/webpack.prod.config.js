@@ -25,7 +25,7 @@ module.exports = assign(admin, {
         // base filenames to full filename with hash.
         new SaveAssetsJson(),
         // Append hash to commons chunk for cachebusting
-        new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.[hash].js' }),
+//        new webpack.optimize.CommonsChunkPlugin({ name: 'vendor', filename: 'vendor.[hash].js' }),
         new webpack.LoaderOptionsPlugin({
             debug: false,
             minimize: true
@@ -36,4 +36,16 @@ module.exports = assign(admin, {
         // Append hash to filenames for cachebusting
         filename: '[name].[chunkhash].js',
     }),
+	optimizations: {
+		splitChunks: {
+			cacheGroups: {
+				vendor: {
+					test: /node_modules/,
+					chunks: 'initial',
+					name: 'vendor',
+					enforce: true
+				},
+			}
+		}
+	};
 });
