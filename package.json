@@ -19,7 +19,7 @@
     "bootbox": "^5.5.2",
     "bootstrap": "4.6.0",
     "bower": "^1.8.8",
-    "css-loader": "^5.2.0",
+    "css-loader": "5.2.4",
     "diff": "~5.0.0",
     "dropzone": "git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
     "exports-loader": "2.0.0",
@@ -65,7 +65,8 @@
     "typeahead.js": "^0.11.1",
     "url-loader": "4.1.1",
     "uuid": "^8.3.2",
-    "webpack": "5.30.0",
+    "webpack": "5.36.0",
+    "webpack-cli": "^4.6.0",
     "zxcvbn": "^4.2.0"
   },
   "devDependencies": {
@@ -90,5 +91,8 @@
     "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
+  },
+  "resolutions": {
+    "font-awesome-webpack/css-loader": "1.0.1"
   }
 }

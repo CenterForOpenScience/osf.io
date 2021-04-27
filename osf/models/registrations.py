@@ -61,6 +61,8 @@ from osf.utils.workflows import (
 )
 
 import osf.utils.notifications as notify
+from api.share.utils import update_share
+
 
 logger = logging.getLogger(__name__)
 
@@ -124,12 +126,16 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
+    # A dictionary of key: value pairs to store additional metadata defined by third-party sources
+    additional_metadata = DateTimeAwareJSONField(blank=True)
+
     @staticmethod
-    def find_failed_registrations():
-        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+    def find_failed_registrations(days_stuck=None):
+        expired_if_before = timezone.now() - (days_stuck or settings.ARCHIVE_TIMEOUT_TIMEDELTA)
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
         stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+
         return stuck_regs
 
     @property
@@ -290,6 +296,57 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    @property
+    def provider_specific_metadata(self):
+        """Surfaces the additional_metadata fields supported by the provider.
+
+        Also formats the reults to inherit any additional field descriptors defined
+        by the provider and to simplify consumpption by the APIt.
+        """
+        additional_metadata = self.additional_metadata or {}
+
+        if not self.provider or not self.provider.additional_metadata_fields:
+            return []
+
+        provider_supported_metadata = []
+        for field_desc in self.provider.additional_metadata_fields:
+            metadata_field = {
+                'field_value': additional_metadata.get(field_desc['field_name'], '')
+            }
+            metadata_field.update(field_desc)
+            provider_supported_metadata.append(metadata_field)
+
+        return provider_supported_metadata
+
+    def update_provider_specific_metadata(self, updated_values):
+        """Updates additional_metadata fields supported by the provider.
+
+        Fields listed in values that are not supported by the current provider will be ignored.
+        Fields supported by the provider that are not listed in values will not be altered.
+        """
+        if not self.provider or not self.provider.additional_metadata_fields:
+            raise ValueError('This registration does not support provider-specific metadata')
+
+        if not self.additional_metadata:
+            self.additional_metadata = {}
+
+        updated_fields = {entry['field_name'] for entry in updated_values}
+        provider_supported_fields = {
+            entry['field_name'] for entry in self.provider.additional_metadata_fields
+        }
+        unsupported_fields = updated_fields - provider_supported_fields
+        if unsupported_fields:
+            raise ValueError(
+                'The provider for this registration does not support some of '
+                f'the provided fields: {unsupported_fields}'
+            )
+
+        for entry in updated_values:
+            key = entry['field_name']
+            value = entry['field_value']
+            self.additional_metadata[key] = value
+        self.save()
 
     def can_view(self, auth):
         if super().can_view(auth):
@@ -687,6 +744,52 @@ class Registration(AbstractNode):
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
 
+    def withdraw(self):
+        self.registered_from.add_log(
+            action=NodeLog.RETRACTION_APPROVED,
+            params={
+                'node': self.registered_from._id,
+                'retraction_id': self.retraction._id,
+                'registration': self._id
+            },
+            auth=Auth(self.retraction.initiated_by),
+        )
+
+        if self.embargo_end_date or self.is_pending_embargo:
+            # Alter embargo state to make sure registration doesn't accidentally get published
+            self.embargo.state = self.retraction.REJECTED
+            self.embargo.approval_stage = (
+                SanctionStates.MODERATOR_REJECTED if self.is_moderated
+                else SanctionStates.REJECTED
+            )
+
+            self.registered_from.add_log(
+                action=NodeLog.EMBARGO_CANCELLED,
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                    'embargo_id': self.embargo._id,
+                },
+                auth=Auth(self.retraction.initiated_by),
+            )
+            self.embargo.save()
+
+        # Ensure retracted registration is public
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
+        for node in self.get_descendants_recursive(primary_only=True):
+            node.set_privacy('public', auth=None, log=False)
+            node.update_search()
+
+        # force a save before sending data to share or retraction will not be updated
+        self.set_privacy('public', auth=None, log=False)
+        self.update_search()
+        self.save()
+
+        if settings.SHARE_ENABLED:
+            update_share(self)
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
@@ -744,9 +847,7 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_id():
-    from django.apps import apps
-    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
-    return RegistrationProvider.get_default().id
+    return RegistrationProvider.get_default_id()
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
