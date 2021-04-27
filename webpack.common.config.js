@@ -190,6 +190,19 @@ var plugins = [
     }),
 ];
 
+var optimization = {
+	splitChunks: {
+		cacheGroups: {
+			vendor: {
+				test: /node_modules/,
+				chunks: 'initial',
+				name: 'vendor',
+				enforce: true
+			},
+		}
+	}
+};
+
 var output = {
     path: path.resolve(__dirname, 'website', 'static', 'public', 'js'),
     // publicPath: '/static/', // used to generate urls to e.g. images
