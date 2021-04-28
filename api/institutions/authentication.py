@@ -138,10 +138,8 @@ class InstitutionAuthentication(BaseAuthentication):
                         'institutions',
                         {},
                     ).get(attribute_value)
-                    logger.info(
-                        'Institution SSO: primary=[{}], secondary=[{}], '
-                        'username=[{}]'.format(provider['id'], secondary_institution_id, username)
-                    )
+                    logger.info('Institution SSO: primary=[{}], secondary=[{}], '
+                                'username=[{}]'.format(provider['id'], secondary_institution_id, username))
                     secondary_institution = Institution.load(secondary_institution_id)
                     if not secondary_institution:
                         # Log errors and inform Sentry but do not raise an exception if OSF fails
