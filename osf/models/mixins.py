@@ -2109,6 +2109,8 @@ class SpamOverrideMixin(SpamMixin):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user):
+        if user.spam_status == SpamStatus.HAM:
+            return False
         self.set_privacy('private', log=False, save=True)
         # Suspend the flagged user for spam.
         user.flag_spam()
