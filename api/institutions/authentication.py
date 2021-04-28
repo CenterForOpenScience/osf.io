@@ -6,7 +6,6 @@ import jwe
 import jwt
 import waffle
 
-from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -264,9 +263,6 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.fullname = fullname
 
             user.update_date_last_login()
-
-            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
-            user.accepted_terms_of_service = timezone.now()
 
             # Register and save user
             password = str(uuid.uuid4()) if new_password_required else None
