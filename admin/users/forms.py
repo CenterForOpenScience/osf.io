@@ -26,3 +26,6 @@ class MergeUserForm(forms.Form):
 
 class AddSystemTagForm(forms.Form):
     system_tag_to_add = forms.CharField(label='system_tag_to_add', min_length=1, max_length=1024, required=True)
+
+class ArchiveRegistrationWithPigeonForm(forms.Form):
+    guid_to_archive = forms.CharField(label='guid_to_archive', min_length=5, max_length=1024, required=False)

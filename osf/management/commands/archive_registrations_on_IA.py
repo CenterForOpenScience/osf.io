@@ -14,13 +14,17 @@ from django.core.management.base import BaseCommand
 
 
 @celery_app.task(name='osf.management.commands.archive_registrations_on_IA')
-def archive_registrations_on_IA(dry_run=False):
-    registrations = Registration.objects.filter(
-        ia_url__isnull=True,
-        is_public=True
-    ).exclude(
-        moderation_state='withdrawn',
-    )[:100]
+def archive_registrations_on_IA(dry_run=False, batch_size=100, guids=None):
+    if guids:
+        registrations = Registration.objects.filter(guids___id__in=guids)
+    else:
+        registrations = Registration.objects.filter(
+            ia_url__isnull=True,
+            is_public=True,
+            identifiers__category='doi'
+        ).exclude(
+            moderation_state='withdrawn',
+        )[:batch_size]
 
     logger.info(f'{registrations.count()} to be archived in batch')
 
@@ -44,7 +48,21 @@ class Command(BaseCommand):
             dest='dry_run',
             help='Run migration and roll back changes to db',
         )
+        parser.add_argument(
+            '--batch_size',
+            '-b',
+            type=int,
+            help='number of registrations to archive.',
+        )
+        parser.add_argument(
+            'guids',
+            type=str,
+            nargs='+',
+            help='List of guids to archive.',
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
-        archive_registrations_on_IA(dry_run=dry_run)
+        batch_size = options.get('batch_size', 100)
+        guids = options.get('guids', [])
+        archive_registrations_on_IA(dry_run=dry_run, batch_size=batch_size, guids=guids)
