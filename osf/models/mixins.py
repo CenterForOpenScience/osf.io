@@ -2109,7 +2109,7 @@ class SpamOverrideMixin(SpamMixin):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user):
-        self.set_privacy('private', log=False, save=False)
+        self.set_privacy('private', log=False, save=True)
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
@@ -2149,6 +2149,15 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+        if settings.SPAM_THROTTLE_AUTOBAN:
+            creator = self.creator
+            yesterday = timezone.now() - timezone.timedelta(days=1)
+            node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+            preprint_spam_count = creator.preprints.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+
+            if (node_spam_count + preprint_spam_count) > settings.SPAM_CREATION_THROTTLE_LIMIT:
+                self.suspend_spam_user(creator)
 
 
 class RegistrationResponseMixin(models.Model):
