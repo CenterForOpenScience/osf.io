@@ -6,7 +6,6 @@ import jwe
 import jwt
 import waffle
 
-from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -114,7 +113,10 @@ class InstitutionAuthentication(BaseAuthentication):
         provider = data['provider']
         institution = Institution.load(provider['id'])
         if not institution:
-            raise AuthenticationFailed('Invalid institution id: "{}"'.format(provider['id']))
+            message = 'Institution SSO Error: invalid institution ID [{}]'.format(provider['id'])
+            logger.error(message)
+            sentry.log_message(message)
+            raise AuthenticationFailed(message)
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
@@ -136,35 +138,25 @@ class InstitutionAuthentication(BaseAuthentication):
                         'institutions',
                         {},
                     ).get(attribute_value)
-                    logger.info(
-                        'Institution SSO: primary=[{}], secondary=[{}], '
-                        'user=[{}]'.format(provider['id'], secondary_institution_id, username),
-                    )
+                    logger.info('Institution SSO: primary=[{}], secondary=[{}], '
+                                'username=[{}]'.format(provider['id'], secondary_institution_id, username))
                     secondary_institution = Institution.load(secondary_institution_id)
                     if not secondary_institution:
-                        # Log warnings and inform Sentry but do not raise an exception if OSF fails
+                        # Log errors and inform Sentry but do not raise an exception if OSF fails
                         # to load the secondary institution from database
-                        logger.warning(
-                            'Institution SSO warning: invalid secondary institution '
-                            '[{}]'.format(secondary_institution_id),
-                        )
-                        sentry.log_message(
-                            'Invalid secondary institution: primary=[{}], secondary=[{}], username='
-                            '[{}]'.format(secondary_institution_id, provider['id'], username),
-                        )
+                        message = 'Institution SSO Error: invalid secondary institution [{}]; ' \
+                                  'primary=[{}], username=[{}]'.format(attribute_value, provider['id'], username)
+                        logger.error(message)
+                        sentry.log_message(message)
                 else:
                     # SSO from primary institution only
-                    logger.info(
-                        'Institution SSO: primary=[{}], secondary=[None], '
-                        'user=[{}]'.format(provider['id'], username),
-                    )
+                    logger.info('Institution SSO: primary=[{}], secondary=[None], '
+                                'username=[{}]'.format(provider['id'], username))
             else:
-                logger.warning('Institution SSO warning: criteria type [{}] '
-                               'invalid or not implemented'.format(criteria_type))
-                sentry.log_message(
-                    'Criteria type invalid or not implemented: criteria=[{}], primary=[{}], '
-                    'username=[{}]'.format(criteria_type, provider['id'], username),
-                )
+                message = 'Institution SSO Error: invalid criteria [{}]; ' \
+                          'primary=[{}], username=[{}]'.format(criteria_type, provider['id'], username)
+                logger.error(message)
+                sentry.log_message(message)
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -172,8 +164,9 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
-            message = 'Institution login failed: fullname required for ' \
-                      'user "{}" from institution "{}"'.format(username, provider['id'])
+            message = 'Institution SSO Error: missing fullname ' \
+                      'for user [{}] from institution [{}]'.format(username, provider['id'])
+            logger.error(message)
             sentry.log_message(message)
             raise AuthenticationFailed(message)
 
@@ -189,7 +182,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if not created:
             try:
                 drf.check_user(user)
-                logger.info('Institution SSO: active user "{}"'.format(username))
+                logger.info('Institution SSO: active user [{}]'.format(username))
             except exceptions.UnclaimedAccountError:
                 # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
                 user.unclaimed_records = {}
@@ -197,7 +190,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Unclaimed users have an unusable password when being added as an unregistered
                 # contributor. Thus a random usable password must be assigned during activation.
                 new_password_required = True
-                logger.info('Institution SSO: unclaimed contributor "{}"'.format(username))
+                logger.warning('Institution SSO: unclaimed contributor [{}]'.format(username))
             except exceptions.UnconfirmedAccountError:
                 if user.has_usable_password():
                     # Unconfirmed user from default username / password signup
@@ -207,26 +200,24 @@ class InstitutionAuthentication(BaseAuthentication):
                     # sign-up. However, it must be overwritten by a new random one so the creator
                     # (if he is not the real person) can not access the account after activation.
                     new_password_required = True
-                    logger.info('Institution SSO: unconfirmed user "{}"'.format(username))
+                    logger.warning('Institution SSO: unconfirmed user [{}]'.format(username))
                 else:
                     # Login take-over has not been implemented for unconfirmed user created via
                     # external IdP login (ORCiD).
-                    message = 'Institution SSO is not eligible for an unconfirmed account ' \
-                              'created via external IdP login: username = "{}"'.format(username)
+                    message = 'Institution SSO Error: SSO is not eligible for an unconfirmed account [{}] ' \
+                              'created via IdP login'.format(username)
                     sentry.log_message(message)
                     logger.error(message)
                     return None, None
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
-                message = 'Institution SSO is not eligible for a deactivated account: ' \
-                          'username = "{}"'.format(username)
+                message = 'Institution SSO Error: SSO is not eligible for a deactivated account: [{}]'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
                 return None, None
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
-                message = 'Institution SSO is not eligible for a merged account: ' \
-                          'username = "{}"'.format(username)
+                message = 'Institution SSO Error: SSO is not eligible for a merged account: [{}]'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
                 return None, None
@@ -234,18 +225,25 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Other invalid status: this shouldn't happen unless the user happens to be in a
                 # temporary state. Such state requires more updates before the user can be saved
                 # to the database. (e.g. `get_or_create_user()` creates a temporary-state user.)
-                message = 'Institution SSO is not eligible for an inactive account with ' \
-                          'an unknown or invalid status: username = "{}"'.format(username)
+                message = 'Institution SSO Error: SSO is not eligible for an inactive account [{}] ' \
+                          'with an unknown or invalid status'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
                 return None, None
         else:
-            logger.info('Institution SSO: new user "{}"'.format(username))
+            logger.info('Institution SSO: new user [{}]'.format(username))
 
         # The `department` field is updated each login when it was changed.
-        if department and user.department != department:
-            user.department = department
-            user.save()
+        user_guid = user.guids.first()._id
+        if department:
+            if user.department != department:
+                user.department = department
+                user.save()
+            logger.info('Institution SSO: user w/ dept: user=[{}], email=[{}], inst=[{}], '
+                        'dept=[{}]'.format(user_guid, username, institution._id, department))
+        else:
+            logger.info('Institution SSO: user w/o dept: user=[{}], email=[{}], '
+                        'inst=[{}]'.format(user_guid, username, institution._id))
 
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
@@ -264,9 +262,6 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.fullname = fullname
 
             user.update_date_last_login()
-
-            # Relying on front-end validation until `accepted_tos` is added to the JWT payload
-            user.accepted_terms_of_service = timezone.now()
 
             # Register and save user
             password = str(uuid.uuid4()) if new_password_required else None
