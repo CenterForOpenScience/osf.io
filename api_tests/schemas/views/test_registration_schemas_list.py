@@ -44,6 +44,8 @@ class TestSchemaList:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert res.json['meta']['total'] == RegistrationSchema.objects.get_latest_versions(factory_request).count()
+        print([entry['attributes']['name'] for entry in res.json['data']])
+        print(RegistrationSchema.objects.get_latest_versions(factory_request).values_list('name', flat=True))
 
         # test_cannot_update_metaschemas
         res = app.put_json_api(url, auth=user.auth, expect_errors=True)
