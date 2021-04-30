@@ -39,7 +39,10 @@ class TestFindSpammyContent:
 
     @pytest.fixture
     def spam_node_but_old(self, user_two):
-        return NodeFactory(title='Kombat spam', creator=user_two, created=timezone.now() - timedelta(days=2))
+        node = NodeFactory(title='Kombat spam', creator=user_two)
+        node.created = timezone.now() - timedelta(days=2)
+        node.save()
+        return node
 
     @pytest.fixture
     def kombat_registration(self, user):
@@ -83,6 +86,10 @@ class TestFindSpammyContent:
 
     def test_ban_all_node_spam(self, user, user_two, kombat_node, node_two):
         manage_spammy_content('Kombat', models=[Node, ], ban=True)
+        user.reload()
+        kombat_node.reload()
+        node_two.reload()
+        user_two.reload()
         assert kombat_node.is_spam
         assert not node_two.is_spam
         assert user.is_disabled
@@ -90,6 +97,10 @@ class TestFindSpammyContent:
 
     def test_ban_all_preprint_spam(self, user, user_two, kombat_preprint, preprint_two):
         manage_spammy_content('Kombat', models=[Preprint, ], ban=True)
+        kombat_preprint.reload()
+        preprint_two.reload()
+        user.reload()
+        user_two.reload()
         assert kombat_preprint.is_spam
         assert not preprint_two.is_spam
         assert user.is_disabled
@@ -97,6 +108,10 @@ class TestFindSpammyContent:
 
     def test_ban_all_registration_spam(self, user, user_two, kombat_registration, registration_two):
         manage_spammy_content('Kombat', models=[Registration, ], ban=True)
+        user.reload()
+        user_two.reload()
+        kombat_registration.reload()
+        registration_two.reload()
         assert kombat_registration.is_spam
         assert not registration_two.is_spam
         assert user.is_disabled
@@ -104,6 +119,10 @@ class TestFindSpammyContent:
 
     def test_ban_recent_spam(self, kombat_node, spam_node_but_old, user, user_two):
         manage_spammy_content('Kombat', models=[Node, ], ban=True)
+        kombat_node.reload()
+        spam_node_but_old.reload()
+        user.reload()
+        user_two.reload()
         assert kombat_node.is_spam
         assert not spam_node_but_old.is_spam
         assert user.is_disabled
