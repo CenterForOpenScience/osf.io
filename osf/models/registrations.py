@@ -137,11 +137,39 @@ class Registration(AbstractNode):
 
     @staticmethod
     def find_failed_registrations():
+        """
+        These are registrations that have been stuck in archiver due to some bug or timeout condition.
+        """
         expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
         stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
         return stuck_regs
+
+    @staticmethod
+    def find_ia_backlog():
+        """
+        These are registrations that are waiting to be archived at archive.org
+        """
+        return Registration.objects.filter(
+            ia_url__isnull=True,
+            is_public=True,
+            identifiers__category='doi'
+        ).exclude(
+            moderation_state='withdrawn',
+        )
+
+    @staticmethod
+    def find_doi_backlog():
+        """
+        These are registrations that should have DOIs but are missing them likely due to temporary outages.
+        """
+        return Registration.objects.filter(
+            is_public=True,
+        ).exclude(
+            identifiers__category='doi',
+            moderation_state='withdrawn',
+        )
 
     @property
     def has_project(self):
