@@ -796,7 +796,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if action == 'get_guid':
         draft_id = extras.get('draft')
         draft = DraftRegistration.load(draft_id)
-        if draft is None or draft.is_approved:
+        if draft is None:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
                 'message_long': 'File not associated with required object.'

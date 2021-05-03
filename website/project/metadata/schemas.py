@@ -31,7 +31,6 @@ OSF_META_SCHEMA_FILES = [
 ]
 
 METASCHEMA_ORDERING = (
-    'Prereg Challenge',
     'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',

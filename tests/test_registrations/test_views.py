@@ -473,33 +473,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         except Exception:
             self.fail()
 
-    def test_check_draft_state_approved(self):
-        try:
-            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
-                draft_views.check_draft_state(self.draft)
-        except HTTPError as e:
-            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
-        else:
-            self.fail()
-
     def test_check_draft_state_ok(self):
         try:
             draft_views.check_draft_state(self.draft)
         except Exception:
             self.fail()
-
-    def test_check_draft_state_registered_and_deleted_and_approved(self):
-        reg = RegistrationFactory()
-        self.draft.registered_node = reg
-        self.draft.save()
-        reg.is_deleted = True
-        reg.save()
-
-        with mock.patch('osf.models.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
-            try:
-                draft_views.check_draft_state(self.draft)
-            except HTTPError:
-                self.fail()
 
 
 @pytest.mark.django_db

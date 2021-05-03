@@ -377,6 +377,11 @@ def redirect_to_cos_news(**kwargs):
     return redirect('https://cos.io/news/')
 
 
+def redirect_to_registration_workflow(**kwargs):
+    # Redirect to prereg help guide
+    return redirect('https://www.cos.io/initiatives/prereg')
+
+
 # Return error for legacy SHARE v1 search route
 def legacy_share_v1_search(**kwargs):
     return HTTPError(

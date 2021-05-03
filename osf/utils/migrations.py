@@ -290,7 +290,7 @@ def find_title_description_help_example(rs, question):
     ]
 
     if title:
-        if schema_name in ['OSF Preregistration', 'Prereg Challenge', 'Secondary Data Preregistration']:
+        if schema_name in ['OSF Preregistration', 'Secondary Data Preregistration']:
             # These two schemas have clear "example" text in the "help" section
             example = help
             help = description

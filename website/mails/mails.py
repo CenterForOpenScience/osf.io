@@ -184,10 +184,6 @@ CONFIRM_EMAIL = Mail(
     'confirm',
     subject='Add a new email to your OSF account'
 )
-CONFIRM_EMAIL_PREREG = Mail(
-    'confirm_prereg',
-    subject='OSF Account Verification, OSF Preregistration'
-)
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'

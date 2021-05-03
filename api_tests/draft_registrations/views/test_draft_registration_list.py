@@ -7,7 +7,6 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
     TestDraftRegistrationCreate
 )
 from api.base.settings.defaults import API_BASE
-from django.contrib.auth.models import Permission
 
 from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
 from osf_tests.factories import (
@@ -225,20 +224,6 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 201
-
-    #   test_reviewer_cannot_create_draft_registration
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 403
 
     def test_create_project_based_draft_does_not_email_initiator(
             self, app, user, url_draft_registrations, payload):

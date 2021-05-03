@@ -45,9 +45,6 @@ def serialize_draft_registration(draft, auth=None):
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id, _guid=True),
             'registrations': node.web_url_for('node_registrations', _guid=True)
         },
-        'requires_approval': draft.requires_approval,
-        'is_pending_approval': draft.is_pending_review,
-        'is_approved': draft.is_approved,
     }
 
 def create_jsonschema_from_metaschema(metaschema, required_fields=False, is_reviewer=False):
@@ -113,7 +110,6 @@ def extract_question_values(question, required_fields, is_reviewer, is_required)
     """
     response = {
         'value': {'type': 'string'},
-        'comments': COMMENTS_SCHEMA,
         'extra': {'type': 'array'}
     }
     if question.get('type') == 'object':
@@ -250,37 +246,6 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
     }
 }
 
-
-COMMENTS_SCHEMA = {
-    'type': 'array',
-    'items': {
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'seenBy': {
-                'type': 'array',
-            },
-            'canDelete': {'type': 'boolean'},
-            'created': {'type': 'string'},
-            'lastModified': {'type': 'string'},
-            'author': {'type': 'string'},
-            'value': {'type': 'string'},
-            'isOwner': {'type': 'boolean'},
-            'getAuthor': {'type': 'string'},
-            'user': {
-                'type': 'object',
-                'additionalProperties': True,
-                'properties': {
-                    'fullname': {'type': 'string'},
-                    'id': {'type': 'integer'}
-                }
-            },
-            'saved': {'type': 'boolean'},
-            'canEdit': {'type': 'boolean'},
-            'isDeleted': {'type': 'boolean'}
-        }
-    }
-}
 
 def base_metaschema(metaschema):
     json_schema = {
