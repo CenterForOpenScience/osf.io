@@ -50,19 +50,14 @@ class AbstractSchemaManager(models.Manager):
         """
         return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, request=None, invisible=False, default_schema_id=None):
+    def get_latest_versions(self, request=None, invisible=False):
         """
         Return the latest version of the given schema
 
         :param request: the request object needed for waffling
         :return: queryset
         """
-        annotated_qs = self.annotate(default_schema_ordering=models.Case(
-            models.When(id=default_schema_id, then=models.Value(1)),
-            default=models.Value(0),
-            output_field=models.PositiveIntegerField(),
-        ))
-        queryset = annotated_qs.order_by('name', '-schema_version', 'default_schema_ordering').distinct('name')
+        queryset = self.order_by('name', '-schema_version').distinct('name')
 
         if not invisible:
             queryset = queryset.filter(visible=True)
@@ -71,7 +66,6 @@ class AbstractSchemaManager(models.Manager):
             return allow_egap_admins(queryset, request)
 
         return queryset
-
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)

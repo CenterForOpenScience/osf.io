@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Q, Value, When
+from django.db.models import Case, CharField, Q, Value, When, Max, PositiveIntegerField
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -686,7 +686,15 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
     def get_default_queryset(self):
         provider = self.get_provider()
         default_schema_id = provider.default_schema.id if provider.default_schema else None
-        return provider.schemas.get_latest_versions(request=self.request, invisible=True, default_schema_id=default_schema_id)
+        if not default_schema_id:
+            return provider.schemas.get_latest_versions(request=self.request, invisible=True).filter(active=True)
+        schemas = provider.schemas.values('name').annotate(version=Max('schema_version'))
+        annotated_schemas = schemas.annotate(default_schema_ordering=Case(
+            When(id=default_schema_id, then=Value(1)),
+            default=Value(0),
+            output_field=PositiveIntegerField(),
+        )).order_by('-default_schema_ordering')
+        return annotated_schemas
 
     def get_queryset(self):
         return self.get_queryset_from_request()
