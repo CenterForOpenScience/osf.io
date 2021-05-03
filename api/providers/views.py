@@ -1,4 +1,4 @@
-from django.db.models import Case, CharField, Q, Value, When, Max, PositiveIntegerField
+from django.db.models import Case, CharField, Q, F, Value, When, Max, IntegerField, Subquery, OuterRef
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -49,6 +49,7 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
+    RegistrationSchema,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
@@ -688,13 +689,20 @@ class RegistrationProviderSchemaList(JSONAPIBaseView, generics.ListAPIView, List
         default_schema_id = provider.default_schema.id if provider.default_schema else None
         if not default_schema_id:
             return provider.schemas.get_latest_versions(request=self.request, invisible=True).filter(active=True)
-        schemas = provider.schemas.values('name').annotate(version=Max('schema_version'))
-        annotated_schemas = schemas.annotate(default_schema_ordering=Case(
+        latest_versions = RegistrationSchema.objects.values('name').annotate(latest_version=Max('schema_version'))
+        annotated = RegistrationSchema.objects.all().annotate(
+            latest_version=Subquery(
+                latest_versions.filter(name=OuterRef('name')).values('latest_version')[:1],
+                output_field=IntegerField(),
+            ),
+        )
+        filtered = annotated.filter(schema_version=F('latest_version'), providers=provider)
+        filtered = filtered.annotate(default_schema_ordering=Case(
             When(id=default_schema_id, then=Value(1)),
             default=Value(0),
-            output_field=PositiveIntegerField(),
+            output_field=IntegerField(),
         )).order_by('-default_schema_ordering')
-        return annotated_schemas
+        return filtered
 
     def get_queryset(self):
         return self.get_queryset_from_request()

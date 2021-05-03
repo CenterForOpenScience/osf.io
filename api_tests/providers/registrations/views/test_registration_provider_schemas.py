@@ -46,6 +46,7 @@ class TestRegistrationProviderSchemas:
     @pytest.fixture()
     def osf_prereg_schema(self):
         osf_prereg = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
+        osf_prereg.visible = True
         osf_prereg.save()
         return osf_prereg
 
@@ -86,10 +87,10 @@ class TestRegistrationProviderSchemas:
         return provider
 
     @pytest.fixture()
-    def provider_with_prereg(self, osf_prereg_schema, egap_schema, schema):
+    def provider_with_prereg(self, osf_prereg_schema, egap_schema, schema, out_dated_schema):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
-        provider.schemas.add(*[osf_prereg_schema, schema])
+        provider.schemas.add(*[osf_prereg_schema, schema, out_dated_schema, egap_schema])
         provider.save()
         return provider
 
@@ -137,7 +138,7 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 3
+        assert len(data) == 2
         assert schema._id in [item['id'] for item in data]
         assert invisible_schema._id in [item['id'] for item in data]
         assert schema.name in [item['attributes']['name'] for item in data]
@@ -182,6 +183,7 @@ class TestRegistrationProviderSchemas:
             self,
             app,
             provider_with_prereg,
+            out_dated_schema,
             user,
             egap_schema,
             schema,
@@ -189,10 +191,11 @@ class TestRegistrationProviderSchemas:
             osf_prereg_schema
     ):
         provider_with_prereg.default_schema = osf_prereg_schema
+        provider_with_prereg.save()
         res = app.get(url_with_prereg, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 2
+        assert len(data) == 3
         assert osf_prereg_schema._id == data[0]['id']
         assert schema.name in [item['attributes']['name'] for item in data]
