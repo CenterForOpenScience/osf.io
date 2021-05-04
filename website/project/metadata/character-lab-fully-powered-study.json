@@ -1,0 +1,254 @@
+{
+    "name": "Secondary Data Preregistration",
+    "version": 1,
+    "config": {
+	"hasFiles": true
+    },
+    "description": "OSF Secondary Data Preregistration (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study.",
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+			"qid": "q1",
+			"nav": "Study Type",
+			"title": "Study Type",
+			"description": "",
+			"help": "",
+			"type": "choose",
+			"format": "singleselect",
+			"options": [
+				"Pilot",
+				"Fully-Powered"
+			]
+		}, {
+            "qid": "q2",
+            "nav": "Study Design",
+            "title": "Study Design",
+            "description": "",
+            "help": "",
+            "type": "choose",
+            "format": "multiselect",
+			"options": [
+				"Correlational",
+				"Cross-sectional",
+				"Intervention",
+				"Longitudinal",
+				"Measure Validation"
+			],
+            "required": true
+        }]
+	}, {
+		"id": "page2",
+        "title": "Contact Information",
+        "questions": []
+	}, {
+		"id": "page3",
+		"title": "Background and Study Intent",
+		"questions": [{
+            "qid": "q3",
+            "nav": "Study Description",
+            "title": "Study Description",
+			"description": "",
+			"help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Primary Outcomes",
+            "title": "Primary Outcomes",
+            "description": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q5",
+            "nav": "Number of Conditions",
+            "title": "Number of Conditions",
+            "description": "",
+            "help": "",
+            "type": "choose",
+            "format": "singleselect",
+			"options": [1, 2, 3, 4, 5],
+            "required": true
+        }, {
+            "qid": "q6",
+            "nav": "Total Number of Students",
+            "title": "Total Number of Students",
+            "description": "",
+			"help": "",
+            "type": "string",
+            "format": "text",
+            "required": true
+        }, {
+            "qid": "q7",
+            "nav": "Character Strengths",
+            "title": "Character Strengths",
+            "description": "",
+            "help": "",
+            "type": "choose",
+            "format": "multiselect",
+			"options": [
+				"Creativity",
+				"Curiosity",
+				"Empathy",
+				"Gratitude",
+				"Grit",
+				"Growth Mindset",
+				"Intellectual Humility",
+				"Kindness",
+				"Motivation",
+				"Practivity",
+				"Prosocial Purpose",
+				"Purpose",
+				"Resilience",
+				"Self-control",
+				"Self-efficacy",
+				"Other"
+			],
+            "required": true
+        }]
+	}. {
+		"id": "page4",
+		"title": "Sample",
+		"questions": [{
+            "qid": "q8",
+            "nav": "Study Grade Assignment",
+            "title": "Study Grade Assignment",
+            "description": "",
+            "help": "",
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"6th grade",
+				"7th grade",
+				"8th grade",
+				"9th grade",
+				"10th grade",
+				"11th grade",
+				"12th grade"
+			],
+			"required": true
+        }, {
+            "qid": "q9",
+            "nav": "School Stratum Assignment",
+            "title": "School Stratum Assignment",
+            "description": "",
+            "help": "",
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
+				"Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
+				"Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
+				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
+				"Stratum E: Mostly White, high SES, suburban schools. These schools represent 21% of all middle and high schools in the US."
+			],
+			"required": true
+        }]
+    }, {
+		"id": "page5",
+		"title": "Pilot Reporting",
+		"questions": [{
+			"qid": "q9",
+			"nav": "Pilot Experience",
+			"title": "Pilot Experience",
+			"description": "",
+			"help": "",
+			"type": "string",
+			"format": "textarea",
+			"required": true
+		}, {
+			"qid": "q10",
+            "nav": "Pilot Goals",
+            "title": "Pilot Goals",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+		}, {
+            "qid": "q11",
+            "nav": "Pilot's Hypothesis",
+            "title": "Pilot's Hypothesis",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+		}, {
+            "qid": "q12",
+            "nav": "Feedback",
+            "title": "Feedback",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+		}]
+	}, {
+		"id": "page6",
+		"title": "Post-Pilot Reporting",
+		"questions": [{
+            "qid": "q13",
+            "nav": "Pilot Analysis",
+            "title": "Pilot Analysis",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+		}, {
+            "qid": "q14",
+            "nav": "Pilot Data",
+            "title": "Pilot Data",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q15",
+            "nav": "Pilot Concerns",
+            "title": "Pilot Concerns",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q16",
+            "nav": "Pilot Takeaways",
+            "title": "Pilot Takeaways",
+            "description": "",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }]
+	}, {
+		"id": "page7",
+		"title": "Transition to Fully Powered Study",
+		"questions": [{
+            "qid": "q18",
+            "nav": "Study Changes",
+            "title": "Study Changes",
+            "description": "What changes, if any, are you making to your study design as a result of the pilot data and feedback you've received?",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q19",
+            "nav": "Hypotheses Changes",
+            "title": "Hypotheses Changes",
+            "description": "Have your hypotheses about this study changed at all following the pilot?",
+            "help": "",
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }]
+	}
+}
+
+
