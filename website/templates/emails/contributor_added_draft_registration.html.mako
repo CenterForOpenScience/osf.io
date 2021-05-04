@@ -9,15 +9,16 @@
     Hello ${user.fullname},<br>
     <br>
     <p>
-        ${'You just started' if not referrer_name else referrer_name + ' just added you to'}
+        ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on}
         % if node.title == 'Untitled':
             <a href="${node.absolute_url}">a new registration draft</a>
         % else:
-            a new registration draft titled <a href="${node.absolute_url}"> ${node.title} </a>
+            a new registration draft titled <a href="${node.absolute_url}">${node.title}</a>
         % endif
+		to be submitted for inclusion in the ${node.provider} registry.
     </p>
     <p>
-        It's <b>important</b> that you save or bookmark this email to return to your registration draft to make additional edits.
+	You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations>"My Registrations" page.</a>
     </p>
     % if is_initiator or node.has_permission(contributor, 'admin'):
         <p>

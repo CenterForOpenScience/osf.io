@@ -6,32 +6,41 @@
     Hello ${user.fullname},
     <p>
     % if is_initiator:
-    You initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.
+        You have requested final approvals to submit your registration titled <a href="${registration_link}">${reviewable.title}</a>.
     % else:
-    ${initiated_by} has initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.
+        ${initiated_by} has requested final approvals to submit your registration titled <a href="${registration_link}">${reviewable.title}</a>.
     % endif
+    </p>
     <p>
     % if is_moderated:
-         If approved, a registration will be created for the project and sent to ${reviewable.provider.name} moderators for review.
+        If approved by all admin contributors, the registration will be submitted for moderator review.
+        If the moderators approve, the registration will be made public as part of the {reviewable.provider.name} registry.
     % else:
-        If approved, a registration will be created for the project and will be made public immediately.
+        If approved by all admin contributors, the registration will be made public as part of the {reviewable.provider.name} registry.
     % endif
+    </p>
+    <p style="color:red;">
+    You have 48 hours from midnight tonight to approve or cancel this registration before it is automatically submitted
+    </p>
     <p>
-    To approve this registration, click the following link: <a href="${approval_link}">Click here</a><br>
-    To cancel this registration, click the following link: <a href="${disapproval_link}">Click here</a>
+    Approve this registration: <a href="${approval_link}">Click here</a>.<br>
+    Cancel this registration: <a href="${disapproval_link}">Click here</a>.
+    </p>
     <p>
-    Note: Clicking the cancel link will immediately cancel the pending registration and the
-    registration will remain in draft state. This operation is irreversible.
+    Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
+    pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+    </p>
+    % if not reviewable.branched_from_node:
+        <p>
+        An OSF Project was created from this registration to support continued collaboration and sharing of your research.
+        This project will remain available even if your registration is rejected.
+        </p>
+        <p>
+        You will be automatically subscribed to notification emails for this project. To change your email notification
+        preferences, visit your project or your user settings: https://staging2.osf.io/settings/notifications/
+        </p>
+    % endif
 	<p>
-    % if is_moderated:
-        If you neither approve nor cancel the registration within ${approval_time_span} hours from
-        midnight tonight (EDT) the registration will be automatically approved and
-         sent to ${reviewable.provider.name} moderators for review.
-    % else:
-        If you neither approve nor cancel the registration within ${approval_time_span} hours from midnight tonight
-         (EDT) the registration will be automatically approved and made public.
-    % endif
-    <p>
     Sincerely yours,<br>
     The OSF Robots<br>
 </tr>
