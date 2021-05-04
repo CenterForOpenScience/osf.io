@@ -1,10 +1,10 @@
 {
-    "name": "Secondary Data Preregistration",
+    "name": "Character Lab Fully-Powered Study",
     "version": 1,
     "config": {
 	"hasFiles": true
     },
-    "description": "OSF Secondary Data Preregistration (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study.",
+    "description": "",
     "pages": [{
         "id": "page1",
         "title": "Study Information",
