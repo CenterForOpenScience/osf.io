@@ -57,7 +57,16 @@ class AbstractSchemaManager(models.Manager):
         :param request: the request object needed for waffling
         :return: queryset
         """
-        queryset = self.order_by('name', '-schema_version').distinct('name')
+
+        latest_versions = self.values('name').annotate(latest_version=models.Max('schema_version'))
+
+        annotated = self.all().annotate(
+            latest_version=models.Subquery(
+                latest_versions.filter(name=models.OuterRef('name')).values('latest_version')[:1],
+                output_field=models.IntegerField(),
+            ),
+        )
+        queryset = annotated.filter(schema_version=models.F('latest_version'))
 
         if not invisible:
             queryset = queryset.filter(visible=True)
