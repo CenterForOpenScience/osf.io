@@ -7,7 +7,6 @@
     <p>
 	${initiated_by} has requested final approvals to end the embargo for your registration titled
       <a href="${registration_link}">${reviewable.title}</a>
-    % endif
     <\p>
 	<p>
 	If all admins contributors appove, the registration will be made public as part of the {reviewable.provider.name} registry.
