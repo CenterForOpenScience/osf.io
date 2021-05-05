@@ -6,19 +6,18 @@
     <%!
         from website import settings
     %>
-    Hello ${user.fullname},<br>
-    <br>
+    Hello ${user.fullname},
     <p>
-        ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on}
+        ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on'}
         % if node.title == 'Untitled':
             <a href="${node.absolute_url}">a new registration draft</a>
         % else:
             a new registration draft titled <a href="${node.absolute_url}">${node.title}</a>
         % endif
-		to be submitted for inclusion in the ${node.provider} registry.
+		to be submitted for inclusion in the ${node.provider.name} registry.
     </p>
     <p>
-	You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations>"My Registrations" page.</a>
+	You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
     </p>
     % if is_initiator or node.has_permission(contributor, 'admin'):
         <p>
