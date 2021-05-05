@@ -1,0 +1,148 @@
+{
+    "name": "Character Lab Pilot Study",
+    "version": 1,
+    "config": {
+	"hasFiles": true
+    },
+    "description": null,
+    "pages": [{
+        "id": "page1",
+        "title": "Study Information",
+        "questions": [{
+			"qid": "q1",
+			"nav": "Study Type",
+			"title": "Study Type",
+			"description": null,
+			"help": null,
+			"type": "choose",
+			"format": "singleselect",
+			"options": [
+				"Pilot",
+				"Fully-Powered"
+			]
+		}, {
+            "qid": "q2",
+            "nav": "Study Design",
+            "title": "Study Design",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "multiselect",
+			"options": [
+				"Correlational",
+				"Cross-sectional",
+				"Intervention",
+				"Longitudinal",
+				"Measure Validation"
+			],
+            "required": true
+        }]
+	}, {
+		"id": "page2",
+        "title": "Contact Information",
+        "questions": []
+	}, {
+		"id": "page3",
+		"title": "Background and Study Intent",
+		"questions": [{
+            "qid": "q3",
+            "nav": "Study Description",
+            "title": "Study Description",
+			"description": null,
+			"help": null,
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Primary Outcomes",
+            "title": "Primary Outcomes",
+            "description": null,
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q5",
+            "nav": "Number of Conditions",
+            "title": "Number of Conditions",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "singleselect",
+			"options": ["1", "2", "3", "4", "5"],
+            "required": true
+        }, {
+            "qid": "q6",
+            "nav": "Total Number of Students",
+            "title": "Total Number of Students",
+            "description": null,
+			"help": null,
+            "type": "string",
+            "format": "text",
+            "required": true
+        }, {
+            "qid": "q7",
+            "nav": "Character Strengths",
+            "title": "Character Strengths",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "multiselect",
+			"options": [
+				"Creativity",
+				"Curiosity",
+				"Empathy",
+				"Gratitude",
+				"Grit",
+				"Growth Mindset",
+				"Intellectual Humility",
+				"Kindness",
+				"Motivation",
+				"Practivity",
+				"Prosocial Purpose",
+				"Purpose",
+				"Resilience",
+				"Self-control",
+				"Self-efficacy",
+				"Other"
+			],
+            "required": true
+        }]
+	}, {
+		"id": "page4",
+		"title": "Sample",
+		"questions": [{
+            "qid": "q8",
+            "nav": "Study Grade Assignment",
+            "title": "Study Grade Assignment",
+            "description": null,
+            "help": null,
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"6th grade",
+				"7th grade",
+				"8th grade",
+				"9th grade",
+				"10th grade",
+				"11th grade",
+				"12th grade"
+			]
+        }, {
+            "qid": "q9",
+            "nav": "School Stratum Assignment",
+            "title": "School Stratum Assignment",
+            "description": null,
+            "help": null,
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
+				"Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
+				"Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
+				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
+				"Stratum E: Mostly White, high SES, suburban schools. These schools represent 21% of all middle and high schools in the US."
+			]
+        }]
+	}]
+}
