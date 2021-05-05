@@ -4,7 +4,7 @@
     "config": {
 	"hasFiles": true
     },
-    "description": "",
+    "description": null,
     "pages": [{
         "id": "page1",
         "title": "Study Information",
@@ -12,8 +12,8 @@
 			"qid": "q1",
 			"nav": "Study Type",
 			"title": "Study Type",
-			"description": "",
-			"help": "",
+			"description": null,
+			"help": null,
 			"type": "choose",
 			"format": "singleselect",
 			"options": [
@@ -24,8 +24,8 @@
             "qid": "q2",
             "nav": "Study Design",
             "title": "Study Design",
-            "description": "",
-            "help": "",
+            "description": null,
+            "help": null,
             "type": "choose",
             "format": "multiselect",
 			"options": [
@@ -48,8 +48,8 @@
             "qid": "q3",
             "nav": "Study Description",
             "title": "Study Description",
-			"description": "",
-			"help": "",
+			"description": null,
+			"help": null,
             "type": "string",
             "format": "textarea",
             "required": true
@@ -57,7 +57,7 @@
             "qid": "q4",
             "nav": "Primary Outcomes",
             "title": "Primary Outcomes",
-            "description": "",
+            "description": null,
             "type": "string",
             "format": "textarea",
             "required": true
@@ -65,18 +65,18 @@
             "qid": "q5",
             "nav": "Number of Conditions",
             "title": "Number of Conditions",
-            "description": "",
-            "help": "",
+            "description": null,
+            "help": null,
             "type": "choose",
             "format": "singleselect",
-			"options": [1, 2, 3, 4, 5],
+			"options": ["1", "2", "3", "4", "5"],
             "required": true
         }, {
             "qid": "q6",
             "nav": "Total Number of Students",
             "title": "Total Number of Students",
-            "description": "",
-			"help": "",
+            "description": null,
+			"help": null,
             "type": "string",
             "format": "text",
             "required": true
@@ -84,8 +84,8 @@
             "qid": "q7",
             "nav": "Character Strengths",
             "title": "Character Strengths",
-            "description": "",
-            "help": "",
+            "description": null,
+            "help": null,
             "type": "choose",
             "format": "multiselect",
 			"options": [
@@ -108,15 +108,15 @@
 			],
             "required": true
         }]
-	}. {
+	}, {
 		"id": "page4",
 		"title": "Sample",
 		"questions": [{
             "qid": "q8",
             "nav": "Study Grade Assignment",
             "title": "Study Grade Assignment",
-            "description": "",
-            "help": "",
+            "description": null,
+            "help": null,
             "type": "choose",
 			"format": "multiselect",
 			"options": [
@@ -132,8 +132,8 @@
             "qid": "q9",
             "nav": "School Stratum Assignment",
             "title": "School Stratum Assignment",
-            "description": "",
-            "help": "",
+            "description": null,
+            "help": null,
             "type": "choose",
 			"format": "multiselect",
 			"options": [
@@ -144,5 +144,5 @@
 				"Stratum E: Mostly White, high SES, suburban schools. These schools represent 21% of all middle and high schools in the US."
 			]
         }]
-    }
+	}]
 }
