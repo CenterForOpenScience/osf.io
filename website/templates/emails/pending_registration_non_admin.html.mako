@@ -15,7 +15,7 @@
         If approved by all admin contributors, the registration will be made public as part of the {reviewable.provider.name} registry.
     % endif
 	<p>
-	Admins have 48 hours from midnight tonight (EDT) to approve or cancel the
+	Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
 	registration before the registration is automatically submitted.
 	</p>
     % if not reviewable.branched_from_node:

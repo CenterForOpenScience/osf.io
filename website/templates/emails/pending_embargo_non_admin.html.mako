@@ -18,7 +18,7 @@
     % endif
 	</p>
 	<p>
-	Admins have 48 hours from midnight tonight (EDT) to approve or cancel the
+	Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
 	registration before the registration is automatically submitted.
 	</p>
     % if not reviewable.branched_from_node:

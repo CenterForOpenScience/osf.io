@@ -22,7 +22,8 @@
     % endif
 	</p>
     <p style="color:red;">
-	You have 48 hours from midnight tonight to approve or cancel this registration before it is automatically submitted
+	You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
+	this registration before it is automatically submitted.
 	</p>
     <p>
     Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
