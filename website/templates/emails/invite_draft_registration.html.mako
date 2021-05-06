@@ -20,8 +20,8 @@
     <a href="${claim_url}">Click here</a> To set a password for your account.
     <\p>
     <p>
-    Once you have set a password, you will be able to this registration draft as well as create
-    your own projects, registrations, and preprints on the OSF. You will be able to access this draft
+    Once you have set a password, you will be able to contribute to this registration draft as well as
+	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
     by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
     <\p>
     <p>
