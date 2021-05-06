@@ -23,8 +23,8 @@
     <\p>
     <p>
     Note: If any admin clicks their cancel link, the embargo termination request will
-    be cancelled immediately and the registration will remain embargoed until
-	${reviewable.embargo_end_date.date()}.
+    be cancelled immediately and the registration will remain private until its current
+	embargo expires.
     <p>
     Sincerely yours,<br>
     The OSF Robots<br>
