@@ -3137,7 +3137,7 @@ msgstr "デフォルトの保管場所の更新エラー"
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "deactivation request."
-msgstr "GakuNin RDM管理者がすぐに連絡して、非アクティブ化リクエストを確認します。"
+msgstr "GakuNin RDM管理者から、非アクティブ化リクエストを確認するためにすぐに連絡があります。"
 
 #: website/static/js/accountSettings.js:421
 msgid "Deactivation request failed. Please contact %1$s if the problem persists."
@@ -3198,7 +3198,7 @@ msgstr "無効化リクエストをキャンセルする"
 msgid ""
 "An GakuNin RDM administrator will contact you shortly to confirm your "
 "export request."
-msgstr "GakuNin RDM管理者がすぐに連絡して、非アクティブ化リクエストを確認します。"
+msgstr "GakuNin RDM管理者から、エクスポートリクエストを確認するためにすぐに連絡があります。"
 
 #: website/static/js/accountSettings.js:520
 msgid "Export request failed. Please contact %1$s if the problem persists."
