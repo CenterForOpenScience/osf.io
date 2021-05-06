@@ -9,7 +9,7 @@
     <br>
     If you did not request this action or you believe an unauthorized person has accessed your account, reset your password immediately by visiting:<br>
     <br>
-    https://osf.io/settings/account/<br>
+	${settings.DOMAIN + "settings/account"}
     <br>
     If you need additional help or have questions, let us know at ${osf_contact_email}.<br>
     <br>

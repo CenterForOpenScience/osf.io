@@ -5,7 +5,8 @@
   <td style="border-collapse: collapse;">
     Hello ${user.fullname},
     <p>
-	${initiated_by} has requested final approval to withdraw your registration titled <a href="${registration_link}">${reviewable.title}</a>
+    ${initiated_by} has requested final approval to withdraw your registration
+    titled <a href="${registration_link}">${reviewable.title}</a>
     </p>
     % if reviewable.withdrawal_justification:
       <p>
@@ -18,7 +19,7 @@
       If approved by all admin contributors, the withdrawal request will be submitted for moderator review.
       If the moderators approve, the registration will be marked as withdrawn.
     % else:
-       If approved by all admin contributors, the registration will be marked as withdrawn.
+      If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
     Its content will be removed from the ${reviewable.provider.name} registry, but basic metadata
     will be left behind. The title of the withdrawn registration and its list of contributors will remain.
@@ -26,19 +27,19 @@
       The provided justification or explanation of the withdrawal will also be visible.
     % endif
     </p>
-	%if not reviewable.branched_from_node:
+    % if not reviewable.branched_from_node:
       <p>
-      Even if the registration is withdrawn, the OSF Project created for this registration
-      will remain available
+      Even if the registration is withdrawn, the <a href="${reviewable.registered_from.absolute_url}">OSF Project</a>
+	  created for this registration will remain available.
       </p>
     % endif
-	<p>
-	  Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
-	  the withdrawal request before the withdrawal is automatically submitted.
-	</p>
+    <p>
+    Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
+    the withdrawal request before the withdrawal is automatically submitted.
+    </p>
     <p>
     Sincerely yours,<br>
     The OSF Robots<br>
-	</p>
+    </p>
 </tr>
 </%def>
