@@ -24,7 +24,7 @@
     <p>
     Note: If any admin clicks their cancel link, the embargo termination request will
     be cancelled immediately and the registration will remain embargoed until
-	${reviewable.embargo_end_date}.
+	${reviewable.embargo_end_date.date()}.
     <p>
     Sincerely yours,<br>
     The OSF Robots<br>
