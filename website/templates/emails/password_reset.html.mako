@@ -3,6 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},<br>
     <br>
     The password for your OSF account has successfully changed. <br>
