@@ -35,7 +35,7 @@
 				"Longitudinal",
 				"Measure Validation"
 			],
-            "required:" false
+            "required": false
         }]
 	}, {
 		"id": "page2",
@@ -196,7 +196,7 @@
             "description": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
         }, {
             "qid": "q9",
             "nav": "Number of conditions",
@@ -206,7 +206,7 @@
             "type": "choose",
             "format": "singleselect",
 			"options": ["1", "2", "3", "4", "5"],
-            "required:" false
+            "required": false
         }, {
             "qid": "q10",
             "nav": "Total number of students",
@@ -215,7 +215,7 @@
 			"help": null,
             "type": "string",
             "format": "text",
-            "required:" false
+            "required": false
         }, {
             "qid": "q11",
             "nav": "Character strengths",
@@ -242,7 +242,7 @@
 				"Self-efficacy",
 				"Other"
 			],
-            "required:" false
+            "required": false
         }]
 	}, {
 		"id": "page4",

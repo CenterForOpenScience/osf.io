@@ -35,7 +35,7 @@
 				"Longitudinal",
 				"Measure Validation"
 			],
-            "required:" false
+            "required": false
         }]
 	}, {
 		"id": "page2",
@@ -196,7 +196,7 @@
             "description": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
         }, {
             "qid": "q9",
             "nav": "Number of conditions",
@@ -206,7 +206,7 @@
             "type": "choose",
             "format": "singleselect",
 			"options": ["1", "2", "3", "4", "5"],
-            "required:" false
+            "required": false
         }, {
             "qid": "q10",
             "nav": "Total number of students",
@@ -215,7 +215,7 @@
 			"help": null,
             "type": "string",
             "format": "text",
-            "required:" false
+            "required": false
         }, {
             "qid": "q11",
             "nav": "Character strengths",
@@ -242,7 +242,7 @@
 				"Self-efficacy",
 				"Other"
 			],
-            "required:" false
+            "required": false
         }]
 	}, {
 		"id": "page4",
@@ -291,7 +291,7 @@
 			"help": null,
 			"type": "string",
 			"format": "textarea",
-			"required:" false
+			"required": false
 		}, {
 			"qid": "q15",
             "nav": "Pilot Goals",
@@ -300,7 +300,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
 		}, {
             "qid": "q16",
             "nav": "Pilot's Hypothesis",
@@ -309,7 +309,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
 		}, {
             "qid": "q17",
             "nav": "Feedback",
@@ -318,7 +318,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
 		}]
 	}, {
 		"id": "page6",
@@ -331,7 +331,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
 		}, {
             "qid": "q19",
             "nav": "Pilot Data",
@@ -340,7 +340,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
         }, {
             "qid": "q20",
             "nav": "Pilot Concerns",
@@ -349,7 +349,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
         }, {
             "qid": "q21",
             "nav": "Pilot Takeaways",
@@ -358,7 +358,7 @@
             "help": null,
             "type": "string",
             "format": "textarea",
-            "required:" false
+            "required": false
         }]
 	}, {
 		"id": "page7",
