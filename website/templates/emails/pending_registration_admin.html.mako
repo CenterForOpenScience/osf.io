@@ -17,9 +17,9 @@
     <p>
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
-      If the moderators approve, the registration will be made public as part of the {reviewable.provider.name} registry.
+      If the moderators approve, the registration will be made public as part of the ${reviewable.provider.name} registry.
     % else:
-      If approved by all admin contributors, the registration will be made public as part of the {reviewable.provider.name} registry.
+      If approved by all admin contributors, the registration will be made public as part of the ${reviewable.provider.name} registry.
     % endif
     </p>
     <p style="color:red;">
@@ -42,7 +42,8 @@
       </p>
       <p>
       You will be automatically subscribed to notification emails for this project. To change your email notification
-      preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}
+      preferences, visit your project or your user settings:
+	  <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
       </p>
     % endif
     <p>

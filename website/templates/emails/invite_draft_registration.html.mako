@@ -17,7 +17,7 @@
     to be submitted for inclusion in the ${node.provider.name} registry.
     </p>
     <p>
-    <a href="${claim_url}">Click here</a> To set a password for your account.
+    <a href="${claim_url}">Click here</a> to set a password for your account.
     <\p>
     <p>
     Once you have set a password, you will be able to contribute to this registration draft as well as
@@ -31,10 +31,10 @@
     <p>
     Sincerely,
     <p>
-    Open Science Framework Robot
+    The OSF Team
     <p>
-    Want more information? Visit https://osf.io/ to learn about the Open Science Framework, or
-    https://cos.io/ for information about its supporting organization, the Center for Open Science.
+    Want more information? Visit https://osf.io/ to learn about the OSF, or https://cos.io/
+	for information about its supporting organization, the Center for Open Science.
     <p>
     Questions? Email ${osf_contact_email}
 </tr>
