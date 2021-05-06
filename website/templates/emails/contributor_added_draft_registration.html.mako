@@ -37,7 +37,7 @@
     </p>
     <p>
     Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
-    or <a href="https://cos.io/" >https://cos.io/</a> for information about its supporting organization,
+    or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
     the Center for Open Science.
     </p>
     <p>

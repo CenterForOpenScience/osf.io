@@ -33,8 +33,9 @@
     <p>
     The OSF Team
     <p>
-    Want more information? Visit https://osf.io/ to learn about the OSF, or https://cos.io/
-	for information about its supporting organization, the Center for Open Science.
+    Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
+    or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
+    the Center for Open Science.
     <p>
     Questions? Email ${osf_contact_email}
 </tr>
