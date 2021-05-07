@@ -251,8 +251,7 @@ def resolve_guid_download(guid, suffix=None, provider=None):
     return resolve_guid(guid, suffix='download')
 
 
-@must_be_logged_in
-def resolve_guid(auth, guid, suffix=None):
+def resolve_guid(guid, suffix=None):
     """Load GUID by primary key, look up the corresponding view function in the
     routing table, and return the return value of the view function without
     changing the URL.
