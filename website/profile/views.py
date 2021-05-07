@@ -284,6 +284,7 @@ def profile_view_json(auth):
 
 @collect_auth
 @must_be_confirmed
+@must_be_logged_in
 def profile_view_id_json(uid, auth):
     user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
@@ -298,6 +299,7 @@ def profile_view(auth):
 
 @collect_auth
 @must_be_confirmed
+@must_be_logged_in
 def profile_view_id(uid, auth):
     user = OSFUser.load(uid)
     is_profile = auth and auth.user == user
