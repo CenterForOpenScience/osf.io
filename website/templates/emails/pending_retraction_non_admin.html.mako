@@ -10,9 +10,9 @@
     </p>
     % if reviewable.withdrawal_justification:
       <p>
-      The registration is being withdrawn for the following reason:<br>
-      ${reviewable.withdrawal_justification}
-      <\p>
+      The registration is being withdrawn for the following reason:
+      <blockquote>${reviewable.withdrawal_justification}</blockquote>
+      </p>
     % endif
     <p>
     % if is_moderated:

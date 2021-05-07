@@ -23,7 +23,7 @@
     % if not reviewable.branched_from_node:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
-	  this registration to support continued collaboration and sharing of your research.
+      this registration to support continued collaboration and sharing of your research.
       This project will remain available even if your registration is rejected.
       </p>
       <p>
