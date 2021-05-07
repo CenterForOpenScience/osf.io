@@ -9,8 +9,8 @@
     titled <a href="${registration_link}">${reviewable.title}</a>
     </p>
     <p>
-    If all admins contributors appove, the registration will be made public
-	as part of the ${reviewable.provider.name} registry.
+    If all admins contributors appove, the registration will be made public as part of the
+    ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
     </p>
     <p>
     Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this

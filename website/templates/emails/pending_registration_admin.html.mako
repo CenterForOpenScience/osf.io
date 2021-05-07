@@ -17,9 +17,11 @@
     <p>
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
-      If the moderators approve, the registration will be made public as part of the ${reviewable.provider.name} registry.
+      If the moderators approve, the registration will be made public as part of the
+      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
     % else:
-      If approved by all admin contributors, the registration will be made public as part of the ${reviewable.provider.name} registry.
+      If approved by all admin contributors, the registration will be made public as part of the
+      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
     % endif
     </p>
     <p style="color:red;">

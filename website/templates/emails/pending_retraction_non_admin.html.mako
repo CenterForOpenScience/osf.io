@@ -21,8 +21,9 @@
     % else:
       If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
-    Its content will be removed from the ${reviewable.provider.name} registry, but basic metadata
-    will be left behind. The title of the withdrawn registration and its list of contributors will remain.
+    Its content will be removed from the
+    ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+    but bssic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
     % if reviewable.withdrawal_justification:
       The provided justification or explanation of the withdrawal will also be visible.
     % endif
@@ -30,7 +31,7 @@
     % if not reviewable.branched_from_node:
       <p>
       Even if the registration is withdrawn, the <a href="${reviewable.registered_from.absolute_url}">OSF Project</a>
-	  created for this registration will remain available.
+      created for this registration will remain available.
       </p>
     % endif
     <p>
