@@ -2035,6 +2035,6 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
-
-OSF_PIGEON_URL = 'https://pigeon.staging.osf.io/'
 IA_ARCHIVE_ENABLED = True
+OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
+IA_ID_VERSION =  os.environ.get('ID_VERSION', None)

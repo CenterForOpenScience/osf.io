@@ -278,6 +278,7 @@
                   </ul>
               </div>
           {% endif %}
+          <li><a href="{% url 'internet_archive:internet_archive' %}"><i class='fa fa-link'></i> <span>Internet Archive</span></a></li>
 
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>

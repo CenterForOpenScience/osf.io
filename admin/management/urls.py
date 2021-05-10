@@ -12,6 +12,4 @@ urlpatterns = [
     url(r'^update_registration_schemas',
         views.UpdateRegistrationSchemas.as_view(),
         name='update_registration_schemas'),
-    url(r'^pigeon', views.SendToPigeon.as_view(), name='pigeon'),
-    url(r'^create_ia_subcollections', views.CreateIASubcollections.as_view(), name='create_ia_subcollections'),
 ]

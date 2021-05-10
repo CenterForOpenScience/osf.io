@@ -19,7 +19,8 @@ def archive_registrations_on_IA(dry_run=False, batch_size=100, guids=None):
     if guids:
         registrations = Registration.objects.filter(guids___id__in=guids)
     else:
-        # randomize order so large registrations won't block all pigeon workers.
+        # randomize order so large registrations won't block all pigeon workers,
+        # and stuck registrations won't block repeatedly
         registrations = Registration.find_ia_backlog().order_by('?')[:batch_size]
 
     logger.info(f'{registrations.count()} to be archived in batch')

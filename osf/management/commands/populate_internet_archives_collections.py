@@ -19,9 +19,10 @@ def populate_internet_archives_collections(version_id, dry_run=False):
                     "Authorization": f"LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}",
                     "x-archive-meta01-title": provider.name,
                     "x-archive-meta02-collection": settings.IA_ROOT_COLLECTION,
+                    "x-archive-meta03-mediatype": 'collection',
                 },
             )
-            if resp.status_code == 409:
+            if resp.status_code in (409, 400):
                 # The following uses the json patch syntax more info here:
                 # https://archive.org/services/docs/api/metadata.html
                 changes = [

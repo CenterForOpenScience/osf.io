@@ -70,6 +70,25 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
+    # Does not include m2ms or FKs that are synced
+    SYNCED_WITH_IA = {
+        'title',
+        'description',
+        'modified',
+        'category',
+        'article_doi',
+        'moderation_state',
+    }
+    IA_MAPPED_NAMES = {
+        'category': 'osf_category',
+        'article_doi': 'osf_article_doi',
+        'tags': 'osf_tags',
+        'subjects': 'osf_subjects',
+        'registration_schema': 'osf_registration_schema',
+        'provider': 'osf_registry',
+        'created': 'date',
+    }
+
     WRITABLE_WHITELIST = [
         'article_doi',
         'description',
@@ -1481,15 +1500,8 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
     """
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url and instance.is_public:
-        internet_archive_metadata = {
-            'title',
-            'description',
-            'category',
-            'modified',
-            'article_doi',
-            'moderation_state'
-        }.intersection(instance.get_dirty_fields().keys())
-        current_fields = {key: str(getattr(instance, key)) for key in internet_archive_metadata}
+        allowed_metadata = Registration.SYNCED_WITH_IA.intersection(instance.get_dirty_fields().keys())
+        current_fields = {key: str(getattr(instance, key)) for key in allowed_metadata}
         if current_fields:
             update_ia_metadata(instance, current_fields)
     elif settings.IA_ARCHIVE_ENABLED and instance.is_public:

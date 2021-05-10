@@ -43,42 +43,5 @@
                 </ul>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h4> <u>Pigeon Commands</u></h4>
-                <ul>
-                    Use this command to archive a specific guid or guids using a comma separated list.
-                    <br>
-                    <form method="post" action="{%url 'management:pigeon'%}">
-                        {% csrf_token %}
-                        <div class="input-group col-xs-2">
-                          <span class="input-group-btn">
-                              <button class="btn btn-success" style="position: fixed;" type="submit">Enter Guid(s)</button>
-                              <input type="text" name="guid_to_archive" class="form-control">
-                          </span>
-                        </div>
-                        <div class="input-group col-xs-2">
-                            Use this command to restart the nightly pigeon archive task.
-                            <br>
-                            <button class="btn btn-success" type="submit">Run</button>
-                        </div>
-                    </form>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h4> <u>Internet Archive Commands</u></h4>
-                <ul>
-                    <form method="post" action="{%url 'management:create_ia_subcollections'%}">
-                        {% csrf_token %}
-                        Use this command create subcollections for each registration provider or update the current
-                        provider name and description.
-                        <br>
-                        <button class="btn btn-success" type="submit">Run</button>
-                    </form>
-                </ul>
-            </div>
-        </div>
     </section>
 {% endblock %}
