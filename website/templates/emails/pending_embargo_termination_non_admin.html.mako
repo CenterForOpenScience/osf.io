@@ -5,12 +5,20 @@
   <td style="border-collapse: collapse;">
     Hello ${user.fullname},
     <p>
-    We just wanted to let you know that ${initiated_by} has initiated a request to end the embargo for a registration of ${project_name}. That registration can be viewed here: ${registration_link}.
+    ${initiated_by} has requested final approvals to end the embargo for your registration
+    titled <a href="${registration_link}">${reviewable.title}</a>
+    </p>
     <p>
-    If approved, the embargo will be terminated and the registration and all of its components will be made public immediately.
+    If all admins contributors appove, the registration will be made public as part of the
+    ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+    </p>
+    <p>
+    Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
+    request before the embargo is automatically lifted and the registration is made public.
+    </p>
     <p>
     Sincerely yours,<br>
     The OSF Robots<br>
-
+    </p>
 </tr>
 </%def>
