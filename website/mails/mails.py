@@ -223,6 +223,10 @@ INVITE_PREPRINT = lambda provider: Mail(
     'invite_preprints',
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
+INVITE_DRAFT_REGISTRATION = Mail(
+    'invite_draft_registration',
+    subject='You have a new registration draft'
+)
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
     subject='You have been added as a contributor to an OSF project.'
