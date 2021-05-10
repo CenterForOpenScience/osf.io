@@ -18,16 +18,16 @@
     </p>
     <p>
     <a href="${claim_url}">Click here</a> to set a password for your account.
-    <\p>
+    </p>
     <p>
     Once you have set a password, you will be able to contribute to this registration draft as well as
 	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
     by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
-    <\p>
+    </p>
     <p>
     If you are not ${fullname} or if you have been erroneously associated with "${node.title}" then
     email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.
-    <\p>
+    </p>
     <p>
     Sincerely,
     <p>

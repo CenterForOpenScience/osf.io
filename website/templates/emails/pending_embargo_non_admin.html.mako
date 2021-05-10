@@ -13,18 +13,18 @@
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
     % endif
     </p>
     <p>
     Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
     registration before the registration is automatically submitted.
     </p>
-    % if not reviewable.branched_from_node:
+    % if reviewable.draft_registration.first() and not reviewable.draft_registration.first().has_project:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
 	  this registration to support continued collaboration and sharing of your research.

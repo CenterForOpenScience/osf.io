@@ -10,7 +10,7 @@ from django.contrib.auth.models import Permission
 from nose.tools import assert_raises
 from transitions import MachineError
 
-from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
+from osf.models import DraftRegistration, DraftRegistrationApproval, NodeLog, RegistrationSchema  # noqa
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
@@ -267,10 +267,13 @@ class TestSanctionEmailRendering:
         provider.reviews_workflow = reviews_workflow
         provider.save()
 
-        registration.branched_from_node = branched_from_node
-        registration.save()
+        with mock.patch(
+            __name__ + '.DraftRegistration.has_project',
+            new_callable=mock.PropertyMock
+        ) as mock_has_project:
+            mock_has_project.return_value = branched_from_node
+            registration.sanction.ask([(registration.creator, registration)])
 
-        registration.sanction.ask([(registration.creator, registration)])
         assert True  # mail rendered successfully
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
@@ -282,8 +285,11 @@ class TestSanctionEmailRendering:
         provider.reviews_workflow = reviews_workflow
         provider.save()
 
-        registration.branched_from_node = branched_from_node
-        registration.save()
+        with mock.patch(
+            __name__ + '.DraftRegistration.has_project',
+            new_callable=mock.PropertyMock
+        ) as mock_has_project:
+            mock_has_project.return_value = branched_from_node
+            registration.sanction.ask([(contributor, registration)])
 
-        registration.sanction.ask([(contributor, registration)])
         assert True  # mail rendered successfully
