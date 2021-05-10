@@ -19,11 +19,11 @@
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the.
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
     % endif
     </p>
     <p style="color:red;">
@@ -31,14 +31,14 @@
     this registration before it is automatically submitted.
     </p>
     <p>
-    Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
-    Cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
+    To approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
     Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
     pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
     </p>
-    % if not reviewable.branched_from_node:
+    % if reviewable.draft_registration.first() and not reviewable.draft_registration.first().has_project:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
 	  this registration to support continued collaboration and sharing of your research.
