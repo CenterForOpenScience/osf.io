@@ -9,12 +9,13 @@
     Hello ${user.fullname},
     <p>
     ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on'}
-    % if node.title == 'Untitled':
+    % if not node.title or node.title == 'Untitled':
       <a href="${node.absolute_url}">a new registration draft</a>
     % else:
       a new registration draft titled <a href="${node.absolute_url}">${node.title}</a>
     % endif
-    to be submitted for inclusion in the ${node.provider.name} registry.
+    to be submitted for inclusion in the
+	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
     You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
@@ -41,7 +42,7 @@
     the Center for Open Science.
     </p>
     <p>
-    Questions? Email <a href="mailto: support@cos.io">support@cos.io</a>
+    Questions? Email <a href="mailto:support@cos.io">support@cos.io</a>
     </p>
   </td>
 </tr>

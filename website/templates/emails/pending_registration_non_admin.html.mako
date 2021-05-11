@@ -13,16 +13,16 @@
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be made public as part of the
-      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
+	  <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be made public as part of the
-      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
+	  <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     <p>
     Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
     registration before the registration is automatically submitted.
     </p>
-    % if reviewable.draft_registration.first() and not reviewable.draft_registration.first().has_project:
+    % if reviewable.branched_from_node:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
       this registration to support continued collaboration and sharing of your research.

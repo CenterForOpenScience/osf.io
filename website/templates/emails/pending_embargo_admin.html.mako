@@ -18,12 +18,12 @@
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
-      ${embargo_end_date.date()}, at which point it will be made public as part of the.
-      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
+      ${embargo_end_date.date()}, at which point it will be made public as part of the
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     </p>
     <p style="color:red;">
@@ -38,7 +38,7 @@
     Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
     pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
     </p>
-    % if reviewable.draft_registration.first() and not reviewable.draft_registration.first().has_project:
+    % if reviewable.branched_from_node:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
 	  this registration to support continued collaboration and sharing of your research.

@@ -3,6 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
     % if is_initiator:
@@ -15,7 +16,7 @@
     </p>
     <p>
     If all admin contributors appove, the registration will be made public as part of the
-    ${reviewable.provider.name if reviewable.provider else 'OSF Registry'}.
+    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     </p>
     <p style="color:red;">
     You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
