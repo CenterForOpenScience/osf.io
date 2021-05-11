@@ -139,7 +139,7 @@ class TestEGAPImport:
         responses.add(
             responses.Response(
                 method=responses.PUT,
-                url='{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/parent?name=test-2.txt&kind=file',
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/parent?name=test-2.txt&kind=file',
                 json={'metadata': 'for test-2!'},
                 status=201,
             )
@@ -147,7 +147,7 @@ class TestEGAPImport:
         responses.add(
             responses.Response(
                 method=responses.PUT,
-                url='{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test-1.txt&kind=file',
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test-1.txt&kind=file',
                 json={'metadata': 'for test-1!'},
                 status=201,
             )

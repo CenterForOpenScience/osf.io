@@ -130,7 +130,7 @@ def recursive_upload(auth, node, dir_path, parent='', metadata=None):
             metadata.append(resp.json())
     except EGAPUploadException as e:
         logger.info(str(e))
-        #metadata = recursive_upload(auth, node, dir_path, parent=parent, metadata=metadata)
+        metadata = recursive_upload(auth, node, dir_path, parent=parent, metadata=metadata)
 
     return metadata
 
