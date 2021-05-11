@@ -20,12 +20,12 @@
     <p>
     You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
     </p>
-    % if is_initiator or node.has_permission(user, 'admin'):
+    % if node.has_permission(user, 'admin'):
       <p>
       Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
       </p>
     % endif
-    % if not is_initiator:
+    % if referrer_name::
       <p>
       If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
       </p>
