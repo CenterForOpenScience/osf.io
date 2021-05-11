@@ -55,7 +55,7 @@ def update_ia_metadata(node, data):
     This debounces/throttles requests by grabbing a pending task and overriding it instead of making a new one every
     pre-commit m2m change.
 
-    IA wants us to brand are specific osf metadata with a `osf_` prefix. So we are following IA_MAPPED_NAMES.
+    IA wants us to brand our specific osf metadata with a `osf_` prefix. So we are following IA_MAPPED_NAMES.
     """
     for key in data.keys():
         Registration = apps.get_model('osf.registration')

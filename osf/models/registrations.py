@@ -79,6 +79,7 @@ class Registration(AbstractNode):
         'article_doi',
         'moderation_state',
     }
+    # IA wants us to brand our specific osf metadata with a `osf_` prefix or as their keyword.
     IA_MAPPED_NAMES = {
         'category': 'osf_category',
         'article_doi': 'osf_article_doi',
