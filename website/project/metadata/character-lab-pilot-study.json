@@ -49,12 +49,14 @@
 				"id": "name",
 				"title": "Team member name",
 				"type": "string",
-				"format": "text"
+				"format": "text",
+				"required": true
 			}, {
 			    "id": "institution",
 				"title": "Team member institution",
 				"type": "string",
-				"format": "text"
+				"format": "text",
+				"required": true
 			}, {
 			    "id": "role",
 				"title": "Team member role",
@@ -68,9 +70,9 @@
 					"Graduate scientist",
 					"Lab manager",
 					"Lab member"
-				]
-			}],
-			"required": true
+				],
+				"required": true
+			}]
 		}, {
             "qid": "q4",
             "nav": "Second team member",
