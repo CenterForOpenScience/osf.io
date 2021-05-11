@@ -14,7 +14,7 @@
     % else:
       a new registration draft titled <a href="${node.absolute_url}">${node.title}</a>
     % endif
-    to be submitted for inclusion in the ${node.provider.name}
+    to be submitted for inclusion in the
 	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
