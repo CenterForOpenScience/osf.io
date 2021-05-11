@@ -38,7 +38,7 @@
     Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
     pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
     </p>
-    % if reviewable.branched_from_node:
+    % if not reviewable.branched_from_node:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
 	  this registration to support continued collaboration and sharing of your research.
