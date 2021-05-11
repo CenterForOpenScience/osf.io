@@ -2109,7 +2109,7 @@ class SpamOverrideMixin(SpamMixin):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user, set_spam=False):
-        if user.spam_status == SpamStatus.HAM and not set_spam:
+        if user.spam_status == SpamStatus.HAM:
             return False
         if set_spam:
             self.confirm_spam(save=True)

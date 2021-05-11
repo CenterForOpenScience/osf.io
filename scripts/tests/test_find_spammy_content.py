@@ -15,7 +15,7 @@ from osf.models import (
     Preprint
 )
 
-from osf.management.commands.find_spammy_content import manage_spammy_content
+from scripts.find_spammy_content import manage_spammy_content
 
 
 @pytest.mark.django_db
