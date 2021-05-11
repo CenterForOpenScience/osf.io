@@ -506,6 +506,8 @@ services:
   pigeon:
     image: quay.io/centerforopenscience/osf-pigeon
     restart: unless-stopped
+    environment:
+      - .osf-pigeon.env
     ports:
       - 2020:2020
     env_file:
