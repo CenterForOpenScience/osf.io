@@ -25,7 +25,7 @@
       Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
       </p>
     % endif
-    % if referrer_name::
+    % if referrer_name:
       <p>
       If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
       </p>
