@@ -66,7 +66,7 @@ class AbstractSchemaManager(models.Manager):
                 output_field=models.IntegerField(),
             ),
         )
-        queryset = annotated.filter(schema_version=models.F('latest_version'))
+        queryset = annotated.filter(schema_version=models.F('latest_version')).order_by('name')
 
         if not invisible:
             queryset = queryset.filter(visible=True)
