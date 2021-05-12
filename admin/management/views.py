@@ -1,10 +1,11 @@
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
-from osf.management.commands.find_spammy_content import manage_spammy_content
+from scripts.find_spammy_content import manage_spammy_content
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from osf.models import Preprint, Node, Registration
@@ -15,7 +16,11 @@ class ManagementCommands(TemplateView):
     template_name = 'management/commands.html'
     object_type = 'management'
 
-class WaffleFlag(View):
+class ManagementCommandPermissionView(View, PermissionRequiredMixin):
+
+    permission_required = 'osf.view_management'
+
+class WaffleFlag(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
         manage_waffle()
@@ -23,17 +28,17 @@ class WaffleFlag(View):
         return redirect(reverse('management:commands'))
 
 
-class UpdateRegistrationSchemas(View):
+class UpdateRegistrationSchemas(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
         update_registration_schemas()
         messages.success(request, 'Registration schemas have been successfully updated.')
         return redirect(reverse('management:commands'))
 
-class GetSpamDataCSV(View):
+class GetSpamDataCSV(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        days = int(request.POST.get('days', 0))
+        days = int(request.POST.get('days_get', 0))
         models = []
         if request.POST.get('preprint_get', None):
             models.append(Preprint)
@@ -57,7 +62,7 @@ class GetSpamDataCSV(View):
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
-class BanSpamByRegex(View):
+class BanSpamByRegex(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
         days = int(request.POST.get('days_ban', 0))
