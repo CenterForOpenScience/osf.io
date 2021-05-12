@@ -74,5 +74,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        version_id = options.get("version_id", settings.IA_ID_VERSION)
+        version_id = options.get("version_id", settings.ID_VERSION)
         populate_internet_archives_collections(version_id, dry_run=dry_run)

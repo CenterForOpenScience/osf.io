@@ -27,7 +27,7 @@ class InternetArchiveView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['ia_collection'] = settings.IA_ROOT_COLLECTION
-        context['ia_id_version'] = settings.IA_ID_VERSION
+        context['ia_id_version'] = settings.ID_VERSION
         context['osf_pigeon_url'] = settings.OSF_PIGEON_URL
         return context
 
@@ -51,10 +51,10 @@ class SendToPigeon(FormView):
 
 class CreateIASubcollections(View):
     def post(self, request, *args, **kwargs):
-        populate_internet_archives_collections(settings.IA_ID_VERSION)
+        populate_internet_archives_collections(settings.ID_VERSION)
         messages.success(
             request,
-            f"Subcollections with ids of {settings.IA_ID_VERSION} are being created",
+            f"Subcollections with ids of {settings.ID_VERSION} are being created",
         )
         return redirect(reverse("internet_archive:internet_archive"))
 

@@ -30,7 +30,7 @@ mirrored_relationships = [
 def check_ia_metadata(collection=settings.IA_ROOT_COLLECTION, guids=None):
     item_data = requests.get(
         f"https://archive.org/advancedsearch.php"
-        f"?q=collection%3A({collection}) AND identifier:(osf-registrations-*-{settings.IA_ID_VERSION})"
+        f"?q=collection%3A({collection}) AND identifier:(osf-registrations-*-{settings.ID_VERSION})"
         f"&fl[]="
         + f"&fl[]=".join([get_ia_field(field) for field in mirrored_fields])
         + f"&fl[]=identifier"
