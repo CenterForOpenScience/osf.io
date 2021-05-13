@@ -24,8 +24,9 @@ var $modal = $('#s3compatb3InputCredentials');
 function ViewModel(url) {
     var self = this;
 
-    self.properName = 'SOracle Cloud Infrastructure Object Storage';
+    self.properName = 'Oracle Cloud Infrastructure Object Storage';
     self.availableServices = ko.observableArray(s3compatb3Settings['availableServices']);
+    self.regions = ko.observableArray(s3compatb3Settings['regions']);
     self.selectedService = ko.observable(s3compatb3Settings['availableServices'][0]);
     self.hostTemplate = ko.observable(s3compatb3Settings['hostTemplate']);
     self.namespaceIndex = ko.observable(s3compatb3Settings['namespaceIndex']);
@@ -36,7 +37,7 @@ function ViewModel(url) {
     self.host = ko.computed(function() {
         var dc = this.hostTemplate().split('.');
         dc[this.namespaceIndex()] = this.namespace();
-        dc[this.regionIndex()] = this.region();
+        dc[this.regionIndex()] = (this.region() || {})['id'];
         return dc.join('.');
     }, self);
     self.accessKey = ko.observable();
