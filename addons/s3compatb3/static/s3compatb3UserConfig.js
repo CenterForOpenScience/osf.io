@@ -37,7 +37,7 @@ function ViewModel(url) {
     self.host = ko.computed(function() {
         var dc = this.hostTemplate().split('.');
         dc[this.namespaceIndex()] = this.namespace();
-        dc[this.regionIndex()] = this.region();
+        dc[this.regionIndex()] = (this.region() || {})['id'];
         return dc.join('.');
     }, self);
     self.accessKey = ko.observable();
