@@ -1210,7 +1210,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """
 
-    id = IDField(source='_id', required=False, allow_null=True)
+    id = IDField(source='user._id', required=False, allow_null=True)
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False, source='user.email', write_only=True)
     index = ser.IntegerField(required=False, source='_order')

@@ -1245,3 +1245,49 @@ class TestNodeContributorDelete:
 
             project.reload()
             assert user_write_contrib not in project.contributors
+
+
+@pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
+class TestAddUnregisteredContributor:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, user):
+        return  ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def url(self, project, user):
+        return f'/{API_BASE}nodes/{project._id}/contributors/?version=latest'
+
+    @pytest.fixture()
+    def payload(self):
+        return {
+          "data":{
+            "attributes":{
+              "permission":"read",
+              "bibliographic": False,
+              "full_name":"Unreg Contrib",
+              "email":"email@cos.io"
+            },
+            "relationships":{
+              "node":{
+                "data":{
+                  "type":"nodes",
+                  "id":"6jqvz"
+                }
+              }
+            },
+            "type":"contributors"
+          }
+        }
+
+    def test_add_unregistred_contrbutor(self, url, user, app, project, payload):
+        resp = app.post_json_api(url, payload, auth=user.auth)
+        assert resp.status_code == 201
+        assert project.contributors.filter(username="email@cos.io").count() == 1
+
+
