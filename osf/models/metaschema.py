@@ -58,15 +58,16 @@ class AbstractSchemaManager(models.Manager):
         :return: queryset
         """
 
-        latest_versions = self.values('name').annotate(latest_version=models.Max('schema_version'))
+        queryset = self.all()
 
-        annotated = self.all().annotate(
-            latest_version=models.Subquery(
-                latest_versions.filter(name=models.OuterRef('name')).values('latest_version')[:1],
-                output_field=models.IntegerField(),
-            ),
-        )
-        queryset = annotated.filter(schema_version=models.F('latest_version')).order_by('name')
+        ids_to_exclude = []
+
+        for schema in queryset:
+            latest_version = self.get_latest_version(schema.name)
+            if schema != latest_version:
+                ids_to_exclude.append(schema.id)
+
+        queryset.exclude(id__in=ids_to_exclude)
 
         if not invisible:
             queryset = queryset.filter(visible=True)
