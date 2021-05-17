@@ -206,6 +206,6 @@ class TestRegistrationProviderSchemas:
         data = res.json['data']
 
         assert provider_with_reg.schemas.all().count() == 4
-        assert len(data) == 3
+        assert len(data) == 2
         assert osf_reg_schema._id == data[0]['id']
         assert schema.name in [item['attributes']['name'] for item in data]
