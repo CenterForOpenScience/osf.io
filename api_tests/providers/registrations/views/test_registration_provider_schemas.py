@@ -44,11 +44,11 @@ class TestRegistrationProviderSchemas:
         return reg_schema
 
     @pytest.fixture()
-    def osf_prereg_schema(self):
-        osf_prereg = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
-        osf_prereg.visible = True
-        osf_prereg.save()
-        return osf_prereg
+    def osf_reg_schema(self):
+        osf_reg = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
+        osf_reg.visible = True
+        osf_reg.save()
+        return osf_reg
 
     @pytest.fixture()
     def invisible_schema(self):
@@ -71,7 +71,7 @@ class TestRegistrationProviderSchemas:
         return provider
 
     @pytest.fixture()
-    def provider_with_v2_prereg_only(self, schema):
+    def provider_with_v2_reg_only(self, schema):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
         provider.schemas.add(schema)
@@ -87,10 +87,10 @@ class TestRegistrationProviderSchemas:
         return provider
 
     @pytest.fixture()
-    def provider_with_prereg(self, osf_prereg_schema, egap_schema, schema, out_dated_schema):
+    def provider_with_reg(self, osf_reg_schema, egap_schema, schema, out_dated_schema):
         provider = RegistrationProviderFactory()
         update_provider_auth_groups()
-        provider.schemas.add(*[osf_prereg_schema, schema, out_dated_schema, egap_schema])
+        provider.schemas.add(*[osf_reg_schema, schema, out_dated_schema, egap_schema])
         provider.save()
         return provider
 
@@ -111,16 +111,16 @@ class TestRegistrationProviderSchemas:
         return f'/{API_BASE}providers/registrations/{provider._id}/schemas/'
 
     @pytest.fixture()
-    def url_with_v2_prereg_only(self, provider_with_v2_prereg_only):
-        return f'/{API_BASE}providers/registrations/{provider_with_v2_prereg_only._id}/schemas/'
+    def url_with_v2_reg_only(self, provider_with_v2_reg_only):
+        return f'/{API_BASE}providers/registrations/{provider_with_v2_reg_only._id}/schemas/'
 
     @pytest.fixture()
     def url_with_egap_only(self, provider_with_egap_only):
         return f'/{API_BASE}providers/registrations/{provider_with_egap_only._id}/schemas/'
 
     @pytest.fixture()
-    def url_with_prereg(self, provider_with_prereg):
-        return f'/{API_BASE}providers/registrations/{provider_with_prereg._id}/schemas/'
+    def url_with_reg(self, provider_with_reg):
+        return f'/{API_BASE}providers/registrations/{provider_with_reg._id}/schemas/'
 
     def test_registration_provider_with_schema(
             self,
@@ -131,7 +131,7 @@ class TestRegistrationProviderSchemas:
             egap_admin,
             invisible_schema,
             user,
-            url_with_v2_prereg_only,
+            url_with_v2_reg_only,
             url_with_egap_only
     ):
         res = app.get(url, auth=user.auth)
@@ -143,7 +143,7 @@ class TestRegistrationProviderSchemas:
         assert invisible_schema._id in [item['id'] for item in data]
         assert schema.name in [item['attributes']['name'] for item in data]
 
-        res = app.get(url_with_v2_prereg_only, auth=egap_admin.auth)
+        res = app.get(url_with_v2_reg_only, auth=egap_admin.auth)
         assert res.status_code == 200
         data = res.json['data']
 
@@ -182,20 +182,20 @@ class TestRegistrationProviderSchemas:
     def test_registration_provider_with_default_schema(
             self,
             app,
-            provider_with_prereg,
+            provider_with_reg,
             out_dated_schema,
             user,
             egap_schema,
             schema,
-            url_with_prereg,
-            osf_prereg_schema
+            url_with_reg,
+            osf_reg_schema
     ):
-        provider_with_prereg.default_schema = osf_prereg_schema
-        provider_with_prereg.save()
-        res = app.get(url_with_prereg, auth=user.auth)
+        provider_with_reg.default_schema = osf_reg_schema
+        provider_with_reg.save()
+        res = app.get(url_with_reg, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
 
         assert len(data) == 3
-        assert osf_prereg_schema._id == data[0]['id']
+        assert osf_reg_schema._id == data[0]['id']
         assert schema.name in [item['attributes']['name'] for item in data]
