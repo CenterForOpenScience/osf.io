@@ -132,8 +132,8 @@ def prepare_mock_wb_response(
 
     responses.add(
         responses.Response(
-            method,
-            wb_url,
+            method=method,
+            url=wb_url,
             json={u'data': jsonapi_data},
             status=status_code,
             content_type='application/json'

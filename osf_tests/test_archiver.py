@@ -427,8 +427,8 @@ class TestStorageAddonBase(ArchiverTestCase):
             )
             responses.add(
                 responses.Response(
-                    responses.GET,
-                    url,
+                    method=responses.GET,
+                    url=url,
                     json=self.get_resp(url),
                     content_type='applcation/json'
                 )
