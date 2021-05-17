@@ -31,11 +31,19 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        schema.visible = True
+        schema.active = True
+        schema.save()
+        return schema
 
     @pytest.fixture()
     def egap_schema(self):
-        return RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
+        schema = RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
+        schema.visible = True
+        schema.active = True
+        schema.save()
+        return schema
 
     @pytest.fixture()
     def out_dated_schema(self):
@@ -47,6 +55,7 @@ class TestRegistrationProviderSchemas:
     def osf_reg_schema(self):
         osf_reg = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
         osf_reg.visible = True
+        osf_reg.active = True
         osf_reg.save()
         return osf_reg
 
@@ -196,6 +205,7 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
+        assert provider_with_reg.schemas.all().count() == 4
         assert len(data) == 3
         assert osf_reg_schema._id == data[0]['id']
         assert schema.name in [item['attributes']['name'] for item in data]

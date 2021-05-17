@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0229_auto_20210317_2013'),
+        ('osf', '0230_make_run_management_perm'),
     ]
 
     operations = [
