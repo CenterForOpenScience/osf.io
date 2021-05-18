@@ -22,7 +22,7 @@
     </p>
     % if node.has_permission(user, 'admin'):
       <p>
-      Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
+      Each contributor that is added will be notified via email, which will contain a link to the draft registration.
       </p>
     % endif
     % if referrer_name:
@@ -42,7 +42,7 @@
     the Center for Open Science.
     </p>
     <p>
-    Questions? Email <a href="mailto:support@cos.io">support@cos.io</a>
+    Questions? Email <a href="mailto:${contact_email}">${contact_email}</a>
     </p>
   </td>
 </tr>
