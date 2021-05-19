@@ -58,18 +58,7 @@ class TestUsers:
         assert user_one._id in ids
         assert user_two._id in ids
 
-    def test_merged_user_is_not_in_user_list_after_2point3(
-            self, app, user_one, user_two):
-        user_two.merge_user(user_one)
-        res = app.get('/{}users/?version=2.3'.format(API_BASE))
-        user_son = res.json['data']
-
-        ids = [each['id'] for each in user_son]
-        assert res.status_code == 200
-        assert user_two._id in ids
-        assert user_one._id not in ids
-
-    def test_merged_user_is_returned_before_2point3(
+    def test_merged_user_is_not_in_user_list(
             self, app, user_one, user_two):
         user_two.merge_user(user_one)
         res = app.get('/{}users/'.format(API_BASE))
@@ -78,7 +67,7 @@ class TestUsers:
         ids = [each['id'] for each in user_son]
         assert res.status_code == 200
         assert user_two._id in ids
-        assert user_one._id in ids
+        assert user_one._id not in ids
 
     def test_find_multiple_in_users(self, app, user_one, user_two):
         url = '/{}users/?filter[full_name]=fred'.format(API_BASE)
