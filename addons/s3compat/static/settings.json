@@ -11,8 +11,10 @@
                              "us-west-1": {"name": "us-west-1", "host": "s3.us-west-1.wasabisys.com"},
                              "eu-central": {"name": "eu-central", "host": "s3.eu-central-1.wasabisys.com"},
                              "": {"name": "Virginia"}}},
-                           {"name": "RDM Minio",
-                           "host": "minio.rdm.nii.ac.jp"}
+                          {"name": "Kanazawa University Cloud(HyperStore)",
+                           "host": "s3-kakuma.rdm.kanazawa-u.ac.jp"},
+                          {"name": "Rakuten Cloud",
+                           "host": "s3.jp3.objectstorage.rakuten-cloud.net"}
                            ],
     "encryptUploads": true
 }
