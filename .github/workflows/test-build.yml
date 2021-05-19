@@ -17,19 +17,20 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-          path: ~/.cache
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('~/.cache/testmon/.testmondata_test_travis_addons') }}
-          restore-keys: |
-            - ${{ runner.os }}-
-            - ${{ runner.os }}-build-
-            - ${{ runner.os }}-build-${{ env.cache-name }}-
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v2
+      with:
+        path: ~/.testmon
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - run: |
         mkdir -p ~/.cache/downloads
         mkdir -p ~/.cache/pip
         mkdir -p ~/.cache/wheelhouse
-        mkdir -p ~/.cache/testmon
         rm -rf node_modules  ## TODO remove this later
-
 
   addons:
     runs-on: ubuntu-20.04
@@ -53,12 +54,15 @@ jobs:
     - id: cache-objects
       uses: actions/cache@v2
       with:
-          path: ~/.cache
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('~/.cache/testmon/.testmondata_test_travis_addons') }}
-          restore-keys: |
-            - ${{ runner.os }}-
-            - ${{ runner.os }}-build-
-            - ${{ runner.os }}-build-${{ env.cache-name }}-
+        path: ~/.cache
+        key: reqs_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v2
+      with:
+        path: ~/.testmon
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -76,4 +80,3 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_addons -n 1 --testmon
-
