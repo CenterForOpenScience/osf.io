@@ -41,7 +41,7 @@ class SendToPigeon(FormView):
         guids = form.cleaned_data["guid_to_archive"]
         guids = [guid.strip() for guid in guids.split(",") if guid]
         archive_registrations_on_IA(guids=guids)
-        messages.success(self.request, f'{" ,".join(guids)} has begun archiving.')
+        messages.success(self.request, f'{" ,".join(guids) if guids else "the job"} has begun archiving.')
 
         return super().form_valid(form)
 

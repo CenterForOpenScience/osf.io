@@ -172,7 +172,7 @@ class Registration(AbstractNode):
         These are registrations that are waiting to be archived at archive.org
         """
         return Registration.objects.filter(
-            ia_url__isnull=True,
+            (models.Q(ia_url__isnull=True) | models.Q(ia_url='')),
             is_public=True,
             identifiers__category='doi'
         ).exclude(

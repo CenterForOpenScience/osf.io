@@ -39,7 +39,7 @@ def check_ia_metadata(collection=settings.IA_ROOT_COLLECTION, guids=None):
     ).json()["response"]["docs"]
     item_data = sorted(item_data, key=lambda x: x["identifier"])
 
-    archived_registrations = Registration.objects.filter(ia_url__isnull=False).order_by(
+    archived_registrations = Registration.objects.filter(ia_url__isnull=False).exclude(ia_url='').order_by(
         "-ia_url",
     )
 
