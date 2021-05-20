@@ -6,199 +6,10 @@
     },
     "description": null,
     "pages": [{
-        "id": "page1",
-        "title": "Study Information",
-        "questions": [{
-			"qid": "q1",
-			"nav": "Study type",
-			"title": "Study type",
-			"description": null,
-			"help": null,
-			"type": "choose",
-			"format": "singleselect",
-			"options": [
-				"Pilot",
-				"Fully-Powered"
-			],
-			"required": true
-		}, {
-            "qid": "q2",
-            "nav": "Study design",
-            "title": "Study design",
-            "description": null,
-            "help": null,
-            "type": "choose",
-            "format": "multiselect",
-			"options": [
-				"Correlational",
-				"Cross-sectional",
-				"Intervention",
-				"Longitudinal",
-				"Measure Validation"
-			],
-            "required": true
-        }]
-	}, {
-		"id": "page2",
-        "title": "Contact Information",
-        "questions": [{
-			"qid": "q3",
-			"nav": "First team member",
-			"title": "First team member",
-			"properties": [{
-				"id": "name",
-				"title": "Team member name",
-				"type": "string",
-				"format": "text",
-				"required": true
-			}, {
-			    "id": "institution",
-				"title": "Team member institution",
-				"type": "string",
-				"format": "text",
-				"required": true
-			}, {
-			    "id": "role",
-				"title": "Team member role",
-				"type": "choose",
-				"format": "singleselect",
-				"options": [
-					"Principal Investigator",
-					"Co-investigator",
-					"Post doc",
-					"Research scientist",
-					"Graduate scientist",
-					"Lab manager",
-					"Lab member"
-				],
-				"required": true
-			}]
-		}, {
-            "qid": "q4",
-            "nav": "Second team member",
-            "title": "Second team member",
-            "properties": [{
-                "id": "name",
-                "title": "Team member name",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "institution",
-                "title": "Team member institution",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "role",
-                "title": "Team member role",
-                "type": "choose",
-                "format": "singleselect",
-                "options": [
-                    "Principal Investigator",
-                    "Co-investigator",
-                    "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
-                ]
-            }],
-			"required": false
-		}, {
-            "qid": "q5",
-            "nav": "Third team member",
-            "title": "Third team member",
-            "properties": [{
-                "id": "name",
-                "title": "Team member name",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "institution",
-                "title": "Team member institution",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "role",
-                "title": "Team member role",
-                "type": "choose",
-                "format": "singleselect",
-                "options": [
-                    "Principal Investigator",
-                    "Co-investigator",
-                    "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
-                ]
-            }],
-			"required": false
-		}, {
-           "qid": "q6",
-            "nav": "Fourth team member",
-            "title": "Fourth team member",
-            "properties": [{
-                "id": "name",
-                "title": "Team member name",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "institution",
-                "title": "Team member institution",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "role",
-                "title": "Team member role",
-                "type": "choose",
-                "format": "singleselect",
-                "options": [
-                    "Principal Investigator",
-                    "Co-investigator",
-                    "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
-                ]
-            }],
-			"required": false
-		}, {
-           "qid": "q7",
-            "nav": "Fifth team member",
-            "title": "Fifth team member",
-            "properties": [{
-                "id": "name",
-                "title": "Team member name",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "institution",
-                "title": "Team member institution",
-                "type": "string",
-                "format": "text"
-            }, {
-                "id": "role",
-                "title": "Team member role",
-                "type": "choose",
-                "format": "singleselect",
-                "options": [
-                    "Principal Investigator",
-                    "Co-investigator",
-                    "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
-                ]
-            }],
-			"required": false
-		}]
-	}, {
-		"id": "page3",
+		"id": "page1",
 		"title": "Background and Study Intent",
 		"questions": [{
-			"qid": "q8",
+			"qid": "q1",
 			"nav": "Study description",
 			"title": "Study description",
 			"description": null,
@@ -207,7 +18,7 @@
 			"format": "textarea",
 			"required": true
 		}, {
-            "qid": "q9",
+            "qid": "q2",
             "nav": "Primary outcomes",
             "title": "Primary outcomes",
             "description": null,
@@ -215,7 +26,7 @@
             "format": "textarea",
             "required": true
         }, {
-            "qid": "q10",
+            "qid": "q3",
             "nav": "Number of conditions",
             "title": "Number of conditions",
             "description": null,
@@ -225,7 +36,7 @@
 			"options": ["1", "2", "3", "4", "5"],
             "required": true
         }, {
-            "qid": "q11",
+            "qid": "q4",
             "nav": "Total number of students",
             "title": "Total number of students",
             "description": null,
@@ -234,7 +45,7 @@
             "format": "text",
             "required": true
         }, {
-            "qid": "q12",
+            "qid": "q5",
             "nav": "Character strengths",
             "title": "Character strengths",
             "description": null,
@@ -262,10 +73,10 @@
             "required": true
         }]
 	}, {
-		"id": "page4",
+		"id": "page2",
 		"title": "Sample",
 		"questions": [{
-            "qid": "q13",
+            "qid": "q6",
             "nav": "Study grade assignment",
             "title": "Study grade assignment",
             "description": null,
@@ -283,7 +94,7 @@
 			],
 			"required": true
         }, {
-            "qid": "q14",
+            "qid": "q7",
             "nav": "School stratum assignment",
             "title": "School stratum assignment",
             "description": null,
@@ -300,10 +111,10 @@
 			"required": true
         }]
     }, {
-		"id": "page5",
+		"id": "page3",
 		"title": "Pilot Reporting",
 		"questions": [{
-			"qid": "q15",
+			"qid": "q8",
 			"nav": "Piloting experience",
 			"title": "Piloting experience",
 			"description": null,
@@ -312,7 +123,7 @@
 			"format": "textarea",
 			"required": true
 		}, {
-			"qid": "q16",
+			"qid": "q9",
             "nav": "Pilot goals",
             "title": "Pilot goals",
             "description": null,
@@ -321,7 +132,7 @@
             "format": "textarea",
             "required": true
 		}, {
-            "qid": "q17",
+            "qid": "q10",
             "nav": "Pilot hypotheses",
             "title": "Pilot hypotheses",
             "description": null,
@@ -330,7 +141,7 @@
             "format": "textarea",
             "required": true
 		}, {
-            "qid": "q18",
+            "qid": "q11",
             "nav": "Feedback",
             "title": "How did you use feedback from a CLIPster/SRL while developing your pilot?",
             "description": null,
@@ -340,10 +151,10 @@
             "required": true
 		}]
 	}, {
-		"id": "page6",
+		"id": "page4",
 		"title": "Post-Pilot Reporting",
 		"questions": [{
-            "qid": "q19",
+            "qid": "q12",
             "nav": "Pilot Analysis",
             "title": "Did you see your hypothesized effects in this pilot data",
             "description": null,
@@ -352,7 +163,7 @@
             "format": "textarea",
             "required": true
 		}, {
-            "qid": "q20",
+            "qid": "q13",
             "nav": "Pilot Data",
             "title": "Did anything merge in this pilot data that you weren't expecting?",
 			"description": null,
@@ -361,7 +172,7 @@
             "format": "textarea",
             "required": true
         }, {
-            "qid": "q21",
+            "qid": "q14",
             "nav": "Pilot Concerns",
             "title": "What are you most concerned about in this pilot data?",
 			"description": null,
@@ -370,7 +181,7 @@
             "format": "textarea",
             "required": true
         }, {
-            "qid": "q22",
+            "qid": "q15",
             "nav": "Pilot Takeaways",
             "title": "What are your three main takeaways from this pilot?",
 			"description": null,
@@ -378,12 +189,8 @@
             "type": "string",
             "format": "textarea",
             "required": true
-        }]
-	}, {
-		"id": "page7",
-		"title": "Transition to Fully Powered Study",
-		"questions": [{
-            "qid": "q23",
+	   }, {
+            "qid": "q16",
             "nav": "Changes based on piloting",
             "title": "Changes based on piloting",
             "description": null,
@@ -392,7 +199,7 @@
             "format": "textarea",
 			"required": true
         }, {
-            "qid": "q24",
+            "qid": "q17",
             "nav": "Changes to hypotheses",
             "title": "Have your hypotheses about this study changed at all following the pilot?",
             "description": null,
@@ -400,6 +207,195 @@
             "type": "string",
             "format": "textarea",
 			"required": true
+        }]
+    }, {
+        "id": "page5",
+        "title": "Study Information",
+        "questions": [{
+            "qid": "q18",
+            "nav": "Study type",
+            "title": "Study type",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Pilot",
+                "Fully-Powered"
+            ],
+            "required": true
+        }, {
+            "qid": "q19",
+            "nav": "Study design",
+            "title": "Study design",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "multiselect",
+            "options": [
+                "Correlational",
+                "Cross-sectional",
+                "Intervention",
+                "Longitudinal",
+                "Measure Validation"
+            ],
+            "required": true
+        }]
+    }, {
+        "id": "page6",
+        "title": "Contact Information",
+        "questions": [{
+            "qid": "q20",
+            "nav": "First team member",
+            "title": "First team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text",
+                "required": true
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text",
+                "required": true
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ],
+                "required": true
+            }]
+        }, {
+            "qid": "q21",
+            "nav": "Second team member",
+            "title": "Second team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+            "qid": "q22",
+            "nav": "Third team member",
+            "title": "Third team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+           "qid": "q23",
+            "nav": "Fourth team member",
+            "title": "Fourth team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+           "qid": "q24",
+            "nav": "Fifth team member",
+            "title": "Fifth team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
         }]
 	}]
 }
