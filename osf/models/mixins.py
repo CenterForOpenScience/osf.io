@@ -1992,13 +1992,13 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=True):
+    def confirm_spam(self, save=True, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save)
+        super().confirm_spam(save=save, train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False)
@@ -2014,13 +2014,13 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False):
+    def confirm_ham(self, save=False, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be ham.
         :param save:
         :return:
         """
-        super().confirm_ham()
+        super().confirm_ham(save=save, train_akismet=train_akismet)
 
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
