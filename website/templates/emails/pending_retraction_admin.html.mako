@@ -3,26 +3,56 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
-    <br>
+    Hello ${user.fullname},
+    <p>
     % if is_initiator:
-    You initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.<br>
+      You have requested final approvals to withdraw your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
     % else:
-    ${initiated_by} initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.<br>
+      ${initiated_by} has requested final approvals to withdraw your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
     % endif
-    <br>
-    If approved, the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic metadata behind. The title of a withdrawn registration and its contributor list will remain, as will justification or explanation of the withdrawal, should you wish to provide it.<br>
-    <br>
-    To approve this withdrawal, click the following link: ${approval_link}.<br>
-    <br>
-    To cancel this withdrawal, click the following link: ${disapproval_link}.<br>
-    <br>
-    Note: Clicking the disapproval link will immediately cancel the pending withdrawal. If you neither approve nor disapprove the withdrawal within ${approval_time_span} hours of midnight tonight (EDT) the registration will become withdrawn. This operation is irreversible.<br>
-    <br>
+    </p>
+    % if reviewable.withdrawal_justification:
+      <p>
+      The registration is being withdrawn for the following reason:
+      <blockquote>${reviewable.withdrawal_justification}</blockquote>
+      </p>
+    % endif
+    <p>
+    % if is_moderated:
+      If approved by all admin contributors, the withdrawal request will be submitted for moderator review.
+      If the moderators approve, the registration will be marked as withdrawn.
+    % else:
+      If approved by all admin contributors, the registration will be marked as withdrawn.
+    % endif
+    Its content will be removed from the
+    ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+    but bssic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
+    % if reviewable.withdrawal_justification:
+      The provided justification or explanation of the withdrawal will also be visible.
+    % endif
+    </p>
+    %if not reviewable.branched_from_node:
+      <p>
+      Even if the registration is withdrawn, the <a href="${reviewable.registered_from.absolute_url}">OSF Project</a>
+      created for this registration will remain available.
+      </p>
+    % endif
+    <p style="color:red;">
+    You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
+    withdrawal request before it is automatically submitted.
+    </p>
+    <p>
+    To approve this withdrawal: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this withdrawal: <a href="${disapproval_link}">Click here</a>.
+    </p>
+    <p>
+    Note: If any admin clicks their cancel link, the pending withdrawal will be
+    cancelled immediately and the registration will remain public. This operation is irreversible.
+    </p>
+    <p>
     Sincerely yours,<br>
-    <br>
     The OSF Robots<br>
-
-
 </tr>
 </%def>

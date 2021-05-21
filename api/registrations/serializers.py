@@ -40,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'is_pending_retraction',
         'is_public',
-        'license',
-        'license_type',
         'withdrawal_justification',
     ]
 
@@ -59,6 +57,7 @@ class RegistrationSerializer(NodeSerializer):
         'pending_registration_approval',
         'pending_withdrawal',
         'provider',
+        'provider_specific_metadata',
         'registered_by',
         'registered_from',
         'registered_meta',
@@ -69,6 +68,7 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
+    reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
@@ -116,6 +116,7 @@ class RegistrationSerializer(NodeSerializer):
         source='is_retracted', read_only=True,
         help_text='The registration has been withdrawn.',
     )
+    has_project = ser.SerializerMethodField()
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
@@ -338,6 +339,18 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    review_actions = RelationshipField(
+        related_view='registrations:registration-actions-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    requests = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-requests-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
+    provider_specific_metadata = ser.JSONField(required=False)
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -349,6 +362,9 @@ class RegistrationSerializer(NodeSerializer):
         return 'registrations:registration-relationships-subjects'
 
     links = LinksField({'html': 'get_absolute_html_url'})
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()
@@ -427,19 +443,40 @@ class RegistrationSerializer(NodeSerializer):
 
         return data
 
-    def check_admin_perms(self, registration, user, validated_data):
+    def check_perms(self, registration, user, validated_data):
         """
         While admin/write users can make both make modifications to registrations,
         most fields are restricted to admin-only edits.  You must be an admin
         contributor on the registration; you cannot have gotten your admin
         permissions through group membership.
 
+        Additionally, provider_specific_metadata fields are only editable by
+        provder admins/moderators, but those users are not allowed to edit
+        any other fields.
+
         Add fields that need admin perms to admin_only_editable_fields
         """
-        user_is_admin = registration.is_admin_contributor(user)
-        for field in validated_data:
-            if field in self.admin_only_editable_fields and not user_is_admin:
-                raise exceptions.PermissionDenied()
+        is_admin = registration.is_admin_contributor(user)
+        can_edit = registration.can_edit(user=user)
+        is_moderator = False
+        if registration.provider:
+            is_moderator = user.has_perm('accept_submissions', registration.provider)
+
+        # Fail if non-moderator tries to edit provider_specific_metadata
+        if 'provider_specific_metadata' in validated_data and not is_moderator:
+            raise exceptions.PermissionDenied()
+
+        # Fail if non-contributor moderator tries to edit
+        # fields other than provider_specific_metdata
+        if any(field != 'provider_specific_metadata' for field in validated_data) and not can_edit:
+            raise exceptions.PermissionDenied()
+
+        # Fail if non-admin attempts to modify admin_only fields
+        admin_only_fields_present = any(
+            field in self.admin_only_editable_fields for field in validated_data
+        )
+        if admin_only_fields_present and not is_admin:
+            raise exceptions.PermissionDenied()
 
     def update_registration_tags(self, registration, validated_data, auth):
         new_tags = validated_data.pop('tags', [])
@@ -469,7 +506,7 @@ class RegistrationSerializer(NodeSerializer):
     def update(self, registration, validated_data):
         user = self.context['request'].user
         auth = Auth(user)
-        self.check_admin_perms(registration, user, validated_data)
+        self.check_perms(registration, user, validated_data)
         validated_data.pop('_id', None)
 
         if 'tags' in validated_data:
@@ -494,6 +531,13 @@ class RegistrationSerializer(NodeSerializer):
         if 'is_public' in validated_data:
             if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        if 'provider_specific_metadata' in validated_data:
+            try:
+                registration.update_provider_specific_metadata(
+                    validated_data.pop('provider_specific_metadata'),
+                )
+            except ValueError as e:
+                raise exceptions.ValidationError(str(e))
 
         try:
             registration.update(validated_data, auth=auth)

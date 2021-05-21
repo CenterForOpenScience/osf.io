@@ -36,10 +36,21 @@ from osf.utils import sanitize
 from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.machines import ReviewsMachine, NodeRequestMachine, PreprintRequestMachine
+from osf.utils.machines import (
+    ReviewsMachine,
+    NodeRequestMachine,
+    PreprintRequestMachine,
+)
+
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ReviewStates, ReviewTriggers
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ReviewStates,
+    ReviewTriggers,
+)
+
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
 from website import settings, mails, language
@@ -947,6 +958,9 @@ class ReviewProviderMixin(GuardianMixin):
     """
 
     REVIEWABLE_RELATION_NAME = None
+    REVIEW_STATES = ReviewStates
+    STATE_FIELD_NAME = 'machine_state'
+
     groups = REVIEW_GROUPS
     group_format = 'reviews_{self.readable_type}_{self.id}_{group}'
 
@@ -957,6 +971,8 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_private = models.NullBooleanField()
     reviews_comments_anonymous = models.NullBooleanField()
 
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
+
     @property
     def is_reviewed(self):
         return self.reviews_workflow is not None
@@ -966,9 +982,19 @@ class ReviewProviderMixin(GuardianMixin):
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
         if isinstance(qs, IncludeQuerySet):
             qs = qs.include(None)
-        qs = qs.filter(deleted__isnull=True, is_public=True).values('machine_state').annotate(count=models.Count('*'))
-        counts = {state.value: 0 for state in ReviewStates}
-        counts.update({row['machine_state']: row['count'] for row in qs if row['machine_state'] in counts})
+        qs = qs.filter(
+            deleted__isnull=True
+        ).exclude(
+            # Excluding Spammy values instead of filtering for non-Spammy ones
+            # because SpamStatus.UNKNOWN = None, which does not work with `IN`
+            spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM]
+        ).values(
+            self.STATE_FIELD_NAME
+        ).annotate(count=models.Count('*'))
+        counts = {state.db_name: 0 for state in self.REVIEW_STATES}
+        counts.update({
+            row[self.STATE_FIELD_NAME]: row['count']
+            for row in qs if row[self.STATE_FIELD_NAME] in counts})
         return counts
 
     def get_request_state_counts(self):
@@ -986,13 +1012,9 @@ class ReviewProviderMixin(GuardianMixin):
 
     def add_to_group(self, user, group):
         # Add default notification subscription
-        notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
+            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+
         return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -1002,10 +1024,23 @@ class ReviewProviderMixin(GuardianMixin):
                 raise ValueError('Cannot remove last admin.')
         if unsubscribe:
             # remove notification subscription
-            notification = self.notification_subscriptions.get(_id='{}_new_pending_submissions'.format(self._id))
-            notification.remove_user_from_subscription(user, save=True)
+            for subscription in self.DEFAULT_SUBSCRIPTIONS:
+                self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
 
         return _group.user_set.remove(user)
+
+    def add_user_to_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        user_id = user.id
+        is_subscriber = notification.none.filter(id=user_id).exists() \
+                        or notification.email_digest.filter(id=user_id).exists() \
+                        or notification.email_transactional.filter(id=user_id).exists()
+        if not is_subscriber:
+            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+
+    def remove_user_from_subscription(self, user, subscription_id):
+        notification = self.notification_subscriptions.get(_id=subscription_id)
+        notification.remove_user_from_subscription(user, save=True)
 
 
 class TaxonomizableMixin(models.Model):
@@ -1036,7 +1071,6 @@ class TaxonomizableMixin(models.Model):
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         DraftRegistration = apps.get_model('osf.DraftRegistration')
-        Node = apps.get_model('osf.Node')
 
         if isinstance(self, AbstractNode):
             if not self.has_permission(auth.user, ADMIN):
@@ -1044,9 +1078,6 @@ class TaxonomizableMixin(models.Model):
         elif isinstance(self, Preprint):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-        if isinstance(self, DraftRegistration) and isinstance(self.branched_from, Node):
-            if not self.branched_from.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have admin on parent node to update draft registration\'s subjects.')
         elif isinstance(self, DraftRegistration):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
@@ -2041,6 +2072,8 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if user.spam_status == SpamStatus.HAM:
             return False
+        if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
+            return False
         host = ''
         if request_headers:
             host = request_headers.get('Host', '')
@@ -2071,32 +2104,46 @@ class SpamOverrideMixin(SpamMixin):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+        ) or (
+            settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
+            and self.spam_data['oopspam_data']['Details']['isIPBlocked']
         ):
-            self.set_privacy('private', log=False, save=False)
+            self.suspend_spam_user(user)
 
-            # Suspend the flagged user for spam.
-            user.flag_spam()
-            if not user.is_disabled:
-                user.disable_account()
-                user.is_registered = False
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.SPAM_USER_BANNED,
-                    user=user,
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                    can_change_preferences=False,
-                )
-            user.save()
+    def suspend_spam_user(self, user, set_spam=False):
+        if user.spam_status == SpamStatus.HAM:
+            return False
+        if set_spam:
+            self.confirm_spam(save=True)
+        self.set_privacy('private', log=False, save=True)
 
-            # Make public nodes private from this contributor
-            for node in user.all_nodes:
-                if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                    node.set_privacy('private', log=False, save=True)
+        # Suspend the flagged user for spam.
+        user.flag_spam()
+        if not user.is_disabled:
+            user.disable_account()
+            user.is_registered = False
+            mails.send_mail(
+                to_addr=user.username,
+                mail=mails.SPAM_USER_BANNED,
+                user=user,
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
+            )
+        user.save()
 
-            # Make preprints private from this contributor
-            for preprint in user.preprints.all():
-                if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                    preprint.set_privacy('private', log=False, save=True)
+        # Make public nodes private from this contributor
+        for node in user.all_nodes:
+            if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
+                if set_spam:
+                    node.confirm_spam(save=True)
+                node.set_privacy('private', log=False, save=True)
+
+        # Make preprints private from this contributor
+        for preprint in user.preprints.all():
+            if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
+                if set_spam:
+                    preprint.confirm_spam(save=True)
+                preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
@@ -2113,6 +2160,15 @@ class SpamOverrideMixin(SpamMixin):
             )
             log.should_hide = True
             log.save()
+
+        if settings.SPAM_THROTTLE_AUTOBAN:
+            creator = self.creator
+            yesterday = timezone.now() - timezone.timedelta(days=1)
+            node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+            preprint_spam_count = creator.preprints.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+
+            if (node_spam_count + preprint_spam_count) > settings.SPAM_CREATION_THROTTLE_LIMIT:
+                self.suspend_spam_user(creator)
 
 
 class RegistrationResponseMixin(models.Model):
@@ -2198,7 +2254,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True, contributors=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2214,8 +2270,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         # Contributors will always come from "resource", as contributor constraints
         # will require contributors to be present on the resource
-        if contributors:
-            self.copy_contributors_from(resource)
+        self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
 

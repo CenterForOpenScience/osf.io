@@ -6,6 +6,7 @@ from addons.base.models import BaseAddonSettings
 from osf.models import (
     AbstractNode,
     Contributor,
+    DraftNode,
     DraftRegistration,
     Institution,
     Node,
@@ -28,15 +29,14 @@ class ContributorOrPublic(permissions.BasePermission):
         from api.nodes.views import NodeStorageProvider
         if isinstance(obj, BaseAddonSettings):
             obj = obj.owner
-        if isinstance(obj, (NodeStorageProvider)):
+        if isinstance(obj, NodeStorageProvider):
             obj = obj.node
+        if isinstance(obj, DraftNode):
+            obj = obj.registered_draft.first()
         if isinstance(obj, dict):
             obj = obj.get('self', None)
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-
-        if isinstance(obj, DraftRegistration) and isinstance(obj.branched_from, Node):
-            obj = obj.branched_from
 
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
@@ -64,9 +64,6 @@ class IsAdminContributor(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
-        # Old Registration workflow checks permissions on Node
-        if isinstance(obj, DraftRegistration):
-            obj = obj.branched_from
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
@@ -314,6 +311,15 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
         if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
+
+
+class WriteAdmin(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        return obj.can_edit(auth)
 
 
 class ShowIfVersion(permissions.BasePermission):

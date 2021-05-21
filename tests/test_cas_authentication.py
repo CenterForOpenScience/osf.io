@@ -21,6 +21,17 @@ def make_successful_response(user):
     )
 
 
+def make_successful_response_with_tos_consent(user):
+    return cas.CasResponse(
+        authenticated=True,
+        user=user._id,
+        attributes={
+            'accessToken': fake.md5(),
+            'termsOfServiceChecked': True
+        }
+    )
+
+
 def make_failure_response():
     return cas.CasResponse(
         authenticated=False,
@@ -233,6 +244,21 @@ class TestCASTicketAuthentication(OsfTestCase):
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
         resp = cas.make_response_from_ticket(ticket, service_url)
+        assert_equal(resp.status_code, 302)
+        assert_equal(mock_service_validate.call_count, 1)
+        assert_equal(mock_get_user_from_cas_resp.call_count, 1)
+
+    @mock.patch('framework.auth.cas.get_user_from_cas_resp')
+    @mock.patch('framework.auth.cas.CasClient.service_validate')
+    def test_make_response_from_ticket_success_with_tos_consent(self, mock_service_validate, mock_get_user_from_cas_resp):
+        self.user.accepted_terms_of_service = None
+        mock_service_validate.return_value = make_successful_response_with_tos_consent(self.user)
+        mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
+        ticket = fake.md5()
+        service_url = 'http://localhost:5000/'
+        resp = cas.make_response_from_ticket(ticket, service_url)
+        self.user.reload()
+        assert self.user.accepted_terms_of_service is not None
         assert_equal(resp.status_code, 302)
         assert_equal(mock_service_validate.call_count, 1)
         assert_equal(mock_get_user_from_cas_resp.call_count, 1)

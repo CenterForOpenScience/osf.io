@@ -1,0 +1,304 @@
+{
+    "name": "Character Lab Pilot Study",
+    "version": 1,
+    "config": {
+	"hasFiles": true
+    },
+    "description": null,
+    "pages": [{
+		"id": "page1",
+		"title": "Background and Study Intent",
+		"questions": [{
+			"qid": "q1",
+			"nav": "Study description",
+			"title": "Study description",
+			"description": null,
+			"help": null,
+			"type": "string",
+			"format": "textarea",
+			"required": true
+		}, {
+            "qid": "q2",
+            "nav": "Primary outcomes",
+            "title": "Primary outcomes",
+            "description": null,
+			"help": null,
+            "type": "string",
+            "format": "textarea",
+            "required": true
+        }, {
+            "qid": "q3",
+            "nav": "Number of conditions",
+            "title": "Number of conditions",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "singleselect",
+			"options": ["1", "2", "3", "4", "5"],
+            "required": true
+        }, {
+            "qid": "q4",
+            "nav": "Total number of students",
+            "title": "Total number of students",
+            "description": null,
+			"help": null,
+            "type": "string",
+            "format": "text",
+            "required": true
+        }, {
+            "qid": "q5",
+            "nav": "Character strengths",
+            "title": "Character strengths",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "multiselect",
+			"options": [
+				"Creativity",
+				"Curiosity",
+				"Empathy",
+				"Gratitude",
+				"Grit",
+				"Growth Mindset",
+				"Intellectual Humility",
+				"Kindness",
+				"Motivation",
+				"Practivity",
+				"Prosocial Purpose",
+				"Purpose",
+				"Resilience",
+				"Self-control",
+				"Self-efficacy",
+				"Other"
+			],
+            "required": true
+        }]
+	}, {
+		"id": "page2",
+		"title": "Sample",
+		"questions": [{
+            "qid": "q6",
+            "nav": "Study grade assignment",
+            "title": "Study grade assignment",
+            "description": null,
+            "help": null,
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"6th grade",
+				"7th grade",
+				"8th grade",
+				"9th grade",
+				"10th grade",
+				"11th grade",
+				"12th grade"
+			],
+			"required": true
+        }, {
+            "qid": "q7",
+            "nav": "School stratum assignment",
+            "title": "School stratum assignment",
+            "description": null,
+            "help": null,
+            "type": "choose",
+			"format": "multiselect",
+			"options": [
+				"Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
+				"Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
+				"Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
+				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
+				"Stratum E: Mostly White, high SES, suburban schools. These schools represent 21% of all middle and high schools in the US."
+			],
+            "required": true
+        }]
+    }, {
+       "id": "page3",
+        "title": "Study Information",
+        "questions": [{
+            "qid": "q8",
+            "nav": "Study type",
+            "title": "Study type",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "singleselect",
+            "options": [
+                "Pilot",
+                "Fully-Powered"
+            ],
+            "required": true
+        }, {
+            "qid": "q9",
+            "nav": "Study design",
+            "title": "Study design",
+            "description": null,
+            "help": null,
+            "type": "choose",
+            "format": "multiselect",
+            "options": [
+                "Correlational",
+                "Cross-sectional",
+                "Intervention",
+                "Longitudinal",
+                "Measure Validation"
+            ],
+            "required": true
+        }]
+    }, {
+        "id": "page4",
+        "title": "Contact Information",
+        "questions": [{
+            "qid": "q10",
+            "nav": "First team member",
+            "title": "First team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text",
+                "required": true
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text",
+                "required": true
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ],
+                "required": true
+            }]
+        }, {
+            "qid": "q11",
+            "nav": "Second team member",
+            "title": "Second team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+            "qid": "q12",
+            "nav": "Third team member",
+            "title": "Third team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+           "qid": "q13",
+            "nav": "Fourth team member",
+            "title": "Fourth team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }, {
+           "qid": "q14",
+            "nav": "Fifth team member",
+            "title": "Fifth team member",
+            "properties": [{
+                "id": "name",
+                "title": "Team member name",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "institution",
+                "title": "Team member institution",
+                "type": "string",
+                "format": "text"
+            }, {
+                "id": "role",
+                "title": "Team member role",
+                "type": "choose",
+                "format": "singleselect",
+                "options": [
+                    "Principal Investigator",
+                    "Co-investigator",
+                    "Post doc",
+                    "Research scientist",
+                    "Graduate scientist",
+                    "Lab manager",
+                    "Lab member"
+                ]
+            }],
+            "required": false
+        }]
+	}]
+}

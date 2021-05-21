@@ -73,7 +73,7 @@ class DraftRegistrationList(NodeDraftRegistrationsList):
 
 class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        ContributorOrPublic,
         AdminDeletePermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -230,3 +230,17 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
         context['resource'] = self.get_draft()
         context['default_email'] = 'draft'
         return context
+
+
+class DraftBibliographicContributorsList(DraftContributorsList):
+
+    view_name = 'draft-registration-bibliographic-contributor-detail'
+
+    def get_default_queryset(self):
+        # Overrides NodeContributorsList
+        draft = self.get_draft()
+        return draft.draftregistrationcontributor_set.filter(visible=True).include('user__guids')
+
+    # Override to prevent use DraftRegistrationContributorsCreateSerializer, this endpoint is read-only
+    def get_serializer_class(self):
+        return DraftRegistrationContributorDetailSerializer

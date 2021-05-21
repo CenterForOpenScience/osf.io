@@ -10,6 +10,7 @@ from api.nodes.serializers import (
     DraftRegistrationDetailLegacySerializer,
     update_institutions,
     get_license_details,
+    NodeSerializer,
     NodeLicenseSerializer,
     NodeLicenseRelationshipField,
     NodeContributorsSerializer,
@@ -71,11 +72,26 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         related_view_kwargs={'draft_id': '<_id>'},
     )
 
+    bibliographic_contributors = RelationshipField(
+        related_view='draft_registrations:draft-registration-bibliographic-contributor-detail',
+        related_view_kwargs={'draft_id': '<_id>'},
+    )
+
+    current_user_permissions = ser.SerializerMethodField(
+        help_text='List of strings representing the permissions '
+        'for the current user on this draft registratione.',
+    )
+
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False,
     )
+
+    has_project = ser.SerializerMethodField()
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     @property
     def subjects_related_view(self):
@@ -106,6 +122,9 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     def get_node(self, validated_data):
         # Node comes from branched_from relationship rather than from URL
         return validated_data.pop('branched_from', None)
+
+    def get_current_user_permissions(self, obj):
+        return NodeSerializer.get_current_user_permissions(self, obj)
 
     def expect_subjects_as_relationships(self, request):
         """Determines whether subjects should be serialized as a relationship.

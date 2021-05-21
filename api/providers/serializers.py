@@ -5,6 +5,8 @@ from rest_framework.exceptions import ValidationError
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
+from api.nodes.serializers import RegistrationProviderRelationshipField
+from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
 from osf.models.user import Email, OSFUser
@@ -33,6 +35,10 @@ class ProviderSerializer(JSONAPISerializer):
     allow_commenting = ser.BooleanField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
     in_sloan_study = ser.BooleanField(read_only=True)
+
+    share_source = ser.CharField(read_only=True)
+    share_publish_type = ser.CharField(read_only=True)
+    permissions = ser.SerializerMethodField()
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -71,6 +77,11 @@ class ProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    schemas = TypedRelationshipField(
+        related_view='providers:registration-providers:registration-schema-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     def get_has_highlighted_subjects(self, obj):
         return obj.has_highlighted_subjects
 
@@ -82,6 +93,12 @@ class ProviderSerializer(JSONAPISerializer):
 
     def get_assets(self, obj):
         return {asset.name: asset.file.url for asset in obj.asset_files.all()} or None
+
+    def get_permissions(self, obj):
+        auth = get_user_auth(self.context['request'])
+        if not auth.user:
+            return []
+        return get_perms(auth.user, obj)
 
 
 class CollectionProviderSerializer(ProviderSerializer):
@@ -107,9 +124,16 @@ class RegistrationProviderSerializer(ProviderSerializer):
     class Meta:
         type_ = 'registration-providers'
 
+    branded_discovery_page = ser.BooleanField(read_only=True)
+
     brand = RelationshipField(
         related_view='brands:brand-detail',
         related_view_kwargs={'brand_id': '<brand.id>'},
+    )
+
+    moderators = RelationshipField(
+        related_view='providers:registration-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
     )
 
     primary_collection = RelationshipField(
@@ -126,7 +150,23 @@ class RegistrationProviderSerializer(ProviderSerializer):
         'domain_redirect_enabled',
         'id',
         'name',
+        'reviews_workflow',
+        'permissions',
     ])
+
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+    reviews_comments_anonymous = ser.BooleanField(read_only=True)
+
+    registrations = ReviewableCountsRelationshipField(
+        related_view='providers:registration-providers:registrations-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+        'external_url': 'get_external_url',
+    })
+
 
 class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
@@ -150,11 +190,8 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         'views',
     ])
 
-    share_source = ser.CharField(read_only=True)
-    share_publish_type = ser.CharField(read_only=True)
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
-    permissions = ser.SerializerMethodField()
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -172,6 +209,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    moderators = RelationshipField(
+        related_view='providers:preprint-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     def get_preprints_url(self, obj):
         return absolute_reverse(
             'providers:preprint-providers:preprints-list', kwargs={
@@ -179,12 +221,6 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
-
-    def get_permissions(self, obj):
-        auth = get_user_auth(self.context['request'])
-        if not auth.user:
-            return []
-        return get_perms(auth.user, obj)
 
     def validate(self, data):
         required_fields = ('reviews_workflow', 'reviews_comments_private', 'reviews_comments_anonymous')
@@ -214,17 +250,25 @@ class ModeratorSerializer(JSONAPISerializer):
     permission_group = ser.CharField(required=True)
     email = ser.EmailField(required=False, write_only=True, validators=[validate_email])
 
-    class Meta:
-        type_ = 'moderators'
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<_id>'},
+        always_embed=True,
+        required=False,
+    )
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_provider(self, obj):
+        return self.context['provider']._id
 
     def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'moderators:provider-moderator-detail', kwargs={
-                'provider_id': self.context['request'].parser_context['kwargs']['version'],
-                'moderator_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+        raise NotImplementedError()
+
+    class Meta:
+        type_ = 'moderators'
 
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
@@ -285,7 +329,6 @@ class ModeratorSerializer(JSONAPISerializer):
         mails.send_mail(
             user.username,
             template,
-            mimetype='html',
             **context
         )
         return user
@@ -303,3 +346,38 @@ class ModeratorSerializer(JSONAPISerializer):
         provider.add_to_group(instance, perm_group)
         setattr(instance, 'permission_group', perm_group)
         return instance
+
+
+class PreprintModeratorSerializer(ModeratorSerializer):
+
+    provider = PreprintProviderRelationshipField(
+        related_view='providers:preprint-providers:preprint-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=False,
+    )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:preprint-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+class RegistrationModeratorSerializer(ModeratorSerializer):
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:registration-providers:registration-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=True,
+    )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:registration-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )

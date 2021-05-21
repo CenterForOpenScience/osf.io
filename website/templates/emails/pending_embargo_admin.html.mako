@@ -3,30 +3,55 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
-    <br>
+    <%!from website import settings%>
+    Hello ${user.fullname},
+    <p>
     % if is_initiator:
-    You initiated an embargoed registration of ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
+      You have requested final approvals to submit your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>.
     % else:
-    ${initiated_by} initiated an embargoed registration of ${project_name}. The proposed registration can be viewed here: ${registration_link}.<br>
+      ${initiated_by} has requested final approvals to submit your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>.
     % endif
-    <br>
-    If approved, a registration will be created for the project, and it will remain private until it is withdrawn,
-    it is manually made public, or the embargo end date is passed on ${embargo_end_date.date()}.<br>
-    <br>
-    To approve this embargo, click the following link: ${approval_link}.<br>
-    <br>
-    To cancel this embargo, click the following link: ${disapproval_link}.<br>
-    <br>
-    Note: Clicking the disapproval link will immediately cancel the pending embargo and the
-    registration will remain in draft state. If you neither approve nor disapprove the embargo
-    within ${approval_time_span} hours from midnight tonight (EDT) the registration will remain
-    private and enter into an embargoed state.<br>
-    <br>
+    </p>
+    <p>
+    % if is_moderated:
+      If approved by all admin contributors, the registration will be submitted for moderator review.
+      If the moderators approve, the registration will be embargoed until
+      ${embargo_end_date.date()}, at which point it will be made public as part of the.
+      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+    % else:
+      If approved by all admin contributors, the registration will be embargoed until
+      ${embargo_end_date.date()}, at which point it will be made public as part of the
+      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+    % endif
+    </p>
+    <p style="color:red;">
+    You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
+    this registration before it is automatically submitted.
+    </p>
+    <p>
+    Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
+    Cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
+    </p>
+    <p>
+    Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
+    pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+    </p>
+    % if not reviewable.branched_from_node:
+      <p>
+      An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
+	  this registration to support continued collaboration and sharing of your research.
+      This project will remain available even if your registration is rejected.
+      </p>
+      <p>
+      You will be automatically subscribed to notification emails for this project. To change your email notification
+      preferences, visit your project or your user settings:
+	  <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+      </p>
+    % endif
+    <p>
     Sincerely yours,<br>
-    <br>
     The OSF Robots<br>
-
-
 </tr>
 </%def>

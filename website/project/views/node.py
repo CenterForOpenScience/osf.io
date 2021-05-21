@@ -42,7 +42,7 @@ from osf.utils.tokens import process_token_or_pass
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
-from website.project.utils import sizeof_fmt
+from website.project.utils import sizeof_fmt, get_storage_limits_css
 from website.project.metadata.utils import serialize_meta_schemas
 from addons.wiki.models import WikiPage
 from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink, Node, NodeRelation, Preprint
@@ -790,6 +790,7 @@ def _view_project(node, auth, primary=False,
             'waterbutler_url': node.osfstorage_region.waterbutler_url,
             'mfr_url': node.osfstorage_region.mfr_url,
             'groups': list(node.osf_groups.values_list('name', flat=True)),
+            'storage_limit_status': get_storage_limits_css(node),
         },
         'parent_node': {
             'exists': parent is not None,
@@ -843,7 +844,7 @@ def _view_project(node, auth, primary=False,
     data.update({'storage_flag_is_active': storage_i18n_flag_active()})
     if storage_usage_flag_active():
         storage_usage = node.storage_usage
-        if storage_usage:
+        if storage_usage is not None:
             data['node']['storage_usage'] = sizeof_fmt(storage_usage)
 
     if embed_contributors and not anonymous:

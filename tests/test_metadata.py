@@ -10,7 +10,7 @@ from framework.forms.utils import process_payload
 
 from osf.models import RegistrationSchema
 from osf.utils.migrations import ensure_schemas
-from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata.schemas import OSF_META_SCHEMA_FILES
 
 from tests.base import OsfTestCase
 
@@ -31,7 +31,7 @@ class TestMetaData(OsfTestCase):
 
         assert_equal(
             RegistrationSchema.objects.all().count(),
-            len(OSF_META_SCHEMAS)
+            len(OSF_META_SCHEMA_FILES)
         )
 
     def test_reigstrationschema_uniqueness_is_enforced_in_the_database(self):

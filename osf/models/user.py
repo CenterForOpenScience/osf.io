@@ -143,7 +143,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id'})
+    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -1032,6 +1032,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides BaseModel
     def save(self, *args, **kwargs):
+        from website import mailchimp_utils
+
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
         dirty_fields = set(self.get_dirty_fields(check_relationship=True))
@@ -1046,6 +1048,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             if quickfiles:
                 quickfiles.title = get_quickfiles_project_title(self)
                 quickfiles.save()
+        if 'username' in dirty_fields:
+            for list_name, subscription in self.mailchimp_mailing_lists.items():
+                if subscription:
+                    mailchimp_utils.subscribe_mailchimp(list_name, self._id)
         return ret
 
     # Legacy methods
@@ -1082,7 +1088,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             mails.send_mail(
                 to_addr=self.username,
                 mail=mails.PASSWORD_RESET,
-                mimetype='html',
                 user=self,
                 can_change_preferences=False,
                 osf_contact_email=website_settings.OSF_CONTACT_EMAIL

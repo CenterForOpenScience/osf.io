@@ -2,6 +2,81 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.03.0 (2021-4-22)
+====================
+- Support for provider-defined metadata fields on registrations
+- Updates to secondary-data registration schema
+- Support to update registration schemas via the Admin App
+- Task to clean up files from stuck/withdrawn registrations
+- Updated SHARE integration
+
+21.02.0 (2021-3-29)
+====================
+- Updated APIs for No-Project registrations
+
+21.01.0 (2021-3-17)
+====================
+- Updates to Datacite integration
+- Give WRITE users more permissions on Draft Registrations
+- Scripts for purging files for withdrawn/failed registrations
+- Various bug fixes
+
+20.22.0 (2020-12-08)
+====================
+- Update emails for Registries Moderation
+
+20.21.0 (2020-11-24)
+====================
+- Miscellaneous fixes for Registries Moderation integration
+- Add Registries Moderation notification management
+
+20.20.0 (2020-11-03)
+====================
+- Add storage limits to nodes
+
+20.19.0 (2020-11-02)
+====================
+- Add four new registration forms
+- Fix missing case for storage caps in admin app
+- Add GET endpoints for registries moderation
+- Add admin app for registries moderation
+
+20.18.0 (2020-10-12)
+====================
+- Add admin panel for storage usage
+- Make scopes play better with files
+
+20.17.0 (2020-09-16)
+====================
+- Re-enable calculation of storage cache with more efficient updates
+- Add node storage limits to node model
+- Add registration moderation state machine
+- Update zotero requirements
+- Update QA notes in PR template
+
+20.16.0 (2020-09-09)
+====================
+- Fix bug in EGAP schema display on branded registries
+- Add script to purge deleted files
+
+20.15.0 (2020-09-01)
+====================
+- Fix OSF Provider not sending data to SHARE
+- Allow osf_admin to create Brand in admin app
+- Move SHARE fields from PreprintProvider to AbstractProvider
+- Models and API to associate a registration provider with schemas
+- Allow admin app to associate registration forms with providers
+- Enable API to create registration that belongs to a registration provider
+- Admin app permissions for branding
+- Allow EGAP schema in /v2/providers/registrations/<id>/schemas.
+- Handle 502s on admin app setup SHARE source
+- Prepend provider names in SHARE on staging/test
+- Send SHARE errors to sentry instead of desk
+- Management command to reindex OSF registrations in SHARE
+- Serialize branded_discovery_page boolean on Registration Provider
+- Prevent API from accepting registration form for a provider that doesn't support that form
+- Branded Registries admin app fixes
+
 20.14.0 (2020-07-13)
 ====================
 - Add brands to registration providers

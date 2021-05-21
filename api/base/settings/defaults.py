@@ -197,6 +197,8 @@ REST_FRAMEWORK = {
         'test-anon': '1/hour',
         'send-email': '2/minute',
         'burst': '10/second',
+        'files': '75/minute',
+        'files-burst': '3/second',
     },
 }
 
@@ -319,6 +321,7 @@ ELASTICSEARCH_METRICS_DATE_FORMAT = '%Y'
 
 WAFFLE_CACHE_NAME = 'waffle_cache'
 STORAGE_USAGE_CACHE_NAME = 'storage_usage'
+STORAGE_USAGE_MAX_ENTRIES = 10000000
 
 
 CACHES = {
@@ -328,6 +331,9 @@ CACHES = {
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'osf_cache_table',
+        'OPTIONS': {
+            'MAX_ENTRIES': STORAGE_USAGE_MAX_ENTRIES,
+        },
     },
     WAFFLE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
