@@ -8,22 +8,19 @@ logger = logging.getLogger(__name__)
 class IAMetadataError(Exception):
     pass
 
-get_ia_field = lambda field : Registration.IA_MAPPED_NAMES.get(field, field)
-
-mirrored_attrs = list(Registration.SYNCED_WITH_IA)
-
-
-mirrored_fields = mirrored_attrs + ['subjects', 'tags', 'affiliated_institutions']
-
 
 def sync_ia_metadata(guids):
     registrations = Registration.objects.filter(guids___id__in=guids).order_by('guids___id')
     data = registrations.values(
-        *mirrored_attrs,
+        'title',
+        'description',
+        'modified',
+        'article_doi',
     ).annotate(
-        subjects=F('subjects__text'),
+        osf_category=F('category'),
+        osf_subjects=F('subjects__text'),
         affiliated_institutions=F('affiliated_institutions__name'),
-        tags=F('tags__name'),
+        osf_tags=F('tags__name'),
     )
     for registration, values in zip(registrations, data):
         update_ia_metadata(registration, values)
