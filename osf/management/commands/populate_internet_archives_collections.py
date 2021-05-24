@@ -9,47 +9,61 @@ import requests
 logger = logging.getLogger(__file__)
 
 
+def create_ia_subcollection(provider, version_id, dry_run):
+    provider_id = f"osf-registration-providers-{provider._id}-{version_id}"
+    resp = None
+    if not dry_run:
+        resp = requests.put(
+            f"https://s3.us.archive.org/{provider_id}",
+            headers={
+                "Authorization": f"LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}",
+                "x-archive-meta01-title": provider.name,
+                "x-archive-meta02-collection": settings.IA_ROOT_COLLECTION,
+                "x-archive-meta03-mediatype": 'collection',
+            },
+        )
+    logger.info(
+        f'{"DRY_RUN" if dry_run else ""} collection for {provider_id} requested with {resp}'
+    )
+    return resp
+
+def modify_ia_subcollection(provider, version_id, dry_run):
+    provider_id = f"osf-registration-providers-{provider._id}-{version_id}"
+    if not dry_run:
+        # The following uses the json patch syntax more info here:
+        # https://archive.org/services/docs/api/metadata.html
+        changes = [
+            {
+                "target": 'metadata',
+                "patch": {
+                    "op": "replace",
+                    "path": "/title",
+                    "value": provider.name,
+                },
+            },
+        ]
+        resp = requests.post(
+            f"http://archive.org/metadata/{provider_id}",
+            headers={
+                "Authorization": f"LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}",
+            },
+            data={
+                "target": 'metadata',
+                "-changes": json.dumps(changes),
+                "priority": None,
+            },
+        )
+    logger.info(
+        f'{"DRY_RUN" if dry_run else ""} collection for {provider_id} updated with {resp}'
+    )
+
+
+
 def populate_internet_archives_collections(version_id, dry_run=False):
     for provider in RegistrationProvider.objects.all():
-        provider_id = f"osf-registration-providers-{provider._id}-{version_id}"
-        if not dry_run:
-            resp = requests.put(
-                f"https://s3.us.archive.org/{provider_id}",
-                headers={
-                    "Authorization": f"LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}",
-                    "x-archive-meta01-title": provider.name,
-                    "x-archive-meta02-collection": settings.IA_ROOT_COLLECTION,
-                    "x-archive-meta03-mediatype": 'collection',
-                },
-            )
-            if resp.status_code in (409, 400):
-                # The following uses the json patch syntax more info here:
-                # https://archive.org/services/docs/api/metadata.html
-                changes = [
-                    {
-                        "target": provider_id,
-                        "patch": {
-                            "op": "replace",
-                            "path": "/title",
-                            "value": provider.name,
-                        },
-                    },
-                ]
-                requests.post(
-                    f"http://archive.org/metadata/{provider_id}",
-                    headers={
-                        "Authorization": f"LOW {settings.IA_ACCESS_KEY}:{settings.IA_SECRET_KEY}",
-                    },
-                    data={
-                        "target": 'metadata',
-                        "-changes": json.dumps(changes),
-                        "priority": None,
-                    },
-                ).raise_for_status()
-
-        logger.info(
-            f'{"DRY_RUN" if dry_run else ""} collection for {provider._id} collection created with id {provider_id} '
-        )
+        resp = create_ia_subcollection(provider, version_id, dry_run)
+        if resp.status_code == 409:
+            modify_ia_subcollection(provider, version_id, dry_run)
 
 
 class Command(BaseCommand):

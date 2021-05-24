@@ -71,7 +71,6 @@ def check_ia_metadata(collection=settings.IA_ROOT_COLLECTION, guids=None):
         for field, osf_value in osf_registration.items():
             ia_url = osf_registration["ia_url"]
             ia_value = ia_item.get(Registration.IA_MAPPED_NAMES.get(field, field), None)
-            print(osf_value, ia_value)
             if osf_value != ia_value and field not in (
                 "ia_url",
                 "modified",
