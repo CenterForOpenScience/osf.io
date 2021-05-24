@@ -1432,7 +1432,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         super().confirm_spam(save=save)
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
             node.confirm_spam(train_akismet=False)
-        for preprint in self.preprints.filter(is_public=True, is_deleted=False):
+        for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
