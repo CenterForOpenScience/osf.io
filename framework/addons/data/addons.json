@@ -165,7 +165,7 @@
             },
             "Delete files": {
                 "status": "full",
-                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
+                "text": "Files deleted via GakuNin RDM will be deleted in OneDrive."
             },
             "Logs": {
                 "status": "partial",
