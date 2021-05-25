@@ -42,7 +42,7 @@
     the Center for Open Science.
     </p>
     <p>
-    Questions? Email <a href="mailto:${osf_contact_email}">${contact_email}</a>
+    Questions? Email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
     </p>
   </td>
 </tr>
