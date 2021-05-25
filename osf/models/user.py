@@ -935,6 +935,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.draft_registrations.filter(
             (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True)),
             branched_from__is_deleted=False,
+            branched_from__deleted__isnull=True,
             deleted__isnull=True,
         )
 
