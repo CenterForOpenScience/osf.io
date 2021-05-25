@@ -6,9 +6,9 @@
     <%!
         from website import settings
     %>
-    Hello ${user.fullname},
+    Hello ${fullname},
     <p>
-    ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on'}
+    ${referrer.fullname} has added you as a contributor on
     % if node.title == 'Untitled':
       <a href="${node.absolute_url}">a new registration draft</a>
     % else:
@@ -17,32 +17,26 @@
     to be submitted for inclusion in the ${node.provider.name} registry.
     </p>
     <p>
-    You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
-    </p>
-    % if is_initiator or node.has_permission(user, 'admin'):
-      <p>
-      Each contributor that is added will be notified via email, which will contain a link to the drafted registration.
-      </p>
-    % endif
-    % if not is_initiator:
-      <p>
-      If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
-      </p>
-    % endif
+    <a href="${claim_url}">Click here</a> to set a password for your account.
+    <\p>
+    <p>
+    Once you have set a password, you will be able to contribute to this registration draft as well as
+	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
+    by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
+    <\p>
+    <p>
+    If you are not ${fullname} or if you have been erroneously associated with "${node.title}" then
+    email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.
+    <\p>
     <p>
     Sincerely,
-    </p>
     <p>
     The OSF Team
-    </p>
     <p>
     Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
     or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
     the Center for Open Science.
-    </p>
     <p>
-    Questions? Email <a href="mailto: support@cos.io">support@cos.io</a>
-    </p>
-  </td>
+    Questions? Email ${osf_contact_email}
 </tr>
 </%def>
