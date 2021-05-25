@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import json
 
 import logging
 
@@ -224,9 +225,13 @@ def mock_pigeon():
     '{settings.OSF_PIGEON_URL}metadata/{guid}'
 
     """
+    def request_callback(request):
+        return (200, {}, json.dumps({'ia_url': 'https://test.ia.url.com'}))
+
+
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
-        with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.osf.pigeon.io/'):
-            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
-                rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
-                yield rsps
+        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
+            rsps.add_callback(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), callback=request_callback)
+            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
+            yield rsps

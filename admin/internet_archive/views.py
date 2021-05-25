@@ -22,7 +22,7 @@ from website import settings
 class InternetArchiveView(TemplateView):
     """Basic form to trigger various management commands"""
 
-    template_name = "internet_archive/internet_archive.html"
+    template_name = 'internet_archive/internet_archive.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -38,15 +38,15 @@ class SendToPigeon(FormView):
     raise_exception = True
 
     def form_valid(self, form):
-        guids = form.cleaned_data["guid_to_archive"]
-        guids = [guid.strip() for guid in guids.split(",") if guid]
+        guids = form.cleaned_data['guid_to_archive']
+        guids = [guid.strip() for guid in guids.split(',') if guid]
         archive_registrations_on_IA(guids=guids)
         messages.success(self.request, f'{" ,".join(guids) if guids else "the job"} has begun archiving.')
 
         return super().form_valid(form)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse("internet_archive:internet_archive")
+        return reverse('internet_archive:internet_archive')
 
 
 class CreateIASubcollections(View):
@@ -54,9 +54,9 @@ class CreateIASubcollections(View):
         populate_internet_archives_collections(settings.ID_VERSION)
         messages.success(
             request,
-            f"Subcollections with ids of {settings.ID_VERSION} are being created",
+            f'Subcollections with ids of {settings.ID_VERSION} are being created',
         )
-        return redirect(reverse("internet_archive:internet_archive"))
+        return redirect(reverse('internet_archive:internet_archive'))
 
 
 class CheckIAMetadata(FormView):
@@ -65,8 +65,8 @@ class CheckIAMetadata(FormView):
     raise_exception = True
 
     def form_valid(self, form):
-        guids = form.cleaned_data["guid_to_archive"]
-        guids = [guid.strip() for guid in guids.split(",") if guid]
+        guids = form.cleaned_data['guid_to_archive']
+        guids = [guid.strip() for guid in guids.split(',') if guid]
         try:
             check_ia_metadata(guids=guids)
             messages.success(self.request, 'All IA items are synced')
@@ -79,7 +79,7 @@ class CheckIAMetadata(FormView):
         return super().form_valid(form)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse("internet_archive:internet_archive")
+        return reverse('internet_archive:internet_archive')
 
 
 class SyncIAMetadata(FormView):
@@ -88,11 +88,11 @@ class SyncIAMetadata(FormView):
     raise_exception = True
 
     def form_valid(self, form):
-        guids = form.cleaned_data["guid_to_archive"]
-        guids = [guid.strip() for guid in guids.split(",") if guid]
+        guids = form.cleaned_data['guid_to_archive']
+        guids = [guid.strip() for guid in guids.split(',') if guid]
         sync_ia_metadata(guids=guids)
         messages.success(self.request, f'{", ".join(guids)} match IA items.')
         return super().form_valid(form)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse("internet_archive:internet_archive")
+        return reverse('internet_archive:internet_archive')

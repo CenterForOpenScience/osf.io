@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, View, FormView
+from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -12,10 +12,10 @@ from osf.models import Preprint, Node, Registration
 
 
 class ManagementCommands(TemplateView):
-    """Basic form to trigger various management commands"""
+    '''Basic form to trigger various management commands'''
 
-    template_name = "management/commands.html"
-    object_type = "management"
+    template_name = 'management/commands.html'
+    object_type = 'management'
 
 
 class ManagementCommandPermissionView(View, PermissionRequiredMixin):
@@ -26,8 +26,8 @@ class WaffleFlag(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
         manage_waffle()
-        messages.success(request, "Waffle flags have been successfully updated.")
-        return redirect(reverse("management:commands"))
+        messages.success(request, 'Waffle flags have been successfully updated.')
+        return redirect(reverse('management:commands'))
 
 
 class UpdateRegistrationSchemas(ManagementCommandPermissionView):
