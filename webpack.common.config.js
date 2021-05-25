@@ -130,8 +130,28 @@ addons.addons.forEach(function(addonName) {
     }
 });
 
+function logEntriesToJS(logs) {
+    var lines = '';
+    var phase = 0;
+    Object.entries(logs).forEach(function(entry) {
+        if (entry[0] === '##comment##') {
+            lines += `//${entry[1]}\n`;
+            return;
+        }
+        if (phase === 0) {
+            lines += 'var _ = require(\'js/rdmGettext\')._;\n';
+            phase ++;
+        }
+        lines += `var ${entry[0]} = _('${entry[1].replace(/'/g, '\\\'')}');\n`;
+    });
+    return lines;
+}
+
 fs.writeFileSync(staticPath('js/_allLogTexts.json'), JSON.stringify(mainLogs));
 fs.writeFileSync(staticPath('js/_anonymousLogTexts.json'), JSON.stringify(anonymousLogs));
+// for i18n
+fs.writeFileSync(staticPath('js/logActionsList_extract.js'), logEntriesToJS(mainLogs));
+fs.writeFileSync(staticPath('js/anonymousLogActionsList_extract.js'), logEntriesToJS(anonymousLogs));
 
 function rdmPoToJson() {
     var acceptLanguages = ['en','ja'];

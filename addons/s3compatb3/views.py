@@ -10,7 +10,6 @@ from framework.auth.decorators import must_be_logged_in
 from addons.base import generic_views
 from addons.s3compatb3 import utils
 from addons.s3compatb3.serializer import S3CompatB3Serializer
-import addons.s3compatb3.settings as settings
 from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon, must_have_permission,
@@ -21,7 +20,7 @@ from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
 
 SHORT_NAME = 's3compatb3'
-FULL_NAME = 'S3 Compatible Storage'
+FULL_NAME = 'Oracle Cloud Infrastructure Object Storage'
 
 s3compatb3_account_list = generic_views.account_list(
     SHORT_NAME,
@@ -87,10 +86,10 @@ def s3compatb3_add_user_account(auth, **kwargs):
         return {
             'message': 'All the fields above are required.'
         }, http_status.HTTP_400_BAD_REQUEST
-    if host not in [s['host'] for s in settings.AVAILABLE_SERVICES]:
-        return {
-            'message': 'The host is not available.'
-        }, http_status.HTTP_400_BAD_REQUEST
+    # if host not in [s['host'] for s in settings.AVAILABLE_SERVICES]:
+    #     return {
+    #         'message': 'The host is not available.'
+    #     }, http_status.HTTP_400_BAD_REQUEST
 
     user_info = utils.get_user_info(host, access_key, secret_key)
     if not user_info:
@@ -113,15 +112,15 @@ def s3compatb3_add_user_account(auth, **kwargs):
             provider_name=FULL_NAME,
             oauth_key=access_key,
             oauth_secret=secret_key,
-            provider_id='{}\t{}'.format(host, user_info.id),
-            display_name=user_info.display_name,
+            provider_id='{}\t{}'.format(host, access_key),
+            display_name=access_key,
         )
         account.save()
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
             provider=SHORT_NAME,
-            provider_id='{}\t{}'.format(host, user_info.id)
+            provider_id='{}\t{}'.format(host, access_key)
         )
         if account.oauth_key != access_key or account.oauth_secret != secret_key:
             account.oauth_key = access_key

@@ -500,6 +500,36 @@
                 "text": "Making a GakuNin RDM project public or private is independent of making an S3 Compatible Storage bucket public or private. The GakuNin RDM does not alter the permissions of linked S3 Compatible Storage buckets."
             }
         },
+        "Oracle Cloud Infrastructure Object Storage": {
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Oracle Cloud Infrastructure Object Storage authorization unless the user forking the project is the same user who authorized the Oracle Cloud Infrastructure Object Storage add-on in the source project being forked."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The GakuNin RDM keeps track of changes you make to your Oracle Cloud Infrastructure Object Storage buckets through the GakuNin RDM, but not for changes made using Oracle Cloud Infrastructure Object Storage directly."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Oracle Cloud Infrastructure Object Storage content will be registered, but version history will not be copied to the registration."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Oracle Cloud Infrastructure Object Storage."
+            },
+            "View / download file versions": {
+                "status": "partial",
+                "text": "The Oracle Cloud Infrastructure Object Storage add-on supports file versions if versioning is enabled for your Oracle Cloud Infrastructure Object Storage buckets."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via GakuNin RDM will be deleted in Oracle Cloud Infrastructure Object Storage."
+            },
+            "Permissions": {
+                "status": "partial",
+                "text": "Making a GakuNin RDM project public or private is independent of making an Oracle Cloud Infrastructure Object Storage bucket public or private. The GakuNin RDM does not alter the permissions of linked Oracle Cloud Infrastructure Object Storage buckets."
+            }
+        },
         "JupyterHub": {
             "Permissions": {
                 "status": "none",
