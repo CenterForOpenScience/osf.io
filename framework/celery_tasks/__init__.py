@@ -48,6 +48,7 @@ def archive_to_ia(node):
 
 @app.task(max_retries=5, default_retry_delay=60)
 def _update_ia_metadata(node_id, data):
+    print(node_id, data)
     requests_retry_session().post(f'{OSF_PIGEON_URL}metadata/{node_id}', json=data).raise_for_status()
 
 def update_ia_metadata(node, data):
@@ -67,6 +68,6 @@ def update_ia_metadata(node, data):
             predicate=lambda task: task.args[0] == node._id and data.keys() == task.args[1].keys()
         )
         if task:
-            task.args = (node._id, data)
+            task.args = (node._id, data, )
         else:
-            enqueue_postcommit_task(_update_ia_metadata, (node._id, data), {}, celery=True)
+            enqueue_postcommit_task(_update_ia_metadata, (node._id, data, ), {}, celery=True)

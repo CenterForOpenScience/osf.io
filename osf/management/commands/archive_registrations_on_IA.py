@@ -26,7 +26,7 @@ def archive_registrations_on_IA(dry_run=False, batch_size=100, guids=None):
     logger.info(f'{registrations.count()} to be archived in batch')
 
     for registration in registrations:
-        time.sleep(.1) # Don't DDOS self
+        time.sleep(.1)  # Don't DDOS self
         if not dry_run:
             logger.info(f'archiving {registration._id}')
             requests_retry_session().post(f'{settings.OSF_PIGEON_URL}archive/{registration._id}')
