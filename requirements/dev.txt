@@ -15,7 +15,7 @@ webtest-plus==0.3.3
 mock==2.0.0
 Faker==4.0.1
 schema==0.3.1
-responses==0.8.1
+responses==0.10.6
 
 # Syntax checking
 flake8==3.6.0

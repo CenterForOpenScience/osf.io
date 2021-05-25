@@ -391,7 +391,6 @@ def update_user_async(self, user_id, index=None):
         self.retry(exc)
 
 def serialize_node(node, category):
-    elastic_document = {}
     parent_id = node.parent_id
 
     try:
@@ -446,8 +445,6 @@ def serialize_node(node, category):
     return elastic_document
 
 def serialize_preprint(preprint, category):
-    elastic_document = {}
-
     try:
         normalized_title = six.u(preprint.title)
     except TypeError:
@@ -481,8 +478,6 @@ def serialize_preprint(preprint, category):
     return elastic_document
 
 def serialize_group(group, category):
-    elastic_document = {}
-
     try:
         normalized_title = six.u(group.name)
     except TypeError:

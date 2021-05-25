@@ -410,13 +410,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             for child in self.children:
                 child._update_node(save=save)
 
-    # TODO: Remove unused parent param
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+    def delete(self, user=None, save=True, deleted_on=None):
         """
         Recast a Folder to TrashedFolder, set fields related to deleting,
         and recast children.
         :param user:
-        :param parent:
         :param save:
         :param deleted_on:
         :return:
@@ -643,7 +641,7 @@ class TrashedFileNode(BaseFileNode):
     is_deleted = True
     _provider = None
 
-    def delete(self, user=None, parent=None, save=True, deleted_on=None):
+    def delete(self, user=None, save=True, deleted_on=None):
         if isinstance(self, TrashedFileNode):  # TODO Why is this needed
             raise UnableToDelete('You cannot delete things that are deleted.')
 

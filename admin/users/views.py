@@ -195,29 +195,30 @@ class HamUserRestoreView(UserDeleteView):
     template_name = 'users/restore_ham_user.html'
 
     def delete(self, request, *args, **kwargs):
-        try:
-            user = self.get_object()
-        except AttributeError:
+        user = self.get_object()
+        if not user:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        if user:
-            user.confirm_ham(save=True)
-            for node in user.contributor_or_group_member_to:
-                if node.is_spam:
-                    node.confirm_ham(save=True)
-                    update_admin_log(
-                        user_id=request.user.id,
-                        object_id=node._id,
-                        object_repr='Node',
-                        message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
-                        action_flag=CONFIRM_SPAM
-                    )
-
-        kwargs.update({'is_spam': False})
-        return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
+        user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
+        user.confirm_ham(save=True)
+        for node in user.contributor_or_group_member_to:
+            if node.is_spam:
+                node.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=node._id,
+                    object_repr='Node',
+                    message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
+                    action_flag=CONFIRM_SPAM
+                )
+        if not user.is_active:
+            # Allow superclass to restore and mark ham
+            kwargs.update({'is_spam': False})
+            return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
+        return redirect(reverse_user(self.kwargs.get('guid')))
 
 
 class UserSpamList(PermissionRequiredMixin, ListView):

@@ -23,11 +23,14 @@ OSF_META_SCHEMA_FILES = [
     'osf-preregistration-3.json',
     'egap-registration.json',
     'egap-registration-3.json',
+    'egap-registration-4.json',
     'asist-hypothesis-capability-registration.json',
     'asist-results-registration.json',
     'real-world-evidence.json',
     'qualitative-research.json',
-    'secondary-data.json'
+    'secondary-data.json',
+    'character-lab-fully-powered-study.json',
+    'character-lab-pilot-study.json',
 ]
 
 METASCHEMA_ORDERING = (

@@ -453,12 +453,13 @@ class RegistrationFactory(BaseNodeFactory):
         reg.save()
         return reg
 
+
 class WithdrawnRegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
 
-        registration = kwargs.pop('registration', None)
+        registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
 
@@ -479,7 +480,7 @@ class SanctionFactory(DjangoModelFactory):
     def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
         user = kwargs.pop('user', None) or UserFactory()
         kwargs['initiated_by'] = initiated_by or user
-        sanction = super(SanctionFactory, cls)._create(target_class, *args, **kwargs)
+        sanction = super()._create(target_class, *args, **kwargs)
         reg_kwargs = {
             'creator': user,
             'user': user,

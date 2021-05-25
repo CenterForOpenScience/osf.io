@@ -980,6 +980,7 @@ class TestPreprintSpam:
                 assert preprint.check_spam(user, None, None) is True
 
                 assert user.is_disabled is True
+                preprint.reload()
                 assert preprint.is_public is False
                 preprint2.reload()
                 assert preprint2.is_public is False

@@ -8,8 +8,10 @@
             <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
             {% endfor %}
         </ul>
+
         <p> Use the buttons below to manually run management commands. </p>
         <div class="row">
+<<<<<<< HEAD
             <div class="col-md-12">
                 <h4> <u>Update Waffle Flags and Switches </u>
                 </h4>
@@ -42,6 +44,73 @@
                     </form>
                 </ul>
             </div>
+=======
+            <h4> <u>Update Waffle Flags and Switches </u>
+            </h4>
+            <ul>
+                Use this management command to update the flags and switches on OSF
+                with the flags and switches in osf/features/switches.py and osf/features/flags.py
+                <br>
+                <form method="post"
+                      action="{% url 'management:waffle_flag'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Update Registration Schemas and Schema Blocks </u>
+            </h4>
+            <ul>
+                Use this management command to update the schemas and schma blocks
+                for Registrations to match values in website/project/metadata
+                <br>
+                <form method="post"
+                      action="{%url 'management:update_registration_schemas'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Download CSV of spam </u>
+            </h4>
+            <ul>
+                Use this management command to download a CSV of spam content that matches a regular expression
+                In the last number of specified days.
+                <br>
+                <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/" target="_blank">Here is a nice cheat sheet for regular expressions</a>
+                <br>
+                <form method="post"
+                      action="{%url 'management:get_spam_csv'%}">
+                    {% csrf_token %}
+                    <label>Regex:</label>  <input type="text" name="regex_get"/><br>
+                    <label>Days:</label>  <input type="text" name="days_get" value=1 /><br>
+                    <label>Nodes:</label>   <input type="checkbox" name="node_get" checked /><br>
+                    <label>Registrations:</label>  <input type="checkbox" name="registration_get" checked /><br>
+                    <label>Preprints:</label>   <input type="checkbox" name="preprint_get" checked /><br>
+                    <input class="btn btn-success" type="submit"
+                           value="Run" />
+                </form>
+            </ul>
+            <h4> <u>Ban spam users by regular expression</u>
+            </h4>
+            <ul>
+                Use this management command to spam all users that created content that matches the specified regular expression.<br>
+                <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/" target="_blank">Here is a nice cheat sheet for regular expressions</a>
+                <br>
+                <b> <p style="color:red">NOTE: This action is PERMANENT. Be EXTREMELY sure you know what you're doing before you press this.</p></b>
+                <form method="post"
+                      action="{%url 'management:ban_spam_regex'%}">
+                    {% csrf_token %}
+                    <label>Regex:</label> <input type="text" name="regex_ban"/><br>
+                    <label>Days:</label> <input type="text" name="days_ban" value=1 /><br>
+                    <label>Nodes:</label>   <input type="checkbox" name="node_ban" checked /><br>
+                    <label>Registrations:</label>   <input type="checkbox" name="registration_ban" checked /><br>
+                    <label>Preprints:</label>  <input type="checkbox" name="preprint_ban" checked /><br>
+                    <input class="btn btn-danger" type="submit"
+                           value="Run" color:"red" />
+                </form>
+            </ul>
+>>>>>>> 24801a065515101525786c976a2b3da1f7c69e94
         </div>
     </section>
 {% endblock %}

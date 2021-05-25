@@ -1,8 +1,6 @@
 import pytz
 import functools
 
-from api.share.utils import update_share
-
 from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.utils import timezone
@@ -126,7 +124,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     # accept(self, user, token)
     # reject(self, user, token)
     #
-    # Overrriding these functions will divorce the offending Sanction class from that trigger's
+    # Overriding these functions will divorce the offending Sanction class from that trigger's
     # functionality on the state machine.
 
     def _get_registration(self):
@@ -533,10 +531,10 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             is_authorizer=is_authorizer)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -557,6 +555,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
             })
@@ -682,10 +681,10 @@ class Retraction(EmailApprovableSanction):
     def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -704,6 +703,7 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
+                'approval_time_span': approval_time_span,
             }
 
     def _on_reject(self, event_data):
@@ -726,55 +726,10 @@ class Retraction(EmailApprovableSanction):
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        NodeLog = apps.get_model('osf.NodeLog')
-
         self.date_retracted = timezone.now()
+        registration = self.target_registration
+        registration.withdraw()
         self.save()
-
-        parent_registration = self.target_registration
-        parent_registration.registered_from.add_log(
-            action=NodeLog.RETRACTION_APPROVED,
-            params={
-                'node': parent_registration.registered_from._id,
-                'retraction_id': self._id,
-                'registration': parent_registration._id
-            },
-            auth=Auth(self.initiated_by),
-        )
-
-        # TODO: Move this into the registration to be re-used in Forced Withdrawal
-        # Remove any embargoes associated with the registration
-        if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
-            # Alter embargo state to make sure registration doesn't accidentally get published
-            parent_registration.embargo.state = self.REJECTED
-            parent_registration.embargo.approval_stage = (
-                SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.REJECTED
-            )
-
-            parent_registration.registered_from.add_log(
-                action=NodeLog.EMBARGO_CANCELLED,
-                params={
-                    'node': parent_registration.registered_from._id,
-                    'registration': parent_registration._id,
-                    'embargo_id': parent_registration.embargo._id,
-                },
-                auth=Auth(self.initiated_by),
-            )
-            parent_registration.embargo.save()
-
-        # Ensure retracted registration is public
-        # Pass auth=None because the registration initiator may not be
-        # an admin on components (component admins had the opportunity
-        # to disapprove the retraction by this point)
-        for node in parent_registration.node_and_primary_descendants():
-            node.set_privacy('public', auth=None, save=True, log=False)
-            node.update_search()
-        # force a save before sending data to share or retraction will not be updated
-        self.save()
-
-        if osf_settings.SHARE_ENABLED:
-            update_share(parent_registration)
 
     def approve_retraction(self, user, token):
         '''Test function'''
@@ -837,14 +792,11 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         context = super(RegistrationApproval, self)._email_template_context(user, node, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-
-            approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
-
             registration = self._get_registration()
-
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
@@ -862,6 +814,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
+                'approval_time_span': approval_time_span,
             })
         return context
 
@@ -1058,10 +1011,10 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         )
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -1085,7 +1038,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
-
+                'approval_time_span': approval_time_span,
             })
         return context
 

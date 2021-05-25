@@ -364,6 +364,7 @@ ARCHIVE_PROVIDER = 'osfstorage'
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
+STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x days are marked as deleted.
 
 ENABLE_ARCHIVER = True
 
@@ -408,6 +409,7 @@ class CeleryConfig:
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
+        'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
@@ -656,7 +658,15 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 4:00 a.m.
                 'kwargs': {'dry_run': False}
             },
-
+            'delete_withdrawn_or_failed_registration_files': {
+                'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {
+                    'dry_run': False,
+                    'batch_size_withdrawn': 10,
+                    'batch_size_stuck': 10
+                }
+            },
         }
 
         # Tasks that need metrics and release requirements
@@ -830,6 +840,8 @@ BLACKLISTED_DOMAINS = [
     'bigstring.com',
     'binkmail.com',
     'bio-muesli.net',
+    'biojuris.com',
+    'biyac.com',
     'bladesmail.net',
     'bloatbox.com',
     'bobmail.info',
@@ -1122,6 +1134,7 @@ BLACKLISTED_DOMAINS = [
     'giantmail.de',
     'girlsundertheinfluence.com',
     'gishpuppy.com',
+    'gmailwe.com',
     'gmial.com',
     'goemailgo.com',
     'gorillaswithdirtyarmpits.com',
@@ -1247,6 +1260,7 @@ BLACKLISTED_DOMAINS = [
     'labetteraverouge.at',
     'lackmail.net',
     'lags.us',
+    'laldo.com',
     'landmail.co',
     'lastmail.co',
     'lawlita.com',
@@ -1268,6 +1282,7 @@ BLACKLISTED_DOMAINS = [
     'lookugly.com',
     'lopl.co.cc',
     'lortemail.dk',
+    'losbanosforeclosures.com',
     'lovemeleaveme.com',
     'lr78.com',
     'lroid.com',
@@ -1394,6 +1409,7 @@ BLACKLISTED_DOMAINS = [
     'monemail.fr.nf',
     'monmail.fr.nf',
     'monumentmail.com',
+    'moyencuen.buzz',
     'msa.minsmail.com',
     'mt2009.com',
     'mt2014.com',
@@ -1454,6 +1470,7 @@ BLACKLISTED_DOMAINS = [
     'nospamthanks.info',
     'notmailinator.com',
     'notsharingmy.info',
+    'notvn.com',
     'nowhere.org',
     'nowmymail.com',
     'nurfuerspam.de',
@@ -1540,6 +1557,7 @@ BLACKLISTED_DOMAINS = [
     'sayawaka-dea.info',
     'saynotospams.com',
     'scatmail.com',
+    'sciencejrq.com',
     'schafmail.de',
     'schrott-email.de',
     'secretemail.de',
@@ -1655,6 +1673,7 @@ BLACKLISTED_DOMAINS = [
     'spoofmail.de',
     'spybox.de',
     'squizzy.de',
+    'srcitation.com',
     'ssoia.com',
     'startkeys.com',
     'stexsy.com',
@@ -1823,6 +1842,7 @@ BLACKLISTED_DOMAINS = [
     'wem.com',
     'wetrainbayarea.com',
     'wetrainbayarea.org',
+    'wifimaple.com',
     'wh4f.org',
     'whatiaas.com',
     'whatpaas.com',
@@ -1842,6 +1862,7 @@ BLACKLISTED_DOMAINS = [
     'wwwnew.eu',
     'wzukltd.com',
     'xagloo.com',
+    'xakw1.com',
     'xemaps.com',
     'xents.com',
     'xmaily.com',
@@ -1904,6 +1925,9 @@ SPAM_ACCOUNT_SUSPENSION_ENABLED = False
 SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
+SPAM_AUTOBAN_IP_BLOCK = True
+SPAM_THROTTLE_AUTOBAN = True
+SPAM_CREATION_THROTTLE_LIMIT = 5
 
 SHARE_API_TOKEN = None
 
