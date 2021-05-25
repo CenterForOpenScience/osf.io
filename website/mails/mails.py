@@ -70,7 +70,7 @@ class Mail(object):
         return render_message(tpl_name, **context)
 
     def subject(self, **context):
-        return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render(**context)
+        return Template(self._subject, input_encoding='utf-8', output_encoding='utf-8').render_unicode(**context)
 
     @property
     def charset(self):
@@ -84,7 +84,7 @@ class Mail(object):
 def render_message(tpl_name, **context):
     """Render an email message."""
     tpl = _tpl_lookup.get_template(tpl_name)
-    return tpl.render(**context)
+    return tpl.render_unicode(**context)
 
 
 def send_mail(
