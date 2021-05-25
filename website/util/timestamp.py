@@ -233,11 +233,11 @@ def get_full_list(uid, pid, node):
     '''Get a full list of timestamps from all files uploaded to a storage.
     '''
     user_info = OSFUser.objects.get(id=uid)
-    cookie = user_info.get_or_create_cookie()
+    cookie = user_info.get_or_create_cookie().decode()
 
     api_url = util.api_v2_url('nodes/{}/files'.format(pid))
     headers = {'content-type': 'application/json'}
-    cookies = {settings.COOKIE_NAME: str(cookie)}
+    cookies = {settings.COOKIE_NAME: cookie}
 
     file_res = requests.get(api_url, headers=headers, cookies=cookies)
     provider_json_res = file_res.json()
@@ -328,7 +328,7 @@ def check_file_timestamp(uid, node, data, verify_external_only=False):
             return TimeStampTokenVerifyCheckHash.timestamp_check(
                 ext_info, user._id, data, node._id)
 
-    cookie = user.get_or_create_cookie()
+    cookie = user.get_or_create_cookie().decode()
     tmp_dir = None
     result = None
     try:
@@ -541,7 +541,7 @@ def add_token(uid, node, data):
             return AddTimestampHash.add_timestamp(
                 user._id, data, node._id, ext_info)
 
-    cookie = user.get_or_create_cookie()
+    cookie = user.get_or_create_cookie().decode()
     tmp_dir = None
 
     # Check access to provider
@@ -586,7 +586,7 @@ def get_file_info(cookie, file_node, version):
     file_data_request = requests.get(
         file_node.generate_waterbutler_url(
             version=version.identifier, meta='', _internal=True
-        ), headers=headers, cookies={settings.COOKIE_NAME: str(cookie)}
+        ), headers=headers, cookies={settings.COOKIE_NAME: cookie.decode()}
     )
     if file_data_request.status_code == 200:
         file_data = file_data_request.json().get('data')
@@ -1632,7 +1632,7 @@ class ExternalInfo():
     @property
     def file_exists(self):
         if self._file_exists is None:
-            cookie = self.user.get_or_create_cookie()
+            cookie = self.user.get_or_create_cookie().decode()
             file_info = waterbutler.get_node_info(
                 cookie, self.node._id,
                 self.file_node.provider, self.file_node.path)
