@@ -228,7 +228,6 @@ def mock_pigeon():
     def request_callback(request):
         return (200, {}, json.dumps({'ia_url': 'https://test.ia.url.com'}))
 
-
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
         with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
             rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)

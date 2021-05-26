@@ -3,14 +3,12 @@
 from celery import Celery
 from celery.utils.log import get_task_logger
 from osf.utils.requests import requests_retry_session
-from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from framework.celery_tasks.handlers import enqueue_task
 
 from raven import Client
 from raven.contrib.celery import register_signal
 
 from website.settings import SENTRY_DSN, VERSION, CeleryConfig, OSF_PIGEON_URL
-from django.apps import apps
 
 app = Celery()
 app.config_from_object(CeleryConfig)
