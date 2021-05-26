@@ -11,6 +11,7 @@ from osf_tests.factories import (
 
 from scripts.embargo_registrations import main as approve_embargos
 from django.utils import timezone
+from osf.utils.workflows import RegistrationModerationStates
 
 
 @pytest.mark.django_db
@@ -44,3 +45,5 @@ class TestDraftRegistrations:
         registration.embargo_termination_approval.refresh_from_db()
 
         assert registration.embargo_termination_approval.state == Sanction.APPROVED
+        registration.update_moderation_state()
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
