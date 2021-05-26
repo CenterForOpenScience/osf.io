@@ -120,18 +120,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
-    def test_osf_group_with_admin_permissions_can_view(
-            self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 1
-        assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
-
     def test_can_view_draft_list(
             self, app, user_write_contrib, user_read_contrib, user_non_contrib, project_public, group, group_mem, url_draft_registrations):
 
@@ -368,16 +356,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
 
     #   test_group_admin_cannot_create_draft
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_group_write_contrib_cannot_create_draft
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, permissions.WRITE)
         res = app.post_json_api(
             url_draft_registrations,
             payload,
