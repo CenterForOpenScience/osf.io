@@ -504,6 +504,9 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        if self.embargo_termination_approval:
+            self.embargo_termination_approval.accept()
+
         for node in self.node_and_primary_descendants():
             node.set_privacy(
                 self.PUBLIC,
@@ -511,10 +514,6 @@ class Registration(AbstractNode):
                 log=False,
                 save=True
             )
-
-        for reg in self.embargo.registrations.all():
-            EmbargoTerminationApproval.objects.filter(embargoed_registration=reg).update(state=Embargo.COMPLETED)
-
         return True
 
     def get_contributor_registration_response_keys(self):

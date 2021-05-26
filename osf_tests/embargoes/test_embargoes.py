@@ -4,15 +4,13 @@ import datetime
 
 from osf.models import Sanction
 
-
 from osf_tests.factories import (
     AuthUserFactory,
     EmbargoFactory
-
 )
+
 from scripts.embargo_registrations import main as approve_embargos
 from django.utils import timezone
-from framework.auth.core import Auth
 
 
 @pytest.mark.django_db
@@ -36,7 +34,7 @@ class TestDraftRegistrations:
         terminated with embargo with less then 48 hours before it would expire anyway.
         """
 
-        registration.request_embargo_termination(Auth(user))
+        registration.request_embargo_termination(user)
         mock_now = timezone.now() + datetime.timedelta(days=6)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             approve_embargos(dry_run=False)
@@ -45,4 +43,4 @@ class TestDraftRegistrations:
         registration.embargo.refresh_from_db()
         registration.embargo_termination_approval.refresh_from_db()
 
-        assert registration.embargo_termination_approval.state == Sanction.COMPLETED
+        assert registration.embargo_termination_approval.state == Sanction.APPROVED
