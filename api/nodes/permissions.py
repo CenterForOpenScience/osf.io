@@ -149,6 +149,21 @@ class AdminContributorOrPublic(permissions.BasePermission):
             return obj.is_admin_contributor(auth.user)
 
 
+class NodeDraftRegistrationsListPermission(permissions.BasePermission):
+    acceptable_models = (AbstractNode, DraftRegistration,)
+
+    def has_object_permission(self, request, view, obj):
+        """
+        To make changes, user must be an admin contributor. Admin group membership is not sufficient.
+        """
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.has_permission(auth.user, osf_permissions.READ)
+        else:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
+
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
