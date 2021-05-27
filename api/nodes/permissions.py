@@ -161,7 +161,7 @@ class NodeDraftRegistrationsListPermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return obj.has_permission(auth.user, osf_permissions.READ)
         else:
-            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+            return obj.is_admin_contributor(auth.user)
 
 
 class ExcludeWithdrawals(permissions.BasePermission):

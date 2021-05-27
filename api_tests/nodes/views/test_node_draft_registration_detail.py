@@ -3,7 +3,6 @@ import hashlib
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from django.contrib.auth.models import Permission
 
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
