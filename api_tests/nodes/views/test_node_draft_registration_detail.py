@@ -12,7 +12,6 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
-from rest_framework import exceptions
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
 SCHEMA_VERSION = 2
@@ -722,20 +721,6 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been registered and cannot be modified.'
-
-    def test_reviewer_cannot_delete_draft_registration(
-            self, app, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        res = app.delete_json_api(
-            url_draft_registrations,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
 
 @pytest.mark.django_db

@@ -2,7 +2,6 @@ import pytest
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
-from django.contrib.auth.models import Permission
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema, RegistrationProvider
 from osf_tests.factories import (
