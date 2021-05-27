@@ -23,7 +23,7 @@
     <p>
     Once you have set a password, you will be able to contribute to this registration draft as well as
 	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
-    by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
+    by going to your <a href="${settings.DOMAIN}registries/my-registrations?tab=drafts">"My Registrations" page.</a>
     </p>
     <p>
     If you are not ${fullname} or if you have been erroneously associated with

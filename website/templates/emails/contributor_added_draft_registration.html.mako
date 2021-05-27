@@ -18,7 +18,7 @@
 	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
-    You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
+    You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations?tab=drafts">"My Registrations" page.</a>
     </p>
     % if node.has_permission(user, 'admin'):
       <p>
