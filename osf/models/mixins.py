@@ -2110,11 +2110,10 @@ class SpamOverrideMixin(SpamMixin):
         ):
             self.suspend_spam_user(user)
 
-    def suspend_spam_user(self, user, set_spam=False):
+    def suspend_spam_user(self, user, train_akismet=True):
         if user.spam_status == SpamStatus.HAM:
             return False
-        if set_spam:
-            self.confirm_spam(save=True)
+        self.confirm_spam(save=True, train_akismet=train_akismet)
         self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
@@ -2134,15 +2133,13 @@ class SpamOverrideMixin(SpamMixin):
         # Make public nodes private from this contributor
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                if set_spam:
-                    node.confirm_spam(save=True)
+                node.confirm_spam(save=True, train_akismet=train_akismet)
                 node.set_privacy('private', log=False, save=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                if set_spam:
-                    preprint.confirm_spam(save=True)
+                preprint.confirm_spam(save=True, train_akismet=train_akismet)
                 preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
