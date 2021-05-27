@@ -24,6 +24,7 @@ OSF_META_SCHEMA_FILES = [
     'egap-registration.json',
     'egap-registration-3.json',
     'egap-registration-4.json',
+    'egap-legacy-registration.json',
     'asist-hypothesis-capability-registration.json',
     'asist-results-registration.json',
     'real-world-evidence.json',
