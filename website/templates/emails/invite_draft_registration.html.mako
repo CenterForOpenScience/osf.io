@@ -6,9 +6,9 @@
     <%!
         from website import settings
     %>
-    Hello ${user.fullname},
+    Hello ${fullname},
     <p>
-    ${'You just started' if not referrer_name else referrer_name + ' has added you as a contributor on'}
+    ${referrer.fullname} has added you as a contributor on
     % if not node.title or node.title == 'Untitled':
       <a href="${node.absolute_url}">a new registration draft</a>
     % else:
@@ -18,32 +18,32 @@
 	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
-    You can access this draft by going to your <a href="${settings.DOMAIN}registries/my-registrations?tab=drafts">"My Registrations" page.</a>
+    <a href="${claim_url}">Click here</a> to set a password for your account.
     </p>
-    % if node.has_permission(user, 'admin'):
-      <p>
-      Each contributor that is added will be notified via email, which will contain a link to the draft registration.
-      </p>
-    % endif
-    % if referrer_name:
-      <p>
-      If you have been erroneously associated with this registration draft, then you may visit the draft to remove yourself.
-      </p>
-    % endif
+    <p>
+    Once you have set a password, you will be able to contribute to this registration draft as well as
+	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
+    by going to your <a href="${settings.DOMAIN}registries/my-registrations?tab=drafts">"My Registrations" page.</a>
+    </p>
+    <p>
+    If you are not ${fullname} or if you have been erroneously associated with
+    % if not node.title or node.title == 'Untitled':
+	  this registration draft
+    % else:
+      "${node.title}"
+	% endif
+    email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> with the subject line
+    "Claiming Error" to report the problem.
+    </p>
     <p>
     Sincerely,
-    </p>
     <p>
     The OSF Team
-    </p>
     <p>
     Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
     or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
     the Center for Open Science.
-    </p>
     <p>
     Questions? Email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
-    </p>
-  </td>
 </tr>
 </%def>

@@ -3,36 +3,54 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
     % if is_initiator:
-        You initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
-		The proposed registration can be viewed here: ${registration_link}.
+      You have requested final approvals to submit your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>.
     % else:
-        ${initiated_by} initiated an embargoed registration of ${project_name} with embargo end date ${embargo_end_date.date()}.
-		The proposed registration can be viewed here: ${registration_link}.
+      ${initiated_by} has requested final approvals to submit your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>.
     % endif
+    </p>
     <p>
     % if is_moderated:
-        If approved, an embargoed registration will be created for the project and sent to ${reviewable.provider.name}
-         moderators for review.
+      If approved by all admin contributors, the registration will be submitted for moderator review.
+      If the moderators approve, the registration will be embargoed until
+      ${embargo_end_date.date()}, at which time it will be made public as part of the
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
-        If approved, a registration will be created for the project, and it will remain private until it is withdrawn,
-         it is manually made public, or the embargo end date is passed on ${embargo_end_date.date()}.
+      If approved by all admin contributors, the registration will be embargoed until
+      ${embargo_end_date.date()}, at which point it will be made public as part of the
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+    % endif
+    </p>
+    <p style="color:red;">
+    You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
+    this registration before it is automatically submitted.
+    </p>
+    <p>
+    To approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
+    </p>
+    <p>
+    Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
+    pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+    </p>
+    % if not reviewable.branched_from_node:
+      <p>
+      An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
+	  this registration to support continued collaboration and sharing of your research.
+      This project will remain available even if your registration is rejected.
+      </p>
+      <p>
+      You will be automatically subscribed to notification emails for this project. To change your email notification
+      preferences, visit your project or your user settings:
+	  <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+      </p>
     % endif
     <p>
-    Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
-    Cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
-    <p>
-    Note: Clicking the cancel link will immediately cancel the pending embargo and the registration will remain in draft state. This operation is irreversible.
-    <p>
-    If you neither approve nor cancel the embargo within ${approval_time_span} hours from midnight tonight (EDT) the registration will
-    % if is_moderated:
-        enter into embargo automatically and be sent to ${reviewable.provider.name} moderators for review.
-    % else:
-     remain private and enter into an embargoed state.
-    % endif
-	<p>
     Sincerely yours,<br>
     The OSF Robots<br>
 </tr>

@@ -3,40 +3,56 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
     % if is_initiator:
-    You initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.
+      You have requested final approvals to withdraw your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
     % else:
-    ${initiated_by} initiated a withdrawal of your registration ${project_name}. The registration can be viewed here: ${registration_link}.
+      ${initiated_by} has requested final approvals to withdraw your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
+    % endif
+    </p>
+    % if reviewable.withdrawal_justification:
+      <p>
+      The registration is being withdrawn for the following reason:
+      <blockquote>${reviewable.withdrawal_justification}</blockquote>
+      </p>
     % endif
     <p>
     % if is_moderated:
-        If approved by project admins, a withdrawal request will be sent to ${reviewable.provider.name} moderators for review.
-        <p>
-        If the withdrawal request is accepted by ${reviewable.provider.name} moderators,  the registration will be
-        marked as withdrawn. Its content will be removed from the OSF, but leave basic metadata behind.
-        The title of a withdrawn registration and its contributor list will remain, as will justification or
-        explanation of the withdrawal, should you wish to provide it.
+      If approved by all admin contributors, the withdrawal request will be submitted for moderator review.
+      If the moderators approve, the registration will be marked as withdrawn.
     % else:
-        If approved, the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic
-        metadata behind. The title of a withdrawn registration and its contributor list will remain, as will
-        justification or explanation of the withdrawal, should you wish to provide it.
+      If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
-    <p>
-    To approve this withdrawal, click the following link: <a href="${approval_link}">Click here</a>.<br>
-    To cancel this withdrawal, click the following link: <a href="${disapproval_link}">Click here</a>.
-    <p>
-    Note: Clicking the disapproval link will immediately cancel the pending withdrawal. This operation is irreversible.
-    <p>
-    % if is_moderated:
-        If you neither approve nor cancel the withdrawal within ${approval_time_span} hours of midnight tonight (EDT)
-         the withdrawal request will be sent to ${reviewable.provider.name} moderators for review.
-    % else:
-        If you neither approve nor cancel the withdrawal within ${approval_time_span} hours of midnight tonight (EDT)
-         the registration will become withdrawn.
+    Its content will be removed from the
+    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
+    but basic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
+    % if reviewable.withdrawal_justification:
+      The provided justification or explanation of the withdrawal will also be visible.
     % endif
-	<p>
+    </p>
+    % if not reviewable.branched_from_node:
+      <p>
+      Even if the registration is withdrawn, the <a href="${reviewable.registered_from.absolute_url}">OSF Project</a>
+      created for this registration will remain available.
+      </p>
+    % endif
+    <p style="color:red;">
+    You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
+    withdrawal request before it is automatically submitted.
+    </p>
+    <p>
+    To approve this withdrawal: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this withdrawal: <a href="${disapproval_link}">Click here</a>.
+    </p>
+    <p>
+    Note: If any admin clicks their cancel link, the pending withdrawal will be
+    cancelled immediately and the registration will remain public. This operation is irreversible.
+    </p>
+    <p>
     Sincerely yours,<br>
     The OSF Robots<br>
 </tr>
