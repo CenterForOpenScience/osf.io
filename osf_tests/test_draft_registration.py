@@ -9,6 +9,7 @@ from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationC
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
 from osf_tests.test_node_license import TestNodeLicenses
+from django.utils import timezone
 
 from website import settings
 
@@ -203,7 +204,7 @@ class TestDraftRegistrations:
 
         registration = factories.RegistrationFactory(project=project)
         deleted_registration = factories.RegistrationFactory(project=project)
-        deleted_registration.is_deleted = True
+        deleted_registration.deleted = timezone.now()
         deleted_registration.save()
 
         draft = factories.DraftRegistrationFactory(branched_from=project, user=project.creator)
