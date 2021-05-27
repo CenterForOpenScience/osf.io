@@ -28,9 +28,9 @@
     <p>
     If you are not ${fullname} or if you have been erroneously associated with
     % if not node.title or node.title == 'Untitled':
-      "${node.title}"
-    % else:
 	  this registration draft
+    % else:
+      "${node.title}"
 	% endif
     email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> with the subject line
     "Claiming Error" to report the problem.
