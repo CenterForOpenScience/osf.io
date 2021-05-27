@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0230_make_run_management_perm'),
+        ('osf', '0231_abstractprovider_default_schema'),
     ]
 
     operations = [

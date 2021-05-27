@@ -19,6 +19,7 @@ from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
+from osf.models.metaschema import RegistrationSchema
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
@@ -227,6 +228,7 @@ class RegistrationProvider(AbstractProvider):
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
     additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+    default_schema = models.ForeignKey(RegistrationSchema, related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
