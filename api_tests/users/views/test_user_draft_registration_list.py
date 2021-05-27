@@ -97,15 +97,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         data = res.json['data']
         assert len(data) == 0
 
-    def test_deleted_node_does_not_show_up_in_draft_list(
-            self, app, user, project_public, draft_registration, url_draft_registrations):
-        project_public.deleted = timezone.now()
-        project_public.save()
-        res = app.get(url_draft_registrations, auth=user.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 0
-
     def test_draft_with_registered_node_does_not_show_up_in_draft_list(
             self, app, user, project_public, draft_registration, url_draft_registrations):
         reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
