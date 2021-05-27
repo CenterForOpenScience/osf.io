@@ -290,6 +290,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_using_post_making_no_changes_returns_204(
             self, app, user, institution_one,
             node, node_institutions_url, create_payload):
+        node.affiliated_institutions.add(institution_one)
         assert institution_one in node.affiliated_institutions.all()
 
         res = app.post_json_api(
@@ -305,6 +306,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_add_through_patch_one_inst_to_node_with_inst(
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
+        node.affiliated_institutions.add(institution_one)
         user.affiliated_institutions.add(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
@@ -343,6 +345,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_add_one_inst_with_post_to_node_with_inst(
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
+        node.affiliated_institutions.add(institution_one)
         user.affiliated_institutions.add(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
@@ -387,6 +390,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_delete_not_affiliated_and_affiliated_insts(
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
+        node.affiliated_institutions.add(institution_one)
         user.affiliated_institutions.add(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
