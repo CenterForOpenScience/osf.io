@@ -274,6 +274,7 @@ class TestDraftRegistrationRelationshipInstitutions():
 
     def test_remove_institutions_with_affiliated_user(
             self, app, user, institution_one, node, node_institutions_url):
+        node.affiliated_institutions.add(institution_one)
         assert institution_one in node.affiliated_institutions.all()
 
         res = app.put_json_api(
