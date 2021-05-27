@@ -26,7 +26,12 @@
     by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
     </p>
     <p>
-    If you are not ${fullname} or if you have been erroneously associated with "${node.title}" then
+    If you are not ${fullname} or if you have been erroneously associated with
+    % if not node.title or node.title == 'Untitled':
+      "${node.title}"
+    % else:
+	  this registration draft
+	% endif
     email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> with the subject line
     "Claiming Error" to report the problem.
     </p>
