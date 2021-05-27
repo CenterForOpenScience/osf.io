@@ -316,17 +316,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
-    def test_group_admin_can_create_draft(
-            self, app, user, project_public, url_draft_registrations, group, group_mem, payload,
-            metaschema_open_ended):
-
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 201
-
     def test_cannot_create_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
