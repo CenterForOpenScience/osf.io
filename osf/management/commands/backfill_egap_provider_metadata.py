@@ -20,16 +20,25 @@ LAST_RELEVANT_VERSION = 3
 WITH_OFFSET_DATE_FORMAT = '%Y-%m-%d %H:%M:%S %z'
 NO_OFFSET_DATE_FORMAT = '%m/%d/%Y - %H:%M'
 # ALL "Timestamp of Original Registration" values *should* match one of
-# the above formats, but I spotted this one at least once in the wild.
-HYBRID_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+# the above formats, but the following were encountered while running the script
+DISCOVERED_DATE_FORMAT_1 = '%Y-%m-%d %H:%M:%S'
+DISCOVERED_DATE_FORMAT_2 = '%Y-%m-%d'
 
-def _get_date_registered(timestamp_string):
-    '''Try to parse the provided timestamp_string with all known formats.'''
+ALL_DATE_FORMATS = [
+    WITH_OFFSET_DATE_FORMAT,
+    NO_OFFSET_DATE_FORMAT,
+    DISCOVERED_DATE_FORMAT_1,
+    DISCOVERED_DATE_FORMAT_2,
+]
+
+def _get_date_registered(registration):
+    '''Try to parse the registration's "Timestamp of Original Registration" value with all known formats.'''
+    timestamp_string = registration.registration_responses.get(EGAP_PUBLICATION_DATE_KEY)
     if not timestamp_string:
         return None
 
     registered_date = None
-    for date_format in [WITH_OFFSET_DATE_FORMAT, NO_OFFSET_DATE_FORMAT, HYBRID_DATE_FORMAT]:
+    for date_format in ALL_DATE_FORMATS:
         try:
             registered_date = dt.strptime(timestamp_string, date_format)
         except ValueError:
@@ -38,7 +47,8 @@ def _get_date_registered(timestamp_string):
     # Could not successfully parse the date field
     if registered_date is None:
         raise ValueError(
-            f'Un-parseable "Timestamp of Original Registration" value: {timestamp_string}'
+            f'Registration with id {registration._id} has un-parseable '
+            f'"Timestamp of Original Registration" value: {timestamp_string}'
         )
 
     # Mimic behavior of import_EGAP script for consistency
@@ -74,9 +84,12 @@ def backfill_egap_metadata(dry_run=False, batch_size=None):
             # Starting with None value for additional_metadata, so assign a new dict
             registration.additional_metadata = {'EGAP Registration ID': egap_id}
 
-        egap_registration_date = _get_date_registered(
-            registration.registration_responses.get(EGAP_PUBLICATION_DATE_KEY)
-        )
+        try:
+            egap_registration_date = _get_date_registered(registration)
+        except ValueError as e:
+            logger.info(e)
+            continue  # Skip this registration but keep running
+
         if egap_registration_date is not None:
             logger.info(
                 f'{"[DRY RUN]: " if dry_run else ""}'
