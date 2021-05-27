@@ -317,11 +317,22 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
+    def test_group_admin_can_create_draft(
+            self, app, user, project_public, url_draft_registrations, group, group_mem, payload,
+            metaschema_open_ended):
+
+        res = app.post_json_api(
+            url_draft_registrations,
+            payload,
+            auth=group_mem.auth,
+            expect_errors=True)
+        assert res.status_code == 201
+
     def test_cannot_create_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            project_public, payload, group,
-            url_draft_registrations, group_mem):
+            project_public, payload,
+            url_draft_registrations):
 
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
@@ -355,25 +366,10 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_group_admin_cannot_create_draft
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_reviewer_cannot_create_draft_registration
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
-            payload, auth=user.auth,
+            payload, auth=user_read_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
