@@ -1050,7 +1050,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        self.target_registration.terminate_embargo(forced=True)
+        if self.target_registration.is_embargoed:  # if the embargo expires normally, this is noop.
+            self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.

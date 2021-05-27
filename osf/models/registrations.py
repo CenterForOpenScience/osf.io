@@ -504,6 +504,9 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        if self.is_pending_embargo_termination:
+            self.embargo_termination_approval.accept()
+
         for node in self.node_and_primary_descendants():
             node.set_privacy(
                 self.PUBLIC,
