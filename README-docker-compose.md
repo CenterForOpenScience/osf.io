@@ -344,6 +344,29 @@ wb:
   stdin_open: true
 ```
 
+### Localization
+
+The message definition file for localization can be generated or updated by the following command.
+
+```
+# Converting message definition JSON, etc. to JavaScript files
+$ docker-compose run --rm web invoke webpack
+
+# Update the message definition template file website/translations/js_messages.pot
+$ docker-compose run --rm web pybabel extract -F ./website/settings/babel_js.cfg -o ./website/translations/js_messages.pot .
+
+# Update the message definition file website/translations/en/LC_MESSAGES/js_messages.po
+$ docker-compose run --rm web pybabel update -i ./website/translations/js_messages.pot -o ./website/translations/ja/LC_MESSAGES/js_messages.po -l ja
+```
+
+If you have updated the translation files(`website/translations` or `admin/translations`), you will need to compile the translation files by the following command.
+
+```
+# Compile files for translations
+$ docker-compose run --rm web pybabel compile -d ./website/translations
+$ docker-compose run --rm web pybabel compile -D django -d ./admin/translations
+```
+
 ## About setting for "Trusted-Timestamp" usage
 
 When you use "Trusted Timestamp Token", execute following steps.
