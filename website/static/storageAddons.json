@@ -90,5 +90,9 @@
     "dropboxbusiness": {
         "fullName": "Dropbox Business",
         "externalView": false
+    },
+    "googledriveinstitutions": {
+        "fullName": "Google Drive in G Suite / Google Workspace",
+        "externalView": true
     }
 }
