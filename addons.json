@@ -29,6 +29,7 @@
         "nextcloudinstitutions",
         "iqbrims",
         "dropboxbusiness",
+        "googledriveinstitutions",
         "binderhub"
     ],
     "addons_default": [
@@ -63,7 +64,8 @@
         "nextcloud": "partial",
         "nextcloudinstitutions": "partial",
         "iqbrims": "partial",
-        "dropboxbusiness": "partial"
+        "dropboxbusiness": "partial",
+        "googledriveinstitutions": "partial"
     },
     "addons_commentable": [
         "osfstorage",
@@ -89,7 +91,8 @@
         "nextcloud",
         "nextcloudinstitutions",
         "iqbrims",
-        "dropboxbusiness"
+        "dropboxbusiness",
+        "googledriveinstitutions"
     ],
     "addons_based_on_ids": [
         "osfstorage",
@@ -129,6 +132,7 @@
         "iqbrims": "IQB-RIMS is a file storage add-on. Connect your Google Drive account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
         "nextcloudinstitutions": "Nextcloud for Institutions is a file storage add-on for Institutions. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
         "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM.",
+        "googledriveinstitutions": "Google Drive in G Suite / Google Workspace is a file storage add-on for Institutions. Connect your G Suite / Google Workspace account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
         "binderhub": "BinderHub is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from BinderHub"
     },
     "addons_url": {
@@ -154,6 +158,7 @@
         "nextcloud": "https://nextcloud.com/",
         "iqbrims": "https://drive.google.com",
         "dropboxbusiness": "http://www.dropbox.com",
+        "googledriveinstitutions": "https://drive.google.com",
         "binderhub": "https://binder.cs.rcos.nii.ac.jp"
     }
 }

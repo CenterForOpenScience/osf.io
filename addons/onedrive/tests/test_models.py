@@ -22,15 +22,14 @@ class TestOneDriveProvider(unittest.TestCase):
         super(TestOneDriveProvider, self).setUp()
         self.provider = OneDriveProvider()
 
-    @mock.patch.object(OneDriveClient, 'user_info_for_token')
+    @mock.patch.object(OneDriveClient, 'user_info')
     def test_handle_callback(self, mock_client):
         fake_response = {'access_token': 'abc123'}
-        fake_info = {'id': '12345', 'name': 'fakename', 'link': 'fakeUrl'}
+        fake_info = {'id': '12345', 'displayName': 'fakename'}
         mock_client.return_value = fake_info
         res = self.provider.handle_callback(fake_response)
         assert res['provider_id'] == '12345'
         assert res['display_name'] == 'fakename'
-        assert res['profile_url'] == 'fakeUrl'
 
 
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):

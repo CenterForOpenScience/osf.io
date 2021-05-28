@@ -559,7 +559,7 @@ def create_waterbutler_log(payload, **kwargs):
                         request.headers.get('Authorization'),
                         **dict(
                             extras,
-                            cookie=user.get_or_create_cookie()
+                            cookie=user.get_or_create_cookie().decode()
                         )
                     )
 

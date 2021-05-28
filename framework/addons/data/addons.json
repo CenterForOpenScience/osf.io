@@ -160,12 +160,12 @@
                 "text": "OneDrive files and their versions can be viewed/downloaded via GakuNin RDM.  OneNote files are unexportable and cannot be downloaded or viewed."
             },
             "Add / update files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in OneDrive."
             },
             "Delete files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
             },
             "Logs": {
                 "status": "partial",
@@ -618,6 +618,36 @@
             "Registering": {
                 "status": "partial",
                 "text": "IQB-RIMS content will be registered, but version history will not be copied to the registration."
+            }
+        },
+        "Google Drive in G Suite / Google Workspace": {
+            "Permissions": {
+                "status": "partial",
+                "text": "Making a GakuNin RDM project public or private is independent of Google Drive privacy. The GakuNin RDM does not alter the permissions of linked Google Drive folders."
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "Google Drive files and their versions can be viewed/downloaded via GakuNin RDM."
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "Adding/updating files in the project via GakuNin RDM will be reflected in Google Drive."
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "Files deleted via GakuNin RDM will be deleted in Google Drive."
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "The GakuNin RDM keeps track of changes you make to your Google Drive content through the GakuNin RDM, but not for changes made using Google Drive directly."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component does not copy Google Drive authorization unless the user forking the project is the same user who authorized the Google Drive add-on in the source project being forked."
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "Google Drive content will be registered, but version history will not be copied to the registration."
             }
         },
         "BinderHub": {

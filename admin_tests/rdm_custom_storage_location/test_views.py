@@ -41,6 +41,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             'NextcloudInstitutionsAddonAppConfig',
             'S3CompatInstitutionsAddonAppConfig',
             'OCIInstitutionsAddonAppConfig',
+            'GoogleDriveInstitutionsAddonConfig',
         ]
 
     def test_admin_login(self):

@@ -278,6 +278,7 @@ class QuotaUserList(ListView):
         return {
             'id': user.guids.first()._id,
             'fullname': user.fullname,
+            'eppn': user.eppn,
             'username': user.username,
             'ratio': float(used_quota) / max_quota_bytes * 100,
             'usage': used_quota,
@@ -298,7 +299,7 @@ class QuotaUserList(ListView):
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', 'ratio')
-        if order_by not in ['fullname', 'username', 'ratio', 'usage', 'remaining', 'quota']:
+        if order_by not in ['fullname', 'eppn', 'username', 'ratio', 'usage', 'remaining', 'quota']:
             return 'ratio'
         return order_by
 

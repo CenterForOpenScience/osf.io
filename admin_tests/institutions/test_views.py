@@ -526,13 +526,14 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         self.us.save()
 
         self.users = []
-        self.users.append(self.add_user(100, 80 * api_settings.SIZE_UNIT_GB))
-        self.users.append(self.add_user(200, 90 * api_settings.SIZE_UNIT_GB))
-        self.users.append(self.add_user(10, 10 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test001-eppn', 100, 80 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test002-eppn', 200, 90 * api_settings.SIZE_UNIT_GB))
+        self.users.append(self.add_user('test003-eppn', 10, 10 * api_settings.SIZE_UNIT_GB))
 
-    def add_user(self, max_quota, used):
+    def add_user(self, eppn, max_quota, used):
         user = AuthUserFactory()
         user.affiliated_institutions.add(self.institution)
+        user.eppn = eppn
         user.save()
         UserQuota.objects.create(
             user=user,
@@ -628,4 +629,16 @@ class TestStatisticalStatusDefaultStorageSorted(AdminTestCase):
         expected = [100.0, 80.0, 45.0]
         response = self.view_get('order_by=invalid&status=hello')
         result = list(map(itemgetter('ratio'), response.context_data['users']))
+        nt.assert_equal(result, expected)
+
+    def test_sort_eppn_asc(self):
+        expected = sorted(map(lambda u: u.eppn, self.users), reverse=False)
+        response = self.view_get('order_by=eppn&status=asc')
+        result = list(map(itemgetter('eppn'), response.context_data['users']))
+        nt.assert_equal(result, expected)
+
+    def test_sort_eppn_desc(self):
+        expected = sorted(map(lambda u: u.eppn, self.users), reverse=True)
+        response = self.view_get('order_by=eppn&status=desc')
+        result = list(map(itemgetter('eppn'), response.context_data['users']))
         nt.assert_equal(result, expected)
