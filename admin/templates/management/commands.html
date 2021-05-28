@@ -11,40 +11,6 @@
 
         <p> Use the buttons below to manually run management commands. </p>
         <div class="row">
-<<<<<<< HEAD
-            <div class="col-md-12">
-                <h4> <u>Update Waffle Flags and Switches </u>
-                </h4>
-                <ul>
-                    Use this management command to update the flags and switches on OSF
-                    with the flags and switches in osf/features/switches.py and osf/features/flags.py
-                    <br>
-                    <form method="post"
-                          action="{% url 'management:waffle_flag'%}">
-                        {% csrf_token %}
-                        <input class="btn btn-success" type="submit"
-                               value="Run" />
-                    </form>
-                </ul>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <h4> <u>Update Registration Schemas and Schema Blocks </u>
-                </h4>
-                <ul>
-                    Use this management command to update the schemas and schma blocks
-                    for Registrations to match values in website/project/metadata
-                    <br>
-                    <form method="post"
-                          action="{%url 'management:update_registration_schemas'%}">
-                        {% csrf_token %}
-                        <input class="btn btn-success" type="submit"
-                               value="Run" />
-                    </form>
-                </ul>
-            </div>
-=======
             <h4> <u>Update Waffle Flags and Switches </u>
             </h4>
             <ul>
@@ -106,11 +72,9 @@
                     <label>Nodes:</label>   <input type="checkbox" name="node_ban" checked /><br>
                     <label>Registrations:</label>   <input type="checkbox" name="registration_ban" checked /><br>
                     <label>Preprints:</label>  <input type="checkbox" name="preprint_ban" checked /><br>
-                    <input class="btn btn-danger" type="submit"
-                           value="Run" color:"red" />
+                    <input class="btn btn-danger" type="submit" value="Run" style="color: red" />
                 </form>
             </ul>
->>>>>>> 24801a065515101525786c976a2b3da1f7c69e94
         </div>
     </section>
 {% endblock %}
