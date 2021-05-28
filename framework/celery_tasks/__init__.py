@@ -50,4 +50,5 @@ def _update_ia_metadata(node_id, data):
     requests_retry_session().post(f'{OSF_PIGEON_URL}metadata/{node_id}', json=data).raise_for_status()
 
 def update_ia_metadata(node, data):
-    enqueue_task(_update_ia_metadata.s(node._id, data))
+    if node.is_registration and node.ia_url:
+        enqueue_task(_update_ia_metadata.s(node._id, data))

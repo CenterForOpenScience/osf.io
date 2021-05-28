@@ -17,7 +17,6 @@ class ManagementCommands(TemplateView):
     template_name = 'management/commands.html'
     object_type = 'management'
 
-
 class ManagementCommandPermissionView(View, PermissionRequiredMixin):
 
     permission_required = 'osf.view_management'

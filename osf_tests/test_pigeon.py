@@ -49,12 +49,16 @@ class TestPigeon:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_archive_immediately(self, user, registration_approval, mock_datacite, mock_pigeon):
-        mock_pigeon._matches += mock_datacite._matches  # mock both of these together
-        token = registration_approval.approval_state[registration_approval.initiated_by._id]['approval_token']
-        registration_approval.approve(user=user, token=token)
-        guid = registration_approval._get_registration()._id
-        assert mock_pigeon.calls[0].request.url == f'{settings.OSF_PIGEON_URL}archive/{guid}'
+    def test_pigeon_archive_immediately(self, registration, mock_pigeon):
+        registration.is_public = True
+        registration.save()
+
+        calls = [call.request.url for call in mock_pigeon.calls]
+        assert len(mock_pigeon.calls) == 2
+        assert calls == [
+            f'{settings.OSF_PIGEON_URL}metadata/{registration._id}',
+            f'{settings.OSF_PIGEON_URL}archive/{registration._id}',
+        ]
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
@@ -62,5 +66,9 @@ class TestPigeon:
         embargo._get_registration().terminate_embargo()
         guid = embargo._get_registration()._id
 
-        assert len(mock_pigeon.calls) == 1
-        assert mock_pigeon.calls[0].request.url == f'{settings.OSF_PIGEON_URL}archive/{guid}'
+        calls = [call.request.url for call in mock_pigeon.calls]
+        assert len(mock_pigeon.calls) == 2
+        assert calls == [
+            f'{settings.OSF_PIGEON_URL}metadata/{guid}',
+            f'{settings.OSF_PIGEON_URL}archive/{guid}',
+        ]

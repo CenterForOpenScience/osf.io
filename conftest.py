@@ -1,6 +1,5 @@
 from __future__ import print_function
 import os
-import json
 
 import logging
 
@@ -226,11 +225,17 @@ def mock_pigeon():
 
     """
     def request_callback(request):
-        return (200, {}, json.dumps({'ia_url': 'https://test.ia.url.com'}))
+        guid = request.url.split('/')[-1]
+        from osf.models import Registration
+        reg = Registration.load(guid)
+        reg.ia_url = 'https://test.ia.url.com'
+        reg.save()
+        return (200, {}, None)
 
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), status=200)
-            rsps.add_callback(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), callback=request_callback)
-            rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
-            yield rsps
+        with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+            with mock.patch('framework.celery_tasks.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add_callback(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), callback=request_callback)
+                    rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
+                    yield rsps

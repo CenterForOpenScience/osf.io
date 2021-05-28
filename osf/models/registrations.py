@@ -1544,7 +1544,7 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
 def sync_internet_archive_attributes(sender, instance, **kwargs):
     """
     This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
-    `title`, `description` and 'category` other fields that use foreign keys are updated by other signals.
+     found in SYNCED_WITH_IA, other fields that use foreign keys are updated by other signals.
     """
     if settings.IA_ARCHIVE_ENABLED and instance.ia_url and instance.is_public:
         allowed_metadata = Registration.SYNCED_WITH_IA.intersection(instance.get_dirty_fields().keys())
