@@ -20,7 +20,7 @@ class OneDriveClient(BaseClient):
     def folders(self, folder_id=None):
         """Get list of subfolders of the folder with id ``folder_id``
 
-        API Docs:  https://dev.onedrive.com/items/list.htm
+        API Docs:  https://docs.microsoft.com/en-us/graph/api/driveitem-list-children
 
         :param str folder_id: the id of the parent folder. defaults to ``None``
         :rtype: list
@@ -28,36 +28,47 @@ class OneDriveClient(BaseClient):
         """
 
         if folder_id is None or folder_id == DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID, 'children')
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID)
         else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items',
-                                  folder_id, 'children')
+            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id)
+        url = url + '?$expand=children($filter=folder%20ne%20null)'
 
-        res = self._make_request(
+        resp = self._make_request(
             'GET',
             url,
-            params={'filter': 'folder ne null'},
             expects=(200, ),
             throws=HTTPError(401)
         )
-        return res.json()['value']
+        data = resp.json()
+        res = data['children']
 
-    def user_info_for_token(self, access_token):
-        """Given an access token, return information about the token's owner.
+        next_url = data.get('children@odata.nextLink', None)
+        while next_url is not None:
+            next_resp = self._make_request(
+                'GET',
+                next_url,
+                expects=(200, ),
+                throws=HTTPError(401)
+            )
+            next_data = next_resp.json()
+            res.extend(next_data['value'])
+            next_url = next_data.get('@odata.nextLink', None)
+
+        return res
+
+    def user_info(self):
+        """Get information about the token's owner.
 
         API Docs::
 
-        https://msdn.microsoft.com/en-us/library/hh826533.aspx#requesting_info_using_rest
-        https://msdn.microsoft.com/en-us/library/hh243648.aspx#user
+        https://docs.microsoft.com/en-us/graph/api/user-get
 
-        :param str access_token: a valid Microsoft Live access token
         :rtype: dict
         :return: a dict containing metadata about the token's owner.
         """
         return self._make_request(
             'GET',
-            self._build_url(settings.MSLIVE_API_URL, 'me'),
-            params={'access_token': access_token},
+            self._build_url(settings.ONEDRIVE_API_URL, 'me'),
             expects=(200, ),
             throws=HTTPError(401)
         ).json()
