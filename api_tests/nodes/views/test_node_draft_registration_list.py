@@ -354,13 +354,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-        assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user_read_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     def test_schema_validation(
             self, app, user, provider, non_default_provider, payload, payload_with_non_default_provider, url_draft_registrations):
         # Schema validation for a default provider without defined schemas with any schema is tested by `test_admin_can_create_draft`
