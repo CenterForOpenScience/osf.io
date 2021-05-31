@@ -265,6 +265,12 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 storage_name,
                 data.get('googledrive_folder'),
             )
+        elif provider_short_name == 'googledriveinstitutions':
+            result = utils.save_googledriveinstitutions_credentials(
+                request.user,
+                storage_name,
+                data.get('googledriveinstitutions_folder'),
+            )
         elif provider_short_name == 'owncloud':
             result = utils.save_owncloud_credentials(
                 institution_id,
@@ -526,7 +532,7 @@ class UserMapView(InstitutionalStorageBaseView, View):
         ext = 'csv'
         name = 'usermap-' + provider_name
 
-        s = StringIO.StringIO()
+        s = StringIO()
         csv_writer = csv.writer(s, delimiter=',')
 
         def fullname(osfuser):

@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
+from addons.googledriveinstitutions.client import GoogleDriveInstitutionsClient
 from addons.osfstorage.models import Region
 from addons.box import settings as box_settings
 from addons.owncloud import settings as owncloud_settings
@@ -49,6 +50,7 @@ enabled_providers_forinstitutions_list = [
     'nextcloudinstitutions',
     's3compatinstitutions',
     'ociinstitutions',
+    'googledriveinstitutions',
 ]
 
 enabled_providers_list = [
@@ -397,6 +399,27 @@ def test_googledrive_connection(institution_id, folder_id):
         'message': 'Credentials are valid'
     }, http_status.HTTP_200_OK)
 
+def test_googledriveinstitutions_connection(institution_id, folder_id):
+    validation_result = oauth_validation('googledriveinstitutions', institution_id, folder_id)
+    if isinstance(validation_result, tuple):
+        return validation_result
+
+    access_token = ExternalAccountTemporary.objects.get(
+        _id=institution_id, provider='googledriveinstitutions'
+    ).oauth_key
+    client = GoogleDriveInstitutionsClient(access_token)
+
+    try:
+        client.folders(folder_id)
+    except HTTPError:
+        return ({
+            'message': 'Invalid folder ID.'
+        }, http_status.HTTP_400_BAD_REQUEST)
+
+    return ({
+        'message': 'Credentials are valid'
+    }, http_status.HTTP_200_OK)
+
 def test_owncloud_connection(host_url, username, password, folder, provider):
     """ This method is valid for both ownCloud and Nextcloud """
     provider_name = None
@@ -664,6 +687,35 @@ def save_googledrive_credentials(user, storage_name, folder_id):
                 'id': folder_id
             },
             'provider': 'googledrive',
+        }
+    }
+    region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
+    external_util.set_region_external_account(region, account)
+
+    return ({
+        'message': 'OAuth was set successfully'
+    }, http_status.HTTP_200_OK)
+
+def save_googledriveinstitutions_credentials(user, storage_name, folder_id):
+    institution_id = user.affiliated_institutions.first()._id
+
+    test_connection_result = test_googledriveinstitutions_connection(institution_id, folder_id)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    account = transfer_to_external_account(user, institution_id, 'googledriveinstitutions')
+    wb_credentials = {
+        'storage': {
+            'token': account.oauth_key,
+        },
+    }
+    wb_settings = {
+        'storage': {
+            'bucket': '',
+            'folder': {
+                'id': folder_id
+            },
+            'provider': 'googledriveinstitutions',
         }
     }
     region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
