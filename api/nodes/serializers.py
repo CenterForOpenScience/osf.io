@@ -37,7 +37,7 @@ from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
-    RegistrationProvider, OSFGroup, NodeLicense,
+    RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -1591,7 +1591,11 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
             self.update_registration_responses(draft, registration_responses)
 
         if affiliate_user_institutions:
-            draft.affiliated_institutions.set(draft.creator.affiliated_institutions.all())
+            if draft.branched_from_type == DraftNode:
+                affiliated_institutions = draft.creator.affiliated_institutions.all()
+            else:
+                affiliated_institutions = draft.branched_from.affiliated_institutions.all()
+            draft.affiliated_institutions.set(affiliated_institutions)
 
         return draft
 
