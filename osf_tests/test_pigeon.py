@@ -1,8 +1,7 @@
-import mock
-import json
 import pytest
-from website import settings
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, RegistrationApprovalFactory
+from framework.celery_tasks import _archive_to_ia, _update_ia_metadata
+
 
 @pytest.mark.django_db
 class TestPigeon:
@@ -27,48 +26,37 @@ class TestPigeon:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_sync_metadata(self, mock_pigeon, registration):
+    def test_pigeon_sync_metadata(self, mock_pigeon, registration, mock_celery):
         registration.is_public = True
         registration.ia_url = 'http://archive.org/details/osf-registrations-guid0-v1'
         registration.title = 'Jefferies'
         registration.save()
 
-        assert len(mock_pigeon.calls) == 1
-
-        data = json.loads(mock_pigeon.calls[0].request.body.decode())
-        assert data == {
-            'modified': mock.ANY,
-            'title': 'Jefferies',
-        }
-
-        registration.title = 'Private'
-        registration.is_public = False
-        registration.save()
-
-        assert len(mock_pigeon.calls) == 1
+        mock_celery.assert_called_with(
+            _update_ia_metadata,
+            (
+                registration._id,
+                {
+                    'title': 'Jefferies',
+                    'modified': str(registration.modified)
+                }
+            ),
+            {},
+            celery=True
+        )
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_archive_immediately(self, registration, mock_pigeon):
+    def test_pigeon_archive_immediately(self, registration, mock_pigeon, mock_celery):
         registration.is_public = True
         registration.save()
 
-        calls = [call.request.url for call in mock_pigeon.calls]
-        assert len(mock_pigeon.calls) == 2
-        assert calls == [
-            f'{settings.OSF_PIGEON_URL}metadata/{registration._id}',
-            f'{settings.OSF_PIGEON_URL}archive/{registration._id}',
-        ]
+        mock_celery.assert_called_with(_archive_to_ia, (registration._id,), {}, celery=True)
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_archive_embargo(self, embargo, mock_pigeon):
+    def test_pigeon_archive_embargo(self, embargo, mock_pigeon, mock_celery):
         embargo._get_registration().terminate_embargo()
         guid = embargo._get_registration()._id
 
-        calls = [call.request.url for call in mock_pigeon.calls]
-        assert len(mock_pigeon.calls) == 2
-        assert calls == [
-            f'{settings.OSF_PIGEON_URL}metadata/{guid}',
-            f'{settings.OSF_PIGEON_URL}archive/{guid}',
-        ]
+        mock_celery.assert_called_with(_archive_to_ia, (guid,), {}, celery=True)

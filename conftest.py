@@ -239,3 +239,12 @@ def mock_pigeon():
                     rsps.add_callback(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), callback=request_callback)
                     rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
                     yield rsps
+
+@pytest.fixture
+def mock_celery():
+    """
+    This should only be necessary for postcommit tasks.
+    """
+    with mock.patch.object(website_settings, 'USE_CELERY', True):
+        with mock.patch('framework.celery_tasks.enqueue_postcommit_task') as mock_celery:
+            yield mock_celery
