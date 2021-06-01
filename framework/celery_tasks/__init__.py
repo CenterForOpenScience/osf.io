@@ -7,6 +7,7 @@ from framework.celery_tasks.handlers import enqueue_task
 
 from raven import Client
 from raven.contrib.celery import register_signal
+from django.apps import apps
 
 from website.settings import SENTRY_DSN, VERSION, CeleryConfig, OSF_PIGEON_URL
 
@@ -50,5 +51,9 @@ def _update_ia_metadata(node_id, data):
     requests_retry_session().post(f'{OSF_PIGEON_URL}metadata/{node_id}', json=data).raise_for_status()
 
 def update_ia_metadata(node, data):
+    for key in data.keys():
+        Registration = apps.get_model('osf.registration')
+        data[Registration.IA_MAPPED_NAMES.get(key, key)] = data.pop(key)
+
     if node.is_registration and node.ia_url:
         enqueue_task(_update_ia_metadata.s(node._id, data))
