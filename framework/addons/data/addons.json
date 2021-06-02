@@ -649,6 +649,36 @@
                 "status": "partial",
                 "text": "Google Drive content will be registered, but version history will not be copied to the registration."
             }
+        },
+        "BinderHub": {
+            "Permissions": {
+                "status": "none",
+                "text": "The GakuNin RDM does not affect the permissions of BidnerHub."
+            },
+            "View / download file versions": {
+                "status": "none",
+                "text": "The BinderHub add-on does not provide Storage Features."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "The BinderHub add-on does not provide Storage Features."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "The BinderHub add-on does not provide Storage Features."
+            },
+            "Logs": {
+                "status": "none",
+                "text": "The BinderHub add-on does not provide Storage Features."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component copies information about linked BinderHub but the GakuNin RDM does not affect authentication of BinderHub."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "BinderHub information will not be registered."
+            }
         }
     },
     "disclaimers": [
