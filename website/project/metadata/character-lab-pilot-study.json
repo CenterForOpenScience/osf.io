@@ -1,5 +1,5 @@
 {
-    "name": "Character Lab Pilot Study",
+    "name": "Character Lab Long-Form Registration",
     "version": 1,
     "config": {
 	"hasFiles": true
@@ -16,7 +16,7 @@
 			"help": null,
 			"type": "string",
 			"format": "textarea",
-			"required": true
+			"required": false
 		}, {
             "qid": "q2",
             "nav": "Primary outcomes",
@@ -25,7 +25,7 @@
 			"help": null,
             "type": "string",
             "format": "textarea",
-            "required": true
+            "required": false
         }, {
             "qid": "q3",
             "nav": "Number of conditions",
@@ -35,7 +35,7 @@
             "type": "choose",
             "format": "singleselect",
 			"options": ["1", "2", "3", "4", "5"],
-            "required": true
+            "required": false
         }, {
             "qid": "q4",
             "nav": "Total number of students",
@@ -44,7 +44,7 @@
 			"help": null,
             "type": "string",
             "format": "text",
-            "required": true
+            "required": false
         }, {
             "qid": "q5",
             "nav": "Character strengths",
@@ -63,15 +63,15 @@
 				"Intellectual Humility",
 				"Kindness",
 				"Motivation",
-				"Practivity",
+				"Proactivity",
 				"Prosocial Purpose",
 				"Purpose",
 				"Resilience",
-				"Self-control",
+				"Self-Eontrol",
 				"Self-efficacy",
 				"Other"
 			],
-            "required": true
+            "required": false
         }]
 	}, {
 		"id": "page2",
@@ -93,7 +93,7 @@
 				"11th grade",
 				"12th grade"
 			],
-			"required": true
+			"required": false
         }, {
             "qid": "q7",
             "nav": "School stratum assignment",
@@ -109,7 +109,7 @@
 				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
 				"Stratum E: Mostly White, high SES, suburban schools. These schools represent 21% of all middle and high schools in the US."
 			],
-            "required": true
+            "required": false
         }]
     }, {
        "id": "page3",
@@ -126,7 +126,7 @@
                 "Pilot",
                 "Fully-Powered"
             ],
-            "required": true
+            "required": false
         }, {
             "qid": "q9",
             "nav": "Study design",
@@ -137,12 +137,12 @@
             "format": "multiselect",
             "options": [
                 "Correlational",
-                "Cross-sectional",
+                "Cross-Sectional",
                 "Intervention",
                 "Longitudinal",
                 "Measure Validation"
             ],
-            "required": true
+            "required": false
         }]
     }, {
         "id": "page4",
@@ -156,13 +156,13 @@
                 "title": "Team member name",
                 "type": "string",
                 "format": "text",
-                "required": true
+                "required": false
             }, {
                 "id": "institution",
                 "title": "Team member institution",
                 "type": "string",
                 "format": "text",
-                "required": true
+                "required": false
             }, {
                 "id": "role",
                 "title": "Team member role",
@@ -170,14 +170,14 @@
                 "format": "singleselect",
                 "options": [
                     "Principal Investigator",
-                    "Co-investigator",
+                    "Co-Investigator",
                     "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
+                    "Research Scientist",
+                    "Graduate Scientist",
+                    "Lab Manager",
+                    "Lab Member"
                 ],
-                "required": true
+                "required": false
             }]
         }, {
             "qid": "q11",
@@ -200,12 +200,12 @@
                 "format": "singleselect",
                 "options": [
                     "Principal Investigator",
-                    "Co-investigator",
+                    "Co-Investigator",
                     "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
+                    "Research Scientist",
+                    "Graduate Scientist",
+                    "Lab Manager",
+                    "Lab Member"
                 ]
             }],
             "required": false
@@ -230,12 +230,12 @@
                 "format": "singleselect",
                 "options": [
                     "Principal Investigator",
-                    "Co-investigator",
+                    "Co-Investigator",
                     "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
+                    "Research Scientist",
+                    "Graduate Scientist",
+                    "Lab Manager",
+                    "Lab Member"
                 ]
             }],
             "required": false
@@ -260,12 +260,12 @@
                 "format": "singleselect",
                 "options": [
                     "Principal Investigator",
-                    "Co-investigator",
+                    "Co-Investigator",
                     "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
+                    "Research Scientist",
+                    "Graduate Scientist",
+                    "Lab Manager",
+                    "Lab Member"
                 ]
             }],
             "required": false
@@ -290,12 +290,12 @@
                 "format": "singleselect",
                 "options": [
                     "Principal Investigator",
-                    "Co-investigator",
+                    "Co-Investigator",
                     "Post doc",
-                    "Research scientist",
-                    "Graduate scientist",
-                    "Lab manager",
-                    "Lab member"
+                    "Research Scientist",
+                    "Graduate Scientist",
+                    "Lab Manager",
+                    "Lab Member"
                 ]
             }],
             "required": false
