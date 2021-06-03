@@ -34,7 +34,7 @@
             "help": null,
             "type": "choose",
             "format": "singleselect",
-			"options": ["1", "2", "3", "4", "5"],
+			"options": ["1", "2", "3", "4", "5", "6"],
             "required": false
         }, {
             "qid": "q4",
@@ -67,8 +67,8 @@
 				"Prosocial Purpose",
 				"Purpose",
 				"Resilience",
-				"Self-Eontrol",
-				"Self-efficacy",
+				"Self-Control",
+				"Self-Efficacy",
 				"Other"
 			],
             "required": false
@@ -173,7 +173,7 @@
                     "Co-Investigator",
                     "Post doc",
                     "Research Scientist",
-                    "Graduate Scientist",
+                    "Graduate Student",
                     "Lab Manager",
                     "Lab Member"
                 ],
@@ -203,7 +203,7 @@
                     "Co-Investigator",
                     "Post doc",
                     "Research Scientist",
-                    "Graduate Scientist",
+                    "Graduate Student",
                     "Lab Manager",
                     "Lab Member"
                 ]
@@ -233,7 +233,7 @@
                     "Co-Investigator",
                     "Post doc",
                     "Research Scientist",
-                    "Graduate Scientist",
+                    "Graduate Student",
                     "Lab Manager",
                     "Lab Member"
                 ]
@@ -263,7 +263,7 @@
                     "Co-Investigator",
                     "Post doc",
                     "Research Scientist",
-                    "Graduate Scientist",
+                    "Graduate Student",
                     "Lab Manager",
                     "Lab Member"
                 ]
@@ -293,7 +293,7 @@
                     "Co-Investigator",
                     "Post doc",
                     "Research Scientist",
-                    "Graduate Scientist",
+                    "Graduate Student",
                     "Lab Manager",
                     "Lab Member"
                 ]
