@@ -1,5 +1,5 @@
 {
-    "name": "Character Lab Long-Form Registration",
+    "name": "Character Lab Short-Form Registration",
     "version": 1,
     "config": {
 	"hasFiles": true
@@ -103,7 +103,7 @@
             "type": "choose",
 			"format": "multiselect",
 			"options": [
-				"Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
+				"Stratum A: Mostly Hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
 				"Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
 				"Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
 				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
@@ -167,7 +167,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -197,7 +197,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -227,7 +227,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -257,7 +257,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -287,7 +287,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",

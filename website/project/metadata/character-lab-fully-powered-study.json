@@ -1,5 +1,5 @@
 {
-    "name": "Character Lab Short-Form Registration",
+    "name": "Character Lab Long-Form Registration",
     "version": 1,
     "config": {
 	"hasFiles": true
@@ -102,7 +102,7 @@
             "type": "choose",
 			"format": "multiselect",
 			"options": [
-				"Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
+				"Stratum A: Mostly Hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
 				"Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
 				"Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
 				"Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
@@ -155,7 +155,7 @@
 		"title": "Post-Pilot Reporting",
 		"questions": [{
             "qid": "q12",
-            "nav": "Pilot Analysis",
+            "nav": "Pilot analysis",
             "title": "Did you see your hypothesized effects in this pilot data",
             "description": null,
             "help": null,
@@ -164,8 +164,8 @@
             "required": false
 		}, {
             "qid": "q13",
-            "nav": "Pilot Data",
-            "title": "Did anything merge in this pilot data that you weren't expecting?",
+            "nav": "Pilot data",
+            "title": "Did anything emerge in this pilot data that you weren't expecting?",
 			"description": null,
             "help": null,
             "type": "string",
@@ -173,7 +173,7 @@
             "required": false
         }, {
             "qid": "q14",
-            "nav": "Pilot Concerns",
+            "nav": "Pilot concerns",
             "title": "What are you most concerned about in this pilot data?",
 			"description": null,
             "help": null,
@@ -182,7 +182,7 @@
             "required": false
         }, {
             "qid": "q15",
-            "nav": "Pilot Takeaways",
+            "nav": "Pilot takeaways",
             "title": "What are your three main takeaways from this pilot?",
 			"description": null,
             "help": null,
@@ -264,7 +264,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -294,7 +294,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -324,7 +324,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -354,7 +354,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
@@ -384,7 +384,7 @@
                 "id": "role",
                 "title": "Team member role",
                 "type": "choose",
-                "format": "singleselect",
+                "format": "multiselect",
                 "options": [
                     "Principal Investigator",
                     "Co-Investigator",
