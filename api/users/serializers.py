@@ -133,6 +133,11 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'},
     ))
 
+    outcome_reports = RelationshipField(
+        related_view='users:outcome-reports',
+        related_view_kwargs={'user_id': '<_id>'},
+    )
+
     institutions = HideIfDisabled(RelationshipField(
         related_view='users:user-institutions',
         related_view_kwargs={'user_id': '<_id>'},

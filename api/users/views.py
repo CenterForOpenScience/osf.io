@@ -55,6 +55,8 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
+from api.outcome_reports.serializers import OutcomeReportSerializer
+
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
@@ -83,6 +85,7 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
+    OutcomeReport
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
@@ -505,6 +508,31 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         # Returns DraftRegistrations for which the user is a contributor, and the user can view
         drafts = user.draft_registrations_active
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
+
+
+class UserOutcomeReports(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = OutcomeReportSerializer
+    view_category = 'users'
+    view_name = 'outcome_reports'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        user = self.get_user()
+        outcome_report_ids = AbstractNode.objects.get_nodes_for_user(
+            user,
+            include_public=True
+        ).values_list('outcome_reports__id', flat=True)
+        return OutcomeReport.objects.filter(id__in=outcome_report_ids)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

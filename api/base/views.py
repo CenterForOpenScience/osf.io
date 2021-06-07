@@ -425,6 +425,7 @@ def root(request, format=None, **kwargs):
         },
         'links': {
             'nodes': utils.absolute_reverse('nodes:node-list', kwargs=kwargs),
+            'outcome_reports': utils.absolute_reverse('outcome_reports:outcome-reports-list', kwargs=kwargs),
             'users': utils.absolute_reverse('users:user-list', kwargs=kwargs),
             'collections': utils.absolute_reverse('collections:collection-list', kwargs=kwargs),
             'registrations': utils.absolute_reverse('registrations:registration-list', kwargs=kwargs),

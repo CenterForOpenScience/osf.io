@@ -133,6 +133,19 @@ class AdminOrPublic(permissions.BasePermission):
         else:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
+class AdminWriteContributorRead(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode, OSFUser,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+
+        if request.method in permissions.SAFE_METHODS:
+            return obj.has_permission(auth.user, osf_permissions.READ)
+        else:
+            return obj.has_permission(auth.user, osf_permissions.ADMIN)
+
 class AdminContributorOrPublic(permissions.BasePermission):
 
     acceptable_models = (AbstractNode, DraftRegistration,)

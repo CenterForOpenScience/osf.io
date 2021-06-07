@@ -253,6 +253,17 @@ class InstitutionFactory(DjangoModelFactory):
         model = models.Institution
 
 
+class OutcomeReportFactory(DjangoModelFactory):
+    class Meta:
+        model = models.OutcomeReport
+
+
+class RegistrationSchemaFactory(DjangoModelFactory):
+    schema_version = factory.Sequence(lambda n: n)
+
+    class Meta:
+        model = models.RegistrationSchema
+
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')
     copyright_holders = FakeList('name', n=3)

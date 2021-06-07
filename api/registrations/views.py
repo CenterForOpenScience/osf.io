@@ -69,11 +69,12 @@ from api.wikis.serializers import RegistrationWikiSerializer
 from api.base.utils import get_object_or_error
 from api.actions.serializers import RegistrationActionSerializer
 from api.requests.serializers import RegistrationRequestSerializer
+from api.outcome_reports.serializers import OutcomeReportListSerializer
 from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
-
+from api.nodes.permissions import AdminContributorOrPublic
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
@@ -847,6 +848,28 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
 
     def get_default_queryset(self):
         return self.get_node().requests.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationOutcomeReportsList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin):
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        AdminContributorOrPublic
+    )
+
+    view_category = 'registrations'
+    view_name = 'outcome-reports-list'
+
+    serializer_class = OutcomeReportListSerializer
+
+    def get_default_queryset(self):
+        return self.get_node().outcome_reports.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

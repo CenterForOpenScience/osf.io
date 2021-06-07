@@ -863,12 +863,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
             raise ImproperlyConfigured(msg % self.view_name)
 
         if url is None:
-            # Prior to 2.9, empty relationships were omitted from the response.
-            # This conflicts with the JSON-API spec and was fixed in 2.9.
-            if StrictVersion(request.version) < StrictVersion('2.9'):
-                raise SkipField
-            else:
-                return {'data': None}
+            return {'data': None}
 
         related_url = url['related']
         related_path = urlparse(related_url).path if related_url else None
