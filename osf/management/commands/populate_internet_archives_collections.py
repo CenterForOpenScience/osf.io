@@ -27,7 +27,7 @@ def create_ia_subcollection(provider, version_id, dry_run):
     )
     return resp
 
-def modify_ia_subcollection(provider, version_id, dry_run):
+def update_ia_subcollection(provider, version_id, dry_run):
     provider_id = f'osf-registration-providers-{provider._id}-{version_id}'
     if not dry_run:
         # The following uses the json patch syntax more info here:
@@ -61,7 +61,7 @@ def populate_internet_archives_collections(version_id, dry_run=False):
     for provider in RegistrationProvider.objects.all():
         resp = create_ia_subcollection(provider, version_id, dry_run)
         if resp.status_code == 409:
-            modify_ia_subcollection(provider, version_id, dry_run)
+            update_ia_subcollection(provider, version_id, dry_run)
 
 
 class Command(BaseCommand):

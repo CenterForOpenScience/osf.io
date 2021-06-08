@@ -1,5 +1,5 @@
 import pytest
-from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, RegistrationApprovalFactory
+from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory
 from framework.celery_tasks import _archive_to_ia, _update_ia_metadata
 
 
@@ -19,10 +19,6 @@ class TestPigeon:
         embargo = EmbargoFactory()
         embargo.accept()
         return embargo
-
-    @pytest.fixture()
-    def registration_approval(self, user):
-        return RegistrationApprovalFactory(state='unapproved', user=user)
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean

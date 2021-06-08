@@ -236,8 +236,16 @@ def mock_pigeon():
         with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
             with mock.patch('framework.celery_tasks.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
                 with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                    rsps.add_callback(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'), callback=request_callback)
-                    rsps.add(responses.POST, re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'), status=200)
+                    rsps.add_callback(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'),
+                        callback=request_callback
+                    )
+                    rsps.add(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'),
+                        status=200
+                    )
                     yield rsps
 
 @pytest.fixture

@@ -4,6 +4,8 @@ from django.core.management.base import BaseCommand
 from osf.models import Registration
 from website import settings
 import logging
+from django.db.models import F
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,6 @@ class IAMetadataError(Exception):
 get_ia_field = lambda field: Registration.IA_MAPPED_NAMES.get(field, field)
 
 mirrored_attrs = list(Registration.SYNCED_WITH_IA)
-from django.db.models import F
 
 mirrored_fields = mirrored_attrs + ['subjects', 'tags', 'affiliated_institutions']
 mirrored_relationships = [

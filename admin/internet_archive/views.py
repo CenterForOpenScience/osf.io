@@ -15,7 +15,7 @@ from osf.management.commands.sync_ia_metadata import (
 )
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
-from admin.users.forms import ArchiveRegistrationWithPigeonForm
+from admin.base.forms import ArchiveRegistrationWithPigeonForm
 from website import settings
 
 
