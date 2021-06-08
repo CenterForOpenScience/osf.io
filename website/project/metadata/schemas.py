@@ -8,6 +8,8 @@ OSF_META_SCHEMA_FILES = [
     'osf-standard-2.json',
     'brandt-prereg-2.json',
     'brandt-postcomp-2.json',
+    'character-lab-fully-powered-study.json',
+    'character-lab-pilot-study.json',
     'prereg-prize.json',
     'erpc-prize.json',
     'confirmatory-general-2.json',
