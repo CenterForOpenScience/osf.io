@@ -94,7 +94,7 @@ matplotlib==2.1.1
 seaborn==0.8.1
 reportlab==3.4.0
 pdfkit==0.6.1
-numpy==1.19.2
+numpy==1.14.5
 
 # Analytics requirements
 keen==0.5.1
