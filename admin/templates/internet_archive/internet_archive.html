@@ -56,13 +56,13 @@
                 When setting up our environment for IA we must follow a few simple steps.
                 <ol>
                     <li>
-                        <h4>Make collections/subcollections</h4>
-                        For our system we sync one registration to one IA item, every item exsists in a collection that
+                        <h4>Make <b>Provider</b> collections/subcollections</h4>
+                        For our system we sync one registration to one IA item, every item exists in a collection that
                         represents it's provider so a OSF registration will be in a collection titled `OSF Registries`
                         with an url of https://archive.org/details/osf-registration-providers-osf-{{ia_id_version}} .
                         All these provider based collections are themselves subcollections of our "root collection" ({{ ia_collection }})
-                        The root collection exists to separate our staging, local and production environments. <b>In order
-                        to create/update the collections providers click Create/Update Provider SubCollections</b>
+                        The <i>root collection</i> exists to separate our staging, local and production environments. <b>In order
+                        to create/update the provider collection click Create/Update Provider SubCollections</b>
                         The root collections must be created by a archive.org admin.
                     </li>
                     <li>
