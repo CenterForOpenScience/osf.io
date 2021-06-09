@@ -34,6 +34,7 @@ from osf.models import (
     DraftRegistration,
 )
 
+
 def create_app_context():
     try:
         init_addons(settings)

@@ -1549,13 +1549,11 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
      found in SYNCED_WITH_IA, other fields that use foreign keys are updated by other signals.
     """
-    if settings.IA_ARCHIVE_ENABLED and instance.ia_url and instance.is_public:
-        allowed_metadata = Registration.SYNCED_WITH_IA.intersection(instance.get_dirty_fields().keys())
-        current_fields = {key: str(getattr(instance, key)) for key in allowed_metadata}
-        if current_fields:
-            update_ia_metadata(instance, current_fields)
-    elif settings.IA_ARCHIVE_ENABLED and instance.is_public:
-        archive_to_ia(instance)
+    if settings.IA_ARCHIVE_ENABLED and instance.is_public:
+        if not instance.ia_url:
+            archive_to_ia(instance)
+        else:
+            update_ia_metadata(instance)
 
 
 @receiver(post_save, sender=NodeLicenseRecord)
