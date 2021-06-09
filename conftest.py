@@ -234,7 +234,7 @@ def mock_pigeon():
 
     with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
         with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
-            with mock.patch('framework.celery_tasks.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+            with mock.patch('osf.external.internet_archive.tasks.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
                 with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
                     rsps.add_callback(
                         method=responses.POST,
@@ -254,5 +254,5 @@ def mock_celery():
     This should only be necessary for postcommit tasks.
     """
     with mock.patch.object(website_settings, 'USE_CELERY', True):
-        with mock.patch('framework.celery_tasks.enqueue_postcommit_task') as mock_celery:
+        with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
             yield mock_celery

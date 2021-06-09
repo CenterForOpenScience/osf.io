@@ -508,6 +508,7 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
+        'osf.management.commands.archive_registrations_on_IA'
     )
 
     # Modules that need metrics and release requirements

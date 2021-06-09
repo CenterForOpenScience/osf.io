@@ -61,7 +61,7 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
-from framework.celery_tasks import archive_to_ia, update_ia_metadata
+from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 
 import osf.utils.notifications as notify
 from api.share.utils import update_share
@@ -1571,11 +1571,9 @@ def sync_internet_archive_tags(sender, instance, action, **kwargs):
 @receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
 def sync_internet_archive_institutions(sender, instance, action, **kwargs):
     if settings.IA_ARCHIVE_ENABLED:
-        institutions = list(instance.affiliated_institutions.all().values_list('name', flat=True))
         update_ia_metadata(
-            instance,
-            {
-                'affiliated_institutions': institutions
+            instance, {
+                'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))
             }
         )
 

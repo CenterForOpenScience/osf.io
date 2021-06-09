@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from osf.models import Registration
-from framework.celery_tasks import update_ia_metadata
+from osf.external.internet_archive.tasks import update_ia_metadata
 from django.db.models import F
 import logging
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 import pytest
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory
-from framework.celery_tasks import _archive_to_ia, _update_ia_metadata
+from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata
 
 
 @pytest.mark.django_db
