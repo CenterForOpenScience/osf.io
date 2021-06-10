@@ -29,7 +29,7 @@ class InstitutionList(PermissionRequiredMixin, ListView):
     model = Institution
 
     def get_queryset(self):
-        return Institution.objects.all().order_by(self.ordering)
+        return Institution.objects.get_all_institutions().order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -48,7 +48,7 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self, queryset=None):
-        return Institution.objects.get(id=self.kwargs.get('institution_id'))
+        return Institution.objects.get_all_institutions().get(id=self.kwargs.get('institution_id'))
 
     def get_context_data(self, *args, **kwargs):
         institution = self.get_object()
@@ -105,7 +105,7 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         provider_id = self.kwargs.get('institution_id')
-        return Institution.objects.get(id=provider_id)
+        return Institution.objects.get_all_institutions().get(id=provider_id)
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
