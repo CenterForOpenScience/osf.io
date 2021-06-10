@@ -41,6 +41,23 @@ $('#tags-input-program-area').on('itemRemoved', function(event) {
     $('#id_program_area_choices').val(JSON.stringify($('#tags-input-program-area').tagsinput('items')));
 });
 
+$('#tags-input-school_type').on('itemAdded', function(event) {
+    $('#id_school_type_choices').val(JSON.stringify($('#tags-input-school-type').tagsinput('items')));
+});
+
+$('#tags-input-program-area').on('itemRemoved', function(event) {
+    $('#id_school_type_choices').val(JSON.stringify($('#tags-input-school-type').tagsinput('items')));
+});
+
+$('#tags-input-study-design').on('itemAdded', function(event) {
+    $('#id_study_design_choices').val(JSON.stringify($('#tags-input-study-design').tagsinput('items')));
+});
+
+$('#tags-input-program-area').on('itemRemoved', function(event) {
+    $('#id_study_design_choices').val(JSON.stringify($('#tags-input-study-design').tagsinput('items')));
+});
+
+
 $(document).ready(function() {
    var collectedTypeItems = JSON.parse($('#id_collected_type_choices').val());
    collectedTypeItems.forEach(function(element){
@@ -65,5 +82,15 @@ $(document).ready(function() {
    var programAreaItems = JSON.parse($('#id_program_area_choices').val());
    programAreaItems.forEach(function(element){
        $('#tags-input-program-area').tagsinput('add', element)
+   });
+
+   var schoolTypeItems = JSON.parse($('#id_school_type_choices').val());
+   programAreaItems.forEach(function(element){
+       $('#tags-input-school-type').tagsinput('add', element)
+   });
+
+   var studyDesignItems = JSON.parse($('#id_study_design_choices').val());
+   programAreaItems.forEach(function(element){
+       $('#tags-study-design-area').tagsinput('add', element)
    });
 });
