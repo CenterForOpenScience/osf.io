@@ -18,7 +18,18 @@ from website import settings as website_settings
 logger = logging.getLogger(__name__)
 
 
+class InstitutionManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().filter(deactivated__isnull=True)
+
+    def get_all_institutions(self):
+        return super().get_queryset()
+
+
 class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel, GuardianMixin):
+
+    objects = InstitutionManager()
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
