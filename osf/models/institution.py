@@ -64,6 +64,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
+    deactivated = NonNaiveDateTimeField(null=True, blank=True)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
