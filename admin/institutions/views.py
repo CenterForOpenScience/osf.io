@@ -191,39 +191,37 @@ class DeleteInstitution(PermissionRequiredMixin, DeleteView):
 
 
 class DeactivateInstitution(PermissionRequiredMixin, UpdateView):
-    permission_required = 'osf.change_institution'
     template_name = 'institutions/confirm_deactivate.html'
+    permission_required = 'osf.change_institution'
+    raise_exception = True
+    model = Institution
     form_class = InstitutionForm
-    success_url = reverse_lazy('institutions:list')
 
     def get_object(self, queryset=None):
-        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
-        return institution
+        return Institution.objects.get_all_institutions().get(id=self.kwargs.get('institution_id'))
 
     def post(self, request, *args, **kwargs):
-        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
+        institution = self.get_object()
         institution.deactivated = timezone.now()
         institution.save()
-        view = InstitutionDetail.as_view()
-        return view(request, *args, **kwargs)
+        return redirect('institutions:detail', institution_id=institution.id)
 
 
 class ReactivateInstitution(PermissionRequiredMixin, UpdateView):
-    permission_required = 'osf.change_institution'
     template_name = 'institutions/confirm_reactivate.html'
+    permission_required = 'osf.change_institution'
+    raise_exception = True
+    model = Institution
     form_class = InstitutionForm
-    success_url = reverse_lazy('institutions:list')
 
     def get_object(self, queryset=None):
-        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
-        return institution
+        return Institution.objects.get_all_institutions().get(id=self.kwargs.get('institution_id'))
 
     def post(self, request, *args, **kwargs):
-        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
+        institution = self.get_object()
         institution.deactivated = None
         institution.save()
-        view = InstitutionDetail.as_view()
-        return view(request, *args, **kwargs)
+        return redirect('institutions:detail', institution_id=institution.id)
 
 
 class CannotDeleteInstitution(TemplateView):
