@@ -794,7 +794,7 @@ def update_file(file_, index=None, delete=False):
 def update_institution(institution, index=None):
     index = index or INDEX
     id_ = institution._id
-    if institution.is_deleted:
+    if institution.deleted or institution.deactivated:
         client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
     else:
         institution_doc = {
