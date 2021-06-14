@@ -394,11 +394,13 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
 def create_schema_blocks_for_simple_schema(schema):
     from osf.models import RegistrationSchemaBlock
     schema_block_group_key = None
+    page_num = 0
+    q_num = 1
     for block in schema.schema['blocks']:
         block_type = block['block_type']
 
         if block_type == 'question-label':
-            schema_block_group_key = generate_object_id()[:10]
+            schema_block_group_key = generate_object_id()
         if block_type == 'section-heading':
             schema_block_group_key = None
         if block_type == 'subsection-heading':
@@ -406,6 +408,8 @@ def create_schema_blocks_for_simple_schema(schema):
         if block_type == 'paragraph':
             schema_block_group_key = None
         if block_type == 'page-heading':
+            page_num += 1
+            q_num = 1
             schema_block_group_key = None
 
         schemablock, created = RegistrationSchemaBlock.objects.update_or_create(
@@ -413,10 +417,11 @@ def create_schema_blocks_for_simple_schema(schema):
             **block
         )
         if created:
-            schemablock.registration_response_key = generate_object_id(),
-            schemablock.schema_block_group_key = schema_block_group_key,
+            schemablock.registration_response_key = f'q{page_num}-{q_num}'
+            schemablock.schema_block_group_key = schema_block_group_key
 
         schemablock.save()
+        q_num += 1
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks

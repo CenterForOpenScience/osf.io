@@ -105,19 +105,6 @@ class RegistrationSchema(AbstractSchema):
         blank=True
     )
 
-
-    @property
-    def render_schema(self):
-        data = {
-            'simpleschema': True,
-            'name': self.name,
-            'version': self.schema_version,
-            'blocks': []
-        }
-        data['blocks'] = [schema.block for schema in self.schema_blocks.all()]
-
-        return data
-
     @property
     def _config(self):
         return self.schema.get('config', {})
@@ -213,21 +200,10 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     # Corresponds to a key in DraftRegistration.registration_responses dictionary
     registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
-    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True, blank=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
     display_text = models.TextField(null=True, blank=True)
     required = models.BooleanField(default=False)
-
-    @property
-    def block(self):
-        return {
-            'help_text': self.help_text,
-            'example_text': self.example_text,
-            'registration_response_key': self.registration_response_key,
-            'block_type': self.block_type,
-            'display_text': self.display_text,
-            'required': self.required,
-        }
 
     @property
     def absolute_api_v2_url(self):
