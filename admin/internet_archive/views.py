@@ -17,12 +17,15 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from admin.base.forms import ArchiveRegistrationWithPigeonForm
 from website import settings
+from django.contrib.auth.mixins import PermissionRequiredMixin
 
 
-class InternetArchiveView(TemplateView):
+
+class InternetArchiveView(TemplateView, PermissionRequiredMixin):
     """Basic form to trigger various management commands"""
 
     template_name = 'internet_archive/internet_archive.html'
+    permission_required = 'osf.change_node'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -32,10 +35,11 @@ class InternetArchiveView(TemplateView):
         return context
 
 
-class SendToPigeon(FormView):
+class SendToPigeon(FormView, PermissionRequiredMixin):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True
+    permission_required = 'osf.change_node'
 
     def form_valid(self, form):
         guids = form.cleaned_data['guid_to_archive']
@@ -49,7 +53,7 @@ class SendToPigeon(FormView):
         return reverse('internet_archive:internet_archive')
 
 
-class CreateIASubcollections(View):
+class CreateIASubcollections(View, PermissionRequiredMixin):
     def post(self, request, *args, **kwargs):
         populate_internet_archives_collections(settings.ID_VERSION)
         messages.success(
@@ -59,10 +63,11 @@ class CreateIASubcollections(View):
         return redirect(reverse('internet_archive:internet_archive'))
 
 
-class CheckIAMetadata(FormView):
+class CheckIAMetadata(FormView, PermissionRequiredMixin):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True
+    permission_required = 'osf.change_node'
 
     def form_valid(self, form):
         guids = form.cleaned_data['guid_to_archive']
@@ -82,10 +87,11 @@ class CheckIAMetadata(FormView):
         return reverse('internet_archive:internet_archive')
 
 
-class SyncIAMetadata(FormView):
+class SyncIAMetadata(FormView, PermissionRequiredMixin):
 
     form_class = ArchiveRegistrationWithPigeonForm
     raise_exception = True
+    permission_required = 'osf.change_node'
 
     def form_valid(self, form):
         guids = form.cleaned_data['guid_to_archive']
