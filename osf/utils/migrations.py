@@ -390,6 +390,34 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
 
+
+def create_schema_blocks_for_simple_schema(schema):
+    from osf.models import RegistrationSchemaBlock
+    schema_block_group_key = None
+    for block in schema.schema['blocks']:
+        block_type = block['block_type']
+
+        if block_type == 'question-label':
+            schema_block_group_key = generate_object_id()[:10]
+        if block_type == 'section-heading':
+            schema_block_group_key = None
+        if block_type == 'subsection-heading':
+            schema_block_group_key = None
+        if block_type == 'paragraph':
+            schema_block_group_key = None
+        if block_type == 'page-heading':
+            schema_block_group_key = None
+
+        schemablock, created = RegistrationSchemaBlock.objects.update_or_create(
+            schema_id=schema.id,
+            **block
+        )
+        if created:
+            schemablock.registration_response_key = generate_object_id(),
+            schemablock.schema_block_group_key = schema_block_group_key,
+
+        schemablock.save()
+
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
 
@@ -407,6 +435,10 @@ def map_schemas_to_schemablocks(*args):
 
     for rs in schema_model.objects.all():
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
+        if rs.schema.get('simpleschema'):
+            create_schema_blocks_for_simple_schema(rs)
+            return
+
         for page in rs.schema['pages']:
             # Create page heading block
             create_schema_block(
