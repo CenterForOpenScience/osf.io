@@ -6233,7 +6233,7 @@ msgstr "${user}が${node}のOCIオブジェクトストレージ(for Institution
 msgid ""
 "${user} linked Oracle Cloud Infrastructure for Institutions folder "
 "${folder} to ${node}"
-msgstr ""
+msgstr "${user}がOCIオブジェクトストレージ(for Institutions)のフォルダ(${folder})を${node}にリンクしました"
 
 #: website/static/js/logActionsList_extract.js:284
 msgid ""
