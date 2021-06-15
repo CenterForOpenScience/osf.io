@@ -42,7 +42,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/wikis/$', views.RegistrationWikiList.as_view(), name=views.RegistrationWikiList.view_name),
     url(r'^(?P<node_id>\w+)/actions/$', views.RegistrationActionList.as_view(), name=views.RegistrationActionList.view_name),
     url(r'^(?P<node_id>\w+)/requests/$', views.RegistrationRequestList.as_view(), name=views.RegistrationRequestList.view_name),
-    url(r'^(?P<node_id>\w+)/outcome_reports/$', views.RegistrationOutcomeReportsList.as_view(), name=views.RegistrationOutcomeReportsList.view_name),
+    url(r'^(?P<node_id>\w+)/schema_response/$', views.RegistrationSchemaResponseList.as_view(), name=views.RegistrationSchemaResponseList.view_name),
 ]
 
 # Routes only active in local/staging environments

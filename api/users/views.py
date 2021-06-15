@@ -55,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.outcome_reports.serializers import OutcomeReportSerializer
+from api.schema_response.serializers import SchemaResponseSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -85,7 +85,7 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
-    OutcomeReport
+    SchemaResponses
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
@@ -510,7 +510,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
 
 
-class UserOutcomeReports(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+class UserSchemaResponse(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -520,19 +520,19 @@ class UserOutcomeReports(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = OutcomeReportSerializer
+    serializer_class = SchemaResponseSerializer
     view_category = 'users'
-    view_name = 'outcome_reports'
+    view_name = 'schema_response'
 
     ordering = ('-modified',)
 
     def get_queryset(self):
         user = self.get_user()
-        outcome_report_ids = AbstractNode.objects.get_nodes_for_user(
+        schema_response_ids = AbstractNode.objects.get_nodes_for_user(
             user,
             include_public=True
-        ).values_list('outcome_reports__id', flat=True)
-        return OutcomeReport.objects.filter(id__in=outcome_report_ids)
+        ).values_list('schema_response__id', flat=True)
+        return SchemaResponses.objects.filter(id__in=schema_response_ids)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

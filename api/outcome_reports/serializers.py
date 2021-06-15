@@ -6,10 +6,10 @@ from api.base.serializers import (
 
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
-from osf.models.outcome_report import OutcomeReport
+from osf.models.schema_responses import SchemaResponses
 
 
-class OutcomeReportSerializer(JSONAPISerializer):
+class SchemaResponseSerializer(JSONAPISerializer):
     id = ser.CharField(source="_id", read_only=True, required=False)
     title = ser.CharField(required=False, allow_blank=True)
     responses = ser.JSONField(source='_responses', required=False)
@@ -35,16 +35,16 @@ class OutcomeReportSerializer(JSONAPISerializer):
     )
 
     versions = RelationshipField(
-        related_view="outcome_reports:outcome-reports-versions",
+        related_view="schema_response:outcome-reports-versions",
         related_view_kwargs={"report_id": "<_id>"},
     )
 
     class Meta:
-        type_ = "outcome_report"
+        type_ = "schema_response"
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            "outcome_reports:outcome-reports-detail",
+            "schema_response:outcome-reports-detail",
             kwargs={
                 "version": self.context["request"].parser_context["kwargs"]["version"],
                 "report_id": obj._id,
@@ -52,14 +52,14 @@ class OutcomeReportSerializer(JSONAPISerializer):
         )
 
 
-class OutcomeReportListSerializer(OutcomeReportSerializer):
+class SchemaResponseListSerializer(SchemaResponseSerializer):
     def create(self, validated_data):
         title = validated_data.get('title')
         node = validated_data.get('node')
         responses = validated_data.get('responses')
         schema = validated_data.get('schema')
 
-        OutcomeReport.objects.create(
+        SchemaResponses.objects.create(
             node_id=node.id,
             title=title,
             _responses=responses,
@@ -67,7 +67,7 @@ class OutcomeReportListSerializer(OutcomeReportSerializer):
         )
 
 
-class OutcomeReportDetailSerializer(OutcomeReportSerializer):
+class SchemaResponseDetailSerializer(SchemaResponseSerializer):
     def update(self, report, validated_data):
         title = validated_data.get('title')
         responses = validated_data.get('responses')

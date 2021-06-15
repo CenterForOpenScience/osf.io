@@ -253,9 +253,9 @@ class InstitutionFactory(DjangoModelFactory):
         model = models.Institution
 
 
-class OutcomeReportFactory(DjangoModelFactory):
+class SchemaResponseFactory(DjangoModelFactory):
     class Meta:
-        model = models.OutcomeReport
+        model = models.SchemaResponses
 
 
 class RegistrationSchemaFactory(DjangoModelFactory):

@@ -5,8 +5,10 @@
 <head>
     <meta charset="utf-8">
     <title>OSF | ${self.title()}</title>
-    % if settings.GOOGLE_SITE_VERIFICATION:
+    % if settings.GOOGLE_SITE_VERIFICATION and node and node['is_public']:
         <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
+    % else:
+        <meta name="robots" content="noindex">
     % endif
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">

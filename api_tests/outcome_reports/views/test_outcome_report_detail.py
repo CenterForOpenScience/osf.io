@@ -1,7 +1,7 @@
 import pytest
 
 from osf_tests.factories import (
-    OutcomeReportFactory,
+    SchemaResponseFactory,
     NodeFactory,
     RegistrationSchemaFactory,
     AuthUserFactory
@@ -10,7 +10,7 @@ from django.utils import timezone
 
 
 @pytest.mark.django_db
-class TestOutcomeReportDetail:
+class TestSchemaResponseDetail:
 
     @pytest.fixture()
     def user(self):
@@ -25,26 +25,26 @@ class TestOutcomeReportDetail:
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
-    def outcome_report(self, node, schema):
-        return OutcomeReportFactory(node=node, schema=schema)
+    def schema_response(self, node, schema):
+        return SchemaResponseFactory(node=node, schema=schema)
 
     @pytest.fixture()
-    def outcome_report_public(self, node, schema):
-        return OutcomeReportFactory(public=timezone.now(), node=node, schema=schema)
+    def schema_response_public(self, node, schema):
+        return SchemaResponseFactory(public=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
-    def outcome_report_deleted(self, node, schema):
-        return OutcomeReportFactory(deleted=timezone.now(), node=node, schema=schema)
+    def schema_response_deleted(self, node, schema):
+        return SchemaResponseFactory(deleted=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
-    def url(self, outcome_report):
-        return f'/v2/outcome_reports/{outcome_report._id}/'
+    def url(self, schema_response):
+        return f'/v2/schema_response/{schema_response._id}/'
 
-    def test_outcome_report_detail(self, app, outcome_report, outcome_report_public, outcome_report_deleted, user, url):
+    def test_schema_response_detail(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == outcome_report._id
+        assert data['id'] == schema_response._id
         assert data == {
             'attributes': {
                 'deleted': None,
@@ -52,31 +52,31 @@ class TestOutcomeReportDetail:
                 'responses': {},
                 'title': None
             },
-            'id': outcome_report._id,
+            'id': schema_response._id,
             'links': {
-                'self': f'http://localhost:8000/v2/outcome_reports/{outcome_report._id}/'
+                'self': f'http://localhost:8000/v2/schema_response/{schema_response._id}/'
             },
             'relationships': {
                 'node': {
                     'data': {
-                        'id': outcome_report.node._id,
+                        'id': schema_response.node._id,
                         'type': 'nodes'
                     },
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/nodes/{outcome_report.node._id}/',
+                            'href': f'http://localhost:8000/v2/nodes/{schema_response.node._id}/',
                             'meta': {}
                         }
                     }
                 },
                 'schema': {
                     'data': {
-                        'id': outcome_report.schema._id,
+                        'id': schema_response.schema._id,
                         'type': 'registration-schemas'
                     },
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/schemas/registrations/{outcome_report.schema._id}/',
+                            'href': f'http://localhost:8000/v2/schemas/registrations/{schema_response.schema._id}/',
                             'meta': {}
                         }
                     }
@@ -84,11 +84,11 @@ class TestOutcomeReportDetail:
                 'versions': {
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/outcome_reports/{outcome_report._id}/versions/',
+                            'href': f'http://localhost:8000/v2/schema_response/{schema_response._id}/versions/',
                             'meta': {}
                         }
                     }
                 }
             },
-            'type': 'outcome_report'
+            'type': 'schema_response'
         }

@@ -6,19 +6,19 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.models.base import GuidMixin, BaseModel
 
 
-class OutcomeReport(GuidMixin, BaseModel):
+class SchemaResponses(GuidMixin, BaseModel):
     _responses = DateTimeAwareJSONField(default=dict, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     public =  NonNaiveDateTimeField(null=True, blank=True)
     schema = models.ForeignKey(
         "RegistrationSchema",
-        related_name="outcome_reports",
+        related_name="schema_responses",
         on_delete=models.CASCADE,
     )
     node = models.ForeignKey(
         "AbstractNode",
-        related_name="outcome_reports",
+        related_name="schema_responses",
         on_delete=models.CASCADE,
     )
 
@@ -52,11 +52,11 @@ class OutcomeReport(GuidMixin, BaseModel):
 
     @property
     def versions(self):
-        outcome_report = OutcomeReport.objects.get(guids___id=self._id)
-        return OutcomeReport.objects.filter(
+        schema_response = SchemaResponses.objects.get(guids___id=self._id)
+        return SchemaResponses.objects.filter(
             deleted__isnull=True,
             public__isnull=False,
-            node=outcome_report.node,
-            schema=outcome_report.schema
+            node=schema_response.node,
+            schema=schema_response.schema
         )
 
