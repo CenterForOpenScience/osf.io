@@ -411,7 +411,7 @@ class RegistrationFactory(BaseNodeFactory):
                 branched_from=project,
                 initator=user,
                 registration_schema=schema,
-                provider=provider
+                provider=provider,
             )
         auth = Auth(user=user)
         register = lambda: project.register_node(
@@ -419,6 +419,7 @@ class RegistrationFactory(BaseNodeFactory):
             auth=auth,
             draft_registration=draft_registration,
             provider=provider,
+            parent=kwargs.get('parent')
         )
 
         def add_approval_step(reg):
