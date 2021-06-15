@@ -504,6 +504,8 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        #refresh in order to honor state change
+        self.refresh_from_db()
         if self.is_pending_embargo_termination:
             self.embargo_termination_approval.accept()
 
