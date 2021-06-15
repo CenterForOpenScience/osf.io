@@ -51,4 +51,5 @@ from osf.models.storage import ProviderAssetFile  # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.blacklisted_email_domain import BlacklistedEmailDomain  # noqa
 from osf.models.brand import Brand  # noqa
+
 from osf.models.schema_responses import SchemaResponses  # noqa

@@ -29,6 +29,7 @@ from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
+from api.outcome_report.serializers import OutcomeReportListSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -508,6 +509,25 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         # Returns DraftRegistrations for which the user is a contributor, and the user can view
         drafts = user.draft_registrations_active
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
+
+class UserOutcomeReports(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    serializer_class = OutcomeReportListSerializer
+    view_category = 'users'
+    view_name = 'user-outcome-reports'
+
+    ordering = ('-modified',)
+
+    def get_queryset(self):
+        user = self.get_user()
+        registrations = Registration.objects.get_nodes_for_user(user, include_public=True)
+        outcome_ids = registrations.values_list('outcome_report___id', flat=True)
+        return OutcomeReport.objects.filter(_id__in=outcome_ids)
 
 
 class UserSchemaResponse(JSONAPIBaseView, generics.ListAPIView, UserMixin):

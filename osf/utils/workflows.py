@@ -37,6 +37,7 @@ class SanctionTypes(ModerationEnum):
     RETRACTION = 3
     EMBARGO_TERMINATION_APPROVAL = 4
     DRAFT_REGISTRATION_APPROVAL = 5
+    OUTCOME_REPORT = 6
 
 
 class SanctionStates(ModerationEnum):

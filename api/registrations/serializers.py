@@ -348,6 +348,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-requests-list',
         related_view_kwargs={'node_id': '<_id>'},
     ))
+    outcome_report = HideIfWithdrawal(RelationshipField(
+        related_view='outcome-report:outcome-report-detail',
+        related_view_kwargs={'report_id': '<outcome_report._id>'},
+    ))
 
     provider_specific_metadata = ser.JSONField(required=False)
 
