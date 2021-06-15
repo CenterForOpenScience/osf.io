@@ -20,7 +20,6 @@ from website import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 
-
 class InternetArchiveView(TemplateView, PermissionRequiredMixin):
     """Basic form to trigger various management commands"""
 
