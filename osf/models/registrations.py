@@ -680,7 +680,6 @@ class Registration(AbstractNode):
 
         self._write_registration_action(from_state, to_state, initiated_by, comment)
         for node in self.node_and_primary_descendants():
-            print('updating state to', to_state.db_name)
             node.moderation_state = to_state.db_name
             node.save()
 
