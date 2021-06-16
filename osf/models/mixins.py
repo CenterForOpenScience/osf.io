@@ -2074,8 +2074,6 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
             return False
-        if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            return False
         host = ''
         if request_headers:
             host = request_headers.get('Host', '')

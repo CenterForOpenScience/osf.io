@@ -5,10 +5,8 @@
 <head>
     <meta charset="utf-8">
     <title>OSF | ${self.title()}</title>
-    % if settings.GOOGLE_SITE_VERIFICATION and node and node['is_public']:
+    % if settings.GOOGLE_SITE_VERIFICATION:
         <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
-    % else:
-        <meta name="robots" content="noindex">
     % endif
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
@@ -165,7 +163,7 @@
         <div class="container">
             <div class="row">
                 <div class='col-sm-2 hidden-xs'>
-                    <img class="logo" src="/static/img/circle_logo.png">
+                    <img class="logo" src="/static/img/circle_logo.png" alt="logo image">
                 </div>
                 <div class='col-sm-10 col-xs-12'>
                     <a data-bind="click: dismiss" class="close" href="#">&times;</a>

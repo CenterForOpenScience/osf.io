@@ -37,7 +37,7 @@ class SanctionTypes(ModerationEnum):
     RETRACTION = 3
     EMBARGO_TERMINATION_APPROVAL = 4
     DRAFT_REGISTRATION_APPROVAL = 5
-    OUTCOME_REPORT = 6
+    REGISTRATION_RESPONSE_EDIT_APPROVAL = 6
 
 
 class SanctionStates(ModerationEnum):
@@ -65,6 +65,7 @@ class RegistrationModerationStates(ModerationEnum):
     PENDING_WITHDRAW_REQUEST = 8
     PENDING_WITHDRAW = 9
     WITHDRAWN = 10
+    PENDING_NEW_VERSION = 11
 
     @classmethod
     def from_sanction(cls, sanction):
@@ -100,6 +101,10 @@ class RegistrationModerationStates(ModerationEnum):
                 SanctionStates.APPROVED: cls.ACCEPTED,
                 SanctionStates.REJECTED: cls.EMBARGO,
                 SanctionStates.MODERATOR_REJECTED: cls.EMBARGO,  # Not currently reachable
+            },
+            SanctionTypes.REGISTRATION_RESPONSE_EDIT_APPROVAL: {
+                SanctionStates.UNAPPROVED: cls.PENDING_NEW_VERSION,
+                SanctionStates.APPROVED: cls.ACCEPTED,
             },
         }
 
@@ -186,6 +191,7 @@ REGISTRATION_STATES = REVIEW_STATES + [
     ('PENDING_EMBARGO_TERMINATION', 'pending_embargo_termination'),
     ('PENDING_WITHDRAW_REQUEST', 'pending_withdraw_request'),
     ('PENDING_WITHDRAW', 'pending_withdraw'),
+    ('PENDING_NEW_VERSION', 'pending_new_version'),
 ]
 
 DefaultStates = ChoiceEnum('DefaultStates', DEFAULT_STATES)
