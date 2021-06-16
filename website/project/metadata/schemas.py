@@ -32,7 +32,8 @@ OSF_META_SCHEMA_FILES = [
     'real-world-evidence.json',
     'qualitative-research.json',
     'secondary-data.json',
-    'null-hypothesis-significance-testing.json'
+    'hypothesis-testing-studies-using-youth-data.json',
+    'other-studies-using-youth-data.json'
 ]
 
 METASCHEMA_ORDERING = (
@@ -55,7 +56,8 @@ METASCHEMA_ORDERING = (
     'Qualitative Preregistration',
     'ASIST Results Registration',
     'ASIST Hypothesis/Capability Registration',
-    'Null Hypothesis Significance Testing (NHST)'
+    'Hypothesis-testing studies using YOUth data',
+    'Other studies using YOUth data',
 )
 
 

@@ -390,38 +390,46 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
 
+def create_schema_blocks_for_atomic_schema(schema):
+    """
+    Atomic schemas are a short cut around making an typical metaschemas by being totally explict about the schemablocks
+    being created.
+    """
 
-def create_schema_blocks_for_simple_schema(schema):
     from osf.models import RegistrationSchemaBlock
     schema_block_group_key = ''
-    page_num = 0
-    q_num = 1
-    for block in schema.schema['blocks']:
+    for index, block in enumerate(schema.schema['blocks']):
         block_type = block['block_type']
+        registration_response_key = None
 
-        if block_type == 'question-label':
+        if block_type == (
+                'page-heading'
+                'section-heading',
+                'subsection-heading',
+                'paragraph'
+                'question-label'
+        ):
+            schema_block_group_key = None
+        elif block_type == 'question-label':
             schema_block_group_key = generate_object_id()
-        if block_type == 'section-heading':
-            schema_block_group_key = generate_object_id()
-        if block_type == 'subsection-heading':
-            schema_block_group_key = generate_object_id()
-        if block_type == 'paragraph':
-            schema_block_group_key = ''
-        if block_type == 'page-heading':
-            page_num += 1
-            q_num = 1
-            schema_block_group_key = ''
 
-        schemablock, created = RegistrationSchemaBlock.objects.update_or_create(
+        if block_type in (
+                'single-select-input',
+                'multi-select-input',
+                'long-text-input',
+                'short-text-input',
+                'file-input'
+        ):
+            registration_response_key = f'{schema.id}-{index}'
+
+        schemablock = RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,
+            schema_block_group_key=schema_block_group_key,
             **block
         )
-        if created:
-            schemablock.registration_response_key = block['registration_response_key']
-            schemablock.schema_block_group_key = schema_block_group_key
+        schemablock.registration_response_key = registration_response_key
 
         schemablock.save()
-        q_num += 1
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
@@ -439,9 +447,9 @@ def map_schemas_to_schemablocks(*args):
     unmap_schemablocks(*args)
 
     for rs in schema_model.objects.all():
-        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
-        if rs.schema.get('simpleschema'):
-            create_schema_blocks_for_simple_schema(rs)
+        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
+        if rs.schema.get('atomicSchema'):
+            create_schema_blocks_for_atomic_schema(rs)
             continue
 
         for page in rs.schema['pages']:

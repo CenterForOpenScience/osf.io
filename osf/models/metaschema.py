@@ -198,7 +198,7 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     help_text = models.TextField(null=True, blank=True)
     example_text = models.TextField(null=True, blank=True)
     # Corresponds to a key in DraftRegistration.registration_responses dictionary
-    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True, default='')
+    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
     schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True, blank=True)
     block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
