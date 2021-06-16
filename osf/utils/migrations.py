@@ -389,7 +389,6 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
         # If there are multiple choice answers, create blocks for these as well.
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
-
 def create_schema_blocks_for_atomic_schema(schema):
     """
     Atomic schemas are a short cut around making an typical metaschemas by being totally explict about the schemablocks
