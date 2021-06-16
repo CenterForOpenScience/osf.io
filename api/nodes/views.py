@@ -115,7 +115,7 @@ from api.nodes.serializers import (
     NodeGroupsCreateSerializer,
     NodeGroupsDetailSerializer,
 )
-from api.schema_responses.serializers import SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponsesListSerializer
 
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
@@ -2282,7 +2282,7 @@ class NodeSchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     view_category = 'nodes'
     view_name = 'outcome-reports-list'
 
-    serializer_class = SchemaResponseListSerializer
+    serializer_class = SchemaResponsesListSerializer
 
     def get_default_queryset(self):
         return self.get_node().schema_response.filter(deleted__isnull=True)

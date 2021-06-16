@@ -7,14 +7,15 @@ from api.base.serializers import (
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
 from osf.models.schema_responses import SchemaResponses
+from osf.models import Registration
 
 
-class SchemaResponseSerializer(JSONAPISerializer):
-    id = ser.CharField(source="_id", read_only=True, required=False)
+class SchemaResponsesSerializer(JSONAPISerializer):
+    id = ser.CharField(required=False, source="_id", read_only=True)
     title = ser.CharField(required=False, allow_blank=True)
-    responses = ser.JSONField(source='_responses', required=False)
-    deleted = ser.BooleanField(default=False, required=False)
-    public = ser.BooleanField(default=False, required=False)
+    responses = ser.JSONField(required=False, source='_responses',)
+    deleted = ser.BooleanField(required=False)
+    public = ser.BooleanField(required=False)
 
     links = LinksField(
         {
@@ -25,13 +26,13 @@ class SchemaResponseSerializer(JSONAPISerializer):
     node = RelationshipField(
         related_view="nodes:node-detail",
         related_view_kwargs={"node_id": "<node._id>"},
-        read_only=False,
-        required=True
+        read_only=True,
     )
 
     schema = RelationshipField(
         related_view="schemas:registration-schema-detail",
         related_view_kwargs={"schema_id": "<schema._id>"},
+        read_only=True,
     )
 
     class Meta:
@@ -47,22 +48,23 @@ class SchemaResponseSerializer(JSONAPISerializer):
         )
 
 
-class SchemaResponseListSerializer(SchemaResponseSerializer):
+class SchemaResponsesListSerializer(SchemaResponsesSerializer):
     def create(self, validated_data):
-        title = validated_data.get('title')
-        node = validated_data.get('node')
-        responses = validated_data.get('responses')
-        schema = validated_data.get('schema')
+        node = Registration.load(self.initial_data['node'])
 
-        SchemaResponses.objects.create(
-            node_id=node.id,
-            title=title,
-            _responses=responses,
-            schema=schema
-        )
+        if node.registered_schema.first():
+            schema_response = SchemaResponses.objects.create(
+                **validated_data,
+                node=node,
+                schema=node.registered_schema.first() # current only used as a one-to-one
+            )
+        else:
+            raise NotImplementedError()
+
+        return schema_response
 
 
-class SchemaResponseDetailSerializer(SchemaResponseSerializer):
+class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
     versions = RelationshipField(
         related_view="registrations:schema-responses-list",

@@ -3,12 +3,13 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.nodes.permissions import ContributorOrPublic
 from api.schema_responses.serializers import (
-    SchemaResponseListSerializer,
-    SchemaResponseDetailSerializer,
+    SchemaResponsesListSerializer,
+    SchemaResponsesDetailSerializer,
 )
 from osf.models.schema_responses import SchemaResponses
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
+from osf.models import Node
 
 class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
     permission_classes = (
@@ -19,7 +20,7 @@ class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-    serializer_class = SchemaResponseListSerializer
+    serializer_class = SchemaResponsesListSerializer
     view_category = "schema_responses"
     view_name = "schema-responses-list"
 
@@ -37,7 +38,7 @@ class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
         base_permissions.TokenHasScope,
     )
 
-    serializer_class = SchemaResponseDetailSerializer
+    serializer_class = SchemaResponsesDetailSerializer
     view_category = "schema_responses"
     view_name = "schema-responses-detail"
 

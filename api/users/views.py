@@ -55,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.schema_responses.serializers import SchemaResponseSerializer, SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponsesSerializer, SchemaResponsesListSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -516,7 +516,7 @@ class UserSchemaResponses(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         CurrentUser,
     )
 
-    serializer_class = SchemaResponseListSerializer
+    serializer_class = SchemaResponsesListSerializer
     view_category = 'users'
     view_name = 'user-schema-responses'
 
