@@ -53,6 +53,6 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/view_only_links/$', views.NodeViewOnlyLinksList.as_view(), name=views.NodeViewOnlyLinksList.view_name),
     url(r'^(?P<node_id>\w+)/view_only_links/(?P<link_id>\w+)/$', views.NodeViewOnlyLinkDetail.as_view(), name=views.NodeViewOnlyLinkDetail.view_name),
     url(r'^(?P<node_id>\w+)/wikis/$', views.NodeWikiList.as_view(), name=views.NodeWikiList.view_name),
-    url(r'^(?P<node_id>\w+)/schema_response/$', views.NodeSchemaResponseList.as_view(), name=views.NodeSchemaResponseList.view_name),
+    url(r'^(?P<node_id>\w+)/schema_responses/$', views.NodeSchemaResponseList.as_view(), name=views.NodeSchemaResponseList.view_name),
 
 ]

@@ -1,7 +1,7 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponseFactory,
+    SchemaResponsesFactory,
     NodeFactory,
     RegistrationSchemaFactory,
     AuthUserFactory
@@ -24,7 +24,7 @@ class TestSchemaResponseList:
     def payload(self, node):
         return {
             'data': {
-                'type': 'schema_response',
+                'type': 'schema_responses',
                 'attributes': {
                     'title': 'new title'
                 },
@@ -45,19 +45,19 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def schema_response(self, node, schema):
-        return SchemaResponseFactory(node=node, schema=schema)
+        return SchemaResponsesFactory(node=node, schema=schema)
 
     @pytest.fixture()
     def schema_response_public(self, node, schema):
-        return SchemaResponseFactory(public=timezone.now(), node=node, schema=schema)
+        return SchemaResponsesFactory(public=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
     def schema_response_deleted(self, node, schema):
-        return SchemaResponseFactory(deleted=timezone.now(), node=node, schema=schema)
+        return SchemaResponsesFactory(deleted=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
     def url(self, schema_response):
-        return '/v2/schema_response/'
+        return '/v2/schema_responses/'
 
     def test_schema_response_list(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)

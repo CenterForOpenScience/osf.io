@@ -253,7 +253,7 @@ class InstitutionFactory(DjangoModelFactory):
         model = models.Institution
 
 
-class SchemaResponseFactory(DjangoModelFactory):
+class SchemaResponsesFactory(DjangoModelFactory):
     class Meta:
         model = models.SchemaResponses
 

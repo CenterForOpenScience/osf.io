@@ -69,7 +69,7 @@ from api.wikis.serializers import RegistrationWikiSerializer
 from api.base.utils import get_object_or_error
 from api.actions.serializers import RegistrationActionSerializer
 from api.requests.serializers import RegistrationRequestSerializer
-from api.schema_response.serializers import SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponseListSerializer
 from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
@@ -853,7 +853,7 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
         return self.get_queryset_from_request()
 
 
-class RegistrationSchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin):
+class RegistrationSchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin):
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
@@ -864,12 +864,12 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.
     )
 
     view_category = 'registrations'
-    view_name = 'outcome-reports-list'
+    view_name = 'schema-responses-list'
 
     serializer_class = SchemaResponseListSerializer
 
     def get_default_queryset(self):
-        return self.get_node().schema_response.filter(deleted__isnull=True)
+        return self.get_node().schema_responses.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

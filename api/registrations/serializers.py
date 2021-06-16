@@ -348,7 +348,7 @@ class RegistrationSerializer(NodeSerializer):
         related_view='registrations:registration-requests-list',
         related_view_kwargs={'node_id': '<_id>'},
     ))
-    outcome_report = HideIfWithdrawal(RelationshipField(
+    schema_responses = HideIfWithdrawal(RelationshipField(
         related_view='outcome-report:outcome-report-detail',
         related_view_kwargs={'report_id': '<outcome_report._id>'},
     ))
@@ -385,8 +385,13 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
+        if obj.registration_responses.exists():
+            return obj.registration_responses.first().responses
+
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
+
+
         return None
 
     def get_embargo_end_date(self, obj):

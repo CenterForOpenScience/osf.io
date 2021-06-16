@@ -12,13 +12,13 @@ class SchemaResponses(GuidMixin, BaseModel):
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     public =  NonNaiveDateTimeField(null=True, blank=True)
     schema = models.ForeignKey(
-        "RegistrationSchema",
-        related_name="schema_responses",
+        'RegistrationSchema',
+        related_name='schema_responses',
         on_delete=models.CASCADE,
     )
     node = models.ForeignKey(
-        "AbstractNode",
-        related_name="schema_responses",
+        'AbstractNode',
+        related_name='schema_responses',
         on_delete=models.CASCADE,
     )
 
@@ -47,7 +47,7 @@ class SchemaResponses(GuidMixin, BaseModel):
     def delete(self, *args, **kwargs):
         self.deleted = timezone.now()
 
-        if kwargs.get("save"):
+        if kwargs.get('save'):
             self.save()
 
     @property
