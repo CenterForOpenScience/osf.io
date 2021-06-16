@@ -41,11 +41,11 @@ $('#tags-input-program-area').on('itemRemoved', function(event) {
     $('#id_program_area_choices').val(JSON.stringify($('#tags-input-program-area').tagsinput('items')));
 });
 
-$('#tags-input-school_type').on('itemAdded', function(event) {
+$('#tags-input-school-type').on('itemAdded', function(event) {
     $('#id_school_type_choices').val(JSON.stringify($('#tags-input-school-type').tagsinput('items')));
 });
 
-$('#tags-input-program-area').on('itemRemoved', function(event) {
+$('#tags-input-school-type').on('itemRemoved', function(event) {
     $('#id_school_type_choices').val(JSON.stringify($('#tags-input-school-type').tagsinput('items')));
 });
 
@@ -53,7 +53,7 @@ $('#tags-input-study-design').on('itemAdded', function(event) {
     $('#id_study_design_choices').val(JSON.stringify($('#tags-input-study-design').tagsinput('items')));
 });
 
-$('#tags-input-program-area').on('itemRemoved', function(event) {
+$('#tags-input-study-design').on('itemRemoved', function(event) {
     $('#id_study_design_choices').val(JSON.stringify($('#tags-input-study-design').tagsinput('items')));
 });
 
@@ -91,6 +91,6 @@ $(document).ready(function() {
 
    var studyDesignItems = JSON.parse($('#id_study_design_choices').val());
    programAreaItems.forEach(function(element){
-       $('#tags-study-design-area').tagsinput('add', element)
+       $('#tags-input-study-design').tagsinput('add', element)
    });
 });

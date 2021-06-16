@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0231_abstractprovider_default_schema'),
+        ('osf', '0232_abstractnode_ia_url'),
     ]
 
     operations = [
