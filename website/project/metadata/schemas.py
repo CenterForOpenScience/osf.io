@@ -31,8 +31,7 @@ OSF_META_SCHEMA_FILES = [
     'asist-results-registration.json',
     'real-world-evidence.json',
     'qualitative-research.json',
-    'secondary-data.json',
-    'youth-hypothesis-testing.json'
+    'secondary-data.json'
 ]
 
 METASCHEMA_ORDERING = (
