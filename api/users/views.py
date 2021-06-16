@@ -29,7 +29,6 @@ from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
-from api.outcome_report.serializers import OutcomeReportListSerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
@@ -56,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.schema_response.serializers import SchemaResponseSerializer
+from api.schema_response.serializers import SchemaResponseSerializer, SchemaResponseListSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -510,49 +509,24 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         drafts = user.draft_registrations_active
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
 
-class UserOutcomeReports(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+class UserSchemaResponses(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
 
-    serializer_class = OutcomeReportListSerializer
+    serializer_class = SchemaResponseListSerializer
     view_category = 'users'
-    view_name = 'user-outcome-reports'
+    view_name = 'user-schema-responses'
 
     ordering = ('-modified',)
 
     def get_queryset(self):
         user = self.get_user()
         registrations = Registration.objects.get_nodes_for_user(user, include_public=True)
-        outcome_ids = registrations.values_list('outcome_report___id', flat=True)
-        return OutcomeReport.objects.filter(_id__in=outcome_ids)
-
-
-class UserSchemaResponse(JSONAPIBaseView, generics.ListAPIView, UserMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticated,
-        base_permissions.TokenHasScope,
-        CurrentUser,
-    )
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = SchemaResponseSerializer
-    view_category = 'users'
-    view_name = 'schema_response'
-
-    ordering = ('-modified',)
-
-    def get_queryset(self):
-        user = self.get_user()
-        schema_response_ids = AbstractNode.objects.get_nodes_for_user(
-            user,
-            include_public=True
-        ).values_list('schema_response__id', flat=True)
-        return SchemaResponses.objects.filter(id__in=schema_response_ids)
+        outcome_ids = registrations.values_list('schema_responses___id', flat=True)
+        return SchemaResponses.objects.filter(_id__in=outcome_ids)
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):

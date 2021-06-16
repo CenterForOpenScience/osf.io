@@ -71,7 +71,7 @@ urlpatterns = [
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
                 url(r'^_waffle/', include(('api.waffle.urls', 'waffle'), namespace='waffle')),
-                url(r'^outcome_reports/', include('api.outcome_report.urls', namespace='outcome-report'))
+                url(r'^schema_response/', include('api.outcome_report.urls', namespace='outcome-report'))
             ],
         ),
     ),

@@ -6,9 +6,9 @@ from api.base.serializers import (
 
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
-from osf.models import OutcomeReport
+from osf.models import SchemaResponses
 
-class OutcomeReportSerializer(JSONAPISerializer):
+class SchemaResponsesSerializer(JSONAPISerializer):
     id = ser.CharField(source="_id", read_only=True)
 
     title = ser.CharField(required=False, allow_blank=True)
@@ -32,26 +32,26 @@ class OutcomeReportSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = "outcome-report"
+        type_ = "schema-responses"
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            "outcome-report:outcome-report-detail",
+            "schema-responses:schema-responses-detail",
             kwargs={
                 "version": self.context["request"].parser_context["kwargs"]["version"],
-                "report_id": obj._id,
+                "schema_responses_id": obj._id,
             },
         )
 
 
-class OutcomeReportListSerializer(OutcomeReportSerializer):
+class SchemaResponsesListSerializer(SchemaResponsesSerializer):
     def create(self, validated_data):
-        outcome_report = OutcomeReport(
+        outcome_report = SchemaResponses(
             **validated_data
         )
         outcome_report.save()
 
-class OutcomeReportDetailSerializer(OutcomeReportSerializer):
+class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
     def update(self, report, validated_data):
         outcome_data = validated_data.get('outcome_data')
 

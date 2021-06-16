@@ -27,11 +27,11 @@ class OutcomeReport(EmailApprovableSanction):
     description = models.TextField(blank=True, default="", null=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     creator = models.ForeignKey(
-        "OSFUser", related_name="outcome_reports", null=True, on_delete=models.CASCADE
+        "OSFUser", related_name="schema_response", null=True, on_delete=models.CASCADE
     )
     schema = models.ForeignKey(
         "RegistrationSchema",
-        related_name="outcome_reports",
+        related_name="schema_response",
         on_delete=models.CASCADE,
     )
     registration = models.OneToOneField(

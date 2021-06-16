@@ -16,6 +16,6 @@ urlpatterns = [
     url(
         r"^(?P<report_id>\w+)/versions/$",
         views.SchemaResponsesVersions.as_view(),
-        name=views.SchemaResponseVersions.view_name,
+        name=views.SchemaResponsesVersions.view_name,
     ),
 ]

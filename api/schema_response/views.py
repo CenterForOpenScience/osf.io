@@ -10,7 +10,7 @@ from osf.models.schema_responses import SchemaResponses
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
 
-class SchemaResponseList(JSONAPIBaseView, generics.ListCreateAPIView):
+class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -20,8 +20,8 @@ class SchemaResponseList(JSONAPIBaseView, generics.ListCreateAPIView):
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     serializer_class = SchemaResponseListSerializer
-    view_category = "outcome-reports"
-    view_name = "outcome-reports-list"
+    view_category = "schema-responses"
+    view_name = "schema-responses-list"
 
     def get_queryset(self):
         return SchemaResponses.objects.filter(
@@ -30,7 +30,7 @@ class SchemaResponseList(JSONAPIBaseView, generics.ListCreateAPIView):
         )
 
 
-class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -38,14 +38,14 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     )
 
     serializer_class = SchemaResponseDetailSerializer
-    view_category = "outcome-reports"
-    view_name = "outcome-reports-detail"
+    view_category = "schema-responses"
+    view_name = "schema-responses-detail"
 
     def get_object(self):
         return SchemaResponses.objects.get(guids___id=self.kwargs["report_id"])
 
 
-class SchemaResponseVersions(JSONAPIBaseView, generics.ListAPIView):
+class SchemaResponsesVersions(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -53,8 +53,8 @@ class SchemaResponseVersions(JSONAPIBaseView, generics.ListAPIView):
     )
 
     serializer_class = SchemaResponseDetailSerializer
-    view_category = "schema_response"
-    view_name = "outcome-reports-versions"
+    view_category = "schema-responses"
+    view_name = "schema-responses-versions"
 
     ordering = ('-public',)
 
