@@ -70,11 +70,6 @@ logger = logging.getLogger(__name__)
 class Registration(AbstractNode):
 
     def __init__(self, *args, **kwargs):
-        from osf.utils.datetime_aware_jsonfield import decode_datetime_objects
-
-        if self.schema_responses.all():
-            field = self._meta.get_field('registration_responses')
-            field.value = self.schema_responses.all()._responses
 
         super().__init__(*args, **kwargs)
 
