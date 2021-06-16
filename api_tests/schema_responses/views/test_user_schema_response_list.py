@@ -2,7 +2,7 @@ import pytest
 
 from osf_tests.factories import (
     SchemaResponsesFactory,
-    NodeFactory,
+    RegistrationFactory,
     RegistrationSchemaFactory,
     AuthUserFactory
 )
@@ -20,6 +20,7 @@ class TestUserSchemaResponseList:
     def user(self):
         return AuthUserFactory()
 
+
     @pytest.fixture()
     def user_write(self):
         return AuthUserFactory()
@@ -29,8 +30,31 @@ class TestUserSchemaResponseList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def node(self):
-        return NodeFactory()
+    def node(self, schema):
+        registration = RegistrationFactory()
+        registration.registered_schema.add(schema)
+        registration.save()
+        return registration
+
+
+    @pytest.fixture()
+    def payload(self, node):
+        return {
+            'data': {
+                'type': 'schema_responses',
+                'attributes': {
+                    'title': 'new title'
+                },
+                'relationships': {
+                    'node': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': node._id
+                        }
+                    }
+                }
+            }
+        }
 
     @pytest.fixture()
     def schema(self):
@@ -52,10 +76,18 @@ class TestUserSchemaResponseList:
         return SchemaResponsesFactory(deleted=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
-    def url(self, schema_response):
-        return f'/v2/schema_responses/'
+    def url(self, user, schema_response):
+        return f'/v2/users/{user._id}/schema_responses/'
 
     def test_schema_response_list(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
+        resp = app.get(url, auth=user.auth)
+        assert resp.status_code == 200
+        data = resp.json['data']
+
+        assert len(data) == 1
+        assert schema_response_public._id == data[0]['id']
+
+    def test_user_schema_response_list_create(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']

@@ -525,8 +525,11 @@ class UserSchemaResponses(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     def get_queryset(self):
         user = self.get_user()
         registrations = Registration.objects.get_nodes_for_user(user, include_public=True)
-        outcome_ids = registrations.values_list('schema_responses___id', flat=True)
-        return SchemaResponses.objects.filter(_id__in=outcome_ids)
+        schema_response_ids = registrations.values_list('schema_responses__guids___id', flat=True)
+        return SchemaResponses.objects.filter(
+            guids___id__in=schema_response_ids,
+            deleted__isnull=True,
+        )
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
