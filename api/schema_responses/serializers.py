@@ -35,16 +35,16 @@ class SchemaResponseSerializer(JSONAPISerializer):
     )
 
     versions = RelationshipField(
-        related_view="schema_response:schema-responses-versions",
+        related_view="schema_responses:schema-responses-versions",
         related_view_kwargs={"report_id": "<_id>"},
     )
 
     class Meta:
-        type_ = "schema_response"
+        type_ = "schema_responses"
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            "schema_response:schema-responses-detail",
+            "schema_responses:schema-responses-detail",
             kwargs={
                 "version": self.context["request"].parser_context["kwargs"]["version"],
                 "report_id": obj._id,

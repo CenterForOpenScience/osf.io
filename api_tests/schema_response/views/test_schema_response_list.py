@@ -24,7 +24,7 @@ class TestSchemaResponseList:
     def payload(self, node):
         return {
             'data': {
-                'type': 'schema_response',
+                'type': 'schema_responses',
                 'attributes': {
                     'title': 'new title'
                 },
@@ -57,7 +57,7 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def url(self, schema_response):
-        return '/v2/schema_response/'
+        return '/v2/schema_responses/'
 
     def test_schema_response_list(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)

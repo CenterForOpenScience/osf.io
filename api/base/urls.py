@@ -54,7 +54,6 @@ urlpatterns = [
                 url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                 url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
                 url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
-                url(r'^schema_response/', include('api.schema_response.urls', namespace='schema_response')),
                 url(r'^regions/', include('api.regions.urls', namespace='regions')),
                 url(r'^providers/', include('api.providers.urls', namespace='providers')),
                 url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
@@ -71,7 +70,7 @@ urlpatterns = [
                 url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
                 url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
                 url(r'^_waffle/', include(('api.waffle.urls', 'waffle'), namespace='waffle')),
-                url(r'^schema_response/', include('api.outcome_report.urls', namespace='outcome-report'))
+                url(r'^schema_responses/', include('api.schema_responses.urls', namespace='schema-responses'))
             ],
         ),
     ),

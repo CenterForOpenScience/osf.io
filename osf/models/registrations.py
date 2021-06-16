@@ -69,10 +69,6 @@ logger = logging.getLogger(__name__)
 
 class Registration(AbstractNode):
 
-    def __init__(self, *args, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
     WRITABLE_WHITELIST = [
         'article_doi',
         'description',

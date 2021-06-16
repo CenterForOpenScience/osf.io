@@ -38,7 +38,7 @@ class TestSchemaResponseDetail:
 
     @pytest.fixture()
     def url(self, schema_response):
-        return f'/v2/schema_response/{schema_response._id}/'
+        return f'/v2/schema_responses/{schema_response._id}/'
 
     def test_schema_response_detail(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)
@@ -90,5 +90,5 @@ class TestSchemaResponseDetail:
                     }
                 }
             },
-            'type': 'schema_response'
+            'type': 'schema_responses'
         }

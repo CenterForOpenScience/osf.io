@@ -115,7 +115,7 @@ from api.nodes.serializers import (
     NodeGroupsCreateSerializer,
     NodeGroupsDetailSerializer,
 )
-from api.schema_response.serializers import SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponseListSerializer
 
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin

@@ -163,7 +163,7 @@
         <div class="container">
             <div class="row">
                 <div class='col-sm-2 hidden-xs'>
-                    <img class="logo" src="/static/img/circle_logo.png" alt="logo image">
+                    <img class="logo" src="/static/img/circle_logo.png">
                 </div>
                 <div class='col-sm-10 col-xs-12'>
                     <a data-bind="click: dismiss" class="close" href="#">&times;</a>

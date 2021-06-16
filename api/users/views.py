@@ -55,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.schema_response.serializers import SchemaResponseSerializer, SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponseSerializer, SchemaResponseListSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
