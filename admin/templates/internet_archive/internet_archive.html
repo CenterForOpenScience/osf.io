@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1> Internet Archive/Pigeon </h1>
+    <section class="content">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row padded">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <form method="post" action="{%url 'internet_archive:pigeon'%}" style="display: inline;">
+                        {% csrf_token %}
+                        <button
+                                class="btn btn-default"
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="Use this command to restart the nightly pigeon archive task."
+                                type="submit">
+                            Archive Batch
+                        </button>
+                    </form>
+                    <form method="post" action="{%url 'internet_archive:create_ia_subcollections'%}" style="display: inline;">
+                        {% csrf_token %}
+                        <button
+                                class="btn btn-default"
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="Use this command create/update subcollections for each registration ."
+                                type="submit">
+                            Create/Update Provider SubCollections
+                        </button>
+                    </form>
+                    <form method="post" action="{%url 'internet_archive:check_ia_metadata'%}" style="display: inline;">
+                        {% csrf_token %}
+                        <button
+                                class="btn btn-default"
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="Use this command to check if metadata is synced."
+                                type="submit">
+                            Check Metadata Sync
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="row ">
+            <div class="col-md-6">
+                <h4><u>What is this?</u></h4>
+                This is the page for interacting with Internet Archive through our archiving service OSF Pigeon!
+                <h4><u>Workflow Info</u></h4>
+                Workflow for IA:
+                When setting up our environment for IA we must follow a few simple steps.
+                <ol>
+                    <li>
+                        <h4>Make <b>Provider</b> collections/subcollections</h4>
+                        For our system we sync one registration to one IA item, every item exists in a collection that
+                        represents it's provider so a OSF registration will be in a collection titled `OSF Registries`
+                        with an url of https://archive.org/details/osf-registration-providers-osf-{{ia_id_version}} .
+                        All these provider based collections are themselves subcollections of our "root collection" ({{ ia_collection }})
+                        The <i>root collection</i> exists to separate our staging, local and production environments. <b>In order
+                        to create/update the provider collection click Create/Update Provider SubCollections</b>
+                        The root collections must be created by a archive.org admin.
+                    </li>
+                    <li>
+                        <h4>Archive backlogged registrations</h4>
+                        Once we've created our collections it's time to start filling them with registrations. Due
+                        to the large number of registrations we are planning to gradually pull registrations from a
+                        backlog of unarchived registration. There's a task that runs every night and archives a batch
+                        of registrations. <b>However if a registration is skipped or broken, the archive job can be restarted
+                        by clicking the Trigger IA Archive button with it's guid.
+                        <a href="{%url 'nodes:ia-backlog-list'%}">backlogged registrations here</a></b>
+                    </li>
+                    <li>
+                        <h4>Monitor syncing</h4>
+                        Once an registration is archived the editable metadata should be synced automatically, but
+                        with so many registrations there's still a possibility a registration will become
+                        desyncronized due to a connection outage or glitch, so <b>there's tools to sync metadata or
+                        check it for accuracy</b>
+                    </li>
+                </ol>
+                <h4><u>General Info</u></h4>
+                <ul>
+                    <li>
+                        IA_ROOT_COLLECTION:
+                        <a href="https://archive.org/details/{{ ia_collection }}">{{ ia_collection }}</a>
+                    </li>
+                    <li>
+                        ID_VERSION:
+                        <b
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="This is a suffix attached to the end of every IA item created by this server."
+                        >{{ ia_id_version }}</b>
+                    </li>
+                    <li>
+                        OSF_PIGEON_URL:
+                        <b
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="The url of the pigeon environment this server is pointing to."
+                        >{{ osf_pigeon_url }}</b>
+                    </li>
+                    <li>
+                        Pigeon Logs:
+                        <a
+                                data-toggle="tooltip"
+                                data-placement="bottom"
+                                title="The url to download the most recent Pigeon logs, this may not be able if you are
+                                on a production server."
+                                href="{{ osf_pigeon_url }}logs"
+                        >Logs</a>
+                    </li>
+                    <li>
+                        <a href="https://archive.org/advancedsearch.php?q=collection%3A({{ ia_collection }})">
+                            Use this Search page to find synced data in our collection
+                        </a>
+                    </li>
+                </ul>
+                </b>
+                <br>
+                <br>
+            </div>
+        </div>
+        <div class="row padded">
+            <div class="col-lg-12">
+                <h4><u>Trigger IA Archive</u></h4>
+                Use this command to archive a specific guid or guids using a comma separated list.
+                <br>
+                <form method="post" action="{%url 'internet_archive:pigeon'%}">
+                    {% csrf_token %}
+                    <div class="input-group col-xs-2">
+                        <span class="input-group-btn">
+                            <input type="text" name="guid_to_archive" class="form-control" style="position: inline;">
+                            <button class="btn btn-success" type="submit">Enter Guid(s)</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row padded">
+            <div class="col-md-12">
+                <h4><u>Check Metadata for Accuracy</u></h4>
+                Use this command to check metadata for specific guid or guids using a comma separated list.
+                <br>
+                <form method="post" action="{%url 'internet_archive:check_ia_metadata'%}">
+                    {% csrf_token %}
+                    <div class="input-group col-xs-2">
+                        <span class="input-group-btn">
+                            <input type="text" name="guid_to_archive" class="form-control" style="position: inline;">
+                            <button class="btn btn-success" type="submit">Enter Guid(s)</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row padded">
+            <div class="col-md-12">
+                <h4><u>Sync Metadata</u></h4>
+                Use this command to sync metadata for specific guid or guids using a comma separated list.
+                <br>
+                <form method="post" action="{%url 'internet_archive:sync_ia_metadata'%}">
+                    {% csrf_token %}
+                    <div class="input-group col-xs-2">
+                        <span class="input-group-btn">
+                            <input type="text" name="guid_to_archive" class="form-control" style="position: inline;">
+                            <button class="btn btn-success" type="submit">Enter Guid(s)</button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+{% endblock %}

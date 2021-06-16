@@ -227,8 +227,8 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
             raise ValidationError('This is not a registration.')
         return registration
 
-    def get_renderer_context(self):
-        context = super(RegistrationDetail, self).get_renderer_context()
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
         show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             registration = self.get_object()
