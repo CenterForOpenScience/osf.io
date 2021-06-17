@@ -68,6 +68,7 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
+    ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)

@@ -42,7 +42,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         return absolute_reverse(
             'schema_responses:schema-responses-detail',
             kwargs={
-                'version': self.context['request'].parser_context['kwargs']['version"],
+                'version': self.context['request'].parser_context['kwargs']['version'],
                 'responses_id': obj._id,
             },
         )
