@@ -478,7 +478,7 @@ class CeleryConfig:
     imports = (
         'framework.celery_tasks',
         'framework.email.tasks',
-        'osf.external.tasks',
+        'osf.external.chronos.tasks',
         'osf.management.commands.data_storage_usage',
         'osf.management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
