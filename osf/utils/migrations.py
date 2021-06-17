@@ -396,39 +396,24 @@ def create_schema_blocks_for_atomic_schema(schema):
     """
 
     from osf.models import RegistrationSchemaBlock
-    schema_block_group_key = ''
+    schema_block_group_key = generate_object_id()
     for index, block in enumerate(schema.schema['blocks']):
         block_type = block['block_type']
-        registration_response_key = None
 
-        if block_type == (
-                'page-heading'
-                'section-heading',
-                'subsection-heading',
-                'paragraph'
-                'question-label'
-        ):
-            schema_block_group_key = None
-        elif block_type == 'question-label':
+        if block_type == 'question-label':
             schema_block_group_key = generate_object_id()
 
-        if block_type in (
-                'single-select-input',
-                'multi-select-input',
-                'long-text-input',
-                'short-text-input',
-                'file-input'
-        ):
+        if block_type in [input[0] for input in RegistrationSchemaBlock.INPUT_BLOCK_TYPES]:
             registration_response_key = f'{schema.id}-{index}'
+        else:
+            registration_response_key = None
 
-        schemablock = RegistrationSchemaBlock.objects.create(
+        RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,
             schema_block_group_key=schema_block_group_key,
+            registration_response_key=registration_response_key,
             **block
         )
-        schemablock.registration_response_key = registration_response_key
-
-        schemablock.save()
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks

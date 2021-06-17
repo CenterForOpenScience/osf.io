@@ -14,21 +14,6 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 from osf.features import EGAP_ADMINS
 
 
-SCHEMABLOCK_TYPES = [
-    ('page-heading', 'page-heading'),
-    ('section-heading', 'section-heading'),
-    ('subsection-heading', 'subsection-heading'),
-    ('paragraph', 'paragraph'),
-    ('question-label', 'question-label'),
-    ('short-text-input', 'short-text-input'),
-    ('long-text-input', 'long-text-input'),
-    ('file-input', 'file-input'),
-    ('contributors-input', 'contributors-input'),
-    ('single-select-input', 'single-select-input'),
-    ('multi-select-input', 'multi-select-input'),
-    ('select-input-option', 'select-input-option'),
-    ('select-other-option', 'select-other-option'),
-]
 
 
 def allow_egap_admins(queryset, request):
@@ -194,15 +179,35 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         order_with_respect_to = 'schema'
         unique_together = ('schema', 'registration_response_key')
 
+    INPUT_BLOCK_TYPES = frozenset([
+        ('short-text-input', 'short-text-input'),
+        ('long-text-input', 'long-text-input'),
+        ('file-input', 'file-input'),
+        ('contributors-input', 'contributors-input'),
+        ('single-select-input', 'single-select-input'),
+        ('multi-select-input', 'multi-select-input'),
+        ('select-input-option', 'select-input-option'),
+        ('select-other-option', 'select-other-option'),
+    ])
+    UNGROUPED_BLOCK_TYPES = frozenset([
+        ('page-heading', 'page-heading'),
+        ('section-heading', 'section-heading'),
+        ('subsection-heading', 'subsection-heading'),
+        ('paragraph', 'paragraph'),
+        ('question-label', 'question-label'),
+    ])
+
+    BLOCK_TYPES = UNGROUPED_BLOCK_TYPES.union(INPUT_BLOCK_TYPES)
+
     schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
-    help_text = models.TextField(null=True, blank=True)
-    example_text = models.TextField(null=True, blank=True)
+    help_text = models.TextField()
+    example_text = models.TextField(null=True)
     # Corresponds to a key in DraftRegistration.registration_responses dictionary
     registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
-    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True, blank=True)
-    block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
-    display_text = models.TextField(null=True, blank=True)
+    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
+    block_type = models.CharField(max_length=31, db_index=True, choices=BLOCK_TYPES)
+    display_text = models.TextField()
     required = models.BooleanField(default=False)
 
     @property
@@ -217,4 +222,4 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         empty "registration_response_key"s as null, instead of an empty string.
         """
         self.registration_response_key = self.registration_response_key or None
-        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)

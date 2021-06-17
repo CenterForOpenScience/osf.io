@@ -40,9 +40,15 @@
 		"example_text": "",
 		"required": false
 	}, {
+		"help_text": "",
+		"block_type": "section-heading",
+		"display_text": "Data collection",
+		"example_text": "",
+		"required": true
+	}, {
 		"help_text": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A \u2260 B). If directional, state the direction. You may also provide a rationale for each hypothesis.",
 		"block_type": "question-label",
-		"display_text": "Data collection",
+		"display_text": "",
 		"example_text": "We expect that religiosity is associated with prosocial behavior in our sample as well. To assessthis prediction, we will use the following hypotheses:H0(1) = In men and women who graduated from Wisconsin high schools in 1957, there is no association between religiosity and prosociality H1(1) = In men and women who graduated from Wisconsin high schools in 1957, there is an association between religiosity and prosociality.It is possible that these mechanisms are stronger for some religions than for others.  and prosocial behavior differs for the different religions in our sample. To answer this question, we will test the following hypotheses: H0(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 does not differ for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants) H1(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 differs for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants).",
 		"required": true
 	}, {
@@ -65,7 +71,6 @@
 		"required": false
 	}, {
 		"help_text": "",
-		"registration_response_key": null,
 		"block_type": "question-label",
 		"display_text": "Approved data request file",
 		"example_text": "Upload the data request form output pdf file here",
@@ -78,7 +83,7 @@
 		"required": false
 	}, {
 		"help_text": "",
-		"block_type": "question-label",
+		"block_type": "section-heading",
 		"display_text": "Data availability and access",
 		"example_text": "",
 		"required": false

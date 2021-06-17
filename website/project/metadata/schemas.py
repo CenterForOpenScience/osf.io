@@ -56,8 +56,6 @@ METASCHEMA_ORDERING = (
     'Qualitative Preregistration',
     'ASIST Results Registration',
     'ASIST Hypothesis/Capability Registration',
-    'Hypothesis-testing studies using YOUth data',
-    'Other studies using YOUth data',
 )
 
 
