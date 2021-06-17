@@ -383,7 +383,6 @@ def create_provider_notification_subscriptions(sender, instance, created, **kwar
 
 
 @receiver(post_save, sender=CollectionProvider)
-@receiver(post_save, sender=RegistrationProvider)
 def create_primary_collection_for_provider(sender, instance, created, **kwargs):
     if created:
         Collection = apps.get_model('osf.Collection')
