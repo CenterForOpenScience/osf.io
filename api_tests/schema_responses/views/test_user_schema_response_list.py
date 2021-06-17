@@ -7,6 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from django.utils import timezone
+from osf.models.schema_responses import SchemaResponses
 
 
 @pytest.mark.django_db
@@ -31,10 +32,7 @@ class TestUserSchemaResponseList:
 
     @pytest.fixture()
     def node(self, schema):
-        registration = RegistrationFactory()
-        registration.registered_schema.add(schema)
-        registration.save()
-        return registration
+        return RegistrationFactory()
 
 
     @pytest.fixture()
@@ -76,7 +74,7 @@ class TestUserSchemaResponseList:
         return SchemaResponsesFactory(deleted=timezone.now(), node=node, schema=schema)
 
     @pytest.fixture()
-    def url(self, user, schema_response):
+    def url(self, user):
         return f'/v2/users/{user._id}/schema_responses/'
 
     def test_schema_response_list(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
@@ -84,13 +82,16 @@ class TestUserSchemaResponseList:
         assert resp.status_code == 200
         data = resp.json['data']
 
-        assert len(data) == 1
+        assert len(data) == 2
         assert schema_response_public._id == data[0]['id']
+        assert schema_response._id == data[1]['id']
 
-    def test_user_schema_response_list_create(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
-        resp = app.get(url, auth=user.auth)
-        assert resp.status_code == 200
+    def test_user_schema_response_list_create(self, app, payload, user, url):
+        resp = app.post_json_api(url, payload,  auth=user.auth)
+        assert resp.status_code == 201
         data = resp.json['data']
 
-        assert len(data) == 1
-        assert schema_response_public._id == data[0]['id']
+        assert SchemaResponses.objects.count() == 1
+        schema_response = SchemaResponses.objects.last()
+
+        assert data['id'] == schema_response._id

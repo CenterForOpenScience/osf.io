@@ -509,12 +509,15 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         drafts = user.draft_registrations_active
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
 
-class UserSchemaResponses(JSONAPIBaseView, generics.ListAPIView, UserMixin):
+class UserSchemaResponses(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         CurrentUser,
     )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
 
     serializer_class = SchemaResponsesListSerializer
     view_category = 'users'
