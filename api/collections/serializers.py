@@ -258,6 +258,11 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.issue = validated_data.pop('issue')
         if 'program_area' in validated_data:
             obj.program_area = validated_data.pop('program_area')
+        if 'school_type' in validated_data:
+            obj.school_Type = validated_data.pop('school_type')
+        if 'study_design' in validated_data:
+            obj.study_design = validated_data.pop('study_design')
+
         obj.save()
         return obj
 
