@@ -38,6 +38,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     volume = models.CharField(blank=True, max_length=127)
     issue = models.CharField(blank=True, max_length=127)
     program_area = models.CharField(blank=True, max_length=127)
+    school_type = models.CharField(blank=True, max_length=127)
+    study_design = models.CharField(blank=True, max_length=127)
 
     @cached_property
     def _id(self):
@@ -117,6 +119,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     volume_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     issue_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     program_area_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    school_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    study_design_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     is_public = models.BooleanField(default=False, db_index=True)
     is_promoted = models.BooleanField(default=False, db_index=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)

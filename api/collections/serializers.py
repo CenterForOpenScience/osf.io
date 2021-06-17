@@ -67,6 +67,14 @@ class CollectionSerializer(JSONAPISerializer):
         child=ser.CharField(max_length=127),
         default=list(),
     )
+    school_type_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
+    study_design_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
 
     links = LinksField({})
 
@@ -221,6 +229,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     volume = ser.CharField(required=False)
     issue = ser.CharField(required=False)
     program_area = ser.CharField(required=False)
+    school_type = ser.CharField(required=False)
+    study_design = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
