@@ -55,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.schema_responses.serializers import SchemaResponsesSerializer, SchemaResponsesListSerializer
+from api.schema_responses.serializers import SchemaResponsesListSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -85,7 +85,7 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
-    SchemaResponses
+    SchemaResponses,
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email

@@ -21,8 +21,8 @@ class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     serializer_class = SchemaResponsesListSerializer
-    view_category = "schema_responses"
-    view_name = "schema-responses-list"
+    view_category = 'schema_responses'
+    view_name = 'schema-responses-list'
 
     def get_queryset(self):
         return SchemaResponses.objects.filter(
@@ -39,9 +39,9 @@ class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     )
 
     serializer_class = SchemaResponsesDetailSerializer
-    view_category = "schema_responses"
-    view_name = "schema-responses-detail"
+    view_category = 'schema_responses'
+    view_name = 'schema-responses-detail'
 
     def get_object(self):
-        return SchemaResponses.objects.get(guids___id=self.kwargs["responses_id"])
+        return SchemaResponses.objects.get(guids___id=self.kwargs['responses_id'])
 

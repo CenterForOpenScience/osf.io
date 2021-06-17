@@ -11,39 +11,39 @@ from osf.models import Registration
 
 
 class SchemaResponsesSerializer(JSONAPISerializer):
-    id = ser.CharField(required=False, source="_id", read_only=True)
+    id = ser.CharField(required=False, source='_id', read_only=True)
     title = ser.CharField(required=False, allow_blank=True)
-    responses = ser.JSONField(required=False, source='_responses',)
+    responses = ser.JSONField(required=False, source='_responses')
     deleted = ser.BooleanField(required=False)
     public = ser.BooleanField(required=False)
 
     links = LinksField(
         {
-            "self": "get_absolute_url",
+            'self': 'get_absolute_url',
         }
     )
 
     node = RelationshipField(
-        related_view="nodes:node-detail",
-        related_view_kwargs={"node_id": "<node._id>"},
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': '<node._id>'},
         read_only=True,
     )
 
     schema = RelationshipField(
-        related_view="schemas:registration-schema-detail",
-        related_view_kwargs={"schema_id": "<schema._id>"},
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
         read_only=True,
     )
 
     class Meta:
-        type_ = "schema_responses"
+        type_ = 'schema_responses'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            "schema_responses:schema-responses-detail",
+            'schema_responses:schema-responses-detail',
             kwargs={
-                "version": self.context["request"].parser_context["kwargs"]["version"],
-                "responses_id": obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version"],
+                'responses_id': obj._id,
             },
         )
 
@@ -67,8 +67,8 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
 class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
     versions = RelationshipField(
-        related_view="registrations:schema-responses-list",
-        related_view_kwargs={"node_id": "<node._id>"},
+        related_view='registrations:schema-responses-list',
+        related_view_kwargs={'node_id': '<node._id>'},
     )
 
     def update(self, report, validated_data):
