@@ -374,17 +374,18 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                 schema_block_group_key=schema_block_group_key,
             )
 
-        # Creates question input block - this block will correspond to an answer
-        # Map the original schema section format to the new block_type, and create a schema block
-        block_type = FORMAT_TYPE_TO_TYPE_MAP[(question.get('format'), question.get('type'))]
-        create_schema_block(
-            state,
-            rs.id,
-            block_type,
-            required=question.get('required', False),
-            schema_block_group_key=schema_block_group_key,
-            registration_response_key=get_registration_response_key(question)
-        )
+        if question.get('format') or question.get('type'):
+            # Creates question input block - this block will correspond to an answer
+            # Map the original schema section format to the new block_type, and create a schema block
+            block_type = FORMAT_TYPE_TO_TYPE_MAP[(question.get('format'), question.get('type'))]
+            create_schema_block(
+                state,
+                rs.id,
+                block_type,
+                required=question.get('required', False),
+                schema_block_group_key=schema_block_group_key,
+                registration_response_key=get_registration_response_key(question)
+            )
 
         # If there are multiple choice answers, create blocks for these as well.
         split_options_into_blocks(state, rs, question, schema_block_group_key)

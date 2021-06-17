@@ -870,9 +870,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
-
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
@@ -943,9 +940,6 @@ class DraftRegistrationApproval(Sanction):
         else:
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
         sanction(notify_initiator_on_complete=True)
-
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
 
     def _on_reject(self, user, *args, **kwargs):
         DraftRegistration = apps.get_model('osf.DraftRegistration')

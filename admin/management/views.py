@@ -10,9 +10,10 @@ from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
 from osf.models import Preprint, Node, Registration
 
+
 class ManagementCommands(TemplateView):
-    """ Basic form to trigger various management commands
-    """
+    '''Basic form to trigger various management commands'''
+
     template_name = 'management/commands.html'
     object_type = 'management'
 
