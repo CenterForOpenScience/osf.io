@@ -151,17 +151,17 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         except SearchUnavailableError as e:
             logger.exception(e)
 
-        saved_fields = self.get_dirty_fields()
-        if saved_fields and bool(self.pk):
-            for node in self.nodes.filter(is_deleted=False):
-                try:
-                    update_node(node, async_update=False)
-                except SearchUnavailableError as e:
-                    logger.exception(e)
+        for node in self.nodes.filter(is_deleted=False):
+            try:
+                update_node(node, async_update=False)
+            except SearchUnavailableError as e:
+                logger.exception(e)
 
     def save(self, *args, **kwargs):
-        self.update_search()
-        return super(Institution, self).save(*args, **kwargs)
+        saved_fields = self.get_dirty_fields()
+        super(Institution, self).save(*args, **kwargs)
+        if saved_fields:
+            self.update_search()
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):
