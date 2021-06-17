@@ -29,7 +29,7 @@ class SchemaResponses(GuidMixin, BaseModel):
     @responses.setter
     def responses(self, data):
         self.schema.validate_metadata(data)
-        self.responses = data
+        self._responses = data
 
     @property
     def is_public(self):

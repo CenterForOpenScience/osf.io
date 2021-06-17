@@ -8,12 +8,13 @@ from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
 from osf.models.schema_responses import SchemaResponses
 from osf.models import Registration
+from rest_framework import exceptions
 
 
 class SchemaResponsesSerializer(JSONAPISerializer):
     id = ser.CharField(required=False, source='_id', read_only=True)
     title = ser.CharField(required=False, allow_blank=True)
-    responses = ser.JSONField(required=False, source='_responses')
+    responses = ser.JSONField(required=False)
     deleted = ser.BooleanField(required=False)
     public = ser.BooleanField(required=False)
 
@@ -77,8 +78,10 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
         try:
             report.responses = responses
-        except Exception:
-            raise Exception('validation errors')
+        except Exception as e:
+            raise exceptions.ValidationError(e.message)
 
         report.title = title
         report.save()
+
+        return report

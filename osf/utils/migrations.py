@@ -390,6 +390,20 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
 
+def map_schema_to_schemablocks(rs, state=None):
+    for page in rs.schema['pages']:
+        # Create page heading block
+        create_schema_block(
+            state,
+            rs.id,
+            'page-heading',
+            display_text=strip_html(page.get('title', '')),
+            help_text=strip_html(page.get('description', ''))
+        )
+        for question in page['questions']:
+            create_schema_blocks_for_question(state, rs, question)
+
+
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
 
@@ -407,17 +421,7 @@ def map_schemas_to_schemablocks(*args):
 
     for rs in schema_model.objects.all():
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
-        for page in rs.schema['pages']:
-            # Create page heading block
-            create_schema_block(
-                state,
-                rs.id,
-                'page-heading',
-                display_text=strip_html(page.get('title', '')),
-                help_text=strip_html(page.get('description', ''))
-            )
-            for question in page['questions']:
-                create_schema_blocks_for_question(state, rs, question)
+        map_schema_to_schemablocks(rs)
 
 
 def unmap_schemablocks(*args):

@@ -521,7 +521,7 @@ class UserSchemaResponses(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin
 
     serializer_class = SchemaResponsesListSerializer
     view_category = 'users'
-    view_name = 'user-schema-responses'
+    view_name = 'schema-responses'
 
     ordering = ('-modified',)
 

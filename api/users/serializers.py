@@ -134,7 +134,7 @@ class UserSerializer(JSONAPISerializer):
     ))
 
     schema_response = RelationshipField(
-        related_view='users:outcome-reports',
+        related_view='users:schema-responses',
         related_view_kwargs={'user_id': '<_id>'},
     )
 
