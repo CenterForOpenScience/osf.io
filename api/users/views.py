@@ -55,7 +55,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
 )
-from api.schema_responses.serializers import SchemaResponsesListSerializer
+from api.schema_responses.serializers import SchemaResponsesListSerializer, SchemaResponsesDetailSerializer
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -509,7 +509,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
         drafts = user.draft_registrations_active
         return get_objects_for_user(user, 'read_draft_registration', drafts, with_superuser=False)
 
-class UserSchemaResponses(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin):
+class UserSchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -521,7 +521,7 @@ class UserSchemaResponses(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin
 
     serializer_class = SchemaResponsesListSerializer
     view_category = 'users'
-    view_name = 'schema-responses'
+    view_name = 'schema-responses-list'
 
     ordering = ('-modified',)
 
@@ -533,6 +533,24 @@ class UserSchemaResponses(JSONAPIBaseView, generics.ListCreateAPIView, UserMixin
             guids___id__in=schema_response_ids,
             deleted__isnull=True,
         )
+
+class UserSchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CurrentUser,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+
+    serializer_class = SchemaResponsesDetailSerializer
+    view_category = 'users'
+    view_name = 'schema-responses-detail'
+
+    def get_object(self):
+        return SchemaResponses.objects.get(guids___id=self.kwargs['responses_id'])
+
 
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
