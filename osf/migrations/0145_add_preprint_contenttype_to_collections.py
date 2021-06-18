@@ -3,17 +3,18 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from osf.models import Collection
 from django.contrib.contenttypes.models import ContentType
 
 
 def reverse_func(state, schema):
+    Collection = state.get_model('osf.collection')
     preprint_content_type = ContentType.objects.get(app_label='osf', model='preprint')
     ThroughModel = Collection.collected_types.through
     ThroughModel.objects.filter(contenttype_id=preprint_content_type.id).delete()
 
 
 def add_preprint_type_to_collections(state, schema):
+    Collection = state.get_model('osf.collection')
     ThroughModel = Collection.collected_types.through
     preprint_ct_id = ContentType.objects.get(app_label='osf', model='preprint').id
 

@@ -28,7 +28,7 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
-        if settings.SHARE_ENABLED:
+        if settings.SHARE_ENABLED and node.type != 'osf.draftregistration':
             update_share(node)
         update_collecting_metadata(node, saved_fields)
 

@@ -294,6 +294,22 @@ class StuckRegistrationListView(RegistrationListView):
         return Registration.find_failed_registrations().order_by(self.ordering)
 
 
+class RegistrationBacklogListView(RegistrationListView):
+    """ List view that filters by registrations the haven't been archived at archive.org/
+    """
+
+    def get_queryset(self):
+        return Registration.find_ia_backlog()
+
+
+class DoiBacklogListView(RegistrationListView):
+    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """
+
+    def get_queryset(self):
+        return Registration.find_doi_backlog()
+
+
 class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
     """ Allow authorized admin user to update the embargo of a registration
     """
