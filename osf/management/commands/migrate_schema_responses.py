@@ -5,12 +5,6 @@ from django.core.management.base import BaseCommand
 from osf.models import Registration
 from osf.models.schema_responses import SchemaResponses
 
-PAGE_SIZE = 100
-
-PROVIDER_WITHDRAWAL_COMMENT = {
-    'eartharxiv': 'This preprint was moved to the new EartharXiv hosted by CDL. The DOI now resolves to the new location at https://eartharxiv.org/.'
-}
-
 logger = logging.getLogger(__name__)
 
 

@@ -93,10 +93,10 @@ class TestRegistrationSchemaValidation:
         }
 
     def test_successful_validation(self, prereg_schema, prereg_test_data, osf_standard_schema, osf_standard_data):
-        validated = prereg_schema.validate(prereg_test_data)
+        validated = prereg_schema.validate_registration_responses(prereg_test_data)
         assert validated is True
 
-        validated = osf_standard_schema.validate(osf_standard_data)
+        validated = osf_standard_schema.validate_registration_responses(osf_standard_data)
         assert validated is True
 
     def test_bad_validation(self, osf_standard_schema):
@@ -106,7 +106,7 @@ class TestRegistrationSchemaValidation:
         }
 
         with pytest.raises(ValidationValueError) as excinfo:
-            osf_standard_schema.validate(bad_key_data)
+            osf_standard_schema.validate_registration_responses(bad_key_data)
         assert excinfo.value.message == "Additional properties are not allowed ('bad' was unexpected)"
 
         # multiple choice does not match
@@ -115,7 +115,7 @@ class TestRegistrationSchemaValidation:
         }
 
         with pytest.raises(ValidationValueError) as excinfo:
-            osf_standard_schema.validate(bad_multiple_choice)
+            osf_standard_schema.validate_registration_responses(bad_multiple_choice)
 
         assert excinfo.value.message == 'For your registration, your response to ' + \
             "the 'Data collection status' field is invalid, your response must be one of the provided options."
@@ -126,43 +126,43 @@ class TestRegistrationSchemaValidation:
         """
         prereg_test_data['q13.uploader'] = {}
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data)
+            prereg_schema.validate_registration_responses(prereg_test_data)
         assert excinfo.value.message == "For your registration, your response to the 'q13.uploader' field is invalid. {} is not of type 'array'"
 
         prereg_test_data['q13.uploader'] = ['hello']
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data)
+            prereg_schema.validate_registration_responses(prereg_test_data)
         assert excinfo.value.message == "For your registration, your response to the 'q13.uploader' field is invalid. 'hello' is not of type 'object'"
 
         prereg_test_data['q13.uploader'] = [{'bad_key': '12345'}]
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data)
+            prereg_schema.validate_registration_responses(prereg_test_data)
         assert excinfo.value.message == "For your registration, your response to the 'q13.uploader' field is invalid. Additional properties are not allowed ('bad_key' was unexpected)"
 
         prereg_test_data['q13.uploader'] = [{'file_name': '12345'}]
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data)
+            prereg_schema.validate_registration_responses(prereg_test_data)
         assert excinfo.value.message.startswith("For your registration, your response to the 'q13.uploader' field is invalid.")
 
         prereg_test_data['q13.uploader'] = [{'file_name': '12345', 'file_id': 'abcde'}]
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data)
+            prereg_schema.validate_registration_responses(prereg_test_data)
         assert excinfo.value.message.startswith("For your registration, your response to the 'q13.uploader' field is invalid.")
 
     def test_validate_required_fields(self, registered_report_schema, prereg_schema, prereg_test_data):
         # Passing in required_fields is True enforces that required fields are present
         with pytest.raises(ValidationValueError) as excinfo:
-            registered_report_schema.validate({}, required_fields=True)
+            registered_report_schema.validate_registration_responses({}, required_fields=True)
         assert excinfo.value.message == "'q1' is a required property"
 
-        validated = registered_report_schema.validate({})
+        validated = registered_report_schema.validate_registration_responses({})
         assert validated is True
 
         # Assert multiple choice questions accept empty strings if required_fields is False
         prereg_test_data['q5'] = ''
-        validated = prereg_schema.validate(prereg_test_data)
+        validated = prereg_schema.validate_registration_responses(prereg_test_data)
         assert validated is True
 
         with pytest.raises(ValidationValueError) as excinfo:
-            prereg_schema.validate(prereg_test_data, required_fields=True)
+            prereg_schema.validate_registration_responses(prereg_test_data, required_fields=True)
         assert excinfo.value.message == "For your registration, your response to the 'Existing Data' field is invalid, your response must be one of the provided options."

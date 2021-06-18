@@ -173,12 +173,12 @@ class RegistrationSchema(AbstractSchema):
             raise ValidationValueError(e)
         return
 
-    def validate(self, data, required_fields=False):
+    def validate_registration_responses(self, registration_responses, required_fields=False):
         """Validates `registration_responses` against this schema (using `schema_blocks`).
         Raises `ValidationError` if invalid. Otherwise, returns True.
         """
         validator = RegistrationResponsesValidator(self.schema_blocks.all(), required_fields)
-        return validator.validate(data)
+        return validator.validate(registration_responses)
 
 
 class FileMetadataSchema(AbstractSchema):
