@@ -14,6 +14,21 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 from osf.features import EGAP_ADMINS
 
 
+SCHEMABLOCK_TYPES = [
+    ('page-heading', 'page-heading'),
+    ('section-heading', 'section-heading'),
+    ('subsection-heading', 'subsection-heading'),
+    ('paragraph', 'paragraph'),
+    ('question-label', 'question-label'),
+    ('short-text-input', 'short-text-input'),
+    ('long-text-input', 'long-text-input'),
+    ('file-input', 'file-input'),
+    ('contributors-input', 'contributors-input'),
+    ('single-select-input', 'single-select-input'),
+    ('multi-select-input', 'multi-select-input'),
+    ('select-input-option', 'select-input-option'),
+    ('select-other-option', 'select-other-option'),
+]
 
 
 def allow_egap_admins(queryset, request):
@@ -180,24 +195,15 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         unique_together = ('schema', 'registration_response_key')
 
     INPUT_BLOCK_TYPES = frozenset([
-        ('short-text-input', 'short-text-input'),
-        ('long-text-input', 'long-text-input'),
-        ('file-input', 'file-input'),
-        ('contributors-input', 'contributors-input'),
-        ('single-select-input', 'single-select-input'),
-        ('multi-select-input', 'multi-select-input'),
-        ('select-input-option', 'select-input-option'),
-        ('select-other-option', 'select-other-option'),
+        'short-text-input',
+        'long-text-input',
+        'file-input',
+        'contributors-input',
+        'single-select-input',
+        'multi-select-input',
+        'select-input-option',
+        'select-other-option',
     ])
-    UNGROUPED_BLOCK_TYPES = frozenset([
-        ('page-heading', 'page-heading'),
-        ('section-heading', 'section-heading'),
-        ('subsection-heading', 'subsection-heading'),
-        ('paragraph', 'paragraph'),
-        ('question-label', 'question-label'),
-    ])
-
-    BLOCK_TYPES = UNGROUPED_BLOCK_TYPES.union(INPUT_BLOCK_TYPES)
 
     schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
@@ -206,7 +212,7 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
     schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
-    block_type = models.CharField(max_length=31, db_index=True, choices=BLOCK_TYPES)
+    block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
     display_text = models.TextField()
     required = models.BooleanField(default=False)
 

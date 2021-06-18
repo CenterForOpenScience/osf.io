@@ -403,8 +403,7 @@ def create_schema_blocks_for_atomic_schema(schema):
 
         if block_type == 'question-label':
             schema_block_group_key = generate_object_id()
-
-        if block_type in [input[0] for input in RegistrationSchemaBlock.INPUT_BLOCK_TYPES]:
+        elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
             registration_response_key = f'{schema.id}-{index}'
         else:
             registration_response_key = None

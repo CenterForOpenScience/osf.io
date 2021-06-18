@@ -13,7 +13,7 @@
 		"help_text": "List each research question included in this study. When specifying your research questions, it is good practice to use only two new concepts per research question. For example, split up your questions into a simple format: \u201cDoes X lead to Y?\u201d and \u201cIs the relationship between X and Y moderated by Z?\u201d. By splitting up the research questions here, you can more easily describe the statistical test for each research question later.",
 		"block_type": "question-label",
 		"display_text": "Research questions",
-		"example_text": "Example: RQ1 = Are more religious people more prosocial than less religious people? RQ2 = Does the relationship between religiosity and prosociality differ for people with different religiousaffiliations?",
+		"example_text": "Example: RQ1 = Are more religious people more prosocial than less religious people? RQ2 = Does the relationship between religiosity and prosociality differ for people with different religious affiliations?",
 		"required": false
 	}, {
 		"help_text": "",
@@ -49,7 +49,7 @@
 		"help_text": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A \u2260 B). If directional, state the direction. You may also provide a rationale for each hypothesis.",
 		"block_type": "question-label",
 		"display_text": "",
-		"example_text": "We expect that religiosity is associated with prosocial behavior in our sample as well. To assessthis prediction, we will use the following hypotheses:H0(1) = In men and women who graduated from Wisconsin high schools in 1957, there is no association between religiosity and prosociality H1(1) = In men and women who graduated from Wisconsin high schools in 1957, there is an association between religiosity and prosociality.It is possible that these mechanisms are stronger for some religions than for others.  and prosocial behavior differs for the different religions in our sample. To answer this question, we will test the following hypotheses: H0(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 does not differ for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants) H1(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 differs for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants).",
+		"example_text": "",
 		"required": true
 	}, {
 		"help_text": "",
