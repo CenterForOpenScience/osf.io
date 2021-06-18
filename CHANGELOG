@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.05.0 (2021-6-17)
+====================
+- OSF Integration with Pigeon (microservice for registration archival)
+- Updates to Collections metadata to support new collaborators
+
+
 21.04.0 (2021-5-27)
 ====================
 - Support for default schema on registration providers
