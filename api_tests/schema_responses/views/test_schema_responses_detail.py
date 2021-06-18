@@ -78,12 +78,12 @@ class TestSchemaResponseDetail:
 
         assert data == {
             'id': schema_response._id,
-            'type': 'schema_responses',
+            'type': 'schema-responses',
             'attributes': {
                 'title': None,
                 'responses': {},
-                'deleted': None,
-                'public': None
+                'deleted': False,
+                'public': False
             },
             'relationships': {
                 'node': {

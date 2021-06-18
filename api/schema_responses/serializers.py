@@ -9,14 +9,21 @@ from api.base.utils import absolute_reverse
 from osf.models.schema_responses import SchemaResponses
 from osf.models import Registration
 from rest_framework import exceptions
+from django.utils import timezone
 
 
 class SchemaResponsesSerializer(JSONAPISerializer):
     id = ser.CharField(required=False, source='_id', read_only=True)
     title = ser.CharField(required=False, allow_blank=True)
     responses = ser.JSONField(required=False)
-    deleted = ser.BooleanField(required=False)
-    public = ser.BooleanField(required=False)
+    deleted = ser.SerializerMethodField(required=False)
+    public = ser.SerializerMethodField(required=False)
+
+    def get_deleted(self, obj):
+        return bool(obj.deleted)
+
+    def get_public(self, obj):
+        return bool(obj.public)
 
     links = LinksField(
         {
@@ -55,7 +62,7 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
             # This must pull node_id from url args for NodeViews
             guid = self.initial_data.get('node') or self.context['view'].kwargs['node_id']
         except KeyError:
-            exceptions.ValidationError('Request did not include node id')
+            raise exceptions.ValidationError('Request did not include node id')
 
         node = Registration.load(guid)
 
@@ -83,12 +90,19 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
         deleted = validated_data.get('deleted')
         responses = validated_data.get('responses')
 
+        if deleted:
+            report.deleted = timezone.now()
+            return report
+        if title:
+            report.title = title
+
+        report.set_public(public)
+
         try:
             report.responses = responses
         except Exception as e:
             raise exceptions.ValidationError(e.message)
 
-        report.title = title
         report.save()
 
         return report
