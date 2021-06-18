@@ -91,13 +91,13 @@ class TestSchemaResponseDetail:
                 'node': {
                     'links': {
                         'related': {
-                            'href': f'{settings.API_DOMAIN}v2/nodes/{schema_response.node._id}/',
+                            'href': f'{settings.API_DOMAIN}v2/registrations/{schema_response.node._id}/',
                             'meta': {}
                         }
                     },
                     'data': {
                         'id': schema_response.node._id,
-                        'type': 'nodes'
+                        'type': 'registrations'
                     }
                 },
                 'schema': {

@@ -25,7 +25,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     )
 
     node = RelationshipField(
-        related_view='nodes:node-detail',
+        related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=True,
     )
@@ -51,7 +51,15 @@ class SchemaResponsesSerializer(JSONAPISerializer):
 
 class SchemaResponsesListSerializer(SchemaResponsesSerializer):
     def create(self, validated_data):
-        node = Registration.load(self.initial_data['node'])
+
+
+        try:
+            # This must pull node_id from url args for NodeViews
+            guid = self.initial_data.get('node') or self.context['view'].kwargs['node_id']
+        except KeyError:
+            exceptions.ValidationError('Request did not include node id')
+
+        node = Registration.load(guid)
 
         if node.registered_schema.first():
             schema_response = SchemaResponses.objects.create(

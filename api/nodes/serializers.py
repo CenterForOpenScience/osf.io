@@ -1544,7 +1544,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         # New workflow - at some point `registration_metadata` will be deprecated, but for now,
         # we support data coming in on either field, registration_metadata (expanded) or registration_responses (flat)
         try:
-            draft.validate_registration_responses(data=registration_responses, required_fields=required_fields)
+            draft.validate_registration_responses(registration_responses=registration_responses, required_fields=required_fields)
         except ValidationError as e:
             raise exceptions.ValidationError(e.message)
         draft.update_registration_responses(registration_responses)

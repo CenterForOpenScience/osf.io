@@ -2280,12 +2280,12 @@ class NodeSchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     )
 
     view_category = 'nodes'
-    view_name = 'outcome-reports-list'
+    view_name = 'schema-responses-list'
 
     serializer_class = SchemaResponsesListSerializer
 
     def get_default_queryset(self):
-        return self.get_node().schema_response.filter(deleted__isnull=True)
+        return self.get_node().schema_responses.filter(deleted__isnull=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

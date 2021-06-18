@@ -391,8 +391,6 @@ class RegistrationSerializer(NodeSerializer):
 
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
-
-
         return None
 
     def get_embargo_end_date(self, obj):
