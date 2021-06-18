@@ -397,16 +397,21 @@ def create_schema_blocks_for_atomic_schema(schema):
     """
 
     from osf.models import RegistrationSchemaBlock
-    schema_block_group_key = generate_object_id()
+    schema_block_group_key = None
     for index, block in enumerate(schema.schema['blocks']):
         block_type = block['block_type']
 
         if block_type == 'question-label':
             schema_block_group_key = generate_object_id()
+            registration_response_key = None
+        elif block_type in ('single-select-input', 'multi-select-input'):
+            schema_block_group_key = generate_object_id()
+            registration_response_key = f'{schema.id}-{index}'
         elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
             registration_response_key = f'{schema.id}-{index}'
         else:
             registration_response_key = None
+            schema_block_group_key = None
 
         RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,

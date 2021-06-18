@@ -201,7 +201,6 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         'contributors-input',
         'single-select-input',
         'multi-select-input',
-        'select-input-option',
         'select-other-option',
     ])
 

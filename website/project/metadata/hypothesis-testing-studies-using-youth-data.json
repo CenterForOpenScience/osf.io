@@ -46,12 +46,6 @@
 		"example_text": "",
 		"required": true
 	}, {
-		"help_text": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A \u2260 B). If directional, state the direction. You may also provide a rationale for each hypothesis.",
-		"block_type": "question-label",
-		"display_text": "",
-		"example_text": "",
-		"required": true
-	}, {
 		"help_text": "",
 		"block_type": "paragraph",
 		"display_text": "A complete overview of the data collection (prospectus) can be downloaded on our Data Collection page or directly through this url. Our catalogue with item-level descriptions is under preparation, and will be added here when available.",
@@ -90,7 +84,7 @@
 	}, {
 		"help_text": "",
 		"block_type": "paragraph",
-		"display_text": "Data only availble upon request, the data access protocol is available here(link). To verify the analysis done on the data, can request access to the same dataset for verification of the data. Email the author of the preregistration",
+		"display_text": "Data only availble upon request, the data access protocol is available <a href='https://www.uu.nl/sites/default/files/dataaccessprotocol_youth_191029.pdf'>here</a>. To verify the analysis done on the data, can request access to the same dataset for verification of the data. Email the author of the preregistration",
 		"example_text": "",
 		"required": false
 	}, {
