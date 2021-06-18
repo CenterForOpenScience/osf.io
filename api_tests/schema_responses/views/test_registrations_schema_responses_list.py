@@ -81,7 +81,6 @@ class TestRegistrationsSchemaResponseList:
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
-        print(data)
 
         assert len(data) == 2
         assert schema_response._id == data[0]['id']

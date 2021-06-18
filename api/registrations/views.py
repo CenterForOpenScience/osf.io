@@ -892,7 +892,7 @@ class RegistrationSchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdate
     )
 
     view_category = 'registrations'
-    view_name = 'schema-responses-list'
+    view_name = 'schema-responses-detail'
 
     serializer_class = SchemaResponsesDetailSerializer
 
