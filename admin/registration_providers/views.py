@@ -202,8 +202,12 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
     def get_context_data(self, *args, **kwargs):
         registration_provider = self.get_object()
         kwargs['provider_name'] = registration_provider.name
-        kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
-        kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        if registration_provider.primary_collection:
+            kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
+            kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        else:
+            kwargs['has_collected_submissions'] = False
+            kwargs['collected_submission_count'] = 0
         kwargs['provider_id'] = registration_provider.id
         return super(DeleteRegistrationProvider, self).get_context_data(*args, **kwargs)
 

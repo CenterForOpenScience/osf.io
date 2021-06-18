@@ -607,6 +607,8 @@ def serialize_cgm(cgm):
         'volume': cgm.volume,
         'issue': cgm.issue,
         'programArea': cgm.program_area,
+        'schoolType': cgm.school_type,
+        'studyDesign': cgm.study_design,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),

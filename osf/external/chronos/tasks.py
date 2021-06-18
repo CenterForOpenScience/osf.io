@@ -3,7 +3,7 @@ from django.apps import apps
 from django.utils import timezone
 
 from website import settings
-from osf.external.chronos import ChronosClient
+from osf.external.chronos.chronos import ChronosClient
 import logging
 
 logger = logging.getLogger(__name__)
