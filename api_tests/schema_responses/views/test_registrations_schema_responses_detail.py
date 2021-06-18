@@ -2,7 +2,6 @@ import pytest
 
 from osf_tests.factories import (
     SchemaResponsesFactory,
-    NodeFactory,
     RegistrationSchemaFactory,
     AuthUserFactory,
     RegistrationFactory
@@ -74,10 +73,8 @@ class TestRegistrationsSchemaResponseDetail:
     def test_schema_response_detail(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
-        print(resp.json)
         data = resp.json['data']
         assert data['id'] == schema_response._id
-
 
         assert data == {
             'id': schema_response._id,
@@ -126,7 +123,6 @@ class TestRegistrationsSchemaResponseDetail:
                 'self': f'{settings.API_DOMAIN}v2/schema_responses/{schema_response._id}/'
             }
         }
-
 
     def test_schema_response_detail_update(self, app, schema_response, payload, user, url):
         resp = app.patch_json_api(url, payload, auth=user.auth)

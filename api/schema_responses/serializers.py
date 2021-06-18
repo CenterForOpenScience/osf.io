@@ -21,7 +21,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     links = LinksField(
         {
             'self': 'get_absolute_url',
-        }
+        },
     )
 
     node = RelationshipField(
@@ -52,7 +52,6 @@ class SchemaResponsesSerializer(JSONAPISerializer):
 class SchemaResponsesListSerializer(SchemaResponsesSerializer):
     def create(self, validated_data):
 
-
         try:
             # This must pull node_id from url args for NodeViews
             guid = self.initial_data.get('node') or self.context['view'].kwargs['node_id']
@@ -65,7 +64,7 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
             schema_response = SchemaResponses.objects.create(
                 **validated_data,
                 node=node,
-                schema=node.registered_schema.first() # current only used as a one-to-one
+                schema=node.registered_schema.first()  # current only used as a one-to-one
             )
         else:
             raise NotImplementedError()

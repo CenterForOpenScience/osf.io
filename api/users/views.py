@@ -518,7 +518,6 @@ class UserSchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView, UserM
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-
     serializer_class = SchemaResponsesListSerializer
     view_category = 'users'
     view_name = 'schema-responses-list'
@@ -543,15 +542,12 @@ class UserSchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyA
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
-
     serializer_class = SchemaResponsesDetailSerializer
     view_category = 'users'
     view_name = 'schema-responses-detail'
 
     def get_object(self):
         return SchemaResponses.objects.get(guids___id=self.kwargs['responses_id'])
-
-
 
 class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     permission_classes = (

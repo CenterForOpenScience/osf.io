@@ -76,17 +76,15 @@ class TestSchemaResponseDetail:
         data = resp.json['data']
         assert data['id'] == schema_response._id
 
-
         assert data == {
             'id': schema_response._id,
             'type': 'schema_responses',
-            'attributes':
-                {
-                    'title': None,
-                    'responses': {},
-                    'deleted': None,
-                    'public': None
-                },
+            'attributes': {
+                'title': None,
+                'responses': {},
+                'deleted': None,
+                'public': None
+            },
             'relationships': {
                 'node': {
                     'links': {
@@ -106,7 +104,8 @@ class TestSchemaResponseDetail:
                             'href': f'{settings.API_DOMAIN}v2/schemas/registrations/{schema_response.schema._id}/',
                             'meta': {}
                         }
-                    }, 'data': {
+                    },
+                    'data': {
                         'id': schema_response.schema._id,
                         'type': 'registration-schemas'
                     }
@@ -125,7 +124,6 @@ class TestSchemaResponseDetail:
             }
         }
 
-
     def test_schema_response_detail_update(self, app, schema_response, payload, user, url):
         resp = app.patch_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 200
@@ -135,7 +133,7 @@ class TestSchemaResponseDetail:
         schema_response.refresh_from_db()
         assert schema_response.responses ==  {
             'q1': {'value': 'test'},
-            'q2': {'value': 'test2'}
+            'q2': {'value': 'test2'},
         }
 
     def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):

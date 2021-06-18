@@ -6,7 +6,7 @@ app_name = 'osf'
 
 urlpatterns = [
     url(
-        r'^$', views.SchemaResponsesList.as_view(), name=views.SchemaResponsesList.view_name
+        r'^$', views.SchemaResponsesList.as_view(), name=views.SchemaResponsesList.view_name,
     ),
     url(
         r'^(?P<responses_id>\w+)/$',

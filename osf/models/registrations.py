@@ -1435,7 +1435,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         """
         Validates draft's registration_responses
         """
-        return self.registration_schema.validate(*args, **kwargs)
+        return self.registration_schema.validate_registration_responses(*args, **kwargs)
 
     def add_log(self, action, params, auth, save=True):
         """

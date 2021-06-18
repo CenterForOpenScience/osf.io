@@ -261,33 +261,33 @@ class SchemaResponsesFactory(DjangoModelFactory):
 class RegistrationSchemaFactory(DjangoModelFactory):
     schema_version = factory.Sequence(lambda n: n)
     schema = {
-        "title": "Test Data Schema",
-        "version": 1,
-        "config": {
-        "hasFiles": True
+        'title': 'Test Data Schema',
+        'version': 1,
+        'config': {
+        'hasFiles': True
         },
-        "description": "Test Schema for internal use only",
-        "pages": [{
-            "id": "page1",
-            "title": "Study Information",
-            "questions": [{
-                "qid": "q1",
-                "nav": "Nav, what does this do?",
-                "type": "string",
-                "format": "textarea",
-                "title": "Maybe a section heading",
-                "description": "Maybe a question label.",
-                "help": "example text for question-label",
-                "required": True
+        'description': 'Test Schema for internal use only',
+        'pages': [{
+            'id': 'page1',
+            'title': 'Study Information',
+            'questions': [{
+                'qid': 'q1',
+                'nav': 'Nav, what does this do?',
+                'type': 'string',
+                'format': 'textarea',
+                'title': 'Maybe a section heading',
+                'description': 'Maybe a question label.',
+                'help': 'example text for question-label',
+                'required': True
             }, {
-                "qid": "q2",
-                "nav": "Hypotheses",
-                "type": "string",
-                "format": "textarea",
-                "title": "Maybe a section heading",
-                "description": "Maybe a question label.",
-                "help": "help text",
-                "required": True
+                'qid': 'q2',
+                'nav': 'Hypotheses',
+                'type': 'string',
+                'format': 'textarea',
+                'title': 'Maybe a section heading',
+                'description': 'Maybe a question label.',
+                'help': 'help text',
+                'required': True
             }]
         }]
     }

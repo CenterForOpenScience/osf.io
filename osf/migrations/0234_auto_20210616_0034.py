@@ -13,7 +13,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0232_abstractnode_ia_url'),
+        ('osf', '0233_auto_20210608_1816'),
     ]
 
     operations = [

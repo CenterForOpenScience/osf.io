@@ -27,7 +27,7 @@ class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
     def get_queryset(self):
         return SchemaResponses.objects.filter(
             deleted__isnull=True,
-            public__isnull=False
+            public__isnull=False,
         )
 
 

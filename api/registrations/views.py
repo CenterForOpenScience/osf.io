@@ -7,7 +7,7 @@ from osf.models import (
     Registration,
     OSFUser,
     RegistrationProvider,
-    SchemaResponses
+    SchemaResponses,
 )
 from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
@@ -898,4 +898,3 @@ class RegistrationSchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdate
 
     def get_object(self):
         return SchemaResponses.objects.get(guids___id=self.kwargs['responses_id'])
-

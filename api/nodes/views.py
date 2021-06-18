@@ -2276,7 +2276,7 @@ class NodeSchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        AdminContributorOrPublic
+        AdminContributorOrPublic,
     )
 
     view_category = 'nodes'

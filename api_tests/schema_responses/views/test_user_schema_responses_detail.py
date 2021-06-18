@@ -11,7 +11,7 @@ from website import settings
 
 
 @pytest.mark.django_db
-class TestUserSchemaResponseList:
+class TestUserSchemaResponseDetail:
 
     @pytest.fixture()
     def non_contrib(self):
