@@ -7,7 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from django.utils import timezone
-
+from website import settings
 
 @pytest.mark.django_db
 class TestSchemaResponseDetail:
@@ -91,7 +91,7 @@ class TestSchemaResponseDetail:
                 'node': {
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/nodes/{schema_response.node._id}/',
+                            'href': f'{settings.API_DOMAIN}v2/nodes/{schema_response.node._id}/',
                             'meta': {}
                         }
                     },
@@ -103,7 +103,7 @@ class TestSchemaResponseDetail:
                 'schema': {
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/schemas/registrations/{schema_response.schema._id}/',
+                            'href': f'{settings.API_DOMAIN}v2/schemas/registrations/{schema_response.schema._id}/',
                             'meta': {}
                         }
                     }, 'data': {
@@ -114,14 +114,14 @@ class TestSchemaResponseDetail:
                 'versions': {
                     'links': {
                         'related': {
-                            'href': f'http://localhost:8000/v2/registrations/{schema_response.node._id}/schema_responses/',
+                            'href': f'{settings.API_DOMAIN}v2/registrations/{schema_response.node._id}/schema_responses/',
                             'meta': {}
                         }
                     }
                 }
             },
             'links': {
-                'self': f'http://localhost:8000/v2/schema_responses/{schema_response._id}/'
+                'self': f'{settings.API_DOMAIN}v2/schema_responses/{schema_response._id}/'
             }
         }
 
