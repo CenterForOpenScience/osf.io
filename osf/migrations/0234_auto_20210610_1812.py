@@ -9,7 +9,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0231_abstractprovider_default_schema'),
+        ('osf', '0233_auto_20210608_1816'),
     ]
 
     operations = [
