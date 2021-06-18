@@ -33,7 +33,6 @@ class TestRegistrationsSchemaResponseDetail:
                     'title': 'new title',
                     'responses': {
                         'q1': {'value': 'test'},
-                        'q2': {'value': 'test2'},
                     }
                 }
             }
@@ -79,13 +78,12 @@ class TestRegistrationsSchemaResponseDetail:
         assert data == {
             'id': schema_response._id,
             'type': 'schema_responses',
-            'attributes':
-                {
-                    'title': None,
-                    'responses': {},
-                    'deleted': None,
-                    'public': None
-                },
+            'attributes': {
+                'title': None,
+                'responses': {},
+                'deleted': None,
+                'public': None
+            },
             'relationships': {
                 'node': {
                     'links': {
@@ -105,7 +103,8 @@ class TestRegistrationsSchemaResponseDetail:
                             'href': f'{settings.API_DOMAIN}v2/schemas/registrations/{schema_response.schema._id}/',
                             'meta': {}
                         }
-                    }, 'data': {
+                    },
+                    'data': {
                         'id': schema_response.schema._id,
                         'type': 'registration-schemas'
                     }
@@ -133,7 +132,6 @@ class TestRegistrationsSchemaResponseDetail:
         schema_response.refresh_from_db()
         assert schema_response.responses ==  {
             'q1': {'value': 'test'},
-            'q2': {'value': 'test2'}
         }
 
     def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):

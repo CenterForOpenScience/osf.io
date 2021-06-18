@@ -133,8 +133,8 @@ class UserSerializer(JSONAPISerializer):
         related_meta={'count': 'get_registration_count'},
     ))
 
-    schema_response = RelationshipField(
-        related_view='users:schema-responses',
+    schema_responses = RelationshipField(
+        related_view='users:schema-responses-list',
         related_view_kwargs={'user_id': '<_id>'},
     )
 

@@ -81,6 +81,8 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
     def update(self, report, validated_data):
         title = validated_data.get('title')
+        public = validated_data.get('public')
+        deleted = validated_data.get('deleted')
         responses = validated_data.get('responses')
 
         try:

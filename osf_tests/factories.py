@@ -264,7 +264,7 @@ class RegistrationSchemaFactory(DjangoModelFactory):
         'title': 'Test Data Schema',
         'version': 1,
         'config': {
-        'hasFiles': True
+            'hasFiles': True
         },
         'description': 'Test Schema for internal use only',
         'pages': [{

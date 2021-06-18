@@ -7,7 +7,6 @@ from osf.models.schema_responses import SchemaResponses
 
 logger = logging.getLogger(__name__)
 
-
 def migrate_schema_responses():
     """
     A management command to transfer schema response JSON into SchemaResponse objects
@@ -19,7 +18,6 @@ def migrate_schema_responses():
             node=reg,
             _responses=reg.registration_responses
         )
-
 
 class Command(BaseCommand):
 

@@ -50,6 +50,8 @@ class SchemaResponses(GuidMixin, BaseModel):
         if kwargs.get('save'):
             self.save()
 
+
+
     @property
     def versions(self):
         schema_response = SchemaResponses.objects.get(guids___id=self._id)
@@ -59,4 +61,3 @@ class SchemaResponses(GuidMixin, BaseModel):
             node=schema_response.node,
             schema=schema_response.schema
         )
-

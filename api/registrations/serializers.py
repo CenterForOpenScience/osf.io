@@ -386,8 +386,8 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        if obj.registration_responses.exists():
-            return obj.registration_responses.first().responses
+        if obj.schema_responses.exists():
+            return obj.schema_responses.first().responses
 
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)

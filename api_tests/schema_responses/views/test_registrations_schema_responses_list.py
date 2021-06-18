@@ -21,7 +21,6 @@ class TestRegistrationsSchemaResponseList:
     def user(self):
         return AuthUserFactory()
 
-
     @pytest.fixture()
     def user_write(self):
         return AuthUserFactory()
@@ -33,7 +32,6 @@ class TestRegistrationsSchemaResponseList:
     @pytest.fixture()
     def node(self, schema):
         return RegistrationFactory()
-
 
     @pytest.fixture()
     def payload(self, node):
@@ -87,7 +85,7 @@ class TestRegistrationsSchemaResponseList:
         assert schema_response_public._id == data[1]['id']
 
     def test_registrations_schema_responses_list_create(self, app, payload, user, url):
-        resp = app.post_json_api(url, payload,  auth=user.auth)
+        resp = app.post_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 201
         data = resp.json['data']
 

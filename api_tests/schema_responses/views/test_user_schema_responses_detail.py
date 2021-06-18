@@ -21,7 +21,6 @@ class TestUserSchemaResponseDetail:
     def user(self):
         return AuthUserFactory()
 
-
     @pytest.fixture()
     def user_write(self):
         return AuthUserFactory()
@@ -86,7 +85,6 @@ class TestUserSchemaResponseDetail:
     @pytest.fixture()
     def url(self, user, schema_response):
         return f'/v2/users/{user._id}/schema_responses/{schema_response._id}/'
-
 
     def test_schema_response_detail(self, app, schema_response, schema_response_public, schema_response_deleted, user, url):
         resp = app.get(url, auth=user.auth)
