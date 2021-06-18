@@ -130,7 +130,7 @@ class TestRegistrationsSchemaResponseDetail:
         assert data['id'] == schema_response._id
 
         schema_response.refresh_from_db()
-        assert schema_response.responses ==  {
+        assert schema_response.responses == {
             'q1': {'value': 'test'},
         }
 

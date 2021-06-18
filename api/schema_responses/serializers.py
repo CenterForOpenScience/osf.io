@@ -37,7 +37,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = 'schema_responses'
+        type_ = 'schema-responses'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -47,7 +47,6 @@ class SchemaResponsesSerializer(JSONAPISerializer):
                 'responses_id': obj._id,
             },
         )
-
 
 class SchemaResponsesListSerializer(SchemaResponsesSerializer):
     def create(self, validated_data):
@@ -70,7 +69,6 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
             raise NotImplementedError()
 
         return schema_response
-
 
 class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 

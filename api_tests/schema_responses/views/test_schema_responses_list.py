@@ -47,7 +47,6 @@ class TestSchemaResponseList:
         registration.save()
         return registration
 
-
     @pytest.fixture()
     def schema_response(self, node, schema):
         return SchemaResponsesFactory(node=node, schema=schema)
@@ -73,7 +72,7 @@ class TestSchemaResponseList:
         assert schema_response_public._id == data[0]['id']
 
     def test_schema_response_create(self, app, node, user, payload, url):
-        resp = app.post_json_api(url, payload,  auth=user.auth)
+        resp = app.post_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 201
         data = resp.json['data']
 

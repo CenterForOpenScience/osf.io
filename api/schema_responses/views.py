@@ -9,8 +9,6 @@ from api.schema_responses.serializers import (
 from osf.models.schema_responses import SchemaResponses
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
-from osf.models import Node
-
 class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
     permission_classes = (
         ContributorOrPublic,
@@ -29,7 +27,6 @@ class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
             deleted__isnull=True,
             public__isnull=False,
         )
-
 
 class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (

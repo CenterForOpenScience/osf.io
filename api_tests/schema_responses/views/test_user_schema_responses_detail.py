@@ -92,7 +92,6 @@ class TestUserSchemaResponseDetail:
         data = resp.json['data']
         assert data['id'] == schema_response._id
 
-
         assert data == {
             'id': schema_response._id,
             'type': 'schema_responses',
