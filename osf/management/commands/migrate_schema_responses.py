@@ -14,7 +14,7 @@ def migrate_schema_responses():
     for reg in Registration.objects.filter(registration_responses__isnull=False):
         SchemaResponses.objects.create(
             created=reg.registered_date,
-            schema=reg.registered_schema.first(), # currently there is only one schema per registration
+            schema=reg.registered_schema.first(),  # currently there is only one schema per registration
             node=reg,
             _responses=reg.registration_responses
         )

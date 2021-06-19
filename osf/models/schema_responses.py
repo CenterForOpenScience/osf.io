@@ -7,10 +7,19 @@ from osf.models.base import GuidMixin, BaseModel
 
 
 class SchemaResponses(GuidMixin, BaseModel):
+    """
+    TODO
+    - make public behavior
+    - moderations behavior
+    - check spam when making public behavior
+    - delete/discard behavior
+    - metadata/DOI behavior
+    - email stuff
+    """
     _responses = DateTimeAwareJSONField(default=dict, blank=True, null=True)
     title = models.TextField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
-    public =  NonNaiveDateTimeField(null=True, blank=True)
+    public = NonNaiveDateTimeField(null=True, blank=True)
     schema = models.ForeignKey(
         'RegistrationSchema',
         related_name='schema_responses',
@@ -50,8 +59,6 @@ class SchemaResponses(GuidMixin, BaseModel):
         if kwargs.get('save'):
             self.save()
 
-
-
     @property
     def versions(self):
         schema_response = SchemaResponses.objects.get(guids___id=self._id)
@@ -61,3 +68,4 @@ class SchemaResponses(GuidMixin, BaseModel):
             node=schema_response.node,
             schema=schema_response.schema
         )
+

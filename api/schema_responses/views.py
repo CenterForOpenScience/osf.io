@@ -41,4 +41,3 @@ class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     def get_object(self):
         return SchemaResponses.objects.get(guids___id=self.kwargs['responses_id'])
-

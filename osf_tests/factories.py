@@ -299,7 +299,6 @@ class RegistrationSchemaFactory(DjangoModelFactory):
         map_schema_to_schemablocks(schema)
         return schema
 
-
     class Meta:
         model = models.RegistrationSchema
 
