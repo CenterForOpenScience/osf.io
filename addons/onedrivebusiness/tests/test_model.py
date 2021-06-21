@@ -74,7 +74,10 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     @mock.patch('addons.onedrivebusiness.models.get_user_map')
     @mock.patch('addons.onedrivebusiness.models.OneDriveBusinessClient.folders')
     @mock.patch('addons.onedrivebusiness.models.OneDriveBusinessClient.create_folder')
-    def test_set_folder(self, mock_onedrivebusinessclient_create_folder,
+    @mock.patch('addons.onedrivebusiness.models.OneDriveBusinessClient.get_permissions')
+    def test_set_folder(self,
+                        mock_onedrivebusinessclient_get_permissions,
+                        mock_onedrivebusinessclient_create_folder,
                         mock_onedrivebusinessclient_folders, mock_get_user_map,
                         mock_node_settings_oauth_provider):
         self.node_settings.folder_id = None
@@ -101,6 +104,9 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         mock_onedrivebusinessclient_folders.return_value = []
         mock_onedrivebusinessclient_create_folder.return_value = {
             'id': 'mock-folder-1234',
+        }
+        mock_onedrivebusinessclient_get_permissions.return_value = {
+            'value': [],
         }
 
         mock_get_user_map.return_value = {}
@@ -134,6 +140,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(credentials, expected)
 
     def test_serialize_settings(self):
+        self.node_settings.drive_id = 'drive-1234'
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.folder_id}
+        expected = {'drive': 'drive-1234', 'folder': self.node_settings.folder_id}
         assert_equal(settings, expected)

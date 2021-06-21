@@ -110,5 +110,16 @@ class OneDriveBusinessAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
         worksheet['B3'] = '#ここにMicrosoftアカウントを記述'
         mock_get_workbook_sheet.return_value = worksheet
 
-        user_map = utils.get_user_map(None, 'test_get_user_map_folder_1234')
-        assert_equals(user_map, {'eppn1234': 'msaccount5678'})
+        mock_region_client = mock.Mock()
+        mock_region_client.get_user = mock.Mock()
+        mock_region_client.get_user.return_value = {
+            'id': 'msaccount-id',
+            'mail': 'msaccount-mail',
+        }
+
+        user_map = utils.get_user_map(mock_region_client, None, 'test_get_user_map_folder_1234')
+        assert_equals(user_map, {'eppn1234': {
+            'id': 'msaccount-id',
+            'mail': 'msaccount-mail',
+            'userPrincipalName': 'msaccount5678',
+        }})
