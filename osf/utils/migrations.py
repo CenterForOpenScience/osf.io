@@ -397,26 +397,28 @@ def create_schema_blocks_for_atomic_schema(schema):
     """
 
     from osf.models import RegistrationSchemaBlock
-    schema_block_group_key = None
+    current_group_key = None
     for index, block in enumerate(schema.schema['blocks']):
+
+        # registration_response_key and schema_block_group_key are unused
+        # for most block types and can/should be empty.
+        # registration_response_key gets explicitly filtered by isnull :/
+        block['registration_response_key'] = None
+        block['schema_block_group_key'] = ''
         block_type = block['block_type']
 
         if block_type == 'question-label':
-            schema_block_group_key = generate_object_id()
-            registration_response_key = None
-        elif block_type in ('single-select-input', 'multi-select-input'):
-            schema_block_group_key = generate_object_id()
-            registration_response_key = f'{schema.id}-{index}'
+            # This key will be used by input and option fields for this question
+            current_group_key = generate_object_id()
+            block['schema_block_group_key'] = current_group_key
         elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
-            registration_response_key = f'{schema.id}-{index}'
-        else:
-            registration_response_key = None
-            schema_block_group_key = None
+            block['registration_response_key'] = f'{schema.id}-{index}'
+            block['schema_block_group_key'] = current_group_key
+        elif block_type in ['select-input-option', 'select-input-other']:
+            block['schema_block_group_key'] = current_group_key
 
         RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,
-            schema_block_group_key=schema_block_group_key,
-            registration_response_key=registration_response_key,
             **block
         )
 
