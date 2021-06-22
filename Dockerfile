@@ -165,6 +165,7 @@ COPY ./addons/s3compat/static/ ./addons/s3compat/static/
 COPY ./addons/s3compatinstitutions/static/ ./addons/s3compatinstitutions/static/
 COPY ./addons/s3compatb3/static/ ./addons/s3compatb3/static/
 COPY ./addons/ociinstitutions/requirements.txt ./addons/ociinstitutions/
+COPY ./addons/ociinstitutions/static/ ./addons/ociinstitutions/static/
 COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/

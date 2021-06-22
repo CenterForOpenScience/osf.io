@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2021-03-16 09:33+0900\n"
+"POT-Creation-Date: 2021-06-14 12:22+0900\n"
 "PO-Revision-Date: 2020-11-16 20:17+0900\n"
 "Last-Translator: Hiroki Ohashi\n"
 "Language: en\n"
@@ -5033,6 +5033,54 @@ msgstr ""
 
 #: website/static/js/logActionsList_extract.js:278
 msgid "S3 Compatible Storage for Institutions addon for ${node} deauthorized"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:279
+msgid ""
+"${user} added file ${path} to Oracle Cloud Infrastructure for "
+"Institutions in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:280
+msgid ""
+"${user} removed ${path_type} ${path} from Oracle Cloud Infrastructure for"
+" Institutions in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:281
+msgid ""
+"${user} updated file ${path} in Oracle Cloud Infrastructure for "
+"Institutions in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:282
+msgid ""
+"${user} created folder ${path} in Oracle Cloud Infrastructure for "
+"Institutions in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:283
+msgid ""
+"${user} linked Oracle Cloud Infrastructure for Institutions folder "
+"${folder} to ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:284
+msgid ""
+"${user} authorized the Oracle Cloud Infrastructure for Institutions addon"
+" for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:285
+msgid ""
+"${user} deauthorized the Oracle Cloud Infrastructure for Institutions "
+"addon for ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:286
+msgid ""
+"Oracle Cloud Infrastructure for Institutions addon for ${node} "
+"deauthorized"
 msgstr ""
 
 #: website/static/js/logTextParser.js:828
