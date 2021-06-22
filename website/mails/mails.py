@@ -475,3 +475,8 @@ STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
     'storage_cap_exceeded_announcement',
     subject='Action Required to avoid disruption to your OSF project',
 )
+
+INSTITUTION_DEACTIVATION = Mail(
+    'institution_deactivation',
+    subject='Your OSF login methods are changing'
+)
