@@ -199,7 +199,7 @@ def has_pigeon_scope(request):
     if token is None or not isinstance(token, CasResponse):
         return False
 
-    if token['accessToken'] == website_settings.OSF_BEARER_TOKEN:
+    if token['accessToken'] == website_settings.PIGEON_CALLBACK_BEARER_TOKEN:
         return True
     else:
         return False
