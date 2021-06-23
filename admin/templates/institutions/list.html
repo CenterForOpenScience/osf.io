@@ -19,6 +19,7 @@
             <th>Logo</th>
             <th>Name</th>
             <th>Description</th>
+			<th>Status</th>
         </tr>
     </thead>
     <tbody>
@@ -31,6 +32,11 @@
         </td>
         <td><a href="{% url 'institutions:detail' institution_id=institution.id %}">{{ institution.name }}</a></td>
         <td>{{ institution.description | safe}}</td>
+		{% if institution.deactivated is None %}
+		<td>ACTIVE</td>
+		{% else %}
+		<td>DEACTIVATED</td>
+		{% endif %}
     </tr>
     {% endfor %}
     </tbody>

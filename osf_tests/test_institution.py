@@ -1,3 +1,4 @@
+from django.utils import timezone
 from past.builtins import basestring
 from osf.models import Institution
 
@@ -82,3 +83,23 @@ class TestInstitutionPermissions:
     @pytest.mark.django_db
     def test_non_group_member_doesnt_have_perms(self, institution, user):
         assert user.has_perm('view_institutional_metrics', institution) is False
+
+
+@pytest.mark.django_db
+class TestInstitutionManager:
+
+    def test_deactivated_institution_not_in_default_queryset(self):
+        institution = InstitutionFactory()
+        assert institution in Institution.objects.all()
+
+        institution.deactivated = timezone.now()
+        institution.save()
+        assert institution not in Institution.objects.all()
+
+    def test_deactivated_institution_in_all_institutions(self):
+        institution = InstitutionFactory()
+        assert institution in Institution.objects.get_all_institutions()
+
+        institution.deactivated = timezone.now()
+        institution.save()
+        assert institution in Institution.objects.get_all_institutions()
