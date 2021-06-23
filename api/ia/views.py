@@ -4,6 +4,7 @@ from rest_framework.exceptions import NotFound
 from osf.models import Guid
 from rest_framework.views import APIView
 from django.http import JsonResponse
+from api.base import permissions as base_permissions
 
 
 class IACallbackView(APIView):
@@ -13,6 +14,9 @@ class IACallbackView(APIView):
     view_category = 'ia'
     view_name = 'ia_callback'
     target_lookup_url_kwarg = 'target_id'
+    permission_classes = (
+        base_permissions.RequestHasPigeonToken,
+    )
 
     def get_object(self):
         return self.get_target(self.kwargs[self.target_lookup_url_kwarg])

@@ -191,6 +191,20 @@ def has_admin_scope(request):
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
 
+
+def has_pigeon_scope(request):
+    """ Helper function to determine if a request token has OSF pigeon scope
+    """
+    token = request.auth
+    if token is None or not isinstance(token, CasResponse):
+        return False
+
+    if token['accessToken'] == website_settings.OSF_BEARER_TOKEN:
+        return True
+    else:
+        return False
+
+
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
