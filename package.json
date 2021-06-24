@@ -25,7 +25,6 @@
     "exports-loader": "0.6.3",
     "file-loader": "^0.8.1",
     "font-awesome": "^4.4.0",
-    "font-awesome-webpack": "0.0.5-beta.2",
     "gsap": "1.18.0",
     "highlight.js": "~8.4.0",
     "html-loader": "^0.2.3",
@@ -64,7 +63,7 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "0.5.7",
     "uuid": "^2.0.1",
-    "webpack": "3.8.1",
+    "webpack": "5.40.0",
     "zxcvbn": "^4.2.0"
   },
   "scripts": {
