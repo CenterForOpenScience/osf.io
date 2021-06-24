@@ -90,6 +90,7 @@ class RegistrationProviderDisplay(PermissionRequiredMixin, DetailView):
         registration_provider_attributes = model_to_dict(registration_provider)
         registration_provider_attributes['default_license'] = registration_provider.default_license.name if registration_provider.default_license else None
         registration_provider_attributes['brand'] = registration_provider.brand.name if registration_provider.brand else None
+        registration_provider_attributes['default_schema'] = registration_provider.default_schema.name if registration_provider.default_schema else None
 
         # compile html list of licenses_acceptable so we can render them as a list
         licenses_acceptable = list(registration_provider.licenses_acceptable.values_list('name', flat=True))
@@ -201,8 +202,12 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
     def get_context_data(self, *args, **kwargs):
         registration_provider = self.get_object()
         kwargs['provider_name'] = registration_provider.name
-        kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
-        kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        if registration_provider.primary_collection:
+            kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
+            kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        else:
+            kwargs['has_collected_submissions'] = False
+            kwargs['collected_submission_count'] = 0
         kwargs['provider_id'] = registration_provider.id
         return super(DeleteRegistrationProvider, self).get_context_data(*args, **kwargs)
 

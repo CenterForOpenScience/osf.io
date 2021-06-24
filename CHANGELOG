@@ -2,6 +2,27 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.05.0 (2021-6-17)
+====================
+- OSF Integration with Pigeon (microservice for registration archival)
+- Updates to Collections metadata to support new collaborators
+
+
+21.04.0 (2021-5-27)
+====================
+- Support for default schema on registration providers
+- Updates to email language for registration workflows
+- Scripts and schemas to support activation of EGAP Registry
+- Fix for edge case where Embargo expires while pending early termination
+
+21.03.0 (2021-4-22)
+====================
+- Support for provider-defined metadata fields on registrations
+- Updates to secondary-data registration schema
+- Support to update registration schemas via the Admin App
+- Task to clean up files from stuck/withdrawn registrations
+- Updated SHARE integration
+
 21.02.0 (2021-3-29)
 ====================
 - Updated APIs for No-Project registrations

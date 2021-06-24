@@ -391,7 +391,6 @@ def update_user_async(self, user_id, index=None):
         self.retry(exc)
 
 def serialize_node(node, category):
-    elastic_document = {}
     parent_id = node.parent_id
 
     try:
@@ -446,8 +445,6 @@ def serialize_node(node, category):
     return elastic_document
 
 def serialize_preprint(preprint, category):
-    elastic_document = {}
-
     try:
         normalized_title = six.u(preprint.title)
     except TypeError:
@@ -481,8 +478,6 @@ def serialize_preprint(preprint, category):
     return elastic_document
 
 def serialize_group(group, category):
-    elastic_document = {}
-
     try:
         normalized_title = six.u(group.name)
     except TypeError:
@@ -612,6 +607,8 @@ def serialize_cgm(cgm):
         'volume': cgm.volume,
         'issue': cgm.issue,
         'programArea': cgm.program_area,
+        'schoolType': cgm.school_type,
+        'studyDesign': cgm.study_design,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
@@ -799,7 +796,7 @@ def update_file(file_, index=None, delete=False):
 def update_institution(institution, index=None):
     index = index or INDEX
     id_ = institution._id
-    if institution.is_deleted:
+    if institution.deleted or institution.deactivated:
         client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
     else:
         institution_doc = {

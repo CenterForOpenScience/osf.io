@@ -18,7 +18,18 @@ from website import settings as website_settings
 logger = logging.getLogger(__name__)
 
 
+class InstitutionManager(models.Manager):
+
+    def get_queryset(self):
+        return super().get_queryset().filter(deactivated__isnull=True)
+
+    def get_all_institutions(self):
+        return super().get_queryset()
+
+
 class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel, GuardianMixin):
+
+    objects = InstitutionManager()
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
@@ -64,6 +75,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
+    deactivated = NonNaiveDateTimeField(null=True, blank=True)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
@@ -139,17 +151,17 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         except SearchUnavailableError as e:
             logger.exception(e)
 
-        saved_fields = self.get_dirty_fields()
-        if saved_fields and bool(self.pk):
-            for node in self.nodes.filter(is_deleted=False):
-                try:
-                    update_node(node, async_update=False)
-                except SearchUnavailableError as e:
-                    logger.exception(e)
+        for node in self.nodes.filter(is_deleted=False):
+            try:
+                update_node(node, async_update=False)
+            except SearchUnavailableError as e:
+                logger.exception(e)
 
     def save(self, *args, **kwargs):
-        self.update_search()
-        return super(Institution, self).save(*args, **kwargs)
+        saved_fields = self.get_dirty_fields()
+        super(Institution, self).save(*args, **kwargs)
+        if saved_fields:
+            self.update_search()
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):
