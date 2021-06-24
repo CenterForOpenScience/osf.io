@@ -90,12 +90,12 @@ class GuidSerializer(JSONAPISerializer):
                 reverse(
                     get_related_view(obj),
                     kwargs={
-                        'version': self.context['view'].kwargs.get('version', '2')
-                        **view_kwargs
+                        'version': self.context['view'].kwargs.get('version', '2'),
+                        **view_kwargs,
                     },
-                )
+                ),
             ).func.cls.serializer_class(
-                context=self.context
+                context=self.context,
             )
 
             [ser.context.update({k: v}) for k, v in self.context.items()]
