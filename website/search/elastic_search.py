@@ -596,6 +596,10 @@ def serialize_cgm(cgm):
     if hasattr(obj, '_contributors'):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
 
+    tags = []
+    if hasattr(obj, 'tags'):
+        tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
+
     return {
         'id': cgm._id,
         'abstract': getattr(obj, 'description', ''),
@@ -612,7 +616,7 @@ def serialize_cgm(cgm):
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
-        'tags': list(obj.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
         'category': 'collectionSubmission',
     }
 
@@ -885,7 +889,8 @@ def create_index(index=None):
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
                     'title': ENGLISH_ANALYZER_PROPERTY,
-                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                    'schoolType': ENGLISH_ANALYZER_PROPERTY,
+                    'studyDesign': ENGLISH_ANALYZER_PROPERTY
                 }
             }
         else:
