@@ -668,8 +668,6 @@ class SearchCollections(BaseSearchView):
             'provider',
             'title',
             'tags',
-            'schoolType',
-            'studyDesign',
         ]
 
     def create(self, request, *args, **kwargs):
