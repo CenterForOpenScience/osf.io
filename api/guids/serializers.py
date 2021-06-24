@@ -82,23 +82,17 @@ class GuidSerializer(JSONAPISerializer):
             # Force the referent to serialize instead.
             obj = obj.referent
             if isinstance(obj, Collection):
-                view_kwargs = {
-                    'collection_id': obj._id,
-                    'version':
-                        self.context['view'].kwargs.get('version', '2')
-                }
+                view_kwargs = {'collection_id': obj._id}
             else:
-                view_kwargs = {
-                    'node_id': obj._id,
-                    'version':
-                        self.context['view'].kwargs.get('version', '2')
-                }
-
+                view_kwargs = {'node_id': obj._id}
 
             ser = resolve(
                 reverse(
                     get_related_view(obj),
-                    kwargs=view_kwargs,
+                    kwargs={
+                        'version': self.context['view'].kwargs.get('version', '2')
+                        **view_kwargs
+                    },
                 )
             ).func.cls.serializer_class(
                 context=self.context
