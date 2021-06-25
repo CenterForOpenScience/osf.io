@@ -19,7 +19,7 @@
     "bootbox": "^4.4.0",
     "bootstrap": "3.3.7",
     "bower": "^1.8.8",
-    "css-loader": "^0.9.1",
+    "css-loader": "^5.2.6",
     "diff": "~2.2.2",
     "dropzone": "git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
     "exports-loader": "0.6.3",
