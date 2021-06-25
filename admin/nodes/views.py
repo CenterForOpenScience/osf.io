@@ -371,7 +371,7 @@ class NodeFlaggedSpamList(NodeSpamList, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         if (('spam_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam')) or
-                ('ham_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_ham'))):
+                ('ham_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam'))):
             raise PermissionDenied('You do not have permission to update a node flagged as spam.')
         node_ids = [
             nid for nid in list(request.POST.keys())
