@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import json
-import logging
 
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -11,19 +10,13 @@ from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.utils import timezone
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic.edit import FormView
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
-from framework import sentry
 from osf.models import Institution, Node, OSFUser
-from website.mails import send_mail, INSTITUTION_DEACTIVATION
-from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
-
-logger = logging.getLogger(__name__)
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -208,39 +201,8 @@ class DeactivateInstitution(PermissionRequiredMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         institution = self.get_object()
-        institution.deactivated = timezone.now()
-        institution.save()
-        # Django mangers aren't used when querying on related models. Thus, we can query
-        # affiliated users and send notification emails after the institution has been deactivated.
-        self._send_deactivation_email(institution)
+        institution.deactivate()
         return redirect('institutions:detail', institution_id=institution.id)
-
-    @staticmethod
-    def _send_deactivation_email(institution):
-        forgot_password = 'forgotpassword' if DOMAIN.endswith('/') else '/forgotpassword'
-        attempts = 0
-        success = 0
-        # Use iterator to reduce potential memory load when there are a lot of users. The side
-        # effect is that this disables QuerySet caching. This is fine since it isn't used again.
-        for user in OSFUser.objects.filter(affiliated_institutions___id=institution._id).iterator():
-            try:
-                attempts += 1
-                send_mail(
-                    to_addr=user.username,
-                    mail=INSTITUTION_DEACTIVATION,
-                    user=user,
-                    forgot_password_link='{}{}'.format(DOMAIN, forgot_password),
-                    osf_support_email=OSF_SUPPORT_EMAIL
-                )
-            except Exception:
-                logger.error('Failed to send institution deactivation email to '
-                             'user [{}] at [{}]'.format(user._id, institution._id))
-                sentry.log_exception()
-                continue
-            else:
-                success += 1
-        logger.info('Institution deactivation notification email has been sent to '
-                    '[{}/{}] users for [{}]'.format(success, attempts, institution._id))
 
 
 class ReactivateInstitution(PermissionRequiredMixin, UpdateView):
@@ -255,8 +217,7 @@ class ReactivateInstitution(PermissionRequiredMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         institution = self.get_object()
-        institution.deactivated = None
-        institution.save()
+        institution.reactivate()
         return redirect('institutions:detail', institution_id=institution.id)
 
 

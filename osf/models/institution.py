@@ -9,11 +9,15 @@ from django.urls import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+
+from framework import sentry
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable, GuardianMixin
 from website import settings as website_settings
+from website.mails import send_mail, INSTITUTION_DEACTIVATION
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +166,56 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         super(Institution, self).save(*args, **kwargs)
         if saved_fields:
             self.update_search()
+
+    def _send_deactivation_email(self):
+        """Send notification emails to all users affiliated with the deactivated institution.
+        """
+        forgot_password = 'forgotpassword' if website_settings.DOMAIN.endswith('/') else '/forgotpassword'
+        attempts = 0
+        success = 0
+        for user in self.osfuser_set.all():
+            try:
+                attempts += 1
+                send_mail(
+                    to_addr=user.username,
+                    mail=INSTITUTION_DEACTIVATION,
+                    user=user,
+                    forgot_password_link='{}{}'.format(website_settings.DOMAIN, forgot_password),
+                    osf_support_email=website_settings.OSF_SUPPORT_EMAIL
+                )
+            except Exception:
+                logger.error('Failed to send institution deactivation email to '
+                             'user [{}] at [{}]'.format(user._id, self._id))
+                sentry.log_exception()
+                continue
+            else:
+                success += 1
+        logger.info('Institution deactivation notification email has been sent to '
+                    '[{}/{}] users for [{}]'.format(success, attempts, self._id))
+
+    def deactivate(self):
+        """Deactivate an active institution, update OSF search and send emails to all affiliated users.
+        """
+        if not self.deactivated:
+            self.deactivated = timezone.now()
+            self.save()
+            # Django mangers aren't used when querying on related models. Thus, we can query
+            # affiliated users and send notification emails after the institution has been deactivated.
+            self._send_deactivation_email()
+        else:
+            logger.warning('Action rejected - deactivating an inactive institution [{}].'.format(self._id))
+            sentry.log_message('Action rejected - deactivating an inactive institution [{}]'.format(self._id))
+
+    def reactivate(self):
+        """Reactivate an inactive institution and update OSF search without sending out emails.
+        """
+        if self.deactivated:
+            self.deactivated = None
+            self.save()
+        else:
+            logger.warning('Action rejected - reactivating an active institution [{}].'.format(self._id))
+            sentry.log_message('Action rejected - reactivating an active institution [{}]'.format(self._id))
+
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):
