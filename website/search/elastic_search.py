@@ -889,8 +889,9 @@ def create_index(index=None):
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
                     'title': ENGLISH_ANALYZER_PROPERTY,
+                    'abstract': ENGLISH_ANALYZER_PROPERTY,
                     'schoolType': NOT_ANALYZED_PROPERTY,
-                    'studyDesign': NOT_ANALYZED_PROPERTY
+                    'studyDesign': NOT_ANALYZED_PROPERTY,
                 }
             }
         else:
