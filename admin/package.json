@@ -19,7 +19,7 @@
     "raven": "^0.7.2",
     "simple-statistics": "2.0.0-beta1",
     "urijs": "^1.14.1",
-    "webpack": "5.40.0",
+    "webpack": "3.12.0",
     "webpack-bundle-tracker": "0.0.8"
   },
   "scripts": {

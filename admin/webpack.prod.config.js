@@ -15,11 +15,6 @@ module.exports = assign(admin, {
             DEBUG: false,
             '__DEV__': false
         }),
-        new webpack.optimize.UglifyJsPlugin({
-            exclude: /conference.*?\.js$/,
-            sourceMap: true,
-            warnings: true,
-        }),
         // Save a webpack-assets.json file that maps base filename to filename with
         // hash. This file is used by the webpack_asset mako filter to expand
         // base filenames to full filename with hash.
