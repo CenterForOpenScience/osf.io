@@ -12,9 +12,23 @@ from .. import SHORT_NAME
 from .. import settings
 from .utils import BaseAddonTestCase
 from website.util import api_url_for
+from future.moves.urllib.parse import urlparse, parse_qs
 
 
 class TestViews(BaseAddonTestCase, OsfTestCase):
+
+    def test_binderhub_authorize(self):
+        url = self.project.api_url_for('{}_oauth_authorize'.format(SHORT_NAME),
+                                       serviceid='binderhub')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http_status.HTTP_302_FOUND)
+        url = res.headers['Location']
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+
+        assert_equal(params['response_type'][0], 'code')
+        assert_equal(params['scope'][0], 'identity')
+        assert_equal(urlparse(params['redirect_uri'][0]).path, '/project/binderhub/callback')
 
     def test_empty_binder_url(self):
         self.node_settings.set_binder_url('')
