@@ -16,8 +16,8 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.mixins import Loggable, GuardianMixin
+from website import mails
 from website import settings as website_settings
-from website.mails import send_mail, INSTITUTION_DEACTIVATION
 
 logger = logging.getLogger(__name__)
 
@@ -176,9 +176,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         for user in self.osfuser_set.all():
             try:
                 attempts += 1
-                send_mail(
+                mails.send_mail(
                     to_addr=user.username,
-                    mail=INSTITUTION_DEACTIVATION,
+                    mail=mails.INSTITUTION_DEACTIVATION,
                     user=user,
                     forgot_password_link='{}{}'.format(website_settings.DOMAIN, forgot_password),
                     osf_support_email=website_settings.OSF_SUPPORT_EMAIL
