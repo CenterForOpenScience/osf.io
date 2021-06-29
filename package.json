@@ -70,5 +70,8 @@
   "scripts": {
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
+  },
+  "resolutions": {
+    "css-loader": "^1.0.0"
   }
 }
