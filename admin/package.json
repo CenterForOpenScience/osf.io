@@ -21,6 +21,7 @@
     "simple-statistics": "2.0.0-beta1",
     "urijs": "^1.14.1",
     "webpack": "3.8.1",
+    "css-loader": "^1.0.0",
     "webpack-bundle-tracker": "0.0.8"
   },
   "scripts": {
