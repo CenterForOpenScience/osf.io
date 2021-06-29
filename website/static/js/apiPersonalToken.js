@@ -7,7 +7,6 @@
 
 var $ = require('jquery');
 var bootbox = require('bootbox');
-var historyjs = require('exports-loader?History!history');
 
 var ko = require('knockout');
 require('knockout.validation');
@@ -326,7 +325,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.showToken(true);
             this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success');
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
-            historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
+            history.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -368,7 +367,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
                     request.done(function () {
                         this.allowExit(true);
                         // Don't let user go back to a deleted token page
-                        historyjs.replaceState({}, '', this.webListUrl);
+                        history.replaceState({}, '', this.webListUrl);
                         this.visitList();
                     }.bind(this));
                     request.fail(function () {
