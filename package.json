@@ -68,25 +68,7 @@
     "webpack": "3.8.1",
     "zxcvbn": "^4.2.0"
   },
-  "devDependencies": {
-    "chai": "^2.1.1",
-    "faker": "^2.1.2",
-    "jshint": "2.8.0",
-    "karma": "^1.7.0",
-    "karma-chrome-launcher": "2.2.0",
-    "karma-firefox-launcher": "^0.1.4",
-    "karma-mocha": "^0.1.10",
-    "karma-sauce-launcher": "^0.2.10",
-    "karma-sinon": "^1.0.5",
-    "karma-sourcemap-loader": "^0.3.7",
-    "karma-spec-reporter": "^0.0.16",
-    "karma-webpack": "^2.0.4",
-    "mocha": "^2.5.3",
-    "sinon": "^2.4.1"
-  },
   "scripts": {
-    "test": "karma start --single-run --browsers ChromeHeadless",
-    "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
   }
