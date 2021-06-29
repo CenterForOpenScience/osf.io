@@ -8,6 +8,8 @@ OSF_META_SCHEMA_FILES = [
     'osf-standard-2.json',
     'brandt-prereg-2.json',
     'brandt-postcomp-2.json',
+    'character-lab-fully-powered-study.json',
+    'character-lab-pilot-study.json',
     'prereg-prize.json',
     'erpc-prize.json',
     'confirmatory-general-2.json',
@@ -23,11 +25,15 @@ OSF_META_SCHEMA_FILES = [
     'osf-preregistration-3.json',
     'egap-registration.json',
     'egap-registration-3.json',
+    'egap-registration-4.json',
+    'egap-legacy-registration.json',
     'asist-hypothesis-capability-registration.json',
     'asist-results-registration.json',
     'real-world-evidence.json',
     'qualitative-research.json',
-    'secondary-data.json'
+    'secondary-data.json',
+    'hypothesis-testing-studies-using-youth-data.json',
+    'other-studies-using-youth-data.json'
 ]
 
 METASCHEMA_ORDERING = (
@@ -49,7 +55,7 @@ METASCHEMA_ORDERING = (
     'Real World Evidence in Health Outcomes Minimum Recommended Form',
     'Qualitative Preregistration',
     'ASIST Results Registration',
-    'ASIST Hypothesis/Capability Registration'
+    'ASIST Hypothesis/Capability Registration',
 )
 
 

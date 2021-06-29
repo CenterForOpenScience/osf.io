@@ -3,19 +3,45 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    We just wanted to let you know that ${initiated_by} has requested a withdrawal for the following registration: ${registration_link}.
+    ${initiated_by} has requested final approval to withdraw your registration
+    titled <a href="${registration_link}">${reviewable.title}</a>
+    </p>
+    % if reviewable.withdrawal_justification:
+      <p>
+      The registration is being withdrawn for the following reason:
+      <blockquote>${reviewable.withdrawal_justification}</blockquote>
+      </p>
+    % endif
     <p>
     % if is_moderated:
-        If approved by project admins, a withdrawal request will be sent to ${reviewable.provider.name} moderators for review.
+      If approved by all admin contributors, the withdrawal request will be submitted for moderator review.
+      If the moderators approve, the registration will be marked as withdrawn.
     % else:
-        If approved, the registration will be marked as withdrawn. Its content will be removed from the OSF, but leave basic
-        metadata behind. The title of a withdrawn registration and its contributor list will remain, as will
-        justification or explanation of the withdrawal, if provided.
+      If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
+    Its content will be removed from the
+    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
+    but basic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
+    % if reviewable.withdrawal_justification:
+      The provided justification or explanation of the withdrawal will also be visible.
+    % endif
+    </p>
+    % if not reviewable.branched_from_node:
+      <p>
+      Even if the registration is withdrawn, the <a href="${reviewable.registered_from.absolute_url}">OSF Project</a>
+      created for this registration will remain available.
+      </p>
+    % endif
+    <p>
+    Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel
+    the withdrawal request before the withdrawal is automatically submitted.
+    </p>
     <p>
     Sincerely yours,<br>
     The OSF Robots<br>
+    </p>
 </tr>
 </%def>

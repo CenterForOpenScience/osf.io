@@ -374,21 +374,53 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                 schema_block_group_key=schema_block_group_key,
             )
 
-        # Creates question input block - this block will correspond to an answer
-        # Map the original schema section format to the new block_type, and create a schema block
-        block_type = FORMAT_TYPE_TO_TYPE_MAP[(question.get('format'), question.get('type'))]
-        create_schema_block(
-            state,
-            rs.id,
-            block_type,
-            required=question.get('required', False),
-            schema_block_group_key=schema_block_group_key,
-            registration_response_key=get_registration_response_key(question)
-        )
+        if question.get('format') or question.get('type'):
+            # Creates question input block - this block will correspond to an answer
+            # Map the original schema section format to the new block_type, and create a schema block
+            block_type = FORMAT_TYPE_TO_TYPE_MAP[(question.get('format'), question.get('type'))]
+            create_schema_block(
+                state,
+                rs.id,
+                block_type,
+                required=question.get('required', False),
+                schema_block_group_key=schema_block_group_key,
+                registration_response_key=get_registration_response_key(question)
+            )
 
         # If there are multiple choice answers, create blocks for these as well.
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
+def create_schema_blocks_for_atomic_schema(schema):
+    """
+    Atomic schemas are a short cut around making an typical metaschemas by being totally explict about the schemablocks
+    being created.
+    """
+
+    from osf.models import RegistrationSchemaBlock
+    current_group_key = None
+    for index, block in enumerate(schema.schema['blocks']):
+
+        # registration_response_key and schema_block_group_key are unused
+        # for most block types and can/should be empty.
+        # registration_response_key gets explicitly filtered by isnull :/
+        block['registration_response_key'] = None
+        block['schema_block_group_key'] = ''
+        block_type = block['block_type']
+
+        if block_type == 'question-label':
+            # This key will be used by input and option fields for this question
+            current_group_key = generate_object_id()
+            block['schema_block_group_key'] = current_group_key
+        elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
+            block['registration_response_key'] = f'{schema.id}-{index}'
+            block['schema_block_group_key'] = current_group_key
+        elif block_type in ['select-input-option', 'select-input-other']:
+            block['schema_block_group_key'] = current_group_key
+
+        RegistrationSchemaBlock.objects.create(
+            schema_id=schema.id,
+            **block
+        )
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
@@ -406,7 +438,11 @@ def map_schemas_to_schemablocks(*args):
     unmap_schemablocks(*args)
 
     for rs in schema_model.objects.all():
-        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.schema.get('name'), rs.schema_version))
+        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
+        if rs.schema.get('atomicSchema'):
+            create_schema_blocks_for_atomic_schema(rs)
+            continue
+
         for page in rs.schema['pages']:
             # Create page heading block
             create_schema_block(

@@ -1,6 +1,7 @@
-# -*- coding: utf-8 -*-
+import logging
 
 import furl
+from django.utils import timezone
 from rest_framework import status as http_status
 import json
 from future.moves.urllib.parse import quote
@@ -13,6 +14,8 @@ from framework.auth.core import get_user, generate_verification_key
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
+
+logger = logging.getLogger(__name__)
 
 
 class CasError(HTTPError):
@@ -264,6 +267,15 @@ def make_response_from_ticket(ticket, service_url):
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
         # user found and authenticated
         if user and action == 'authenticate':
+            # If users check the TOS consent checkbox via CAS, CAS sets the attribute `termsOfServiceChecked` to `true`
+            # and then release it to OSF among other authentication attributes. When OSF receives it, it trusts CAS and
+            # updates the user object if this is THE FINAL STEP of the login flow. DON'T update TOS consent status when
+            # `external_credential == true` (i.e. w/ `action == 'authenticate'` or `action == 'external_first_login'`)
+            # since neither is the final step of a login flow.
+            if cas_resp.attributes.get('termsOfServiceChecked', False):
+                user.accepted_terms_of_service = timezone.now()
+                user.save()
+                logger.info('CAS TOS consent checked: {}, {}'.format(user.guids.first()._id, user.username))
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
                 user.verification_key = None

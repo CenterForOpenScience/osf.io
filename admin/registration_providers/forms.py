@@ -2,7 +2,7 @@ import bleach
 
 from django import forms
 
-from osf.models import RegistrationProvider, Subject
+from osf.models import RegistrationProvider, Subject, RegistrationSchema
 from admin.base.utils import (
     get_nodelicense_choices,
     get_defaultlicense_choices,
@@ -46,6 +46,11 @@ class RegistrationProviderForm(forms.ModelForm):
         self.fields['licenses_acceptable'].choices = nodelicense_choices
         self.fields['default_license'].choices = defaultlicense_choices
         self.fields['brand'].choices = brand_choices
+        if kwargs.get('initial', None) and kwargs.get('initial').get('_id', None):
+            provider = RegistrationProvider.load(kwargs.get('initial').get('_id'))
+            self.fields['default_schema'].choices = provider.schemas.filter(visible=True, active=True).values_list('id', 'name')
+        else:
+            self.fields['default_schema'].choices = RegistrationSchema.objects.filter(active=True).values_list('id', 'name')
 
     def clean_description(self, *args, **kwargs):
         if not self.data.get('description'):

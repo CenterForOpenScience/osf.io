@@ -596,6 +596,10 @@ def serialize_cgm(cgm):
     if hasattr(obj, '_contributors'):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
 
+    tags = []
+    if hasattr(obj, 'tags'):
+        tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
+
     return {
         'id': cgm._id,
         'abstract': getattr(obj, 'description', ''),
@@ -607,10 +611,12 @@ def serialize_cgm(cgm):
         'volume': cgm.volume,
         'issue': cgm.issue,
         'programArea': cgm.program_area,
+        'schoolType': cgm.school_type,
+        'studyDesign': cgm.study_design,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
-        'tags': list(obj.tags.filter(system=False).values_list('name', flat=True)),
+        'tags': tags,
         'category': 'collectionSubmission',
     }
 
@@ -794,7 +800,7 @@ def update_file(file_, index=None, delete=False):
 def update_institution(institution, index=None):
     index = index or INDEX
     id_ = institution._id
-    if institution.is_deleted:
+    if institution.deleted or institution.deactivated:
         client().delete(index=index, doc_type='institution', id=id_, refresh=True, ignore=[404])
     else:
         institution_doc = {
@@ -883,7 +889,9 @@ def create_index(index=None):
                     'programArea': NOT_ANALYZED_PROPERTY,
                     'provider': NOT_ANALYZED_PROPERTY,
                     'title': ENGLISH_ANALYZER_PROPERTY,
-                    'abstract': ENGLISH_ANALYZER_PROPERTY
+                    'abstract': ENGLISH_ANALYZER_PROPERTY,
+                    'schoolType': NOT_ANALYZED_PROPERTY,
+                    'studyDesign': NOT_ANALYZED_PROPERTY,
                 }
             }
         else:

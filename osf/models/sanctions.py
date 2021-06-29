@@ -531,10 +531,10 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             is_authorizer=is_authorizer)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -555,6 +555,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
+                'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
             })
@@ -680,10 +681,10 @@ class Retraction(EmailApprovableSanction):
     def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.RETRACTION_PENDING_TIME.days * 24
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -702,6 +703,7 @@ class Retraction(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
+                'approval_time_span': approval_time_span,
             }
 
     def _on_reject(self, event_data):
@@ -790,14 +792,11 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         context = super(RegistrationApproval, self)._email_template_context(user, node, is_authorizer, urls)
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-
-            approval_time_span = osf_settings.REGISTRATION_APPROVAL_TIME.days * 24
-
             registration = self._get_registration()
-
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
@@ -815,6 +814,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
+                'approval_time_span': approval_time_span,
             })
         return context
 
@@ -869,9 +869,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             node.update_search()  # update search if public
 
         self.save()
-
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
 
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
@@ -944,9 +941,6 @@ class DraftRegistrationApproval(Sanction):
             raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
         sanction(notify_initiator_on_complete=True)
 
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
-
     def _on_reject(self, user, *args, **kwargs):
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
@@ -1017,10 +1011,10 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         )
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
+        approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
 
             registration = self._get_registration()
 
@@ -1044,13 +1038,14 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,
                 'reviewable': self._get_registration(),
-
+                'approval_time_span': approval_time_span,
             })
         return context
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        self.target_registration.terminate_embargo(forced=True)
+        if self.target_registration.is_embargoed:  # if the embargo expires normally, this is noop.
+            self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.

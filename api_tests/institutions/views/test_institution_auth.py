@@ -107,7 +107,7 @@ class TestInstitutionAuth:
         user = OSFUser.objects.filter(username=username).first()
         assert user
         assert user.fullname == 'Fake User'
-        assert user.accepted_terms_of_service is not None
+        assert user.accepted_terms_of_service is None
         assert institution in user.affiliated_institutions.all()
 
     def test_existing_user_found_but_not_affiliated(self, app, institution, url_auth_institution):
@@ -413,7 +413,7 @@ class TestInstitutionAuthnSharedSSO:
         user = OSFUser.objects.filter(username=username).first()
         assert user
         assert user.fullname == 'Fake User'
-        assert user.accepted_terms_of_service is not None
+        assert user.accepted_terms_of_service is None
         assert institution_primary in user.affiliated_institutions.all()
         assert institution_secondary not in user.affiliated_institutions.all()
 
@@ -432,7 +432,7 @@ class TestInstitutionAuthnSharedSSO:
         user = OSFUser.objects.filter(username=username).first()
         assert user
         assert user.fullname == 'Fake User'
-        assert user.accepted_terms_of_service is not None
+        assert user.accepted_terms_of_service is None
         assert institution_primary in user.affiliated_institutions.all()
         assert institution_secondary in user.affiliated_institutions.all()
 
