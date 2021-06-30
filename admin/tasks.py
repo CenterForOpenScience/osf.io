@@ -30,7 +30,7 @@ def assets(ctx, dev=False, watch=False):
     """
     if os.getcwd() != HERE:
         os.chdir(HERE)
-    command = 'yarn install '
+    command = 'yarn install --frozen-lockfile'
     if not dev:
         command += ' --production'
     ctx.run(command, echo=True)

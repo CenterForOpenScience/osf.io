@@ -503,11 +503,6 @@ var ViewModel = function(params) {
 
     //History JS callback
     self.pageChange = function() {
-        if (self.stateJustPushed) {
-            self.stateJustPushed = false;
-            return;
-        }
-
         self.loadState();
 
         self.search(true);
@@ -583,8 +578,8 @@ function Search(selector, url, appURL) {
     self.viewModel = new ViewModel({'url': url, 'appURL': appURL});
 
     window.onpopstate = function(event){
-        self.viewModel.pageChange(event.state); // will be our state data, so myNewState.data
-    }
+        self.viewModel.pageChange(event.state); // will be our state data
+    };
 
     var data = {
         query: $osf.urlParams().q,
