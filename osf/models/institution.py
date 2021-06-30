@@ -184,14 +184,13 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
                     osf_support_email=website_settings.OSF_SUPPORT_EMAIL
                 )
             except Exception:
-                logger.error('Failed to send institution deactivation email to '
-                             'user [{}] at [{}]'.format(user._id, self._id))
+                logger.error(f'Failed to send institution deactivation email to user [{user._id}] at [{self._id}]')
                 sentry.log_exception()
                 continue
             else:
                 success += 1
-        logger.info('Institution deactivation notification email has been sent to '
-                    '[{}/{}] users for [{}]'.format(success, attempts, self._id))
+        logger.info(f'Institution deactivation notification email has been '
+                    f'sent to [{success}/{attempts}] users for [{self._id}]')
 
     def deactivate(self):
         """Deactivate an active institution, update OSF search and send emails to all affiliated users.
@@ -203,8 +202,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             # affiliated users and send notification emails after the institution has been deactivated.
             self._send_deactivation_email()
         else:
-            logger.warning('Action rejected - deactivating an inactive institution [{}].'.format(self._id))
-            sentry.log_message('Action rejected - deactivating an inactive institution [{}]'.format(self._id))
+            message = f'Action rejected - deactivating an inactive institution [{self._id}].'
+            logger.warning(message)
+            sentry.log_message(message)
 
     def reactivate(self):
         """Reactivate an inactive institution and update OSF search without sending out emails.
@@ -213,8 +213,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             self.deactivated = None
             self.save()
         else:
-            logger.warning('Action rejected - reactivating an active institution [{}].'.format(self._id))
-            sentry.log_message('Action rejected - reactivating an active institution [{}]'.format(self._id))
+            message = f'Action rejected - reactivating an active institution [{self._id}].'
+            logger.warning(message)
+            sentry.log_message(message)
 
 
 @receiver(post_save, sender=Institution)

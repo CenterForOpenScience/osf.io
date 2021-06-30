@@ -125,6 +125,7 @@ class TestInstitutionManager:
         institution.reactivate()
         assert institution.deactivated is None
 
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
     def test_send_deactivation_email_call_count(self, mock_send_mail):
         institution = InstitutionFactory()
@@ -137,21 +138,22 @@ class TestInstitutionManager:
         institution._send_deactivation_email()
         assert mock_send_mail.call_count == 2
 
-    def test_send_deactivation_email_call_args(self):
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    def test_send_deactivation_email_call_args(self, mock_send_mail):
         institution = InstitutionFactory()
         user = UserFactory()
         user.affiliated_institutions.add(institution)
         user.save()
-        with mock.patch.object(mails, 'send_mail', return_value=None, side_effect=mails.send_mail) as mock_send_mail:
-            institution._send_deactivation_email()
-            forgot_password = 'forgotpassword' if settings.DOMAIN.endswith('/') else '/forgotpassword'
-            mock_send_mail.assert_called_with(
-                to_addr=user.username,
-                mail=mails.INSTITUTION_DEACTIVATION,
-                user=user,
-                forgot_password_link='{}{}'.format(settings.DOMAIN, forgot_password),
-                osf_support_email=settings.OSF_SUPPORT_EMAIL
-            )
+        institution._send_deactivation_email()
+        forgot_password = 'forgotpassword' if settings.DOMAIN.endswith('/') else '/forgotpassword'
+        mock_send_mail.assert_called_with(
+            to_addr=user.username,
+            mail=mails.INSTITUTION_DEACTIVATION,
+            user=user,
+            forgot_password_link='{}{}'.format(settings.DOMAIN, forgot_password),
+            osf_support_email=settings.OSF_SUPPORT_EMAIL
+        )
 
     def test_deactivate_inactive_institution_noop(self):
         institution = InstitutionFactory()
