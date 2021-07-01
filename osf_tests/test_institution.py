@@ -1,9 +1,12 @@
+import mock
+import pytest
+
 from django.utils import timezone
 from past.builtins import basestring
-from osf.models import Institution
 
-from .factories import InstitutionFactory, AuthUserFactory
-import pytest
+from osf.models import Institution
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, UserFactory
+from website import mails, settings
 
 
 @pytest.mark.django_db
@@ -103,3 +106,67 @@ class TestInstitutionManager:
         institution.deactivated = timezone.now()
         institution.save()
         assert institution in Institution.objects.get_all_institutions()
+
+    def test_deactivate_institution(self):
+        institution = InstitutionFactory()
+        with mock.patch.object(
+                institution,
+                '_send_deactivation_email',
+                return_value=None
+        ) as mock__send_deactivation_email:
+            institution.deactivate()
+            assert institution.deactivated is not None
+            assert mock__send_deactivation_email.called
+
+    def test_reactivate_institution(self):
+        institution = InstitutionFactory()
+        institution.deactivated = timezone.now()
+        institution.save()
+        institution.reactivate()
+        assert institution.deactivated is None
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    def test_send_deactivation_email_call_count(self, mock_send_mail):
+        institution = InstitutionFactory()
+        user_1 = UserFactory()
+        user_1.affiliated_institutions.add(institution)
+        user_1.save()
+        user_2 = UserFactory()
+        user_2.affiliated_institutions.add(institution)
+        user_2.save()
+        institution._send_deactivation_email()
+        assert mock_send_mail.call_count == 2
+
+    @mock.patch('website.mails.settings.USE_EMAIL', False)
+    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    def test_send_deactivation_email_call_args(self, mock_send_mail):
+        institution = InstitutionFactory()
+        user = UserFactory()
+        user.affiliated_institutions.add(institution)
+        user.save()
+        institution._send_deactivation_email()
+        forgot_password = 'forgotpassword' if settings.DOMAIN.endswith('/') else '/forgotpassword'
+        mock_send_mail.assert_called_with(
+            to_addr=user.username,
+            mail=mails.INSTITUTION_DEACTIVATION,
+            user=user,
+            forgot_password_link='{}{}'.format(settings.DOMAIN, forgot_password),
+            osf_support_email=settings.OSF_SUPPORT_EMAIL
+        )
+
+    def test_deactivate_inactive_institution_noop(self):
+        institution = InstitutionFactory()
+        institution.deactivated = timezone.now()
+        institution.save()
+        with mock.patch.object(institution, 'save', return_value=None) as mock_save:
+            institution.deactivate()
+            assert not mock_save.called
+
+    def test_reactivate_active_institution_noop(self):
+        institution = InstitutionFactory()
+        institution.deactivated = None
+        institution.save()
+        with mock.patch.object(institution, 'save', return_value=None) as mock_save:
+            institution.reactivate()
+            assert not mock_save.called
