@@ -44,7 +44,6 @@ PROVIDERS = {
     'weko': 'WEKO',
     'dropboxbusiness': 'Dropbox Business',
     'nextcloudinstitutions': 'Nextcloud for Institutions',
-    'googledriveinstitutions': 'Google Drive in G Suite / Google Workspace',
 }
 # install-addons.py
 PROVIDERS['s3compat'] = 'S3 Compatible Storage'

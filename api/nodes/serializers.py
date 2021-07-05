@@ -1019,7 +1019,7 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
             folder_info = None
             set_folder = False
 
-        if addon_name in ['googledrive', 'iqbrims', 'googledriveinstitutions']:
+        if addon_name in ['googledrive', 'iqbrims']:
             folder_id = folder_info
             try:
                 folder_path = data['folder_path']

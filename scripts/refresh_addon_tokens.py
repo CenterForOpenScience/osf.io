@@ -20,13 +20,12 @@ from addons.box.models import Provider as Box
 from addons.googledrive.models import GoogleDriveProvider
 from addons.iqbrims.models import IQBRIMSProvider
 from addons.mendeley.models import Mendeley
-from addons.googledriveinstitutions.models import GoogleDriveInstitutionsProvider
 from osf.models import ExternalAccount
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-PROVIDER_CLASSES = (Box, GoogleDriveProvider, IQBRIMSProvider, Mendeley, GoogleDriveInstitutionsProvider, )
+PROVIDER_CLASSES = (Box, GoogleDriveProvider, IQBRIMSProvider, Mendeley, )
 
 
 def look_up_provider(addon_short_name):
