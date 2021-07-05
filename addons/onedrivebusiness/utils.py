@@ -21,6 +21,8 @@ def parse_root_folder_id(root_folder_id):
 
 def get_region_external_account(node):
     user = node.creator
+    if user is None:
+        return None
     institution = user.affiliated_institutions.first()
     if institution is None:
         return None
