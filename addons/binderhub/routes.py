@@ -22,9 +22,12 @@ page_routes = {
         Rule([
             '/project/<pid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
+            '/<pid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
+            '/<pid>/node/<nid>/{}/<serviceid>/authorize'.format(SHORT_NAME),
         ], 'get', oauth.binderhub_oauth_authorize, json_renderer),
         Rule([
             '/project/{}/callback'.format(SHORT_NAME),
+            '/{}/callback'.format(SHORT_NAME),
         ], 'get', oauth.binderhub_oauth_callback, json_renderer),
     ]
 }

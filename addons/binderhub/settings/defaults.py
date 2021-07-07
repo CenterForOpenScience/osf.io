@@ -3,9 +3,9 @@ DEFAULT_BINDER_URL = 'https://binder.cs.rcos.nii.ac.jp'
 BINDERHUB_OAUTH_CLIENT = dict(
     client_id='AAAA',
     client_secret='BBBB',
-    authorize_url='http://192.168.168.167:8585/api/oauth2/authorize',
-    token_url='http://192.168.168.167:8585/api/oauth2/token',
-    services_url='http://192.168.168.167:8585/api/services',
+    authorize_url='https://192.168.168.167:8585/api/oauth2/authorize',
+    token_url='https://192.168.168.167:8585/api/oauth2/token',
+    services_url='https://192.168.168.167:8585/api/services',
     scope=['identity'],
 )
 
