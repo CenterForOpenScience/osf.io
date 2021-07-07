@@ -98,7 +98,6 @@ def make_complex_draft_registration(title, institution, description, category,
                 'copyrightHolders': COPYLEFT_HOLDERS
             },
             auth=Auth(user),
-            save=True
         )
         draft_registration.add_tag('savanna', Auth(user))
         draft_registration.add_tag('taxonomy', Auth(user))

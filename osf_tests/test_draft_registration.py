@@ -9,6 +9,7 @@ from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationC
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
 from osf_tests.test_node_license import TestNodeLicenses
+from osf.exceptions import ValidationError
 
 from website import settings
 
@@ -710,6 +711,36 @@ class TestDraftRegistrationLicenses(TestNodeLicenses):
         draft_registration.save()
         return draft_registration
 
+    def test_node_set_node_license(self, node, user):
+        GPL3 = NodeLicense.objects.get(license_id='GPL3')
+        NEW_YEAR = '2014'
+        COPYLEFT_HOLDERS = ['Richard Stallman']
+        node.set_node_license(
+            {
+                'id': GPL3.license_id,
+                'year': NEW_YEAR,
+                'copyrightHolders': COPYLEFT_HOLDERS
+            },
+            auth=Auth(user)
+        )
+
+        assert node.node_license.license_id == GPL3.license_id
+        assert node.node_license.name == GPL3.name
+        assert node.node_license.copyright_holders == COPYLEFT_HOLDERS
+        assert node.logs.latest().action == NodeLog.CHANGED_LICENSE
+
+    def test_node_set_node_license_invalid(self, node, user):
+        with pytest.raises(ValidationError):
+            node.set_node_license(
+                {
+                    'id': 'SOME ID',
+                    'year': 'foo',
+                    'copyrightHolders': []
+                },
+                auth=Auth(user)
+            )
+        action = node.logs.latest().action if node.logs.count() else None
+        assert action != NodeLog.CHANGED_LICENSE
 
 class TestDraftRegistrationSubjects(TestNodeSubjects):
     @pytest.fixture()

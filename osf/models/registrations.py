@@ -1463,34 +1463,28 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             kwargs.pop('old_subjects')
         return super(DraftRegistration, self).save(*args, **kwargs)
 
-    def set_node_license(self, license_detail):
-
+    def set_node_license(self, license_detail, auth):
+        from django.apps import apps
         NodeLicense = apps.get_model('osf.NodeLicense')
         NodeLicenseRecord = apps.get_model('osf.NodeLicenseRecord')
 
-        license_id = license_detail.get('id')
-        license_year = license_detail.get('year')
-        copyright_holders = license_detail.get('copyrightHolders', [])
-
         try:
-            node_license = NodeLicense.objects.get(license_id=license_id)
+            node_license = NodeLicense.objects.get(license_id=license_detail.get('id'))
         except NodeLicense.DoesNotExist:
             raise ValidationError('Trying to update a draft registration with an invalid license')
 
-        if self.license is None:
-            self.license = NodeLicenseRecord(node_license=node_license)
-
-
-        self.license.year = license_year
-        self.license.copyright_holders = copyright_holders
-        self.license.save()
+        self.node_license = NodeLicenseRecord(node_license=node_license)
+        self.node_license.year = license_detail.get('year')
+        self.node_license.copyright_holders = license_detail.get('copyrightHolders', [])
+        self.node_license.save()
 
         params = self.log_params
-        params['new_license'] = self.license.node_license.name
+        params['new_license'] = self.node_license.name
 
         self.add_log(
             action=self.log_class.CHANGED_LICENSE,
-            params=params
+            params=params,
+            auth=auth,
         )
         self.save()
 
@@ -1518,6 +1512,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                         'year': value.get('year'),
                         'copyrightHolders': value.get('copyrightHolders') or value.get('copyright_holders', [])
                     },
+                    auth
                 )
         if save:
             updated = self.get_dirty_fields()
