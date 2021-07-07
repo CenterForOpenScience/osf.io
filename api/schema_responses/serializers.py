@@ -14,7 +14,6 @@ from django.utils import timezone
 
 class SchemaResponsesSerializer(JSONAPISerializer):
     id = ser.CharField(required=False, source='_id', read_only=True)
-    title = ser.CharField(required=False, allow_blank=True)
     responses = ser.JSONField(required=False)
     deleted = ser.SerializerMethodField(required=False)
     public = ser.SerializerMethodField(required=False)
@@ -31,13 +30,13 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         },
     )
 
-    node = RelationshipField(
+    registration = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=True,
     )
 
-    schema = RelationshipField(
+    registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<schema._id>'},
         read_only=True,
@@ -64,13 +63,13 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
         except KeyError:
             raise exceptions.ValidationError('Request did not include node id')
 
-        node = Registration.load(guid)
+        registration = Registration.load(guid)
 
-        if node.registered_schema.first():
+        if registration.registered_schema.first():
             schema_response = SchemaResponses.objects.create(
                 **validated_data,
-                node=node,
-                schema=node.registered_schema.first()  # current only used as a one-to-one
+                node=registration,
+                registration_schema=registration.registered_schema.first()  # current only used as a one-to-one
             )
         else:
             raise NotImplementedError()

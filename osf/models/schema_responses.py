@@ -17,7 +17,6 @@ class SchemaResponses(GuidMixin, BaseModel):
     - email stuff
     """
     _responses = DateTimeAwareJSONField(default=dict, blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     public = NonNaiveDateTimeField(null=True, blank=True)
     schema = models.ForeignKey(
@@ -25,7 +24,7 @@ class SchemaResponses(GuidMixin, BaseModel):
         related_name='schema_responses',
         on_delete=models.CASCADE,
     )
-    node = models.ForeignKey(
+    registration = models.ForeignKey(
         'AbstractNode',
         related_name='schema_responses',
         on_delete=models.CASCADE,
