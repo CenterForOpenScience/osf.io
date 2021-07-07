@@ -207,7 +207,10 @@ def get_license_details(node, validated_data):
     if ('license_type' not in validated_data and not (license and license.node_license.license_id)):
         raise exceptions.ValidationError(detail='License ID must be provided for a Node License.')
     license_id = license.node_license.license_id if license else None
-    license_year = license.year if license else datetime.datetime.now()
+    license_year = license.year if license else None
+    if license_year is None and isinstance(node, DraftRegistration):
+        license_year = str(datetime.datetime.now().year)
+
     license_holders = license.copyright_holders if license else []
 
     if 'license' in validated_data:
