@@ -28,6 +28,7 @@ RUN apk add --no-cache --virtual .run-deps \
     xvfb \
     jq \
     python3-tkinter \
+    openssl \
     && yarn global add bower
 
 WORKDIR /code
