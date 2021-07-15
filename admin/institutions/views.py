@@ -10,7 +10,6 @@ from django.forms.models import model_to_dict
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.utils import timezone
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic.edit import FormView
 
@@ -202,8 +201,7 @@ class DeactivateInstitution(PermissionRequiredMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         institution = self.get_object()
-        institution.deactivated = timezone.now()
-        institution.save()
+        institution.deactivate()
         return redirect('institutions:detail', institution_id=institution.id)
 
 
@@ -219,8 +217,7 @@ class ReactivateInstitution(PermissionRequiredMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         institution = self.get_object()
-        institution.deactivated = None
-        institution.save()
+        institution.reactivate()
         return redirect('institutions:detail', institution_id=institution.id)
 
 
@@ -231,6 +228,7 @@ class CannotDeleteInstitution(TemplateView):
         context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
         context['institution'] = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
         return context
+
 
 class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_institution'
