@@ -141,11 +141,9 @@ class Command(shell_plus.Command):
 
     def get_osf_imports(self):
         """Return a dictionary of common OSF objects and utilities."""
-        from osf.management.utils import print_sql
         from website import settings as website_settings
         from framework.auth import Auth, get_user
         ret = {
-            'print_sql': print_sql,
             'Auth': Auth,
             'get_user': get_user,
             'website_settings': website_settings,

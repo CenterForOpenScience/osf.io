@@ -15,10 +15,6 @@ if not settings.DEBUG_MODE:
     # the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
     #  'foo'.encode('idna')  # noqa
 
-    from psycogreen.gevent import patch_psycopg  # noqa
-    patch_psycopg()
-
-
 import os  # noqa
 from django.core.wsgi import get_wsgi_application  # noqa
 from website.app import init_app  # noqa

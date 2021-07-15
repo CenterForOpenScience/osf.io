@@ -124,8 +124,6 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
     cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
-    if print_sql:
-        cmd += ' --print-sql'
     if notebook:
         cmd += ' --notebook'
     if not transaction:

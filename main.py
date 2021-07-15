@@ -7,10 +7,6 @@ monkey.patch_all()
 # the final gevent 1.1 release (https://github.com/gevent/gevent/issues/349)
 #  'foo'.encode('idna')  # noqa
 
-from psycogreen.gevent import patch_psycopg
-patch_psycopg()
-
-
 import os
 
 from website import settings
