@@ -127,7 +127,7 @@ def get_storage_limits_css(node):
         return None
     status = node.storage_limit_status
 
-    if status is settings.StorageLimits.APPROACHING_PRIVATE:
+    if status is settings.StorageLimits.APPROACHING_PRIVATE and not node.is_public:
         return {
             'text': 'approaching',
             'class': 'btn-warning storage-warning',
