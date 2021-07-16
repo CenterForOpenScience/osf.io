@@ -27,6 +27,7 @@ def get_admin_read_permissions():
         'view_collectionprovider',
         'view_providerassetfile',
         'view_registrationprovider',
+        'view_management',
     ])
 
 

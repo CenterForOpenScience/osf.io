@@ -2311,10 +2311,6 @@ class TestSetPrivacy:
 # copied from tests/test_models.py
 class TestNodeSpam:
 
-    @pytest.fixture()
-    def project(self):
-        return ProjectFactory(is_public=True)
-
     @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
     def test_set_privacy_on_spammy_node(self, project):
         project.is_public = False
@@ -2378,6 +2374,7 @@ class TestNodeSpam:
                 assert project.check_spam(user, None, None) is True
 
                 assert user.is_disabled is True
+                project.reload()
                 assert project.is_public is False
                 project2.reload()
                 assert project2.is_public is False
@@ -2398,6 +2395,7 @@ class TestNodeSpam:
                 assert project.is_public is True
 
     def test_flag_spam_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             project.flag_spam()
@@ -2405,6 +2403,7 @@ class TestNodeSpam:
         assert project.is_public is False
 
     def test_flag_spam_do_not_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
             project.flag_spam()
@@ -2412,6 +2411,7 @@ class TestNodeSpam:
         assert project.is_public
 
     def test_confirm_spam_makes_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         project.confirm_spam()
         assert project.is_spammy

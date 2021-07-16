@@ -219,6 +219,10 @@ INVITE_PREPRINT = lambda provider: Mail(
     'invite_preprints',
     subject='You have been added as a contributor to {} {} {}.'.format(get_english_article(provider.name), provider.name, provider.preprint_word)
 )
+INVITE_DRAFT_REGISTRATION = Mail(
+    'invite_draft_registration',
+    subject='You have a new registration draft'
+)
 CONTRIBUTOR_ADDED_DEFAULT = Mail(
     'contributor_added_default',
     subject='You have been added as a contributor to an OSF project.'
@@ -237,7 +241,7 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
 )
 CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
     'contributor_added_draft_registration',
-    subject='You have been added as a contributor to a draft registration.'
+    subject='You have a new registration draft.'
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
@@ -298,11 +302,11 @@ TRANSACTIONAL = Mail(
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
-    subject='Withdrawal pending for one of your projects.'
+    subject='Withdrawal pending for one of your registrations.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
-    subject='Withdrawal pending for one of your projects.'
+    subject='Withdrawal pending for one of your registrations.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
@@ -311,24 +315,24 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 # Registration related Mail Objects
 PENDING_REGISTRATION_ADMIN = Mail(
     'pending_registration_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_REGISTRATION_NON_ADMIN = Mail(
     'pending_registration_non_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
     'pending_embargo_termination_admin',
-    subject='Request to end an embargo early for one of your projects.'
+    subject='Request to end an embargo early for one of your registrations.'
 )
 PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
     'pending_embargo_termination_non_admin',
@@ -466,4 +470,9 @@ TOU_NOTIF = Mail(
 STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
     'storage_cap_exceeded_announcement',
     subject='Action Required to avoid disruption to your OSF project',
+)
+
+INSTITUTION_DEACTIVATION = Mail(
+    'institution_deactivation',
+    subject='Your OSF login has changed - here\'s what you need to know!'
 )

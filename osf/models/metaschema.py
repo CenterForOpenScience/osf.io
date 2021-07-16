@@ -57,7 +57,16 @@ class AbstractSchemaManager(models.Manager):
         :param request: the request object needed for waffling
         :return: queryset
         """
-        queryset = self.order_by('name', '-schema_version').distinct('name')
+
+        latest_versions = self.values('name').annotate(latest_version=models.Max('schema_version'))
+
+        annotated = self.all().annotate(
+            latest_version=models.Subquery(
+                latest_versions.filter(name=models.OuterRef('name')).values('latest_version')[:1],
+                output_field=models.IntegerField(),
+            ),
+        )
+        queryset = annotated.filter(schema_version=models.F('latest_version')).order_by('name')
 
         if not invisible:
             queryset = queryset.filter(visible=True)
@@ -185,6 +194,16 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         order_with_respect_to = 'schema'
         unique_together = ('schema', 'registration_response_key')
 
+    INPUT_BLOCK_TYPES = frozenset([
+        'short-text-input',
+        'long-text-input',
+        'file-input',
+        'contributors-input',
+        'single-select-input',
+        'multi-select-input',
+        'select-other-option',
+    ])
+
     schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
     example_text = models.TextField(null=True)
@@ -208,4 +227,4 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         empty "registration_response_key"s as null, instead of an empty string.
         """
         self.registration_response_key = self.registration_response_key or None
-        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)

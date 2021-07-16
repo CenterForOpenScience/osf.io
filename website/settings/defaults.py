@@ -364,6 +364,7 @@ ARCHIVE_PROVIDER = 'osfstorage'
 MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
 
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
+STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x days are marked as deleted.
 
 ENABLE_ARCHIVER = True
 
@@ -408,12 +409,14 @@ class CeleryConfig:
         'scripts.analytics.run_keen_snapshots',
         'scripts.analytics.run_keen_events',
         'scripts.clear_sessions',
+        'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
+        'osf.management.commands.archive_registrations_on_IA'
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from'
@@ -475,7 +478,7 @@ class CeleryConfig:
     imports = (
         'framework.celery_tasks',
         'framework.email.tasks',
-        'osf.external.tasks',
+        'osf.external.chronos.tasks',
         'osf.management.commands.data_storage_usage',
         'osf.management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
@@ -505,6 +508,7 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
+        'osf.management.commands.archive_registrations_on_IA'
     )
 
     # Modules that need metrics and release requirements
@@ -649,6 +653,20 @@ class CeleryConfig:
             'update_institution_project_counts': {
                 'task': 'management.commands.update_institution_project_counts',
                 'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+            },
+#            'archive_registrations_on_IA': {
+#                'task': 'osf.management.commands.archive_registrations_on_IA',
+#                'schedule': crontab(minute=0, hour=5),  # Daily 4:00 a.m.
+#                'kwargs': {'dry_run': False}
+#            },
+            'delete_withdrawn_or_failed_registration_files': {
+                'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {
+                    'dry_run': False,
+                    'batch_size_withdrawn': 10,
+                    'batch_size_stuck': 10
+                }
             },
         }
 
@@ -1909,6 +1927,8 @@ SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)
 SPAM_FLAGGED_MAKE_NODE_PRIVATE = False
 SPAM_FLAGGED_REMOVE_FROM_SEARCH = False
 SPAM_AUTOBAN_IP_BLOCK = True
+SPAM_THROTTLE_AUTOBAN = True
+SPAM_CREATION_THROTTLE_LIMIT = 5
 
 SHARE_API_TOKEN = None
 
@@ -2040,3 +2060,8 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
+IA_ARCHIVE_ENABLED = True
+OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
+ID_VERSION = 'staging_v2'
+IA_ROOT_COLLECTION = 'cos-dev-sandbox'
+PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')

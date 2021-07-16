@@ -90,7 +90,8 @@ def prepare_mock_wb_response(
         folder=True,
         path='/',
         method=responses.GET,
-        status_code=200):
+        status_code=200,
+        view_only=None):
     """Prepare a mock Waterbutler response with responses library.
 
     :param Node node: Target node.
@@ -104,7 +105,7 @@ def prepare_mock_wb_response(
     """
     node = node
     files = files or []
-    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=None, base_url=node.osfstorage_region.waterbutler_url)
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, _internal=True, path=path, meta=True, view_only=view_only, base_url=node.osfstorage_region.waterbutler_url)
 
     default_file = {
         u'contentType': None,
@@ -132,8 +133,8 @@ def prepare_mock_wb_response(
 
     responses.add(
         responses.Response(
-            method,
-            wb_url,
+            method=method,
+            url=wb_url,
             json={u'data': jsonapi_data},
             status=status_code,
             content_type='application/json'
@@ -291,10 +292,10 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_vol_node_files_list(self):
-        self._prepare_mock_wb_response(
-            provider='github', files=[{'name': 'NewFile'}])
-        self.add_github()
         vol = self.view_only_link()
+        self._prepare_mock_wb_response(
+            provider='github', files=[{'name': 'NewFile'}], view_only=vol.key)
+        self.add_github()
         url = '/{}draft_nodes/{}/files/github/?view_only={}'.format(
             API_BASE, self.draft_node._id, vol.key)
         res = self.app.get(url, auth=self.user_two.auth)

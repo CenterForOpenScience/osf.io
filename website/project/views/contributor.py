@@ -469,6 +469,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             else:
                 mail_tpl = mails.INVITE_PREPRINT(node.provider)
                 logo = node.provider._id
+        elif email_template == 'draft_registration':
+            mail_tpl = mails.INVITE_DRAFT_REGISTRATION
         else:
             mail_tpl = mails.INVITE_DEFAULT
 

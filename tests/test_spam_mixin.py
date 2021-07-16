@@ -5,11 +5,14 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 
+import mock
+
 from framework.auth import Auth
 
 from tests.base import OsfTestCase
-from osf_tests.factories import UserFactory, CommentFactory
+from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, AuthUserFactory
 from osf.models import SpamStatus
+from website import settings, mails
 
 
 @pytest.mark.enable_implicit_clean
@@ -136,3 +139,23 @@ class TestSpamMixin(OsfTestCase):
         self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
         with assert_raises(ValidationError):
             self.comment.save()
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_throttled_autoban(self, mock_mail):
+        settings.SPAM_THROTTLE_AUTOBAN = True
+        user = AuthUserFactory()
+        projects = []
+        for _ in range(7):
+            proj = ProjectFactory(creator=user)
+            proj.flag_spam()
+            proj.save()
+            projects.append(proj)
+        mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
+                to_addr=user.username,
+                user=user,
+                mail=mails.SPAM_USER_BANNED)
+        user.reload()
+        assert user.is_disabled
+        for project in projects:
+            assert not project.is_public

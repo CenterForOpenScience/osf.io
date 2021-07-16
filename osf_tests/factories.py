@@ -453,12 +453,13 @@ class RegistrationFactory(BaseNodeFactory):
         reg.save()
         return reg
 
+
 class WithdrawnRegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
 
-        registration = kwargs.pop('registration', None)
+        registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
 
@@ -479,7 +480,7 @@ class SanctionFactory(DjangoModelFactory):
     def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
         user = kwargs.pop('user', None) or UserFactory()
         kwargs['initiated_by'] = initiated_by or user
-        sanction = super(SanctionFactory, cls)._create(target_class, *args, **kwargs)
+        sanction = super()._create(target_class, *args, **kwargs)
         reg_kwargs = {
             'creator': user,
             'user': user,
@@ -1056,16 +1057,16 @@ class ChronosJournalFactory(DjangoModelFactory):
     class Meta:
         model = models.ChronosJournal
 
-    name = factory.Faker('text')
-    title = factory.Faker('text')
+    name = factory.Faker('company')
+    title = factory.Faker('sentence')
     journal_id = factory.Faker('ean')
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'TITLE': kwargs.get('title', factory.Faker('sentence').generate([])),
             'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
-            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('company').generate([])),
             'JOURNAL_URL': factory.Faker('url').generate([]),
             'PUBLISHER_ID': factory.Faker('ean').generate([]),
             'PUBLISHER_NAME': factory.Faker('name').generate([])

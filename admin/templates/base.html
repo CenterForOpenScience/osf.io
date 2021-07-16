@@ -158,6 +158,8 @@
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>All Registrations</span></a></li>
                       <li><a href="{% url 'nodes:stuck-registrations' %}"><i class='fa fa-link'></i> <span>Stuck Registrations</span></a></li>
+                      <li><a href="{% url 'nodes:ia-backlog-list' %}"><i class='fa fa-link'></i> <span>IA Backlog</span></a></li>
+                      <li><a href="{% url 'nodes:doi-backlog-list' %}"><i class='fa fa-link'></i> <span>DOI Backlog</span></a></li>
                   </ul>
               </div>
           {% endif %}
@@ -275,6 +277,9 @@
                       {% endif %}
                   </ul>
               </div>
+          {% endif %}
+          {% if perms.osf.change_node %}
+              <li><a href="{% url 'internet_archive:internet_archive' %}"><i class='fa fa-link'></i> <span>Internet Archive</span></a></li>
           {% endif %}
 
           {% if perms.osf.change_maintenancestate %}

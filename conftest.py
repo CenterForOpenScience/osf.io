@@ -3,6 +3,7 @@ import os
 
 import logging
 
+import re
 import mock
 import responses
 import pytest
@@ -212,3 +213,46 @@ def mock_oopspam():
         with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
             with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
                 yield rsps
+
+
+@pytest.fixture
+def mock_pigeon():
+    """
+    This should be used to mock our Internet Archive archiving microservice osf-pigeon.
+    Relevent endpoints:
+    '{settings.OSF_PIGEON_URL}archive/{guid}'
+    '{settings.OSF_PIGEON_URL}metadata/{guid}'
+
+    """
+    def request_callback(request):
+        guid = request.url.split('/')[-1]
+        from osf.models import Registration
+        reg = Registration.load(guid)
+        reg.ia_url = 'https://test.ia.url.com'
+        reg.save()
+        return (200, {}, None)
+
+    with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
+        with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+            with mock.patch('osf.external.internet_archive.tasks.settings.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add_callback(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'),
+                        callback=request_callback
+                    )
+                    rsps.add(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'),
+                        status=200
+                    )
+                    yield rsps
+
+@pytest.fixture
+def mock_celery():
+    """
+    This should only be necessary for postcommit tasks.
+    """
+    with mock.patch.object(website_settings, 'USE_CELERY', True):
+        with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
+            yield mock_celery

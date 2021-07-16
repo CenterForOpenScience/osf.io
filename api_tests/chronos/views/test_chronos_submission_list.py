@@ -237,5 +237,5 @@ class TestChronosSubmissionAutomaticUpdate:
         res = app.get(url, auth=submitter.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
-        from osf.external.tasks import update_submissions_status_async
+        from osf.external.chronos.tasks import update_submissions_status_async
         mock_enqueue.assert_called_with(update_submissions_status_async.s([submission_stale.id]))

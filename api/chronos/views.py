@@ -20,7 +20,7 @@ from api.chronos.permissions import SubmissionOnPreprintPublishedOrAdmin, Submis
 from api.chronos.serializers import ChronosJournalSerializer, ChronosSubmissionSerializer, ChronosSubmissionCreateSerializer, ChronosSubmissionDetailSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import ChronosJournal, ChronosSubmission, Preprint
-from osf.external.tasks import update_submissions_status_async
+from osf.external.chronos.tasks import update_submissions_status_async
 
 
 class ChronosJournalList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):

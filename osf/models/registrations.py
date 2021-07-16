@@ -50,6 +50,7 @@ from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
+from osf.models.licenses import NodeLicenseRecord
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
@@ -59,12 +60,35 @@ from osf.utils.workflows import (
     SanctionTypes
 )
 
+from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
+
 import osf.utils.notifications as notify
+from api.share.utils import update_share
+
 
 logger = logging.getLogger(__name__)
 
 
 class Registration(AbstractNode):
+
+    # Does not include m2ms or FKs that are synced
+    SYNCED_WITH_IA = {
+        'title',
+        'description',
+        'modified',
+        'category',
+        'article_doi',
+    }
+    # IA wants us to brand our specific osf metadata with a `osf_` prefix or as their keyword.
+    IA_MAPPED_NAMES = {
+        'category': 'osf_category',
+        'article_doi': 'osf_article_doi',
+        'tags': 'osf_tags',
+        'subjects': 'osf_subjects',
+        'registration_schema': 'osf_registration_schema',
+        'provider': 'osf_registry',
+        'created': 'date',
+    }
 
     WRITABLE_WHITELIST = [
         'article_doi',
@@ -123,16 +147,47 @@ class Registration(AbstractNode):
         default=RegistrationModerationStates.INITIAL.db_name
     )
 
+    ia_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text='Where the archive.org data for the registration is stored'
+    )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
     @staticmethod
-    def find_failed_registrations():
-        expired_if_before = timezone.now() - settings.ARCHIVE_TIMEOUT_TIMEDELTA
+    def find_failed_registrations(days_stuck=None):
+        expired_if_before = timezone.now() - (days_stuck or settings.ARCHIVE_TIMEOUT_TIMEDELTA)
         node_id_list = ArchiveJob.objects.filter(sent=False, datetime_initiated__lt=expired_if_before, status=ARCHIVER_INITIATED).values_list('dst_node', flat=True)
         root_nodes_id = AbstractNode.objects.filter(id__in=node_id_list).values_list('root', flat=True).distinct()
         stuck_regs = AbstractNode.objects.filter(id__in=root_nodes_id, is_deleted=False)
+
         return stuck_regs
+
+    @staticmethod
+    def find_ia_backlog():
+        """
+        These are registrations that are waiting to be archived at archive.org
+        """
+        return Registration.objects.filter(
+            (models.Q(ia_url__isnull=True) | models.Q(ia_url='')),
+            is_public=True,
+            identifiers__category='doi'
+        ).exclude(
+            moderation_state='withdrawn',
+        )
+
+    @staticmethod
+    def find_doi_backlog():
+        """
+        These are registrations that should have DOIs but are missing them likely due to temporary outages.
+        """
+        return Registration.objects.filter(
+            is_public=True,
+        ).exclude(
+            identifiers__category='doi',
+            moderation_state='withdrawn',
+        )
 
     @property
     def has_project(self):
@@ -500,6 +555,9 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        if self.is_pending_embargo_termination:
+            self.embargo_termination_approval.accept()
+
         for node in self.node_and_primary_descendants():
             node.set_privacy(
                 self.PUBLIC,
@@ -734,6 +792,52 @@ class Registration(AbstractNode):
             super(Registration, self).remove_tags(tags, auth, save)
         else:
             raise NodeStateError('Cannot remove tags of withdrawn registrations.')
+
+    def withdraw(self):
+        self.registered_from.add_log(
+            action=NodeLog.RETRACTION_APPROVED,
+            params={
+                'node': self.registered_from._id,
+                'retraction_id': self.retraction._id,
+                'registration': self._id
+            },
+            auth=Auth(self.retraction.initiated_by),
+        )
+
+        if self.embargo_end_date or self.is_pending_embargo:
+            # Alter embargo state to make sure registration doesn't accidentally get published
+            self.embargo.state = self.retraction.REJECTED
+            self.embargo.approval_stage = (
+                SanctionStates.MODERATOR_REJECTED if self.is_moderated
+                else SanctionStates.REJECTED
+            )
+
+            self.registered_from.add_log(
+                action=NodeLog.EMBARGO_CANCELLED,
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                    'embargo_id': self.embargo._id,
+                },
+                auth=Auth(self.retraction.initiated_by),
+            )
+            self.embargo.save()
+
+        # Ensure retracted registration is public
+        # Pass auth=None because the registration initiator may not be
+        # an admin on components (component admins had the opportunity
+        # to disapprove the retraction by this point)
+        for node in self.get_descendants_recursive(primary_only=True):
+            node.set_privacy('public', auth=None, log=False)
+            node.update_search()
+
+        # force a save before sending data to share or retraction will not be updated
+        self.set_privacy('public', auth=None, log=False)
+        self.update_search()
+        self.save()
+
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
@@ -1367,3 +1471,43 @@ def create_django_groups_for_draft_registration(sender, instance, created, **kwa
                 visible=True,
             )
         instance.add_permission(initiator, ADMIN)
+
+
+@receiver(post_save, sender=Registration)
+def sync_internet_archive_attributes(sender, instance, **kwargs):
+    """
+    This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
+     found in SYNCED_WITH_IA, other fields that use foreign keys are updated by other signals.
+    """
+    if instance.is_public:
+        if not instance.ia_url:
+            archive_to_ia(instance)
+        else:
+            update_ia_metadata(instance)
+
+
+@receiver(post_save, sender=NodeLicenseRecord)
+def sync_internet_archive_license(sender, instance, **kwargs):
+    if instance.nodes.first():
+        update_ia_metadata(instance.nodes.first(), {'license': instance.node_license.url})
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.tags.through)
+def sync_internet_archive_tags(sender, instance, action, **kwargs):
+    update_ia_metadata(instance, {'tags': list(instance.tags.all().values_list('name', flat=True))})
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
+def sync_internet_archive_institutions(sender, instance, action, **kwargs):
+    update_ia_metadata(
+        instance,
+        {
+            'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))
+        }
+    )
+
+
+@receiver(models.signals.m2m_changed, sender=Registration.subjects.through)
+def sync_internet_archive_subjects(sender, instance, action, **kwargs):
+    subjects = list(instance.subjects.all().values_list('text', flat=True))
+    update_ia_metadata(instance, {'subjects': subjects})

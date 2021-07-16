@@ -94,8 +94,6 @@
 </table>
 {% if form_action and perms.osf.mark_spam %}
     {% include 'nodes/ham_spam_modal.html' with target_type="spam" %}
-{% endif %}
-{% if form_action and perms.osf.mark_ham %}
     {% include 'nodes/ham_spam_modal.html' with target_type="ham" %}
 {% endif %}
 {% csrf_token %}
