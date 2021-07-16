@@ -216,20 +216,3 @@ class TestPreprintProviderAssets:
 
         res = app.get(provider_two_url)
         assert res.json['data']['attributes']['assets'][provider_asset_two.name] == provider_asset_two.file.url
-
-
-@pytest.mark.django_db
-class TestPreprintProvider:
-
-    @pytest.fixture()
-    def provider(self):
-        return PreprintProviderFactory()
-
-    @pytest.fixture()
-    def url(self, provider):
-        return f'/{API_BASE}providers/preprints/{provider._id}/'
-
-    def test_in_sloan_study(self, app, url):
-        res = app.get(url)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['in_sloan_study']

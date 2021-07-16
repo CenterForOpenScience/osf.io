@@ -34,7 +34,6 @@ class ProviderSerializer(JSONAPISerializer):
     allow_submissions = ser.BooleanField(read_only=True)
     allow_commenting = ser.BooleanField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
-    in_sloan_study = ser.BooleanField(read_only=True)
 
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
