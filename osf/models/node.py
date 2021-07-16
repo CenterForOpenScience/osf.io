@@ -1597,6 +1597,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.custom_storage_usage_limit_private = None
+        forked.custom_storage_usage_limit_public = None
         forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
