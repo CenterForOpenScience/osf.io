@@ -6,7 +6,7 @@ import logging
 from decimal import Decimal
 
 import pytz
-import ciso8601
+from dateutil.parser import isoparse
 from django.contrib.postgres import lookups
 from django.contrib.postgres.fields.jsonb import JSONField
 from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
@@ -59,11 +59,11 @@ def decode_datetime_objects(nested_value):
         for key, value in nested_value.items():
             if isinstance(value, dict) and 'type' in value.keys():
                 if value['type'] == 'encoded_datetime':
-                    nested_value[key] = ciso8601.parse_datetime(value['value'])
+                    nested_value[key] = isoparse(value['value'])
                 if value['type'] == 'encoded_date':
-                    nested_value[key] = ciso8601.parse_datetime(value['value']).date()
+                    nested_value[key] = isoparse(value['value']).date()
                 if value['type'] == 'encoded_time':
-                    nested_value[key] = ciso8601.parse_datetime(value['value']).time()
+                    nested_value[key] = isoparse(value['value']).time()
                 if value['type'] == 'encoded_decimal':
                     nested_value[key] = Decimal(value['value'])
             elif isinstance(value, dict):

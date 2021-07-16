@@ -576,8 +576,10 @@ function Search(selector, url, appURL) {
     var self = this;
 
     self.viewModel = new ViewModel({'url': url, 'appURL': appURL});
-    // History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
-    window.addEventListener('popstate', self.viewModel.pageChange);
+
+    window.onpopstate = function(event){
+        self.viewModel.pageChange(event.state); // will be our state data
+    };
 
     var data = {
         query: $osf.urlParams().q,
