@@ -17,7 +17,7 @@
 		"required": false
 	  }, {
 		"help_text": "",
-		"block_type": "question-label",
+		"block_type": "paragraph",
 		"display_text": "Please describe the research question, problem statement, or goal of the study.",
 		"example_text": "",
 		"required": false
@@ -35,7 +35,7 @@
 		"required": false
 	  }, {
 		"help_text": "",
-		"block_type": "question-label",
+		"block_type": "paragraph",
 		"display_text": "Describe the general methodological approach to answering the research question or tackling the problem.",
 		"example_text": "",
 		"required": false
@@ -53,7 +53,7 @@
 		"required": false
 	  }, {
 		"help_text": "",
-		"block_type": "question-label",
+		"block_type": "paragraph",
 		"display_text": "Specify the data processing/analysis steps insofar as they are known.",
 		"example_text": "",
 		"required": false
@@ -71,8 +71,8 @@
 		"required": false
 	  }, {
 		"help_text": "",
-		"block_type": "question-label",
-		"display_text": "Upload any supporting materials that help describe the studiy design, goals, methodology approach, analysis plan, data processing, etc. ",
+		"block_type": "paragraph",
+		"display_text": "Upload the data request form output pdf file here. \n\nAlso upload any supporting materials that help describe the study design, goals, methodology approach, analysis plan, data processing, etc.",
 		"example_text": "",
 		"required": false
 	  }, {
