@@ -556,6 +556,8 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        #refresh in order to honor state change
+        self.refresh_from_db()
         if self.is_pending_embargo_termination:
             self.embargo_termination_approval.accept()
 
@@ -731,8 +733,9 @@ class Registration(AbstractNode):
                 to_state = RegistrationModerationStates.ACCEPTED
 
         self._write_registration_action(from_state, to_state, initiated_by, comment)
-        self.moderation_state = to_state.db_name
-        self.save()
+        for node in self.node_and_primary_descendants():
+            node.moderation_state = to_state.db_name
+            node.save()
 
     def _write_registration_action(self, from_state, to_state, initiated_by, comment):
         '''Write a new RegistrationAction on relevant state transitions.'''
