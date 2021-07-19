@@ -79,7 +79,6 @@ class Registration(AbstractNode):
         'modified',
         'category',
         'article_doi',
-        'moderation_state',
     }
     # IA wants us to brand our specific osf metadata with a `osf_` prefix or as their keyword.
     IA_MAPPED_NAMES = {
@@ -557,6 +556,8 @@ class Registration(AbstractNode):
             save=True
         )
         self.embargo.mark_as_completed()
+        #refresh in order to honor state change
+        self.refresh_from_db()
         if self.is_pending_embargo_termination:
             self.embargo_termination_approval.accept()
 
@@ -732,8 +733,9 @@ class Registration(AbstractNode):
                 to_state = RegistrationModerationStates.ACCEPTED
 
         self._write_registration_action(from_state, to_state, initiated_by, comment)
-        self.moderation_state = to_state.db_name
-        self.save()
+        for node in self.node_and_primary_descendants():
+            node.moderation_state = to_state.db_name
+            node.save()
 
     def _write_registration_action(self, from_state, to_state, initiated_by, comment):
         '''Write a new RegistrationAction on relevant state transitions.'''
@@ -1549,7 +1551,7 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
     This ensures all our Internet Archive storage buckets are synced with our registrations. Valid fields to update are
      found in SYNCED_WITH_IA, other fields that use foreign keys are updated by other signals.
     """
-    if settings.IA_ARCHIVE_ENABLED and instance.is_public:
+    if instance.is_public:
         if not instance.ia_url:
             archive_to_ia(instance)
         else:
@@ -1558,28 +1560,26 @@ def sync_internet_archive_attributes(sender, instance, **kwargs):
 
 @receiver(post_save, sender=NodeLicenseRecord)
 def sync_internet_archive_license(sender, instance, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED:
+    if instance.nodes.first():
         update_ia_metadata(instance.nodes.first(), {'license': instance.node_license.url})
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.tags.through)
 def sync_internet_archive_tags(sender, instance, action, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED:
-        update_ia_metadata(instance, {'tags': list(instance.tags.all().values_list('name', flat=True))})
+    update_ia_metadata(instance, {'tags': list(instance.tags.all().values_list('name', flat=True))})
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.affiliated_institutions.through)
 def sync_internet_archive_institutions(sender, instance, action, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED:
-        update_ia_metadata(
-            instance, {
-                'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))
-            }
-        )
+    update_ia_metadata(
+        instance,
+        {
+            'affiliated_institutions': list(instance.affiliated_institutions.all().values_list('name', flat=True))
+        }
+    )
 
 
 @receiver(models.signals.m2m_changed, sender=Registration.subjects.through)
 def sync_internet_archive_subjects(sender, instance, action, **kwargs):
-    if settings.IA_ARCHIVE_ENABLED:
-        subjects = list(instance.subjects.all().values_list('text', flat=True))
-        update_ia_metadata(instance, {'subjects': subjects})
+    subjects = list(instance.subjects.all().values_list('text', flat=True))
+    update_ia_metadata(instance, {'subjects': subjects})
