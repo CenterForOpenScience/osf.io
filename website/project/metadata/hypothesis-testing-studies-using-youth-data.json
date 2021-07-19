@@ -68,7 +68,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "",
 		"block_type": "question-label",
@@ -80,7 +80,7 @@
 		"block_type": "file-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "",
 		"block_type": "section-heading",
@@ -122,7 +122,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will usein the statistical analyses. Based on this information, provide a new expected sample size.",
 		"block_type": "question-label",
@@ -134,7 +134,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "How will you define what a statistical outlier is in your data and what will you do when you encounter them? If you plan to remove outliers, provide a new expected sample size. If you expect to remove many outliers or if you are unsure about your outlier handling strategy, it is good practice to preregister analyses including and excluding outliers. Note that this will be the definitive expected sample size for your study and you will use this number to do any power analyses.",
 		"block_type": "question-label",
@@ -146,7 +146,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "",
 		"block_type": "page-heading",
@@ -164,7 +164,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "Disclose any prior knowledge you may have about the dataset that is relevant for the proposed analysis. If you do not have any prior knowledge of it, please state so. Your prior knowledge could stem from working with the data first-hand, from reading previously published research, or from codebooks. Provide prior knowledge for every author separately.   Indirect knowledge about the hypothesized association does not preclude a confirmatory analysis but should be transparently reported in this section. However, direct knowledge about the association between the variables in your hypothesis may indicate that you are unable to make unbiased analytic decisions to test this hypothesis.",
 		"block_type": "question-label",
@@ -206,7 +206,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "Present the statistical power available to detect the predicted effect size or the smallest effect size of interest. Use the sample size after updating for missing data and outliers.",
 		"block_type": "question-label",
@@ -218,7 +218,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "What criteria will you use to make inferences? Describe the information you will use (e.g. specify the p-values, effect sizes, confidence intervals, Bayes factors, specific model fit indices) as well as cut-off criteria, where appropriate. Will you be using one or two-tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this, and if so, how?",
 		"block_type": "question-label",
@@ -230,7 +230,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "What will you do should your data violate assumptions, your model not converge, or some other analytic problem arise?",
 		"block_type": "question-label",
@@ -242,7 +242,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "Provide a series of decisions or tests about evaluating the strength, reliability, or robustness of your finding. This may include within-study replication attempts, additional covariates, cross-validation, applying weights, selectively applying constraints in an SEM context (e.g., comparing model fit statistics), overfitting adjustment techniques used, or some other simulation/sampling/bootstrapping method.",
 		"block_type": "question-label",
@@ -254,7 +254,7 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}, {
 		"help_text": "If you plan to explore your dataset to look for unexpected differences or relationships, describe those tests here. If reported, add them to the final paper under a heading that clearly differentiates this exploratory part of your study from the confirmatory part.",
 		"block_type": "question-label",
@@ -266,6 +266,6 @@
 		"block_type": "long-text-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	}]
 }

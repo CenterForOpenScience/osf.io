@@ -80,7 +80,7 @@
 		"block_type": "file-input",
 		"display_text": "",
 		"example_text": "",
-		"required": false
+		"required": true
 	  }
     ]
 }
