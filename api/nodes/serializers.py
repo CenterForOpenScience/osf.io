@@ -1590,6 +1590,9 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
 
+        if affiliate_user_institutions and draft.branched_from_type == DraftNode:
+            draft.affiliated_institutions.set(draft.creator.affiliated_institutions.all())
+
         return draft
 
     class Meta:
