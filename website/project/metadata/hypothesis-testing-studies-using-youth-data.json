@@ -58,9 +58,9 @@
 		"example_text": "",
 		"required": false
 	}, {
-		"help_text": "",
+		"help_text": "Enter the datasets planned for this analysis",
 		"block_type": "question-label",
-		"display_text": "Enter the datasets planned for this analysis",
+		"display_text": "Datasets",
 		"example_text": "Provide the same information as it was entered on the data request form, copy and paste is preferred.",
 		"required": false
 	}, {
@@ -71,9 +71,14 @@
 		"required": true
 	}, {
 		"help_text": "",
-		"block_type": "question-label",
+		"block_type": "section-heading",
 		"display_text": "Approved data request file",
-		"example_text": "Upload the data request form output pdf file here",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "paragraph",
+		"display_text": "Upload the data request form output pdf file here",
+		"example_text": "",
 		"required": false
 	}, {
 		"help_text": "",

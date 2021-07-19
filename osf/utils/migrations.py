@@ -407,7 +407,7 @@ def create_schema_blocks_for_atomic_schema(schema):
         block['schema_block_group_key'] = ''
         block_type = block['block_type']
 
-        if block_type == 'question-label':
+        if block_type in ('question-label', 'paragraph'):
             # This key will be used by input and option fields for this question
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
