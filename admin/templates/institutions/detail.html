@@ -16,6 +16,13 @@
                 {%  if perms.osf.delete_institution %}
                 <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
                 {%  endif %}
+				{% if perms.osf.change_institution %}
+					{% if institution.deactivated is None %}
+					<a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
+					{% else %}
+					<a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
+					{% endif %}
+				{% endif %}
             </div>
         </div>
 

@@ -7,6 +7,8 @@ from osf.migrations import update_provider_auth_groups
 from osf_tests.factories import (
     AuthUserFactory,
     EmbargoFactory,
+    ProjectFactory,
+    RegistrationFactory,
     RegistrationProviderFactory,
     RegistrationApprovalFactory,
     RetractionFactory
@@ -749,3 +751,65 @@ class TestModerationActions:
         registration.refresh_from_db()
         assert sanction_object.approval_stage is SanctionStates.REJECTED
         assert registration.actions.count() == 0
+
+
+@pytest.mark.django_db
+class TestNestedFlows():
+
+    @pytest.fixture(params=[registration_approval, embargo, retraction])
+    def pending_registration(self, request):
+        sanction = request.param()
+        return sanction.target_registration
+
+    @pytest.fixture
+    def child_registration(self, pending_registration):
+        project = ProjectFactory(parent=pending_registration.registered_from)
+        # NodeRelation created on save
+        project.save()
+        registration = RegistrationFactory(project=project, parent=pending_registration)
+        return registration
+
+    @pytest.fixture
+    def grandchild_registration(self, child_registration):
+        project = ProjectFactory(parent=child_registration.registered_from)
+        project.save()
+        registration = RegistrationFactory(project=project, parent=child_registration)
+        return registration
+
+    def test_approval(self, pending_registration, child_registration, grandchild_registration):
+        #Ensure underlying sanction requires approval; implicitly updates moderation_states
+        pending_registration.sanction.to_UNAPPROVED()
+        for reg in [pending_registration, child_registration, grandchild_registration]:
+            reg.refresh_from_db()
+        initial_state = pending_registration.moderation_state
+        assert child_registration.moderation_state == pending_registration.moderation_state
+        assert grandchild_registration.moderation_state == pending_registration.moderation_state
+
+        pending_registration.sanction.accept()
+
+        # verify that all registrations have updated state
+        for reg in [pending_registration, child_registration, grandchild_registration]:
+            reg.refresh_from_db()
+        assert pending_registration.moderation_state != initial_state
+        assert child_registration.moderation_state == pending_registration.moderation_state
+        assert grandchild_registration.moderation_state == pending_registration.moderation_state
+
+    def test_rejection(self, pending_registration, child_registration, grandchild_registration):
+        #Ensure underlying sanction requires approval; implicitly updates moderation_states
+        pending_registration.sanction.to_UNAPPROVED()
+        for reg in [pending_registration, child_registration, grandchild_registration]:
+            reg.refresh_from_db()
+        initial_state = pending_registration.moderation_state
+        assert child_registration.moderation_state == pending_registration.moderation_state
+        assert grandchild_registration.moderation_state == pending_registration.moderation_state
+
+        user = pending_registration.creator
+        rejection_token = pending_registration.sanction.token_for_user(user, 'rejection')
+        pending_registration.sanction.reject(user=user, token=rejection_token)
+
+        # verify that all registrations have updated state
+        for reg in [pending_registration, child_registration, grandchild_registration]:
+            reg.refresh_from_db()
+        assert pending_registration.moderation_state != initial_state
+        assert child_registration.moderation_state == pending_registration.moderation_state
+        assert grandchild_registration.moderation_state == pending_registration.moderation_state
