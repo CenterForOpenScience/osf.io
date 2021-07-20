@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.06.0 (2021-7-19)
+====================
+- Add support to deactivate institutions
+- Fix bugs with embargo termination and nested registration state
+
 21.05.0 (2021-6-17)
 ====================
 - OSF Integration with Pigeon (microservice for registration archival)

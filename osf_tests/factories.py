@@ -411,7 +411,7 @@ class RegistrationFactory(BaseNodeFactory):
                 branched_from=project,
                 initator=user,
                 registration_schema=schema,
-                provider=provider
+                provider=provider,
             )
         auth = Auth(user=user)
         register = lambda: project.register_node(
@@ -419,6 +419,7 @@ class RegistrationFactory(BaseNodeFactory):
             auth=auth,
             draft_registration=draft_registration,
             provider=provider,
+            parent=kwargs.get('parent')
         )
 
         def add_approval_step(reg):
@@ -1057,16 +1058,16 @@ class ChronosJournalFactory(DjangoModelFactory):
     class Meta:
         model = models.ChronosJournal
 
-    name = factory.Faker('text')
-    title = factory.Faker('text')
+    name = factory.Faker('company')
+    title = factory.Faker('sentence')
     journal_id = factory.Faker('ean')
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'TITLE': kwargs.get('title', factory.Faker('sentence').generate([])),
             'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
-            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('company').generate([])),
             'JOURNAL_URL': factory.Faker('url').generate([]),
             'PUBLISHER_ID': factory.Faker('ean').generate([]),
             'PUBLISHER_NAME': factory.Faker('name').generate([])

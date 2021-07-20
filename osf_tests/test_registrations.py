@@ -299,7 +299,7 @@ class TestRegisterNode:
         user2 = factories.UserFactory()
         project.add_contributor(user2, permissions=ADMIN)
         # Second contributor registers project
-        registration = factories.RegistrationFactory(parent=project, user=user2)
+        registration = factories.RegistrationFactory(project=project, user=user2)
         assert registration.registered_user == user2
 
     def test_registered_from(self, registration, project):
