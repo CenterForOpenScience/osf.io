@@ -10,29 +10,29 @@ from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
-def sync_datacite_doi_metadata(dry_run=True, retries=4):
+def retry(func, retries=4):
+    for i in range(retries):
+        try:
+            time.sleep(0.3)
+            return func('doi')
+        except DataCiteForbiddenError as e:
+            if i < 1:
+                raise e
+            time.sleep(10)
+
+def sync_datacite_doi_metadata(dry_run=True):
     content_type = ContentType.objects.get_for_model(Registration)
     reg_ids = Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
         'object_id',
         flat=True
     )
 
-    registrations = Registration.objects.exclude(id__in=reg_ids)
+    registrations = Registration.objects.exclude(id__in=reg_ids, deleted__isnull=False, moderation_state='withdrawn')
     logger.info(f'{registrations.count()} registrations to mint')
     for registration in registrations:
         if not dry_run:
-            try:
-                doi = registration.request_identifier('doi')['doi']
-                registration.set_identifier_value('doi', doi)
-            except DataCiteForbiddenError as e:
-                # Just rate limiting, sleep and retry
-                logger.info(f'retrying for {registration._id}, {retries} retries left')
-                if retries < 1:
-                    raise e
-                retries -= 1
-                time.sleep(10)
-                sync_datacite_doi_metadata(dry_run, retries)
-                break
+            doi = retry(registration.request_identifier)['doi']
+            registration.set_identifier_value('doi', doi)
 
         logger.info(f'doi minting for {registration._id} complete')
 
