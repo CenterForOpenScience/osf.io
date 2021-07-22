@@ -9,12 +9,13 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, Institution
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    InstitutionFactory
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
@@ -247,6 +248,29 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             app.post_json_api(post_url, payload, auth=user.auth)
 
         assert not mock_send_mail.called
+
+    def test_affiliated_institutions_are_copied_from_user(
+            self, app, user, url_draft_registrations, payload):
+        project = ProjectFactory(is_public=True, creator=user)
+        InstitutionFactory()
+        payload['data']['relationships']['branched_from']['data']['id'] = project._id
+        res = app.post_json_api(
+            url_draft_registrations, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        draft_registration = DraftRegistration.load(res.json['data']['id'])
+        assert not draft_registration.affiliated_institutions.exists()
+
+        project = ProjectFactory(is_public=True, creator=user)
+        payload['data']['relationships']['branched_from']['data']['id'] = project._id
+        user.affiliated_institutions.set(Institution.objects.filter(id__lt=3))
+        res = app.post_json_api(
+            url_draft_registrations, payload,
+            auth=user.auth, expect_errors=True)
+        assert res.status_code == 201
+        draft_registration = DraftRegistration.load(res.json['data']['id'])
+        assert not draft_registration.affiliated_institutions.all() == user.affiliated_institutions.all()
+
 
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
     @pytest.fixture()
