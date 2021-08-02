@@ -20,12 +20,12 @@ def retry(func, retries=4):
                 raise e
             time.sleep(10)
 
-def sync_datacite_doi_metadata(dry_run=True):
+def sync_datacite_doi_metadata(dry_run=True, batch_size=100):
     content_type = ContentType.objects.get_for_model(Registration)
-    reg_ids = Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
+    reg_ids = list(Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
         'object_id',
         flat=True
-    )
+    ))[:batch_size - 1]
 
     registrations = Registration.objects.exclude(id__in=reg_ids, deleted__isnull=False, moderation_state='withdrawn')
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
@@ -48,7 +48,14 @@ class Command(BaseCommand):
             action='store_true',
             dest='dry_run',
         )
+        parser.add_argument(
+            '--batch_size',
+            '-b',
+            type=int,
+            help='number of dois to create.',
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
-        sync_datacite_doi_metadata(dry_run=dry_run)
+        batch_size = options.get('batch_size')
+        sync_datacite_doi_metadata(dry_run=dry_run, batch_size=batch_size)
