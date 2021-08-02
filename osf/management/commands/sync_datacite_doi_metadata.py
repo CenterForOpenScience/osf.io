@@ -22,14 +22,19 @@ def retry(func, retries=4):
 
 def sync_datacite_doi_metadata(dry_run=True, batch_size=100):
     content_type = ContentType.objects.get_for_model(Registration)
-    reg_ids = list(Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
+    reg_ids = Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
         'object_id',
         flat=True
-    ))[:batch_size - 1]
+    )
 
-    registrations = Registration.objects.exclude(id__in=reg_ids, deleted__isnull=False, moderation_state='withdrawn')
+    registrations = Registration.objects.exclude(
+        id__in=reg_ids,
+        deleted__isnull=False,
+        moderation_state='withdrawn'
+    )[:batch_size or 1 - 1]
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                 f'{registrations.count()} registrations to mint')
+
     for registration in registrations:
         if not dry_run:
             doi = retry(registration.request_identifier)['doi']
@@ -52,10 +57,11 @@ class Command(BaseCommand):
             '--batch_size',
             '-b',
             type=int,
+            default=0,
             help='number of dois to create.',
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
-        batch_size = options.get('batch_size')
+        batch_size = options.get('batch_size', 0)
         sync_datacite_doi_metadata(dry_run=dry_run, batch_size=batch_size)
