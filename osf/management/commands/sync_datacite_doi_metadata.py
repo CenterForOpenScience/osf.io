@@ -28,13 +28,15 @@ def sync_datacite_doi_metadata(dry_run=True):
     )
 
     registrations = Registration.objects.exclude(id__in=reg_ids, deleted__isnull=False, moderation_state='withdrawn')
-    logger.info(f'{registrations.count()} registrations to mint')
+    logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
+                f'{registrations.count()} registrations to mint')
     for registration in registrations:
         if not dry_run:
             doi = retry(registration.request_identifier)['doi']
             registration.set_identifier_value('doi', doi)
 
-        logger.info(f'doi minting for {registration._id} complete')
+        logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
+                    f' doi minting for {registration._id} complete')
 
 
 class Command(BaseCommand):
