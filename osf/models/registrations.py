@@ -36,7 +36,6 @@ from osf.models import (
     RegistrationApproval,
     RegistrationSchema,
     Retraction,
-    SchemaResponses
 )
 
 from osf.models.action import RegistrationAction
@@ -54,6 +53,7 @@ from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.licenses import NodeLicenseRecord
+from osf.models.schema_responses import SchemaResponses
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
