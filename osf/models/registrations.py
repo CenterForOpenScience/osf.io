@@ -3,6 +3,7 @@ import datetime
 import html
 from future.moves.urllib.parse import urljoin
 
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
@@ -35,6 +36,7 @@ from osf.models import (
     RegistrationApproval,
     RegistrationSchema,
     Retraction,
+    SchemaResponses
 )
 
 from osf.models.action import RegistrationAction
@@ -155,6 +157,8 @@ class Registration(AbstractNode):
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
+
+    all_responses = GenericRelation(SchemaResponses)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
