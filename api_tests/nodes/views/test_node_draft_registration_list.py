@@ -194,7 +194,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         reg = RegistrationFactory(project=project_public, draft_registration=draft_registration)
         draft_registration.registered_node = reg
         draft_registration.save()
-        reg.is_deleted = True
+        reg.deleted = timezone.now()
         reg.save()
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
