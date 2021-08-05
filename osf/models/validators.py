@@ -13,7 +13,7 @@ from website.notifications.constants import NOTIFICATION_TYPES
 
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
-from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlacklistedEmailError
+from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
 
 from website.language import SWITCH_VALIDATOR_ERROR
 
@@ -97,12 +97,18 @@ def validate_social(value):
             raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
-    from osf.models import BlacklistedEmailDomain
+    from osf.models import NotableEmailDomain
     with reraise_django_validation_errors():
         django_validate_email(value)
     domain = value.split('@')[1].lower()
-    if BlacklistedEmailDomain.objects.filter(domain=domain).exists():
-        raise BlacklistedEmailError('Invalid Email')
+
+    is_email_domain_blocked = NotableEmailDomain.objects.filter(
+        domain=domain,
+        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+    ).exists()
+
+    if is_email_domain_blocked:
+        raise BlockedEmailError('Invalid Email')
 
 
 def validate_subject_highlighted_count(provider, is_highlighted_addition):

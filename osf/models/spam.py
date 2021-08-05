@@ -111,6 +111,24 @@ class SpamMixin(models.Model):
     def is_spammy(self):
         return self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
 
+    @property
+    def is_ham(self):
+        return self.spam_status == SpamStatus.HAM
+
+    @property
+    def is_hammy(self):
+        return self.is_ham or (
+            self.spam_status == SpamStatus.UNKNOWN and self.is_assumed_ham
+        )
+
+    @property
+    def is_assumed_ham(self):
+        """If True, will automatically skip spam checks.
+
+        Override to set criteria for assumed ham.
+        """
+        return False
+
     def report_abuse(self, user, save=False, **kwargs):
         """Report object is spam or other abuse of OSF
 
@@ -198,7 +216,7 @@ class SpamMixin(models.Model):
         pass
 
     def do_check_spam(self, author, author_email, content, request_headers, update=True):
-        if self.spam_status == SpamStatus.HAM:
+        if self.is_hammy:
             return False
         if self.is_spammy:
             return True
