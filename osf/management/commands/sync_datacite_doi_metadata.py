@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
-def sync_datacite_doi_metadata(dry_run=True, batch_size=100):
+def sync_datacite_doi_metadata(batch_size, dry_run=True, retries=4):
     content_type = ContentType.objects.get_for_model(Registration)
     reg_ids = Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
         'object_id',
@@ -28,7 +28,6 @@ def sync_datacite_doi_metadata(dry_run=True, batch_size=100):
                 f'{registrations.count()} registrations to mint')
 
     for registration in registrations:
-        retries = 4
         for i in reversed(range(retries)):
             try:
                 if not dry_run:
@@ -57,11 +56,11 @@ class Command(BaseCommand):
             '--batch_size',
             '-b',
             type=int,
-            default=0,
+            default=100,
             help='number of dois to create.',
         )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        sync_datacite_doi_metadata(dry_run=dry_run, batch_size=batch_size)
+        sync_datacite_doi_metadata(batch_size, dry_run=dry_run)
