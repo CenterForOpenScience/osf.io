@@ -53,7 +53,6 @@ from osf.models.provider import RegistrationProvider
 from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
 from osf.models.licenses import NodeLicenseRecord
-from osf.models.schema_responses import SchemaResponses
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
@@ -158,7 +157,7 @@ class Registration(AbstractNode):
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True)
 
-    all_responses = GenericRelation(SchemaResponses)
+    all_responses = GenericRelation('osf.SchemaResponses')
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
