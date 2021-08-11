@@ -17,11 +17,11 @@ def sync_datacite_doi_metadata(batch_size, dry_run=True, retries=4):
         flat=True
     )
 
-    registrations = Registration.objects.exclude(
-        deleted__isnull=False,
-        is_public=False,
-        moderation_state='withdrawn'
-    ).exclude(  # Strangely we are required to call exclude two times for a list comp.
+    registrations = Registration.objects.filter(
+        deleted__isnull=True,
+        is_public=True,
+        moderation_state='accepted'
+    ).exclude(
         id__in=reg_ids
     )[:batch_size]
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
