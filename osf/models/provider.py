@@ -282,7 +282,6 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
-    in_sloan_study = models.NullBooleanField(default=True)
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),

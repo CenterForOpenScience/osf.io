@@ -129,10 +129,6 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
     preprint_id = metrics.Keyword(index=True, doc_values=True, required=True)
     version = metrics.Keyword(index=True, doc_values=True)
     path = metrics.Text(index=True)
-    sloan_coi = metrics.Boolean(index=True, doc_values=True)
-    sloan_data = metrics.Boolean(index=True, doc_values=True)
-    sloan_prereg = metrics.Boolean(index=True, doc_values=True)
-    sloan_id = metrics.Keyword(index=True, doc_values=True)
 
     # TODO: locale
 

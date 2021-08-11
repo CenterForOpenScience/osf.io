@@ -6,7 +6,6 @@ import markupsafe
 from future.moves.urllib.parse import quote
 from django.utils import timezone
 
-from distutils.util import strtobool
 from flask import make_response
 from flask import redirect
 from flask import request
@@ -18,7 +17,6 @@ from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
 
-from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base.models import BaseStorageAddon
@@ -52,18 +50,6 @@ from website.project.decorators import must_be_contributor_or_public, must_be_va
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
-
-from osf.features import (
-    SLOAN_COI_DISPLAY,
-    SLOAN_DATA_DISPLAY,
-    SLOAN_PREREG_DISPLAY
-)
-
-SLOAN_FLAGS = (
-    SLOAN_COI_DISPLAY,
-    SLOAN_DATA_DISPLAY,
-    SLOAN_PREREG_DISPLAY
-)
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
@@ -340,19 +326,12 @@ def get_auth(auth, **kwargs):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)
                             if metric_class:
-                                sloan_flags = {'sloan_id': request.cookies.get(SLOAN_ID_COOKIE_NAME)}
-                                for flag_name in SLOAN_FLAGS:
-                                    value = request.cookies.get(f'dwf_{flag_name}_custom_domain') or request.cookies.get(f'dwf_{flag_name}')
-                                    if value:
-                                        sloan_flags[flag_name.replace('_display', '')] = strtobool(value)
-
                                 try:
                                     metric_class.record_for_preprint(
                                         preprint=node,
                                         user=auth.user,
                                         version=fileversion.identifier if fileversion else None,
                                         path=path,
-                                        **sloan_flags
                                     )
                                 except es_exceptions.ConnectionError:
                                     log_exception()

@@ -374,7 +374,6 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
-    'api_tests/sloan',
     'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
