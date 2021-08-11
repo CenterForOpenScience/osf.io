@@ -931,9 +931,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Active draft registrations attached to a user (user is a contributor)
         """
+
         return self.draft_registrations.filter(
-            models.Q(registered_node__isnull=True) |
-            models.Q(registered_node__is_deleted=True),
+            (models.Q(registered_node__isnull=True) | models.Q(registered_node__deleted__isnull=False)),
+            branched_from__deleted__isnull=True,
             deleted__isnull=True,
         )
 
