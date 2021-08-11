@@ -7,7 +7,7 @@ from osf.models.institution import Institution  # noqa
 from osf.models.collection import CollectionSubmission, Collection  # noqa
 from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
-from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
+from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
 from osf.models.preprintlog import PreprintLog  # noqa

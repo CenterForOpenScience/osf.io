@@ -209,16 +209,9 @@ class DraftMixin(object):
         self.check_branched_from(draft)
 
         if self.request.method not in drf_permissions.SAFE_METHODS:
-            registered_and_deleted = draft.registered_node and draft.registered_node.is_deleted
-
             if draft.registered_node and not draft.registered_node.is_deleted:
                 raise PermissionDenied('This draft has already been registered and cannot be modified.')
 
-            if draft.is_pending_review:
-                raise PermissionDenied('This draft is pending review and cannot be modified.')
-
-            if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
-                raise PermissionDenied('This draft has already been approved and cannot be modified.')
         else:
             if draft.registered_node and not draft.registered_node.is_deleted:
                 redirect_url = draft.registered_node.absolute_api_v2_url

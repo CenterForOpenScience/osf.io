@@ -28,15 +28,15 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlacklistedEmailError
-from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
-from osf import features
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
+from website.ember_osf_web.decorators import ember_flag_is_active
+from osf import features
+from osf.models import PreprintProvider
 
 
 @block_bing_preview
@@ -1076,7 +1076,7 @@ def external_login_email_post():
                     if campaign != 'osf-preprints':
                         break
             elif service_url.startswith(campaign_url):
-                # osf campaigns: OSF Prereg and ERPC
+                # osf campaigns: ERPC
                 destination = campaign
                 break
 

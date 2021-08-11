@@ -31,11 +31,10 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def schema(self):
-        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        schema.visible = True
-        schema.active = True
-        schema.save()
-        return schema
+        reg_schema = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=2)
+        reg_schema.active = True
+        reg_schema.save()
+        return reg_schema
 
     @pytest.fixture()
     def egap_schema(self):
@@ -47,7 +46,7 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def out_dated_schema(self):
-        reg_schema = RegistrationSchema(name='Prereg Challenge', schema_version=1)
+        reg_schema = RegistrationSchema(name='Old Schema', schema_version=1)
         reg_schema.save()
         return reg_schema
 
@@ -147,7 +146,7 @@ class TestRegistrationProviderSchemas:
         assert res.status_code == 200
         data = res.json['data']
 
-        assert len(data) == 2
+        assert len(data) == 3
         assert schema._id in [item['id'] for item in data]
         assert invisible_schema._id in [item['id'] for item in data]
         assert schema.name in [item['attributes']['name'] for item in data]

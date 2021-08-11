@@ -5,12 +5,11 @@ import pytest
 import datetime
 
 from django.utils import timezone
-from django.contrib.auth.models import Permission
 
 from nose.tools import assert_raises
 from transitions import MachineError
 
-from osf.models import DraftRegistrationApproval, NodeLog, RegistrationSchema
+from osf.models import NodeLog
 from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
@@ -73,130 +72,6 @@ class TestNodeEmbargoTerminations:
         assert last_log.action == NodeLog.EMBARGO_TERMINATED
         assert last_log.user is None
 
-
-@pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
-class TestDraftRegistrationApprovals:
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_immediate_creates_registration_for_draft_initiator(self, mock_enquque):
-        user = factories.UserFactory()
-        project = factories.ProjectFactory(creator=user)
-        registration_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        draft = factories.DraftRegistrationFactory(
-            branched_from=project,
-            registration_schema=registration_schema,
-        )
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-        draft.approval = approval
-        draft.save()
-        approval._on_complete(user)
-        draft.reload()
-        registered_node = draft.registered_node
-
-        assert registered_node is not None
-        assert registered_node.is_pending_registration
-        assert registered_node.registered_user == draft.initiator
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-8280
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_approval_after_initiator_is_merged_into_another_user(self, mock_enqueue):
-        approver = factories.UserFactory()
-        administer_permission = Permission.objects.get(codename='administer_prereg')
-        approver.user_permissions.add(administer_permission)
-        approver.save()
-
-        mergee = factories.UserFactory(fullname='Manny Mergee')
-        merger = factories.UserFactory(fullname='Merve Merger')
-        project = factories.ProjectFactory(creator=mergee)
-        registration_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        draft = factories.DraftRegistrationFactory(
-            branched_from=project,
-            registration_schema=registration_schema,
-        )
-        merger.merge_user(mergee)
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-        draft.approval = approval
-        draft.save()
-        approval.approve(approver)
-
-        draft.reload()
-        registered_node = draft.registered_node
-        assert registered_node.registered_user == merger
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_on_complete_embargo_creates_registration_for_draft_initiator(self, mock_enquque):
-        user = factories.UserFactory()
-        end_date = timezone.now() + datetime.timedelta(days=366)  # <- leap year
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'embargo',
-                'embargo_end_date': end_date.isoformat()
-            }
-        )
-        approval.save()
-        project = factories.ProjectFactory(creator=user)
-        registration_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        draft = factories.DraftRegistrationFactory(
-            branched_from=project,
-            registration_schema=registration_schema,
-        )
-        draft.approval = approval
-        draft.save()
-
-        approval._on_complete(user)
-        draft.reload()
-        registered_node = draft.registered_node
-        assert registered_node is not None
-        assert registered_node.is_pending_embargo
-        assert registered_node.registered_user == draft.initiator
-
-    def test_approval_requires_only_a_single_authorizer(self):
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate',
-            }
-        )
-        approval.save()
-        with mock.patch.object(approval, '_on_complete') as mock_on_complete:
-            authorizer1 = factories.AuthUserFactory()
-            administer_permission = Permission.objects.get(codename='administer_prereg')
-            authorizer1.user_permissions.add(administer_permission)
-            authorizer1.save()
-            approval.approve(authorizer1)
-            assert mock_on_complete.called
-            assert approval.is_approved
-
-    @mock.patch('osf.models.DraftRegistrationApproval._send_rejection_email')
-    def test_on_reject(self, mock_send_mail):
-        user = factories.UserFactory()
-        approval = DraftRegistrationApproval(
-            meta={
-                'registration_choice': 'immediate'
-            }
-        )
-        approval.save()
-        project = factories.ProjectFactory(creator=user)
-        registration_schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
-        draft = factories.DraftRegistrationFactory(
-            branched_from=project,
-            registration_schema=registration_schema,
-        )
-        draft.approval = approval
-        draft.save()
-        approval._on_reject(user)
-        assert approval.meta == {}
-        assert mock_send_mail.call_count == 1
 
 @pytest.mark.django_db
 class TestRegistrationEmbargoTermination:

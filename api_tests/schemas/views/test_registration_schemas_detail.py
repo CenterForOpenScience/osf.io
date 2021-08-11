@@ -17,7 +17,7 @@ def user():
 @pytest.fixture()
 def schema():
     return RegistrationSchema.objects.filter(
-        name='Prereg Challenge',
+        name='OSF Preregistration',
         schema_version=SCHEMA_VERSION
     ).first()
 
@@ -55,7 +55,7 @@ class TestRegistrationSchemaDetail:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']['attributes']
-        assert data['name'] == 'Prereg Challenge'
+        assert data['name'] == 'OSF Preregistration'
         assert data['schema_version'] == 2
         assert res.json['data']['id'] == schema._id
 

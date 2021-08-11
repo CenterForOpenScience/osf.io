@@ -96,14 +96,6 @@ def update_admin_permissions(verbosity=0):
     metrics_group.permissions.add(metrics_permission)
     metrics_group.save()
 
-    # Add a view_prereg Group and permissions
-    prereg_view_group, created = Group.objects.get_or_create(name='prereg_view')
-    if created and should_log:
-        logger.info('Prereg view group created')
-    prereg_view_permission = Permission.objects.get(codename='view_prereg')
-    prereg_view_group.permissions.add(prereg_view_permission)
-    prereg_view_group.save()
-
 
 def update_provider_auth_groups(verbosity=0):
     # TODO: determine efficient way to only do this if perms change

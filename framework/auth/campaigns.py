@@ -22,15 +22,7 @@ def get_campaigns():
 
     if not CAMPAIGNS or (not mutex.locked() and throttle_period_expired(CAMPAIGNS_LAST_REFRESHED, CAMPAIGN_REFRESH_THRESHOLD)):
         with mutex:
-            # Native campaigns: PREREG and ERPC
             newest_campaigns = {
-                'prereg': {
-                    'system_tag': CampaignSourceTags.Prereg.value,
-                    'redirect_url': furl.furl(DOMAIN).add(path='prereg/').url,
-                    'confirmation_email_template': mails.CONFIRM_EMAIL_PREREG,
-                    'login_type': 'native',
-                    'logo': settings.OSF_PREREG_LOGO
-                },
                 'erpc': {
                     'system_tag': CampaignSourceTags.ErpChallenge.value,
                     'redirect_url': furl.furl(DOMAIN).add(path='erpc/').url,
@@ -206,8 +198,6 @@ def get_external_domains():
 
 NODE_SOURCE_TAG_CLAIMED_TAG_RELATION = {
     CampaignSourceTags.ErpChallenge.value: CampaignClaimedTags.ErpChallenge.value,
-    CampaignSourceTags.PreregChallenge.value: CampaignClaimedTags.PreregChallenge.value,
-    CampaignSourceTags.Prereg.value: CampaignClaimedTags.Prereg.value,
     CampaignSourceTags.OsfRegisteredReports.value: CampaignClaimedTags.OsfRegisteredReports.value,
     CampaignSourceTags.Osf4m.value: CampaignClaimedTags.Osf4m.value,
     OsfSourceTags.Osf.value: OsfClaimedTags.Osf.value,
