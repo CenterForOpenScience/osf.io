@@ -7,10 +7,12 @@ from osf.models import Registration, Identifier
 import logging
 from datacite.errors import DataCiteForbiddenError
 from django.contrib.contenttypes.models import ContentType
+from framework.celery_tasks import app
 
 logger = logging.getLogger(__name__)
 
-def sync_datacite_doi_metadata(batch_size, dry_run=True, retries=4):
+@app.task(name='osf.management.commands.sync_datacite_doi_metadata')
+def sync_datacite_doi_metadata(batch_size=100, dry_run=True, retries=4):
     content_type = ContentType.objects.get_for_model(Registration)
     reg_ids = Identifier.objects.filter(category='doi', content_type=content_type, deleted__isnull=True).values_list(
         'object_id',
