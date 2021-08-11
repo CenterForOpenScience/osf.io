@@ -418,6 +418,7 @@ class CeleryConfig:
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
         'osf.management.commands.sync_collection_provider_indices',
+        'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from'
     }
@@ -508,6 +509,7 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
+        'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.archive_registrations_on_IA'
     )
 
