@@ -32,3 +32,4 @@ class OneDriveNodeSettingsFactory(DjangoModelFactory):
     user_settings = SubFactory(OneDriveUserSettingsFactory)
     folder_id = '1234567890'
     folder_path = 'Drive/Camera Uploads'
+    drive_id = '123456-789-abcdef12'
