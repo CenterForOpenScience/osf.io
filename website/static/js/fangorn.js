@@ -48,7 +48,7 @@ var STATE_MAP = {
 };
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
-var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
+var READ_ONLY_ADDONS = ['bitbucket', 'gitlab'];
 var MOVE_INTERVAL;
 var MILLSECOND_PER_MOVE_REQUEST = 500;
 
@@ -2237,7 +2237,6 @@ var FGToolbar = {
         if(
             (items.length > 1) &&
             (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
-            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
             (ctrl.tb.options.placement !== 'fileview') &&
             !(
                 (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
