@@ -370,6 +370,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
     custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
 
+    all_responses = GenericRelation('osf.SchemaResponses')
+
+    @property
+    def schema_responses(self):
+        from django.contrib.contenttypes.models import ContentType
+        from osf.models import SchemaResponses
+        content_type = ContentType.objects.get_for_model(self.__class__)
+        try:
+            schema_responses = SchemaResponses.objects.filter(content_type=content_type, object_id=self.id)
+        except SchemaResponses.DoesNotExist:
+            return None
+        return schema_responses
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
