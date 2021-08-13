@@ -798,6 +798,12 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
 class RegistrationBulkCreate(APIView):
     parser_classes = [FileUploadParser]
 
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CanAddModerator,
+    )
+
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
