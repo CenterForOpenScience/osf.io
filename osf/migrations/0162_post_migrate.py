@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def post_migrate_signal(state, schema):
     # this is to make sure that the permissions created earlier exist!
-    emit_post_migrate_signal(3, False, 'default')
+#    emit_post_migrate_signal(3, False, 'default')
     logger.info('Starting guardian/groups migration [SQL]:')
 
 

@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
+#        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
         migrations.RunSQL(add_draft_read_write_admin_auth_groups, remove_draft_auth_groups),
         migrations.RunSQL(add_permissions_to_draft_registration_groups, drop_draft_reg_group_object_permission_table),
     ]
