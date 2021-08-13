@@ -19,12 +19,12 @@
 
                                     <!-- ko if: $parent.category().name === name -->
                                         <li class="active"> <!-- TODO: simplify markup; only the active class really needs to be conditional -->
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" style="background-color: #595959; color:white;" data-bind="text: count"></span></a>
                                         </li>
                                     <!-- /ko -->
                                     <!-- ko if: $parent.category().name !== name -->
                                         <li>
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" style="background-color: #595959; color:white;" data-bind="text: count"></span></a>
                                         </li>
                                     <!-- /ko -->
                                 </ul>
@@ -103,7 +103,7 @@
                             <li data-bind="css: {disabled: !prevPageExists()}">
                                 <a href="#" data-bind="click: pagePrev">Previous Page </a>
                             </li>
-                            <span data-bind="visible: totalPages() > 0">
+                            <li data-bind="visible: totalPages() > 0">
                                 <span data-bind="text: navLocation"></span>
                             </span>
                             <li data-bind="css: {disabled: !nextPageExists()}">

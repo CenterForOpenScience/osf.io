@@ -1111,7 +1111,7 @@ var MyProjects = {
                     m('small.hidden-xs', 'Browse and organize all your projects')
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m('.btn.btn-success.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
                     }}, 'Create Project'),
                     parentID: null,
@@ -1458,7 +1458,7 @@ var Collections = {
                     'data-index' : index,
                     onclick : collectionOnclick.bind(null, item)
                   },[
-                        m('span', item.label + childCount),
+                        m('span.high-contrast-link-italic', item.label + childCount),
                         submenuTemplate
                     ]
                 ));
@@ -1466,14 +1466,14 @@ var Collections = {
             return list;
         };
         var collectionListTemplate = [
-            m('h5.clearfix', [
+            m('p.clearfix', [
                 'Collections ',
                  viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
-                !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"].m-h-xs', {onclick: function() {
+                !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"][aria-label="Add Collection"].m-h-xs', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
@@ -1721,7 +1721,7 @@ var Breadcrumbs = {
                         m('i.fa.fa-angle-right')
                     ]),
                     m('li', [
-                      m('span.btn', items[items.length-1].label),
+                      m('span.btn.high-contrast-link', items[items.length-1].label),
                       contributorsTemplate,
                       tagsTemplate
                     ])
@@ -1817,7 +1817,7 @@ var Breadcrumbs = {
                         }
                         return [
                             m('li', [
-                                m('span.btn', $osf.decodeText(item.label)),
+                                m('span.btn.high-contrast-link', $osf.decodeText(item.label)),
                                 contributorsTemplate,
                                 tagsTemplate,
                                 m('i.fa.fa-angle-right')
@@ -1829,7 +1829,7 @@ var Breadcrumbs = {
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
-                    m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  $osf.decodeText(item.label)),
+                    m('span.btn.btn-link.high-contrast-link-italic', {onclick : updateFilesOnClick.bind(null, item)},  $osf.decodeText(item.label)),
                     index === 0 && arr.length === 1 ? [contributorsTemplate, tagsTemplate] : '',
                     m('i.fa.fa-angle-right'),
                     ]
@@ -1889,14 +1889,14 @@ var Filters = {
                 item = args.nameFilters[i];
                 selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
                 list.push(m('li.pointer' + selectedCSS, {onclick : filterContributor.bind(null, item)},
-                    m('span', item.label)
+                    m('span.high-contrast-link-italic', item.label)
                 ));
             }
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
             if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
-                return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
+                return m('.high-contrast-link.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
 
             var list = [];
             var selectedCSS;
@@ -1913,7 +1913,7 @@ var Filters = {
                 item = args.tagFilters[i];
                 selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
                 list.push(m('li.pointer' + selectedCSS, {onclick : filterTag.bind(null, item)},
-                    m('span', item.label
+                    m('span.high-contrast-link-italic', item.label
                     )
                 ));
             }
@@ -1921,7 +1921,7 @@ var Filters = {
         };
         return m('.db-filters.m-t-lg',
             [
-                m('h5.m-t-sm', [
+                m('p.m-t-sm', [
                     'Contributors ',
                     args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
@@ -1932,16 +1932,17 @@ var Filters = {
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
                 ]),
-                m('ul', [
+                m('p', [
                     args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
-                m('h5.m-t-sm', [
-                    'Tags',
-                    m('.pull-right',
-                        args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
-                        )
-                ]), m('ul', [
-                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                m('p',
+                    m('p.m-t-sm', [
+                        'Tags',
+                        m('.pull-right',
+                            args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
+                            )
+                ])), m('ul', [
+                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('li.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
@@ -2017,7 +2018,7 @@ var Information = {
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
-                                m('h5', 'Tags'),
+                                m('p', 'Tags'),
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')', onclick: function(){
                                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-search-by-tag');

@@ -4,7 +4,7 @@
 
 
 <div id="requestAccessPrivateScope">
-    <header class="subhead" id="overview">
+    <header class="subhead">
         <div class="row no-gutters">
             <div class="col-lg-8 col-md-12 cite-container">
                 <h2 class="node-title">

@@ -9,7 +9,7 @@
 %>
 
 <div id="projectScope">
-    <header class="subhead" id="overview">
+    <div class="subhead">
         <div class="row no-gutters">
             <div class="col-lg-6 col-md-12 cite-container">
                 % if parent_node['exists']:
@@ -28,7 +28,7 @@
                     <div id="instLogo"></div>
                 % endif
 
-                <h2 class="node-title" style="float: left;">
+                <h2 class="node-title subnav-header" style="float: left;">
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
@@ -305,8 +305,7 @@
                 </div>
             </div>
         </div>
-
-    </header>
+    </div>
 </div>
 
 
@@ -623,7 +622,7 @@
                     ${render_nodes.render_nodes(nodes=node['descendants'], sortable=user['can_sort'], user=user, pluralized_node_type='components', show_path=False, include_js=True)}
                 </div>
             % else:
-              <p class="text-muted">Add components to organize your project.</p>
+              <p class="high-contrast-link">Add components to organize your project.</p>
             % endif
         </div><!-- end addon-widget-body -->
     </div><!-- end components -->

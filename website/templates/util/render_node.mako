@@ -5,7 +5,7 @@
 
 <div id="render-node">
 % if summary['can_view']:
-    <li
+    <div
             node_id="${summary['id']}"
             class="
                 project list-group-item list-group-item-node cite-container
@@ -109,7 +109,7 @@
             <div>Anonymous Contributors</div>
         % endif
         % if summary['description']:
-            <span class="text-muted">${summary['description']}</span>
+            <span class="high-contrast-link" >${summary['description']}</span>
         % endif
         % if not summary['archiving']:
             <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
@@ -130,7 +130,7 @@
             % endif
         </div>
         % endif
-    </li>
+    </div>
 
 % else:
     <li

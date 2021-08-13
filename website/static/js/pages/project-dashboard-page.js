@@ -306,6 +306,7 @@ $(document).ready(function () {
             });
         }
     });
+    $('#node-tags_tag').attr('aria-label', 'Tags Input');
 
     // allows inital default message to fit on empty tag
     if(!$('.tag').length){

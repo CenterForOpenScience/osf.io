@@ -75,7 +75,7 @@ var QuickFile = {
         var viewUrl = ctrl.file.attributes.guid ? viewBase + '/' + ctrl.file.attributes.guid : viewBase + '/quickfiles' + ctrl.file.attributes.path;
         return m('div', [
             m('li.project list-group-item list-group-item-node cite-container', [
-                m('h4.list-group-item-heading', [
+                m('p.list-group-item-heading', [
                     m('span.component-overflow.f-w-lg', {style: {lineHeight: 1.5, width: '100%'}}, [
                         m('span.col-md-8.project-statuses-lg', [
                             m('span', {class: ctrl.icon, style: 'padding-right: 5px;'}, ''),
@@ -114,7 +114,7 @@ var QuickFiles = {
 
     view: function (ctrl) {
 
-        return m('ul.list-group m-md', [
+        return m('p.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
                     'Unable to retrieve quickfiles at this time. Please refresh the page or contact ',

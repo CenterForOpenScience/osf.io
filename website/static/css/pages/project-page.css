@@ -263,3 +263,8 @@ li.addon-categories a{
 #shareButtonsPopover a {
     display: block;
 }
+
+#nodeDescriptionEditable {
+    color: #595959;
+    font-style: italic;
+}

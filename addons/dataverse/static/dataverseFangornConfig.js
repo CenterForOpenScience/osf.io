@@ -240,7 +240,7 @@ function _fangornDataverseTitle(item, col) {
             }
         } else {
             contents.push(
-                m('span.text.text-muted', '[Draft]')
+                m('span.text.high-contrast-link', '[Draft]')
             );
         }
         return m('span', contents);
