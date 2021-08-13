@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
+from corsheaders.defaults import default_headers
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Quick-start development settings - unsuitable for production
@@ -212,6 +213,9 @@ CORS_ORIGIN_WHITELIST = (
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "cache-control",
+]
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
 

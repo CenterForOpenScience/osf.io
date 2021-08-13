@@ -4,6 +4,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.views import APIView
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
 
 from api.actions.serializers import RegistrationActionSerializer
 from api.base import permissions as base_permissions
@@ -35,6 +38,7 @@ from api.subjects.serializers import SubjectSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
+from api.base.settings import BULK_SETTINGS
 
 from osf.models import (
     AbstractNode,
@@ -789,3 +793,24 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class RegistrationBulkCreate(APIView):
+    parser_classes = [FileUploadParser]
+
+    def put(self, request, *args, **kwargs):
+        provider_id = kwargs['provider_id']
+        file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
+        file_obj = request.data['file']
+        # Get hash of the file_obj
+        # Search among the existing Uploads, if an Upload with same hash exists
+        # return Response(status=409)
+        if file_obj.size > file_size_limit:
+            return Response(status=413)
+        if file_obj.content_type != 'text/csv':
+            return Response(status=415)
+        # Validate the content of the csv file
+        # return Response(status=400) if validation fails
+        # Otherwise, queue a celery task for creating database rows:
+        # enqueue_task(create_upload.s(provider_id, file_obj, file_obj_hash))
+        return Response(status=204)
