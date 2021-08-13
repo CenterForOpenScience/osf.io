@@ -370,6 +370,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
     custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
 
+    all_responses = GenericRelation('osf.SchemaResponses')
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
