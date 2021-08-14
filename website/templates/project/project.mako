@@ -110,7 +110,7 @@
                         </div><!-- end .btn-group -->
                     <div class="btn-group">
                         <div class="generic-dropdown dropdown pull-right">
-                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" data-toggle="dropdown">
+                            <button id="otherActionsButton" class="btn btn-default dropdown-toggle disabled" type="button" aria-label="Other Action Dropdown Menu" data-toggle="dropdown">
                                 <i class="fa fa-ellipsis-h"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-right">
@@ -436,7 +436,7 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title">Files</h3>
                 <div class="pull-right">
-                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
+                   <a href="${node['url']}files/" aria-label="Link to projects files" > <i class="fa fa-external-link"></i> </a>
                 </div>
             </div>
             % if not node['is_registration'] and not node['anonymous'] and permissions.WRITE in user['permissions']:
@@ -487,7 +487,7 @@
              <div class="panel-heading clearfix">
                 <h3 class="panel-title"  style="padding-top: 3px">Citation</h3>
                 <div class="pull-right">
-                    <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+                    <button class="btn btn-link project-toggle" aria-label="Toggle Citations" ><i class="fa fa-angle-down"></i></button>
                 </div>
              </div>
              <div id="citationList">

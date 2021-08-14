@@ -46,11 +46,11 @@ $(function() {
             });
         }
     });
+    $('#fileTags_tag').css('aria-label', 'Tag');
 
     // allows inital default message to fit on empty tag
     if(!$('.tag').length){
         $('#fileTags_tag').css('width', '250px');
-        $('#fileTags_tag').css('aria-label', 'Tag');
     }
 
     $('#fileTags_tag').attr('maxlength', '128');
