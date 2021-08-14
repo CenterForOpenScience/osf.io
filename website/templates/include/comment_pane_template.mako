@@ -11,7 +11,7 @@
 
     <div class="comments cp-sidebar" id="comments_window">
         <div class="cp-sidebar-content">
-            <button type="button" class="close text-smaller" data-bind="click: togglePane">
+            <button type="button" class="close text-smaller" aria-label="Toggle Comment Pane" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
             </button>
             <div>

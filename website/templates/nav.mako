@@ -2,7 +2,7 @@
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
-<nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
+<nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope">
     <div class="container">
         <div class="navbar-header">
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
