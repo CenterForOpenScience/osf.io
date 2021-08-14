@@ -26,7 +26,7 @@ $(function() {
                     extra: { tag: tag, url: url, textStatus: textStatus, error: error }
                 });
             });
-            $('.tag').css('aria-label', 'Tag');
+            $('.tag').attr('aria-label', 'Tag');
 
         },
         onRemoveTag: function (tag) {
@@ -46,7 +46,6 @@ $(function() {
             });
         }
     });
-    $('#fileTags_tag').css('aria-label', 'Tag');
 
     // allows inital default message to fit on empty tag
     if(!$('.tag').length){
@@ -54,6 +53,8 @@ $(function() {
     }
 
     $('#fileTags_tag').attr('maxlength', '128');
+    $('#fileTags').attr('aria-label', 'Tag');
+    $('#fileTags_tag').attr('aria-label', 'Tag');
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {

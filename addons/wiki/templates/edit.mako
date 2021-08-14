@@ -87,7 +87,7 @@
                                 <!-- Version Picker -->
                                 <span>Wiki Version:</span>
                                 <div style="display: inline-block">
-                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect" aria-label="Select Version">
                                     % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
@@ -138,7 +138,7 @@
                             <div class="progress no-margin pointer " data-toggle="modal" data-bind="attr: {'data-target': modalTarget}" >
                                 <div role="progressbar" data-bind="attr: progressBar">
                                     <span class="progress-bar-content p-h-sm">
-                                        <span data-bind="text: statusDisplay"></span>
+                                        <span data-bind="text: statusDisplay" style="background-color: white;"></span>
                                         <span class="sharejs-info-btn">
                                             <i class="fa fa-question-circle fa-large"></i>
                                         </span>
