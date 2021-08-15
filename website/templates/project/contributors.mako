@@ -10,7 +10,7 @@
 
 <div class="col-md-3 col-xs-12">
     <div class="filters">
-        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Filter by name"/>
+        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Filter by name" aria-label="Name Search Input"/>
         <h5 class="m-t-md">Permissions
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -259,7 +259,7 @@
                        click: $root.collapsed() ? toggleExpand : null">
             <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
                 <span class="fa fa-bars sortable-bars"></span>
-                <img class="m-l-xs" data-bind="attr: {src: contributor.profile_image_url}" />
+                <img class="m-l-xs" data-bind="attr: {src: contributor.profile_image_url}" aria-label="Contributor Profile Image" />
             <!-- /ko -->
             <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
                 <img data-bind="attr: {src: contributor.profile_image_url}" />
@@ -288,7 +288,7 @@
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <!-- ko if: contributor.canEdit() -->
                     <span data-bind="visible: !deleteStaged()">
-                        <select class="form-control input-sm" data-bind="
+                        <select class="form-control input-sm" aria-label="Select Permissions" data-bind="
                             options: $parents[1].permissionList,
                             value: permission,
                             optionsText: optionsText.bind(permission),
@@ -310,7 +310,7 @@
             <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
                 <input
-                    type="checkbox" class="biblio visible-filter"
+                    type="checkbox" aria-label="Bibliographic User Checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
             </div>
