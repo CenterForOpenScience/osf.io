@@ -12,7 +12,9 @@
                 <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="0" data-offset-bottom="263"><!-- Begin sidebar -->
                     <ul class="nav nav-stacked nav-pills">
                         <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-                        <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                        % if any(addon['enabled'] and not addon['default'] for addon in addon_settings):
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                        % endif
                     </ul>
                 </div><!-- End sidebar -->
 
