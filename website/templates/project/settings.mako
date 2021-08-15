@@ -139,7 +139,7 @@
                         <b>Storage location:</b> ${node['storage_location']}
                     </p>
                     <div class="help-block">
-                        <p class="text-muted">Storage location cannot be changed after project is created.</p>
+                        <p class="high-contrast-link-italic">Storage location cannot be changed after project is created.</p>
                     </div>
 
                 </div>
@@ -272,16 +272,17 @@
                     <div class="panel-body">
 
                         <form class="form" id="commentSettings">
+                            <div style="display: none;" id="privacyOptions">privacy options</div>
 
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                    <input type="radio" name="commentLevel" aria-labelledby="privacyOptions" value="private" ${'checked' if comments['level'] == 'private' else ''}>
                                     Only contributors can post comments
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                    <input type="radio" name="commentLevel" aria-labelledby="privacyOptions" value="public" ${'checked' if comments['level'] == 'public' else ''}>
                                     When the ${node['node_type']} is public, any OSF user can post comments
                                 </label>
                             </div>
@@ -311,7 +312,7 @@
                     </div>
                     <div class="panel-body">
                         <div class="help-block">
-                            <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                            <p class="high-contrast-link-italic">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                         </div>
                         <form id="notificationSettings" class="osf-treebeard-minimal">
                             <div id="grid">
