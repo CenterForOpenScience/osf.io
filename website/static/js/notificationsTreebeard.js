@@ -184,7 +184,7 @@ function ProjectNotifications(data) {
                             ];
                         }
                         return m('div[style="padding-right:10px"]',
-                            [m('select.form-control', {
+                            [m('select.form-control[aria-label="Select Email Preference"]', {
                                 onchange: function(ev) {
                                     subscribe(item, ev.target.value);
                                 }},
