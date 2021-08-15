@@ -443,7 +443,7 @@
                          <tbody>
                              <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" aria-label="Institution Logo" alt="Institution Logo" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  <td>
                                      % if permissions.ADMIN in user['permissions']:
@@ -465,7 +465,7 @@
                          <tbody>
                              <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" aria-label="Institution Logo" alt="Institution Logo" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  % if permissions.WRITE in user['permissions']:
                                      <td><button
