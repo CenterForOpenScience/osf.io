@@ -6,7 +6,7 @@
     <%include file="gitlab_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}>
+        <img class="addon-icon" src=${addon_icon_url} aria-label="${addon['addon_full_name} icon" alt="${addon_full_name} icon">
         <span data-bind="text: properName"></span>
         <small>
             <a href="#gitlabInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>

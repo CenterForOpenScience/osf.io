@@ -4,7 +4,7 @@
     <%include file="owncloud_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}>
+        <img class="addon-icon" src=${addon_icon_url} aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
         ${addon_full_name}
 
         <small class="authorized-by">

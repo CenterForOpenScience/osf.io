@@ -3,7 +3,7 @@
      data-addon-short-name="${ addon_short_name }"
      data-addon-name="${ addon_full_name }">
     <h4 class="addon-title">
-      <img class="addon-icon" src="${addon_icon_url}">
+      <img class="addon-icon" src="${addon_icon_url} aria-label="${addon_full_name} icon" alt="${addon_full_name} icon"">
       <span data-bind="text:properName"></span>
       <small>
         <a data-bind="click: connectAccount" class="pull-right text-primary">Connect or Reauthorize Account</a>
