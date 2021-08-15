@@ -46,7 +46,7 @@
                                             <b>Categories</b>
                                         </td>
                                         <td>
-                                            <input id="filter-addons" class="" placeholder="Search..." type="text">
+                                            <input id="filter-addons" class="" placeholder="Search..." aria-label="Addon Search" type="text">
                                         </td>
                                     </tr>
                                 </thead>
