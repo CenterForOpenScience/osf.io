@@ -120,7 +120,7 @@ function ProjectWiki(data) {
                     filter : false,
                     custom : function() {
                         return  m('div[style="padding-right:10px"]',
-                            [m('select.form-control', {
+                            [m('select.form-control[aria-label="Select Wiki Privacy"]', {
                                 onchange: function(ev) {
                                     beforeChangePermissions(item, ev.target.value);
                                 },
