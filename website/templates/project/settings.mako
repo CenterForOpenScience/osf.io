@@ -132,7 +132,7 @@
             <div class="panel panel-default">
                 <span id="nodeStorageLocation" class="anchor"></span>
                 <div class="panel-heading clearfix">
-                    <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
+                    <h3 class="panel-title">Storage Location</h3>
                 </div>
                 <div class="panel-body">
                     <p>
