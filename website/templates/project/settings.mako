@@ -241,7 +241,7 @@
                             </div>
 
                             <form id="wikiSettings" class="osf-treebeard-minimal">
-                                <div id="wgrid">
+                                <div id="wiki-grid">
                                     <div class="spinner-loading-wrapper">
                                         <div class="ball-scale ball-scale-blue">
                                             <div></div>

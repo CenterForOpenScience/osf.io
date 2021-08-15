@@ -68,7 +68,7 @@ function ProjectWiki(data) {
     //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         filesData: data,
-        divID: 'wgrid',
+        divID: 'wiki-grid',
         ondataload: function () {
             var tb = this;
             expandOnLoad.call(tb);
