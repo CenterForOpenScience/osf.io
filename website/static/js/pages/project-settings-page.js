@@ -55,8 +55,6 @@ if ($('#wiki-grid').length) {
             extra: { url: wikiSettingsURL, status: status, error: error }
         });
     });
-    // For a11y compatibility
-    $('#wiki-grid > .gridWrapper > .tb-table > div').attr('id', 'tb-body-wiki');
 }
 
 $(document).ready(function() {
