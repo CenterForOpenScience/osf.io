@@ -291,6 +291,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'view_only_links',
         'wiki_enabled',
         'wikis',
+        'addons',
     ]
 
     id = IDField(source='_id', read_only=True)
@@ -395,6 +396,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-storage-providers',
         related_view_kwargs={'node_id': '<_id>'},
     )
+
+    addons = HideIfRegistration(RelationshipField(
+        related_view='nodes:node-addons',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
 
     settings = RelationshipField(
         related_view='nodes:node-settings',
