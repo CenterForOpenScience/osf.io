@@ -37,7 +37,7 @@
             <div class="panel panel-osf">
                 <div class="panel-heading">Password reset request</div>
                     <div class="panel-body">
-                        <input type="email" class="form-control" data-bind="value: username" name="forgot_password-email" placeholder="Enter your email address" autofocus/>
+                        <input aria-label="Email Input" type="email" class="form-control" data-bind="value: username" name="forgot_password-email" placeholder="Enter your email address" autofocus/>
                         <button type="submit" class="btn btn-primary pull-right m-t-md">Reset password</button>
                     </div>
             </div>
