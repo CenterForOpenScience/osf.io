@@ -365,22 +365,17 @@ class ApprovalsMachine(Machine):
             'SanctionStateMachine subclasses must define a target_registration property'
         )
 
-    @property
-    def approval_stage(self):
-        raise NotImplementedError(
-            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
-        )
-
     def _process(self, *args, **kwargs):
         '''Wrap superclass _process to handle expected MachineErrors.'''
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            if self.approval_stage in [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED]:
+            state = self.get_model_state
+            if state in [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED]:
                 error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
                         sanction=self.DISPLAY_NAME))
-            elif self.approval_stage in [ApprovalStates.APPROVED, ApprovalStates.COMPLETED]:
+            elif state in [ApprovalStates.APPROVED, ApprovalStates.COMPLETED]:
                 error_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))

@@ -16,7 +16,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
     pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
-    state = models.CharField(
+    reviews_state = models.CharField(
         choices=ApprovalStates.char_field_choices(),
         default=ApprovalStates.IN_PROGRESS.db_name,
         max_length=255
@@ -32,15 +32,15 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         self.machine = ApprovalsMachine(
             model=self,
             active_state=self.approval_state,
-            state_property_name='approval_state'
+            state_property_name='state'
         )
 
     @property
-    def approval_state(self):
+    def state(self):
         return ApprovalStates.from_db_name(self.state)
 
-    @approval_state.setter
-    def approval_state(self, new_state):
+    @state.setter
+    def state(self, new_state):
         self.state = new_state.db_name
 
     @property
@@ -53,11 +53,25 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         return True
 
     def _validate_trigger(self, event_data):
-        # Delegate permissions validation to API
-        pass
+        '''All additional validation to confirm that a trigger is being used correctly.
+
+        For SchemaResponses, use this to enforce correctness of the internal 'accept' shortcut.
+        '''
+        # Allow 'accept' without a user only to bypass internal
+        user = event_data.get('user')
+        trigger = event_data.get('action')
+        if not user and trigger != 'accept' and self.state is not ApprovalStates.UNAPPROVED:
+            raise ValueError(f'Trigger "{trigger}" must pass the user who invoked it"')
+
+        if self.state is ApprovalStates.UNAPPROVED and not self.pending_approvers.get(user):
+            raise RuntimeError(f'{user} is not a pending approver on this submission')
 
     def _on_submit(self, event_data):
-        approvers = event_data['required_approvers']
+        approvers = event_data.get('required_approvers', None)
+        if not approvers:
+            raise ValueError(
+                'Cannot submit SchemaResponses for review with no required approvers'
+            )
         self.pending_approvers.set(approvers)
 
     def _on_approve(self, event_data):
@@ -68,3 +82,6 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
 
     def _on_reject(self, event_data):
         self.pending_approvers.clear()
+
+    def _save_transition(self, event_data):
+        pass

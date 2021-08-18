@@ -179,6 +179,23 @@ class Sanction(ObjectIDMixin, BaseModel):
     def forcibly_reject(self):
         self.state = Sanction.REJECTED
 
+    def _save_transition(self, event_data):
+        """Recored the effects of a state transition in the database."""
+        self.save()
+        new_state = event_data.transition.dest
+        # No need to update registration state with no sanction state change
+        if new_state is None:
+            return
+
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.kwargs:
+            user = event_data.args[0]
+        comment = event_data.kwargs.get('comment', '')
+        if new_state == ApprovalStates.PENDING_MODERATION.name:
+            user = None  # Don't worry about the particular user who gave final approval
+
+        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
+
     class Meta:
         abstract = True
 
