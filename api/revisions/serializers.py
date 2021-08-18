@@ -78,20 +78,6 @@ class SchemaResponsesSerializer(JSONAPISerializer):
 
 class SchemaResponsesListSerializer(SchemaResponsesSerializer):
 
-    # overrides Serializer
-    def is_valid(self, clean_html=True, **kwargs):
-        """
-        move attributes to be validated
-        """
-        if self.initial_data.get('data'):
-            self.initial_data = {
-                **self.initial_data['data']['relationships']['registration']['data'].pop('attributes'),
-                **{'id': self.initial_data['data']['relationships']['registration']['data']['id']},
-                **{'type': self.initial_data['data']['relationships']['registration']['data']['type']},
-            }
-
-        return super().is_valid(**kwargs)
-
     def create(self, validated_data):
         registration = Registration.load(validated_data.pop('_id'))
         if registration.registered_schema.first():

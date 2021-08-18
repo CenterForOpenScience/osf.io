@@ -23,6 +23,7 @@ from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.exceptions import Conflict
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
+from api.base.parsers import JSONAPIParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
 from api.base.utils import (
     get_user_auth,
@@ -867,18 +868,12 @@ class RegistrationSchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics
         base_permissions.TokenHasScope,
         AdminContributorOrPublic,
     )
+    parser_classes = (JSONAPIParser,)
 
     view_category = 'registrations'
     view_name = 'schema-responses-list'
 
     serializer_class = SchemaResponsesListSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=json.loads(self.request._request._body))
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=201, headers=headers)
 
     def get_default_queryset(self):
         return self.get_node().schema_responses.all()
