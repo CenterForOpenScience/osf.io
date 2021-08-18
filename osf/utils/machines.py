@@ -13,10 +13,10 @@ from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
-    SanctionStates,
+    ApprovalStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    SANCTION_TRANSITIONS
+    APPROVAL_TRANSITIONS
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
@@ -323,7 +323,7 @@ class ApprovalsMachine(Machine):
 
     The ApprovalMachine can be used by by instantiating an ApprovalMachine and attaching the desired
     model with the 'model' kwarg. Attached models will inherit the 'trigger' functions named in
-    the SANCTION_TRANSITIONS dictionary (submit, approve, accept, and reject).
+    the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
 
     Attached models must define the calbacks used by the ApprvalsMachine:
     * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
@@ -350,8 +350,8 @@ class ApprovalsMachine(Machine):
 
         super().__init__(
             model=model,
-            states=SanctionStates,
-            transitions=SANCTION_TRANSITIONS,
+            states=ApprovalStates,
+            transitions=APPROVAL_TRANSITIONS,
             initial=active_state,
             model_attribute=state_property_name,
             after_state_change='_save_transition',
@@ -376,11 +376,11 @@ class ApprovalsMachine(Machine):
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            if self.approval_stage in [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED]:
+            if self.approval_stage in [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED]:
                 error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
                         sanction=self.DISPLAY_NAME))
-            elif self.approval_stage in [SanctionStates.APPROVED, SanctionStates.COMPLETED]:
+            elif self.approval_stage in [ApprovalStates.APPROVED, ApprovalStates.COMPLETED]:
                 error_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))
@@ -401,7 +401,7 @@ class ApprovalsMachine(Machine):
         if user is None and event_data.kwargs:
             user = event_data.args[0]
         comment = event_data.kwargs.get('comment', '')
-        if new_state == SanctionStates.PENDING_MODERATION.name:
+        if new_state == ApprovalStates.PENDING_MODERATION.name:
             user = None  # Don't worry about the particular user who gave final approval
 
         self.target_registration.update_moderation_state(initiated_by=user, comment=comment)

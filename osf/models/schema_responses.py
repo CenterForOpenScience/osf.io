@@ -2,22 +2,22 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.machines import ApprovalsMachine
-from osf.models.workflows import ApprovalStates
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.machines import ApprovalsMachine
+from osf.utils.workflows import ApprovalStates
 
 
 class SchemaResponses(ObjectIDMixin, BaseModel):
 
     schema = models.ForeignKey('osf.registrationschema')
     all_responses = models.ManyToManyField('osf.schemaresponseblock')
-    initiator = models.ForeignKey('osf.osfuser', null=False)
+    initiator = models.ForeignKey('osf.osfuser', null=False, related_name='initaited_responses')
 
     submitted_timestamp = NonNaiveDateTimeField(null=True)
-    pending_approvers = models.ManyToManyField('osf.osfuser')
+    pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
     state = models.CharField(
         choices=ApprovalStates.char_field_choices(),
-        default=ApprovalStates.IN_PROGRESS.db_name(),
+        default=ApprovalStates.IN_PROGRESS.db_name,
         max_length=255
     )
 
