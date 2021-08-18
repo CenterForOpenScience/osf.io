@@ -7,19 +7,32 @@ from api.base.serializers import (
 
 from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse
-from osf.models.schema_responses import SchemaResponses
-from osf.models import Registration
+from osf.models.schema_responses import SchemaResponses, SchemaResponseBlock
+from osf.models import Registration, RegistrationSchemaBlock
 from rest_framework import exceptions
 from django.utils import timezone
+from api.base.serializers import JSONAPISerializer, LinksField
+from django.contrib.contenttypes.models import ContentType
+
 
 class SchemaResponsesSerializer(JSONAPISerializer):
-    id = ser.CharField(required=False, source='_id', read_only=True)
-    responses = ser.JSONField(required=False)
-    date_created = VersionedDateTimeField(source='created')
-    date_modified = VersionedDateTimeField(source='modified')
-    revision_justification = ser.CharField(source='justification')
-    revision_response = ser.JSONField(source='all_responses')
-    reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], read_only=True)
+    filterable_fields = frozenset([
+        'date_created',
+        'date_modified',
+        'revision_justification',
+        'reviews_state',
+    ])
+
+    writeable_method_fields = frozenset([
+        'revision_response',
+    ])
+
+    id = ser.CharField(source='_id', required=False, allow_null=True)
+    date_created = VersionedDateTimeField(source='created', required=False)
+    date_modified = VersionedDateTimeField(source='modified', required=False)
+    revision_justification = ser.CharField(required=False)
+    revision_response = ser.JSONField(source='schema_responses', required=False)
+    reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
 
     links = LinksField(
@@ -31,19 +44,22 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     registration = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent._id>'},
-        read_only=True,
+        required=False,
     )
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<parent.registered_schema_id>'},
         read_only=True,
+        required=False,
     )
 
     initiated_by = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<initiator._id>'},
         read_only=True,
+        required=False,
+
     )
 
     class Meta:
@@ -51,10 +67,9 @@ class SchemaResponsesSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'registrations:schema-responses-detail',
+            'revisions:schema-responses-detail',
             kwargs={
                 'version': self.context['request'].parser_context['kwargs']['version'],
-                'node_id': obj.parent._id,
                 'revision_id': obj._id,
             },
         )
@@ -65,21 +80,29 @@ class SchemaResponsesSerializer(JSONAPISerializer):
 
 
 class SchemaResponsesListSerializer(SchemaResponsesSerializer):
+
+    # overrides Serializer
+    def is_valid(self, clean_html=True, **kwargs):
+        """
+        move attributes to be validated
+        """
+        if self.initial_data.get('data'):
+            self.initial_data = {
+                **self.initial_data['data']['relationships']['registration']['data'].pop('attributes'),
+                **{'id': self.initial_data['data']['relationships']['registration']['data']['id']},
+                **{'type': self.initial_data['data']['relationships']['registration']['data']['type']},
+            }
+
+        return super().is_valid(**kwargs)
+
     def create(self, validated_data):
-
-        try:
-            # This must pull node_id from url args for NodeViews
-            guid = self.initial_data.get('node') or self.context['view'].kwargs['node_id']
-        except KeyError:
-            raise exceptions.ValidationError('Request did not include node id')
-
-        registration = Registration.load(guid)
-
+        registration = Registration.load(validated_data.pop('_id'))
         if registration.registered_schema.first():
             schema_response = SchemaResponses.objects.create(
                 **validated_data,
-                node=registration,
-                registration_schema=registration.registered_schema.first()  # current only used as a one-to-one
+                object_id=registration.id,
+                content_type=ContentType.objects.get_for_model(registration),
+                initiator=self.context['request'].user
             )
         else:
             raise NotImplementedError()
@@ -93,25 +116,40 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
         related_view='registrations:schema-responses-list',
         related_view_kwargs={'node_id': '<node._id>'},
     )
+    writeable_method_fields = frozenset([
+        'revision_response',
+    ])
+    revision_response = ser.SerializerMethodField()
+
+    def get_revision_response(self, obj):
+        data = []
+        for response in obj.schema_responses.all():
+            data.append({response.schema_key: response.response})
+
+        return data
 
     def update(self, revision, validated_data):
-        title = validated_data.get('title')
-        public = validated_data.get('public')
-        deleted = validated_data.get('deleted')
-        responses = validated_data.get('responses')
+        schema_responses = validated_data.get('revision_response')
+        schema = revision.parent.registered_schema.first()
+        if not schema:
+            raise exceptions.ValidationError('Schema Response parent must have a schema.')
 
-        if deleted:
-            revision.deleted = timezone.now()
-            return revision
-        if title:
-            revision.title = title
+        for key, response in schema_responses.items():
+            try:
+                block = RegistrationSchemaBlock.objects.get(
+                    registration_response_key=key,
+                    schema=schema,
+                )
+            except RegistrationSchemaBlock.DoesNotExist:
+                raise exceptions.ValidationError(f'Schema Response key "{key}" not found in schema "{schema.name}"')
 
-        #report.set_public(public)
-
-        try:
-            revision.responses = responses
-        except Exception as e:
-            raise exceptions.ValidationError(e.message)
+            response_block, created = SchemaResponseBlock.objects.get_or_create(
+                schema_key=key,
+                response=response,
+                source_block=block,
+            )
+            response_block.save()
+            revision.schema_responses.add(response_block)
 
         revision.save()
 

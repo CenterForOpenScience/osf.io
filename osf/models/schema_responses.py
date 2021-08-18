@@ -13,8 +13,14 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent = GenericForeignKey('content_type', 'object_id')
 
-    all_responses = models.ManyToManyField(SchemaResponseBlock)
+    schema_responses = models.ManyToManyField(SchemaResponseBlock, related_name='schema_response')
 
-    justification = models.CharField(max_length=2048, null=True)
+    revision_justification = models.CharField(max_length=2048, null=True)
     initiator = models.ForeignKey('OSFUser', null=False)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
+
+    reviews_state = models.CharField(
+        max_length=100,
+        choices=(('revision_in_progress', 'revision_in_progress'), ('revision_pending_admin_approval', 'revision_pending_admin_approval'), ('revision_pending_moderation', 'revision_pending_moderation'), ('approved', 'approved')),
+        default='revision_pending_admin_approval'
+    )

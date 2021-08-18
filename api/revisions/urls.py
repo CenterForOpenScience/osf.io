@@ -13,14 +13,4 @@ urlpatterns = [
         views.SchemaResponsesDetail.as_view(),
         name=views.SchemaResponsesDetail.view_name,
     ),
-    url(
-        r'^(?P<revision_id>\w+)/actions/$',
-        views.SchemaResponsesActionList.as_view(),
-        name=views.SchemaResponsesActionList.view_name,
-    ),
-    url(
-        r'^(?P<revision_id>\w+)/actions/(?P<action_id>\w+)/$',
-        views.SchemaResponsesActionDetail.as_view(),
-        name=views.SchemaResponsesActionDetail.view_name,
-    ),
 ]

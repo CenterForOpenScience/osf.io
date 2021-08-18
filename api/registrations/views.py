@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
@@ -76,6 +78,7 @@ from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 
 from api.revisions.serializers import SchemaResponsesListSerializer, SchemaResponsesDetailSerializer
+from rest_framework.response import Response
 
 
 class RegistrationMixin(NodeMixin):
@@ -869,6 +872,13 @@ class RegistrationSchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics
     view_name = 'schema-responses-list'
 
     serializer_class = SchemaResponsesListSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=json.loads(self.request._request._body))
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=201, headers=headers)
 
     def get_default_queryset(self):
         return self.get_node().schema_responses.all()

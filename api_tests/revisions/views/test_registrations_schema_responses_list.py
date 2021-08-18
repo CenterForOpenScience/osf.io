@@ -30,26 +30,27 @@ class TestRegistrationsSchemaResponseList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def node(self, schema):
+    def registration(self, schema):
         return RegistrationFactory()
 
     @pytest.fixture()
-    def payload(self, node):
+    def payload(self, registration):
         return {
-            'data': {
-                'type': 'schema_responses',
-                'attributes': {
-                    'title': 'new title'
-                },
-                'relationships': {
-                    'node': {
-                        'data': {
-                            'type': 'registration',
-                            'id': node._id
+            'data':
+                {
+                    'type': 'registrations',
+                    'relationships': {
+                        'registration': {
+                            'data': {
+                                'id': registration._id,
+                                'type': 'revisions',
+                                'attributes': {
+                                    'revision_justification': "We're talkin' about practice..."
+                                }
+                            }
                         }
                     }
                 }
-            }
         }
 
     @pytest.fixture()
@@ -57,21 +58,27 @@ class TestRegistrationsSchemaResponseList:
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
-    def schema_response(self, user, user_write, user_admin, node, schema):
-        node.add_contributor(user, permissions='read')
-        node.add_contributor(user_write, permissions='write')
-        node.add_contributor(user_admin, permissions='admin')
-        content_type = ContentType.objects.get_for_model(node)
-        return SchemaResponsesFactory(content_type=content_type, object_id=node.id, initiator=node.creator)
+    def schema_response(self, user, user_write, user_admin, registration, schema):
+        registration.add_contributor(user, permissions='read')
+        registration.add_contributor(user_write, permissions='write')
+        registration.add_contributor(user_admin, permissions='admin')
+        content_type = ContentType.objects.get_for_model(registration)
+        return SchemaResponsesFactory(
+            content_type=content_type,
+            object_id=registration.id,
+            initiator=registration.creator,
+            revision_justification="We ain't even talking about the game.",
+            reviews_state='revision_in_progress'
+        )
 
     @pytest.fixture()
-    def schema_response2(self, node, schema):
-        content_type = ContentType.objects.get_for_model(node)
-        return SchemaResponsesFactory(content_type=content_type, object_id=node.id, initiator=node.creator)
+    def schema_response2(self, registration, schema):
+        content_type = ContentType.objects.get_for_model(registration)
+        return SchemaResponsesFactory(content_type=content_type, object_id=registration.id, initiator=registration.creator)
 
     @pytest.fixture()
-    def url(self, node):
-        return f'/v2/registrations/{node._id}/revisions/'
+    def url(self, registration):
+        return f'/v2/registrations/{registration._id}/revisions/'
 
     def test_registrations_schema_responses_list(self, app, schema_response, schema_response2, user, url):
         resp = app.get(url, auth=user.auth)
@@ -82,6 +89,13 @@ class TestRegistrationsSchemaResponseList:
         assert schema_response2._id == data[0]['id']
         assert schema_response._id == data[1]['id']
 
+        resp = app.get(f'{url}?filter[reviews_state]={schema_response.reviews_state}', auth=user.auth)
+        assert resp.status_code == 200
+        data = resp.json['data']
+
+        assert len(data) == 1
+        assert schema_response._id == data[0]['id']
+
     def test_registrations_schema_responses_list_create(self, app, payload, user, url):
         resp = app.post_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 201
@@ -91,3 +105,4 @@ class TestRegistrationsSchemaResponseList:
         schema_response = SchemaResponses.objects.last()
 
         assert data['id'] == schema_response._id
+        assert schema_response.revision_justification == "We're talkin' about practice..."
