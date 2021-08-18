@@ -45,25 +45,23 @@ class OneDriveProvider(ExternalProvider):
     client_id = settings.ONEDRIVE_KEY
     client_secret = settings.ONEDRIVE_SECRET
 
-    auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
-    callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
-    default_scopes = ['wl.basic wl.signin onedrive.readwrite wl.offline_access']
+    auth_url_base = settings.ONEDRIVE_DEFAULT_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.ONEDRIVE_DEFAULT_OAUTH_TOKEN_ENDPOINT
+    auto_refresh_url = settings.ONEDRIVE_DEFAULT_OAUTH_TOKEN_ENDPOINT
+    default_scopes = settings.ONEDRIVE_DEFAULT_SCOPES
 
     refresh_time = settings.REFRESH_TIME
-
-    _drive_client = OneDriveClient()
 
     def handle_callback(self, response):
         """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
-        user_info = self._drive_client.user_info_for_token(response['access_token'])
-
+        client = OneDriveClient(response['access_token'])
+        user_info = client.user_info()
         return {
             'provider_id': user_info['id'],
             'display_name': user_info['name'],
-            'profile_url': user_info['link']
+            'profile_url': user_info['link'],
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -99,6 +97,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    drive_id = models.TextField(null=True, blank=True)
 
     _api = None
 
@@ -118,7 +117,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def folder_name(self):
-        if not self.folder_id:
+        if not (self.drive_id and self.folder_id):
             return None
 
         if self.folder_id != DEFAULT_ROOT_ID:
@@ -131,6 +130,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self.folder_name
 
     def clear_settings(self):
+        self.drive_id = None
         self.folder_id = None
         self.folder_path = None
 
@@ -186,7 +186,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             raise HTTPError(403)
 
         client = OneDriveClient(access_token)
-        items = client.folders(folder_id)
+        items = client.folders(self.drive_id, folder_id)
         return [
             {
                 'addon': 'onedrive',
@@ -245,19 +245,19 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
-        if self.folder_id is None:
+        if self.drive_id is None or self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder_id}
+        return {'drive_id': self.drive_id, 'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
             'onedrive_{0}'.format(action),
             auth=auth,
             params={
-                'path': metadata['path'],
+                'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder': self.folder_path,
+                'folder': self.folder_id,
                 'urls': {
                     'view': self.owner.web_url_for(
                         'addon_view_or_download_file',
@@ -283,4 +283,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def on_delete(self):
         self.deauthorize(add_log=False)
+        self.save()
+
+    def set_auth(self, external_account, user, **kwargs):
+        super(NodeSettings, self).set_auth(external_account, user, **kwargs)
+
+        client = OneDriveClient(self.fetch_access_token())
+        user_info = client.user_info()
+        self.drive_id = user_info['drive_id']
         self.save()
