@@ -37,19 +37,24 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
 
     @property
     def state(self):
-        return ApprovalStates.from_db_name(self.state)
+        return ApprovalStates.from_db_name(self.reviews_state)
 
     @state.setter
     def state(self, new_state):
-        self.state = new_state.db_name
+        self.reviews_state = new_state.db_name
 
     @property
     def is_moderated(self):
+        '''Determine if these Responses belong to a moderated resource'''
         return getattr(self.parent, 'is_moderated', False)
 
     @property
     def revisable(self):
-        '''Controls what happens when responses are rejected'''
+        '''Controls what state the responses move to if they are rejected.
+
+        True -> return to IN_PROGRESS
+        False -> either ADMIN_REJECTED or MODERATOR_REJECTED
+        '''
         return True
 
     def _validate_trigger(self, event_data):
@@ -84,4 +89,4 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         self.pending_approvers.clear()
 
     def _save_transition(self, event_data):
-        pass
+        self.save()
