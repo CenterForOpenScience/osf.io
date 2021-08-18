@@ -875,22 +875,3 @@ class RegistrationSchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics
 
     def get_queryset(self):
         return self.get_queryset_from_request()
-
-
-class RegistrationSchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-
-    permission_classes = (
-        drf_permissions.IsAuthenticated,
-        base_permissions.TokenHasScope,
-        AdminContributorOrPublic,
-    )
-
-    view_category = 'registrations'
-    view_name = 'schema-responses-detail'
-
-    serializer_class = SchemaResponsesDetailSerializer
-
-    def get_object(self):
-        return SchemaResponses.objects.get(_id=self.kwargs['revision_id'])
