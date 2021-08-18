@@ -10,9 +10,10 @@ from osf.utils.workflows import ApprovalStates
 class SchemaResponses(ObjectIDMixin, BaseModel):
 
     schema = models.ForeignKey('osf.registrationschema')
-    all_responses = models.ManyToManyField('osf.schemaresponseblock')
-    initiator = models.ForeignKey('osf.osfuser', null=False, related_name='initaited_responses')
+    response_blocks = models.ManyToManyField('osf.schemaresponseblock')
+    creator = models.ForeignKey('osf.osfuser', null=False)
 
+    revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
     pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
     state = models.CharField(
@@ -20,8 +21,6 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         default=ApprovalStates.IN_PROGRESS.db_name,
         max_length=255
     )
-
-    justification = models.CharField(max_length=2048, null=True)
 
     # Allow schema responses for non-Registrations
     object_id = models.PositiveIntegerField()
