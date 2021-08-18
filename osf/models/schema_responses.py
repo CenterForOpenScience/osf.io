@@ -11,7 +11,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
 
     schema = models.ForeignKey('osf.registrationschema')
     response_blocks = models.ManyToManyField('osf.schemaresponseblock')
-    creator = models.ForeignKey('osf.osfuser', null=False)
+    initiator = models.ForeignKey('osf.osfuser', null=False)
 
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)

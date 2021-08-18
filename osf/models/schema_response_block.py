@@ -1,5 +1,6 @@
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
 class SchemaResponseBlock(ObjectIDMixin, BaseModel):
@@ -11,7 +12,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
 
     # Should match source_block.registration_response_key
     schema_key = models.CharField(max_length=255)
-    answer = models.TextField()
+    response = DateTimeAwareJSONField()
 
     class Meta:
         unique_together = ('source_revision', 'source_block')
