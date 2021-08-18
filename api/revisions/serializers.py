@@ -103,13 +103,21 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
         'revision_response',
     ])
     revision_response = ser.SerializerMethodField()
+    revised_responses = ser.SerializerMethodField()
 
     def get_revision_response(self, obj):
         data = []
-        for response in obj.schema_responses.all():
-            data.append({response.schema_key: response.response})
-
+        for response_block in obj.response_blocks.all():
+            data.append({response_block.schema_key: response_block.response})
         return data
+
+    def get_revised_responses(self, obj):
+        previous_version = obj.previous_version
+
+        if not previous_version:
+            return []
+        else:
+            return obj.response_blocks.values_list('schema_key', flat=True)
 
     def update(self, revision, validated_data):
         schema_responses = validated_data.get('revision_response')
@@ -126,13 +134,20 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
             except RegistrationSchemaBlock.DoesNotExist:
                 raise exceptions.ValidationError(f'Schema Response key "{key}" not found in schema "{schema.name}"')
 
-            response_block, created = SchemaResponseBlock.objects.get_or_create(
-                schema_key=key,
-                response=response,
-                source_block=block,
-            )
-            response_block.save()
-            revision.schema_responses.add(response_block)
+            # don't add exactly the same block if the current or previous version has it too.
+            previous_version = revision.previous_version
+            if revision.response_blocks.filter(schema_key=key, response=response):
+                continue
+            elif previous_version and previous_version.response_blocks.filter(schema_key=key, response=response):
+                continue
+            else:
+                response_block, created = SchemaResponseBlock.objects.get_or_create(
+                    schema_key=key,
+                    source_block=block,
+                )
+                response_block.response = response
+                response_block.save()
+                revision.response_blocks.add(response_block)
 
         revision.save()
 
