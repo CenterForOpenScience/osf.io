@@ -1,5 +1,3 @@
-import json
-
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
@@ -79,7 +77,6 @@ from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 
 from api.revisions.serializers import SchemaResponsesListSerializer
-from rest_framework.response import Response
 
 
 class RegistrationMixin(NodeMixin):
