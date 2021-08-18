@@ -359,18 +359,17 @@ class ApprovalsMachine(Machine):
             queued=True,
         )
 
-    @property
-    def target_registration(self):
-        raise NotImplementedError(
-            'SanctionStateMachine subclasses must define a target_registration property'
-        )
+    def get_model_state(self):
+        # ApprovalsMachine should never have more than one model
+        model = self.models[0]
+        return super().get_model_state(model)
 
     def _process(self, *args, **kwargs):
         '''Wrap superclass _process to handle expected MachineErrors.'''
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            state = self.get_model_state
+            state = self.get_model_state()
             if state in [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED]:
                 error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
