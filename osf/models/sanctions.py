@@ -22,26 +22,26 @@ from osf.exceptions import (
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
-from osf.utils.machines import SanctionStateMachine
-from osf.utils.workflows import SanctionStates, SanctionTypes
+from osf.utils.machines import ApprovalsMachine
+from osf.utils.workflows import ApprovalStates, SanctionTypes
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
-class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
+class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
-    UNAPPROVED = SanctionStates.UNAPPROVED.db_name
+    UNAPPROVED = ApprovalStates.UNAPPROVED.db_name
     # Has approval
-    APPROVED = SanctionStates.APPROVED.db_name
+    APPROVED = ApprovalStates.APPROVED.db_name
     # Rejected by at least one contributor
-    REJECTED = SanctionStates.REJECTED.db_name
+    REJECTED = ApprovalStates.REJECTED.db_name
     # Embargo has been completed
-    COMPLETED = SanctionStates.COMPLETED.db_name
+    COMPLETED = ApprovalStates.COMPLETED.db_name
     # Approved by admins but pending moderator approval/rejection
-    PENDING_MODERATION = SanctionStates.PENDING_MODERATION.db_name
+    PENDING_MODERATION = ApprovalStates.PENDING_MODERATION.db_name
     # Rejected by a moderator
-    MODERATOR_REJECTED = SanctionStates.MODERATOR_REJECTED.db_name
+    MODERATOR_REJECTED = ApprovalStates.MODERATOR_REJECTED.db_name
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
@@ -76,9 +76,17 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
     initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
-    state = models.CharField(choices=SanctionStates.char_field_choices(),
+    state = models.CharField(choices=ApprovalStates.char_field_choices(),
                              default=UNAPPROVED,
                              max_length=255)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.approvals_machine = ApprovalsMachine(
+            model=self,
+            state_property_name='approval_stage',
+            active_state=self.approval_stage
+        )
 
     def __repr__(self):
         return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
@@ -87,18 +95,18 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def is_pending_approval(self):
         '''The sanction is awaiting admin approval.'''
-        return self.approval_stage is SanctionStates.UNAPPROVED
+        return self.approval_stage is ApprovalStates.UNAPPROVED
 
     @property
     def is_approved(self):
         '''The sanction has received all required admin and moderator approvals.'''
-        return self.approval_stage is SanctionStates.APPROVED
+        return self.approval_stage is ApprovalStates.APPROVED
 
     @property
     def is_rejected(self):
         '''The sanction has been rejected by either an admin or a moderator.'''
         rejected_states = [
-            SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED
+            ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED
         ]
         return self.approval_stage in rejected_states
 
@@ -108,7 +116,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def approval_stage(self):
-        return SanctionStates.from_db_name(self.state)
+        return ApprovalStates.from_db_name(self.state)
 
     @approval_stage.setter
     def approval_stage(self, state):
@@ -117,6 +125,10 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def target_registration(self):
         return self._get_registration()
+
+    @property
+    def revisable(self):
+        return False
 
     # The Sanction object will also inherit the following functions from the SanctionStateMachine:
     #
@@ -180,7 +192,7 @@ class TokenApprovableSanction(Sanction):
 
     def _verify_user_role(self, user, action):
         '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
-        if self.approval_stage is SanctionStates.UNAPPROVED:
+        if self.approval_stage is ApprovalStates.UNAPPROVED:
             # Allow user is None when UNAPPROVED to support timed
             # sanction expiration from within OSF via the 'accept' trigger
             if user is None or user._id in self.approval_state:
@@ -188,12 +200,12 @@ class TokenApprovableSanction(Sanction):
             return False
 
         required_permission = f'{action}_submissions'
-        if self.approval_stage is SanctionStates.PENDING_MODERATION:
+        if self.approval_stage is ApprovalStates.PENDING_MODERATION:
             return user.has_perm(required_permission, self.target_registration.provider)
 
         return False
 
-    def _validate_request(self, event_data):
+    def _validate_trigger(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
         action = event_data.event.name
         user = event_data.kwargs.get('user')
@@ -209,7 +221,7 @@ class TokenApprovableSanction(Sanction):
 
         # Moderator auth is validated by API, no token to check
         # user is None and no prior exception -> OSF-internal accept call
-        if self.approval_stage is SanctionStates.PENDING_MODERATION or user is None:
+        if self.approval_stage is ApprovalStates.PENDING_MODERATION or user is None:
             return True
 
         token = event_data.kwargs.get('token')
