@@ -60,7 +60,6 @@ class TestSchemaResponseList:
         content_type = ContentType.objects.get_for_model(node)
         return SchemaResponsesFactory(content_type=content_type, object_id=node.id, initiator=node.creator)
 
-
     @pytest.fixture()
     def url(self):
         return '/v2/revisions/'

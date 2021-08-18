@@ -1156,8 +1156,8 @@ class RegistrationSchemaFactory(DjangoModelFactory):
         }]
     }
 
-    @classmethod
-    def _create(cls, *args, **kwargs):
+    @staticmethod
+    def _create(*args, **kwargs):
         from osf.utils.migrations import map_schema_to_schemablocks
         schema = super()._create(*args, **kwargs)
         map_schema_to_schemablocks(schema)
@@ -1165,4 +1165,3 @@ class RegistrationSchemaFactory(DjangoModelFactory):
 
     class Meta:
         model = models.RegistrationSchema
-

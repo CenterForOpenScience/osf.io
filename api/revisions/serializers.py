@@ -1,6 +1,4 @@
 from api.base.serializers import (
-    JSONAPISerializer,
-    LinksField,
     RelationshipField,
     VersionedDateTimeField,
 )
@@ -10,7 +8,6 @@ from api.base.utils import absolute_reverse
 from osf.models.schema_responses import SchemaResponses, SchemaResponseBlock
 from osf.models import Registration, RegistrationSchemaBlock
 from rest_framework import exceptions
-from django.utils import timezone
 from api.base.serializers import JSONAPISerializer, LinksField
 from django.contrib.contenttypes.models import ContentType
 

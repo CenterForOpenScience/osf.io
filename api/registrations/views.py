@@ -4,7 +4,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider, SchemaResponses
+from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
 from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
@@ -77,7 +77,7 @@ from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 
-from api.revisions.serializers import SchemaResponsesListSerializer, SchemaResponsesDetailSerializer
+from api.revisions.serializers import SchemaResponsesListSerializer
 from rest_framework.response import Response
 
 
