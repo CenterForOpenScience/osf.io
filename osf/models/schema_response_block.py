@@ -6,7 +6,11 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 class SchemaResponseBlock(ObjectIDMixin, BaseModel):
 
     # The SchemaResponses version where this response originated
-    source_revision = models.ForeignKey('osf.SchemaResponses', null=False)
+    source_revision = models.ForeignKey(
+        'osf.SchemaResponses',
+        null=False,
+        related_name='revised_response_blocks'
+    )
     # The RegistrationSchemaBlock that defines the question being answered
     source_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
 
