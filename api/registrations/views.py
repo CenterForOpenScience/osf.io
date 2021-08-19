@@ -20,9 +20,13 @@ from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationsh
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.exceptions import Conflict
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
-from api.base.parsers import JSONAPIParser
-from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+    JSONAPIParser,
+)
 from api.base.utils import (
     get_user_auth,
     default_node_list_permission_queryset,

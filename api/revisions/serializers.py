@@ -1,15 +1,20 @@
+from api.base.utils import absolute_reverse
+from api.base.serializers import JSONAPISerializer, LinksField
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import serializers as ser
+from rest_framework import exceptions
+
 from api.base.serializers import (
     RelationshipField,
     VersionedDateTimeField,
 )
 
-from rest_framework import serializers as ser
-from api.base.utils import absolute_reverse
-from osf.models.schema_responses import SchemaResponses, SchemaResponseBlock
-from osf.models import Registration, RegistrationSchemaBlock
-from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField
-from django.contrib.contenttypes.models import ContentType
+from osf.models import (
+    Registration,
+    SchemaResponses,
+    SchemaResponseBlock,
+    RegistrationSchemaBlock,
+)
 
 
 class SchemaResponsesSerializer(JSONAPISerializer):
@@ -18,10 +23,6 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         'date_modified',
         'revision_justification',
         'reviews_state',
-    ])
-
-    writeable_method_fields = frozenset([
-        'revision_response',
     ])
 
     id = ser.CharField(source='_id', required=False, allow_null=True)
