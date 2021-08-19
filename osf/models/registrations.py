@@ -57,7 +57,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
-    SanctionStates,
+    ApprovalStates,
     SanctionTypes
 )
 
@@ -662,7 +662,7 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            self.retraction.approval_stage = SanctionStates.PENDING_MODERATION
+            self.retraction.approval_stage = ApprovalStates.PENDING_MODERATION
             self.retraction.accept(user=user, comment=justification)
             self.refresh_from_db()  # grab updated state
 
@@ -817,8 +817,8 @@ class Registration(AbstractNode):
             # Alter embargo state to make sure registration doesn't accidentally get published
             self.embargo.state = self.retraction.REJECTED
             self.embargo.approval_stage = (
-                SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.REJECTED
+                ApprovalStates.MODERATOR_REJECTED if self.is_moderated
+                else ApprovalStates.REJECTED
             )
 
             self.registered_from.add_log(

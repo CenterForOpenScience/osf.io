@@ -13,10 +13,10 @@ from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
-    SanctionStates,
+    ApprovalStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    SANCTION_TRANSITIONS
+    APPROVAL_TRANSITIONS
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
@@ -315,14 +315,22 @@ class PreprintRequestMachine(BaseMachine):
         }
 
 
-class SanctionStateMachine(Machine):
-    '''SanctionsStateMachine manages state transitions for Sanctions objects.
+class ApprovalsMachine(Machine):
+    '''ApprovalsMachine manages state transitions for Sanction and SchemaResponses entities.
 
-    The valid machine states for a Sanction object are defined in Workflows.SanctionStates.
-    The valid transitions between these states are defined in Workflows.SANCTION_TRANSITIONS.
+    The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
+    The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
 
-    Subclasses of SanctionStateMachine inherit the 'trigger' functions named in
-    the SANCTION_TRANSITIONS dictionary (approve, accept, and reject).
+    The ApprovalMachine can be used by by instantiating an ApprovalMachine and attaching the desired
+    model with the 'model' kwarg. Attached models will inherit the 'trigger' functions named in
+    the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
+
+    Attached models must define the calbacks used by the ApprvalsMachine:
+    * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
+    * revisable: Determines what transiition to follow on a 'reject' trigger
+    * `_on_submit', '_on_approve', '_on_accept', and '_on_reject': Define any custom per-trigger logic
+    * _save_transition': Defines any global, post-transition logic
+
     These trigger functions will, in order,
     1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
     2) Call Sanction member functions listed in the 'conditions' key of the dictionary
@@ -335,44 +343,38 @@ class SanctionStateMachine(Machine):
 
     SanctionStateMachine also provides some extra functionality to write
     RegistrationActions on events moving in to or out of Moderated machine states
-    as well as to convert MachineErrors (which arise on unsupported state changes
-    requests) into HTTPErrors to report back to users who try to initiate such errors.
+    as well as to provide custom error messages on unsupported state changes.
     '''
 
-    def __init__(self):
+    def __init__(self, model, active_state, state_property_name):
 
         super().__init__(
-            states=SanctionStates,
-            transitions=SANCTION_TRANSITIONS,
-            initial=SanctionStates.from_db_name(self.state),
-            model_attribute='approval_stage',
+            model=model,
+            states=ApprovalStates,
+            transitions=APPROVAL_TRANSITIONS,
+            initial=active_state,
+            model_attribute=state_property_name,
             after_state_change='_save_transition',
             send_event=True,
             queued=True,
         )
 
-    @property
-    def target_registration(self):
-        raise NotImplementedError(
-            'SanctionStateMachine subclasses must define a target_registration property'
-        )
-
-    @property
-    def approval_stage(self):
-        raise NotImplementedError(
-            'SanctionStateMachine subclasses must define an approval_stage property with a setter.'
-        )
+    def get_current_state(self):
+        # ApprovalsMachine should never have more than one model
+        model = self.models[0]
+        return self.get_model_state(model)
 
     def _process(self, *args, **kwargs):
         '''Wrap superclass _process to handle expected MachineErrors.'''
         try:
             super()._process(*args, **kwargs)
         except MachineError as e:
-            if self.approval_stage in [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED]:
+            state = self.get_current_state()
+            if state in [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED]:
                 error_message = (
                     'This {sanction} has already been rejected and cannot be approved'.format(
                         sanction=self.DISPLAY_NAME))
-            elif self.approval_stage in [SanctionStates.APPROVED, SanctionStates.COMPLETED]:
+            elif state in [ApprovalStates.APPROVED, ApprovalStates.COMPLETED]:
                 error_message = (
                     'This {sanction} has all required approvals and cannot be rejected'.format(
                         sanction=self.DISPLAY_NAME))
@@ -393,7 +395,7 @@ class SanctionStateMachine(Machine):
         if user is None and event_data.kwargs:
             user = event_data.args[0]
         comment = event_data.kwargs.get('comment', '')
-        if new_state == SanctionStates.PENDING_MODERATION.name:
+        if new_state == ApprovalStates.PENDING_MODERATION.name:
             user = None  # Don't worry about the particular user who gave final approval
 
         self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
