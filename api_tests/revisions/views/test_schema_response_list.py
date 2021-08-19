@@ -26,7 +26,7 @@ class TestSchemaResponseList:
             'data': {
                 'type': 'schema_responses',
                 'attributes': {
-                    'title': 'new title'
+                    'revision_justification': 'test justification'
                 },
                 'relationships': {
                     'node': {
@@ -45,20 +45,17 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def node(self, schema):
-        registration = RegistrationFactory()
-        registration.registered_schema.add(schema)
+        registration = RegistrationFactory(schema=schema)
         registration.save()
         return registration
 
     @pytest.fixture()
     def schema_response(self, user, node, schema):
-        content_type = ContentType.objects.get_for_model(node)
-        return SchemaResponsesFactory(content_type=content_type, object_id=node.id, initiator=node.creator)
+        return SchemaResponsesFactory(parent=node, initiator=node.creator)
 
     @pytest.fixture()
     def schema_response2(self, node, schema):
-        content_type = ContentType.objects.get_for_model(node)
-        return SchemaResponsesFactory(content_type=content_type, object_id=node.id, initiator=node.creator)
+        return SchemaResponsesFactory(parent=node, initiator=node.creator)
 
     @pytest.fixture()
     def url(self):

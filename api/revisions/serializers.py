@@ -96,10 +96,6 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
 
 class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
-    versions = RelationshipField(
-        related_view='registrations:schema-responses-list',
-        related_view_kwargs={'node_id': '<node._id>'},
-    )
     writeable_method_fields = frozenset([
         'revision_response',
     ])

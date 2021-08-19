@@ -18,12 +18,6 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     initiator = models.ForeignKey('OSFUser', null=False)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
 
-    reviews_state = models.CharField(
-        max_length=100,
-        choices=(('revision_in_progress', 'revision_in_progress'), ('revision_pending_admin_approval', 'revision_pending_admin_approval'), ('revision_pending_moderation', 'revision_pending_moderation'), ('approved', 'approved')),
-        default='revision_pending_admin_approval'
-    )
-
     @property
     def previous_version(self):
         return self.parent.schema_responses.filter(created__lt=self.created).order_by('created').first()
