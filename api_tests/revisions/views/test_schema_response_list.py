@@ -21,7 +21,7 @@ class TestSchemaResponseList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def payload(self, node):
+    def payload(self, registration):
         return {
             'data': {
                 'type': 'schema_responses',
@@ -29,10 +29,10 @@ class TestSchemaResponseList:
                     'revision_justification': 'test justification'
                 },
                 'relationships': {
-                    'node': {
+                    'registrations': {
                         'data': {
-                            'type': 'nodes',
-                            'id': node._id
+                            'type': 'registrations',
+                            'id': registration._id
                         }
                     }
                 }
@@ -44,18 +44,18 @@ class TestSchemaResponseList:
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
-    def node(self, schema):
+    def registration(self, schema):
         registration = RegistrationFactory(schema=schema)
         registration.save()
         return registration
 
     @pytest.fixture()
-    def schema_response(self, user, node, schema):
-        return SchemaResponsesFactory(parent=node, initiator=node.creator)
+    def schema_response(self, user, registration, schema):
+        return SchemaResponsesFactory(parent=registration, initiator=registration.creator, schema=schema)
 
     @pytest.fixture()
-    def schema_response2(self, node, schema):
-        return SchemaResponsesFactory(parent=node, initiator=node.creator)
+    def schema_response2(self, registration, schema):
+        return SchemaResponsesFactory(parent=registration, initiator=registration.creator, schema=schema)
 
     @pytest.fixture()
     def url(self):
@@ -70,7 +70,7 @@ class TestSchemaResponseList:
         assert schema_response._id == data[0]['id']
         assert schema_response2._id == data[1]['id']
 
-    def test_schema_response_create(self, app, node, user, payload, url):
+    def test_schema_response_create(self, app, registration, user, payload, url):
         resp = app.post_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 201
         data = resp.json['data']

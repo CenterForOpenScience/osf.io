@@ -7,8 +7,11 @@ from api.revisions.serializers import (
     SchemaResponsesDetailSerializer,
 )
 from osf.models import SchemaResponses
+from api.base.filters import ListFilterMixin
 
-class SchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView):
+
+
+class SchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,

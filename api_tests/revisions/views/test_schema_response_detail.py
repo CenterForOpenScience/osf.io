@@ -8,7 +8,7 @@ from osf_tests.factories import (
 )
 
 from django.contrib.contenttypes.models import ContentType
-from osf.models.schema_responses import SchemaResponseBlock
+from osf.models import SchemaResponseBlock
 
 
 @pytest.mark.django_db
@@ -62,12 +62,14 @@ class TestSchemaResponseDetail:
             content_type=content_type,
             object_id=node.id,
             initiator=node.creator,
-            revision_justification='test justification'
+            revision_justification='test justification',
+            schema=schema
         )
         response_block = SchemaResponseBlock.objects.create(
             schema_key='q1',
             response={'value': 'initial value'},
-            source_block=node.registered_schema.first().schema_blocks.get(registration_response_key='q1'),
+            source_block=schema.schema_blocks.get(registration_response_key='q1'),
+            source_revision=schema_response,
         )
         response_block.save()
         schema_response.response_blocks.add(response_block)
@@ -75,7 +77,8 @@ class TestSchemaResponseDetail:
         response_block = SchemaResponseBlock.objects.create(
             schema_key='q2',
             response={'value': 'initial value'},
-            source_block=node.registered_schema.first().schema_blocks.get(registration_response_key='q1'),
+            source_block=schema.schema_blocks.get(registration_response_key='q2'),
+            source_revision=schema_response,
         )
         response_block.save()
         schema_response.response_blocks.add(response_block)
@@ -88,6 +91,7 @@ class TestSchemaResponseDetail:
             content_type=content_type,
             object_id=node.id,
             initiator=node.creator,
+            schema=schema
         )
 
     @pytest.fixture()
@@ -136,4 +140,11 @@ class TestSchemaResponseDetail:
         assert resp.status_code == 400
         errors = resp.json['errors']
         assert len(errors) == 1
-        assert errors[0]['detail'] == 'Schema Response key "oops" not found in schema "test schema"'
+        assert errors[0]['detail'] == 'payload requires key: q1'
+
+        invalid_payload['data']['attributes']['revision_response']['q1'] = {'test': 'new value'}
+        resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 400
+        errors = resp.json['errors']
+        assert len(errors) == 1
+        assert errors[0]['detail'] == 'Encountered unexpected keys: oops'

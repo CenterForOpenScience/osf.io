@@ -89,13 +89,6 @@ class TestRegistrationsSchemaResponseList:
         assert schema_response2._id == data[0]['id']
         assert schema_response._id == data[1]['id']
 
-        resp = app.get(f'{url}?filter[reviews_state]={schema_response.reviews_state}', auth=user.auth)
-        assert resp.status_code == 200
-        data = resp.json['data']
-
-        assert len(data) == 1
-        assert schema_response._id == data[0]['id']
-
     def test_registrations_schema_responses_list_create(self, app, payload, user, url):
         resp = app.post_json_api(url, payload, auth=user.auth)
         assert resp.status_code == 201

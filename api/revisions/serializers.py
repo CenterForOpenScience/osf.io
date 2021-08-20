@@ -13,6 +13,7 @@ from osf.models import (
     Registration,
     SchemaResponses,
     SchemaResponseBlock,
+    RegistrationSchema,
     RegistrationSchemaBlock,
 )
 
@@ -81,15 +82,21 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
 
     def create(self, validated_data):
         registration = Registration.load(validated_data.pop('_id'))
-        if registration.registered_schema.first():
-            schema_response = SchemaResponses.objects.create(
-                **validated_data,
-                object_id=registration.id,
-                content_type=ContentType.objects.get_for_model(registration),
-                initiator=self.context['request'].user
-            )
-        else:
-            raise NotImplementedError()
+
+        try:
+            schema = registration.registered_schema.get()
+        except RegistrationSchema.DoesNotExist:
+            raise exceptions.ValidationError(f'Resource {registration._id} must have schema')
+
+        initiator = self.context['request'].user
+        justification = validated_data.pop('revision_justification', '')
+
+        schema_response = SchemaResponses.create_initial_responses(
+            initiator=initiator,
+            parent=registration,
+            schema=schema,
+            justification=justification,
+        )
 
         return schema_response
 
@@ -118,34 +125,10 @@ class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
     def update(self, revision, validated_data):
         schema_responses = validated_data.get('revision_response')
-        schema = revision.parent.registered_schema.first()
-        if not schema:
-            raise exceptions.ValidationError('Schema Response parent must have a schema.')
 
-        for key, response in schema_responses.items():
-            try:
-                block = RegistrationSchemaBlock.objects.get(
-                    registration_response_key=key,
-                    schema=schema,
-                )
-            except RegistrationSchemaBlock.DoesNotExist:
-                raise exceptions.ValidationError(f'Schema Response key "{key}" not found in schema "{schema.name}"')
-
-            # don't add exactly the same block if the current or previous version has it too.
-            previous_version = revision.previous_version
-            if revision.response_blocks.filter(schema_key=key, response=response):
-                continue
-            elif previous_version and previous_version.response_blocks.filter(schema_key=key, response=response):
-                continue
-            else:
-                response_block, created = SchemaResponseBlock.objects.get_or_create(
-                    schema_key=key,
-                    source_block=block,
-                )
-                response_block.response = response
-                response_block.save()
-                revision.response_blocks.add(response_block)
-
-        revision.save()
+        try:
+            revision.update_responses(schema_responses)
+        except ValueError as exc:
+            raise exceptions.ValidationError(detail=str(exc))
 
         return revision
