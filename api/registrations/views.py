@@ -25,7 +25,6 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
-    JSONAPIParser,
 )
 from api.base.utils import (
     get_user_auth,

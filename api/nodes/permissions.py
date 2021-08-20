@@ -15,7 +15,6 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
-    SchemaResponses,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -174,6 +173,8 @@ class ParentWriteContributorOrPublic(permissions.BasePermission):
     def has_permission(self, request, view):
         obj = view.get_object().parent
         return self.has_object_permission(request, view, obj)
+
+
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):

@@ -1,4 +1,3 @@
-
 import pytest
 
 from osf_tests.factories import (
@@ -7,10 +6,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory
 )
-
-from django.contrib.contenttypes.models import ContentType
-
-from osf.models import SchemaResponses
 
 
 @pytest.mark.django_db
