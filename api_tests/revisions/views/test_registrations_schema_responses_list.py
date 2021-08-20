@@ -30,7 +30,7 @@ class TestRegistrationsSchemaResponseList:
                         'registration': {
                             'data': {
                                 'id': registration._id,
-                                'type': 'schema_responses',
+                                'type': 'schema-responses',
                                 'attributes': {
                                     'revision_justification': "We're talkin' about practice..."
                                 }

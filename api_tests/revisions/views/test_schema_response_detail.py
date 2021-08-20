@@ -30,7 +30,7 @@ class TestSchemaResponseDetail:
     def payload(self, node):
         return {
             'data': {
-                'type': 'schema_responses',
+                'type': 'schema-responses',
                 'attributes': {
                     'revision_response': {
                         'q1': {'value': 'update value'},
@@ -44,7 +44,7 @@ class TestSchemaResponseDetail:
     def invalid_payload(self, node):
         return {
             'data': {
-                'type': 'schema_responses',
+                'type': 'schema-responses',
                 'attributes': {
                     'revision_response': {
                         'oops': {'value': 'test'},

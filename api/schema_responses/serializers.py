@@ -69,7 +69,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = 'schema_responses'
+        type_ = 'schema-responses'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

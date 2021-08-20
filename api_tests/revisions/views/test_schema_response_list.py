@@ -19,7 +19,7 @@ class TestSchemaResponseList:
     def payload(self, registration):
         return {
             'data': {
-                'type': 'schema_responses',
+                'type': 'schema-responses',
                 'attributes': {
                     'revision_justification': 'test justification'
                 },
