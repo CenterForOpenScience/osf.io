@@ -25,14 +25,25 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         'revision_justification',
         'reviews_state',
     ])
+    writeable_method_fields = frozenset([
+        'revision_response',
+    ])
+
 
     id = ser.CharField(source='_id', required=False, allow_null=True)
     date_created = VersionedDateTimeField(source='created', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
-    revision_response = ser.JSONField(source='schema_responses', required=False)
+    revised_responses = ser.JSONField(required=False)
     reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
+    revision_response = ser.SerializerMethodField()
+
+    def get_revision_response(self, obj):
+        data = []
+        for response_block in obj.response_blocks.all():
+            data.append({response_block.schema_key: response_block.response})
+        return data
 
     links = LinksField(
         {
@@ -62,14 +73,14 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = 'revisions'
+        type_ = 'schema_responses'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'revisions:schema-responses-detail',
+            'schema_responses:schema-responses-detail',
             kwargs={
                 'version': self.context['request'].parser_context['kwargs']['version'],
-                'revision_id': obj._id,
+                'schema_response_id': obj._id,
             },
         )
 
@@ -103,32 +114,12 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
 
 class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
 
-    writeable_method_fields = frozenset([
-        'revision_response',
-    ])
-    revision_response = ser.SerializerMethodField()
-    revised_responses = ser.SerializerMethodField()
-
-    def get_revision_response(self, obj):
-        data = []
-        for response_block in obj.response_blocks.all():
-            data.append({response_block.schema_key: response_block.response})
-        return data
-
-    def get_revised_responses(self, obj):
-        previous_version = obj.previous_version
-
-        if not previous_version:
-            return []
-        else:
-            return obj.response_blocks.values_list('schema_key', flat=True)
-
-    def update(self, revision, validated_data):
+    def update(self, schema_response, validated_data):
         schema_responses = validated_data.get('revision_response')
 
         try:
-            revision.update_responses(schema_responses)
+            schema_response.update_responses(schema_responses)
         except ValueError as exc:
             raise exceptions.ValidationError(detail=str(exc))
 
-        return revision
+        return schema_response

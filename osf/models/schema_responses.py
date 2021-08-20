@@ -73,19 +73,22 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         return new_responses
 
     @classmethod
-    def create_from_previous_responses(cls, initiator, previous_responses, justification=None):
+    def create_from_previous_schema_response(cls, initiator, previous_schema_response, justification=None):
         '''Create a new SchemaResponses object referencing existing SchemaResponseBlocks.
 
         New response blocks will be created as updated answers are proveded
         '''
         # TODO confirm that no other non-Approved responses exist
         new_responses = cls(
-            parent=previous_responses.parent,
-            schema=previous_responses.schema,
+            parent=previous_schema_response.parent,
+            schema=previous_schema_response.schema,
             initiator=initiator,
             revision_justification=justification or ''
         )
-        new_responses.response_blocks.add(*previous_responses.response_blocks)
+        new_responses.save()
+        new_responses.response_blocks.add(*previous_schema_response.response_blocks.all())
+
+        return new_responses
 
     def update_responses(self, updated_responses):
         '''
@@ -105,7 +108,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(f'Encountered unexpected keys: {",".join(list(updated_responses.keys()))}')
+            raise ValueError(f'Encountered unexpected keys: {", ".join(list(updated_responses.keys()))}')
 
     def _update_response(self, current_block, latest_response):
         '''Create/update a SchemaResponseBlock with a new answer.'''
@@ -121,7 +124,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
                 source_revision=self,
                 source_block=current_block.source_block,
                 schema_key=current_block.schema_key,
-                respone=latest_response
+                response=latest_response
             )
 
             revised_block.save()

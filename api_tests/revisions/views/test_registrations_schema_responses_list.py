@@ -6,7 +6,6 @@ from osf_tests.factories import (
     RegistrationSchemaFactory,
     AuthUserFactory,
 )
-from django.contrib.contenttypes.models import ContentType
 from osf.models.schema_responses import SchemaResponses
 
 
@@ -14,19 +13,7 @@ from osf.models.schema_responses import SchemaResponses
 class TestRegistrationsSchemaResponseList:
 
     @pytest.fixture()
-    def non_contrib(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def user(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def user_write(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def user_admin(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -43,7 +30,7 @@ class TestRegistrationsSchemaResponseList:
                         'registration': {
                             'data': {
                                 'id': registration._id,
-                                'type': 'revisions',
+                                'type': 'schema_responses',
                                 'attributes': {
                                     'revision_justification': "We're talkin' about practice..."
                                 }
@@ -58,30 +45,34 @@ class TestRegistrationsSchemaResponseList:
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
-    def schema_response(self, user, user_write, user_admin, registration, schema):
-        registration.add_contributor(user, permissions='read')
-        registration.add_contributor(user_write, permissions='write')
-        registration.add_contributor(user_admin, permissions='admin')
-        content_type = ContentType.objects.get_for_model(registration)
+    def schema_response(self, user, registration, schema):
         return SchemaResponsesFactory(
-            content_type=content_type,
-            object_id=registration.id,
+            parent=registration,
             initiator=registration.creator,
+            schema=registration.registered_schema.get(),
             revision_justification="We ain't even talking about the game.",
-            reviews_state='revision_in_progress'
         )
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
-        content_type = ContentType.objects.get_for_model(registration)
-        return SchemaResponsesFactory(content_type=content_type, object_id=registration.id, initiator=registration.creator)
+        return SchemaResponsesFactory(
+            parent=registration,
+            initiator=registration.creator,
+            schema=registration.registered_schema.get(),
+            revision_justification="We ain't even talking about the game.",
+        )
 
     @pytest.fixture()
     def url(self, registration):
-        return f'/v2/registrations/{registration._id}/revisions/'
+        return f'/v2/registrations/{registration._id}/schema_responses/'
 
     def test_registrations_schema_responses_list(self, app, schema_response, schema_response2, user, url):
-        resp = app.get(url, auth=user.auth)
+        resp = app.get(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.is_public = True
+        schema_response.parent.save()
+        resp = app.get(url, auth=user.auth, expect_error=True)
         assert resp.status_code == 200
         data = resp.json['data']
 
@@ -89,11 +80,14 @@ class TestRegistrationsSchemaResponseList:
         assert schema_response2._id == data[0]['id']
         assert schema_response._id == data[1]['id']
 
-    def test_registrations_schema_responses_list_create(self, app, payload, user, url):
-        resp = app.post_json_api(url, payload, auth=user.auth)
-        assert resp.status_code == 201
-        data = resp.json['data']
+    def test_registrations_schema_responses_list_create(self, app, registration, payload, user, url):
+        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
 
+        registration.add_contributor(user, 'admin')
+        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        data = resp.json['data']
+        assert resp.status_code == 201
         assert SchemaResponses.objects.count() == 1
         schema_response = SchemaResponses.objects.last()
 

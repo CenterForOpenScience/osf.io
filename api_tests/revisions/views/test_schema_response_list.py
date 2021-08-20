@@ -51,15 +51,23 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def schema_response(self, user, registration, schema):
-        return SchemaResponsesFactory(parent=registration, initiator=registration.creator, schema=schema)
+        return SchemaResponsesFactory(
+            parent=registration,
+            initiator=registration.creator,
+            schema=schema
+        )
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
-        return SchemaResponsesFactory(parent=registration, initiator=registration.creator, schema=schema)
+        return SchemaResponsesFactory(
+            parent=registration,
+            initiator=registration.creator,
+            schema=schema
+        )
 
     @pytest.fixture()
     def url(self):
-        return '/v2/revisions/'
+        return '/v2/schema_responses/'
 
     def test_schema_response_list(self, app, schema_response, schema_response2, user, url):
         resp = app.get(url, auth=user.auth)
@@ -69,13 +77,3 @@ class TestSchemaResponseList:
         assert len(data) == 2
         assert schema_response._id == data[0]['id']
         assert schema_response2._id == data[1]['id']
-
-    def test_schema_response_create(self, app, registration, user, payload, url):
-        resp = app.post_json_api(url, payload, auth=user.auth)
-        assert resp.status_code == 201
-        data = resp.json['data']
-
-        assert SchemaResponses.objects.count() == 1
-        schema_response = SchemaResponses.objects.last()
-
-        assert data['id'] == schema_response._id

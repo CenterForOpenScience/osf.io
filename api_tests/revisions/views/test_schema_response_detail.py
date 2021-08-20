@@ -8,7 +8,7 @@ from osf_tests.factories import (
 )
 
 from django.contrib.contenttypes.models import ContentType
-from osf.models import SchemaResponseBlock
+from osf.models import SchemaResponseBlock, SchemaResponses
 
 
 @pytest.mark.django_db
@@ -32,7 +32,6 @@ class TestSchemaResponseDetail:
             'data': {
                 'type': 'schema_responses',
                 'attributes': {
-
                     'revision_response': {
                         'q1': {'value': 'update value'},
                         'q2': {'value': 'initial value'},  # fake it out by adding an old value
@@ -85,20 +84,14 @@ class TestSchemaResponseDetail:
         return schema_response
 
     @pytest.fixture()
-    def revised_response(self, node, schema, schema_response):
-        content_type = ContentType.objects.get_for_model(node)
-        return SchemaResponsesFactory(
-            content_type=content_type,
-            object_id=node.id,
-            initiator=node.creator,
-            schema=schema
-        )
-
-    @pytest.fixture()
     def url(self, schema_response):
-        return f'/v2/revisions/{schema_response._id}/'
+        return f'/v2/schema_responses/{schema_response._id}/'
 
     def test_schema_response_detail(self, app, schema_response, user, url):
+        resp = app.get(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.add_contributor(user, 'read')
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
@@ -106,8 +99,22 @@ class TestSchemaResponseDetail:
         assert data['attributes']['revision_justification'] == schema_response.revision_justification
         assert data['attributes']['revision_response'] == [{'q1': {'value': 'initial value'}}, {'q2': {'value': 'initial value'}}]
 
+        schema_response.parent.remove_permission(user, 'read', save=True)
+        schema_response.parent.is_public = True
+        schema_response.parent.save()
+        resp = app.get(url, auth=user.auth)
+        assert resp.status_code == 200
+
     def test_schema_response_detail_update(self, app, schema_response, payload, user, url):
-        resp = app.patch_json_api(url, payload, auth=user.auth)
+        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.add_contributor(user, 'read')
+        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.add_contributor(user, 'write')
+        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == schema_response._id
@@ -118,24 +125,29 @@ class TestSchemaResponseDetail:
         assert block.schema_key == 'q1'
         assert block.response == {'value': 'update value'}
 
-    def test_schema_response_detail_get_revised_responses(self, app, revised_response, payload, user, url):
-        resp = app.patch_json_api(
-            f'/v2/revisions/{revised_response._id}/',
-            payload,
-            auth=user.auth
+    def test_schema_response_detail_revised_responses(self, app, schema_response, payload, user, url):
+        revised_schema = SchemaResponses.create_from_previous_schema_response(
+            schema_response.initiator,
+            schema_response
         )
+        revised_schema.parent.add_contributor(user, 'read')
+
+        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == revised_response._id
+        assert data['id'] == revised_schema._id
+        assert data['attributes']['revised_responses'] == []
+
+        revised_schema.update_responses({'q1': {'value': 'update value'}, 'q2': {'value': 'initial value'}})
+        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
+        assert resp.status_code == 200
+        data = resp.json['data']
+        assert data['id'] == revised_schema._id
         assert data['attributes']['revised_responses'] == ['q1']
 
-        revised_response.refresh_from_db()
-        assert revised_response.response_blocks.count() == 1
-        block = revised_response.response_blocks.first()
-        assert block.schema_key == 'q1'
-        assert block.response == {'value': 'update value'}
-
     def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):
+        schema_response.parent.add_contributor(user, 'admin')
+
         resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
         errors = resp.json['errors']

@@ -1,8 +1,9 @@
 from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.nodes.permissions import ContributorOrPublic
-from api.revisions.serializers import (
+from api.nodes.permissions import ParentWriteContributorOrPublic
+
+from api.schema_responses.serializers import (
     SchemaResponsesListSerializer,
     SchemaResponsesDetailSerializer,
 )
@@ -10,10 +11,8 @@ from osf.models import SchemaResponses
 from api.base.filters import ListFilterMixin
 
 
-
-class SchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
+class SchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView):
     permission_classes = (
-        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -28,7 +27,7 @@ class SchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateA
 
 class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
-        ContributorOrPublic,
+        ParentWriteContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -38,4 +37,4 @@ class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     view_name = 'schema-responses-detail'
 
     def get_object(self):
-        return SchemaResponses.objects.get(_id=self.kwargs['revision_id'])
+        return SchemaResponses.objects.get(_id=self.kwargs['schema_response_id'])

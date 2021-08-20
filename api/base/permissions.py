@@ -122,6 +122,7 @@ class RequestHasAdminScope(permissions.BasePermission):
             return True
         raise exceptions.NotFound()
 
+
 class RequestHasPigeonToken(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if has_pigeon_scope(request):

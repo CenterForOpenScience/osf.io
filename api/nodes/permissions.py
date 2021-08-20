@@ -15,6 +15,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
+    SchemaResponses,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -133,6 +134,7 @@ class AdminOrPublic(permissions.BasePermission):
         else:
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
+
 class AdminContributorOrPublic(permissions.BasePermission):
 
     acceptable_models = (AbstractNode, DraftRegistration,)
@@ -148,7 +150,30 @@ class AdminContributorOrPublic(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
+    def has_permission(self, request, view):
+        return self.has_object_permission(request, view, view.get_object())
 
+
+class ParentWriteContributorOrPublic(permissions.BasePermission):
+    '''
+    Campare the permissions of the parent over the route resource, useful when the parent is a node.
+    '''
+    acceptable_models = (AbstractNode, )
+
+    def has_object_permission(self, request, view, obj):
+        """
+        To make changes, user must be an admin contributor. Admin group membership is not sufficient.
+        """
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        else:
+            return obj.has_permission(auth.user, 'write')
+
+    def has_permission(self, request, view):
+        obj = view.get_object().parent
+        return self.has_object_permission(request, view, obj)
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
