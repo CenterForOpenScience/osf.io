@@ -160,3 +160,6 @@ class TestSchemaResponseDetail:
         errors = resp.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == 'Encountered unexpected keys: oops'
+
+    def test_schema_response_detail_delete(self, app, schema_response, invalid_payload, user, url):
+        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
