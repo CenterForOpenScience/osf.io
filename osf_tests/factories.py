@@ -1117,20 +1117,17 @@ class BrandFactory(DjangoModelFactory):
     secondary_color = factory.Faker('hex_color')
 
 
-class SchemaResponsesFactory(DjangoModelFactory):
-    class Meta:
-        model = models.SchemaResponses
-
-
 class RegistrationSchemaFactory(DjangoModelFactory):
+    name = factory.Faker('catch_phrase')
     schema_version = factory.Sequence(lambda n: n)
-    schema = {
-        'title': 'Test Data Schema',
+
+    schema = factory.Sequence(lambda n: {
+        'title': f'Test Data Schema #{n}',
         'version': 1,
         'config': {
             'hasFiles': True
         },
-        'description': 'Test Schema for internal use only',
+        'description': f'Test Schema #{n} for internal use only',
         'pages': [{
             'id': 'page1',
             'title': 'Study Information',
@@ -1154,7 +1151,7 @@ class RegistrationSchemaFactory(DjangoModelFactory):
                 'required': True
             }]
         }]
-    }
+    })
 
     @classmethod
     def _create(cls, *args, **kwargs):
@@ -1165,3 +1162,31 @@ class RegistrationSchemaFactory(DjangoModelFactory):
 
     class Meta:
         model = models.RegistrationSchema
+
+
+class SchemaResponsesFactory(DjangoModelFactory):
+    initiator = factory.SubFactory(AuthUserFactory)
+    parent = factory.SubFactory(RegistrationFactory)
+    revision_justification = "We're talkin' about practice!"
+    submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    schema = factory.SubFactory(RegistrationSchemaFactory)
+
+    class Meta:
+        model = models.SchemaResponses
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        from django.contrib.contenttypes.models import ContentType
+
+        SchemaResponses = models.SchemaResponses
+        justification = kwargs.get('revision_justification')
+        initiator = kwargs.get('initiator')
+        parent = kwargs.get('parent')
+        schema = kwargs.get('schema')
+        parent.registered_schema.add(schema)
+
+        if SchemaResponses.objects.filter(object_id=parent.id, content_type_id=ContentType.objects.get_for_model(parent)).exists():
+            previous_schema_response = SchemaResponses.objects.filter(parent=parent).ordered_by('created').first()
+            return SchemaResponses.create_from_previous_schema_response(initiator, previous_schema_response, justification)
+        else:
+            return SchemaResponses.create_initial_responses(initiator, parent, schema, justification)

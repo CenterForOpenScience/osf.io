@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.exceptions import SchemaResponseStateError
@@ -52,7 +53,8 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
             parent=parent,
             schema=schema,
             initiator=initiator,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
+            submitted_timestamp=timezone.now()
         )
         new_responses.save()
 

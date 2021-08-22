@@ -16,7 +16,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
 
     # Should match source_block.registration_response_key
     schema_key = models.CharField(max_length=255)
-    response = DateTimeAwareJSONField()
+    response = DateTimeAwareJSONField(null=True, blank=True)
 
     class Meta:
         unique_together = ('source_revision', 'source_block')
