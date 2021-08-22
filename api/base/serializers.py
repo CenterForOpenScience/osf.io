@@ -1213,6 +1213,36 @@ class RelatedLambdaRelationshipField(RelationshipField):
         return view(getattr(obj, self.view_lambda_argument))
 
 
+class GenericRelationshipField(RelationshipField):
+    """
+    This handy field allows one to pass the view as a lambda that determines what view used with the object as a
+    parameter.
+    Example:
+    parent = GenericRelationshipField(
+        related_view=(
+            lambda object: {
+                'osf.registration': 'registrations:registration-detail',
+                'osf.node': 'nodes:node-detail',
+                'osf.preprint': 'preprints:preprint-detail',
+            }[object.parent.type]
+        ),
+        related_view_kwargs=(
+            lambda object: {
+                'osf.registration': {'node_id': '<parent._id>'},
+                'osf.node': {'node_id': '<parent._id>'},
+                'osf.preprint': {'preprint_id': '<parent._id>'},
+            }[object.parent.type]
+        ),
+        required=False,
+    )
+
+    """
+
+    def _handle_callable_view(self, obj, view_func):
+        assert callable(view_func), f'{view_func} must be callable for a {self.__class__.__name__}'
+        return view_func(obj)
+
+
 class NodeFileHyperLinkField(RelatedLambdaRelationshipField):
     def __init__(self, kind=None, never_embed=False, **kws):
         self.kind = kind

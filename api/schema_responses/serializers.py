@@ -1,5 +1,5 @@
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, GenericRelationshipField
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -47,9 +47,21 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         },
     )
 
-    registration = RelationshipField(
-        related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': '<parent._id>'},
+    parent = GenericRelationshipField(
+        related_view=(
+            lambda object: {
+                'osf.registration': 'registrations:registration-detail',
+                'osf.node': 'nodes:node-detail',
+                'osf.preprint': 'preprints:preprint-detail',
+            }[object.parent.type]
+        ),
+        related_view_kwargs=(
+            lambda object: {
+                'osf.registration': {'node_id': '<parent._id>'},
+                'osf.node': {'node_id': '<parent._id>'},
+                'osf.preprint': {'preprint_id': '<parent._id>'},
+            }[object.parent.type]
+        ),
         required=False,
     )
 
