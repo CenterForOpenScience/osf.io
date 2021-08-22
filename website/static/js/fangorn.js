@@ -752,10 +752,20 @@ function _fangornResolveUploadUrl(item, file) {
     if (configOption) {
         return configOption;
     }
+    var filenames = [file.name];
+    var filenameNFC = file.name.normalize('NFC');
+    var filenameNFD = file.name.normalize('NFD');
+    if (file.name != filenameNFC) filenames.push(filenameNFC);
+    if (file.name != filenameNFD) filenames.push(filenameNFD);
     var updateUrl;
-    $.each(item.children, function( index, value ) {
-        if (file.name === value.data.name) {
-            updateUrl = waterbutler.buildTreeBeardUpload(value);
+    $.each(filenames, function( i, filename ) {
+        $.each(item.children, function( index, value ) {
+            if (filename === value.data.name) {
+                updateUrl = waterbutler.buildTreeBeardUpload(value);
+                return false;
+            }
+        });
+        if (updateUrl) {
             return false;
         }
     });
