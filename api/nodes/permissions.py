@@ -150,9 +150,9 @@ class AdminContributorOrPublic(permissions.BasePermission):
             return obj.is_admin_contributor(auth.user)
 
 
-class ParentWriteContributorOrPublic(permissions.BasePermission):
+class SchemaResponseViewPermission(permissions.BasePermission):
     '''
-    Campare the permissions of the parent over the route resource, useful when the parent is a node.
+    Permissions for top-level `schema_responses` endpoints.
     '''
     acceptable_models = (AbstractNode, )
 
@@ -164,6 +164,8 @@ class ParentWriteContributorOrPublic(permissions.BasePermission):
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
+        elif request.method == 'DELETE':
+            return obj.has_permission(auth.user, 'admin')
         else:
             return obj.has_permission(auth.user, 'write')
 

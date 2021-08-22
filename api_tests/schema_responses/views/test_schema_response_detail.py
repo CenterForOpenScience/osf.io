@@ -161,5 +161,17 @@ class TestSchemaResponseDetail:
         assert len(errors) == 1
         assert errors[0]['detail'] == 'Encountered unexpected keys: oops'
 
-    def test_schema_response_detail_delete(self, app, schema_response, invalid_payload, user, url):
+    def test_schema_response_detail_delete(self, app, schema_response, user, url):
         resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.add_contributor(user, 'write')
+        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 403
+
+        schema_response.parent.add_contributor(user, 'admin')
+        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 204
+
+        with pytest.raises(SchemaResponses.DoesNotExist):  # shows it was really deleted
+            schema_response.refresh_from_db()

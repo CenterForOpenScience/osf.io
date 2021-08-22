@@ -1,7 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.nodes.permissions import ParentWriteContributorOrPublic
+from api.nodes.permissions import SchemaResponseViewPermission
 
 from api.schema_responses.serializers import (
     SchemaResponsesListSerializer,
@@ -27,7 +27,7 @@ class SchemaResponsesList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
 class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
-        ParentWriteContributorOrPublic,
+        SchemaResponseViewPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -38,3 +38,7 @@ class SchemaResponsesDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
 
     def get_object(self):
         return SchemaResponses.objects.get(_id=self.kwargs['schema_response_id'])
+
+    def perform_destroy(self, instance):
+        ## check state
+        instance.delete()
