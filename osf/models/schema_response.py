@@ -7,7 +7,7 @@ from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
 
 
-class SchemaResponses(ObjectIDMixin, BaseModel):
+class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
     SchemaResponses manages to creation, surfacing, updating, and approval of
@@ -22,10 +22,10 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     This allows SchemaResponses to also serve as a revision history when
     users submit updates to the schema form on a given parent object.
     '''
-
     schema = models.ForeignKey('osf.registrationschema')
     response_blocks = models.ManyToManyField('osf.schemaresponseblock')
     initiator = models.ForeignKey('osf.osfuser', null=False)
+    previous_response = models.ForeignKey('osf.schemaresponse', related_name='updated_response')
 
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
@@ -36,7 +36,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     parent = GenericForeignKey('content_type', 'object_id')
 
     @property
-    def revision_responses(self):
+    def all_responses(self):
         '''Surfaces responses from response_blocks in a dictionary format'''
         formatted_responses = {
             response_block.schema_key: response_block.response
@@ -45,9 +45,9 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         return formatted_responses
 
     @property
-    def revised_responses(self):
+    def updated_response_keys(self):
         '''Surfaces the keys of responses_blocks added in this revision.'''
-        revised_keys = self.revised_response_blocks.values_list('schema_key', flat=True)
+        revised_keys = self.updated_response_blocks.values_list('schema_key', flat=True)
         return list(revised_keys)
 
     @classmethod
@@ -80,7 +80,6 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
                 source_revision=new_responses,
                 source_block=source_block,
                 schema_key=source_block.registration_response_key,
-                response=''
             )
             new_response_block.save()
             new_responses.response_blocks.add(new_response_block)
