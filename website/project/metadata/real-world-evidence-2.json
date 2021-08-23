@@ -46,12 +46,6 @@
 		"example_text": "",
 		"required": true
 	}, {
-		"help_text": "This refers to either the extraction version number or the date of the final analytic dataset of extraction for the RWD database that will be used to implement the study protocol.",
-		"block_type": "question-label",
-		"display_text": "Extraction date",
-		"example_text": "This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
-		"required": false
-	}, {
 		"help_text": "",
 		"block_type": "short-text-input",
 		"display_text": "",
