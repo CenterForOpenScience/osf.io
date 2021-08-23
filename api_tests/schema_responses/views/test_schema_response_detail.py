@@ -1,14 +1,14 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponsesFactory,
+    SchemaResponseFactory,
     RegistrationFactory,
     RegistrationSchemaFactory,
     AuthUserFactory
 )
 
 from django.contrib.contenttypes.models import ContentType
-from osf.models import SchemaResponseBlock, SchemaResponses
+from osf.models import SchemaResponseBlock, SchemaResponse
 
 
 @pytest.mark.django_db
@@ -57,30 +57,13 @@ class TestSchemaResponseDetail:
     @pytest.fixture()
     def schema_response(self, node, schema):
         content_type = ContentType.objects.get_for_model(node)
-        schema_response = SchemaResponsesFactory(
+        schema_response = SchemaResponseFactory(
             content_type=content_type,
             object_id=node.id,
             initiator=node.creator,
             revision_justification='test justification',
             schema=schema
         )
-        response_block = SchemaResponseBlock.objects.create(
-            schema_key='q1',
-            response={'value': 'initial value'},
-            source_block=schema.schema_blocks.get(registration_response_key='q1'),
-            source_revision=schema_response,
-        )
-        response_block.save()
-        schema_response.response_blocks.add(response_block)
-
-        response_block = SchemaResponseBlock.objects.create(
-            schema_key='q2',
-            response={'value': 'initial value'},
-            source_block=schema.schema_blocks.get(registration_response_key='q2'),
-            source_revision=schema_response,
-        )
-        response_block.save()
-        schema_response.response_blocks.add(response_block)
         return schema_response
 
     @pytest.fixture()
@@ -97,7 +80,7 @@ class TestSchemaResponseDetail:
         data = resp.json['data']
         assert data['id'] == schema_response._id
         assert data['attributes']['revision_justification'] == schema_response.revision_justification
-        assert data['attributes']['revision_response'] == [{'q1': {'value': 'initial value'}}, {'q2': {'value': 'initial value'}}]
+        assert data['attributes']['revision_response'] == [{'q1': {}}, {'q2': {}}]
 
         schema_response.parent.remove_permission(user, 'read', save=True)
         schema_response.parent.is_public = True
@@ -126,24 +109,24 @@ class TestSchemaResponseDetail:
         assert block.response == {'value': 'update value'}
 
     def test_schema_response_detail_revised_responses(self, app, schema_response, payload, user, url):
-        revised_schema = SchemaResponses.create_from_previous_schema_response(
+        revised_schema = SchemaResponse.create_from_previous_schema_response(
             schema_response.initiator,
             schema_response
         )
+
         revised_schema.parent.add_contributor(user, 'read')
-
         resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == revised_schema._id
-        assert data['attributes']['revised_responses'] == []
+        assert data['attributes']['updated_response_keys'] == []
 
-        revised_schema.update_responses({'q1': {'value': 'update value'}, 'q2': {'value': 'initial value'}})
+        revised_schema.update_responses({'q1': {'value': 'update value'}, 'q2': {}})
         resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == revised_schema._id
-        assert data['attributes']['revised_responses'] == ['q1']
+        assert data['attributes']['updated_response_keys'] == ['q1']
 
     def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):
         schema_response.parent.add_contributor(user, 'admin')
@@ -173,5 +156,5 @@ class TestSchemaResponseDetail:
         resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == 204
 
-        with pytest.raises(SchemaResponses.DoesNotExist):  # shows it was really deleted
+        with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted
             schema_response.refresh_from_db()

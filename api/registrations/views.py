@@ -79,7 +79,7 @@ from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 
-from api.schema_responses.serializers import SchemaResponsesListSerializer
+from api.schema_responses.serializers import SchemaResponseListSerializer
 
 
 class RegistrationMixin(NodeMixin):
@@ -859,7 +859,7 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
         return self.get_queryset_from_request()
 
 
-class RegistrationSchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, RegistrationMixin):
+class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, RegistrationMixin):
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 
@@ -872,7 +872,7 @@ class RegistrationSchemaResponsesList(JSONAPIBaseView, generics.ListCreateAPIVie
     view_category = 'schema-responses'
     view_name = 'schema-responses-list'
 
-    serializer_class = SchemaResponsesListSerializer
+    serializer_class = SchemaResponseListSerializer
 
     def get_object(self):
         return self.get_node()

@@ -1164,7 +1164,7 @@ class RegistrationSchemaFactory(DjangoModelFactory):
         model = models.RegistrationSchema
 
 
-class SchemaResponsesFactory(DjangoModelFactory):
+class SchemaResponseFactory(DjangoModelFactory):
     initiator = factory.SubFactory(AuthUserFactory)
     parent = factory.SubFactory(RegistrationFactory)
     revision_justification = "We're talkin' about practice!"
@@ -1172,21 +1172,24 @@ class SchemaResponsesFactory(DjangoModelFactory):
     schema = factory.SubFactory(RegistrationSchemaFactory)
 
     class Meta:
-        model = models.SchemaResponses
+        model = models.SchemaResponse
 
     @classmethod
     def _create(cls, *args, **kwargs):
         from django.contrib.contenttypes.models import ContentType
 
-        SchemaResponses = models.SchemaResponses
+        SchemaResponse = models.SchemaResponse
         justification = kwargs.get('revision_justification')
         initiator = kwargs.get('initiator')
         parent = kwargs.get('parent')
         schema = kwargs.get('schema')
         parent.registered_schema.add(schema)
 
-        if SchemaResponses.objects.filter(object_id=parent.id, content_type_id=ContentType.objects.get_for_model(parent)).exists():
-            previous_schema_response = SchemaResponses.objects.filter(parent=parent).ordered_by('created').first()
-            return SchemaResponses.create_from_previous_schema_response(initiator, previous_schema_response, justification)
+        if SchemaResponse.objects.filter(object_id=parent.id, content_type_id=ContentType.objects.get_for_model(parent)).exists():
+            previous_schema_response = SchemaResponse.objects.filter(
+                object_id=parent.id,
+                content_type_id=ContentType.objects.get_for_model(parent)
+            ).order_by('created').first()
+            return SchemaResponse.create_from_previous_schema_response(initiator, previous_schema_response, justification)
         else:
-            return SchemaResponses.create_initial_responses(initiator, parent, schema, justification)
+            return SchemaResponse.create_initial_responses(initiator, parent, schema, justification)

@@ -1,12 +1,12 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponsesFactory,
+    SchemaResponseFactory,
     RegistrationFactory,
     RegistrationSchemaFactory,
     AuthUserFactory,
 )
-from osf.models.schema_responses import SchemaResponses
+from osf.models.schema_response import SchemaResponse
 
 
 @pytest.mark.django_db
@@ -46,7 +46,7 @@ class TestRegistrationsSchemaResponseList:
 
     @pytest.fixture()
     def schema_response(self, user, registration, schema):
-        return SchemaResponsesFactory(
+        return SchemaResponseFactory(
             parent=registration,
             initiator=registration.creator,
             schema=registration.registered_schema.get(),
@@ -55,7 +55,7 @@ class TestRegistrationsSchemaResponseList:
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
-        return SchemaResponsesFactory(
+        return SchemaResponseFactory(
             parent=registration,
             initiator=registration.creator,
             schema=registration.registered_schema.get(),
@@ -88,8 +88,8 @@ class TestRegistrationsSchemaResponseList:
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         data = resp.json['data']
         assert resp.status_code == 201
-        assert SchemaResponses.objects.count() == 1
-        schema_response = SchemaResponses.objects.last()
+        assert SchemaResponse.objects.count() == 1
+        schema_response = SchemaResponse.objects.last()
 
         assert data['id'] == schema_response._id
         assert schema_response.revision_justification == "We're talkin' about practice..."

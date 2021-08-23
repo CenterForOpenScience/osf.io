@@ -6,11 +6,11 @@ app_name = 'osf'
 
 urlpatterns = [
     url(
-        r'^$', views.SchemaResponsesList.as_view(), name=views.SchemaResponsesList.view_name,
+        r'^$', views.SchemaResponseList.as_view(), name=views.SchemaResponseList.view_name,
     ),
     url(
         r'^(?P<schema_response_id>\w+)/$',
-        views.SchemaResponsesDetail.as_view(),
-        name=views.SchemaResponsesDetail.view_name,
+        views.SchemaResponseDetail.as_view(),
+        name=views.SchemaResponseDetail.view_name,
     ),
 ]

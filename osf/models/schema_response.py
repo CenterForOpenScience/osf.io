@@ -48,7 +48,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         assert not parent.schema_responses.exists(), \
             SchemaResponseStateError('Cannot use this method when schema response has parent.')
 
-        #TODO: consider validation to ensure SchemaResponses aren't using a different
+        #TODO: consider validation to ensure SchemaResponse aren't using a different
         # schema than a parent object
 
         new_responses = cls(
@@ -66,8 +66,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         for source_block in question_blocks:
             new_response_block = SchemaResponseBlock.objects.create(
-                source_revision=new_responses,
-                source_block=source_block,
+                source_schema_response=new_responses,
+                source_schema_block=source_block,
                 schema_key=source_block.registration_response_key,
                 response={},
             )
@@ -78,7 +78,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     @classmethod
     def create_from_previous_schema_response(cls, initiator, previous_schema_response, justification=None):
-        '''Create a new SchemaResponses object referencing existing SchemaResponseBlocks.
+        '''Create a new SchemaResponse object referencing existing SchemaResponseBlocks.
 
         New response blocks will be created as updated answers are proveded
         '''
@@ -119,14 +119,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         from osf.models import SchemaResponseBlock
 
         # Update the block in-place if it's already part of this revision
-        if current_block.source_revision == self:
+        if current_block.source_schema_response == self:
             current_block.response = latest_response
             current_block.save()
         # Otherwise, create a new block and swap out the entries in response_blocks
         else:
             revised_block = SchemaResponseBlock.objects.create(
-                source_revision=self,
-                source_block=current_block.source_block,
+                source_schema_response=self,
+                source_schema_block=current_block.source_schema_block,
                 schema_key=current_block.schema_key,
                 response=latest_response
             )

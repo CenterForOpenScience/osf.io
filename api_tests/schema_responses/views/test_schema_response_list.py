@@ -1,7 +1,7 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponsesFactory,
+    SchemaResponseFactory,
     RegistrationSchemaFactory,
     AuthUserFactory,
     RegistrationFactory
@@ -46,7 +46,7 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def schema_response(self, user, registration, schema):
-        return SchemaResponsesFactory(
+        return SchemaResponseFactory(
             parent=registration,
             initiator=registration.creator,
             schema=schema
@@ -54,7 +54,7 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
-        return SchemaResponsesFactory(
+        return SchemaResponseFactory(
             parent=registration,
             initiator=registration.creator,
             schema=schema

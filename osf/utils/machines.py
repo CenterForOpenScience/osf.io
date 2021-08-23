@@ -316,7 +316,7 @@ class PreprintRequestMachine(BaseMachine):
 
 
 class ApprovalsMachine(Machine):
-    '''ApprovalsMachine manages state transitions for Sanction and SchemaResponses entities.
+    '''ApprovalsMachine manages state transitions for Sanction and SchemaResponse entities.
 
     The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
     The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.

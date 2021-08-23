@@ -10,12 +10,12 @@ from api.base.serializers import (
 
 from osf.models import (
     Registration,
-    SchemaResponses,
+    SchemaResponse,
     RegistrationSchema,
 )
 
 
-class SchemaResponsesSerializer(JSONAPISerializer):
+class SchemaResponseSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'date_created',
         'date_modified',
@@ -30,7 +30,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
-    revised_responses = ser.JSONField(required=False)
+    updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
     revision_response = ser.SerializerMethodField()
@@ -97,7 +97,7 @@ class SchemaResponsesSerializer(JSONAPISerializer):
         return False
 
 
-class SchemaResponsesListSerializer(SchemaResponsesSerializer):
+class SchemaResponseListSerializer(SchemaResponseSerializer):
 
     def create(self, validated_data):
         registration = Registration.load(validated_data.pop('_id'))
@@ -110,7 +110,7 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        schema_response = SchemaResponses.create_initial_responses(
+        schema_response = SchemaResponse.create_initial_responses(
             initiator=initiator,
             parent=registration,
             schema=schema,
@@ -120,7 +120,7 @@ class SchemaResponsesListSerializer(SchemaResponsesSerializer):
         return schema_response
 
 
-class SchemaResponsesDetailSerializer(SchemaResponsesSerializer):
+class SchemaResponseDetailSerializer(SchemaResponseSerializer):
 
     def update(self, schema_response, validated_data):
         schema_responses = validated_data.get('revision_response')

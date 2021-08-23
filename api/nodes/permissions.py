@@ -149,6 +149,9 @@ class AdminContributorOrPublic(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
+    def has_permission(self, request, view):
+        return self.has_object_permission(request, view,  view.get_object())
+
 
 class SchemaResponseViewPermission(permissions.BasePermission):
     '''
