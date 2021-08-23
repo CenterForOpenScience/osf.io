@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('object_id', models.PositiveIntegerField()),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
                 ('initiator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('previous_response', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='updated_response', to='osf.SchemaResponse')),
+                ('previous_response', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='updated_response', to='osf.SchemaResponse', null=True)),
             ],
             options={
                 'abstract': False,

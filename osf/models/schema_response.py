@@ -10,6 +10,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
+<<<<<<< HEAD
     SchemaResponses manages to creation, surfacing, updating, and approval of
     "responses" to the questions on a Registration schema (for example).
 
@@ -22,10 +23,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     This allows SchemaResponses to also serve as a revision history when
     users submit updates to the schema form on a given parent object.
     '''
-    schema = models.ForeignKey('osf.registrationschema')
-    response_blocks = models.ManyToManyField('osf.schemaresponseblock')
-    initiator = models.ForeignKey('osf.osfuser', null=False)
-    previous_response = models.ForeignKey('osf.schemaresponse', related_name='updated_response')
+    schema = models.ForeignKey('osf.RegistrationSchema')
+    response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
+    initiator = models.ForeignKey('osf.OsfUser', null=False)
+    previous_response = models.ForeignKey(
+        'osf.SchemaResponse',
+        related_name='updated_response',
+        null=True
+    )
 
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
