@@ -7,10 +7,14 @@ from osf.utils.fields import NonNaiveDateTimeField
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
 
-    schema = models.ForeignKey('osf.registrationschema')
-    response_blocks = models.ManyToManyField('osf.schemaresponseblock')
-    initiator = models.ForeignKey('osf.osfuser', null=False)
-    previous_response = models.ForeignKey('osf.schemaresponse', related_name='updated_response')
+    schema = models.ForeignKey('osf.RegistrationSchema')
+    response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
+    initiator = models.ForeignKey('osf.OsfUser', null=False)
+    previous_response = models.ForeignKey(
+        'osf.SchemaResponse',
+        related_name='updated_response',
+        null=True
+    )
 
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
