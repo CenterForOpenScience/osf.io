@@ -7,11 +7,16 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.exceptions import SchemaResponseStateError
 
 
-class SchemaResponses(ObjectIDMixin, BaseModel):
+class SchemaResponse(ObjectIDMixin, BaseModel):
 
-    schema = models.ForeignKey('osf.registrationschema')
-    response_blocks = models.ManyToManyField('osf.schemaresponseblock')
-    initiator = models.ForeignKey('osf.osfuser', null=False)
+    schema = models.ForeignKey('osf.RegistrationSchema')
+    response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
+    initiator = models.ForeignKey('osf.OsfUser', null=False)
+    previous_response = models.ForeignKey(
+        'osf.SchemaResponse',
+        related_name='updated_response',
+        null=True
+    )
 
     revision_justification = models.CharField(max_length=2048, null=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True)
@@ -22,10 +27,7 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
     parent = GenericForeignKey('content_type', 'object_id')
 
     @property
-    def previous_version(self):
-        return self.parent.schema_responses.filter(created__lt=self.created).order_by('created').first()
-
-    def revision_responses(self):
+    def all_responses(self):
         '''Surfaces responses from response_blocks in a dictionary format'''
         formatted_responses = {
             response_block.schema_key: response_block.response
@@ -34,9 +36,9 @@ class SchemaResponses(ObjectIDMixin, BaseModel):
         return formatted_responses
 
     @property
-    def revised_responses(self):
+    def updated_response_keys(self):
         '''Surfaces the keys of responses_blocks added in this revision.'''
-        revised_keys = self.revised_response_blocks.values_list('schema_key', flat=True)
+        revised_keys = self.updated_response_blocks.values_list('schema_key', flat=True)
         return list(revised_keys)
 
     @classmethod
