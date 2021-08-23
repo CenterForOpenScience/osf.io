@@ -28,9 +28,9 @@ from api.base.serializers import (
     TypeField,
     WaterbutlerLink,
     VersionedDateTimeField,
-    TargetField,
     HideIfPreprint,
     ShowIfVersion,
+    GenericRelationshipField,
 )
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.exceptions import Conflict, InvalidModelValueError
@@ -361,15 +361,29 @@ class FileSerializer(BaseFileSerializer):
         ),
         min_version='2.0', max_version='2.7',
     )
-    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+    target = GenericRelationshipField(
+        related_view=(
+            lambda obj: {
+                'registration': 'registrations:registration-detail',
+                'node': 'nodes:node-detail',
+                'preprint':  'preprints:preprint-detail',
+                'draftnode':  'draft_nodes:draft-node-detail',
+                'comment': 'comments:comment-detail',
+                'nodewikipage': None,
+            }[obj.target._meta.model_name]
+        ),
+        related_view_kwargs=(
+            lambda obj: {
+                'registration': {'node_id': '<target._id>'},
+                'node': {'node_id': '<target._id>'},
+                'preprint': {'preprint_id': '<target._id>'},
+                'draftnode':  {'node_id': '<target._id>'},
+                'comment': {'comment_id': '<target._id>'},
+                'nodewikipage': {None: '<target._id>'},
+            }[obj.target._meta.model_name]
+        ),
+    )
 
-    def get_target_type(self, obj):
-        target_type = 'node'
-        if isinstance(obj, Preprint):
-            target_type = 'preprint'
-        if isinstance(obj, DraftNode):
-            target_type = 'draft_node'
-        return target_type
 
 
 class OsfStorageFileSerializer(FileSerializer):

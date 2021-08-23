@@ -15,6 +15,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
+    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -149,9 +150,6 @@ class AdminContributorOrPublic(permissions.BasePermission):
         else:
             return obj.is_admin_contributor(auth.user)
 
-    def has_permission(self, request, view):
-        return self.has_object_permission(request, view,  view.get_object())
-
 
 class SchemaResponseViewPermission(permissions.BasePermission):
     '''
@@ -173,8 +171,12 @@ class SchemaResponseViewPermission(permissions.BasePermission):
             return obj.has_permission(auth.user, 'write')
 
     def has_permission(self, request, view):
-        obj = view.get_object().parent
-        return self.has_object_permission(request, view, obj)
+        obj = view.get_object()
+
+        if isinstance(obj, AbstractNode):
+            return self.has_object_permission(request, view, obj)
+        elif isinstance(obj, SchemaResponse):
+            return self.has_object_permission(request, view, obj.parent)
 
 
 class ExcludeWithdrawals(permissions.BasePermission):

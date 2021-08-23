@@ -8,7 +8,7 @@ from osf_tests.factories import (
 )
 
 from django.contrib.contenttypes.models import ContentType
-from osf.models import SchemaResponseBlock, SchemaResponse
+from osf.models import SchemaResponse
 
 
 @pytest.mark.django_db
