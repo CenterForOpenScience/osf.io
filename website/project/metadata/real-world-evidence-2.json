@@ -1,0 +1,355 @@
+{
+	"atomicSchema": true,
+	"name": "Real World Evidence Recommended Minimum Study Registration Template",
+	"version": 3,
+	"description": null,
+	"blocks": [{
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Administrative Information",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "The research question is essential to guide the research project and should pinpoint exactly what you are attempting to evaluate. For hypothesis evaluating treatment effect or comparative effectiveness research the question should include the population of interest, exposure, comparator and outcome(s) to be evaluated.",
+		"block_type": "question-label",
+		"display_text": "Research question",
+		"example_text": "Does in-hospital zxxxxxnib improve pulmonary function compared to yxxxxxnib in\npatients treated with high-dose corticosteroids for moderate to severe SARS-CoV-2\npneumonia?\nWhat are the comparative risks for stroke or major bleeding in patients with non-\nvalvular atrial fibrillation who initiate anticoagulant X versus anticoagulant Y?",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "Please include grant numbers and funding source, or company name\n",
+		"block_type": "question-label",
+		"display_text": "Funding source(s)",
+		"example_text": "Grant number: XYZ9999 source: PCORI, OR company: AbbPfir BioPharmaceutical\n",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "Please list the databases or other source of data for this secondary data use study",
+		"block_type": "question-label",
+		"display_text": "Data source(s)",
+		"example_text": "IBM Marketscan Claims and Encounters Database; Clinical Practice Research Datalink (CPRD)",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "This refers to either the extraction version number or the date of the final analytic dataset of extraction for the RWD database that will be used to implement the study protocol.",
+		"block_type": "question-label",
+		"display_text": "Extraction date",
+		"example_text": "This refers to either the version number for the database that will be used to implement the study protocol or the date that the database was created.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "The calendar time boundaries for data used to create the analyzed study data set, including exposures, inclusion and exclusion criteria, covariates, outcome, and follow-up. This is the full window of data observation \u2013 from the date of the earliest data point to the date of the last data point, across all subjects.",
+		"block_type": "question-label",
+		"display_text": "Study period(s)",
+		"example_text": "01/15/2010 to 09/22/2019 (can include a future date as well)",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Summary Design and Summary Specifications",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "Please choose one",
+		"block_type": "question-label",
+		"display_text": "Study Design",
+		"example_text": "Cohort designs - A study design in which groups defined by a characteristic, risk factor or exposure are identified and followed for a defined period of time with subsequent evaluations of the outcome(s) of interest. Cohort studies are conducted to determine the magnitude of treatment associations with the outcome. Within cohorts, one can apply sampling designs that oversample patient according to certain study parameters to increase study efficiency:\ncase-control sampling identifies patients according to their outcome status; case-cohort sampling identifies patients according to exposure status and pre-exposure patient characteristics; and two-stage sampling which does both. The efficiency gain with cohort sampling approaches is most relevant if some information critical to the study is difficult or costly to acquire.\nThe family of self-controlled designs use an individual\u2019s experience at different times as their own control. We differentiate self-controlled designs by how patients are selected into the study, or the indexing event. The case-crossover design is indexed by the study outcome, while the self-controlled case series is typically exposure-indexed.\nQuasi-experimental: research that resembles experimental research but is not true experimental research. Often but not always a cohort design, it also involves a condition or analytical technique that proxies randomization of treatment assignment to some degree but is not true randomization.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "single-select-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Cohort",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Case-Control",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Self-controlled (e.g. pre-post)",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Cross-sectional",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Quasi-experimental",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Other (describe in text box below)",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "question-label",
+		"display_text": "Other",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "The population under evaluation in the study",
+		"block_type": "question-label",
+		"display_text": "Study population",
+		"example_text": "Adults with sleep disordered breathing",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "The cohort entry date could also be referred to as the \u2018index\u2019 date. This is the date from which the cohorts will be followed forward in time in the data set. This could be the first date of drug initiation or first prescription fill date, or the date of diagnosis of the disease of interest or perhaps the date of disease progression.",
+		"block_type": "question-label",
+		"display_text": "Cohort entry (index) date",
+		"example_text": " The cohort entry date was defined by new initiation of SLEEPINATOR \u2013 XR (intervention) or melatonin (comparator).",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "A description of how exactly patients enter the study",
+		"block_type": "question-label",
+		"display_text": "Specific Inclusion criteria",
+		"example_text": "a prior diagnosis of condition X.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "The population that you want to leave OUT of the study",
+		"block_type": "question-label",
+		"display_text": "Specific Exclusion criteria",
+		"example_text": "Adults with previous sleep disordered breathing-related surgery; Patients under 18 years of age",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "The intervention or approach you are evaluating",
+		"block_type": "question-label",
+		"display_text": "Intervention",
+		"example_text": "SLEEPINATOR \u2013 XR (oral formulation)",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "The approach you\u2019re comparing the intervention to. The comparator could be a placebo or a control group, but often it is a different type of medical treatment or the usual form of care",
+		"block_type": "question-label",
+		"display_text": "Comparator",
+		"example_text": "Melatonin",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": " Variables that are monitored during a study to document the impact that a given intervention has on the health of a given population.",
+		"block_type": "question-label",
+		"display_text": "Outcome(s)",
+		"example_text": "Hospitalization for injury based on a fall, acceptance of CPAP treatment, adherence to CPAP treatment, change in functional status or quality of life. Adverse effects or complications related to the use of SLEEPINATOR \u2013 XR and Melatonin.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "To improve explanatory power, one may want to model pre-exposure patient characteristics that are risk factors for the study outcome. To reduce confounding in the absence of baseline randomization one may want to adjust for patient characteristics that are also associated exposure.",
+		"block_type": "question-label",
+		"display_text": "Patient Characteristics to be used in the analysis",
+		"example_text": "Age, sex, pre-existing dementia, BMI, Hb A1c measurement, \u2026..",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "A subset of subjects from the overall study population defined by a variable (age or a certain co-morbidity) based on a reasonable supposition that one group or another might have a different response or outcome.",
+		"block_type": "question-label",
+		"display_text": "Patient subgroups",
+		"example_text": "Age >65; patients with low density lipoproteins (LDL) > 200 mg/dl",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Key Elements of Evaluation Period",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "The text definition of the full follow-up window inclusive of treatment for both intervention and comparator.",
+		"block_type": "question-label",
+		"display_text": "Follow-up definition",
+		"example_text": "Day 1 (fill date) through 100 days, the last day of the study period, death, or disenrollment.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Data Handling Attestation at Time of Registration",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "Please choose the one best short description that best reflects the amount of data handling that you have had up until the date of registration for this study.",
+		"block_type": "question-label",
+		"display_text": "Data handling attestation at time of registration",
+		"example_text": "If you have looked at the data to determine whether there are enough adults with sleep disordered breathing to at least satisfy requirements for your sample size, you should choose option 3 \u2013conducted feasibility counts.",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "single-select-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "No data handling at this point",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Acquired access to the source data",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Conducted feasibility counts",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Created an analytic dataset for the study population of interest",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Conducted preliminary analyses, including descriptive statistics and observation of data distributions \u2013 but no analyses of association between treatment and outcome",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Study analysis in progress",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "select-input-option",
+		"display_text": "Statistical comparisons completed",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "Clarify the description chosen for data handling",
+		"block_type": "question-label",
+		"display_text": "Data handling",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "short-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Protocol Document",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "You may attach up to 5 file(s) to this question. You may attach files that you already have in OSF Storage in this project or upload (drag and drop) a new file from your computer. Uploaded files will automatically be added to this project so that they can be registered. To attach files from other components or an add-on, first add them to this project.",
+		"block_type": "question-label",
+		"display_text": "Upload protocol document",
+		"example_text": "",
+		"required": false
+	}, {
+		"help_text": "",
+		"block_type": "file-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	}]
+}
