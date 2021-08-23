@@ -32,12 +32,14 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
     guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
-    creator = models.ForeignKey('OSFUser')
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     collected_type = models.CharField(blank=True, max_length=127)
     status = models.CharField(blank=True, max_length=127)
     volume = models.CharField(blank=True, max_length=127)
     issue = models.CharField(blank=True, max_length=127)
     program_area = models.CharField(blank=True, max_length=127)
+    school_type = models.CharField(blank=True, max_length=127)
+    study_design = models.CharField(blank=True, max_length=127)
 
     @cached_property
     def _id(self):
@@ -103,7 +105,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         )
 
     provider = models.ForeignKey('AbstractProvider', blank=True, null=True, on_delete=models.CASCADE)
-    creator = models.ForeignKey('OSFUser')
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     guid_links = models.ManyToManyField('Guid', through=CollectionSubmission, related_name='collections')
     collected_types = models.ManyToManyField(
         'contenttypes.ContentType',
@@ -117,6 +119,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     volume_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     issue_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     program_area_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    school_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    study_design_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     is_public = models.BooleanField(default=False, db_index=True)
     is_promoted = models.BooleanField(default=False, db_index=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
@@ -181,8 +185,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         if first_save:
             # Set defaults for M2M
-            self.collected_types = ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'collection', 'preprint'])
-            # Set up initial permissions
+            content_type = ContentType.objects.filter(
+                app_label='osf',
+                model__in=['abstractnode', 'collection', 'preprint']
+            )
+
+            self.collected_types.add(*content_type)
+
+        # Set up initial permissions
             self.update_group_permissions()
             self.get_group(ADMIN).user_set.add(self.creator)
 
@@ -195,7 +205,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def has_permission(self, user, perm):
         return user.has_perms(self.groups[perm], self)
 
-    def collect_object(self, obj, collector, collected_type=None, status=None, volume=None, issue=None, program_area=None):
+    def collect_object(
+            self, obj, collector, collected_type=None, status=None, volume=None, issue=None,
+            program_area=None, school_type=None, study_design=None):
         """ Adds object to collection, creates CollectionSubmission reference
             Performs type / metadata validation. User permissions checked in view.
 
@@ -210,6 +222,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         volume = volume or ''
         issue = issue or ''
         program_area = program_area or ''
+        school_type = school_type or ''
+        study_design = study_design or ''
 
         if not self.collected_type_choices and collected_type:
             raise ValidationError('May not specify "type" for this collection')
@@ -241,6 +255,18 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         if self.program_area_choices and program_area not in self.program_area_choices:
             raise ValidationError('"{}" is not an acceptable "program_area" for this collection'.format(program_area))
 
+        if school_type:
+            if not self.school_type_choices:
+                raise ValidationError('May not specify "school_type" for this collection')
+            elif school_type not in self.school_type_choices:
+                raise ValidationError(f'"{school_type}" is not an acceptable "school_type" for this collection')
+
+        if study_design:
+            if not self.study_design_choices:
+                raise ValidationError('May not specify "school_type" for this collection')
+            elif study_design not in self.study_design_choices:
+                raise ValidationError(f'"{study_design}" is not an acceptable "study_design" for this collection')
+
         if not any([isinstance(obj, t.model_class()) for t in self.collected_types.all()]):
             # Not all objects have a content_type_pk, have to look the other way.
             # Ideally, all objects would, and we could do:
@@ -257,6 +283,8 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         cgm.volume = volume
         cgm.issue = issue
         cgm.program_area = program_area
+        cgm.school_type = school_type
+        cgm.study_design = study_design
         cgm.save()
 
         return cgm

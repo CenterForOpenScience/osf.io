@@ -3,24 +3,35 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
-    <br>
+    <%!from website import settings%>
+    Hello ${user.fullname},
+    <p>
     % if is_initiator:
-    You initiated a request to end the embargo for a registration of ${project_name}. The embargoed registration can be viewed here: ${registration_link}.<br>
+      You have requested final approvals to end the embargo for your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
     % else:
-    ${initiated_by} initiated a request to end the embargo for a registration of ${project_name}. The embargoed registration can be viewed here: ${registration_link}.<br>
+      ${initiated_by} has requested final approvals to end the embargo for your registration
+      titled <a href="${registration_link}">${reviewable.title}</a>
     % endif
-    <br>
-    To approve this change and to make this registration public immediately, click the following link: ${approval_link}.<br>
-    <br>
-    To cancel this change, click the following link: ${disapproval_link}.<br>
-    <br>
-    Note: Clicking the disapproval link will immediately cancel the embargo termination request. If you neither approve nor cancel the request within ${approval_time_span} hours from midnight tonight (EDT) the embargo will be lifted and the registration will be made public. This operation is irreversible.<br>
-    <br>
+    </p>
+    <p>
+    If all admin contributors appove, the registration will be made public as part of the
+    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+    </p>
+    <p style="color:red;">
+    You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
+    request before the embargo is lifted and the registration is made public.
+    </p>
+    <p>
+    To approve this requst: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this request: <a href="${disapproval_link}">Click here</a>
+    </p>
+    <p>
+    Note: If any admin clicks their cancel link, the embargo termination request will
+    be cancelled immediately and the registration will remain private until its current
+    embargo expires.
+    <p>
     Sincerely yours,<br>
-    <br>
     The OSF Robots<br>
-
-
 </tr>
 </%def>

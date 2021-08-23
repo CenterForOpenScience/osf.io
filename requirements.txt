@@ -23,7 +23,7 @@ kombu==4.2.0
 amqp==2.2.2
 vine==1.1.4
 itsdangerous==1.1.0
-lxml==3.4.1
+lxml==4.6.2
 mailchimp==2.0.9
 nameparser==0.5.3
 bcrypt==3.1.4
@@ -49,23 +49,21 @@ ndg-httpsclient==0.3.0
 # Python markdown extensions for comment emails
 git+git://github.com/CenterForOpenScience/mdx_del_ins.git
 
-# Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
-# MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
-certifi==2015.4.28
+certifi==2020.12.5
 sendgrid==1.5.13
 
 # avoid dbus-python requirement from secretstorage dependency
 # https://github.com/jaraco/keyring/blob/9.1/setup.py
 keyring==9.1
 
-requests==2.20.0
+requests>=2.21.0
 urllib3==1.22
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
-raven==5.32.0
+raven==6.4.0
 
 # API requirements
-Django==1.11.15  # pyup: <2.0 # Remove this when we're on Py3
+Django==1.11.28
 djangorestframework==3.8.2
 django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
@@ -76,6 +74,9 @@ django-celery-results==1.0.1
 # Issue: sorry, but this version only supports 100 named groups (https://github.com/eliben/pycparser/issues/147)
 pycparser==2.18
 pyjwe==1.0.0
+# Building wheel for cryptography 3.4.0 requires a Rust version incompatible with Docker base image.
+# Required by pyjwe and ndg-httpsclient
+cryptography==3.3.2
 jsonschema==2.6.0
 django-guardian==1.4.9
 
@@ -104,7 +105,7 @@ django-bulk-update==2.2.0
 ciso8601==1.0.5
 
 # Reviews requirements
-transitions==0.6.1
+transitions==0.8.2
 enum34==1.1.6
 
 # identifiers
@@ -112,3 +113,6 @@ datacite==1.0.1
 
 # Metrics
 django-elasticsearch-metrics==5.0.0
+
+# Impact Metrics CSV Export
+djangorestframework-csv==2.1.0

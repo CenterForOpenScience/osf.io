@@ -3,6 +3,7 @@ from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 
 from osf.models import Institution
+from website.ember_osf_web.views import use_ember_app
 
 def serialize_institution(inst):
     return {
@@ -21,3 +22,6 @@ def view_institution(inst_id, **kwargs):
     except Institution.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
     return serialize_institution(inst)
+
+def view_institution_dashboard(inst_id, **kwargs):
+    return use_ember_app()

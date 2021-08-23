@@ -64,6 +64,8 @@ class Conference(ObjectIDMixin, BaseModel):
     # of submissions, and the email adress to send material to.
     field_names = DateTimeAwareJSONField(default=get_default_field_names)
 
+    auto_check_spam = models.BooleanField(default=True)
+
     objects = ConferenceManager()
 
     def __repr__(self):

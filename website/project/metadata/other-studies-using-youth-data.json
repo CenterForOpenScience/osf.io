@@ -1,0 +1,62 @@
+{
+	"atomicSchema": true,
+	"name": "Other studies using YOUth data",
+	"version": 1,
+	"description": "Use this template for all other studies using YOUth data",
+	"blocks": [{
+		"help_text": "",
+		"block_type": "page-heading",
+		"display_text": "Study Information",
+		"example_text": "",
+		"required": false
+	  }, {
+		"help_text": "Please describe the research question, problem statement, or goal of the study.",
+		"block_type": "question-label",
+		"display_text": "Research questions",
+		"example_text": "",
+		"required": false
+	  }, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	  }, {
+		"help_text": "Describe the general methodological approach to answering the research question or tackling the problem.",
+		"block_type": "question-label",
+		"display_text": "Methodological Approach",
+		"example_text": "",
+		"required": false
+	  }, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	  }, {
+		"help_text": "Specify the data processing/analysis steps insofar as they are known.",
+		"block_type": "question-label",
+		"display_text": "Data processing/analysis",
+		"example_text": "",
+		"required": false
+	  }, {
+		"help_text": "",
+		"block_type": "long-text-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	  }, {
+		"help_text": "Upload any supporting materials that help describe the studiy design, goals, methodology approach, analysis plan, data processing, etc. ",
+		"block_type": "question-label",
+		"display_text": "Upload any files or supporting materials",
+		"example_text": "",
+		"required": false
+	  }, {
+		"help_text": "",
+		"block_type": "file-input",
+		"display_text": "",
+		"example_text": "",
+		"required": true
+	  }
+    ]
+}

@@ -1,33 +1,28 @@
 import datetime
-import json
 
 import mock
 import pytest
 import pytz
-import random
-import string
-import builtins
+import responses
 
 from django.utils import timezone
-from django.db.utils import IntegrityError
-from nose.tools import assert_equal, assert_is_not_none, assert_not_equal, assert_false, assert_raises
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from osf.exceptions import NodeStateError
-from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 from api_tests.utils import disconnected_from_listeners
 from website.citations.utils import datetime_to_csl
 from website import language, settings
-from website.project.tasks import on_node_updated, format_registration
+from website.project.tasks import on_node_updated
 from website.project.views.node import serialize_collections
 from website.views import find_bookmark_collection
 
-from osf.utils.migrations import ensure_licenses
 from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 from osf.models import (
@@ -43,11 +38,11 @@ from osf.models import (
     Registration,
     DraftRegistration,
     DraftRegistrationApproval,
+    CollectionSubmission
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
-from osf.models.spam import SpamStatus
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
@@ -76,7 +71,7 @@ from osf_tests.factories import (
 )
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
-from .utils import capture_signals, assert_datetime_equal, mock_archive, MockShareResponse
+from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
 
 pytestmark = pytest.mark.django_db
 
@@ -86,7 +81,11 @@ def user():
 
 @pytest.fixture()
 def node(user):
-    return NodeFactory(creator=user)
+    node = NodeFactory(creator=user)
+    # Sets node storage cache to avoid need for retries in tests
+    key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
+    storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+    return node
 
 @pytest.fixture()
 def project(user):
@@ -950,9 +949,7 @@ class TestContributorMethods:
 
         with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
-        assert str(excinfo.value) == 'This contributor cannot be added. ' \
-                                        'If the problem persists please report it to please report it to' \
-                                        ' <a href="mailto:support@osf.io">support@osf.io</a>.'
+        assert str(excinfo.value).startswith('This contributor cannot be added.')
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
@@ -1928,6 +1925,24 @@ class TestRegisterNode:
         assert registration.subjects.filter(id=subject.id).exists()
 
     @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_copies_contributors_from_draft_registration(self, mock_signal):
+        creator = UserFactory()
+        draft_reg_user = UserFactory()
+        node_user = UserFactory()
+
+        node = NodeFactory(creator=creator)
+        draft_reg = DraftRegistrationFactory(branched_from=node)
+
+        draft_reg.add_contributor(draft_reg_user, permissions.WRITE, save=True)
+        node.add_contributor(node_user, permissions.WRITE, save=True)
+
+        registration = node.register_node(get_default_metaschema(), Auth(creator), draft_reg, None)
+
+        assert registration.has_permission(creator, permissions.ADMIN) is True
+        assert registration.has_permission(draft_reg_user, permissions.WRITE) is True
+        assert registration.has_permission(node_user, permissions.WRITE) is False
+
+    @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_does_not_copy_group_members(self, mock_signal):
         user = UserFactory()
         node = NodeFactory(creator=user)
@@ -2090,8 +2105,6 @@ class TestRegisterNode:
 
         # Author questions are overridden with bibliographic contributors upon registration,
         # so there aren't discrepancies
-        assert registration.registered_meta[registration.registration_schema._id]['q2']['value'] == user.fullname + ', ' + bib_contrib.fullname
-        assert registration.registration_responses['q2'] == user.fullname + ', ' + bib_contrib.fullname
 
         # assert that other registration_metadata not overridden
         assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
@@ -2292,18 +2305,13 @@ class TestSetPrivacy:
         )
         assert len([a for a in registration.get_admin_contributors_recursive(unique_users=True)]) == 4
         embargo = registration.embargo
-        embargo.state = Sanction.APPROVED
-        embargo.save()
+        embargo.accept()
         with mock.patch('osf.models.Registration.request_embargo_termination') as mock_request_embargo_termination:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
 
 # copied from tests/test_models.py
 class TestNodeSpam:
-
-    @pytest.fixture()
-    def project(self):
-        return ProjectFactory(is_public=True)
 
     @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
     def test_set_privacy_on_spammy_node(self, project):
@@ -2368,6 +2376,7 @@ class TestNodeSpam:
                 assert project.check_spam(user, None, None) is True
 
                 assert user.is_disabled is True
+                project.reload()
                 assert project.is_public is False
                 project2.reload()
                 assert project2.is_public is False
@@ -2388,6 +2397,7 @@ class TestNodeSpam:
                 assert project.is_public is True
 
     def test_flag_spam_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             project.flag_spam()
@@ -2395,6 +2405,7 @@ class TestNodeSpam:
         assert project.is_public is False
 
     def test_flag_spam_do_not_make_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', False):
             project.flag_spam()
@@ -2402,6 +2413,7 @@ class TestNodeSpam:
         assert project.is_public
 
     def test_confirm_spam_makes_node_private(self, project):
+        project.set_privacy('public')
         assert project.is_public
         project.confirm_spam()
         assert project.is_spammy
@@ -2530,7 +2542,6 @@ class TestManageContributors:
                 {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
             ]
         )
-        print(node.visible_contributor_ids)
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
             node.set_visible(user=user, visible=False, auth=None)
@@ -3784,28 +3795,25 @@ class TestOnNodeUpdate:
         return s
 
     @pytest.fixture()
+    def collection(self):
+        collection_provider = CollectionProviderFactory()
+        return CollectionFactory(provider=collection_provider)
+
+    @pytest.fixture()
+    def node_in_collection(self, collection):
+        node = ProjectFactory(is_public=True)
+        CollectionSubmission(
+            guid=node.guids.first(),
+            collection=collection,
+            creator=node.creator,
+        ).save()
+        return node
+
+    @pytest.fixture()
     def node(self):
         return ProjectFactory(is_public=True)
 
-    @pytest.fixture()
-    def registration(self, node):
-        return RegistrationFactory(is_public=True)
-
-    @pytest.fixture()
-    def component_registration(self, node):
-        NodeFactory(
-            creator=node.creator,
-            parent=node,
-            title='Title1',
-        )
-        registration = RegistrationFactory(project=node)
-        registration.refresh_from_db()
-        return registration.get_nodes()[0]
-
-    def teardown_method(self, method):
-        handlers.celery_before_request()
-
-    def test_on_node_updated_called(self, node, user, request_context):
+    def test_on_node_updated_called(self, node, user):
         node.title = 'A new title'
         node.save()
 
@@ -3846,201 +3854,16 @@ class TestOnNodeUpdate:
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    def test_updates_share(self, requests, node, user):
-        on_node_updated(node._id, user._id, False, {'is_public'})
+    @responses.activate
+    @mock.patch('website.search.search.update_collected_metadata')
+    def test_update_collection_elasticsearch_make_private(self, mock_update_collected_metadata, node_in_collection, collection, user):
+        node_in_collection.is_public = False
+        node_in_collection.save()
 
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
+        on_node_updated(node_in_collection._id, user._id, False, {'is_public'})
 
-        assert requests.post.called
-        assert kwargs['headers']['Authorization'] == 'Bearer Token'
-        assert graph[0]['uri'] == '{}{}/'.format(settings.DOMAIN, node._id)
+        mock_update_collected_metadata.assert_called_with(node_in_collection._id, op='delete')
 
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    def test_update_share_correctly_for_projects(self, requests, node, user, request_context):
-        cases = [{
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': False, 'is_deleted': False, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': True, 'spam_status': SpamStatus.HAM}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': False, 'spam_status': SpamStatus.SPAM}
-        }]
-
-        for case in cases:
-            for attr, value in case['attrs'].items():
-                setattr(node, attr, value)
-            node.save()
-
-            on_node_updated(node._id, user._id, False, {'is_public'})
-
-            kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['data']['attributes']['data']['@graph']
-            assert graph[1]['is_deleted'] == case['is_deleted']
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations(self, requests, registration, user, request_context):
-        cases = [{
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': False, 'is_deleted': False}
-        }, {
-            'is_deleted': True,
-            'attrs': {'is_public': True, 'is_deleted': True}
-        }, {
-            'is_deleted': False,
-            'attrs': {'is_public': True, 'is_deleted': False}
-        }]
-
-        for case in cases:
-            for attr, value in case['attrs'].items():
-                setattr(registration, attr, value)
-            registration.save()
-
-            on_node_updated(registration._id, user._id, False, {'is_public'})
-
-            assert registration.is_registration
-            kwargs = requests.post.call_args[1]
-            graph = kwargs['json']['data']['attributes']['data']['@graph']
-            payload = next((item for item in graph if 'is_deleted' in item.keys()))
-            assert payload['is_deleted'] == case['is_deleted']
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_format_registration_gets_parent_hierarchy_for_component_registrations(self, requests, project, component_registration, user, request_context):
-
-        graph = format_registration(component_registration)
-
-        parent_relation = [i for i in graph if i['@type'] == 'ispartof'][0]
-        parent_work_identifier = [i for i in graph if 'creative_work' in i and i['creative_work']['@id'] == parent_relation['subject']['@id']][0]
-
-        # Both must exist to be valid
-        assert parent_relation
-        assert parent_work_identifier
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    def test_update_share_correctly_for_projects_with_qa_tags(self, requests, node, user, request_context):
-        node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations_with_qa_tags(self, requests, registration, user, request_context):
-        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    def test_update_share_correctly_for_projects_with_qa_titles(self, requests, node, user, request_context):
-        node.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
-        node.save()
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        node.title = 'Not a qa title'
-        node.save()
-        assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'https://share.osf.io')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'Token')
-    @mock.patch('website.project.tasks.requests')
-    @mock.patch('osf.models.registrations.Registration.archiving', mock.PropertyMock(return_value=False))
-    def test_update_share_correctly_for_registrations_with_qa_titles(self, requests, registration, user, request_context):
-        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0].join(random.choice(string.ascii_lowercase) for i in range(5))
-        registration.save()
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        registration.title = 'Not a qa title'
-        registration.save()
-        assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-        kwargs = requests.post.call_args[1]
-        graph = kwargs['json']['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', None)
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', None)
-    @mock.patch('website.project.tasks.requests')
-    def test_skips_no_settings(self, requests, node, user, request_context):
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert requests.post.called is False
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
-    @mock.patch('website.project.tasks._async_update_node_share.delay')
-    @mock.patch('website.project.tasks.requests')
-    def test_call_async_update_on_500_failure(self, requests, mock_async, node, user, request_context):
-        requests.post.return_value = MockShareResponse(501)
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert mock_async.called
-
-    @mock.patch('website.project.tasks.settings.SHARE_URL', 'a_real_url')
-    @mock.patch('website.project.tasks.settings.SHARE_API_TOKEN', 'a_real_token')
-    @mock.patch('website.project.tasks.send_desk_share_error')
-    @mock.patch('website.project.tasks._async_update_node_share.delay')
-    @mock.patch('website.project.tasks.requests')
-    def test_no_call_async_update_on_400_failure(self, requests, mock_async, mock_mail, node, user, request_context):
-        requests.post.return_value = MockShareResponse(400)
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert mock_mail.called
-        assert not mock_async.called
 
 # copied from tests/test_models.py
 class TestRemoveNode:
@@ -4512,7 +4335,11 @@ class TestAddonCallbacks:
 
     @pytest.fixture()
     def node(self, user, parent):
-        return NodeFactory(creator=user, parent=parent)
+        node = NodeFactory(creator=user, parent=parent)
+        # Sets node storage cache to avoid need for retries in tests
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=node._id)
+        storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
+        return node
 
     @pytest.fixture(autouse=True)
     def mock_addons(self, node):
@@ -4854,133 +4681,3 @@ class TestCollectionProperties:
         assert len(collection_summary) == 3
         urls_actual = {summary['url'] for summary in collection_summary}
         assert self._collection_url(bookmark_collection_public) not in urls_actual
-
-
-CHANGED_NAME = 'FOO BAR'
-CHANGED_TEXT = 'Some good new text'
-
-CHANGED_PROPERTIES = ['foo', 'bar']
-LICENSE_TEXT = json.dumps({
-    'MIT': {
-        'name': CHANGED_NAME,
-        'text': CHANGED_TEXT,
-        'properties': CHANGED_PROPERTIES
-    }
-})
-
-@pytest.mark.django_db
-class TestNodeLicenses:
-
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def node(self, node_license, user):
-        node = ProjectFactory(creator=user)
-        node.node_license = NodeLicenseRecordFactory(
-            node_license=node_license,
-            year=self.YEAR,
-            copyright_holders=self.COPYRIGHT_HOLDERS
-        )
-        node.save()
-        return node
-
-    LICENSE_NAME = 'MIT License'
-    YEAR = '2105'
-    COPYRIGHT_HOLDERS = ['Foo', 'Bar']
-
-    @pytest.fixture()
-    def node_license(self):
-        return NodeLicense.objects.get(name=self.LICENSE_NAME)
-
-    def test_serialize_node_license(self, node_license):
-        serialized = serialize_node_license(node_license)
-        assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], node_license.license_id)
-        assert_equal(serialized['text'], node_license.text)
-
-    def test_serialize_node_license_record(self, node, node_license):
-        serialized = serialize_node_license_record(node.node_license)
-        assert_equal(serialized['name'], self.LICENSE_NAME)
-        assert_equal(serialized['id'], node_license.license_id)
-        assert_equal(serialized['text'], node_license.text)
-        assert_equal(serialized['year'], self.YEAR)
-        assert_equal(serialized['copyright_holders'], self.COPYRIGHT_HOLDERS)
-
-    def test_serialize_node_license_record_None(self, node):
-        node.node_license = None
-        serialized = serialize_node_license_record(node.node_license)
-        assert_equal(serialized, {})
-
-    def test_copy_node_license_record(self, node):
-        record = node.node_license
-        copied = record.copy()
-        assert_is_not_none(copied._id)
-        assert_not_equal(record._id, copied._id)
-        for prop in ('license_id', 'name', 'node_license'):
-            assert_equal(getattr(record, prop), getattr(copied, prop))
-
-    def test_license_uniqueness_on_id_is_enforced_in_the_database(self):
-        NodeLicense(license_id='foo', name='bar', text='baz').save()
-        with pytest.raises(IntegrityError):
-            NodeLicense(license_id='foo', name='buz', text='boo').save()
-
-    def test_ensure_licenses_updates_existing_licenses(self):
-        assert_equal(ensure_licenses(), (0, 18))
-
-    def test_ensure_licenses_no_licenses(self):
-        before_count = NodeLicense.objects.all().count()
-        NodeLicense.objects.all().delete()
-        assert_false(NodeLicense.objects.all().count())
-
-        ensure_licenses()
-        assert_equal(before_count, NodeLicense.objects.all().count())
-
-    def test_ensure_licenses_some_missing(self):
-        NodeLicense.objects.get(license_id='LGPL3').delete()
-        with assert_raises(NodeLicense.DoesNotExist):
-            NodeLicense.objects.get(license_id='LGPL3')
-        ensure_licenses()
-        found = NodeLicense.objects.get(license_id='LGPL3')
-        assert_is_not_none(found)
-
-    def test_ensure_licenses_updates_existing(self):
-        with mock.patch.object(builtins, 'open', mock.mock_open(read_data=LICENSE_TEXT)):
-            ensure_licenses()
-        MIT = NodeLicense.objects.get(license_id='MIT')
-        assert_equal(MIT.name, CHANGED_NAME)
-        assert_equal(MIT.text, CHANGED_TEXT)
-        assert_equal(MIT.properties, CHANGED_PROPERTIES)
-
-    def test_node_set_node_license(self, node, user):
-        GPL3 = NodeLicense.objects.get(license_id='GPL3')
-        NEW_YEAR = '2014'
-        COPYLEFT_HOLDERS = ['Richard Stallman']
-        node.set_node_license(
-            {
-                'id': GPL3.license_id,
-                'year': NEW_YEAR,
-                'copyrightHolders': COPYLEFT_HOLDERS
-            },
-            auth=Auth(user),
-            save=True
-        )
-
-        assert_equal(node.node_license.license_id, GPL3.license_id)
-        assert_equal(node.node_license.name, GPL3.name)
-        assert_equal(node.node_license.copyright_holders, COPYLEFT_HOLDERS)
-        assert node.logs.latest().action == NodeLog.CHANGED_LICENSE
-
-    def test_node_set_node_license_invalid(self, node, user):
-        with assert_raises(NodeStateError):
-            node.set_node_license(
-                {
-                    'id': 'SOME ID',
-                    'year': 'foo',
-                    'copyrightHolders': []
-                },
-                auth=Auth(user)
-            )
-        action = node.logs.latest().action if node.logs.count() else None
-        assert action != NodeLog.CHANGED_LICENSE

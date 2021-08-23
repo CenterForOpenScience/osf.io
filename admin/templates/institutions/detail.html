@@ -16,6 +16,13 @@
                 {%  if perms.osf.delete_institution %}
                 <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
                 {%  endif %}
+				{% if perms.osf.change_institution %}
+					{% if institution.deactivated is None %}
+					<a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
+					{% else %}
+					<a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
+					{% endif %}
+				{% endif %}
             </div>
         </div>
 
@@ -50,6 +57,9 @@
                     <button id="show-modify-form" class="btn btn-link" type="button">
                         Modify Institution
                     </button>
+                    <div class="col-md-12">
+                        <a class="btn btn-link" href={% url 'institutions:register_metrics_admin' institution.id %}>Create Moderator/Admin</a>
+                    </div>
                 {% endif %}
             </div>
         </div>

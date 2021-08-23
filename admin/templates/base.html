@@ -158,6 +158,8 @@
                   <ul class="sidebar-menu sidebar-menu-inner">
                       <li><a href="{% url 'nodes:registrations' %}"><i class='fa fa-link'></i> <span>All Registrations</span></a></li>
                       <li><a href="{% url 'nodes:stuck-registrations' %}"><i class='fa fa-link'></i> <span>Stuck Registrations</span></a></li>
+                      <li><a href="{% url 'nodes:ia-backlog-list' %}"><i class='fa fa-link'></i> <span>IA Backlog</span></a></li>
+                      <li><a href="{% url 'nodes:doi-backlog-list' %}"><i class='fa fa-link'></i> <span>DOI Backlog</span></a></li>
                   </ul>
               </div>
           {% endif %}
@@ -170,6 +172,19 @@
                       <li><a href="{% url 'institutions:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
                       {% if perms.osf.change_institution %}
                       <li><a href="{% url 'institutions:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_brand %}
+              <li><a role="button" data-toggle="collapse" href="#collapseBrands">
+                  <i class='fa fa-caret-down'></i> Brands
+              </a></li>
+              <div class="collapse" id="collapseBrands">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'brands:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.modify_brand %}
+                      <li><a href="{% url 'brands:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
               </div>
@@ -230,14 +245,14 @@
           {% if perms.osf.view_conference %}
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
           {% endif %}
-          {% if perms.osf.view_prereg %}
-            <li><a href="{% url 'pre_reg:prereg' %}"><i class='fa fa-link'></i> <span>OSF Prereg</span></a></li>
-            {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
           {% endif %}
           {% if perms.osf.view_subject%}
             <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
+          {% endif %}
+          {% if perms.osf.view_management%}
+            <li><a href="{% url 'management:commands' %}"><i class='fa fa-link'></i> <span>Management Commands</span></a></li>
           {% endif %}
           {% if perms.osf.view_osf_groups %}
               <li><a role="button" data-toggle="collapse" href="#collapseOSFGroups">
@@ -262,6 +277,9 @@
                       {% endif %}
                   </ul>
               </div>
+          {% endif %}
+          {% if perms.osf.change_node %}
+              <li><a href="{% url 'internet_archive:internet_archive' %}"><i class='fa fa-link'></i> <span>Internet Archive</span></a></li>
           {% endif %}
 
           {% if perms.osf.change_maintenancestate %}

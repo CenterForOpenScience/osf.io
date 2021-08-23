@@ -9,7 +9,7 @@ from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftRegistrationDelete,
     TestDraftPreregChallengeRegistrationMetadataValidation
 )
-from osf.models import DraftNode, Node, NodeLicense
+from osf.models import DraftNode, Node, NodeLicense, RegistrationSchema
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import (
     DraftRegistrationFactory,
@@ -34,8 +34,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 
-    # Overrides TestDraftRegistrationDetail
-    def test_cannot_view_draft(
+    def test_can_view_draft(
             self, app, user_write_contrib, project_public,
             user_read_contrib, user_non_contrib,
             url_draft_registrations, group, group_mem):
@@ -44,24 +43,28 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(
             url_draft_registrations,
             auth=user_read_contrib.auth,
-            expect_errors=True)
+            expect_errors=False)
         assert res.status_code == 200
 
-    #   test_read_write_contributor_can_view_draft
+        #   test_read_write_contributor_can_view_draft
         res = app.get(
             url_draft_registrations,
             auth=user_write_contrib.auth,
-            expect_errors=True)
+            expect_errors=False)
         assert res.status_code == 200
 
-    #   test_logged_in_non_contributor_cannot_view_draft
+    def test_cannot_view_draft(
+            self, app, project_public,
+            user_non_contrib, url_draft_registrations):
+
+        #   test_logged_in_non_contributor_cannot_view_draft
         res = app.get(
             url_draft_registrations,
             auth=user_non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_unauthenticated_user_cannot_view_draft
+        #   test_unauthenticated_user_cannot_view_draft
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
@@ -74,6 +77,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['title'] == project_public.title
         assert attributes['description'] == project_public.description
         assert attributes['category'] == project_public.category
+        assert attributes['has_project']
 
         res.json['data']['links']['self'] == url_draft_registrations
 
@@ -97,6 +101,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert attributes['description'] == ''
         assert attributes['category'] == ''
         assert attributes['node_license'] is None
+        assert not attributes['has_project']
 
         res.json['data']['links']['self'] == url
         relationships = res.json['data']['relationships']
@@ -134,6 +139,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=draft_admin.auth)
         assert res.status_code == 200
 
+    # Overwrites TestDraftRegistrationDetail
+    def test_can_view_after_added(
+            self, app, schema, draft_registration, url_draft_registrations):
+        # Draft Registration permissions are no longer based on the branched from project
+
+        user = AuthUserFactory()
+        project = draft_registration.branched_from
+        project.add_contributor(user, ADMIN)
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
+        assert res.status_code == 403
+
     # Overrides TestDraftRegistrationDetail
     def test_reviewer_can_see_draft_registration(
             self, app, schema, draft_registration, url_draft_registrations):
@@ -145,6 +161,17 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
         # New workflows aren't accommodating old prereg challenge
         assert res.status_code == 403
+
+    def test_current_permissions_field(self, app, user_read_contrib,
+            user_write_contrib, user, draft_registration, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [READ]
+
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [WRITE, READ]
+
+        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=False)
+        assert res.json['data']['attributes']['current_user_permissions'] == [ADMIN, WRITE, READ]
 
 
 class TestUpdateEditableFieldsTestCase:
@@ -253,13 +280,56 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         draft_registration.save()
         return draft_registration
 
+    @pytest.fixture()
+    def schema_open_ended(self):
+        return RegistrationSchema.objects.get(
+            name='Open-Ended Registration',
+            schema_version=3)
+
+    @pytest.fixture
+    def draft_registration_open_ended(self, user, schema_open_ended):
+        return DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema_open_ended,
+            branched_from=None
+        )
+
+    @pytest.fixture()
+    def url_draft_registration_open_ended(self, draft_registration_open_ended):
+        return f'/{API_BASE}draft_registrations/{draft_registration_open_ended._id}/'
+
+    @pytest.fixture()
+    def upload_payload(self, draft_registration_open_ended):
+        return {
+            'data': {
+                'id': draft_registration_open_ended._id,
+                'attributes': {
+                    'registration_responses': {
+                        'uploader': [{
+                            'file_id': '5eda89dfc00e6f0570715e5b',
+                            'file_name': 'Cafe&LunchMenu.pdf',
+                            'file_hashes': {
+                                'sha256': '2161a32cfe1cbbfbd73aa541fdcb8c407523a8828bfd7a031362e1763a74e8ad'
+                            },
+                            'file_urls': {
+                                'html': f'{API_BASE}/etch4/files/osfstorage/5eda89dfc00e6f0570715e5b',
+                                'download': f'{API_BASE}/download/b56ve/'
+                            }
+                        }]
+                    }
+                },
+                'relationships': {},
+                'type': 'draft_registrations'
+            }
+        }
+
     def test_update_editable_fields(self, app, url_draft_registrations, draft_registration, license, copyright_holders,
             year, institution_one, user, title, description, category, subject, editable_fields_payload):
         user.affiliated_institutions.add(institution_one)
 
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
+            auth=user.auth)
         assert res.status_code == 200
         attributes = res.json['data']['attributes']
 
@@ -298,6 +368,14 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
         assert 'draft_registrations/{}/contributors'.format(draft_registration._id) in relationships['contributors']['links']['related']['href']
 
+    def test_update_upload(self, app, url_draft_registration_open_ended, draft_registration_open_ended, upload_payload, user):
+        res = app.patch_json_api(
+            url_draft_registration_open_ended,
+            upload_payload,
+            auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['registration_responses']['uploader'][0]['file_name'] == 'Cafe&LunchMenu.pdf'
+
     def test_registration_metadata_must_be_supplied(
             self, app, user, payload, url_draft_registrations):
         payload['data']['attributes'] = {}
@@ -309,16 +387,17 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         # Override - not required
         assert res.status_code == 200
 
-    def test_invalid_editable_title(
-            self, app, user, editable_fields_payload, url_draft_registrations):
+    def test_editable_title(
+            self, app, user, editable_fields_payload, url_draft_registrations, institution_one):
+        # User must have permissions on the institution included in the editable_fields_payload
+        user.affiliated_institutions.add(institution_one)
 
-        # test blank title
+        # test blank title - should be allowed
         editable_fields_payload['data']['attributes']['title'] = ''
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This field may not be blank.'
+            auth=user.auth)
+        assert res.status_code == 200
 
         # test null title
         editable_fields_payload['data']['attributes']['title'] = None

@@ -81,7 +81,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None):
+def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True):
     if not request:
         # for backwards compat with existing get_object_or_error usages
         raise TypeError('request is a required argument')
@@ -136,7 +136,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
         raise UserGone(user=obj)
-    elif model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False):
+    if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False)):
         if display_name is None:
             raise Gone
         else:
@@ -191,6 +191,20 @@ def has_admin_scope(request):
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
 
+
+def has_pigeon_scope(request):
+    """ Helper function to determine if a request token has OSF pigeon scope
+    """
+    token = request.auth
+    if token is None or not isinstance(token, CasResponse):
+        return False
+
+    if token.attributes['accessToken'] == website_settings.PIGEON_CALLBACK_BEARER_TOKEN:
+        return True
+    else:
+        return False
+
+
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:
         raise NotImplementedError('Must specify min or max version.')
@@ -225,3 +239,24 @@ def assert_resource_type(obj, resource_tuple):
 
     a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
     assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)
+
+
+class MockQueryset(list):
+    """
+    This class is meant to convert a simple list into a filterable queryset look-a-like.
+    """
+
+    def __init__(self, items, search, default_attrs=None, **kwargs):
+        self.search = search
+
+        for item in items:
+            if default_attrs:
+                item.update(default_attrs)
+            self.add_dict_as_item(item)
+
+    def __len__(self):
+        return self.search.count()
+
+    def add_dict_as_item(self, dict):
+        item = type('item', (object,), dict)
+        self.append(item)

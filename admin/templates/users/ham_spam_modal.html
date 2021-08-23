@@ -1,0 +1,19 @@
+<button class="btn btn-warning" type="button" data-toggle="modal" data-target="#confirm{{ target_type|capfirst }}ListModal">
+    Confirm {{ target_type|capfirst }}
+</button>
+<div id="confirm{{ target_type|capfirst }}ListModal" class="modal fade well" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">x</button>
+                <h3>Are you sure the selected user(s) are {{ target_type }}?</h3>
+            </div>
+            <div class="modal-footer">
+                <input class="btn btn-danger" type="submit" value="Confirm" name={{ target_type|add:"_confirm" }} />
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

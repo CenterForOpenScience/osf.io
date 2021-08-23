@@ -1,16 +1,22 @@
+import json
+
 from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
+from rest_framework.generics import GenericAPIView
 from elasticsearch.exceptions import NotFoundError, RequestError
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
-from osf.metrics import PreprintDownload, PreprintView
-from api.metrics.permissions import IsPreprintMetricsUser
-from api.metrics.serializers import PreprintMetricSerializer
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics
+from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
+from api.metrics.serializers import PreprintMetricSerializer, RawMetricsSerializer
 from api.metrics.utils import parse_datetimes
 from api.base.views import JSONAPIBaseView
+from api.base.waffle_decorators import require_switch
 from elasticsearch_dsl.connections import get_connection
+
+from osf.features import ENABLE_RAW_METRICS
 
 
 class PreprintMetricMixin(JSONAPIBaseView):
@@ -120,8 +126,11 @@ class PreprintMetricMixin(JSONAPIBaseView):
 
         try:
             results = self.execute_search(search, query)
-        except RequestError:
-            raise ValidationError('Misformed elasticsearch query.')
+        except RequestError as e:
+            if e.args:
+                raise ValidationError(e.info['error']['root_cause'][0]['reason'])
+            raise ValidationError('Malformed elasticsearch query.')
+
         return JsonResponse(results.to_dict())
 
 
@@ -151,3 +160,61 @@ class PreprintDownloadMetrics(PreprintMetricMixin):
     @property
     def metric(self):
         return PreprintDownload
+
+class RawMetricsView(GenericAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsRawMetricsUser,
+        TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.METRICS_BASIC]
+    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
+
+    view_category = 'raw-metrics'
+    view_name = 'raw-metrics-view'
+
+    serializer_class = RawMetricsSerializer
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def delete(self, request, *args, **kwargs):
+        raise ValidationError('DELETE not supported. Use GET/POST/PUT')
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def get(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        return JsonResponse(connection.transport.perform_request('GET', f'/{url_path}'))
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def post(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('POST', f'/{url_path}', body=body))
+
+    @require_switch(ENABLE_RAW_METRICS)
+    def put(self, request, *args, **kwargs):
+        connection = get_connection()
+        url_path = kwargs['url_path']
+        body = json.loads(request.body)
+        return JsonResponse(connection.transport.perform_request('PUT', f'/{url_path}', body=body))
+
+
+class RegistriesModerationMetricsView(GenericAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        IsRegistriesModerationMetricsUser,
+        TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.METRICS_BASIC]
+    required_write_scopes = [CoreScopes.METRICS_RESTRICTED]
+
+    view_category = 'raw-metrics'
+    view_name = 'raw-metrics-view'
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse(RegistriesModerationMetrics.get_registries_info())

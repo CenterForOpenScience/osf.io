@@ -224,7 +224,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 200
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
 
-    def test_child_inherits_withdrawl_justication_and_date_withdrawn(
+    def test_child_inherits_withdrawal_justification_and_date_withdrawn(
             self, app, user, withdrawn_registration_with_child, registration_with_child):
 
         reg_child = registration_with_child.node_relations.first().child

@@ -29,9 +29,9 @@ from osf.models import (
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
 from api.base.utils import waterbutler_api_url_for
+from api.base.settings.defaults import GBs
 
 ERRORS = []
-GBs = 1024 ** 3.0
 TMP_PATH = tempfile.mkdtemp()
 
 PREPRINT_EXPORT_FIELDS = [

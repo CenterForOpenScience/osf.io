@@ -6,9 +6,8 @@ import pytest
 import mock
 from django.utils import timezone
 from waffle.testutils import override_switch
-from website.prereg.utils import get_prereg_schema
 
-from .factories import UserFactory, NodeFactory, DraftRegistrationFactory
+from .factories import UserFactory, NodeFactory
 
 from osf.features import DISABLE_ENGAGEMENT_EMAILS
 from osf.models.queued_mail import (
@@ -24,10 +23,6 @@ def user():
 
 @pytest.mark.django_db
 class TestQueuedMail:
-
-    @pytest.fixture()
-    def prereg(self, user):
-        return DraftRegistrationFactory(initiator=user, registration_schema=get_prereg_schema())
 
     def queue_mail(self, mail, user, send_at=None, **kwargs):
         mail = queue_mail(

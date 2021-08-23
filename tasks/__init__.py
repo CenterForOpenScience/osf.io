@@ -29,7 +29,6 @@ logging.getLogger('invoke').setLevel(logging.CRITICAL)
 # gets the root path for all the scripts that rely on it
 HERE = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WHEELHOUSE_PATH = os.environ.get('WHEELHOUSE')
-CONSTRAINTS_PATH = os.path.join(HERE, 'requirements', 'constraints.txt')
 NO_TESTS_COLLECTED = 5
 ns = Collection()
 
@@ -263,21 +262,21 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
         ctx.run(
-            pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+            pip_install(req_file),
             echo=True
         )
     else:
         if dev:  # then dev requirements
             req_file = os.path.join(HERE, 'requirements', 'dev.txt')
             ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(req_file),
                 echo=True
             )
 
         if base:  # then base requirements
             req_file = os.path.join(HERE, 'requirements.txt')
             ctx.run(
-                pip_install(req_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(req_file),
                 echo=True
             )
 
@@ -318,6 +317,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     if params:
         params = [params] if isinstance(params, basestring) else params
         args.extend(params)
+
     retcode = pytest.main(args)
 
     # exit code 5 is all tests skipped which is the same as passing with testmon
@@ -333,6 +333,8 @@ WEBSITE_TESTS = [
 ]
 
 API_TESTS1 = [
+    'api_tests/draft_registrations',
+    'api_tests/draft_nodes',
     'api_tests/identifiers',
     'api_tests/institutions',
     'api_tests/licenses',
@@ -341,6 +343,7 @@ API_TESTS1 = [
     'api_tests/providers',
     'api_tests/preprints',
     'api_tests/registrations',
+    'api_tests/registries_moderation',
     'api_tests/users',
 ]
 API_TESTS2 = [
@@ -370,10 +373,13 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
+    'api_tests/sloan',
+    'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
     'api_tests/tokens',
     'api_tests/view_only_links',
+    'api_tests/share',
     'api_tests/wikis',
 ]
 ADDON_TESTS = [
@@ -476,7 +482,7 @@ def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
+    #travis_setup(ctx)
     syntax(ctx)
     test_addons(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
@@ -485,7 +491,7 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
     """
     Run other half of the tests to help travis go faster.
     """
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_website(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
@@ -493,19 +499,19 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
     # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
     # karma(ctx)
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api2(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 
 @task
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
-    travis_setup(ctx)
+    #travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
 @task
@@ -532,9 +538,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
             if os.path.isdir(path):
                 req_file = os.path.join(path, 'requirements.txt')
                 if os.path.exists(req_file):
-                    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
-                        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
-                    )
+                    cmd = ('pip3 wheel --find-links={} -r {} --wheel-dir={} ').format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
                     ctx.run(cmd, pty=pty)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -542,9 +546,7 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
-    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} -c {}'.format(
-        WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH, CONSTRAINTS_PATH,
-    )
+    cmd = 'pip3 wheel --find-links={} -r {} --wheel-dir={} '.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     ctx.run(cmd, pty=pty)
 
 
@@ -558,7 +560,7 @@ def addon_requirements(ctx):
         if os.path.isdir(path) and os.path.isfile(requirements_file):
             print('Installing requirements for {0}'.format(directory))
             ctx.run(
-                pip_install(requirements_file, constraints_file=CONSTRAINTS_PATH),
+                pip_install(requirements_file),
                 echo=True
             )
 

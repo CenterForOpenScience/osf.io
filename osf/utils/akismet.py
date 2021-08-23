@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import requests
+from website import settings
 
 
 class AkismetClientError(Exception):
@@ -56,6 +57,8 @@ class AkismetClient(object):
 
         :return: a (bool, str) tuple representing (is_spam, pro_tip)
         """
+        if not settings.AKISMET_ENABLED:
+            return False, ''
         ALLOWED_ARGS = ('referrer', 'permalink', 'is_test',
                         'comment_author', 'comment_author_email', 'comment_author_url',
                         'comment_content', 'comment_date_gmt', 'comment_post_modified_gmt')
@@ -68,16 +71,15 @@ class AkismetClient(object):
         data['user_ip'] = user_ip
         data['user_agent'] = user_agent
 
-        try:
-            res = requests.post(
-                '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
-                data=data,
-                headers=self._default_headers,
-                timeout=5
-            )
-            res.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            raise AkismetClientError(reason=e.args[0])
+        res = requests.post(
+            '{}{}.{}/1.1/comment-check'.format(self.API_PROTOCOL, self.apikey, self.API_HOST),
+            data=data,
+            headers=self._default_headers,
+            timeout=5
+        )
+        if res.status_code != requests.codes.ok:
+            raise AkismetClientError(reason=res.text)
+
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
     def submit_spam(self, user_ip, user_agent, **kwargs):

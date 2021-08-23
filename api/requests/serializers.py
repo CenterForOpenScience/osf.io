@@ -69,6 +69,26 @@ class NodeRequestSerializer(RequestSerializer):
     def get_target_url(self, obj):
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': obj.target._id, 'version': self.context['request'].parser_context['kwargs']['version']})
 
+
+class RegistrationRequestSerializer(RequestSerializer):
+    class Meta:
+        type_ = 'registration-requests'
+
+    target = RelationshipField(
+        read_only=True,
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<target._id>'},
+        filter_key='target__guids___id',
+    )
+
+    def get_target_url(self, obj):
+        return absolute_reverse(
+            'registrations:registration-detail', kwargs={
+                'node_id': obj.target._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
 class NodeRequestCreateSerializer(NodeRequestSerializer):
     request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
 

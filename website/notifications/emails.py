@@ -1,7 +1,7 @@
 from babel import dates, core, Locale
 
 from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
-from osf.utils.permissions import READ
+from osf.utils.permissions import ADMIN, READ
 from website import mails
 from website.notifications import constants
 from website.notifications import utils
@@ -60,10 +60,14 @@ def notify_mentions(event, user, node, timestamp, **context):
 def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
     event_type = utils.find_subscription_type(event)
     sent_users = []
+    if not context:
+        context = {}
 
     for recipient in recipients:
         subscriptions = get_user_subscriptions(recipient, event_type)
         context['is_creator'] = recipient == node.creator
+        if node.provider:
+            context['has_psyarxiv_chronos_text'] = node.has_permission(recipient, ADMIN) and 'psyarxiv' in node.provider.name.lower()
         for notification_type in subscriptions:
             if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
                 store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template=template, **context)

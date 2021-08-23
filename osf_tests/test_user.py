@@ -25,6 +25,7 @@ from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
+from website.util.metrics import OsfSourceTags
 
 from osf.models import (
     AbstractNode,
@@ -980,10 +981,10 @@ class TestChangePassword:
         user = UserFactory()
         user.set_password('password')
         user.save()
-        with pytest.raises(ChangePasswordError) as excinfo:
+        with pytest.raises(ChangePasswordError, match=error_message):
             user.change_password(old_password, new_password, confirm_password)
             user.save()
-        assert error_message in str(excinfo)
+
         assert bool(user.check_password(new_password)) is False
 
     def test_change_password_invalid_old_password(self):
@@ -1338,7 +1339,8 @@ class TestRecentlyAdded:
 
         assert len(list(user.get_recently_added())) == 15
 
-# New tests
+
+@pytest.mark.enable_implicit_clean
 class TestTagging:
     def test_add_system_tag(self, user):
         tag_name = fake.word()
@@ -1493,8 +1495,9 @@ class TestMergingUsers:
             assert mock_signals.signals_sent() == set([user_merged])
 
     @pytest.mark.enable_enqueue_task
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
-    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
+    def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
         list_name = 'foo'
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
@@ -1899,8 +1902,8 @@ class TestUserMerging(OsfTestCase):
         self.user.notifications_configured = {'abc12': True}
         other_user.notifications_configured = {'123ab': True}
 
-        self.user.external_accounts = [ExternalAccountFactory()]
-        other_user.external_accounts = [ExternalAccountFactory()]
+        self.user.external_accounts.add(ExternalAccountFactory())
+        other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
             'user': True,
@@ -2055,7 +2058,7 @@ class TestUserMerging(OsfTestCase):
         # TODO: test security_messages
         # TODO: test mailing_lists
 
-        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed'])
+        assert sorted(self.user.system_tags) == sorted(['shared', 'user', 'unconfirmed', OsfSourceTags.Osf.value])
 
         # TODO: test emails
         # TODO: test external_accounts
@@ -2471,7 +2474,7 @@ class TestUserGdprDelete:
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
 
 
-class TestUserSpam:
+class TestUserSpamAkismet:
 
     @pytest.fixture
     def user(self):
@@ -2495,11 +2498,12 @@ class TestUserSpam:
         assert spam_content == expected_content.strip()
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('osf.models.spam._get_client')
-    def test_do_check_spam(self, mock_get_client, user):
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch('osf.models.spam._get_akismet_client')
+    def test_do_check_spam(self, mock_get_akismet_client, user):
         new_mock = mock.MagicMock()
         new_mock.check_comment = mock.MagicMock(return_value=(True, None))
-        mock_get_client.return_value = new_mock
+        mock_get_akismet_client.return_value = new_mock
 
         suspicious_content = 'spam eggs sausage and spam'
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
@@ -2519,6 +2523,66 @@ class TestUserSpam:
         assert user.do_check_spam(None, None, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch('osf.models.OSFUser.do_check_spam')
+    def test_check_spam(self, mock_do_check_spam, user):
+
+        # test check_spam for other saved fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+            assert mock_do_check_spam.call_count == 0
+
+        # test check spam for correct saved_fields
+        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
+            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+            assert mock_do_check_spam.call_count == 1
+
+
+class TestUserSpamOOPSpam:
+
+    @pytest.fixture
+    def user(self):
+        return AuthUserFactory()
+
+    def test_get_spam_content(self, user):
+        schools_list = []
+        expected_content = ''
+
+        for _ in range(2):
+            institution = fake.company()
+            degree = fake.catch_phrase()
+            schools_list.append({
+                'degree': degree,
+                'institution': institution
+            })
+            expected_content += '{} {} '.format(degree, institution)
+        saved_fields = {'schools': schools_list}
+
+        spam_content = user._get_spam_content(saved_fields)
+        assert spam_content == expected_content.strip()
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch('osf.models.spam._get_oopspam_client')
+    def test_do_check_spam(self, mock_get_oopspam_client, user):
+        new_mock = mock.MagicMock()
+        new_mock.check_content = mock.MagicMock(return_value=(True, None))
+        mock_get_oopspam_client.return_value = new_mock
+
+        suspicious_content = 'spam eggs sausage and spam'
+        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
+            user.do_check_spam(
+                author=user.fullname,
+                author_email=user.username,
+                content=suspicious_content,
+                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
+            )
+        user.save()
+        assert user.spam_data['content'] == suspicious_content
+        assert user.spam_data['author'] == user.fullname
+        assert user.spam_data['author_email'] == user.username
+
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_APIKEY', 'FFFFFF')
     @mock.patch('osf.models.OSFUser.do_check_spam')
     def test_check_spam(self, mock_do_check_spam, user):
 

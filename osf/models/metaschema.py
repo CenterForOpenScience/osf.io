@@ -36,11 +36,9 @@ def allow_egap_admins(queryset, request):
     Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
     live.
     """
-    if hasattr(request, 'user') and waffle.flag_is_active(request, EGAP_ADMINS):
-        return queryset | RegistrationSchema.objects.filter(name='EGAP Registration').distinct('name')
-    else:
-        return queryset
-
+    if hasattr(request, 'user') and not waffle.flag_is_active(request, EGAP_ADMINS):
+        return queryset.exclude(name='EGAP Registration')
+    return queryset
 
 class AbstractSchemaManager(models.Manager):
 
@@ -52,14 +50,26 @@ class AbstractSchemaManager(models.Manager):
         """
         return self.filter(name=name).order_by('schema_version').last()
 
-    def get_latest_versions(self, request=None):
+    def get_latest_versions(self, request=None, invisible=False):
         """
         Return the latest version of the given schema
 
         :param request: the request object needed for waffling
         :return: queryset
         """
-        queryset = self.filter(visible=True).order_by('name', '-schema_version').distinct('name')
+
+        latest_versions = self.values('name').annotate(latest_version=models.Max('schema_version'))
+
+        annotated = self.all().annotate(
+            latest_version=models.Subquery(
+                latest_versions.filter(name=models.OuterRef('name')).values('latest_version')[:1],
+                output_field=models.IntegerField(),
+            ),
+        )
+        queryset = annotated.filter(schema_version=models.F('latest_version')).order_by('name')
+
+        if not invisible:
+            queryset = queryset.filter(visible=True)
 
         if request:
             return allow_egap_admins(queryset, request)
@@ -89,6 +99,11 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
 class RegistrationSchema(AbstractSchema):
     config = DateTimeAwareJSONField(blank=True, default=dict)
     description = models.TextField(null=True, blank=True)
+    providers = models.ManyToManyField(
+        'RegistrationProvider',
+        related_name='schemas',
+        blank=True
+    )
 
     @property
     def _config(self):
@@ -118,13 +133,6 @@ class RegistrationSchema(AbstractSchema):
     def absolute_api_v2_url(self):
         path = '/schemas/registrations/{}/'.format(self._id)
         return api_v2_url(path)
-
-    @classmethod
-    def get_prereg_schema(cls):
-        return cls.objects.get(
-            name='Prereg Challenge',
-            schema_version=2
-        )
 
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
         """
@@ -186,6 +194,16 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         order_with_respect_to = 'schema'
         unique_together = ('schema', 'registration_response_key')
 
+    INPUT_BLOCK_TYPES = frozenset([
+        'short-text-input',
+        'long-text-input',
+        'file-input',
+        'contributors-input',
+        'single-select-input',
+        'multi-select-input',
+        'select-other-option',
+    ])
+
     schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
     help_text = models.TextField()
     example_text = models.TextField(null=True)
@@ -209,4 +227,4 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
         empty "registration_response_key"s as null, instead of an empty string.
         """
         self.registration_response_key = self.registration_response_key or None
-        return super(RegistrationSchemaBlock, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)

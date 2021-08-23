@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser
+from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
 from osf.utils.permissions import WRITE_NODE
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
@@ -19,9 +19,15 @@ from api.base.views import (
 from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationshipSerializer
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
+from api.base.exceptions import Conflict
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
 from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
-from api.base.utils import get_user_auth, default_node_list_permission_queryset, is_bulk_request, is_truthy
+from api.base.utils import (
+    get_user_auth,
+    default_node_list_permission_queryset,
+    is_bulk_request,
+    is_truthy,
+)
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
@@ -38,6 +44,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
 )
+from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
@@ -60,7 +67,12 @@ from api.registrations.serializers import RegistrationNodeLinksSerializer, Regis
 from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
+from api.actions.serializers import RegistrationActionSerializer
+from api.requests.serializers import RegistrationRequestSerializer
+from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
+from api.providers.permissions import MustBeModerator
+from api.providers.views import ProviderMixin
 
 
 class RegistrationMixin(NodeMixin):
@@ -171,16 +183,18 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         """
         draft_id = self.request.data.get('draft_registration', None) or self.request.data.get('draft_registration_id', None)
         draft = self.get_draft(draft_id)
-        node = draft.branched_from
         user = get_user_auth(self.request).user
 
-        # A user must be an admin contributor on the node (not group member), and have
-        # admin perms on the draft to register
-        if node.is_admin_contributor(user) and draft.has_permission(user, ADMIN):
-            serializer.save(draft=draft)
+        # A user have admin perms on the draft to register
+        if draft.has_permission(user, ADMIN):
+            try:
+                serializer.save(draft=draft)
+            except ValidationError as e:
+                log_exception()
+                raise e
         else:
             raise PermissionDenied(
-                'You must be an admin contributor on both the project and the draft registration to create a registration.',
+                'You must be an admin contributor on the draft registration to create a registration.',
             )
 
     def check_branched_from(self, draft):
@@ -193,7 +207,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ContributorOrModeratorOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -213,8 +227,8 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
             raise ValidationError('This is not a registration.')
         return registration
 
-    def get_renderer_context(self):
-        context = super(RegistrationDetail, self).get_renderer_context()
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
         show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             registration = self.get_object()
@@ -765,3 +779,74 @@ class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
     """
 
     serializer_class = RegistrationIdentifierSerializer
+
+
+class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, ProviderMixin):
+    provider_class = RegistrationProvider
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        ContributorOrModerator,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+    view_category = 'registrations'
+    view_name = 'registration-actions-list'
+
+    serializer_class = RegistrationActionSerializer
+    ordering = ('-created',)
+    node_lookup_url_kwarg = 'node_id'
+
+    def get_registration(self):
+        registration = get_object_or_error(
+            Registration,
+            self.kwargs[self.node_lookup_url_kwarg],
+            self.request,
+            check_deleted=False,
+        )
+        # May raise a permission denied
+        self.check_object_permissions(self.request, registration)
+        return registration
+
+    def get_default_queryset(self):
+        return self.get_registration().actions.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        target = serializer.validated_data['target']
+        self.check_object_permissions(self.request, target)
+
+        if not target.provider.is_reviewed:
+            raise Conflict(f'{target.provider.name } is an umoderated provider. If you believe this is an error, contact OSF Support.')
+
+        serializer.save(user=self.request.user)
+
+
+class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView, RegistrationMixin, ProviderMixin):
+    provider_class = RegistrationProvider
+
+    required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+
+    view_category = 'registrations'
+    view_name = 'registration-requests-list'
+
+    serializer_class = RegistrationRequestSerializer
+
+    def get_default_queryset(self):
+        return self.get_node().requests.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

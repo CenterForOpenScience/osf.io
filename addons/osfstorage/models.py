@@ -161,10 +161,10 @@ class OsfStorageFileNode(BaseFileNode):
             not getattr(self.target, 'is_deleted', None)
         )
 
-    def delete(self, user=None, parent=None, **kwargs):
+    def delete(self, user=None, **kwargs):
         self._path = self.path
         self._materialized_path = self.materialized_path
-        return super(OsfStorageFileNode, self).delete(user=user, parent=parent) if self._check_delete_allowed() else None
+        return super().delete(user=user) if self._check_delete_allowed() else None
 
     def update_region_from_latest_version(self, destination_parent):
         raise NotImplementedError
@@ -194,12 +194,7 @@ class OsfStorageFileNode(BaseFileNode):
         target = self.target
         if isinstance(target, AbstractNode) and self.is_checked_out and self.checkout != user:
             # Allow project admins to force check in
-            if target.has_permission(user, permissions.ADMIN):
-                # But don't allow force check in for prereg admin checked out files
-                if self.checkout.has_perm('osf.view_prereg') and target.draft_registrations_active.filter(
-                        registration_schema__name='Prereg Challenge').exists():
-                    raise exceptions.FileNodeCheckedOutError()
-            else:
+            if not target.has_permission(user, permissions.ADMIN):
                 raise exceptions.FileNodeCheckedOutError()
 
         if not target.has_permission(user, permissions.WRITE):
@@ -388,11 +383,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 self.save()
             return True
 
-    def delete(self, user=None, parent=None, **kwargs):
+    def delete(self, user=None, **kwargs):
         from website.search import search
 
         search.update_file(self, delete=True)
-        return super(OsfStorageFile, self).delete(user, parent, **kwargs)
+        return super().delete(user, **kwargs)
 
     def save(self, skip_search=False, *args, **kwargs):
         from website.search import search
@@ -550,7 +545,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         clone.owner = fork
         user_settings = user.get_addon('osfstorage')
         clone.user_settings = user_settings
-        clone.region_id = user_settings.default_region_id
+        clone.region_id = self.region_id
 
         clone.save()
         if not self.root_node:

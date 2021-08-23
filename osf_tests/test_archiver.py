@@ -414,21 +414,22 @@ class TestStorageAddonBase(ArchiverTestCase):
 
     @responses.activate
     def _test__get_file_tree(self, addon_short_name):
+        cookie = self.user.get_or_create_cookie()
         for path in self.URLS:
             url = waterbutler_api_url_for(
                 self.src._id,
                 addon_short_name,
-                meta=True,
                 path=path,
                 user=self.user,
                 view_only=True,
                 _internal=True,
+                cookie=cookie,
                 base_url=self.src.osfstorage_region.waterbutler_url
             )
             responses.add(
                 responses.Response(
-                    responses.GET,
-                    url,
+                    method=responses.GET,
+                    url=url,
                     json=self.get_resp(url),
                     content_type='applcation/json'
                 )
@@ -441,7 +442,7 @@ class TestStorageAddonBase(ArchiverTestCase):
             # Regression test for OSF-8696 confirming that size attr does not stop folders from recursing
             'size': '100',
         }
-        file_tree = addon._get_file_tree(root, self.user)
+        file_tree = addon._get_file_tree(root, self.user, cookie)
         assert_equal(FILE_TREE, file_tree)
         assert_equal(len(responses.calls), 2)
 
@@ -845,7 +846,6 @@ class TestArchiverUtils(ArchiverTestCase):
             mail=mails.ARCHIVE_COPY_ERROR_USER,
             results={},
             can_change_preferences=False,
-            mimetype='html',
         )
         args_desk = dict(
             to_addr=settings.OSF_SUPPORT_EMAIL,
@@ -877,7 +877,6 @@ class TestArchiverUtils(ArchiverTestCase):
             src=self.src,
             mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
             can_change_preferences=False,
-            mimetype='html',
         )
         args_desk = dict(
             to_addr=settings.OSF_SUPPORT_EMAIL,

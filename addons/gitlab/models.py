@@ -76,7 +76,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     repo_id = models.TextField(blank=True, null=True)
     hook_id = models.TextField(blank=True, null=True)
     hook_secret = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(UserSettings, null=True, blank=True)
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
     def folder_id(self):
@@ -172,7 +172,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
             valid_credentials = True
             try:
-                repos = [repo.attributes for repo in connection.repos()]
+                repos = [repo.attributes for repo in connection.repos(all=True)]
             except GitLabError:
                 valid_credentials = False
 

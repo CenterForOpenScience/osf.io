@@ -18,6 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
+from osf.models import Tag
 from osf.exceptions import NodeStateError
 from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
@@ -31,6 +32,8 @@ from website.project.views.node import serialize_preprints
 from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
+from website.util.metrics import provider_claimed_tag
+from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 
 
 @collect_auth
@@ -456,21 +459,20 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
-    preprint_provider = None
     logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
         if email_template == 'preprint':
-            email_template, preprint_provider = find_preprint_provider(node)
-            if not email_template or not preprint_provider:
-                return
-            mail_tpl = getattr(mails, 'INVITE_PREPRINT')(email_template, preprint_provider)
-            if preprint_provider._id == 'osf':
+            if node.provider.is_default:
+                mail_tpl = mails.INVITE_OSF_PREPRINT
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = preprint_provider._id
+                mail_tpl = mails.INVITE_PREPRINT(node.provider)
+                logo = node.provider._id
+        elif email_template == 'draft_registration':
+            mail_tpl = mails.INVITE_DRAFT_REGISTRATION
         else:
-            mail_tpl = getattr(mails, 'INVITE_DEFAULT'.format(email_template.upper()))
+            mail_tpl = mails.INVITE_DEFAULT
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
@@ -522,7 +524,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         claim_url=claim_url,
         email=claimer_email,
         fullname=unclaimed_record['name'],
-        branded_service=preprint_provider,
+        branded_service=node.provider,
         can_change_preferences=False,
         logo=logo if logo else settings.OSF_LOGO,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
@@ -531,62 +533,69 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     return to_addr
 
 
+def check_email_throttle(node, contributor, throttle=None):
+    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+    contributor_record = contributor.contributor_added_email_records.get(node._id, {})
+    if contributor_record:
+        timestamp = contributor_record.get('last_sent', None)
+        if timestamp:
+            if not throttle_period_expired(timestamp, throttle):
+                return True
+    else:
+        contributor.contributor_added_email_records[node._id] = {}
+
+
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, throttle=None, email_template='default', *args, **kwargs):
+def notify_added_contributor(node, contributor, auth=None, email_template='default', throttle=None, *args, **kwargs):
+    logo = settings.OSF_LOGO
+    if check_email_throttle(node, contributor, throttle=throttle):
+        return
     if email_template == 'false':
         return
-
-    if hasattr(node, 'is_published') and not getattr(node, 'is_published'):
+    if not getattr(node, 'is_published', True):
+        return
+    if not contributor.is_registered:
+        unreg_contributor_added.send(
+            node,
+            contributor=contributor,
+            auth=auth,
+            email_template=email_template
+        )
         return
 
-    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
     # Email users for projects, or for components where they are not contributors on the parent node.
-    if contributor.is_registered and ((isinstance(node, (Preprint, DraftRegistration))) or
-            (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))):
-        mimetype = 'html'
-        preprint_provider = None
-        logo = None
+    contrib_on_parent_node = isinstance(node, (Preprint, DraftRegistration)) or \
+                             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))
+    if contrib_on_parent_node:
         if email_template == 'preprint':
-            email_template, preprint_provider = find_preprint_provider(node)
-            if not email_template or not preprint_provider:
-                return
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT')(email_template, preprint_provider)
-            if preprint_provider._id == 'osf':
+            if node.provider.is_default:
+                email_template = mails.CONTRIBUTOR_ADDED_OSF_PREPRINT
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                logo = preprint_provider._id
+                email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
+                logo = node.provider._id
         elif email_template == 'draft_registration':
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DRAFT_REGISTRATION'.format(email_template.upper()))
+            email_template = mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
         elif email_template == 'access_request':
-            mimetype = 'html'
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_ACCESS_REQUEST'.format(email_template.upper()))
+            email_template = mails.CONTRIBUTOR_ADDED_ACCESS_REQUEST
         elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF'.format(email_template.upper()))
+            email_template = mails.CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = getattr(mails, 'CONTRIBUTOR_ADDED_DEFAULT')
-
-        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
-        if contributor_record:
-            timestamp = contributor_record.get('last_sent', None)
-            if timestamp:
-                if not throttle_period_expired(timestamp, throttle):
-                    return
-        else:
-            contributor.contributor_added_email_records[node._id] = {}
+            email_template = mails.CONTRIBUTOR_ADDED_DEFAULT
 
         mails.send_mail(
-            contributor.username,
-            email_template,
-            mimetype=mimetype,
+            to_addr=contributor.username,
+            mail=email_template,
             user=contributor,
             node=node,
             referrer_name=auth.user.fullname if auth else '',
+            is_initiator=getattr(auth, 'user', False) == contributor,
             all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=preprint_provider,
+            branded_service=node.provider,
             can_change_preferences=False,
-            logo=logo if logo else settings.OSF_LOGO,
+            logo=logo,
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
             published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         )
@@ -594,8 +603,6 @@ def notify_added_contributor(node, contributor, auth=None, throttle=None, email_
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
         contributor.save()
 
-    elif not contributor.is_registered:
-        unreg_contributor_added.send(node, contributor=contributor, auth=auth, email_template=email_template)
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):
@@ -617,30 +624,11 @@ def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs
             for each in user.recentlyaddedcontributor_set.order_by('date_added')[:difference]:
                 each.delete()
 
-    if isinstance(node, DraftRegistration):
-        return
     # If there are pending access requests for this user, mark them as accepted
     pending_access_requests_for_user = node.requests.filter(creator=contributor, machine_state='pending')
     if pending_access_requests_for_user.exists():
         permissions = kwargs.get('permissions') or node.DEFAULT_CONTRIBUTOR_PERMISSIONS
         pending_access_requests_for_user.get().run_accept(contributor, comment='', permissions=permissions)
-
-
-def find_preprint_provider(node):
-    """
-    Given a node, find the preprint and the service provider.
-
-    :param node: the node to which a contributer or preprint author is added
-    :return: tuple containing the type of email template (osf or branded) and the preprint provider
-    """
-
-    try:
-        preprint = node if isinstance(node, Preprint) else Preprint.objects.get(node=node)
-        provider = preprint.provider
-        email_template = 'osf' if provider._id == 'osf' else 'branded'
-        return email_template, provider
-    except Preprint.DoesNotExist:
-        return None, None
 
 
 def verify_claim_token(user, token, pid):
@@ -842,6 +830,8 @@ def claim_user_form(auth, **kwargs):
             if provider:
                 redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
             else:
+                # Add related claimed tags to user
+                _add_related_claimed_tag_to_user(pid, user)
                 redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
 
             return redirect(cas.get_login_url(
@@ -857,6 +847,31 @@ def claim_user_form(auth, **kwargs):
         'form': forms.utils.jsonify(form) if is_json_request() else form,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
+
+
+def _add_related_claimed_tag_to_user(pid, user):
+    """
+    Adds claimed tag to incoming users, depending on whether the resource has related source tags
+    :param pid: guid of either the node or the preprint
+    :param user: the claiming user
+    """
+    node = AbstractNode.load(pid)
+    preprint = Preprint.load(pid)
+    osf_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag('osf'), system=True)
+    if node:
+        node_source_tags = node.all_tags.filter(name__icontains='source:', system=True)
+        if node_source_tags.exists():
+            for tag in node_source_tags:
+                claimed_tag, created = Tag.all_tags.get_or_create(name=NODE_SOURCE_TAG_CLAIMED_TAG_RELATION[tag.name],
+                                                                  system=True)
+                user.add_system_tag(claimed_tag)
+        else:
+            user.add_system_tag(osf_claimed_tag)
+    elif preprint:
+        provider_id = preprint.provider._id
+        preprint_claimed_tag, created = Tag.all_tags.get_or_create(name=provider_claimed_tag(provider_id, 'preprint'),
+                                                                   system=True)
+        user.add_system_tag(preprint_claimed_tag)
 
 
 @must_be_valid_project

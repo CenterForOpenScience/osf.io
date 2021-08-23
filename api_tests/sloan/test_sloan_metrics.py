@@ -65,8 +65,8 @@ class TestSloanMetrics(OsfTestCase):
         sloan_cookie_value = resp.headers['Set-Cookie'].split('=')[1].split(';')[0]
 
         # tests cookies get sent to impact
-        self.app.set_cookie(SLOAN_COI_DISPLAY, 'True')
-        self.app.set_cookie(SLOAN_DATA_DISPLAY, 'False')
+        self.app.set_cookie(f'dwf_{SLOAN_COI_DISPLAY}', 'True')
+        self.app.set_cookie(f'dwf_{SLOAN_DATA_DISPLAY}', 'False')
         self.app.set_cookie(SLOAN_ID_COOKIE_NAME, sloan_cookie_value)
         with override_switch(ELASTICSEARCH_METRICS, active=True):
             self.app.get(self.build_url(path=test_file.path))
@@ -76,10 +76,9 @@ class TestSloanMetrics(OsfTestCase):
             preprint=self.preprint,
             user=None,
             version='1',
-            sloan_coi='True',
-            sloan_data='False',
+            sloan_coi=1,
+            sloan_data=0,
             sloan_id=sloan_cookie_value,
-            sloan_prereg=None,
         )
 
 
@@ -120,18 +119,21 @@ class TestSloanQueries:
         ).save()
 
         data = {
-            'size': 0,
-            'aggs': {
-                'users': {
-                    'terms': {
-                        'field': 'sloan_id',
-                    },
+            'data': {
+                'size': 0,
+                'aggs': {
+                    'users': {
+                        'terms': {
+                            'field': 'sloan_id',
+                        },
+                    }
                 }
             }
         }
         time.sleep(2)  # ES is slow
         res = app.post_json_api(url, data, auth=admin.auth)
         assert res.status_code == 200
+        assert len(res.json['hits']['hits']) == 1
         assert res.json['hits']['hits'][0]['_source'] == {
             'timestamp': timestamp.isoformat(),
             'count': 1,

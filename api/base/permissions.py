@@ -3,7 +3,7 @@ import operator
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import exceptions, permissions
 
-from api.base.utils import has_admin_scope
+from api.base.utils import has_admin_scope, has_pigeon_scope
 
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
@@ -119,6 +119,17 @@ class RequestHasAdminScope(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if has_admin_scope(request):
+            return True
+        raise exceptions.NotFound()
+
+class RequestHasPigeonToken(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if has_pigeon_scope(request):
+            return True
+        raise exceptions.NotFound()
+
+    def has_permission(self, request, view):
+        if has_pigeon_scope(request):
             return True
         raise exceptions.NotFound()
 

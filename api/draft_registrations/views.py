@@ -4,10 +4,10 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.pagination import DraftRegistrationContributorPagination
-from api.base.views import JSONAPIBaseView
 from api.draft_registrations.permissions import (
     DraftContributorDetailPermissions,
     IsContributorOrAdminContributor,
+    IsAdminContributor,
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
@@ -40,6 +40,12 @@ class DraftRegistrationMixin(DraftMixin):
     def check_branched_from(self, draft):
         # We do not have to check the branched_from relationship. node_id is not a kwarg
         return
+
+    # Overrides DraftMixin
+    def check_resource_permissions(self, resource):
+        # Checks permissions on draft_registration, regardless of whether or not
+        # draft_registration is branched off of a node
+        return self.check_object_permissions(self.request, resource)
 
 
 class DraftRegistrationList(NodeDraftRegistrationsList):
@@ -152,7 +158,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
 
 class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
     permission_classes = (
-        IsContributorOrAdminContributor,
+        IsAdminContributor,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -185,7 +191,7 @@ class DraftContributorsList(NodeContributorsList, DraftRegistrationMixin):
 
     # Overrides NodeContributorsList
     def get_serializer_context(self):
-        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['resource'] = self.get_resource()
         context['default_email'] = 'draft_registration'
         return context
@@ -220,7 +226,21 @@ class DraftContributorDetail(NodeContributorDetail, DraftRegistrationMixin):
             raise exceptions.NotFound('{} cannot be found in the list of contributors.'.format(user))
 
     def get_serializer_context(self):
-        context = super(JSONAPIBaseView, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['resource'] = self.get_draft()
         context['default_email'] = 'draft'
         return context
+
+
+class DraftBibliographicContributorsList(DraftContributorsList):
+
+    view_name = 'draft-registration-bibliographic-contributor-detail'
+
+    def get_default_queryset(self):
+        # Overrides NodeContributorsList
+        draft = self.get_draft()
+        return draft.draftregistrationcontributor_set.filter(visible=True).include('user__guids')
+
+    # Override to prevent use DraftRegistrationContributorsCreateSerializer, this endpoint is read-only
+    def get_serializer_class(self):
+        return DraftRegistrationContributorDetailSerializer

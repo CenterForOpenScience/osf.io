@@ -9,7 +9,7 @@ from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.http import Http404, HttpResponse
@@ -37,6 +37,7 @@ from osf.models.admin_log_entry import (
     USER_RESTORED,
     USER_GDPR_DELETED,
     CONFIRM_SPAM,
+    CONFIRM_HAM,
     REINDEX_ELASTIC,
 )
 
@@ -194,29 +195,30 @@ class HamUserRestoreView(UserDeleteView):
     template_name = 'users/restore_ham_user.html'
 
     def delete(self, request, *args, **kwargs):
-        try:
-            user = self.get_object()
-        except AttributeError:
+        user = self.get_object()
+        if not user:
             raise Http404(
                 '{} with id "{}" not found.'.format(
                     self.context_object_name.title(),
                     self.kwargs.get('guid')
                 ))
-        if user:
-            user.confirm_ham(save=True)
-            for node in user.contributor_or_group_member_to:
-                if node.is_spam:
-                    node.confirm_ham(save=True)
-                    update_admin_log(
-                        user_id=request.user.id,
-                        object_id=node._id,
-                        object_repr='Node',
-                        message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
-                        action_flag=CONFIRM_SPAM
-                    )
-
-        kwargs.update({'is_spam': False})
-        return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
+        user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
+        user.confirm_ham(save=True)
+        for node in user.contributor_or_group_member_to:
+            if node.is_spam:
+                node.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=node._id,
+                    object_repr='Node',
+                    message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
+                    action_flag=CONFIRM_SPAM
+                )
+        if not user.is_active:
+            # Allow superclass to restore and mark ham
+            kwargs.update({'is_spam': False})
+            return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
+        return redirect(reverse_user(self.kwargs.get('guid')))
 
 
 class UserSpamList(PermissionRequiredMixin, ListView):
@@ -251,22 +253,33 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
     def delete(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
-        user_ids = [
-            uid for uid in request.POST.keys()
-            if uid != 'csrfmiddlewaretoken'
-        ]
+
+        user_ids = []
+        for key in list(request.POST.keys()):
+            if key == 'spam_confirm':
+                action = 'SPAM'
+                action_flag = CONFIRM_SPAM
+            elif key == 'ham_confirm':
+                action = 'HAM'
+                action_flag = CONFIRM_HAM
+            elif key != 'csrfmiddlwaretoken':
+                user_ids.append(key)
+
         for uid in user_ids:
             user = OSFUser.load(uid)
-            if 'spam_flagged' in user.system_tags:
-                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
-            user.confirm_spam()
+
+            if action == 'SPAM':
+                user.confirm_spam()
+            elif action == 'HAM':
+                user.confirm_ham(save=True)
+
             user.save()
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=uid,
                 object_repr='User',
-                message='Confirmed SPAM: {}'.format(uid),
-                action_flag=CONFIRM_SPAM
+                message=f'Confirmed {action}: {uid}',
+                action_flag=action_flag
             )
         return redirect('users:flagged-spam')
 

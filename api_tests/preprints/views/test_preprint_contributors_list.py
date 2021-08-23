@@ -245,28 +245,6 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         res = app.get(url_published, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
 
-    def test_return_preprint_contributors_orphaned_preprint(
-            self, app, user, user_two, preprint_published, url_published):
-        preprint_published.primary_file = None
-        preprint_published.save()
-
-        # test_orphaned_preprint_contributors_logged_out
-        res = app.get(url_published, expect_errors=True)
-        assert res.status_code == 401
-
-        # test_orphaned_preprint_contributor_non_contrib
-        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test_orphaned_preprint_contributors_read_contrib_logged_out
-        preprint_published.add_contributor(user_two, permissions.READ, save=True)
-        res = app.get(url_published, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 200
-
-        # test_orphaned_preprint_contributors_admin
-        res = app.get(url_published, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-
     def test_filtering_on_obsolete_fields(self, app, user, url_published):
         # regression test for changes in filter fields
         url_fullname = '{}?filter[fullname]=foo'.format(url_published)

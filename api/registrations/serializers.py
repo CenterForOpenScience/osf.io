@@ -1,15 +1,15 @@
 import pytz
 import json
+from unicodedata import normalize
 
 from distutils.version import StrictVersion
 from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-from api.base.exceptions import Conflict, InvalidModelValueError
+from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
-from website.project.metadata.utils import is_prereg_admin_not_project_admin
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -40,8 +40,6 @@ class RegistrationSerializer(NodeSerializer):
         'custom_citation',
         'is_pending_retraction',
         'is_public',
-        'license',
-        'license_type',
         'withdrawal_justification',
     ]
 
@@ -59,6 +57,7 @@ class RegistrationSerializer(NodeSerializer):
         'pending_registration_approval',
         'pending_withdrawal',
         'provider',
+        'provider_specific_metadata',
         'registered_by',
         'registered_from',
         'registered_meta',
@@ -69,6 +68,8 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
+    ia_url = ser.URLField(read_only=True)
+    reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
@@ -116,6 +117,7 @@ class RegistrationSerializer(NodeSerializer):
         source='is_retracted', read_only=True,
         help_text='The registration has been withdrawn.',
     )
+    has_project = ser.SerializerMethodField()
 
     date_registered = VersionedDateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     date_withdrawn = VersionedDateTimeField(read_only=True, help_text='Date time of when this registration was retracted.')
@@ -338,6 +340,18 @@ class RegistrationSerializer(NodeSerializer):
         read_only=True,
     )
 
+    review_actions = RelationshipField(
+        related_view='registrations:registration-actions-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    )
+
+    requests = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:registration-requests-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
+    provider_specific_metadata = ser.JSONField(required=False)
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -349,6 +363,9 @@ class RegistrationSerializer(NodeSerializer):
         return 'registrations:registration-relationships-subjects'
 
     links = LinksField({'html': 'get_absolute_html_url'})
+
+    def get_has_project(self, obj):
+        return obj.has_project
 
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()
@@ -427,19 +444,40 @@ class RegistrationSerializer(NodeSerializer):
 
         return data
 
-    def check_admin_perms(self, registration, user, validated_data):
+    def check_perms(self, registration, user, validated_data):
         """
         While admin/write users can make both make modifications to registrations,
         most fields are restricted to admin-only edits.  You must be an admin
         contributor on the registration; you cannot have gotten your admin
         permissions through group membership.
 
+        Additionally, provider_specific_metadata fields are only editable by
+        provder admins/moderators, but those users are not allowed to edit
+        any other fields.
+
         Add fields that need admin perms to admin_only_editable_fields
         """
-        user_is_admin = registration.is_admin_contributor(user)
-        for field in validated_data:
-            if field in self.admin_only_editable_fields and not user_is_admin:
-                raise exceptions.PermissionDenied()
+        is_admin = registration.is_admin_contributor(user)
+        can_edit = registration.can_edit(user=user)
+        is_moderator = False
+        if registration.provider:
+            is_moderator = user.has_perm('accept_submissions', registration.provider)
+
+        # Fail if non-moderator tries to edit provider_specific_metadata
+        if 'provider_specific_metadata' in validated_data and not is_moderator:
+            raise exceptions.PermissionDenied()
+
+        # Fail if non-contributor moderator tries to edit
+        # fields other than provider_specific_metdata
+        if any(field != 'provider_specific_metadata' for field in validated_data) and not can_edit:
+            raise exceptions.PermissionDenied()
+
+        # Fail if non-admin attempts to modify admin_only fields
+        admin_only_fields_present = any(
+            field in self.admin_only_editable_fields for field in validated_data
+        )
+        if admin_only_fields_present and not is_admin:
+            raise exceptions.PermissionDenied()
 
     def update_registration_tags(self, registration, validated_data, auth):
         new_tags = validated_data.pop('tags', [])
@@ -469,7 +507,7 @@ class RegistrationSerializer(NodeSerializer):
     def update(self, registration, validated_data):
         user = self.context['request'].user
         auth = Auth(user)
-        self.check_admin_perms(registration, user, validated_data)
+        self.check_perms(registration, user, validated_data)
         validated_data.pop('_id', None)
 
         if 'tags' in validated_data:
@@ -494,6 +532,13 @@ class RegistrationSerializer(NodeSerializer):
         if 'is_public' in validated_data:
             if validated_data.get('is_public') is False:
                 raise exceptions.ValidationError('Registrations can only be turned from private to public.')
+        if 'provider_specific_metadata' in validated_data:
+            try:
+                registration.update_provider_specific_metadata(
+                    validated_data.pop('provider_specific_metadata'),
+                )
+            except ValueError as e:
+                raise exceptions.ValidationError(str(e))
 
         try:
             registration.update(validated_data, auth=auth)
@@ -526,7 +571,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             self.fields['draft_registration_id'] = ser.CharField(write_only=True)
         else:
             self.fields['draft_registration'] = ser.CharField(write_only=True)
-            self.fields['registration_choice'] = ser.ChoiceField(write_only=True, choices=['immediate', 'embargo'])
 
     # For newer versions
     embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
@@ -534,6 +578,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     # For older versions
     lift_embargo = VersionedDateTimeField(write_only=True, default=None, input_formats=['%Y-%m-%dT%H:%M:%S'])
     children = ser.ListField(write_only=True, required=False)
+    registration_choice = ser.ChoiceField(write_only=True, required=False, choices=['immediate', 'embargo'])
 
     users = RelationshipField(
         related_view='users:user-detail',
@@ -548,6 +593,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         New API versions should pass in an "embargo_end_date" if it should be embargoed, else it will be None
         """
         if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('registration_choice'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/registration_choice'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
             return 'embargo' if validated_data.get('embargo_end_date', None) else 'immediate'
         return validated_data.get('registration_choice', 'immediate')
 
@@ -557,6 +607,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         New API versions should pass in "embargo_end_date"
         """
         if self.expect_cleaner_attributes(self.context['request']):
+            if validated_data.get('lift_embargo'):
+                raise JSONAPIException(
+                    source={'pointer': '/data/attributes/lift_embargo'},
+                    detail=f'Deprecated in version {CREATE_REGISTRATION_FIELD_CHANGE_VERSION}. Use embargo_end_date instead.',
+                )
             return validated_data.get('embargo_end_date', None)
         return validated_data.get('lift_embargo')
 
@@ -575,7 +630,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         registration_choice = self.get_registration_choice_by_version(validated_data)
         embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
 
-        reviewer = is_prereg_admin_not_project_admin(self.context['request'], draft)
         children = self.get_children_by_version(validated_data)
         if children:
             # First check that all children are valid
@@ -595,7 +649,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         try:
             # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
             # on the draft, the other field was built and populated as well.  Both should exist.
-            draft.validate_metadata(metadata=draft.registration_metadata, reviewer=reviewer, required_fields=True)
+            draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
         except ValidationValueError:
             log_exception()  # Probably indicates a bug on our end, so log to sentry
             # TODO: Raise an error once our JSON schemas are updated
@@ -660,7 +714,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         specified_sha = file_metadata.get('sha256', '')
 
-        file = node.files.filter(name=file_metadata.get('selectedFileName')).first()
+        file = node.files.filter(name=normalize('NFD', file_metadata.get('selectedFileName', ''))).first() or \
+               node.files.filter(name=normalize('NFC', file_metadata.get('selectedFileName', ''))).first()
         if not file:
             # file with this name does not exist on the node
             return False
@@ -675,20 +730,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             return False
 
         return True
-
-
-class RegistrationCreateLegacySerializer(RegistrationCreateSerializer):
-    """
-    Overrides RegistrationCreateSerializer for the old registration workflow
-    to copy editable fields.
-    """
-
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        draft = validated_data.get('draft', None)
-        draft.copy_editable_fields(draft.branched_from, auth=auth)
-        registration = super(RegistrationCreateLegacySerializer, self).create(validated_data)
-        return registration
 
 
 class RegistrationDetailSerializer(RegistrationSerializer):

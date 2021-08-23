@@ -67,7 +67,7 @@ class TestEGAPImport:
     def test_ensure_egap_schema(self):
         ensure_egap_schema()
 
-        assert RegistrationSchema.objects.get(name='EGAP Registration')
+        assert RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
 
     def test_create_node_from_project_json(self, egap_assets_path, egap_project_name, greg):
         node = create_node_from_project_json(egap_assets_path, egap_project_name, greg)
@@ -85,34 +85,25 @@ class TestEGAPImport:
     def test_recursive_upload(self, node, greg, egap_assets_path, egap_project_name):
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/?name=test_folder&kind=folder'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test-1.txt&kind=file',
+                json={'metadata': 'for test-1!'},
+                status=201,
+            )
+        )
+        responses.add(
+            responses.Response(
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test_folder&kind=folder',
                 json={'data': {'attributes': {'path': 'parent'}}},
                 status=201,
             )
         )
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/parent?name=test-2.txt&kind=file'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/parent?name=test-2.txt&kind=file',
                 json={'metadata': 'for test-2!'},
-                status=201,
-            )
-        )
-        responses.add(
-            responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/?name=test-1.txt&kind=file'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
-                json={'metadata': 'for test-1!'},
                 status=201,
             )
         )
@@ -124,51 +115,39 @@ class TestEGAPImport:
 
         metadata = recursive_upload(auth, node, egap_project_path)
 
-        assert metadata[0] == {'metadata': 'for test-2!'}
-        assert metadata[1] == {'data': {'attributes': {'path': 'parent'}}}
-        assert metadata[2] == {'metadata': 'for test-1!'}
+        assert {'metadata': 'for test-1!'} in metadata
+        assert {'data': {'attributes': {'path': 'parent'}}} in metadata
+        assert {'metadata': 'for test-2!'} in metadata
 
     @responses.activate
     def test_recursive_upload_retry(self, node, greg, egap_assets_path, egap_project_name):
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/?name=test_folder&kind=folder'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test_folder&kind=folder',
                 json={'data': {'attributes': {'path': 'parent'}}},
                 status=201,
             )
         )
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/parent?name=test-2.txt&kind=file'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/parent?name=test-2.txt&kind=file',
                 status=500,
             )
         )
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/parent?name=test-2.txt&kind=file'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/parent?name=test-2.txt&kind=file',
                 json={'metadata': 'for test-2!'},
                 status=201,
             )
         )
         responses.add(
             responses.Response(
-                responses.PUT,
-                '{}/v1/resources/{}/providers/osfstorage/?name=test-1.txt&kind=file'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node._id,
-                ),
+                method=responses.PUT,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node._id}/providers/osfstorage/?name=test-1.txt&kind=file',
                 json={'metadata': 'for test-1!'},
                 status=201,
             )
@@ -181,9 +160,9 @@ class TestEGAPImport:
 
         metadata = recursive_upload(auth, node, egap_project_path)
 
-        assert metadata[0] == {'metadata': 'for test-2!'}
-        assert metadata[1] == {'data': {'attributes': {'path': 'parent'}}}
-        assert metadata[2] == {'metadata': 'for test-1!'}
+        assert {'metadata': 'for test-2!'} in metadata
+        assert {'data': {'attributes': {'path': 'parent'}}} in metadata
+        assert {'metadata': 'for test-1!'} in metadata
 
     @responses.activate
     def test_get_egap_assets(self, node_with_file, zip_data):
@@ -191,12 +170,8 @@ class TestEGAPImport:
 
         responses.add(
             responses.Response(
-                responses.GET,
-                '{}/v1/resources/{}/providers/osfstorage/{}'.format(
-                    WATERBUTLER_INTERNAL_URL,
-                    node_with_file._id,
-                    file_node._id
-                ),
+                method=responses.GET,
+                url=f'{WATERBUTLER_INTERNAL_URL}/v1/resources/{node_with_file._id}/providers/osfstorage/{file_node._id}',
                 body=zip_data,
                 status=200,
             )

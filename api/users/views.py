@@ -3,6 +3,7 @@ import pytz
 from django.apps import apps
 from django.db.models import F
 from guardian.shortcuts import get_objects_for_user
+from rest_framework.throttling import UserRateThrottle
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
@@ -24,7 +25,7 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle
+from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
@@ -161,9 +162,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'user-list'
 
     def get_default_queryset(self):
-        if self.request.version >= '2.3':
-            return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
-        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True)
+        return OSFUser.objects.filter(is_registered=True, date_disabled__isnull=True, merged_by__isnull=True)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -630,7 +629,7 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
     view_name = 'user-account-export'
 
     serializer_class = UserAccountExportSerializer
-    throttle_classes = (SendEmailThrottle, )
+    throttle_classes = [UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, SendEmailThrottle]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -817,7 +816,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
-    throttle_classes = (SendEmailThrottle, )
+    throttle_classes = [UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, SendEmailThrottle]
 
     view_category = 'users'
     view_name = 'user-emails'
