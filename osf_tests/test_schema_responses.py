@@ -134,3 +134,36 @@ class TestCreateSchemaResponses():
         assert revised_responses != initial_responses
         assert not revised_responses.revised_response_blocks.exists()
         assert set(revised_responses.response_blocks.all()) == set(initial_responses.response_blocks.all())
+
+
+class TestUpdateSchemaResponses():
+
+    def test_all_responses_property(self):
+        pass
+
+    def test_revised_responses_property(self):
+        pass
+
+    def test_update_to_initial_responses_updates_response_blocks(self, initial_responses):
+        pass
+
+    def test_initial_update_to_revised_responses_creates_new_block(self, revised_responses):
+        pass
+
+    def test_update_to_previously_revised_response_updates_block(self, revised_responses):
+        pass
+
+    def test_update_multiple_responses(self, revised_responses):
+        pass
+
+    def test_revert_updated_response_deletes_block(self, revised_responses):
+        pass
+
+    def test_update_surfaced_by_all_responses_property(self, initial_responses):
+        pass
+
+    def test_update_surfaced_by_revised_response_keys_property(self, revised_responses):
+        pass
+
+    def test_reverted_update_surfaced_by_revised_response_keys_property(self, revised_responses):
+        pass
