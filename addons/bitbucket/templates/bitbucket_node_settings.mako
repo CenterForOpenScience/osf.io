@@ -2,7 +2,7 @@
 
     <div>
         <h4 class="addon-title">
-            <img class="addon-icon" src="${addon_icon_url}" aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
+            <img class="addon-icon" src="${addon_icon_url}" aria-label="Bitbucket icon" alt="Bitbucket icon">
             Bitbucket
             <small class="authorized-by">
                 % if node_has_auth:

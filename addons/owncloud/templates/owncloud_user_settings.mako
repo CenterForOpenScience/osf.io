@@ -6,7 +6,7 @@
     <%include file="owncloud_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url} aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
+        <img class="addon-icon" src=${addon_icon_url} aria-label="Owncloud icon" alt="Owncloud icon">
         <span data-bind="text: properName"></span>
         <small>
             <a href="#ownCloudCredentialsModal" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>

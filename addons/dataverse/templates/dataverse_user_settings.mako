@@ -6,7 +6,7 @@
     <%include file="dataverse_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url} aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
+        <img class="addon-icon" src=${addon_icon_url} aria-label="Dataverse icon" alt="Dataverse icon">
         <span data-bind="text: properName"></span> <!-- TODO: Can we use mako addon_full_name as some other addons do? -->
         <small>
             <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
