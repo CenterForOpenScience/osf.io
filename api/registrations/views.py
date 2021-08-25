@@ -859,7 +859,7 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
         return self.get_queryset_from_request()
 
 
-class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, RegistrationMixin):
+class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
     required_read_scopes = [CoreScopes.NULL]
     required_write_scopes = [CoreScopes.NULL]
 

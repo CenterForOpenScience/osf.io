@@ -16,48 +16,25 @@ class TestSchemaResponseList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def payload(self, registration):
-        return {
-            'data': {
-                'type': 'schema-responses',
-                'attributes': {
-                    'revision_justification': 'test justification'
-                },
-                'relationships': {
-                    'registrations': {
-                        'data': {
-                            'type': 'registrations',
-                            'id': registration._id
-                        }
-                    }
-                }
-            }
-        }
-
-    @pytest.fixture()
     def schema(self):
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
     def registration(self, schema):
-        registration = RegistrationFactory(schema=schema)
-        registration.save()
-        return registration
+        return RegistrationFactory(schema=schema)
 
     @pytest.fixture()
     def schema_response(self, user, registration, schema):
         return SchemaResponseFactory(
-            parent=registration,
+            registration=registration,
             initiator=registration.creator,
-            schema=schema
         )
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
         return SchemaResponseFactory(
-            parent=registration,
+            registration=registration,
             initiator=registration.creator,
-            schema=schema
         )
 
     @pytest.fixture()

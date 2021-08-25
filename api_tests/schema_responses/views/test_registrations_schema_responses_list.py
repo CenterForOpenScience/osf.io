@@ -6,7 +6,6 @@ from osf_tests.factories import (
     RegistrationSchemaFactory,
     AuthUserFactory,
 )
-from osf.models.schema_response import SchemaResponse
 
 
 @pytest.mark.django_db
@@ -21,45 +20,23 @@ class TestRegistrationsSchemaResponseList:
         return RegistrationFactory()
 
     @pytest.fixture()
-    def payload(self, registration):
-        return {
-            'data':
-                {
-                    'type': 'registrations',
-                    'relationships': {
-                        'registration': {
-                            'data': {
-                                'id': registration._id,
-                                'type': 'schema-responses',
-                                'attributes': {
-                                    'revision_justification': "We're talkin' about practice..."
-                                }
-                            }
-                        }
-                    }
-                }
-        }
-
-    @pytest.fixture()
     def schema(self):
         return RegistrationSchemaFactory()
 
     @pytest.fixture()
     def schema_response(self, user, registration, schema):
         return SchemaResponseFactory(
-            parent=registration,
+            registration=registration,
             initiator=registration.creator,
-            schema=registration.registered_schema.get(),
             revision_justification="We ain't even talking about the game.",
         )
 
     @pytest.fixture()
     def schema_response2(self, registration, schema):
         return SchemaResponseFactory(
-            parent=registration,
+            registration=registration,
             initiator=registration.creator,
-            schema=registration.registered_schema.get(),
-            revision_justification="We ain't even talking about the game.",
+            revision_justification="We're talkin' about practice.",
         )
 
     @pytest.fixture()
@@ -79,17 +56,3 @@ class TestRegistrationsSchemaResponseList:
         assert len(data) == 2
         assert schema_response2._id == data[0]['id']
         assert schema_response._id == data[1]['id']
-
-    def test_registrations_schema_responses_list_create(self, app, registration, payload, user, url):
-        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
-
-        registration.add_contributor(user, 'admin')
-        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        data = resp.json['data']
-        assert resp.status_code == 201
-        assert SchemaResponse.objects.count() == 1
-        schema_response = SchemaResponse.objects.last()
-
-        assert data['id'] == schema_response._id
-        assert schema_response.revision_justification == "We're talkin' about practice..."

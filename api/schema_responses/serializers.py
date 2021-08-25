@@ -110,12 +110,19 @@ class SchemaResponseListSerializer(SchemaResponseSerializer):
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        schema_response = SchemaResponse.create_initial_responses(
-            initiator=initiator,
-            parent=registration,
-            schema=schema,
-            justification=justification,
-        )
+        if registration.schema_responses.exists():
+            schema_response = SchemaResponse.create_initial_responses(
+                initiator=initiator,
+                parent=registration,
+                schema=schema,
+                justification=justification,
+            )
+        else:
+            schema_response = SchemaResponse.create_from_previous_schema_response(
+                initiator=initiator,
+                previous_schema_response=registration.schema_responses.order_by('-created').first(),
+                justification=justification,
+            )
 
         return schema_response
 

@@ -1181,15 +1181,14 @@ class SchemaResponseFactory(DjangoModelFactory):
         SchemaResponse = models.SchemaResponse
         justification = kwargs.get('revision_justification')
         initiator = kwargs.get('initiator')
-        parent = kwargs.get('parent')
-        schema = kwargs.get('schema')
-        parent.registered_schema.add(schema)
+        registration = kwargs.get('registration')
+        schema = registration.registered_schema.get()
 
-        if SchemaResponse.objects.filter(object_id=parent.id, content_type_id=ContentType.objects.get_for_model(parent)).exists():
+        if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=ContentType.objects.get_for_model(registration)).exists():
             previous_schema_response = SchemaResponse.objects.filter(
-                object_id=parent.id,
-                content_type_id=ContentType.objects.get_for_model(parent)
-            ).order_by('created').first()
+                object_id=registration.id,
+                content_type_id=ContentType.objects.get_for_model(registration)
+            ).order_by('-created').first()
             return SchemaResponse.create_from_previous_schema_response(initiator, previous_schema_response, justification)
         else:
-            return SchemaResponse.create_initial_responses(initiator, parent, schema, justification)
+            return SchemaResponse.create_initial_responses(initiator, registration, schema, justification)

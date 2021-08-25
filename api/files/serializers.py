@@ -7,7 +7,7 @@ import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
+from osf.models import BaseFileNode, OSFUser, Comment, AbstractNode
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -366,8 +366,8 @@ class FileSerializer(BaseFileSerializer):
             lambda obj: {
                 'registration': 'registrations:registration-detail',
                 'node': 'nodes:node-detail',
-                'preprint':  'preprints:preprint-detail',
-                'draftnode':  'draft_nodes:draft-node-detail',
+                'preprint': 'preprints:preprint-detail',
+                'draftnode': 'draft_nodes:draft-node-detail',
                 'comment': 'comments:comment-detail',
                 'nodewikipage': None,
             }[obj.target._meta.model_name]
@@ -377,13 +377,12 @@ class FileSerializer(BaseFileSerializer):
                 'registration': {'node_id': '<target._id>'},
                 'node': {'node_id': '<target._id>'},
                 'preprint': {'preprint_id': '<target._id>'},
-                'draftnode':  {'node_id': '<target._id>'},
+                'draftnode': {'node_id': '<target._id>'},
                 'comment': {'comment_id': '<target._id>'},
                 'nodewikipage': {None: '<target._id>'},
             }[obj.target._meta.model_name]
         ),
     )
-
 
 
 class OsfStorageFileSerializer(FileSerializer):

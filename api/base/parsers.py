@@ -32,9 +32,6 @@ class JSONAPIParser(JSONParser):
             )
 
         id = data.get('id')
-        if data.get('attributes'):
-            return {'id': id, 'target_type': target_type, **data.get('attributes')}
-
         return {'id': id, 'target_type': target_type}
 
     # Overrides JSONParser

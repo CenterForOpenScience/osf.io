@@ -7,7 +7,6 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 
-from django.contrib.contenttypes.models import ContentType
 from osf.models import SchemaResponse
 
 
@@ -55,14 +54,11 @@ class TestSchemaResponseDetail:
         }
 
     @pytest.fixture()
-    def schema_response(self, node, schema):
-        content_type = ContentType.objects.get_for_model(node)
+    def schema_response(self, node):
         schema_response = SchemaResponseFactory(
-            content_type=content_type,
-            object_id=node.id,
+            registration=node,
             initiator=node.creator,
             revision_justification='test justification',
-            schema=schema
         )
         return schema_response
 
