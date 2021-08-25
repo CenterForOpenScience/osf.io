@@ -758,8 +758,8 @@ function _fangornResolveUploadUrl(item, file) {
     var filenames = [file.name];
     var filenameNFC = file.name.normalize('NFC');
     var filenameNFD = file.name.normalize('NFD');
-    if (file.name != filenameNFC) filenames.push(filenameNFC);
-    if (file.name != filenameNFD) filenames.push(filenameNFD);
+    if (file.name !== filenameNFC) filenames.push(filenameNFC);
+    if (file.name !== filenameNFD) filenames.push(filenameNFD);
     var updateUrl;
     $.each(filenames, function( i, filename ) {
         $.each(item.children, function( index, value ) {
