@@ -213,8 +213,10 @@ CORS_ORIGIN_WHITELIST = (
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
+# Allow 'cache-control' in addition to default request headers
+# to enable file upload using dropzone.js
 CORS_ALLOW_HEADERS = list(default_headers) + [
-    "cache-control",
+    'cache-control',
 ]
 # Set dynamically on app init
 ORIGINS_WHITELIST = ()
