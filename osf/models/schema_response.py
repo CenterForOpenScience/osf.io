@@ -52,7 +52,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def updated_response_keys(self):
         '''Surfaces the keys of responses_blocks added in this revision.'''
         revised_keys = self.updated_response_blocks.values_list('schema_key', flat=True)
-        return list(revised_keys)
+        return set(revised_keys)
 
     @classmethod
     def create_initial_response(cls, initiator, parent, schema, justification=None):
@@ -119,10 +119,13 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         # TODO: Add check for state once that stuff is here
         # TODO: Handle the case where an updated response is reverted
+        # make a local copy of the responses so we can pop with impunity
+        # no need for deepcopy, since we aren't mutating responses
+        updated_responses = dict(updated_responses)
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
-            latest_response = updated_responses.pop(block.schema_key)
-            if latest_response != block.responses:
+            latest_response = updated_responses.pop(block.schema_key, None)
+            if latest_response is not None and latest_response != block.response:
                 self._update_response(block, latest_response)
 
         if updated_responses:
@@ -140,7 +143,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 source_schema_response=self,
                 source_schema_block=current_block.source_schema_block,
                 schema_key=current_block.schema_key,
-                respone=latest_response
+                response=latest_response
             )
 
             revised_block.save()
