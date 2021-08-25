@@ -111,16 +111,16 @@ class SchemaResponseListSerializer(SchemaResponseSerializer):
         justification = validated_data.pop('revision_justification', '')
 
         if registration.schema_responses.exists():
-            schema_response = SchemaResponse.create_initial_responses(
+            schema_response = SchemaResponse.create_initial_response(
                 initiator=initiator,
                 parent=registration,
                 schema=schema,
                 justification=justification,
             )
         else:
-            schema_response = SchemaResponse.create_from_previous_schema_response(
+            schema_response = SchemaResponse.create_from_previous_response(
                 initiator=initiator,
-                previous_schema_response=registration.schema_responses.order_by('-created').first(),
+                previous_response=registration.schema_responses.order_by('-created').first(),
                 justification=justification,
             )
 

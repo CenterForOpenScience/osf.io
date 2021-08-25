@@ -105,7 +105,7 @@ class TestSchemaResponseDetail:
         assert block.response == {'value': 'update value'}
 
     def test_schema_response_detail_revised_responses(self, app, schema_response, payload, user, url):
-        revised_schema = SchemaResponse.create_from_previous_schema_response(
+        revised_schema = SchemaResponse.create_from_previous_response(
             schema_response.initiator,
             schema_response
         )
@@ -127,13 +127,6 @@ class TestSchemaResponseDetail:
     def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):
         schema_response.parent.add_contributor(user, 'admin')
 
-        resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 400
-        errors = resp.json['errors']
-        assert len(errors) == 1
-        assert errors[0]['detail'] == 'payload requires key: q1'
-
-        invalid_payload['data']['attributes']['revision_response']['q1'] = {'test': 'new value'}
         resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
         errors = resp.json['errors']

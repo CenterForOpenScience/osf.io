@@ -398,24 +398,34 @@ def create_schema_blocks_for_atomic_schema(schema):
 
     from osf.models import RegistrationSchemaBlock
     current_group_key = None
-    for index, block in enumerate(schema.schema['blocks']):
+    grouped_block_types = RegistrationSchemaBlock.INPUT_BLOCK_TYPES.union(
+        {'select-input-option', 'select-input-other'}
+    )
 
-        # registration_response_key and schema_block_group_key are unused
-        # for most block types and can/should be empty.
-        # registration_response_key gets explicitly filtered by isnull :/
-        block['registration_response_key'] = None
-        block['schema_block_group_key'] = ''
+    for index, block in enumerate(schema.schema['blocks']):
+        # Not all block types use all '*_text' fields, so provide an easy default
+        for optional_text_field in ['display_text', 'help_text', 'example_text']:
+            block[optional_text_field] = block.get(optional_text_field, '')
+
         block_type = block['block_type']
 
+        # Each 'question-label' generates a 'schema_block_group_key' that is inherited
+        # By all input and input-option blocks until the next question-label appears
         if block_type == 'question-label':
-            # This key will be used by input and option fields for this question
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
-        elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
-            block['registration_response_key'] = f'{schema.id}-{index}'
+        elif block_type in grouped_block_types:
             block['schema_block_group_key'] = current_group_key
-        elif block_type in ['select-input-option', 'select-input-other']:
-            block['schema_block_group_key'] = current_group_key
+        else:
+            block['schema_block_group_key'] = ''
+
+        # Input blocks define a 'registration_response_key', while it is NULL for all other blocks
+        # Either honor a provided key or auto-generate one based on the block's index
+        if block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
+            if not block.get('registration_response_key'):
+                block['registration_response_key'] = f'{schema.id}-{index}'
+        else:  # Ignore any improperly-supplied registration_response_key
+            block['registration_response_key'] = None
 
         RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,

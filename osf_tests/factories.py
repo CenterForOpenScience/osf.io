@@ -1189,6 +1189,6 @@ class SchemaResponseFactory(DjangoModelFactory):
                 object_id=registration.id,
                 content_type_id=ContentType.objects.get_for_model(registration)
             ).order_by('-created').first()
-            return SchemaResponse.create_from_previous_schema_response(initiator, previous_schema_response, justification)
+            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
         else:
-            return SchemaResponse.create_initial_responses(initiator, registration, schema, justification)
+            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)

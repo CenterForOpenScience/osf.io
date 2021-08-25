@@ -1,14 +1,28 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils import timezone
+from osf.models import RegistrationSchemaBlock
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.exceptions import SchemaResponseStateError
 
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
+    '''Collects responses for a schema associated with a parent object.
 
+    SchemaResponse manages to creation, surfacing, updating, and approval of
+    "responses" to the questions on a Registration schema (for example).
+
+    Individual answers are stored in SchemaResponseBlocks and aggregated here
+    via the response_blocks M2M relationship.
+
+    SchemaResponseBlocks can be shared across multiple SchemaResponses, but
+    each SchemaResponseBlock links to the SchemaResponse where it originated.
+    These are referenced on the SchemaResponse using the updated_response_blocks manager.
+    This allows SchemaResponses to also serve as a revision history when
+    users submit updates to the schema form on a given parent object.
+    '''
     schema = models.ForeignKey('osf.RegistrationSchema')
     response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
     initiator = models.ForeignKey('osf.OsfUser', null=False)
@@ -39,11 +53,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def updated_response_keys(self):
         '''Surfaces the keys of responses_blocks added in this revision.'''
         revised_keys = self.updated_response_blocks.values_list('schema_key', flat=True)
-        return list(revised_keys)
+        return set(revised_keys)
 
     @classmethod
-    def create_initial_responses(cls, initiator, parent, schema, justification=None):
-        from osf.models import RegistrationSchemaBlock, SchemaResponseBlock
+    def create_initial_response(cls, initiator, parent, schema, justification=None):
+        '''Create SchemaResponses and all initial SchemaResponseBlocks.
+
+        This should only be called the first time SchemaResponses are created for
+        a parent object. Every subsequent time new Responses are being created, they
+        should be based on existing responses to simplify diffing between versions.
+        '''
+        assert not parent.schema_responses.exists()
 
         assert not parent.schema_responses.exists(), \
             SchemaResponseStateError('Cannot use this method when schema response has parent.')
@@ -51,14 +71,13 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         #TODO: consider validation to ensure SchemaResponse aren't using a different
         # schema than a parent object
 
-        new_responses = cls(
+        new_response = cls(
             parent=parent,
             schema=schema,
             initiator=initiator,
-            revision_justification=justification or '',
-            submitted_timestamp=timezone.now()
+            revision_justification=justification or ''
         )
-        new_responses.save()
+        new_response.save()
 
         question_blocks = RegistrationSchemaBlock.objects.filter(
             schema=schema,
@@ -66,58 +85,80 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         for source_block in question_blocks:
             new_response_block = SchemaResponseBlock.objects.create(
-                source_schema_response=new_responses,
+                source_schema_response=new_response,
                 source_schema_block=source_block,
                 schema_key=source_block.registration_response_key,
                 response={},
             )
             new_response_block.save()
-            new_responses.response_blocks.add(new_response_block)
+            new_response.response_blocks.add(new_response_block)
 
-        return new_responses
+        return new_response
 
     @classmethod
-    def create_from_previous_schema_response(cls, initiator, previous_schema_response, justification=None):
-        '''Create a new SchemaResponse object referencing existing SchemaResponseBlocks.
+    def create_from_previous_response(cls, initiator, previous_response, justification=None):
+        '''Create SchemaResponses using existing SchemaResponses as a starting point.
 
-        New response blocks will be created as updated answers are proveded
+        On creation, the new SchemaResponses will share all of its response_blocks with the
+        previous_version (as no responses have changed). As responses are updated through the
+        new SchemaResponses, new SchemaResponseBlocks will be created/updated.
         '''
+
         # TODO confirm that no other non-Approved responses exist
-        new_responses = cls(
-            parent=previous_schema_response.parent,
-            schema=previous_schema_response.schema,
+        new_response = cls(
+            parent=previous_response.parent,
+            schema=previous_response.schema,
             initiator=initiator,
+            previous_response=previous_response,
             revision_justification=justification or ''
         )
-        new_responses.save()
-        new_responses.response_blocks.add(*previous_schema_response.response_blocks.all())
-
-        return new_responses
+        new_response.save()
+        new_response.response_blocks.add(*previous_response.response_blocks.all())
+        return new_response
 
     def update_responses(self, updated_responses):
-        '''
-        Args
-        updated_responses: All of the latest responses for the schema in JSON format
-           (i.e. what will be returned by self.revision_responses following this call)
+        '''Updates any response_blocks with keys listed in updated_responses
+
+        This will raise a ValueError at the end if any unsupported keys are encountered.
+        If you do not want any writes to persist if called with unsupported keys,
+        make sure to call in an atomic context.
         '''
         # TODO: Add check for state once that stuff is here
+
+        # make a local copy of the responses so we can pop with impunity
+        # no need for deepcopy, since we aren't mutating responses
+        updated_responses = dict(updated_responses)
+
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
-            try:
-                latest_response = updated_responses.pop(block.schema_key)
-            except KeyError:
-                raise ValueError(f'payload requires key: {block.schema_key}')
+            latest_response = updated_responses.pop(block.schema_key, None)
+            if latest_response is None or latest_response == block.response:
+                continue
 
-            if latest_response != block.response:
+            if not self._response_reverted(block, latest_response):
                 self._update_response(block, latest_response)
 
         if updated_responses:
             raise ValueError(f'Encountered unexpected keys: {", ".join(list(updated_responses.keys()))}')
 
+    def _response_reverted(self, current_block, latest_response):
+        '''Handle the case where an answer is reverted over the course of editing a Response.
+        '''
+        if not self.previous_response:
+            return False
+
+        previous_response_block = self.previous_response.response_blocks.get(
+            schema_key=current_block.schema_key
+        )
+        if latest_response != previous_response_block.response:
+            return False
+
+        current_block.delete()
+        self.response_blocks.add(previous_response_block)
+        return True
+
     def _update_response(self, current_block, latest_response):
         '''Create/update a SchemaResponseBlock with a new answer.'''
-        from osf.models import SchemaResponseBlock
-
         # Update the block in-place if it's already part of this revision
         if current_block.source_schema_response == self:
             current_block.response = latest_response
@@ -134,4 +175,3 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             revised_block.save()
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
-            self.save()  # is this needed?
