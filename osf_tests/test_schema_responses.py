@@ -256,29 +256,46 @@ class TestUpdateSchemaResponses():
         revised_response.update_responses({'q1': 'Jokes!'})
         revised_response.refresh_from_db()
         assert revised_response.response_blocks.get(schema_key='q1').id == updated_block.id
+        updated_block.refresh_from_db()
         assert updated_block.response == 'Jokes!'
 
     def test_update_without_change_is_noop(self, revised_response):
         original_block_ids = set(revised_response.response_blocks.values_list('id', flat=True))
-        revised_response.udpate_responses(INITIAL_SCHEMA_RESPONSES)
+        revised_response.update_responses(INITIAL_SCHEMA_RESPONSES)
 
         revised_response.refresh_from_db()
         updated_block_ids = set(revised_response.response_blocks.values_list('id', flat=True))
         assert updated_block_ids == original_block_ids
         assert not revised_response.updated_response_keys
 
+    def test_revert_updated_response(self, revised_response):
+        original_block = revised_response.response_blocks.get(schema_key='q1')
+        revised_response.update_responses({'q1': 'whoops'})
+
+        revised_response.refresh_from_db()
+        updated_block = revised_response.response_blocks.get(schema_key='q1')
+
+        revised_response.update_responses({'q1': INITIAL_SCHEMA_RESPONSES['q1']})
+        revised_response.refresh_from_db()
+
+        assert revised_response.response_blocks.get(schema_key='q1') == original_block
+        assert not SchemaResponseBlock.objects.filter(id=updated_block.id).exists()
+        assert 'q1' not in revised_response.updated_response_keys
+
     def test_update_with_mixed_modalities(self, revised_response):
         original_q2_block = revised_response.response_blocks.get(schema_key='q2')
         original_q3_block = revised_response.response_blocks.get(schema_key='q3')
+        original_q4_block = revised_response.response_blocks.get(schema_key='q4')
 
-        revised_response.update_responses({'q1': 'Heeyo'})
+        revised_response.update_responses({'q1': 'Heeyo', 'q4': ['D', 'E', 'F', 'G']})
         revised_response.refresh_from_db()
         updated_q1_block = revised_response.response_blocks.get(schema_key='q1')
 
         updated_responses = {
             'q1': 'Hello there',
             'q2': 'This is a new response',
-            'q3': INITIAL_SCHEMA_RESPONSES['q3']
+            'q3': INITIAL_SCHEMA_RESPONSES['q3'],
+            'q4': INITIAL_SCHEMA_RESPONSES['q4']
         }
         revised_response.update_responses(updated_responses)
         revised_response.refresh_from_db()
@@ -286,9 +303,25 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q1').id == updated_q1_block.id
         assert revised_response.response_blocks.get(schema_key='q2').id != original_q2_block.id
         assert revised_response.response_blocks.get(schema_key='q3').id == original_q3_block.id
+        assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
-    def test_revert_updated_response(self, revised_response):
-        pass
+    def test_update_with_unsupported_key_raises(self, initial_response):
+        with assert_raises(ValueError):
+            initial_response.update_responses({'q7': 'sneaky'})
 
-    def test_reverted_update_surfaced_by_revised_response_keys_property(self, revised_response):
-        pass
+    @pytest.mark.parametrize(
+        'updated_responses',
+        [
+            {'q1': 'New Answer', 'q2': 'Another one', 'q7': 'Wrong key at end'},
+            {'q7': 'Wrong key first', 'q1': 'New Answer', 'q2': 'Another one'},
+            {'q1': 'New Answer', 'q7': 'Wrong key in the middle', 'q2': 'Another one'}
+        ]
+    )
+    def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
+            self, updated_responses, initial_response):
+        with assert_raises(ValueError):
+            initial_response.update_responses(updated_responses)
+
+        initial_response.refresh_from_db()
+        assert initial_response.all_responses['q1'] == updated_responses['q1']
+        assert initial_response.all_responses['q2'] == updated_responses['q2']

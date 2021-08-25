@@ -112,24 +112,45 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         return new_response
 
     def update_responses(self, updated_responses):
-        '''
-        Args
-        updated_responses: All of the latest responses for the schema in JSON format
-           (i.e. what will be returned by self.revision_responses following this call)
+        '''Updates any response_blocks with keys listed in updated_responses
+
+        This will raise a ValueError at the end if any unsupported keys are encountered.
+        If you do not want any writes to persist if called with unsupported keys,
+        make sure to call in an atomic context.
         '''
         # TODO: Add check for state once that stuff is here
-        # TODO: Handle the case where an updated response is reverted
+
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating responses
         updated_responses = dict(updated_responses)
+
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
-            if latest_response is not None and latest_response != block.response:
+            if latest_response is None or latest_response == block.response:
+                continue
+
+            if not self._response_reverted(block, latest_response):
                 self._update_response(block, latest_response)
 
         if updated_responses:
             raise ValueError(f'Encountered unexpected keys: {updated_responses.keys()}')
+
+    def _response_reverted(self, current_block, latest_response):
+        '''Handle the case where an answer is reverted over the course of editing a Response.
+        '''
+        if not self.previous_response:
+            return False
+
+        previous_response_block = self.previous_response.response_blocks.get(
+            schema_key=current_block.schema_key
+        )
+        if latest_response != previous_response_block.response:
+            return False
+
+        current_block.delete()
+        self.response_blocks.add(previous_response_block)
+        return True
 
     def _update_response(self, current_block, latest_response):
         '''Create/update a SchemaResponseBlock with a new answer.'''
