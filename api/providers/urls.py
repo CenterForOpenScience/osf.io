@@ -62,7 +62,6 @@ urlpatterns = [
                     url(r'^(?P<provider_id>\w+)/actions/$', views.RegistrationProviderActionList.as_view(), name=views.RegistrationProviderActionList.view_name),
                     url(r'^(?P<provider_id>\w+)/moderators/$', views.RegistrationProviderModeratorsList.as_view(), name=views.RegistrationProviderModeratorsList.view_name),
                     url(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.RegistrationProviderModeratorsDetail.as_view(), name=views.RegistrationProviderModeratorsDetail.view_name),
-                    url(r'^(?P<provider_id>\w+)/upload_csv/(?P<filename>\w+.(csv))/$', views.RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
                 ], 'registrations',
             ),
             namespace='registration-providers',

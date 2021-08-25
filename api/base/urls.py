@@ -5,6 +5,7 @@ from django.views.generic.base import RedirectView
 from api.base import views
 from api.base import settings
 from api.base import versioning
+from api.providers.views import RegistrationBulkCreate
 
 default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK['DEFAULT_VERSION'])
 
@@ -23,6 +24,7 @@ urlpatterns = [
                 url(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
                 url(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
                 url(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
+                url(r'^registries/(?P<provider_id>\w+)/bulk_create/(?P<filename>\w+.(csv))/$', RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
             ],
         ),
     ),
