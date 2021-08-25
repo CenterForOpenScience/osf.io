@@ -10,8 +10,7 @@ from osf.utils.fields import NonNaiveDateTimeField
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
-<<<<<<< HEAD
-    SchemaResponses manages to creation, surfacing, updating, and approval of
+    SchemaResponse manages to creation, surfacing, updating, and approval of
     "responses" to the questions on a Registration schema (for example).
 
     Individual answers are stored in SchemaResponseBlocks and aggregated here
@@ -19,7 +18,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     SchemaResponseBlocks can be shared across multiple SchemaResponses, but
     each SchemaResponseBlock links to the SchemaResponse where it originated.
-    These are referenced on the SchemaResponses using the revised_response_blocks manager.
+    These are referenced on the SchemaResponse using the updated_response_blocks manager.
     This allows SchemaResponses to also serve as a revision history when
     users submit updates to the schema form on a given parent object.
     '''
@@ -56,7 +55,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         return list(revised_keys)
 
     @classmethod
-    def create_initial_responses(cls, initiator, parent, schema, justification=None):
+    def create_initial_response(cls, initiator, parent, schema, justification=None):
         '''Create SchemaResponses and all initial SchemaResponseBlocks.
 
         This should only be called the first time SchemaResponses are created for
@@ -68,13 +67,13 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         #TODO: consider validation to ensure SchemaResponses aren't using a different
         # schema than a parent object
 
-        new_responses = cls(
+        new_response = cls(
             parent=parent,
             schema=schema,
             initiator=initiator,
             revision_justification=justification or ''
         )
-        new_responses.save()
+        new_response.save()
 
         question_blocks = RegistrationSchemaBlock.objects.filter(
             schema=schema,
@@ -82,17 +81,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         for source_block in question_blocks:
             new_response_block = SchemaResponseBlock.objects.create(
-                source_revision=new_responses,
-                source_block=source_block,
+                source_schema_response=new_response,
+                source_schema_block=source_block,
                 schema_key=source_block.registration_response_key,
             )
             new_response_block.save()
-            new_responses.response_blocks.add(new_response_block)
+            new_response.response_blocks.add(new_response_block)
 
-        return new_responses
+        return new_response
 
     @classmethod
-    def create_from_previous_responses(cls, initiator, previous_responses, justification=None):
+    def create_from_previous_response(cls, initiator, previous_response, justification=None):
         '''Create SchemaResponses using existing SchemaResponses as a starting point.
 
         On creation, the new SchemaResponses will share all of its response_blocks with the
@@ -101,15 +100,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
 
         # TODO confirm that no other non-Approved responses exist
-        new_responses = cls(
-            parent=previous_responses.parent,
-            schema=previous_responses.schema,
+        new_response = cls(
+            parent=previous_response.parent,
+            schema=previous_response.schema,
             initiator=initiator,
+            previous_response=previous_response,
             revision_justification=justification or ''
         )
-        new_responses.save()
-        new_responses.response_blocks.add(*previous_responses.response_blocks.all())
-        return new_responses
+        new_response.save()
+        new_response.response_blocks.add(*previous_response.response_blocks.all())
+        return new_response
 
     def update_responses(self, updated_responses):
         '''
@@ -131,14 +131,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _update_response(self, current_block, latest_response):
         '''Create/update a SchemaResponseBlock with a new answer.'''
         # Update the block in-place if it's already part of this revision
-        if current_block.source_revision == self:
+        if current_block.source_schema_response == self:
             current_block.response = latest_response
             current_block.save()
         # Otherwise, create a new block and swap out the entries in response_blocks
         else:
             revised_block = SchemaResponseBlock.objects.create(
-                source_revision=self,
-                source_block=current_block.source_block,
+                source_schema_response=self,
+                source_schema_block=current_block.source_schema_block,
                 schema_key=current_block.schema_key,
                 respone=latest_response
             )
