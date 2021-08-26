@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib.auth.models import Group
-#from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.models import ContentType
 from django.db import migrations
 from django.db.models import Func, Value, F, Q
 from django.core.management.sql import emit_post_migrate_signal
@@ -13,7 +13,6 @@ from bulk_update.helper import bulk_update
 logger = logging.getLogger(__name__)
 
 def reverse_func(apps, schema_editor):
-    ContentType = apps.get_model('contenttypes', 'ContentType')
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     PreprintTags = apps.get_model('osf', 'Preprint_Tags')
     NodeSettings = apps.get_model('addons_osfstorage', 'NodeSettings')
