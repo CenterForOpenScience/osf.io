@@ -21,7 +21,7 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint
+from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint, Guid, Comment
 from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
@@ -933,99 +933,6 @@ class FileRelationshipField(RelationshipField):
         return super(FileRelationshipField, self).get_url(obj, view_name, request, format)
 
 
-class TargetField(ser.Field):
-    """
-    Field that returns a nested dict with the url (constructed based
-    on the object's type), optional meta information, and link_type.
-
-    Example:
-
-        target = TargetField(link_type='related', meta={'type': 'get_target_type'})
-
-    """
-    json_api_link = True  # serializes to a links object
-    view_map = {
-        'node': {
-            'view': 'nodes:node-detail',
-            'lookup_kwarg': 'node_id',
-        },
-        'preprint': {
-            'view': 'preprints:preprint-detail',
-            'lookup_kwarg': 'preprint_id',
-        },
-        'draft-node': {
-            'view': 'draft_nodes:node-detail',
-            'lookup_kwarg': 'node_id',
-        },
-        'comment': {
-            'view': 'comments:comment-detail',
-            'lookup_kwarg': 'comment_id',
-        },
-        'nodewikipage': {
-            'view': None,
-            'lookup_kwarg': None,
-        },
-    }
-
-    def __init__(self, **kwargs):
-        self.meta = kwargs.pop('meta', {})
-        self.link_type = kwargs.pop('link_type', 'url')
-        super(TargetField, self).__init__(read_only=True, **kwargs)
-
-    def resolve(self, resource, field_name, request):
-        """
-        Resolves the view for target node or target comment when embedding.
-        """
-        view_info = self.view_map.get(resource.target.referent._name, None)
-        if not view_info:
-            raise api_exceptions.TargetNotSupportedError('{} is not a supported target type'.format(
-                resource.target._name,
-            ))
-        if not view_info['view']:
-            return None, None, None
-        embed_value = resource.target._id
-
-        return resolve(
-            reverse(
-                view_info['view'],
-                kwargs={
-                    view_info['lookup_kwarg']: embed_value,
-                    'version': request.parser_context['kwargs']['version'],
-                },
-            ),
-        )
-
-    def to_esi_representation(self, value, envelope='data'):
-        href = value.get_absolute_url()
-
-        if href:
-            esi_url = utils.extend_querystring_params(href, dict(envelope=[envelope, ], format=['jsonapi', ]))
-            return '<esi:include src="{}"/>'.format(esi_url)
-        return self.to_representation(value)
-
-    def to_representation(self, value):
-        """
-        Returns nested dictionary in format {'links': {'self.link_type': ... }
-
-        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
-        """
-        meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
-        obj = getattr(value, 'referent', value)
-        return {
-            'links': {
-                self.link_type: {
-                    'href': obj.get_absolute_url(),
-                    'meta': meta,
-                },
-            },
-            'data': {
-                'type': meta['type'],
-                'id': obj._id,
-            },
-        }
-
-
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
@@ -1237,10 +1144,45 @@ class GenericRelationshipField(RelationshipField):
     )
 
     """
+    def __init__(self, *args, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        super().__init__(*args, **kwargs)
 
     def _handle_callable_view(self, obj, view_func):
         assert callable(view_func), f'{view_func} must be callable for a {self.__class__.__name__}'
         return view_func(obj)
+
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        if not self.meta:
+            return super().to_representation(value)
+
+        meta = functional.rapply(self.meta, _url_val, obj=value, serializer=self.parent, request=self.context['request'])
+
+        if isinstance(value, Guid):
+            value = value.referent
+
+        if hasattr(value, 'root_target'):  # probably a Comment
+            value = value.root_target.referent
+
+        return {
+            'links': {
+                'related': {
+                    'href': value.get_absolute_url(),
+                    'meta': meta,
+                },
+            },
+            'data': {
+                'type': meta['type'],
+                'id': value._id,
+            },
+        }
 
 
 class NodeFileHyperLinkField(RelatedLambdaRelationshipField):
