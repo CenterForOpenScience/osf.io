@@ -168,7 +168,7 @@ class GitHubClient(object):
             resp = self.gh3._get(
                 url,
                 headers={
-                    'Authorization': f'token {self.access_token}',
+                    'Authorization': 'token {}'.format(self.access_token),
                     'Accept': 'application/vnd.github.v3+json'
                 },
             )
