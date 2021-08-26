@@ -79,7 +79,7 @@ from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 
-from api.schema_responses.serializers import SchemaResponseListSerializer
+from api.schema_responses.serializers import SchemaResponseRegistrationParentSerializer
 
 
 class RegistrationMixin(NodeMixin):
@@ -872,7 +872,7 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
     view_category = 'schema-responses'
     view_name = 'schema-responses-list'
 
-    serializer_class = SchemaResponseListSerializer
+    serializer_class = SchemaResponseRegistrationParentSerializer
 
     def get_object(self):
         return self.get_node()

@@ -1,5 +1,5 @@
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, GenericRelationshipField
+from api.base.serializers import JSONAPISerializer, LinksField
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -15,7 +15,7 @@ from osf.models import (
 )
 
 
-class SchemaResponseSerializer(JSONAPISerializer):
+class SchemaResponseRegistrationParentSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'date_created',
         'date_modified',
@@ -28,6 +28,7 @@ class SchemaResponseSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', required=False, allow_null=True)
     date_created = VersionedDateTimeField(source='created', required=False)
+    date_submittted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
@@ -47,21 +48,10 @@ class SchemaResponseSerializer(JSONAPISerializer):
         },
     )
 
-    parent = GenericRelationshipField(
-        related_view=(
-            lambda object: {
-                'osf.registration': 'registrations:registration-detail',
-                'osf.node': 'nodes:node-detail',
-                'osf.preprint': 'preprints:preprint-detail',
-            }[object.parent.type]
-        ),
-        related_view_kwargs=(
-            lambda object: {
-                'osf.registration': {'node_id': '<parent._id>'},
-                'osf.node': {'node_id': '<parent._id>'},
-                'osf.preprint': {'preprint_id': '<parent._id>'},
-            }[object.parent.type]
-        ),
+    registration = RelationshipField(
+        related_view='registrations:registration-detail',
+        related_view_kwargs={'node_id': '<parent._id>'},
+        read_only=True,
         required=False,
     )
 
@@ -96,9 +86,6 @@ class SchemaResponseSerializer(JSONAPISerializer):
         # TBD
         return False
 
-
-class SchemaResponseListSerializer(SchemaResponseSerializer):
-
     def create(self, validated_data):
         registration = Registration.load(validated_data.pop('_id'))
 
@@ -125,9 +112,6 @@ class SchemaResponseListSerializer(SchemaResponseSerializer):
             )
 
         return schema_response
-
-
-class SchemaResponseDetailSerializer(SchemaResponseSerializer):
 
     def update(self, schema_response, validated_data):
         schema_responses = validated_data.get('revision_response')

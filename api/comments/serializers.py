@@ -11,11 +11,11 @@ from api.base.utils import absolute_reverse
 from api.base.settings import osf_settings
 from api.base.serializers import (
     JSONAPISerializer,
+    TargetField,
     RelationshipField,
     IDField, TypeField, LinksField,
     AnonymizedRegexField,
     VersionedDateTimeField,
-    GenericRelationshipField,
 )
 from api.base.versioning import get_kebab_snake_case_field
 
@@ -42,6 +42,7 @@ class CommentSerializer(JSONAPISerializer):
     content = AnonymizedRegexField(source='get_content', regex=r'\[@[^\]]*\]\([^\) ]*\)', replace='@A User', required=True)
     page = ser.CharField(read_only=True)
 
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
     user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': '<user._id>'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': '<_id>'})
 
@@ -57,29 +58,6 @@ class CommentSerializer(JSONAPISerializer):
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
-
-    target = GenericRelationshipField(
-        related_view=(
-            lambda obj:  {
-                'node': 'nodes:node-detail',
-                'preprint':  'preprints:preprint-detail',
-                'draftnode':  'draft_nodes:draft-node-detail',
-                'comment': 'comments:comment-detail',
-                'nodewikipage': None,
-            }[obj._meta.model_name]
-        ),
-        related_view_kwargs=(
-            lambda obj: {
-                'registration': {'node_id': '<target._id>'},
-                'node': {'node_id': '<target._id>'},
-                'preprint': {'preprint_id': '<target._id>'},
-                'draftnode':  {'node_id': '<target._id>'},
-                'comment': {'comment_id': '<target._id>'},
-                'nodewikipage': {None: '<target._id>'},
-            }[obj._meta.model_name]
-        ),
-        meta={'type': 'get_target_type'},
-    )
 
     class Meta:
         type_ = 'comments'
@@ -143,17 +121,12 @@ class CommentSerializer(JSONAPISerializer):
         return comment
 
     def get_target_type(self, obj):
-        if isinstance(obj, Guid):
-            obj = obj.referent
-        if isinstance(obj, Comment):
-            obj = obj.root_target.referent
-
-        if not getattr(obj, 'target_type', None):
+        if not getattr(obj.referent, 'target_type', None):
             raise InvalidModelValueError(
                 source={'pointer': '/data/relationships/target/links/related/meta/type'},
-                detail=f'Invalid comment target type for: {obj}',
+                detail='Invalid comment target type.',
             )
-        return obj.target_type
+        return obj.referent.target_type
 
     def sanitize_data(self):
         ret = super(CommentSerializer, self).sanitize_data()

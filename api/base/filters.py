@@ -11,7 +11,7 @@ from api.base.exceptions import (
     InvalidFilterMatchType, InvalidFilterOperator,
     InvalidFilterValue,
 )
-from api.base.serializers import RelationshipField, ShowIfVersion, GenericRelationshipField
+from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
 from django.db.models import QuerySet as DjangoQuerySet
@@ -136,7 +136,7 @@ class FilterMixin(object):
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
     LIST_FIELDS = (ser.ListField, )
-    RELATIONSHIP_FIELDS = (RelationshipField, )
+    RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
