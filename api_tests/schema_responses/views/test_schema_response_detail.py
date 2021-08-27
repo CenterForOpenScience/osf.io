@@ -3,11 +3,11 @@ import pytest
 from osf_tests.factories import (
     SchemaResponseFactory,
     RegistrationFactory,
-    RegistrationSchemaFactory,
     AuthUserFactory
 )
 
 from osf.models import SchemaResponse
+from osf_tests.utils import DEFAULT_TEST_SCHEMA
 
 
 @pytest.mark.django_db
@@ -18,12 +18,8 @@ class TestSchemaResponseDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def schema(self):
-        return RegistrationSchemaFactory(name='test schema')
-
-    @pytest.fixture()
-    def node(self, schema):
-        return RegistrationFactory(schema=schema)
+    def node(self):
+        return RegistrationFactory()
 
     @pytest.fixture()
     def payload(self, node):
@@ -76,7 +72,14 @@ class TestSchemaResponseDetail:
         data = resp.json['data']
         assert data['id'] == schema_response._id
         assert data['attributes']['revision_justification'] == schema_response.revision_justification
-        assert data['attributes']['revision_response'] == [{'q1': {}}, {'q2': {}}]
+        assert data['attributes']['revision_responses'] == [
+            {'q1': {}},
+            {'q2': {}},
+            {'q3': {}},
+            {'q4': {}},
+            {'q5': {}},
+            {'q6': {}},
+        ]
 
         schema_response.parent.remove_permission(user, 'read', save=True)
         schema_response.parent.is_public = True
@@ -99,7 +102,11 @@ class TestSchemaResponseDetail:
         assert data['id'] == schema_response._id
 
         schema_response.refresh_from_db()
-        assert schema_response.response_blocks.count() == 2
+        assert schema_response.response_blocks.count() == len(
+            [
+               block for block in DEFAULT_TEST_SCHEMA['blocks'] if block.get('registration_response_key')
+            ]
+        )
         block = schema_response.response_blocks.first()
         assert block.schema_key == 'q1'
         assert block.response == {'value': 'update value'}

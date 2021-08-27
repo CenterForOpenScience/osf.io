@@ -16,22 +16,18 @@ class TestSchemaResponseList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def schema(self):
-        return RegistrationSchemaFactory()
+    def registration(self):
+        return RegistrationFactory()
 
     @pytest.fixture()
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture()
-    def schema_response(self, user, registration, schema):
+    def schema_response(self, user, registration):
         return SchemaResponseFactory(
             registration=registration,
             initiator=registration.creator,
         )
 
     @pytest.fixture()
-    def schema_response2(self, registration, schema):
+    def schema_response2(self, registration):
         return SchemaResponseFactory(
             registration=registration,
             initiator=registration.creator,

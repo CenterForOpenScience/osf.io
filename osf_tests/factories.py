@@ -1177,12 +1177,16 @@ class SchemaResponseFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         from django.contrib.contenttypes.models import ContentType
+        from osf_tests.utils import get_default_test_schema
 
         SchemaResponse = models.SchemaResponse
         justification = kwargs.get('revision_justification')
         initiator = kwargs.get('initiator')
         registration = kwargs.get('registration')
-        schema = registration.registered_schema.get()
+        schema = get_default_test_schema()
+
+        registration.registered_schema.clear()
+        registration.registered_schema.add(schema)
 
         if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=ContentType.objects.get_for_model(registration)).exists():
             previous_schema_response = SchemaResponse.objects.filter(

@@ -154,13 +154,12 @@ class AdminContributorOrPublic(permissions.BasePermission):
 class SchemaResponseViewPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_responses` endpoints.
+    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
+    deleting.
     '''
     acceptable_models = (AbstractNode, )
 
     def has_object_permission(self, request, view, obj):
-        """
-        To make changes, user must be an admin contributor. Admin group membership is not sufficient.
-        """
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
