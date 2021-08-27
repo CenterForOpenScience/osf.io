@@ -163,7 +163,6 @@ class GitHubClient(object):
         :rtype:
             bool
         """
-        p = self.gh3.session.params
         if self.access_token:
             url = self.gh3._build_url('user')
             resp = self.gh3._get(
