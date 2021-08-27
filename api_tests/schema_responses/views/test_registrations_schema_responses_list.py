@@ -3,7 +3,6 @@ import pytest
 from osf_tests.factories import (
     SchemaResponseFactory,
     RegistrationFactory,
-    RegistrationSchemaFactory,
     AuthUserFactory,
 )
 

@@ -102,11 +102,9 @@ class TestSchemaResponseDetail:
         assert data['id'] == schema_response._id
 
         schema_response.refresh_from_db()
-        assert schema_response.response_blocks.count() == len(
-            [
-               block for block in DEFAULT_TEST_SCHEMA['blocks'] if block.get('registration_response_key')
-            ]
-        )
+        assert schema_response.response_blocks.count() == len([
+            block for block in DEFAULT_TEST_SCHEMA['blocks'] if block.get('registration_response_key')
+        ])
         block = schema_response.response_blocks.first()
         assert block.schema_key == 'q1'
         assert block.response == {'value': 'update value'}
