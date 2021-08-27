@@ -42,7 +42,6 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         else:
             raise NotImplementedError()
 
-
     def get_object(self):
         return SchemaResponse.objects.get(_id=self.kwargs['schema_response_id'])
 
