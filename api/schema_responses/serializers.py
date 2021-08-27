@@ -71,7 +71,7 @@ class SchemaResponseRegistrationParentSerializer(JSONAPISerializer):
     )
 
     class Meta:
-        type_ = 'schema-responses'
+        type_ = 'revisions'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
