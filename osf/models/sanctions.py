@@ -128,6 +128,13 @@ class Sanction(ObjectIDMixin, BaseModel):
 
     @property
     def revisable(self):
+        '''Controls state machine flow on a 'reject' trigger.
+
+        True -> IN_PROGRESS
+        False -> [MODERATOR_]REJECTED
+
+        Sanctions do not represent a revisable entity, so return False
+        '''
         return False
 
     # The Sanction object will also inherit the following functions from the SanctionStateMachine:

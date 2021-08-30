@@ -106,6 +106,20 @@ INSTITUTIONS = {
                 'delegation_protocol': '',
             },
             {
+                '_id': 'albion',
+                'name': 'Albion College',
+                'description': 'This site is provided as a partnership between Albion College\'s Office of the President, the Carnegie Foundation for the Advancement of Teaching, and the U.S. National Advisory Committee for the Carnegie Elective Classification for Community Engagement. Projects must abide by <a href="https://web.albion.edu/student-life/information-technology/support/it-policies">Albion\'s Information Security Policies</a> | <a href="https://web.albion.edu/student-life/information-technology/about-it">Albion Information Technology</a>. Learn more about <a href="https://public-purpose.org/research/access-for-researchers/">the Public Purpose Institute and its commitment to data access</a>.',
+                'banner_name': 'albion-banner.png',
+                'logo_name': 'albion-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('ethos01w.albion.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'asu',
                 'name': 'Arizona State University',
                 'description': '<a href="https://asu.edu">Arizona State University</a>',
@@ -1034,6 +1048,20 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['a2jlab.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'albion',
+                'name': 'Albion College [Test]',
+                'description': 'This site is provided as a partnership between Albion College\'s Office of the President, the Carnegie Foundation for the Advancement of Teaching, and the U.S. National Advisory Committee for the Carnegie Elective Classification for Community Engagement. Projects must abide by <a href="https://web.albion.edu/student-life/information-technology/support/it-policies">Albion\'s Information Security Policies</a> | <a href="https://web.albion.edu/student-life/information-technology/about-it">Albion Information Technology</a>. Learn more about <a href="https://public-purpose.org/research/access-for-researchers/">the Public Purpose Institute and its commitment to data access</a>.',
+                'banner_name': 'albion-banner.png',
+                'logo_name': 'albion-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(
+                    encode_uri_component('ethos01w.albion.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(
+                    encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-ablbion.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'asu',

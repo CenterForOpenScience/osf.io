@@ -325,12 +325,6 @@ class ApprovalsMachine(Machine):
     model with the 'model' kwarg. Attached models will inherit the 'trigger' functions named in
     the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
 
-    Attached models must define the calbacks used by the ApprvalsMachine:
-    * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
-    * revisable: Determines what transiition to follow on a 'reject' trigger
-    * `_on_submit', '_on_approve', '_on_accept', and '_on_reject': Define any custom per-trigger logic
-    * _save_transition': Defines any global, post-transition logic
-
     These trigger functions will, in order,
     1) Call any 'prepare_event' functions defined on the StateMachine (see __init__)
     2) Call Sanction member functions listed in the 'conditions' key of the dictionary
@@ -338,12 +332,17 @@ class ApprovalsMachine(Machine):
     4) Update the state field of the Sanction object via the approval_stage setter
     5) Call Sanction member functions listed in the 'after' key of the dictionary
 
+    Attached models must define the calbacks used by the ApprvalsMachine:
+    * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
+    * revisable: Determines what transiition to follow on a 'reject' trigger
+    * `_on_submit', '_on_approve', '_on_complete', and '_on_reject': Define any custom per-trigger logic
+    * _save_transition': Defines any global, post-transition logic
+
     If any step fails, the whole transition will fail and the Sanction's
     approval_stage will be rolled back.
 
-    SanctionStateMachine also provides some extra functionality to write
-    RegistrationActions on events moving in to or out of Moderated machine states
-    as well as to provide custom error messages on unsupported state changes.
+    ApprovalsMachine also provides some extra functionality to  provide custom
+    error messages on certain unsupported state changes.
     '''
 
     def __init__(self, model, active_state, state_property_name):
@@ -382,20 +381,3 @@ class ApprovalsMachine(Machine):
                 raise e
 
             raise MachineError(error_message)
-
-    def _save_transition(self, event_data):
-        """Recored the effects of a state transition in the database."""
-        self.save()
-        new_state = event_data.transition.dest
-        # No need to update registration state with no sanction state change
-        if new_state is None:
-            return
-
-        user = event_data.kwargs.get('user')
-        if user is None and event_data.kwargs:
-            user = event_data.args[0]
-        comment = event_data.kwargs.get('comment', '')
-        if new_state == ApprovalStates.PENDING_MODERATION.name:
-            user = None  # Don't worry about the particular user who gave final approval
-
-        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
