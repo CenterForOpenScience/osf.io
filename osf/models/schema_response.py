@@ -106,8 +106,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         a parent object. Every subsequent time new Responses are being created, they
         should be based on existing responses to simplify diffing between versions.
         '''
-        assert not parent.schema_responses.exists()
-
         assert not parent.schema_responses.exists(), \
             SchemaResponseStateError('Cannot use this method when schema response has parent.')
 

@@ -28,7 +28,6 @@ from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
     Embargo,
     EmbargoTerminationApproval,
-    DraftRegistrationApproval,
     DraftRegistrationContributor,
     Node,
     OSFUser,
@@ -1327,6 +1326,23 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 self.add_permission(contrib.user, permission, save=True)
         DraftRegistrationContributor.objects.bulk_create(contribs)
 
+    def copy_into_schema_response(self, resource):
+        """Copies registration metadata into schema responses"""
+        from osf.models.schema_response import SchemaResponse
+
+        schema_response = SchemaResponse.create_initial_response(
+            resource.creator,
+            resource,
+            resource.registered_schema.get()
+        )
+
+        for key, value in resource.registration_responses.items():
+            schema_response.response_blocks.filter(
+                key=key
+            ).update(
+                response=value
+            )
+
     def update_metadata(self, metadata):
         changes = []
         # Prevent comments on approved drafts
@@ -1375,16 +1391,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             for upload in registration_responses.get('uploader', []):
                 upload['file_name'] = html.unescape(upload['file_name'])
         return registration_responses
-
-    def submit_for_review(self, initiated_by, meta, save=False):
-        approval = DraftRegistrationApproval(
-            meta=meta
-        )
-        approval.save()
-        self.approval = approval
-        self.add_status_log(initiated_by, DraftRegistrationLog.SUBMITTED)
-        if save:
-            self.save()
 
     def register(self, auth, save=False, child_ids=None):
         node = self.branched_from

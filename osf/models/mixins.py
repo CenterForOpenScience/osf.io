@@ -2251,7 +2251,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
+    def copy_editable_fields(self, resource, alternative_resource=None, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2270,6 +2270,9 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         self.copy_contributors_from(resource)
         # Copy unclaimed records for unregistered users
         self.copy_unclaimed_records(resource)
+
+        # Copy draft metadata intp schema responses
+        self.copy_into_schema_response(resource)
 
         self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
         self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))
