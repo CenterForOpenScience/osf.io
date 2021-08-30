@@ -1425,6 +1425,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Sets registration_metadata and registration_responses
         registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
+        registered.copy_into_schema_response()
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)

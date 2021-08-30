@@ -14,12 +14,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='schemaresponses',
+            model_name='schemaresponse',
             name='pending_approvers',
             field=models.ManyToManyField(related_name='pending_submissions', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name='schemaresponses',
+            model_name='schemaresponse',
             name='reviews_state',
             field=models.CharField(choices=[('undefined', 'Undefined'), ('unapproved', 'Unapproved'), ('pending_moderation', 'PendingModeration'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('moderator_rejected', 'ModeratorRejected'), ('completed', 'Completed'), ('in_progress', 'InProgress')], default='in_progress', max_length=255),
         ),

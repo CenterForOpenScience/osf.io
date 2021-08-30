@@ -37,10 +37,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     revision_responses = ser.SerializerMethodField()
 
     def get_revision_responses(self, obj):
-        data = []
-        for response_block in obj.response_blocks.all():
-            data.append({response_block.schema_key: response_block.response})
-        return data
+        return obj.all_responses
 
     links = LinksField(
         {
@@ -57,7 +54,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<parent.registered_schema_id>'},
+        related_view_kwargs={'schema_id': '<parent.schema>'},
         read_only=True,
         required=False,
     )
@@ -90,14 +87,14 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         registration = Registration.load(validated_data.pop('_id'))
 
         try:
-            schema = registration.registered_schema.get()
+            schema = registration.registration_schema
         except RegistrationSchema.DoesNotExist:
             raise exceptions.ValidationError(f'Resource {registration._id} must have schema')
 
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        if registration.schema_responses.exists():
+        if not registration.schema_response.exists():
             schema_response = SchemaResponse.create_initial_response(
                 initiator=initiator,
                 parent=registration,
@@ -114,10 +111,10 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return schema_response
 
     def update(self, schema_response, validated_data):
-        schema_responses = validated_data.get('revision_response')
+        revision_response = validated_data.get('revision_response')
 
         try:
-            schema_response.update_responses(schema_responses)
+            schema_response.update_responses(revision_response)
         except ValueError as exc:
             raise exceptions.ValidationError(detail=str(exc))
 

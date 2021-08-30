@@ -200,6 +200,11 @@ class Registration(AbstractNode):
             return self.registered_schema.first()
         return None
 
+    @property
+    def schema_responses(self):
+        from osf.models import SchemaResponse
+        return SchemaResponse.objects.filter(parent=self)
+
     def get_registration_metadata(self, schema):
         # Overrides RegistrationResponseMixin
         registered_meta = self.registered_meta or {}
@@ -1325,23 +1330,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 contribs.append(new_contrib)
                 self.add_permission(contrib.user, permission, save=True)
         DraftRegistrationContributor.objects.bulk_create(contribs)
-
-    def copy_into_schema_response(self, resource):
-        """Copies registration metadata into schema responses"""
-        from osf.models.schema_response import SchemaResponse
-
-        schema_response = SchemaResponse.create_initial_response(
-            resource.creator,
-            resource,
-            resource.registered_schema.get()
-        )
-
-        for key, value in resource.registration_responses.items():
-            schema_response.response_blocks.filter(
-                key=key
-            ).update(
-                response=value
-            )
 
     def update_metadata(self, metadata):
         changes = []

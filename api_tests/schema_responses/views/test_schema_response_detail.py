@@ -1,7 +1,6 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponseFactory,
     RegistrationFactory,
     AuthUserFactory
 )
@@ -18,11 +17,11 @@ class TestSchemaResponseDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def node(self):
-        return RegistrationFactory()
+    def registration(self, user):
+        return RegistrationFactory(creator=user)
 
     @pytest.fixture()
-    def payload(self, node):
+    def payload(self):
         return {
             'data': {
                 'type': 'schema-responses',
@@ -36,7 +35,7 @@ class TestSchemaResponseDetail:
         }
 
     @pytest.fixture()
-    def invalid_payload(self, node):
+    def invalid_payload(self):
         return {
             'data': {
                 'type': 'schema-responses',
@@ -50,52 +49,32 @@ class TestSchemaResponseDetail:
         }
 
     @pytest.fixture()
-    def schema_response(self, node):
-        schema_response = SchemaResponseFactory(
-            registration=node,
-            initiator=node.creator,
-            revision_justification='test justification',
-        )
-        return schema_response
-
-    @pytest.fixture()
-    def url(self, schema_response):
+    def url(self, registration):
+        schema_response = registration.schema_responses.last()
         return f'/v2/schema_responses/{schema_response._id}/'
 
-    def test_schema_response_detail(self, app, schema_response, user, url):
-        resp = app.get(url, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
+    def test_schema_response_detail(self, app, registration, user, url):
+        schema_response = registration.schema_responses.get()
 
-        schema_response.parent.add_contributor(user, 'read')
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == schema_response._id
         assert data['attributes']['revision_justification'] == schema_response.revision_justification
-        assert data['attributes']['revision_responses'] == [
-            {'q1': {}},
-            {'q2': {}},
-            {'q3': {}},
-            {'q4': {}},
-            {'q5': {}},
-            {'q6': {}},
-        ]
 
-        schema_response.parent.remove_permission(user, 'read', save=True)
-        schema_response.parent.is_public = True
-        schema_response.parent.save()
-        resp = app.get(url, auth=user.auth)
-        assert resp.status_code == 200
+        # default test schema
+        assert data['attributes']['revision_responses'] == {
+            'q1': '',
+            'q2': '',
+            'q3': '',
+            'q4': '',
+            'q5': schema_response.parent.visible_contributors.values_list('fullname', flat=True)[0],
+            'q6': '',
+        }
 
-    def test_schema_response_detail_update(self, app, schema_response, payload, user, url):
-        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
+    def test_schema_response_detail_update(self, app, registration, user, payload, url):
+        schema_response = registration.schema_responses.get()
 
-        schema_response.parent.add_contributor(user, 'read')
-        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
-
-        schema_response.parent.add_contributor(user, 'write')
         resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 200
         data = resp.json['data']
@@ -105,49 +84,42 @@ class TestSchemaResponseDetail:
         assert schema_response.response_blocks.count() == len([
             block for block in DEFAULT_TEST_SCHEMA['blocks'] if block.get('registration_response_key')
         ])
-        block = schema_response.response_blocks.first()
+        block = schema_response.response_blocks.get(schema_key='q1')
         assert block.schema_key == 'q1'
         assert block.response == {'value': 'update value'}
 
-    def test_schema_response_detail_revised_responses(self, app, schema_response, payload, user, url):
+    def test_schema_response_detail_revised_responses(self, app, registration, user, payload, url):
+        schema_response = registration.schema_responses.get()
+
         revised_schema = SchemaResponse.create_from_previous_response(
             schema_response.initiator,
             schema_response
         )
 
-        revised_schema.parent.add_contributor(user, 'read')
         resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == revised_schema._id
         assert data['attributes']['updated_response_keys'] == []
 
-        revised_schema.update_responses({'q1': {'value': 'update value'}, 'q2': {}})
+        revised_schema.update_responses({'q1': {'value': 'update value'}, 'q2': ''})
         resp = app.get(f'/v2/schema_responses/{revised_schema._id}/', auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
         assert data['id'] == revised_schema._id
         assert data['attributes']['updated_response_keys'] == ['q1']
 
-    def test_schema_response_detail_validation(self, app, schema_response, invalid_payload, user, url):
-        schema_response.parent.add_contributor(user, 'admin')
-
+    def test_schema_response_detail_validation(self, app, invalid_payload, registration, user, url):
         resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
         errors = resp.json['errors']
         assert len(errors) == 1
         assert errors[0]['detail'] == 'Encountered unexpected keys: oops'
 
-    def test_schema_response_detail_delete(self, app, schema_response, user, url):
-        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
+    def test_schema_response_detail_delete(self, app, registration, user, url):
+        schema_response = registration.schema_responses.get()
 
-        schema_response.parent.add_contributor(user, 'write')
-        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
-        assert resp.status_code == 403
-
-        schema_response.parent.add_contributor(user, 'admin')
-        resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
+        resp = app.delete_json_api(url, auth=user.auth)
         assert resp.status_code == 204
 
         with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted

@@ -21,7 +21,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView)
     view_name = 'schema-responses-list'
 
     def get_queryset(self):
-        return SchemaResponse.objects.filter()  # TODO: Filter for status
+        return SchemaResponse.objects.all()
 
 
 class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):

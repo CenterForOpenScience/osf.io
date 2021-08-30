@@ -382,22 +382,11 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        from osf.models.schema_response import SchemaResponse
-        try:
-            schema_response = SchemaResponse.objects.filter(parent=self).get()
-        except SchemaResponse.DoesNotExist:
-            # legacy zone
-            if obj.registration_responses:
-                return self.anonymize_registration_responses(obj)
-            return None
-            # now leaving legacy zone
-
-        data = []
-        for block in schema_response.response_block.all():
-            data.append({block.schema_key: block.response})
-
-        return data
-
+        if obj.schema_responses.exists():
+            return self.anonymize_fields(obj, obj.schema_responses.order_by('-created').last().all_responses)
+        if obj.registration_responses:
+            return self.anonymize_registration_responses(obj)
+        return None
 
     def get_embargo_end_date(self, obj):
         if obj.embargo_end_date:
