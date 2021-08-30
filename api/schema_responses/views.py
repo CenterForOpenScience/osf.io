@@ -4,7 +4,7 @@ from api.base.views import JSONAPIBaseView
 from api.nodes.permissions import SchemaResponseViewPermission
 
 from api.schema_responses.serializers import (
-    SchemaResponseRegistrationParentSerializer,
+    RegistrationSchemaResponseSerializer,
 )
 from osf.models import SchemaResponse, Registration
 from api.base.filters import ListFilterMixin
@@ -16,7 +16,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView)
         base_permissions.TokenHasScope,
     )
 
-    serializer_class = SchemaResponseRegistrationParentSerializer
+    serializer_class = RegistrationSchemaResponseSerializer
     view_category = 'schema_responses'
     view_name = 'schema-responses-list'
 
@@ -38,7 +38,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         parent = self.get_object().parent
 
         if isinstance(parent, Registration):
-            return SchemaResponseRegistrationParentSerializer
+            return RegistrationSchemaResponseSerializer
         else:
             raise NotImplementedError()
 

@@ -15,7 +15,7 @@ from osf.models import (
 )
 
 
-class SchemaResponseRegistrationParentSerializer(JSONAPISerializer):
+class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'date_created',
         'date_modified',
