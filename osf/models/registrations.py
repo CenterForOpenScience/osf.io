@@ -1256,7 +1256,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             initiator=user,
             branched_from=node,
             registration_schema=schema,
-            registration_metadata=data or {},
+            registration_responses=data or {},
             provider=provider,
         )
         draft.save()

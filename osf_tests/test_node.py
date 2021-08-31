@@ -2076,7 +2076,7 @@ class TestRegisterNode:
         draft_reg = DraftRegistrationFactory(branched_from=root)
 
         data = {
-            'q2': {
+            'q1': {
                 'comments': [],
                 'value': 'Dawn Pattison, James Brown, Carrie Skinner',
                 'extra': []
@@ -2088,7 +2088,7 @@ class TestRegisterNode:
             }
         }
         flat_data = {
-            'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+            'q1': 'Dawn Pattison, James Brown, Carrie Skinner',
             'q3': 'research questions'
         }
 
@@ -2103,11 +2103,6 @@ class TestRegisterNode:
             draft_registration=draft_reg
         )
 
-        # Author questions are overridden with bibliographic contributors upon registration,
-        # so there aren't discrepancies
-
-        # assert that other registration_metadata not overridden
-        assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
         assert registration.registration_responses['q3'] == 'research questions'
 
 

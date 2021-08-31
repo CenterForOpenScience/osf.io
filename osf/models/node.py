@@ -1409,9 +1409,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_user = auth.user
         registered.registered_from = original
         registered.provider = provider
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[schema._id] = draft_registration.registration_metadata
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator
@@ -1424,8 +1421,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_schema.add(schema)
 
         # copies registration_responses in SchemaResponse
-        registered.registration_responses = self.registration_responses
-        registered.copy_into_schema_response()
+        registered.copy_into_schema_response(draft_registration)
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)

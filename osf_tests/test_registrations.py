@@ -78,10 +78,6 @@ def test_factory(user, project):
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
-    assert (
-        registration2.registered_meta[get_default_metaschema()._id] ==
-        data
-    )
 
 
 class TestRegistration:
