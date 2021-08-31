@@ -65,7 +65,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def all_responses(self):
         '''Surfaces responses from response_blocks in a dictionary format'''
         formatted_responses = {
-            response_block.schema_key: response_block.response
+            response_block.schema_key: response_block.response or None
             for response_block in self.response_blocks.all()
         }
         return formatted_responses
@@ -119,8 +119,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             initiator=initiator,
             revision_justification=justification or '',
         )
-        new_response.previous_response = None
-        new_response.submitted_timestamp = None
         new_response.save()
 
         question_blocks = RegistrationSchemaBlock.objects.filter(

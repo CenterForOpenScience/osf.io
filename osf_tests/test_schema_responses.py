@@ -153,22 +153,14 @@ class TestCreateSchemaResponse():
 class TestUpdateSchemaResponses():
 
     @pytest.fixture
-    def schema(self):
-        return get_default_test_schema()
+    def registration(self):
+        return RegistrationFactory()
 
     @pytest.fixture
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture
-    def initial_response(self, schema, registration):
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-        response.update_responses(INITIAL_SCHEMA_RESPONSES)
-        return response
+    def initial_response(self, registration):
+        schema_response = registration.schema_responses.get()
+        schema_response.update_responses(INITIAL_SCHEMA_RESPONSES)
+        return schema_response
 
     @pytest.fixture
     def revised_response(self, initial_response):
@@ -181,13 +173,13 @@ class TestUpdateSchemaResponses():
     def test_all_responses_property(self, initial_response):
         assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
         for block in initial_response.response_blocks.all():
-            assert initial_response.all_responses[block.schema_key] == block.response
+            assert initial_response.all_responses[block.schema_key] == (block.response or None)
 
-    def test_uodated_response_keys_property(self, initial_response, revised_response, schema):
+    def test_uodated_response_keys_property(self, initial_response, revised_response):
         # initial_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
-                schema=schema, registration_response_key__isnull=False
+                schema=get_default_test_schema(), registration_response_key__isnull=False
             ).values_list('registration_response_key', flat=True)
         )
 
