@@ -229,6 +229,7 @@ class RegistrationProvider(AbstractProvider):
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
     additional_metadata_fields = DateTimeAwareJSONField(blank=True)
     default_schema = models.ForeignKey(RegistrationSchema, related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
+    bulk_upload_auto_approval = models.NullBooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
