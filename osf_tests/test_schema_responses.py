@@ -11,8 +11,8 @@ INITIAL_SCHEMA_RESPONSES = {
     'q2': 'Some even longer answer',
     'q3': 'A',
     'q4': ['D', 'G'],
-    'q5': None,
-    'q6': None
+    'q5': '',
+    'q6': ''
 }
 
 @pytest.mark.enable_bookmark_creation
@@ -28,11 +28,7 @@ class TestCreateSchemaResponse():
         return get_default_test_schema()
 
     def test_create_initial_response_sets_attributes(self, registration, schema):
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+        response = registration.schema_responses.get()
 
         assert response.parent == registration
         assert response in registration.schema_responses.all()
@@ -42,12 +38,7 @@ class TestCreateSchemaResponse():
 
     def test_create_initial_response_assigns_response_blocks_and_source_revision(
             self, registration, schema):
-        assert not SchemaResponseBlock.objects.exists()
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+        response = registration.schema_responses.get()
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
         created_response_blocks = set(SchemaResponseBlock.objects.all())
@@ -59,12 +50,6 @@ class TestCreateSchemaResponse():
 
     def test_create_initial_response_creates_blocks_for_each_schema_question(
             self, registration, schema):
-        assert not SchemaResponseBlock.objects.exists()
-        SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
         created_response_blocks = SchemaResponseBlock.objects.all()
@@ -77,12 +62,6 @@ class TestCreateSchemaResponse():
             assert created_response_blocks.filter(schema_key=key).exists()
 
     def test_cannot_create_initial_response_twice(self, registration, schema):
-        SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-
         with assert_raises(AssertionError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
@@ -91,18 +70,10 @@ class TestCreateSchemaResponse():
             )
 
     def test_create_initial_response_for_different_parent(self, registration, schema):
-        first_response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+        first_response = registration.schema_responses.get()
 
         alternate_registration = RegistrationFactory(schema=schema)
-        alternate_registration_response = SchemaResponse.create_initial_response(
-            initiator=alternate_registration.creator,
-            parent=alternate_registration,
-            schema=schema,
-        )
+        alternate_registration_response = alternate_registration.schema_responses.get()
 
         # Confirm that a response block was created for each input block
         schema_input_blocks = RegistrationSchemaBlock.objects.filter(
@@ -125,11 +96,7 @@ class TestCreateSchemaResponse():
         ).exists()
 
     def test_create_from_previous_response(self, registration, schema):
-        initial_response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+        initial_response = registration.schema_responses.get()
 
         revised_response = SchemaResponse.create_from_previous_response(
             initiator=registration.creator,
@@ -161,11 +128,7 @@ class TestUpdateSchemaResponses():
 
     @pytest.fixture
     def initial_response(self, schema, registration):
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+        response = registration.schema_responses.get()
         response.update_responses(INITIAL_SCHEMA_RESPONSES)
         return response
 

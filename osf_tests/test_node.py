@@ -2103,6 +2103,11 @@ class TestRegisterNode:
             draft_registration=draft_reg
         )
 
+        # Author questions are overridden with bibliographic contributors upon registration,
+        # so there aren't discrepancies
+
+        # assert that other registration_metadata not overridden
+        assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
         assert registration.registration_responses['q3'] == 'research questions'
 
 

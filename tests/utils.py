@@ -159,7 +159,7 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project)
+    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, registration_schema=schema)
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = project.register_node(
