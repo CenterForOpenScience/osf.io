@@ -201,6 +201,11 @@ class Registration(AbstractNode):
             return self.registered_schema.first()
         return None
 
+    @property
+    def schema_responses(self):
+        from osf.models import SchemaResponse
+        return SchemaResponse.objects.filter(parent=self)
+
     def get_registration_metadata(self, schema):
         # Overrides RegistrationResponseMixin
         registered_meta = self.registered_meta or {}
@@ -1282,7 +1287,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             initiator=user,
             branched_from=node,
             registration_schema=schema,
-            registration_metadata=data or {},
+            registration_responses=data or {},
             provider=provider,
         )
         draft.save()

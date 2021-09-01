@@ -13,11 +13,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     previous_response = models.ForeignKey(
         'osf.SchemaResponse',
         related_name='updated_response',
-        null=True
+        null=True,
+        blank=True
     )
 
-    revision_justification = models.CharField(max_length=2048, null=True)
-    submitted_timestamp = NonNaiveDateTimeField(null=True)
+    revision_justification = models.CharField(max_length=2048, null=True, blank=True)
+    submitted_timestamp = NonNaiveDateTimeField(null=True, blank=True)
 
     # Allow schema responses for non-Registrations
     object_id = models.PositiveIntegerField()
@@ -28,7 +29,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def all_responses(self):
         '''Surfaces responses from response_blocks in a dictionary format'''
         formatted_responses = {
-            response_block.schema_key: response_block.response
+            response_block.schema_key: (response_block.response.get('value', response_block.response) or '')
             for response_block in self.response_blocks.all()
         }
         return formatted_responses
