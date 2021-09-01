@@ -44,7 +44,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def all_responses(self):
         '''Surfaces responses from response_blocks in a dictionary format'''
         formatted_responses = {
-            response_block.schema_key: (response_block.response.get('value', response_block.response) or '')
+            response_block.schema_key: response_block.response
             for response_block in self.response_blocks.all()
         }
         return formatted_responses

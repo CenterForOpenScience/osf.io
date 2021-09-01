@@ -387,7 +387,6 @@ class RegistrationFactory(BaseNodeFactory):
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
-        from osf_tests.utils import get_default_test_schema
         user = None
         if project:
             user = project.creator
@@ -406,7 +405,7 @@ class RegistrationFactory(BaseNodeFactory):
         project.save()
 
         # Default registration parameters
-        schema = schema or get_default_test_schema()
+        schema = schema or getattr(draft_registration, 'registration_schema', False) or get_default_metaschema()
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
@@ -534,7 +533,6 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        from osf_tests.utils import get_default_test_schema
         title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
@@ -544,7 +542,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or get_default_test_schema()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
         provider.schemas.add(registration_schema)

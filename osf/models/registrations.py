@@ -201,11 +201,6 @@ class Registration(AbstractNode):
             return self.registered_schema.first()
         return None
 
-    @property
-    def schema_responses(self):
-        from osf.models import SchemaResponse
-        return SchemaResponse.objects.filter(parent=self)
-
     def get_registration_metadata(self, schema):
         # Overrides RegistrationResponseMixin
         registered_meta = self.registered_meta or {}
@@ -584,36 +579,6 @@ class Registration(AbstractNode):
         return self.registration_schema.schema_blocks.filter(
             block_type='contributors-input', registration_response_key__isnull=False,
         ).values_list('registration_response_key', flat=True)
-
-    def copy_registered_meta_and_registration_responses(self, draft, save=True):
-        """
-        Sets the registration's registered_meta and registration_responses from the draft.
-
-        If contributor information is in a question, build an accurate bibliographic
-        contributors list on the registration
-        """
-        if not self.registered_meta:
-            self.registered_meta = {}
-
-        registration_metadata = draft.registration_metadata
-        registration_responses = draft.registration_responses
-
-        bibliographic_contributors = ', '.join(
-            draft.branched_from.visible_contributors.values_list('fullname', flat=True)
-        )
-        contributor_keys = self.get_contributor_registration_response_keys()
-
-        for key in contributor_keys:
-            if key in registration_metadata:
-                registration_metadata[key]['value'] = bibliographic_contributors
-            if key in registration_responses:
-                registration_responses[key] = bibliographic_contributors
-
-        self.registered_meta[self.registration_schema._id] = registration_metadata
-        self.registration_responses = registration_responses
-
-        if save:
-            self.save()
 
     def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration
