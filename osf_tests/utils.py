@@ -23,7 +23,6 @@ from .factories import (
     DraftRegistrationFactory,
 )
 
-
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
     """Testing utility for capturing blinker signals.
