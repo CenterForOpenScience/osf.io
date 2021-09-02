@@ -163,6 +163,8 @@ class SchemaResponseViewPermission(permissions.BasePermission):
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
+        elif request.method == 'PATCH':
+            return obj.has_permission(auth.user, 'write')
         elif request.method in ('DELETE', 'POST', 'PATCH'):
             return obj.has_permission(auth.user, 'admin')
 
