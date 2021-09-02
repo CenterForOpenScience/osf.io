@@ -143,6 +143,15 @@ class RegistrationModerationTriggers(ModerationEnum):
         return transition_to_trigger_mappings.get((from_state, to_state))
 
 
+class SchemaResponseTriggers(ModerationEnum):
+    '''The acceptable 'triggers' to use with a SchemaResponseAction'''
+    SUBMIT = 0
+    APPROVE = 1  # Resource admins "approve" a submission
+    ACCEPT = 2  # Moderators "accept" a submission
+    ADMIN_REJECT = 3
+    MODERATOR_REJECT = 4
+
+
 @unique
 class ChoiceEnum(Enum):
     @classmethod
