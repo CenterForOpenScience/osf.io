@@ -15,6 +15,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
+    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -147,6 +148,31 @@ class AdminContributorOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.is_admin_contributor(auth.user)
+
+
+class SchemaResponseViewPermission(permissions.BasePermission):
+    '''
+    Permissions for top-level `schema_responses` endpoints.
+    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
+    deleting.
+    '''
+    acceptable_models = (AbstractNode, )
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        elif request.method in ('DELETE', 'POST', 'PATCH'):
+            return obj.has_permission(auth.user, 'admin')
+
+    def has_permission(self, request, view):
+        obj = view.get_object()
+
+        if isinstance(obj, AbstractNode):
+            return self.has_object_permission(request, view, obj)
+        elif isinstance(obj, SchemaResponse):
+            return self.has_object_permission(request, view, obj.parent)
 
 
 class ExcludeWithdrawals(permissions.BasePermission):

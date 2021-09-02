@@ -20,8 +20,12 @@ from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationsh
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.exceptions import Conflict
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
-from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import (
     get_user_auth,
     default_node_list_permission_queryset,
@@ -43,6 +47,7 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
+    SchemaResponseViewPermission,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -73,6 +78,8 @@ from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
+
+from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 
 class RegistrationMixin(NodeMixin):
@@ -847,6 +854,31 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
 
     def get_default_queryset(self):
         return self.get_node().requests.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        SchemaResponseViewPermission,
+    )
+
+    view_category = 'schema-responses'
+    view_name = 'schema-responses-list'
+
+    serializer_class = RegistrationSchemaResponseSerializer
+
+    def get_object(self):
+        return self.get_node()
+
+    def get_default_queryset(self):
+        return self.get_node().schema_responses.all()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
