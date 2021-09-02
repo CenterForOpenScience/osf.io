@@ -745,7 +745,7 @@ class Registration(AbstractNode):
 
         # IF fegistration is moving into moderation, "creator" should reflect the
         # Registration Admin who initiated the Registration/Withdrawal
-        if trigger in [
+        if not initiated_by or trigger in [
                 RegistrationModerationTriggers.SUBMIT,
                 RegistrationModerationTriggers.REQUEST_WITHDRAWAL
         ]:
