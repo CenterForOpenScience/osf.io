@@ -23,7 +23,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         'reviews_state',
     ])
     writeable_method_fields = frozenset([
-        'revision_response',
+        'revision_responses',
     ])
 
     id = ser.CharField(source='_id', required=False, allow_null=True)
@@ -34,10 +34,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
-    revision_responses = ser.SerializerMethodField()
-
-    def get_revision_responses(self, obj):
-        return obj.all_responses
+    revision_responses = ser.JSONField(source='all_responses')
 
     links = LinksField(
         {
@@ -111,10 +108,10 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return schema_response
 
     def update(self, schema_response, validated_data):
-        revision_response = validated_data.get('revision_response')
+        revision_responses = validated_data.get('revision_responses')
 
         try:
-            schema_response.update_responses(revision_response)
+            schema_response.update_responses(revision_responses)
         except ValueError as exc:
             raise exceptions.ValidationError(detail=str(exc))
 

@@ -29,12 +29,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         'osf.SchemaResponse',
         related_name='updated_response',
         null=True,
-        blank=True,
     )
 
-    revision_justification = models.CharField(max_length=2048, null=True, blank=True)
-    submitted_timestamp = NonNaiveDateTimeField(null=True, blank=True)
-    pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
+    revision_justification = models.CharField(max_length=2048, null=True)
+    submitted_timestamp = NonNaiveDateTimeField(null=True)
 
     # Allow schema responses for non-Registrations
     object_id = models.PositiveIntegerField()
@@ -136,7 +134,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(f'Encountered unexpected keys: {updated_responses.keys()}')
+            raise ValueError(f'Encountered unexpected keys: {",".join(updated_responses.keys())}')
 
     def _response_reverted(self, current_block, latest_response):
         '''Handle the case where an answer is reverted over the course of editing a Response.

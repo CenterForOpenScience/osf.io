@@ -33,5 +33,5 @@ class TestSchemaResponseList:
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
-        assert len(data) == 2
-        assert set(registration.schema_responses.values_list('_id', flat=True)) == {data[0]['id'], data[1]['id']}
+        assert len(data) == 1
+        assert registration.schema_responses.get()._id == data[0]['id']
