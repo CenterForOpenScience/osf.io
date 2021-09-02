@@ -13,6 +13,14 @@ from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates
 
 
+class SchemaResponseError(Exception):
+    pass
+
+
+class InvalidSchemaResponseStateError(SchemaResponseError):
+    pass
+
+
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
@@ -53,7 +61,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.machine = ApprovalsMachine(
+        self.approvals_state_machine = ApprovalsMachine(
             model=self,
             active_state=self.state,
             state_property_name='state'
@@ -141,10 +149,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         previous_version (as no responses have changed). As responses are updated through the
         new SchemaResponses, new SchemaResponseBlocks will be created/updated.
         '''
+        # Cannot create new response if parent has another response in-progress or pending approval
+        parent = previous_response.parent
+        if parent.schema_responses.exclude(reviews_state=ApprovalStates.APPROVED.db_name).exists():
+            raise InvalidSchemaResponseStateError(
+                f'Cannot create new SchemaResponse for {parent} because {parent} already '
+                'has non-terminal SchemaResponse'
+            )
 
-        # TODO confirm that no other non-Approved responses exist
         new_response = cls(
-            parent=previous_response.parent,
+            parent=parent,
             schema=previous_response.schema,
             initiator=initiator,
             previous_response=previous_response,
@@ -162,6 +176,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         make sure to call in an atomic context.
         '''
         # TODO: Add check for state once that stuff is here
+        if self.state is not ApprovalStates.IN_PROGRESS:
+            raise InvalidSchemaResponseStateError(
+                f'SchemaResponse has state f{self.reviews_state}. '
+                'Must have state "in_progress" to update responses'
+            )
 
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating responses
@@ -226,8 +245,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         user = event_data.kwargs.get('user')
         trigger = event_data.event.name
-        # Allow "accept" witn o user from an UNAPPROVED state as an OSF-internal shortcut
-        if not user and trigger != 'accept':
+        # Allow triggers without a user iff that trigger is an "accept" call in UNAPPROVED
+        # TODO: Consider adding an "OSFAuth" concept for internal calls instead of just using None
+        if trigger == 'accept' and user is not None:
+            raise PermissionsError('Approvers must "approve", not "accept"')
+        if user is None and trigger != 'accept':
             raise ValueError(f'Trigger "{trigger}" must pass the user who invoked it"')
 
         # 'approve' and 'reject' triggers must supply a user
@@ -249,7 +271,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         approving_user = event_data.kwargs.get('user', None)
         self.pending_approvers.remove(approving_user)
         if not self.pending_approvers.exists():
-            self.accept(user=approving_user)
+            self.accept()
 
     def _on_complete(self, event_data):
         '''No special logic on complete for SchemaResponses'''

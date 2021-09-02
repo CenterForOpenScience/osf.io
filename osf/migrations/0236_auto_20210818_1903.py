@@ -9,17 +9,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0235_auto_20210818_1927'),
+        ('osf', '0235_auto_20210823_1310'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='schemaresponses',
+            model_name='schemaresponse',
             name='pending_approvers',
             field=models.ManyToManyField(related_name='pending_submissions', to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name='schemaresponses',
+            model_name='schemaresponse',
             name='reviews_state',
             field=models.CharField(choices=[('undefined', 'Undefined'), ('unapproved', 'Unapproved'), ('pending_moderation', 'PendingModeration'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('moderator_rejected', 'ModeratorRejected'), ('completed', 'Completed'), ('in_progress', 'InProgress')], default='in_progress', max_length=255),
         ),

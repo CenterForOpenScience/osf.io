@@ -1,7 +1,12 @@
 import pytest
 
+from framework.exceptions import PermissionsError
+
 from nose.tools import assert_raises
-from osf.models import RegistrationSchemaBlock, SchemaResponseBlock, SchemaResponse
+
+from osf.models.metaschema import RegistrationSchemaBlock
+from osf.models.schema_response import InvalidSchemaResponseStateError, SchemaResponse
+from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import AuthUserFactory, RegistrationFactory
 from osf_tests.utils import get_default_test_schema
@@ -16,38 +21,49 @@ INITIAL_SCHEMA_RESPONSES = {
     'q6': None
 }
 
+
+@pytest.fixture
+def schema():
+    return get_default_test_schema()
+
+@pytest.fixture
+def registration(schema):
+    return RegistrationFactory(schema=schema)
+
+@pytest.fixture
+def schema_response(registration):
+    response = SchemaResponse.create_initial_response(
+        initiator=registration.creator,
+        parent=registration,
+        schema=registration.registration_schema
+    )
+    response.update_responses(INITIAL_SCHEMA_RESPONSES)
+    return response
+
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
 class TestCreateSchemaResponse():
 
-    @pytest.fixture
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture
-    def schema(self):
-        return get_default_test_schema()
-
-    def test_create_initial_response_sets_attributes(self, registration, schema):
+    def test_create_initial_response_sets_attributes(self, registration):
         response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
+            schema=registration.registration_schema
         )
 
         assert response.parent == registration
         assert response in registration.schema_responses.all()
-        assert response.schema == schema
+        assert response.schema == registration.registration_schema
         assert response.initiator == registration.creator
         assert not response.submitted_timestamp
 
     def test_create_initial_response_assigns_response_blocks_and_source_revision(
-            self, registration, schema):
+            self, registration):
         assert not SchemaResponseBlock.objects.exists()
         response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
+            schema=registration.registration_schema
         )
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
@@ -58,9 +74,9 @@ class TestCreateSchemaResponse():
         assert created_response_blocks == set(response.updated_response_blocks.all())
         assert created_response_blocks == set(response.response_blocks.all())
 
-    def test_create_initial_response_creates_blocks_for_each_schema_question(
-            self, registration, schema):
+    def test_create_initial_response_creates_blocks_for_each_schema_question(self, registration):
         assert not SchemaResponseBlock.objects.exists()
+        schema = registration.registration_schema
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
@@ -77,11 +93,11 @@ class TestCreateSchemaResponse():
         for key in schema_input_blocks.values_list('registration_response_key', flat=True):
             assert created_response_blocks.filter(schema_key=key).exists()
 
-    def test_cannot_create_initial_response_twice(self, registration, schema):
+    def test_cannot_create_initial_response_twice(self, registration):
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
+            schema=registration.registration_schema
         )
 
         with assert_raises(AssertionError):
@@ -125,27 +141,59 @@ class TestCreateSchemaResponse():
             alternate_registration_response.response_blocks.all()
         ).exists()
 
-    def test_create_from_previous_response(self, registration, schema):
-        initial_response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
+    def test_create_from_previous_response(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
 
         revised_response = SchemaResponse.create_from_previous_response(
-            initiator=registration.creator,
-            previous_response=initial_response,
+            initiator=schema_response.initiator,
+            previous_response=schema_response,
             justification='Leeeeerooooy Jeeeenkiiiinns'
         )
 
-        assert revised_response.initiator == registration.creator
-        assert revised_response.parent == registration
-        assert revised_response.schema == schema
+        assert revised_response.initiator == schema_response.initiator
+        assert revised_response.parent == schema_response.parent
+        assert revised_response.schema == schema_response.schema
         assert revised_response.revision_justification == 'Leeeeerooooy Jeeeenkiiiinns'
 
-        assert revised_response != initial_response
+        assert revised_response != schema_response
         assert not revised_response.updated_response_blocks.exists()
-        assert set(revised_response.response_blocks.all()) == set(initial_response.response_blocks.all())
+        assert set(revised_response.response_blocks.all()) == set(schema_response.response_blocks.all())
+
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.IN_PROGRESS,
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_create_from_previous_response_fails_if_parent_has_unapproved_response(
+            self, invalid_response_state, schema_response):
+        # Making a valid revised response, then pushing the initial response into an
+        # invalid state to ensure that `create_from_previous_response` fails if
+        # *any* schema_response on the parent is unapproved
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
+
+        intermediate_response = SchemaResponse.create_from_previous_response(
+            initiator=schema_response.initiator,
+            previous_response=schema_response
+        )
+        intermediate_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        intermediate_response.save()
+
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        schema_response.save()
+        with assert_raises(InvalidSchemaResponseStateError):
+            SchemaResponse.create_from_previous_response(
+                initiator=schema_response.initiator,
+                previous_response=intermediate_response
+            )
 
 
 @pytest.mark.enable_bookmark_creation
@@ -153,37 +201,21 @@ class TestCreateSchemaResponse():
 class TestUpdateSchemaResponses():
 
     @pytest.fixture
-    def schema(self):
-        return get_default_test_schema()
-
-    @pytest.fixture
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture
-    def initial_response(self, schema, registration):
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-        response.update_responses(INITIAL_SCHEMA_RESPONSES)
-        return response
-
-    @pytest.fixture
-    def revised_response(self, initial_response):
+    def revised_response(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
         return SchemaResponse.create_from_previous_response(
-            initiator=initial_response.initiator,
-            previous_response=initial_response,
+            initiator=schema_response.initiator,
+            previous_response=schema_response,
             justification='Leeeeerooooy Jeeeenkiiiinns'
         )
 
-    def test_all_responses_property(self, initial_response):
-        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
-        for block in initial_response.response_blocks.all():
-            assert initial_response.all_responses[block.schema_key] == block.response
+    def test_all_responses_property(self, schema_response):
+        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
+        for block in schema_response.response_blocks.all():
+            assert schema_response.all_responses[block.schema_key] == block.response
 
-    def test_uodated_response_keys_property(self, initial_response, revised_response, schema):
+    def test_uodated_response_keys_property(self, schema_response, revised_response, schema):
         # initial_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
@@ -191,7 +223,7 @@ class TestUpdateSchemaResponses():
             ).values_list('registration_response_key', flat=True)
         )
 
-        assert initial_response.updated_response_keys == all_keys
+        assert schema_response.updated_response_keys == all_keys
 
         # No updated_responses on the standard revised_response
         assert not revised_response.updated_response_keys
@@ -199,40 +231,40 @@ class TestUpdateSchemaResponses():
         revised_response.update_responses({'q1': 'I has a new  answer'})
         assert revised_response.updated_response_keys == {'q1'}
 
-    def test_update_responses(self, initial_response):
-        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
+    def test_update_responses(self, schema_response):
+        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
 
         updated_responses = {
             'q1': 'Hello there',
             'q2': 'This is a new response',
             'q3': 'B',
             'q4': ['E'],
-            'q5': [initial_response.initiator.id],
+            'q5': [schema_response.initiator.id],
             'q6': 'SomeFile',
         }
-        initial_response.update_responses(updated_responses)
+        schema_response.update_responses(updated_responses)
 
-        initial_response.refresh_from_db()
-        assert initial_response.all_responses == updated_responses
-        for block in initial_response.response_blocks.all():
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses == updated_responses
+        for block in schema_response.response_blocks.all():
             assert block.response == updated_responses[block.schema_key]
 
-    def test_update_to_initial_response_updates_response_blocks_in_place(self, initial_response):
+    def test_update_to_initial_response_updates_response_blocks_in_place(self, schema_response):
         # Call set to force evaluation
-        initial_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
+        initial_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
 
-        initial_response.update_responses(
+        schema_response.update_responses(
             {
                 'q1': 'Hello there',
                 'q2': 'This is a new response',
                 'q3': 'B',
                 'q4': ['E'],
-                'q5': [initial_response.initiator.id],
+                'q5': [schema_response.initiator.id],
                 'q6': 'SomeFile'
             }
         )
-        initial_response.refresh_from_db()
-        updated_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
+        schema_response.refresh_from_db()
+        updated_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
         assert initial_block_ids == updated_block_ids
 
     def test_initial_update_to_revised_response_creates_new_block(self, revised_response):
@@ -306,9 +338,9 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q3').id == original_q3_block.id
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
-    def test_update_with_unsupported_key_raises(self, initial_response):
+    def test_update_with_unsupported_key_raises(self, schema_response):
         with assert_raises(ValueError):
-            initial_response.update_responses({'q7': 'sneaky'})
+            schema_response.update_responses({'q7': 'sneaky'})
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -319,69 +351,120 @@ class TestUpdateSchemaResponses():
         ]
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
-            self, updated_responses, initial_response):
+            self, updated_responses, schema_response):
         with assert_raises(ValueError):
-            initial_response.update_responses(updated_responses)
+            schema_response.update_responses(updated_responses)
 
-        initial_response.refresh_from_db()
-        assert initial_response.all_responses['q1'] == updated_responses['q1']
-        assert initial_response.all_responses['q2'] == updated_responses['q2']
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses['q1'] == updated_responses['q1']
+        assert schema_response.all_responses['q2'] == updated_responses['q2']
+
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_update_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        with assert_raises(InvalidSchemaResponseStateError):
+            schema_response.update_responses({'q1': 'harrumph'})
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
-class TestSchemaResponsesApprovalFlows():
-
-    @pytest.fixture
-    def registration(self):
-        return RegistrationFactory()
-
-    @pytest.fixture
-    def schema_responses(self, registration):
-        schema = registration.registered_schema.first()
-        return SchemaResponse.objects.create(
-            parent=registration,
-            schema=schema,
-            initiator=registration.creator
-        )
+class TestUnmoderatedSchemaResponseApprovalFlows():
 
     @pytest.fixture
     def alternate_user(self):
         return AuthUserFactory()
 
-    def test_submit_responses(self, schema_responses, alternate_user):
-        assert schema_responses.state is ApprovalStates.IN_PROGRESS
-        schema_responses.submit(
-            user=schema_responses.initiator,
-            required_approvers=[schema_responses.initiator, alternate_user]
+    def test_submit_response_adds_pending_approvers(self, schema_response, alternate_user):
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator, alternate_user]
         )
 
-        schema_responses.refresh_from_db()
-        assert schema_responses.state is ApprovalStates.UNAPPROVED
-        for user in [schema_responses.initiator, alternate_user]:
-            assert schema_responses.pending_approvers.filter(id=user.id).exists()
+        schema_response.refresh_from_db()
+        assert schema_response.state is ApprovalStates.UNAPPROVED
+        for user in [schema_response.initiator, alternate_user]:
+            assert user in schema_response.pending_approvers.all()
 
-    def test_approve_responses(self, schema_responses, alternate_user):
-        schema_responses.submit(
-            user=schema_responses.initiator,
-            required_approvers=[schema_responses.initiator, alternate_user],
+    def test_approve_response_requires_all_approvers(self, schema_response, alternate_user):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator, alternate_user],
         )
 
-        schema_responses.approve(user=schema_responses.initiator)
-        schema_responses.refresh_from_db()
-        assert schema_responses.state is ApprovalStates.UNAPPROVED
+        schema_response.approve(user=schema_response.initiator)
+        schema_response.refresh_from_db()
+        assert schema_response.state is ApprovalStates.UNAPPROVED
 
-        schema_responses.approve(user=alternate_user)
-        schema_responses.refresh_from_db()
-        assert schema_responses.state is ApprovalStates.APPROVED
+        schema_response.approve(user=alternate_user)
+        schema_response.refresh_from_db()
+        assert schema_response.state is ApprovalStates.APPROVED
 
-    def test_reject_responses(self, schema_responses, alternate_user):
-        schema_responses.submit(
-            user=schema_responses.initiator,
-            required_approvers=[schema_responses.initiator, alternate_user],
+    def test_non_approver_cannot_approve_response(self, schema_response, alternate_user):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator]
+        )
+        schema_response.refresh_from_db()
+
+        with assert_raises(PermissionsError):
+            schema_response.approve(user=alternate_user)
+
+    def test_reject_response_moves_state_to_in_progress(self, schema_response, alternate_user):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator, alternate_user],
         )
 
-        schema_responses.reject(user=schema_responses.initiator)
+        # Implicitly confirm that only one reject call is needed to advance state
+        schema_response.reject(user=schema_response.initiator)
+        schema_response.refresh_from_db()
 
-        schema_responses.refresh_from_db()
-        assert schema_responses.state is ApprovalStates.IN_PROGRESS
-        assert not schema_responses.pending_approvers.exists()
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+
+    def test_reject_response_clears_pending_approvers(self, schema_response, alternate_user):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator, alternate_user],
+        )
+
+        schema_response.reject(user=schema_response.initiator)
+        schema_response.refresh_from_db()
+
+        assert not schema_response.pending_approvers.exists()
+
+    def test_non_approver_cannnot_reject_response(self, schema_response, alternate_user):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator]
+        )
+        schema_response.refresh_from_db()
+
+        with assert_raises(PermissionsError):
+            schema_response.reject(user=alternate_user)
+
+    def test_approver_cannot_call_accept_directly(self, schema_response):
+        schema_response.submit(
+            user=schema_response.initiator,
+            required_approvers=[schema_response.initiator]
+        )
+        schema_response.refresh_from_db()
+
+        with assert_raises(PermissionsError):
+            schema_response.accept(user=schema_response.initiator)
+
+
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.django_db
+class TestModeratedSchemaResponseApprovalFlows():
+    pass
