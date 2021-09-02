@@ -75,6 +75,26 @@ class RegistrationAction(BaseAction):
 
 class SchemaResponseAction(BaseAction):
     target = models.ForeignKey('SchemaResponse', related_name='actions', on_delete=models.CASCADE)
-    trigger = models.IntField(choices=SchemaResponseTriggers.int_field_choices())
-    from_state = models.IntField(choices=ApprovalStates.int_field_choices())
-    to_state = models.IntField(choices=ApprovalStates.int_field_choices())
+    trigger = models.CharField(max_length=31, choices=SchemaResponseTriggers.char_field_choices())
+    from_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+    to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+
+    @classmethod
+    def from_transition(cls, target, transition, user, comment):
+        '''Generate a SchemaResponseAction based on a SchemaResposne object and a transition.'''
+        from_state = ApprovalStates[transition.source]
+        to_state = transition.dest
+        to_state = ApprovalStates[to_state] if to_state is not None else from_state
+        trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
+        if not trigger:
+            raise ValueError(f'No action to write on transition from {from_state} to {to_state}')
+
+        action = cls(
+            target=target,
+            creator=user,
+            trigger=trigger.db_name,
+            from_state=from_state.db_name,
+            to_state=to_state.db_name,
+            comment=comment
+        )
+        return action

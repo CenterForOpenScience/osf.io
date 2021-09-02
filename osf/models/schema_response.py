@@ -6,6 +6,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.models import RegistrationSchemaBlock
+from osf.models.action import SchemaResponseAction
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
@@ -122,7 +123,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             parent=parent,
             schema=schema,
             initiator=initiator,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
+            submitted_timestamp=None,
+            previous_response=None,
         )
         new_response.save()
 
@@ -284,3 +287,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
+        self._log_reviews_action(
+            transition=event_data.transition,
+            user=event_data.kwargs.get('user', self.initiator)
+        )
+        action = SchemaResponseAction.from_transition(
+            target=self,
+            transition=event_data.transition,
+            creator=event_data.kwargs.get('user', self.initiator),
+            comment=event_data.kwargs.get('comment', '')
+        )
+        action.save()

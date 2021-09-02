@@ -151,6 +151,17 @@ class SchemaResponseTriggers(ModerationEnum):
     ADMIN_REJECT = 3
     MODERATOR_REJECT = 4
 
+    @classmethod
+    def from_transition(cls, from_state, to_state):
+        transition_to_trigger_mappings = {
+            (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.UNAPPROVED): cls.APPROVE,
+            (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.ADMIN_REJECT,
+            (ApprovalStates.PENDING_MODERATION, ApprovalStates.IN_PROGRESS): cls.MODERATOR_REJECT,
+        }
+        return transition_to_trigger_mappings.get((from_state, to_state))
+
 
 @unique
 class ChoiceEnum(Enum):
