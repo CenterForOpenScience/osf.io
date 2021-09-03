@@ -35,7 +35,6 @@ def schema_response(registration):
     response = SchemaResponse.create_initial_response(
         initiator=registration.creator,
         parent=registration,
-        schema=registration.registration_schema
     )
     response.update_responses(INITIAL_SCHEMA_RESPONSES)
     return response
@@ -48,7 +47,6 @@ class TestCreateSchemaResponse():
         response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=registration.registration_schema
         )
 
         assert response.parent == registration
@@ -63,7 +61,6 @@ class TestCreateSchemaResponse():
         response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=registration.registration_schema
         )
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
@@ -80,7 +77,6 @@ class TestCreateSchemaResponse():
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
@@ -97,28 +93,24 @@ class TestCreateSchemaResponse():
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=registration.registration_schema
         )
 
         with assert_raises(AssertionError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
-                schema=schema
             )
 
     def test_create_initial_response_for_different_parent(self, registration, schema):
         first_response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
 
         alternate_registration = RegistrationFactory(schema=schema)
         alternate_registration_response = SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
-            schema=schema,
         )
 
         # Confirm that a response block was created for each input block
