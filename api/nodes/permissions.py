@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
+import io
 from rest_framework import permissions
 from rest_framework import exceptions
 
@@ -21,6 +21,7 @@ from osf.models import (
 from osf.utils import permissions as osf_permissions
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
+from api.base.parsers import JSONAPIParser
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -207,15 +208,16 @@ class SchemaResponseCreatePermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         elif request.method == 'POST':
-            if request.body:
-                request_json = json.loads(request.body.decode())
-            else:
-                raise exceptions.ValidationError(f'No request json ')
+            # Validate json before using id to check for permissions
+            request_json = JSONAPIParser().parse(
+                io.BytesIO(request.body),
+                parser_context={'request': request},
+            )
 
             obj = get_object_or_error(
                 Registration,
-                request_json['data']['relationships']['registration']['data']['id'],
-                request,
+                query_or_pk=request_json['id'],
+                request=request,
             )
 
             return self.has_object_permission(request, view, obj)

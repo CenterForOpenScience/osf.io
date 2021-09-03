@@ -22,18 +22,29 @@ class TestSchemaResponseList:
     @pytest.fixture()
     def payload(self, registration):
         return {
-            "data":
-                {
-                    "type": "revisions",
-                    "relationships": {
-                        "registration": {
-                            "data": {
-                                "id": registration._id,
-                                "type": "registrations"
-                            }
+            'data': {
+                'type': 'revisions',
+                'relationships': {
+                    'registration': {
+                        'data': {
+                            'id': registration._id,
+                            'type': 'registrations'
                         }
                     }
                 }
+            }
+        }
+
+    @pytest.fixture()
+    def invalid_payload(self, registration):
+        return {
+            'data': {
+                'type': 'revisions',
+                'relationships': {
+                    'registration': {
+                    }
+                }
+            }
         }
 
     @pytest.fixture()
@@ -63,6 +74,12 @@ class TestSchemaResponseList:
         schema_response = SchemaResponse.objects.last()
 
         assert data['id'] == schema_response._id
+
+    def test_schema_responses_list_create_validation(self, app, registration, invalid_payload, user, url):
+        registration.add_contributor(user, 'admin')
+        resp = app.post_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['detail'] == 'Request must include /data.'
 
     @pytest.mark.parametrize(
         'permission,expected_response',

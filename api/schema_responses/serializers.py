@@ -89,9 +89,8 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
         registration = get_object_or_error(
             Registration,
-            registration_id,
-            self.context['request'],
-            check_deleted=False,
+            query_or_pk=registration_id,
+            request=self.context['request'],
         )
 
         try:
