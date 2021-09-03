@@ -122,6 +122,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating responses
+        if not updated_responses:
+            return
+
         updated_responses = dict(updated_responses)
 
         for block in self.response_blocks.all():

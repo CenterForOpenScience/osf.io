@@ -1124,6 +1124,7 @@ class SchemaResponseFactory(DjangoModelFactory):
     initiator = factory.SubFactory(AuthUserFactory)
     revision_justification = "We're talkin' about practice!"
     submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    registration = factory.SubFactory(RegistrationFactory)
 
     class Meta:
         model = models.SchemaResponse

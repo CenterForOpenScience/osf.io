@@ -26,7 +26,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         'revision_responses',
     ])
 
-    id = ser.CharField(source='_id', required=False, allow_null=True)
+    id = ser.CharField(source='_id', required=True, allow_null=True)
     date_created = VersionedDateTimeField(source='created', required=False)
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
@@ -34,7 +34,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
-    revision_responses = ser.JSONField(source='all_responses')
+    revision_responses = ser.JSONField(source='all_responses', required=False)
 
     links = LinksField(
         {
@@ -81,7 +81,16 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return False
 
     def create(self, validated_data):
-        registration = Registration.load(validated_data.pop('_id'))
+
+        registration_id = validated_data.pop('_id')
+        try:
+            registration = Registration.objects.get_nodes_for_user(
+                self.context['request'].user
+            ).get(
+                guids___id=registration_id
+            )
+        except Registration.DoesNotExist:
+            raise exceptions.ValidationError(f'Invalid Registration id {registration_id}')
 
         try:
             schema = registration.registration_schema
@@ -91,7 +100,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        if not registration.schema_response.exists():
+        if not registration.schema_responses.exists():
             schema_response = SchemaResponse.create_initial_response(
                 initiator=initiator,
                 parent=registration,

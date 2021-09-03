@@ -47,7 +47,7 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
-    SchemaResponseViewPermission,
+    SchemaResponseRegistrationViewPermission,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -866,7 +866,7 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        SchemaResponseViewPermission,
+        SchemaResponseRegistrationViewPermission,
     )
 
     view_category = 'schema-responses'
