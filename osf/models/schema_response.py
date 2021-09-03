@@ -16,7 +16,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     Individual answers are stored in SchemaResponseBlocks and aggregated here
     via the response_blocks M2M relationship.
 
-    SchemaResponseBlocks can be shared across multiple SchemaResponses, but
+    SchemaResponseBlocks can be shared across multiple SchemaResponse, but
     each SchemaResponseBlock links to the SchemaResponse where it originated.
     These are referenced on the SchemaResponse using the updated_response_blocks manager.
     This allows SchemaResponses to also serve as a revision history when
@@ -55,8 +55,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         return set(revised_keys)
 
     @classmethod
-    def create_initial_response(cls, initiator, parent, schema, justification=None):
-        '''Create SchemaResponses and all initial SchemaResponseBlocks.
+    def create_initial_response(cls, initiator, parent, schema=None, justification=None):
+        '''Create SchemaResponse and all initial SchemaResponseBlocks.
 
         This should only be called the first time SchemaResponses are created for
         a parent object. Every subsequent time new Responses are being created, they
@@ -64,8 +64,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         assert not parent.schema_responses.exists()
 
-        #TODO: consider validation to ensure SchemaResponses aren't using a different
-        # schema than a parent object
+        # TODO: Decide on a fixed property/field name that parent types should implement
+        # to access a supported schema. Just use registration_schema for now.
+        parent_schema = parent.registration_schema
+        schema = schema or parent_schema
+        if not schema:
+            raise ValueError('Must pass a schema if parent resource does not define one.')
+        if schema != parent_schema:
+            raise ValueError(
+                f'Provided schema ({schema.name}) does not match '
+                f'schema on parent ({parent_schema.name})'
+            )
 
         new_response = cls(
             parent=parent,
@@ -92,11 +101,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     @classmethod
     def create_from_previous_response(cls, initiator, previous_response, justification=None):
-        '''Create SchemaResponses using existing SchemaResponses as a starting point.
+        '''Create a SchemaResponse using an existing SchemaResponse as a starting point.
 
         On creation, the new SchemaResponses will share all of its response_blocks with the
-        previous_version (as no responses have changed). As responses are updated through the
-        new SchemaResponses, new SchemaResponseBlocks will be created/updated.
+        previous_version (as no responses have changed). As responses are updated via
+        response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
         '''
 
         # TODO confirm that no other non-Approved responses exist
@@ -114,17 +123,28 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def update_responses(self, updated_responses):
         '''Updates any response_blocks with keys listed in updated_responses
 
+        If this is the first time a given key has been updated on this SchemaResponse, a
+        new SchemaResponseBlock (with source_schema_response=self) will be created to hold the
+        answer and added to response_blocks, and the outdated response_block entry for that key
+        (inherited from the previous_response) will be removed from response_blocks.
+
+        If a previously updated response is udpated again, the existing entry in response_blocks
+        for that key will have its "response" field updated to the new value.
+
+        If a previously updated response has its answer reverted to the previous_response's answer,
+        the previously created SchemaResponseBlock will be deleted, and the previous_response's
+        response_block for that key will be restored to self's response_blocks.
+
         This will raise a ValueError at the end if any unsupported keys are encountered.
         If you do not want any writes to persist if called with unsupported keys,
         make sure to call in an atomic context.
         '''
         # TODO: Add check for state once that stuff is here
-
-        # make a local copy of the responses so we can pop with impunity
-        # no need for deepcopy, since we aren't mutating responses
         if not updated_responses:
             return
 
+        # make a local copy of the responses so we can pop with impunity
+        # no need for deepcopy, since we aren't mutating dictionary values
         updated_responses = dict(updated_responses)
 
         for block in self.response_blocks.all():
@@ -140,8 +160,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             raise ValueError(f'Encountered unexpected keys: {",".join(updated_responses.keys())}')
 
     def _response_reverted(self, current_block, latest_response):
-        '''Handle the case where an answer is reverted over the course of editing a Response.
-        '''
+        '''Handle the case where an answer is reverted over the course of editing a Response.'''
         if not self.previous_response:
             return False
 

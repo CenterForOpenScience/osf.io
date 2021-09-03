@@ -1,7 +1,7 @@
 import pytest
 
 from nose.tools import assert_raises
-from osf.models import RegistrationSchemaBlock, SchemaResponseBlock, SchemaResponse
+from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
 from osf_tests.factories import RegistrationFactory
 from osf_tests.utils import get_default_test_schema
 
@@ -15,17 +15,30 @@ INITIAL_SCHEMA_RESPONSES = {
     'q6': None
 }
 
+
+@pytest.fixture
+def schema():
+    return get_default_test_schema()
+
+
+@pytest.fixture
+def registration(schema):
+    return RegistrationFactory(schema=schema)
+
+
+@pytest.fixture
+def schema_response(registration):
+    response = SchemaResponse.create_initial_response(
+        initiator=registration.creator,
+        parent=registration
+    )
+    response.update_responses(INITIAL_SCHEMA_RESPONSES)
+    return response
+
+
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
 class TestCreateSchemaResponse():
-
-    @pytest.fixture
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture
-    def schema(self):
-        return get_default_test_schema()
 
     def test_create_initial_response_sets_attributes(self, registration, schema):
         response = SchemaResponse.create_initial_response(
@@ -39,6 +52,14 @@ class TestCreateSchemaResponse():
         assert response.schema == schema
         assert response.initiator == registration.creator
         assert not response.submitted_timestamp
+
+    def test_create_initial_response_uses_parent_schema_if_none_provided(self, registration):
+        response = SchemaResponse.create_initial_response(
+            initiator=registration.creator,
+            parent=registration
+        )
+
+        assert response.schema == registration.registration_schema
 
     def test_create_initial_response_assigns_response_blocks_and_source_revision(
             self, registration, schema):
@@ -57,9 +78,29 @@ class TestCreateSchemaResponse():
         assert created_response_blocks == set(response.updated_response_blocks.all())
         assert created_response_blocks == set(response.response_blocks.all())
 
-    def test_create_initial_response_creates_blocks_for_each_schema_question(
-            self, registration, schema):
+    def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
+        registration.registered_schema.clear()
+        registration.save()
+        with assert_raises(ValueError):
+            SchemaResponse.create_initial_response(
+                initiator=registration.creator,
+                parent=registration
+            )
+
+    def test_create_initial_response_fails_if_schema_and_parent_schema_mismatch(self, registration):
+        alt_schema = RegistrationSchema.objects.exclude(
+            id=registration.registration_schema.id
+        ).first()
+        with assert_raises(ValueError):
+            SchemaResponse.create_initial_response(
+                initiator=registration.creator,
+                parent=registration,
+                schema=alt_schema
+            )
+
+    def test_create_initial_response_creates_blocks_for_each_schema_question(self, registration):
         assert not SchemaResponseBlock.objects.exists()
+        schema = registration.registration_schema
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
@@ -76,32 +117,29 @@ class TestCreateSchemaResponse():
         for key in schema_input_blocks.values_list('registration_response_key', flat=True):
             assert created_response_blocks.filter(schema_key=key).exists()
 
-    def test_cannot_create_initial_response_twice(self, registration, schema):
+    def test_cannot_create_initial_response_twice(self, registration):
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
 
         with assert_raises(AssertionError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
-                schema=schema
             )
 
-    def test_create_initial_response_for_different_parent(self, registration, schema):
+    def test_create_initial_response_for_different_parent(self, registration):
+        schema = registration.registration_schema
         first_response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
 
         alternate_registration = RegistrationFactory(schema=schema)
         alternate_registration_response = SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
-            schema=schema,
         )
 
         # Confirm that a response block was created for each input block
@@ -124,27 +162,22 @@ class TestCreateSchemaResponse():
             alternate_registration_response.response_blocks.all()
         ).exists()
 
-    def test_create_from_previous_response(self, registration, schema):
-        initial_response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-
+    def test_create_from_previous_response(self, registration, schema_response):
         revised_response = SchemaResponse.create_from_previous_response(
             initiator=registration.creator,
-            previous_response=initial_response,
+            previous_response=schema_response,
             justification='Leeeeerooooy Jeeeenkiiiinns'
         )
 
         assert revised_response.initiator == registration.creator
         assert revised_response.parent == registration
-        assert revised_response.schema == schema
+        assert revised_response.schema == schema_response.schema
+        assert revised_response.previous_response == schema_response
         assert revised_response.revision_justification == 'Leeeeerooooy Jeeeenkiiiinns'
 
-        assert revised_response != initial_response
+        assert revised_response != schema_response
         assert not revised_response.updated_response_blocks.exists()
-        assert set(revised_response.response_blocks.all()) == set(initial_response.response_blocks.all())
+        assert set(revised_response.response_blocks.all()) == set(schema_response.response_blocks.all())
 
 
 @pytest.mark.enable_bookmark_creation
@@ -152,45 +185,27 @@ class TestCreateSchemaResponse():
 class TestUpdateSchemaResponses():
 
     @pytest.fixture
-    def schema(self):
-        return get_default_test_schema()
-
-    @pytest.fixture
-    def registration(self, schema):
-        return RegistrationFactory(schema=schema)
-
-    @pytest.fixture
-    def initial_response(self, schema, registration):
-        response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-        response.update_responses(INITIAL_SCHEMA_RESPONSES)
-        return response
-
-    @pytest.fixture
-    def revised_response(self, initial_response):
+    def revised_response(self, schema_response):
         return SchemaResponse.create_from_previous_response(
-            initiator=initial_response.initiator,
-            previous_response=initial_response,
+            initiator=schema_response.initiator,
+            previous_response=schema_response,
             justification='Leeeeerooooy Jeeeenkiiiinns'
         )
 
-    def test_all_responses_property(self, initial_response):
-        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
-        for block in initial_response.response_blocks.all():
-            assert initial_response.all_responses[block.schema_key] == block.response
+    def test_all_responses_property(self, schema_response):
+        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
+        for block in schema_response.response_blocks.all():
+            assert schema_response.all_responses[block.schema_key] == block.response
 
-    def test_uodated_response_keys_property(self, initial_response, revised_response, schema):
-        # initial_response "updates" all keys
+    def test_uodated_response_keys_property(self, schema_response, revised_response, schema):
+        # schema_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
                 schema=schema, registration_response_key__isnull=False
             ).values_list('registration_response_key', flat=True)
         )
 
-        assert initial_response.updated_response_keys == all_keys
+        assert schema_response.updated_response_keys == all_keys
 
         # No updated_responses on the standard revised_response
         assert not revised_response.updated_response_keys
@@ -198,40 +213,40 @@ class TestUpdateSchemaResponses():
         revised_response.update_responses({'q1': 'I has a new  answer'})
         assert revised_response.updated_response_keys == {'q1'}
 
-    def test_update_responses(self, initial_response):
-        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
+    def test_update_responses(self, schema_response):
+        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
 
         updated_responses = {
             'q1': 'Hello there',
             'q2': 'This is a new response',
             'q3': 'B',
             'q4': ['E'],
-            'q5': [initial_response.initiator.id],
+            'q5': [schema_response.initiator.id],
             'q6': 'SomeFile',
         }
-        initial_response.update_responses(updated_responses)
+        schema_response.update_responses(updated_responses)
 
-        initial_response.refresh_from_db()
-        assert initial_response.all_responses == updated_responses
-        for block in initial_response.response_blocks.all():
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses == updated_responses
+        for block in schema_response.response_blocks.all():
             assert block.response == updated_responses[block.schema_key]
 
-    def test_update_to_initial_response_updates_response_blocks_in_place(self, initial_response):
+    def test_update_to_schema_response_updates_response_blocks_in_place(self, schema_response):
         # Call set to force evaluation
-        initial_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
+        initial_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
 
-        initial_response.update_responses(
+        schema_response.update_responses(
             {
                 'q1': 'Hello there',
                 'q2': 'This is a new response',
                 'q3': 'B',
                 'q4': ['E'],
-                'q5': [initial_response.initiator.id],
+                'q5': [schema_response.initiator.id],
                 'q6': 'SomeFile'
             }
         )
-        initial_response.refresh_from_db()
-        updated_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
+        schema_response.refresh_from_db()
+        updated_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
         assert initial_block_ids == updated_block_ids
 
     def test_initial_update_to_revised_response_creates_new_block(self, revised_response):
@@ -305,9 +320,9 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q3').id == original_q3_block.id
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
-    def test_update_with_unsupported_key_raises(self, initial_response):
+    def test_update_with_unsupported_key_raises(self, schema_response):
         with assert_raises(ValueError):
-            initial_response.update_responses({'q7': 'sneaky'})
+            schema_response.update_responses({'q7': 'sneaky'})
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -318,10 +333,10 @@ class TestUpdateSchemaResponses():
         ]
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
-            self, updated_responses, initial_response):
+            self, updated_responses, schema_response):
         with assert_raises(ValueError):
-            initial_response.update_responses(updated_responses)
+            schema_response.update_responses(updated_responses)
 
-        initial_response.refresh_from_db()
-        assert initial_response.all_responses['q1'] == updated_responses['q1']
-        assert initial_response.all_responses['q2'] == updated_responses['q2']
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses['q1'] == updated_responses['q1']
+        assert schema_response.all_responses['q2'] == updated_responses['q2']
