@@ -55,7 +55,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         return set(revised_keys)
 
     @classmethod
-    def create_initial_response(cls, initiator, parent, schema, justification=None):
+    def create_initial_response(cls, initiator, parent, schema=None, justification=None):
         '''Create SchemaResponse and all initial SchemaResponseBlocks.
 
         This should only be called the first time SchemaResponses are created for
@@ -64,8 +64,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         assert not parent.schema_responses.exists()
 
-        #TODO: consider validation to ensure SchemaResponses aren't using a different
-        # schema than a parent object
+        # TODO: Decide on a fixed property/field name that parent types should implement
+        # to access a supported schema. Just use registration_schema for now.
+        parent_schema = parent.registration_schema
+        schema = schema or parent_schema
+        if not schema:
+            raise ValueError('Must pass a schema if parent resource does not define one.')
+        if schema != parent_schema:
+            raise ValueError(
+                f'Provided schema ({schema.name}) does not match '
+                f'schema on parent ({parent_schema.name})'
+            )
 
         new_response = cls(
             parent=parent,
