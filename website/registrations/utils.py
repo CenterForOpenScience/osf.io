@@ -68,7 +68,7 @@ class BulkRegistrationUpload():
                 schema_questions[question['qid']] = get_question_validations(question)
                 if 'properties' in question:
                     for nested_question in question['properties']:
-                        qid="{}{}".format(question['qid'], nested_question['id'])
+                        qid = '{}{}'.format(question['qid'], nested_question['id'])
                         schema_questions[qid] = get_question_validations(nested_question)
         return schema_questions
 
@@ -92,7 +92,7 @@ class BulkRegistrationUpload():
     def get_parsed(self):
         parsed = []
         for row in self.rows:
-            parsed.append({ 'csv_raw': row.get_raw_value(), 'csv_parsed': row.get_parsed_value()})
+            parsed.append({'csv_raw': row.get_raw_value(), 'csv_parsed': row.get_parsed_value()})
         return {'schema_id': self.schema_id, 'registrations': parsed}
 
     def validate(self):
@@ -175,7 +175,7 @@ class Cell():
             if name in CONTRIBUTOR_METADATA_FIELDS:
                 field_instance = ContributorField(**kwargs)
             elif name == 'license':
-            	field_instance = LicenseField(**kwargs)
+                field_instance = LicenseField(**kwargs)
             elif name == 'category':
                 field_instance = CategoryField(**kwargs)
             elif name == 'subjects':
@@ -221,7 +221,7 @@ class RegistrationResponseField():
                         if choice not in self.options:
                             self.log_error(invalid=True)
                         else:
-                            parse_value.append(choice)
+                            parsed_value.append(choice)
             self._parsed_value = parsed_value
 
     def parse(self):
@@ -264,7 +264,7 @@ class ContributorField(MetadataField):
         else:
             parsed_value = []
             parsed_contributor_list = [val.strip() for val in self.value.split(';')]
-            # TODO: use re.findall()
+            # TODO: maybe use re.findall()
             for contrib in parsed_contributor_list:
                 match = self.contributor_regex.match(contrib.strip())
                 if match:
@@ -342,7 +342,7 @@ class InstitutionsField(MetadataField):
 class ProjectIDField(MetadataField):
     def _validate(self):
         try:
-            project = AbstractNode.objects.get(guids___id=self.value, is_deleted=False, type='osf.node')
+            AbstractNode.objects.get(guids___id=self.value, is_deleted=False, type='osf.node')
         except AbstractNode.DoesNotExist:
             self.log_error(invalid=True)
         else:
