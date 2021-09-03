@@ -1,7 +1,7 @@
 import pytest
 
 from nose.tools import assert_raises
-from osf.models import RegistrationSchemaBlock, SchemaResponseBlock, SchemaResponse
+from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
 from osf_tests.factories import RegistrationFactory
 from osf_tests.utils import get_default_test_schema
 
@@ -28,10 +28,12 @@ def registration(schema):
 
 @pytest.fixture
 def schema_response(registration):
-    return SchemaResponse.create_initial_response(
+    response = SchemaResponse.create_initial_response(
         initiator=registration.creator,
         parent=registration
     )
+    response.update_responses(INITIAL_SCHEMA_RESPONSES)
+    return response
 
 
 @pytest.mark.enable_bookmark_creation
@@ -51,6 +53,14 @@ class TestCreateSchemaResponse():
         assert response.initiator == registration.creator
         assert not response.submitted_timestamp
 
+    def test_create_initial_response_uses_parent_schema_if_none_provided(self, registration):
+        response = SchemaResponse.create_initial_response(
+            initiator=registration.creator,
+            parent=registration
+        )
+
+        assert response.schema == registration.registration_schema
+
     def test_create_initial_response_assigns_response_blocks_and_source_revision(
             self, registration, schema):
         assert not SchemaResponseBlock.objects.exists()
@@ -68,9 +78,29 @@ class TestCreateSchemaResponse():
         assert created_response_blocks == set(response.updated_response_blocks.all())
         assert created_response_blocks == set(response.response_blocks.all())
 
-    def test_create_initial_response_creates_blocks_for_each_schema_question(
-            self, registration, schema):
+    def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
+        registration.registered_schema.clear()
+        registration.save()
+        with assert_raises(ValueError):
+            SchemaResponse.create_initial_response(
+                initiator=registration.creator,
+                parent=registration
+            )
+
+    def test_create_initial_response_fails_if_schema_and_parent_schema_mismatch(self, registration):
+        alt_schema = RegistrationSchema.objects.exclude(
+            id=registration.registration_schema.id
+        ).first()
+        with assert_raises(ValueError):
+            SchemaResponse.create_initial_response(
+                initiator=registration.creator,
+                parent=registration,
+                schema=alt_schema
+            )
+
+    def test_create_initial_response_creates_blocks_for_each_schema_question(self, registration):
         assert not SchemaResponseBlock.objects.exists()
+        schema = registration.registration_schema
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
@@ -87,32 +117,29 @@ class TestCreateSchemaResponse():
         for key in schema_input_blocks.values_list('registration_response_key', flat=True):
             assert created_response_blocks.filter(schema_key=key).exists()
 
-    def test_cannot_create_initial_response_twice(self, registration, schema):
+    def test_cannot_create_initial_response_twice(self, registration):
         SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
 
         with assert_raises(AssertionError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
-                schema=schema
             )
 
-    def test_create_initial_response_for_different_parent(self, registration, schema):
+    def test_create_initial_response_for_different_parent(self, registration):
+        schema = registration.registration_schema
         first_response = SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
-            schema=schema
         )
 
         alternate_registration = RegistrationFactory(schema=schema)
         alternate_registration_response = SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
-            schema=schema,
         )
 
         # Confirm that a response block was created for each input block
@@ -135,13 +162,7 @@ class TestCreateSchemaResponse():
             alternate_registration_response.response_blocks.all()
         ).exists()
 
-    def test_create_from_previous_response(self, registration, schema):
-        schema_response = SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
-        )
-
+    def test_create_from_previous_response(self, registration, schema_response):
         revised_response = SchemaResponse.create_from_previous_response(
             initiator=registration.creator,
             previous_response=schema_response,
@@ -150,7 +171,8 @@ class TestCreateSchemaResponse():
 
         assert revised_response.initiator == registration.creator
         assert revised_response.parent == registration
-        assert revised_response.schema == schema
+        assert revised_response.schema == schema_response.schema
+        assert revised_response.previous_response == schema_response
         assert revised_response.revision_justification == 'Leeeeerooooy Jeeeenkiiiinns'
 
         assert revised_response != schema_response
