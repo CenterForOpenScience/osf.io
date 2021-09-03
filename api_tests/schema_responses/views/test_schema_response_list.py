@@ -42,6 +42,10 @@ class TestSchemaResponseList:
                 'type': 'revisions',
                 'relationships': {
                     'registration': {
+                        'data': {
+                            'sds': 'dsdas',
+                            'type': 'not yours'
+                        }
                     }
                 }
             }
@@ -79,7 +83,7 @@ class TestSchemaResponseList:
         registration.add_contributor(user, 'admin')
         resp = app.post_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
-        assert resp.json['errors'][0]['detail'] == 'Request must include /data.'
+        assert resp.json['errors'][0]['detail'] == 'Request must include /data/relationships/data/id.'
 
     @pytest.mark.parametrize(
         'permission,expected_response',

@@ -211,7 +211,11 @@ class SchemaResponseCreatePermission(permissions.BasePermission):
             # Validate json before using id to check for permissions
             request_json = JSONAPIParser().parse(
                 io.BytesIO(request.body),
-                parser_context={'request': request},
+                parser_context={
+                    'request': request,
+                    'is_relationship': True,
+                    'schema_response_endpoint': True,
+                },
             )
 
             obj = get_object_or_error(

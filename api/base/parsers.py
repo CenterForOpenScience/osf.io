@@ -13,6 +13,8 @@ NO_RELATIONSHIPS_ERROR = 'Request must include /data/relationships.'
 NO_DATA_ERROR = 'Request must include /data.'
 NO_TYPE_ERROR = 'Request must include /type.'
 NO_ID_ERROR = 'Request must include /data/id.'
+NO_RELATIONSHIPS_ID_ERROR = 'Request must include /data/relationships/data/id.'
+NO_RELATIONSHIPS_TYPE_ERROR = 'Request must include /data/relationships/data/type.'
 
 
 class JSONAPIParser(JSONParser):
@@ -35,7 +37,7 @@ class JSONAPIParser(JSONParser):
         return {'id': id, 'target_type': target_type}
 
     # Overrides JSONParser
-    def flatten_relationships(self, relationships):
+    def flatten_relationships(self, relationships, parser_context=None):
         """
         Flattens relationships dictionary which has information needed to create related resource objects.
 
@@ -52,6 +54,19 @@ class JSONAPIParser(JSONParser):
 
         if not data:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
+
+        if data and parser_context and parser_context.get('schema_response_endpoint'):
+            if not data.get('id'):
+                raise JSONAPIException(
+                    source={'pointer': f'/data/relationships/{related_resource}/data/id'},
+                    detail=NO_RELATIONSHIPS_ID_ERROR,
+                )
+
+            if not data.get('type'):
+                raise JSONAPIException(
+                    source={'pointer': f'/data/relationships/{related_resource}/data/type'},
+                    detail=NO_RELATIONSHIPS_TYPE_ERROR,
+                )
 
         if isinstance(data, list):
             return [self.get_relationship(item, related_resource) for item in data]
@@ -95,7 +110,7 @@ class JSONAPIParser(JSONParser):
             parsed.update(attributes)
 
         if relationships:
-            relationships = self.flatten_relationships(relationships)
+            relationships = self.flatten_relationships(relationships, parser_context=parser_context)
             if isinstance(relationships, list):
                 relationship_values = []
                 relationship_key = None
@@ -137,10 +152,10 @@ class JSONAPIParser(JSONParser):
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
-    def flatten_multiple_relationships(self, parser, relationships):
+    def flatten_multiple_relationships(self, parser, relationships, parser_context=None):
         rel = {}
         for resource in relationships:
-            ret = super(parser, self).flatten_relationships({resource: relationships[resource]})
+            ret = super(parser, self).flatten_relationships({resource: relationships[resource]}, parser_context=parser_context)
             if isinstance(ret, list):
                 rel[resource] = []
                 for item in ret:
@@ -240,16 +255,16 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
     If edits are made to this class, be sure to check JSONAPIMultipleRelationshipsParserForRegularJSON to see if corresponding
     edits should be made there.
     """
-    def flatten_relationships(self, relationships):
-        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships)
+    def flatten_relationships(self, relationships, parser_context=None):
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships, parser_context)
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
     """
     Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
     """
-    def flatten_relationships(self, relationships):
-        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships)
+    def flatten_relationships(self, relationships, parser_context=None):
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships, parser_context)
 
 
 class HMACSignedParser(JSONParser):
