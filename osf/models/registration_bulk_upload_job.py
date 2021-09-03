@@ -1,11 +1,21 @@
-import logging
+from enum import IntEnum
 
 from django.db import models
 
 from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
-logger = logging.getLogger(__name__)
+
+class JobState(IntEnum):
+    """Defines the six states of registration bulk upload jobs.
+    """
+
+    PENDING = 0  # Database preparation is in progress
+    INITIALIZED = 1  # Database preparation has been finished and is ready to be picked up
+    PICKED_UP = 2  # Registration creation is in progress
+    DONE_FULL = 3  # All (draft) registrations have been successfully created
+    DONE_PARTIAL = 4  # Some (draft) registrations have failed the creation creation process
+    DONE_ERROR = 5  # All (draft) registrations have failed
 
 
 class RegistrationBulkUploadJob(BaseModel):
@@ -16,29 +26,29 @@ class RegistrationBulkUploadJob(BaseModel):
     payload_hash = models.CharField(blank=False, null=False, unique=True, max_length=255)
 
     # The status/state of the bulk upload
-    state = models.CharField(choices=[
-        ('pending', 'Database preparation in progress'),
-        ('initialized', 'Database preparation done'),
-        ('picked_up', 'Registration creation in progress'),
-        ('done_full', 'All (draft) registrations have been created'),
-        ('done_partial', 'Some (draft) registrations have failed creation'),
-        ('done_error', 'All have failed'),
-    ], max_length=255)
+    state = models.IntegerField(choices=[
+        (JobState.PENDING, 'PENDING'),
+        (JobState.INITIALIZED, 'INITIALIZED'),
+        (JobState.PICKED_UP, 'PICKED_UP'),
+        (JobState.DONE_FULL, 'DONE_FULL'),
+        (JobState.DONE_PARTIAL, 'DONE_PARTIAL'),
+        (JobState.DONE_ERROR, 'DONE_ERROR'),
+    ], default=JobState.PENDING)
 
     # The user / admin who started this bulk upload
-    initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
+    initiator = models.ForeignKey('OSFUser', blank=False, null=True, on_delete=models.CASCADE)
 
     # The registration provider this bulk upload targets
-    provider = models.ForeignKey('RegistrationProvider', null=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('RegistrationProvider', blank=False, null=True, on_delete=models.CASCADE)
 
     # The registration template this bulk upload uses
     schema = models.ForeignKey('RegistrationSchema', blank=False, null=True, on_delete=models.CASCADE)
 
     # The date when success / failure emails are sent after the creation of registrations in this upload has been done
-    email_sent = NonNaiveDateTimeField(null=True, blank=True)
+    email_sent = NonNaiveDateTimeField(blank=True, null=True)
 
     @classmethod
     def create(cls, payload_hash, initiator, provider, schema):
-        upload = cls(payload_hash=payload_hash, state='pending',
+        upload = cls(payload_hash=payload_hash, state=JobState.PENDING,
                      initiator=initiator, provider=provider, schema=schema, email_sent=None)
         return upload

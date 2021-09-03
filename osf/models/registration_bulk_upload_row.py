@@ -1,11 +1,7 @@
-import logging
-
 from django.db import models
 
 from osf.models.base import BaseModel
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-
-logger = logging.getLogger(__name__)
 
 
 class RegistrationBulkUploadRow(BaseModel):
@@ -16,7 +12,7 @@ class RegistrationBulkUploadRow(BaseModel):
     upload = models.ForeignKey('RegistrationBulkUploadJob', blank=False, null=True, on_delete=models.CASCADE)
 
     # The draft registration that have been successfully created
-    draft_registration = models.ForeignKey('DraftRegistration', null=True, blank=True, on_delete=models.CASCADE)
+    draft_registration = models.ForeignKey('DraftRegistration', blank=True, null=True, on_delete=models.CASCADE)
 
     # A flag that indicates whether the draft registration has been created
     is_completed = models.BooleanField(default=False)
