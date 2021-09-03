@@ -24,7 +24,7 @@ class TestSchemaResponseDetail:
     def payload(self):
         return {
             'data': {
-                'type': 'schema-responses',
+                'type': 'revisions',
                 'attributes': {
                     'revision_responses': {
                         'q1': 'update value',
@@ -38,7 +38,7 @@ class TestSchemaResponseDetail:
     def invalid_payload(self):
         return {
             'data': {
-                'type': 'schema-responses',
+                'type': 'revisions',
                 'attributes': {
                     'revision_responses': {
                         'oops': {'value': 'test'},

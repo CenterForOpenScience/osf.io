@@ -1,5 +1,5 @@
 from api.base.utils import absolute_reverse, get_object_or_error
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, TypeField
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -27,6 +27,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     ])
 
     id = ser.CharField(source='_id', required=True, allow_null=True)
+    type = TypeField()
     date_created = VersionedDateTimeField(source='created', required=False)
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
