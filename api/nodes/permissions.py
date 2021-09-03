@@ -153,7 +153,7 @@ class AdminContributorOrPublic(permissions.BasePermission):
 
 class SchemaResponseViewPermission(permissions.BasePermission):
     '''
-    Permissions for top-level `schema_responses` endpoints.
+    Permissions for top-level `schema_response` detail endpoints.
     To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
     deleting.
     '''
@@ -178,9 +178,9 @@ class SchemaResponseViewPermission(permissions.BasePermission):
 
 class SchemaResponseRegistrationViewPermission(permissions.BasePermission):
     '''
-    Permissions for top-level `schema_responses` endpoints.
-    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
-    deleting.
+    Permissions for the registration relationship view for schema responses.
+    This endpoint only allows the user to view and filter the schema responses for that Registration if it is public or
+    the user has read permission.
     '''
     acceptable_models = (Registration, )
 
@@ -198,9 +198,8 @@ class SchemaResponseRegistrationViewPermission(permissions.BasePermission):
 
 class SchemaResponseCreatePermission(permissions.BasePermission):
     '''
-    Permissions for top-level `schema_responses` endpoints.
-    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
-    deleting.
+    Permissions for top-level `schema_responses` list endpoints.
+    To create a schema response a user must be an admin contributor on that Registration.
     '''
     acceptable_models = (Registration, )
 
