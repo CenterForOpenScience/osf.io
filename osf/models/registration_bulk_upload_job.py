@@ -27,12 +27,12 @@ class RegistrationBulkUploadJob(BaseModel):
 
     # The status/state of the bulk upload
     state = models.IntegerField(choices=[
-        (JobState.PENDING, 'PENDING'),
-        (JobState.INITIALIZED, 'INITIALIZED'),
-        (JobState.PICKED_UP, 'PICKED_UP'),
-        (JobState.DONE_FULL, 'DONE_FULL'),
-        (JobState.DONE_PARTIAL, 'DONE_PARTIAL'),
-        (JobState.DONE_ERROR, 'DONE_ERROR'),
+        (JobState.PENDING, JobState.PENDING.name),
+        (JobState.INITIALIZED, JobState.INITIALIZED.name),
+        (JobState.PICKED_UP, JobState.PICKED_UP.name),
+        (JobState.DONE_FULL, JobState.DONE_FULL.name),
+        (JobState.DONE_PARTIAL, JobState.DONE_PARTIAL.name),
+        (JobState.DONE_ERROR, JobState.DONE_ERROR.name),
     ], default=JobState.PENDING)
 
     # The user / admin who started this bulk upload
