@@ -16,8 +16,7 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
-    SchemaResponse,
-    Registration
+    Registration,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -217,7 +216,7 @@ class SchemaResponseCreatePermission(permissions.BasePermission):
             obj = get_object_or_error(
                 Registration,
                 request_json['data']['relationships']['registration']['data']['id'],
-                request
+                request,
             )
 
             return self.has_object_permission(request, view, obj)

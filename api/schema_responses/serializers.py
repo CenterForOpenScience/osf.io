@@ -1,4 +1,4 @@
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.serializers import JSONAPISerializer, LinksField
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -81,16 +81,17 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return False
 
     def create(self, validated_data):
-
-        registration_id = validated_data.pop('_id')
         try:
-            registration = Registration.objects.get_nodes_for_user(
-                self.context['request'].user
-            ).get(
-                guids___id=registration_id
-            )
-        except Registration.DoesNotExist:
-            raise exceptions.ValidationError(f'Invalid Registration id {registration_id}')
+            registration_id = validated_data.pop('_id')
+        except KeyError:
+            raise exceptions.ValidationError('payload must contain valid Registration id')
+
+        registration = get_object_or_error(
+            Registration,
+            registration_id,
+            self.context['request'],
+            check_deleted=False,
+        )
 
         try:
             schema = registration.registration_schema

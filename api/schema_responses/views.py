@@ -1,4 +1,3 @@
-import json
 from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -24,7 +23,6 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
 
     def get_queryset(self):
         return SchemaResponse.objects.all()
-
 
 
 class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
