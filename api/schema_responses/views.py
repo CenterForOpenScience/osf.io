@@ -18,66 +18,62 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
         base_permissions.TokenHasScope,
     )
 
-    parser_classes = (JSONAPIParser, JSONSchemaParser,)
+    parser_classes = (JSONAPIParser, JSONSchemaParser)
 
     serializer_class = RegistrationSchemaResponseSerializer
     view_category = 'schema_responses'
     view_name = 'schema-responses-list'
     create_payload_schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "object",
-        "properties": {
-            "data": {
-                "additionalProperties": False,
-                "type": "object",
-                "properties": {
-                    "type": {
-                        "type": "string"
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        'type': 'object',
+        'properties': {
+            'data': {
+                'type': 'object',
+                'properties': {
+                    'type': {
+                        'type': 'string',
                     },
-                    "relationships": {
-                        "additionalProperties": False,
-                        "type": "object",
-                        "properties": {
-                            "registration": {
-                                "additionalProperties": False,
-                                "type": "object",
-                                "properties": {
-                                    "data": {
-                                        "additionalProperties": False,
-                                        "type": "object",
-                                        "properties": {
-                                            "id": {
-                                                "type": "string"
+                    'relationships': {
+                        'type': 'object',
+                        'properties': {
+                            'registration': {
+                                'type': 'object',
+                                'properties': {
+                                    'data': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'id': {
+                                                'pattern': '^[a-z0-9]{5,}',
                                             },
-                                            "type": {
-                                                "type": "string"
-                                            }
+                                            'type': {
+                                                'pattern': 'registrations',
+                                            },
                                         },
-                                        "required": [
-                                            "id",
-                                            "type"
-                                        ]
-                                    }
+                                        'required': [
+                                            'id',
+                                            'type',
+                                        ],
+                                    },
                                 },
-                                "required": [
-                                    "data"
-                                ]
-                            }
+                                'required': [
+                                    'data',
+                                ],
+                            },
                         },
-                        "required": [
-                            "registration"
-                        ]
-                    }
+                        'required': [
+                            'registration',
+                        ],
+                    },
                 },
-                "required": [
-                    "type",
-                    "relationships"
-                ]
-            }
+                'required': [
+                    'type',
+                    'relationships',
+                ],
+            },
         },
-        "required": [
-            "data"
-        ]
+        'required': [
+            'data',
+        ],
     }
 
     def get_queryset(self):

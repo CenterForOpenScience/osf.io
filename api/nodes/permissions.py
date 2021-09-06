@@ -21,7 +21,7 @@ from osf.models import (
 from osf.utils import permissions as osf_permissions
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
-from api.base.parsers import JSONAPIParser, JSONSchemaParser
+from api.base.parsers import JSONSchemaParser
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -213,7 +213,7 @@ class SchemaResponseCreatePermission(permissions.BasePermission):
                 io.BytesIO(request.body),
                 parser_context={
                     'request': request,
-                    'json_schema': view.create_payload_schema
+                    'json_schema': view.create_payload_schema,
                 },
             )
             obj = get_object_or_error(
