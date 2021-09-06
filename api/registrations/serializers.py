@@ -28,6 +28,7 @@ from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
+    HideIfWithdrawalOrWikiDisabled,
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
@@ -191,7 +192,7 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_files_count'},
     ))
 
-    wikis = HideIfWithdrawal(RelationshipField(
+    wikis = HideIfWithdrawalOrWikiDisabled(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_wiki_page_count'},

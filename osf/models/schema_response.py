@@ -6,8 +6,8 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
-from osf.models import RegistrationSchemaBlock
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
@@ -17,7 +17,7 @@ from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
-    SchemaResponse manages to creation, surfacing, updating, and approval of
+    SchemaResponse manages the creation, surfacing, updating, and approval of
     "responses" to the questions on a Registration schema (for example).
 
     Individual answers are stored in SchemaResponseBlocks and aggregated here
@@ -152,6 +152,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         On creation, the new SchemaResponses will share all of its response_blocks with the
         previous_version (as no responses have changed). As responses are updated via
         response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
+
+        A new SchemaResponse cannot be created for a given parent object if it already has another
+        SchemaResponse in a non-APPROVED state.
         '''
         # Cannot create new response if parent has another response in-progress or pending approval
         parent = previous_response.parent
@@ -175,6 +178,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def update_responses(self, updated_responses):
         '''Updates any response_blocks with keys listed in updated_responses
 
+        Only SchemaResponses in state IN_PROGRESS can have their responses updated.
+
         If this is the first time a given key has been updated on this SchemaResponse, a
         new SchemaResponseBlock (with source_schema_response=self) will be created to hold the
         answer and added to response_blocks, and the outdated response_block entry for that key
@@ -191,7 +196,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         If you do not want any writes to persist if called with unsupported keys,
         make sure to call in an atomic context.
         '''
-        # TODO: Add check for state once that stuff is here
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
                 f'SchemaResponse has state f{self.reviews_state}. '
