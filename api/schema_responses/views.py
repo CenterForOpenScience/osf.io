@@ -80,18 +80,17 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
         ]
     }
 
-
     def get_queryset(self):
         return SchemaResponse.objects.all()
 
     def get_parser_context(self, http_request):
         """
-        Tells parser that we are creating a relationship
+        Tells parser what json schema we are checking againest.
         """
         res = super().get_parser_context(http_request)
         res['json_schema'] = self.create_payload_schema
-
         return res
+
 
 class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
