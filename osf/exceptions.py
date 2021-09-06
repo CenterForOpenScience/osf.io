@@ -154,3 +154,22 @@ class SchemaBlockConversionError(OSFError):
     'schema block' format.
     """
     pass
+
+
+class SchemaResponseError(OSFError):
+    """Superclass for errors ariseing from unexpected SchemaResponse behavior."""
+    pass
+
+
+class SchemaResponseStateError(SchemaResponseError):
+    """Raised when attempting to perform an operation against a
+    SchemaResponse with an invalid state.
+    """
+    pass
+
+
+class PreviousPendingSchemaResponseError(SchemaResponseError):
+    """Raised when attempting to create a new SchemaResponse for a parent
+    that already has an in-progress/pending SchemaResponse.
+    """
+    pass

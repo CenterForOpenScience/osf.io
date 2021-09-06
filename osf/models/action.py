@@ -80,10 +80,11 @@ class SchemaResponseAction(BaseAction):
     to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
 
     @classmethod
-    def from_transition(cls, target, transition, user, comment):
+    def from_transition(cls, target, transition, creator, comment):
         '''Generate a SchemaResponseAction based on a SchemaResposne object and a transition.'''
         from_state = ApprovalStates[transition.source]
         to_state = transition.dest
+        # transition has dest=None if no state change, so re-use from_state
         to_state = ApprovalStates[to_state] if to_state is not None else from_state
         trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
         if not trigger:
@@ -91,7 +92,7 @@ class SchemaResponseAction(BaseAction):
 
         action = cls(
             target=target,
-            creator=user,
+            creator=creator,
             trigger=trigger.db_name,
             from_state=from_state.db_name,
             to_state=to_state.db_name,

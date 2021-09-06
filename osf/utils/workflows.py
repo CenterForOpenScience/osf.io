@@ -156,6 +156,8 @@ class SchemaResponseTriggers(ModerationEnum):
         transition_to_trigger_mappings = {
             (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
             (ApprovalStates.UNAPPROVED, ApprovalStates.UNAPPROVED): cls.APPROVE,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.APPROVE,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION): cls.APPROVE,
             (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
             (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.ADMIN_REJECT,
             (ApprovalStates.PENDING_MODERATION, ApprovalStates.IN_PROGRESS): cls.MODERATOR_REJECT,

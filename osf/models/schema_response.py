@@ -5,21 +5,13 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
+from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
 from osf.models import RegistrationSchemaBlock
-from osf.models.action import SchemaResponseAction
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
-from osf.utils.workflows import ApprovalStates
-
-
-class SchemaResponseError(Exception):
-    pass
-
-
-class InvalidSchemaResponseStateError(SchemaResponseError):
-    pass
+from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
@@ -164,7 +156,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # Cannot create new response if parent has another response in-progress or pending approval
         parent = previous_response.parent
         if parent.schema_responses.exclude(reviews_state=ApprovalStates.APPROVED.db_name).exists():
-            raise InvalidSchemaResponseStateError(
+            raise PreviousPendingSchemaResponseError(
                 f'Cannot create new SchemaResponse for {parent} because {parent} already '
                 'has non-terminal SchemaResponse'
             )
@@ -201,7 +193,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         # TODO: Add check for state once that stuff is here
         if self.state is not ApprovalStates.IN_PROGRESS:
-            raise InvalidSchemaResponseStateError(
+            raise SchemaResponseStateError(
                 f'SchemaResponse has state f{self.reviews_state}. '
                 'Must have state "in_progress" to update responses'
             )
@@ -256,28 +248,108 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
 
+# *** Callbcks in support of ApprovalsMachine ***
+
     def _validate_trigger(self, event_data):
         '''Any additional validation to confirm that a trigger is being used correctly.
 
-        For SchemaResponses, use this to enforce correctness of the internal 'accept' shortcut
-        and to confirm that the provided user has permission to execute the trigger.
+        For SchemaResponses, use this to confirm that the provided user has permission to
+        execute the trigger, including enforcing correct usage of the internal "accept" shortcut.
         '''
-        # Restrictions on calls from PENDING_MODERATION and IN_PROGRESS states are handled by API
-        if self.state is not ApprovalStates.UNAPPROVED:
-            return
-
         user = event_data.kwargs.get('user')
         trigger = event_data.event.name
-        # Allow triggers without a user iff that trigger is an "accept" call in UNAPPROVED
-        # TODO: Consider adding an "OSFAuth" concept for internal calls instead of just using None
-        if trigger == 'accept' and user is not None:
-            raise PermissionsError('Approvers must "approve", not "accept"')
-        if user is None and trigger != 'accept':
-            raise ValueError(f'Trigger "{trigger}" must pass the user who invoked it"')
 
-        # 'approve' and 'reject' triggers must supply a user
-        if trigger in {'approve', 'reject'} and user not in self.pending_approvers.all():
-            raise PermissionsError(f'{user} is not a pending approver on this submission')
+        # The only valid case for not providing a user is the internal accept shortcut
+        # See _validate_accept_trigger docstring for more information
+        if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
+            raise ValueError(
+                f'Trigger {trigger} from state {self.state} for '
+                f'SchemaResponse with id [{self.id}] must be called with a user.'
+            )
+
+        trigger_specific_validator = getattr(self, f'_validate_{trigger}_trigger')
+        trigger_specific_validator(user)
+
+    def _validate_submit_trigger(self, user):
+        """Validate usage of the "submit" trigger on the underlying ApprovalsMachine.
+
+        Only admins on the parent resource can submit the SchemaResponse for review.
+
+        submit can only be called from IN_PROGRESS, calling from any other state will
+        result in a MachineError prior to this validation.
+        """
+        if not self.parent.is_admin_contributor(user):
+            raise PermissionsError(
+                f'User {user} is not an admin contributor on parent resource {self.parent} '
+                f'and does not have permission to "submit" SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_approve_trigger(self, user):
+        """Validate usage of the "approve" trigger on the underlying ApprovalsMachine
+
+        Only users listed in self.pending_approvers can approve.
+
+        "approve" can only be invoked from UNAPPROVED, calling from any other state will
+        result in a MachineError prior to this validation.
+        """
+        if user not in self.pending_approvers.all():
+            raise PermissionsError(
+                f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_accept_trigger(self, user):
+        """Validate usage of the "accept" trigger on the underlying ApprovalsMachine
+
+        "accept" has three valid usages:
+        First, "accept" is called from within the"approve" trigger once all required approvals
+        have been granted. This call should receive the user who issued the final "approve"
+        so that the correct SchemaResponseAction can be logged.
+
+        Secone, moderators "accept" a SchemaResponse if it belongs to a moderated parent resource.
+        In this case, the user must have the correct permission on the parent's provider.
+
+        Finally, "accept" can be called without a user in order to bypass the need for approvals
+        (the "internal accept shortcut") to make life easier for OSF scripts and utilities.
+
+        "accept" can only be invoked from UNAPPROVED and PENDING_MODERATION, calling from any
+        other state will result in a MachineError prior to this validation.
+        """
+        if self.state is ApprovalStates.UNAPPROVED:
+            # user = None -> internal accept shortcut
+            # not self.pending_approvers.exists() -> called from within "approve"
+            if user is None or not self.pending_approvers.exists():
+                return
+            raise ValueError(
+                'Invalid usage of "accept" trigger from UNAPPROVED state '
+                f'against SchemaResponse with id [{self.id}]'
+            )
+
+        if not user.has_perm('accept_submissions', self.parent.provider):
+            raise PermissionsError(
+                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'have permission to "accept" SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_reject_trigger(self, user):
+        """Validate usage of the "reject" trigger on the underlying ApprovalsMachine
+
+        "reject" must be called by a pending approver or a moderator, depending on the state.
+
+        "reject" can only be invoked from UNAPPROVED and PENDING_MODERATION, calling from any
+        other state will result in a MachineError prior to this validation.
+        """
+        if self.state is ApprovalStates.UNAPPROVED:
+            if user not in self.pending_approvers.all():
+                raise PermissionsError(
+                    f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+                )
+            return
+
+        if not user.has_perm('reject_submissions', self.parent.provider):
+            raise PermissionsError(
+                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'have permission to "reject" SchemaResponse with id [{self.id}]'
+            )
 
     def _on_submit(self, event_data):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
@@ -294,11 +366,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         approving_user = event_data.kwargs.get('user', None)
         self.pending_approvers.remove(approving_user)
         if not self.pending_approvers.exists():
-            self.accept()
+            self.accept(**event_data.kwargs)
 
     def _on_complete(self, event_data):
-        '''No special logic on complete for SchemaResponses'''
-        pass
+        '''Clear out any lingering pending_approvers in the case of an internal accept.'''
+        self.pending_approvers.clear()
 
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''
@@ -307,14 +379,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
-        self._log_reviews_action(
-            transition=event_data.transition,
-            user=event_data.kwargs.get('user', self.initiator)
-        )
-        action = SchemaResponseAction.from_transition(
-            target=self,
-            transition=event_data.transition,
+        # Skip writing the final UNAPPROVED -> UNAPPROVED transition and wait for the accept trigger
+        if self.state is ApprovalStates.UNAPPROVED and not self.pending_approvers.exists():
+            return
+
+        from_state = ApprovalStates[event_data.transition.source]
+        to_state = self.state
+        trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
+        self.actions.create(
+            from_state=from_state.db_name,
+            to_state=to_state.db_name,
+            trigger=trigger.db_name,
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
-        action.save()
