@@ -43,7 +43,7 @@ class TestSchemaResponseList:
                 'relationships': {
                     'registration': {
                         'data': {
-                            'sds': 'dsdas',
+                            'rogue_property': 'dsdas',
                             'type': 'not yours'
                         }
                     }
@@ -83,7 +83,7 @@ class TestSchemaResponseList:
         registration.add_contributor(user, 'admin')
         resp = app.post_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
-        assert resp.json['errors'][0]['detail'] == 'Request must include /data/relationships/data/id.'
+        assert "'Additional properties are not allowed ('rogue_property' was unexpected)" in resp.json['errors'][0]['detail']
 
     @pytest.mark.parametrize(
         'permission,expected_response',

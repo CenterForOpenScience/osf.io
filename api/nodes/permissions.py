@@ -21,7 +21,7 @@ from osf.models import (
 from osf.utils import permissions as osf_permissions
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
-from api.base.parsers import JSONAPIParser
+from api.base.parsers import JSONAPIParser, JSONSchemaParser
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -209,18 +209,16 @@ class SchemaResponseCreatePermission(permissions.BasePermission):
             return True
         elif request.method == 'POST':
             # Validate json before using id to check for permissions
-            request_json = JSONAPIParser().parse(
+            request_json = JSONSchemaParser().parse(
                 io.BytesIO(request.body),
                 parser_context={
                     'request': request,
-                    'is_relationship': True,
-                    'schema_response_endpoint': True,
+                    'json_schema': view.create_payload_schema
                 },
             )
-
             obj = get_object_or_error(
                 Registration,
-                query_or_pk=request_json['id'],
+                query_or_pk=request_json['data']['relationships']['registration']['data']['id'],
                 request=request,
             )
 

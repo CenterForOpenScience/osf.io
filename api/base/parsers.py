@@ -1,3 +1,7 @@
+import json
+import jsonschema
+import codecs
+
 import time
 import collections
 from django.core.exceptions import ImproperlyConfigured
@@ -13,8 +17,36 @@ NO_RELATIONSHIPS_ERROR = 'Request must include /data/relationships.'
 NO_DATA_ERROR = 'Request must include /data.'
 NO_TYPE_ERROR = 'Request must include /type.'
 NO_ID_ERROR = 'Request must include /data/id.'
-NO_RELATIONSHIPS_ID_ERROR = 'Request must include /data/relationships/data/id.'
-NO_RELATIONSHIPS_TYPE_ERROR = 'Request must include /data/relationships/data/type.'
+
+
+class JSONSchemaParser(JSONParser):
+    """
+    Parses JSON-serialized data.
+    """
+    media_type = 'application/vnd.api+json'
+    renderer_class = JSONAPIRenderer
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        """
+        Parses the incoming bytestream as JSON and returns the resulting data.
+        """
+        parser_context = parser_context or {}
+        encoding = parser_context.get('encoding', 'utf-8')
+
+        try:
+            decoded_stream = codecs.getreader(encoding)(stream)
+            json_payload = json.load(decoded_stream)
+        except ValueError as exc:
+            raise ParseError('JSON parse error - %s' % str(exc))
+
+        json_schema = parser_context['json_schema']
+
+        try:
+            jsonschema.validate(json_payload, json_schema)
+        except jsonschema.exceptions.ValidationError as exc:
+            raise ParseError(exc)
+
+        return json_payload
 
 
 class JSONAPIParser(JSONParser):
@@ -37,7 +69,7 @@ class JSONAPIParser(JSONParser):
         return {'id': id, 'target_type': target_type}
 
     # Overrides JSONParser
-    def flatten_relationships(self, relationships, parser_context=None):
+    def flatten_relationships(self, relationships):
         """
         Flattens relationships dictionary which has information needed to create related resource objects.
 
@@ -54,19 +86,6 @@ class JSONAPIParser(JSONParser):
 
         if not data:
             raise JSONAPIException(source={'pointer': 'data/relationships/{}/data'.format(related_resource)}, detail=NO_DATA_ERROR)
-
-        if data and parser_context and parser_context.get('schema_response_endpoint'):
-            if not data.get('id'):
-                raise JSONAPIException(
-                    source={'pointer': f'/data/relationships/{related_resource}/data/id'},
-                    detail=NO_RELATIONSHIPS_ID_ERROR,
-                )
-
-            if not data.get('type'):
-                raise JSONAPIException(
-                    source={'pointer': f'/data/relationships/{related_resource}/data/type'},
-                    detail=NO_RELATIONSHIPS_TYPE_ERROR,
-                )
 
         if isinstance(data, list):
             return [self.get_relationship(item, related_resource) for item in data]
@@ -110,7 +129,7 @@ class JSONAPIParser(JSONParser):
             parsed.update(attributes)
 
         if relationships:
-            relationships = self.flatten_relationships(relationships, parser_context=parser_context)
+            relationships = self.flatten_relationships(relationships)
             if isinstance(relationships, list):
                 relationship_values = []
                 relationship_key = None
@@ -152,10 +171,10 @@ class JSONAPIParser(JSONParser):
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
-    def flatten_multiple_relationships(self, parser, relationships, parser_context=None):
+    def flatten_multiple_relationships(self, parser, relationships):
         rel = {}
         for resource in relationships:
-            ret = super(parser, self).flatten_relationships({resource: relationships[resource]}, parser_context=parser_context)
+            ret = super(parser, self).flatten_relationships({resource: relationships[resource]})
             if isinstance(ret, list):
                 rel[resource] = []
                 for item in ret:
@@ -255,16 +274,16 @@ class JSONAPIMultipleRelationshipsParser(JSONAPIParser):
     If edits are made to this class, be sure to check JSONAPIMultipleRelationshipsParserForRegularJSON to see if corresponding
     edits should be made there.
     """
-    def flatten_relationships(self, relationships, parser_context=None):
-        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships, parser_context)
+    def flatten_relationships(self, relationships):
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParser, relationships)
 
 
 class JSONAPIMultipleRelationshipsParserForRegularJSON(JSONAPIParserForRegularJSON):
     """
     Allows same processing as JSONAPIMultipleRelationshipsParser to occur for requests with application/json media type.
     """
-    def flatten_relationships(self, relationships, parser_context=None):
-        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships, parser_context)
+    def flatten_relationships(self, relationships):
+        return self.flatten_multiple_relationships(JSONAPIMultipleRelationshipsParserForRegularJSON, relationships)
 
 
 class HMACSignedParser(JSONParser):

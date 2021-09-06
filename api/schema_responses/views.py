@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
+from api.base.parsers import JSONSchemaParser, JSONAPIParser
 from api.nodes.permissions import SchemaResponseViewPermission, SchemaResponseCreatePermission
 
 from api.schema_responses.serializers import (
@@ -17,9 +18,68 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
         base_permissions.TokenHasScope,
     )
 
+    parser_classes = (JSONAPIParser, JSONSchemaParser,)
+
     serializer_class = RegistrationSchemaResponseSerializer
     view_category = 'schema_responses'
     view_name = 'schema-responses-list'
+    create_payload_schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "properties": {
+            "data": {
+                "additionalProperties": False,
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    },
+                    "relationships": {
+                        "additionalProperties": False,
+                        "type": "object",
+                        "properties": {
+                            "registration": {
+                                "additionalProperties": False,
+                                "type": "object",
+                                "properties": {
+                                    "data": {
+                                        "additionalProperties": False,
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {
+                                                "type": "string"
+                                            },
+                                            "type": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "id",
+                                            "type"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "data"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "registration"
+                        ]
+                    }
+                },
+                "required": [
+                    "type",
+                    "relationships"
+                ]
+            }
+        },
+        "required": [
+            "data"
+        ]
+    }
+
 
     def get_queryset(self):
         return SchemaResponse.objects.all()
@@ -29,8 +89,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
         Tells parser that we are creating a relationship
         """
         res = super().get_parser_context(http_request)
-        res['is_relationship'] = True
-        res['schema_response_endpoint'] = True
+        res['json_schema'] = self.create_payload_schema
 
         return res
 
