@@ -10,6 +10,8 @@ from api.schema_responses.serializers import (
 from osf.models import SchemaResponse, Registration
 from api.base.filters import ListFilterMixin
 from api.schema_responses.schemas import create_schema_response_payload
+from framework.auth.oauth_scopes import CoreScopes
+
 
 class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
@@ -17,6 +19,9 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
+    required_write_scopes = [CoreScopes.WRITE_SCHEMA_RESPONSES]
 
     parser_classes = (JSONAPIParser, JSONSchemaParser)
 
@@ -43,6 +48,9 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
+    required_write_scopes = [CoreScopes.WRITE_SCHEMA_RESPONSES]
 
     view_category = 'schema_responses'
     view_name = 'schema-responses-detail'

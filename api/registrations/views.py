@@ -860,7 +860,7 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
 
 
 class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
-    required_read_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
     required_write_scopes = [CoreScopes.NULL]
 
     permission_classes = (
