@@ -126,51 +126,59 @@ class TestSchemaResponseDetail:
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 403, ),  # assumes private registration
             ('read', 200, ),
             ('write', 200, ),
             ('admin', 200, ),
         ]
     )
     def test_schema_response_auth_get(self, app, schema_response, payload, permission, user, expected_response, url):
-        schema_response.parent.add_contributor(user, permission)
+        if permission:
+            schema_response.parent.add_contributor(user, permission)
         resp = app.get(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_post(self, app, schema_response, payload, permission, user, expected_response, url):
-        schema_response.parent.add_contributor(user, permission)
+        if permission:
+            schema_response.parent.add_contributor(user, permission)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 403, ),
             ('read', 403, ),
             ('write', 200, ),
             ('admin', 200, ),
         ]
     )
     def test_schema_response_auth_patch(self, app, schema_response, payload, permission, user, expected_response, url):
-        schema_response.parent.add_contributor(user, permission)
+        if permission:
+            schema_response.parent.add_contributor(user, permission)
         resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 403, ),
             ('read', 403, ),
             ('write', 403, ),
             ('admin', 204, ),
         ]
     )
     def test_schema_response_auth_delete(self, app, schema_response, payload, permission, user, expected_response, url):
-        schema_response.parent.add_contributor(user, permission)
+        if permission:
+            schema_response.parent.add_contributor(user, permission)
         resp = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response

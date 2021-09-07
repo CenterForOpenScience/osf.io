@@ -2,18 +2,18 @@ from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONSchemaParser, JSONAPIParser
-from api.nodes.permissions import SchemaResponseViewPermission, SchemaResponseCreatePermission
+from api.nodes.permissions import SchemaResponseDetailPermission, SchemaResponseListPermission
 
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
 from osf.models import SchemaResponse, Registration
 from api.base.filters import ListFilterMixin
-
+from api.schema_responses.schemas import create_schema_response_payload
 
 class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
-        SchemaResponseCreatePermission,
+        SchemaResponseListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -23,58 +23,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
     serializer_class = RegistrationSchemaResponseSerializer
     view_category = 'schema_responses'
     view_name = 'schema-responses-list'
-    create_payload_schema = {
-        '$schema': 'http://json-schema.org/draft-04/schema#',
-        'type': 'object',
-        'properties': {
-            'data': {
-                'type': 'object',
-                'properties': {
-                    'type': {
-                        'type': 'string',
-                    },
-                    'relationships': {
-                        'type': 'object',
-                        'properties': {
-                            'registration': {
-                                'type': 'object',
-                                'properties': {
-                                    'data': {
-                                        'type': 'object',
-                                        'properties': {
-                                            'id': {
-                                                'pattern': '^[a-z0-9]{5,}',
-                                            },
-                                            'type': {
-                                                'pattern': 'registrations',
-                                            },
-                                        },
-                                        'required': [
-                                            'id',
-                                            'type',
-                                        ],
-                                    },
-                                },
-                                'required': [
-                                    'data',
-                                ],
-                            },
-                        },
-                        'required': [
-                            'registration',
-                        ],
-                    },
-                },
-                'required': [
-                    'type',
-                    'relationships',
-                ],
-            },
-        },
-        'required': [
-            'data',
-        ],
-    }
+    create_payload_schema = create_schema_response_payload
 
     def get_queryset(self):
         return SchemaResponse.objects.all()
@@ -90,7 +39,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
 
 class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (
-        SchemaResponseViewPermission,
+        SchemaResponseDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

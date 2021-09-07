@@ -152,7 +152,7 @@ class AdminContributorOrPublic(permissions.BasePermission):
             return obj.is_admin_contributor(auth.user)
 
 
-class SchemaResponseViewPermission(permissions.BasePermission):
+class SchemaResponseDetailPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
     To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
@@ -177,7 +177,7 @@ class SchemaResponseViewPermission(permissions.BasePermission):
         return self.has_object_permission(request, view, obj.parent)
 
 
-class SchemaResponseRegistrationViewPermission(permissions.BasePermission):
+class RegistrationSchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for the registration relationship view for schema responses.
     This endpoint only allows the user to view and filter the schema responses for that Registration if it is public or
@@ -197,7 +197,7 @@ class SchemaResponseRegistrationViewPermission(permissions.BasePermission):
         return self.has_object_permission(request, view, view.get_object())
 
 
-class SchemaResponseCreatePermission(permissions.BasePermission):
+class SchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_responses` list endpoints.
     To create a schema response a user must be an admin contributor on that Registration.

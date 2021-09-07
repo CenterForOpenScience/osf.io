@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
+
 @pytest.mark.django_db
 class TestRegistrationsSchemaResponseList:
 
@@ -29,63 +30,71 @@ class TestRegistrationsSchemaResponseList:
         return f'/v2/registrations/{registration._id}/schema_responses/'
 
     def test_registrations_schema_responses_list(self, app, registration, schema_response, user, url):
-        schema_response.parent.is_public = True
-        schema_response.parent.save()
+        registration.is_public = True
+        registration.save()
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']
 
         assert len(data) == 1
-        assert registration.schema_responses.get()._id == data[0]['id']
+        assert schema_response._id == data[0]['id']
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 403, ),
             ('read', 200, ),
             ('write', 200, ),
             ('admin', 200, ),
         ]
     )
     def test_schema_response_auth_get(self, app, registration, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.get(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_post(self, app, registration, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.post_json_api(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_patch(self, app, registration, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.patch_json_api(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_delete(self, app, registration, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response

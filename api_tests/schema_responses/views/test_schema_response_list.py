@@ -83,56 +83,64 @@ class TestSchemaResponseList:
         registration.add_contributor(user, 'admin')
         resp = app.post_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
-        assert "'Additional properties are not allowed ('rogue_property' was unexpected)" in resp.json['errors'][0]['detail']
+        assert "'not yours' does not match 'registrations'\n\nFailed validating 'pattern'" in resp.json['errors'][0]['detail']
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 200, ),
             ('read', 200, ),
             ('write', 200, ),
             ('admin', 200, ),
         ]
     )
     def test_schema_response_auth_get(self, app, registration, payload, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.get(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 403, ),
             ('read', 403, ),
             ('write', 403, ),
             ('admin', 201, ),
         ]
     )
     def test_schema_response_auth_post(self, app, registration, payload, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_patch(self, app, registration, payload, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
 
     @pytest.mark.parametrize(
         'permission,expected_response',
         [
+            (None, 405, ),
             ('read', 405, ),
             ('write', 405, ),
             ('admin', 405, ),
         ]
     )
     def test_schema_response_auth_delete(self, app, registration, payload, permission, user, expected_response, url):
-        registration.add_contributor(user, permission)
+        if permission:
+            registration.add_contributor(user, permission)
         resp = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == expected_response
