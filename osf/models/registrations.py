@@ -743,7 +743,13 @@ class Registration(AbstractNode):
         if trigger is None:
             return  # Not a moderated event, no need to write an action
 
-        initiated_by = initiated_by or self.sanction.initiated_by
+        # IF fegistration is moving into moderation, "creator" should reflect the
+        # Registration Admin who initiated the Registration/Withdrawal
+        if not initiated_by or trigger in [
+                RegistrationModerationTriggers.SUBMIT,
+                RegistrationModerationTriggers.REQUEST_WITHDRAWAL
+        ]:
+            initiated_by = self.sanction.initiated_by
 
         if not comment and trigger is RegistrationModerationTriggers.REQUEST_WITHDRAWAL:
             comment = self.withdrawal_justification or ''  # Withdrawal justification is null by default
