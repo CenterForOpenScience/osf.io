@@ -35,11 +35,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     previous_response = models.ForeignKey(
         'osf.SchemaResponse',
         related_name='updated_response',
-        null=True
+        null=True,
+        blank=True
     )
 
-    revision_justification = models.CharField(max_length=2048, null=True)
-    submitted_timestamp = NonNaiveDateTimeField(null=True)
+    revision_justification = models.CharField(max_length=2048, null=True, blank=True)
+    submitted_timestamp = NonNaiveDateTimeField(null=True, blank=True)
     pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
     reviews_state = models.CharField(
         choices=ApprovalStates.char_field_choices(),
