@@ -201,7 +201,6 @@ def create_mock_gcs_client():
     mock_client.get_bucket.return_value = create_mock_bucket()
     return mock_client
 
-
 def get_default_test_schema():
     try:
         test_schema = RegistrationSchema.objects.get(name=DEFAULT_TEST_SCHEMA_NAME)
