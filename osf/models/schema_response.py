@@ -53,6 +53,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent = GenericForeignKey('content_type', 'object_id')
 
+    # Attribute for controlling flow from 'reject' triggers on the state machine.
+    # True -> IN_PROGRESS
+    # False -> [MODERATOR_]REJECTED
+    revisable = True
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.approvals_state_machine = ApprovalsMachine(
@@ -90,15 +95,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Determine if this SchemaResponseResponse belong to a moderated resource'''
         return getattr(self.parent, 'is_moderated', False)
 
-    @property
-    def revisable(self):
-        '''Controls what state the Response moves when rejected.
-
-        True -> return to IN_PROGRESS
-        False -> either ADMIN_REJECTED or MODERATOR_REJECTED
-        '''
-        return True
-
     @classmethod
     def create_initial_response(cls, initiator, parent, schema=None, justification=None):
         '''Create SchemaResponse and all initial SchemaResponseBlocks.
@@ -114,11 +110,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         parent_schema = parent.registration_schema
         schema = schema or parent_schema
         if not schema:
-            raise ValueError('Must pass a schema if parent resource does not define one.')
+            raise ValueError(
+                'Must pass a schema when creating SchemaResponse if '
+                'parent resource does not define one.'
+            )
         if schema != parent_schema:
             raise ValueError(
                 f'Provided schema ({schema.name}) does not match '
-                f'schema on parent ({parent_schema.name})'
+                f'schema on parent resource ({parent_schema.name})'
             )
 
         new_response = cls(
@@ -199,7 +198,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
-                f'SchemaResponse has state f{self.reviews_state}. '
+                f'SchemaResponse with id [{self.id}]  has state {self.reviews_state}. '
                 'Must have state "in_progress" to update responses'
             )
 
@@ -217,7 +216,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(f'Encountered unexpected keys: {updated_responses.keys()}')
+            raise ValueError(
+                'Encountered unexpected keys while trying to update responses for '
+                f'SchemaResponse with id [{self.id}]: {", ".join(updated_responses.keys())}'
+            )
 
     def _response_reverted(self, current_block, latest_response):
         '''Handle the case where an answer is reverted over the course of editing a Response.'''
@@ -252,6 +254,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             revised_block.save()
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
+
+    def delete(self, *args, **kwargs):
+        if self.state is not ApprovalStates.IN_PROGRESS:
+            raise SchemaResponseStateError(
+                'Cannot delete SchemaResponse with id [{self.id}]. In order to delete, '
+                'state must be "in_progress", but is "{self.reviews_state}" instead.'
+            )
+        super().delete(*args, **kwargs)
 
 # *** Callbcks in support of ApprovalsMachine ***
 
@@ -361,7 +371,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
-                'Cannot submit SchemaResponses for review with no required approvers'
+                f'Cannot submit SchemaResponses with id [{self.id}] '
+                'for review with no required approvers'
             )
         self.pending_approvers.set(approvers)
         self.submitted_timestamp = timezone.now()

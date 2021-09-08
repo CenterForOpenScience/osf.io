@@ -408,6 +408,52 @@ class TestUpdateSchemaResponses():
             schema_response.update_responses({'q1': 'harrumph'})
 
 
+@pytest.mark.django_db
+class TestDeleteSchemaResponse():
+
+    def test_delete_schema_response_deletes_schema_response_blocks(self, schema_response):
+        # schema_response is the only current source of SchemaResponseBlocks,
+        # so all should be deleted
+        schema_response.delete()
+        assert not SchemaResponseBlock.objects.exists()
+
+    def test_delete_revised_response_only_deletes_updated_blocks(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
+
+        revised_response = SchemaResponse.create_from_previous_response(
+            previous_response=schema_response,
+            initiator=schema_response.initiator
+        )
+        revised_response.update_responses({'q1': 'blahblahblah', 'q2': 'whoopdedoo'})
+
+        old_blocks = schema_response.response_blocks.all()
+        updated_blocks = revised_response.updated_response_blocks.all()
+
+        revised_response.delete()
+        for block in old_blocks:
+            assert SchemaResponseBlock.objects.filter(id=block.id).exists()
+        for block in updated_blocks:
+            assert not SchemaResponseBlock.objects.filter(id=block.id).exists()
+
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_delete_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        with assert_raises(SchemaResponseStateError):
+            schema_response.delete()
+
+
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
 class TestUnmoderatedSchemaResponseApprovalFlows():
