@@ -1,7 +1,7 @@
 {
 	"atomicSchema": true,
 	"name": "Character Lab Short-Form Registration",
-	"version": 1,
+	"version": 2,
 	"description": null,
 	"blocks": [{
 		"block_type": "page-heading",
