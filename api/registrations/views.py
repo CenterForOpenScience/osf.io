@@ -869,7 +869,7 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         RegistrationSchemaResponseListPermission,
     )
 
-    view_category = 'schema-responses'
+    view_category = 'registrations'
     view_name = 'schema-responses-list'
 
     serializer_class = RegistrationSchemaResponseSerializer
