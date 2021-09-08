@@ -4,1192 +4,562 @@
 	"version": 1,
 	"description": null,
 	"blocks": [{
-		"help_text": "",
 		"block_type": "page-heading",
 		"display_text": "Background and Study Intent",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Study description",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
 		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. To learn more, go to impactgenome.org",
 		"block_type": "question-label",
 		"display_text": "Expected outcomes",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Access to Trustworthy Personal/Professional Networks",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Attendance and Persistence in School",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Career Access and Readiness",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Civic / Community Engagement",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "College Access and Readiness",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "College Persistence and Completion",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Development of Tools for Active Learning",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Effective School Leadership",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Effective Teachers",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Equitable Education",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "High School Completion",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Improved Academic Attitudes, Beliefs, and Motiviations",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Improved Academic Performance, Attendance and Persistence in School",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Improved Academic Skills",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Mathematics and Science Knowledge Gains",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Navigation of Institutions",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Oral Language and Emergent Literacy Gains",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Positive School Environment",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Social and Emotional Gains",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "STEM Interest",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "STEM Persistence",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "STEM Proficiency",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Use of Personal/Professional Networks",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Primary outcomes",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Character strengths",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Creativity",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Curiosity",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Decision making",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Emotional Intelligence",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Empathy",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Gratitude",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Grit",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Growth Mindset",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Honesty",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Intellectual Humility",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Interpersonal relationships",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Judgment",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Kindness",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Motivation",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Proactivity",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Prosocial Purpose",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Purpose",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Resilience",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Self-Control",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Self-Efficacy",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Social identity",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Social intelligence",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Other",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Number of conditions",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "single-select-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "1",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "2",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "3",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "4",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Total number of students",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "page-heading",
 		"display_text": "Sample",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Study Grade Assignment",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "6th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "7th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "8th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "9th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "10th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "11th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "12th grade",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "School Stratum Assignment",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US.",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US.",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US.",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US.",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Stratum E: Mostly White, high socioeconomic status, suburban schools. These schools represent 21% of all middle and high schools in the United States.",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "page-heading",
 		"display_text": "Study Information",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Is this a pilot?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "single-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Yes",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "No",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Study design",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Correlational, Cross-Sectional",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Correlational, Longitudinal",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Intervention, Cross-Sectional",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Intervention, Longitudinal",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Measure Validation, Cross-Sectional",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Measure Validation, Longitudinal",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "page-heading",
 		"display_text": "Contact Information",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "section-heading",
 		"display_text": "First team member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member name",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member institution",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member role",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Co-Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Post doc",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Graduate Student",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Manager",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Unknown",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "section-heading",
 		"display_text": "Second team member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member name",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member institution",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member role",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Co-Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Post doc",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Graduate Student",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Manager",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Unknown",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "section-heading",
 		"display_text": "Third team member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member name",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member institution",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member role",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Co-Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Post doc",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Graduate Student",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Manager",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Unknown",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "section-heading",
 		"display_text": "Fourth team member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member name",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member institution",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member role",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Co-Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Post doc",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Graduate Student",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Manager",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Unknown",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "section-heading",
 		"display_text": "Fifth team member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member name",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member institution",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "short-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Team member role",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Co-Investigator",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Post doc",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Graduate Student",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Manager",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Lab Member",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Unknown",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "page-heading",
 		"display_text": "Pilot Reporting",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Have you piloted this study?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Yes",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "No",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Did you pilot this study on the Character Lab Research Network?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
-		"block_type": "multiple-input-option",
-		"display_text": "",
-		"example_text": "",
-		"required": false
+		"block_type": "multiple-select-option",
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "Yes",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "select-input-option",
 		"display_text": "No",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Piloting experience",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Pilot goals",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Pilot hypotheses",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "How did you use feedback from a CLIPster/SRL while developing your pilot?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "How did your pilot data line up with your hypotheses?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Have your hypotheses about this study changed at all following the pilot? If so, how?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Did anything emerge in this pilot data that you weren't expecting?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "What concerns you the most about this pilot data?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "What are your three main takeaways from this pilot?",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "question-label",
 		"display_text": "Changes based on piloting",
-		"example_text": "",
-		"required": false
 	}, {
-		"help_text": "",
 		"block_type": "long-text-input",
-		"display_text": "",
-		"example_text": "",
-		"required": false
 	}]
 }
