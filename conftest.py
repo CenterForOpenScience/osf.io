@@ -66,34 +66,6 @@ def fake():
     return Factory.create()
 
 _MOCKS = {
-    'osf.models.user.new_bookmark_collection': {
-        'mark': 'enable_bookmark_creation',
-        'replacement': lambda *args, **kwargs: None,
-    },
-    'osf.models.user._create_quickfiles_project': {
-        'mark': 'enable_quickfiles_creation',
-        'replacement': lambda *args, **kwargs: None,
-    },
-    'framework.celery_tasks.handlers._enqueue_task': {
-        'mark': 'enable_enqueue_task',
-        'replacement': lambda *args, **kwargs: None,
-    },
-    'osf.models.base.BaseModel.full_clean': {
-        'mark': 'enable_implicit_clean',
-        'replacement': lambda *args, **kwargs: None,
-    },
-    'osf.models.base._check_blacklist': {
-        'mark': 'enable_blacklist_check',
-        'replacement': lambda *args, **kwargs: False,
-    },
-    'website.search.search.search_engine': {
-        'mark': 'enable_search',
-        'replacement': mock.MagicMock()
-    },
-    'website.search.elastic_search': {
-        'mark': 'enable_search',
-        'replacement': mock.MagicMock()
-    }
 }
 
 @pytest.fixture(autouse=True, scope='session')
