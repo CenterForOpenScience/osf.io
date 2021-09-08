@@ -39,7 +39,7 @@ class SanctionTypes(ModerationEnum):
     DRAFT_REGISTRATION_APPROVAL = 5
 
 
-class SanctionStates(ModerationEnum):
+class ApprovalStates(ModerationEnum):
     '''The moderated state of a Sanction object.'''
 
     UNDEFINED = 0
@@ -49,6 +49,7 @@ class SanctionStates(ModerationEnum):
     REJECTED = 4
     MODERATOR_REJECTED = 5
     COMPLETED = 6  # Embargo only
+    IN_PROGRESS = 7  # Revisions only
 
 
 class RegistrationModerationStates(ModerationEnum):
@@ -71,34 +72,34 @@ class RegistrationModerationStates(ModerationEnum):
         # Define every time because it gets interpreted as an enum member in the class body :(
         SANCTION_STATE_MAP = {
             SanctionTypes.REGISTRATION_APPROVAL: {
-                SanctionStates.UNAPPROVED: cls.INITIAL,
-                SanctionStates.PENDING_MODERATION: cls.PENDING,
-                SanctionStates.APPROVED: cls.ACCEPTED,
-                SanctionStates.REJECTED: cls.REVERTED,
-                SanctionStates.MODERATOR_REJECTED: cls.REJECTED,
+                ApprovalStates.UNAPPROVED: cls.INITIAL,
+                ApprovalStates.PENDING_MODERATION: cls.PENDING,
+                ApprovalStates.APPROVED: cls.ACCEPTED,
+                ApprovalStates.REJECTED: cls.REVERTED,
+                ApprovalStates.MODERATOR_REJECTED: cls.REJECTED,
             },
             SanctionTypes.EMBARGO: {
-                SanctionStates.UNAPPROVED: cls.INITIAL,
-                SanctionStates.PENDING_MODERATION: cls.PENDING,
-                SanctionStates.APPROVED: cls.EMBARGO,
-                SanctionStates.COMPLETED: cls.ACCEPTED,
-                SanctionStates.REJECTED: cls.REVERTED,
-                SanctionStates.MODERATOR_REJECTED: cls.REJECTED,
+                ApprovalStates.UNAPPROVED: cls.INITIAL,
+                ApprovalStates.PENDING_MODERATION: cls.PENDING,
+                ApprovalStates.APPROVED: cls.EMBARGO,
+                ApprovalStates.COMPLETED: cls.ACCEPTED,
+                ApprovalStates.REJECTED: cls.REVERTED,
+                ApprovalStates.MODERATOR_REJECTED: cls.REJECTED,
             },
             SanctionTypes.RETRACTION: {
-                SanctionStates.UNAPPROVED: cls.PENDING_WITHDRAW_REQUEST,
-                SanctionStates.PENDING_MODERATION: cls.PENDING_WITHDRAW,
-                SanctionStates.APPROVED: cls.WITHDRAWN,
+                ApprovalStates.UNAPPROVED: cls.PENDING_WITHDRAW_REQUEST,
+                ApprovalStates.PENDING_MODERATION: cls.PENDING_WITHDRAW,
+                ApprovalStates.APPROVED: cls.WITHDRAWN,
                 # Rejected retractions are in either ACCEPTED or EMBARGO
-                SanctionStates.REJECTED: cls.UNDEFINED,
-                SanctionStates.MODERATOR_REJECTED: cls.UNDEFINED,
+                ApprovalStates.REJECTED: cls.UNDEFINED,
+                ApprovalStates.MODERATOR_REJECTED: cls.UNDEFINED,
             },
             SanctionTypes.EMBARGO_TERMINATION_APPROVAL: {
-                SanctionStates.UNAPPROVED: cls.PENDING_EMBARGO_TERMINATION,
-                SanctionStates.PENDING_MODERATION: cls.ACCEPTED,  # Not currently reachable
-                SanctionStates.APPROVED: cls.ACCEPTED,
-                SanctionStates.REJECTED: cls.EMBARGO,
-                SanctionStates.MODERATOR_REJECTED: cls.EMBARGO,  # Not currently reachable
+                ApprovalStates.UNAPPROVED: cls.PENDING_EMBARGO_TERMINATION,
+                ApprovalStates.PENDING_MODERATION: cls.ACCEPTED,  # Not currently reachable
+                ApprovalStates.APPROVED: cls.ACCEPTED,
+                ApprovalStates.REJECTED: cls.EMBARGO,
+                ApprovalStates.MODERATOR_REJECTED: cls.EMBARGO,  # Not currently reachable
             },
         }
 
@@ -247,71 +248,87 @@ REVIEWABLE_TRANSITIONS = DEFAULT_TRANSITIONS + [
     }
 ]
 
-SANCTION_TRANSITIONS = [
+APPROVAL_TRANSITIONS = [
     {
-        # A single admin approves a sanction
+        # Submit an approvable resource
+        'trigger': 'submit',
+        'source': [ApprovalStates.IN_PROGRESS],
+        'dest': ApprovalStates.UNAPPROVED,
+        'before': ['_validate_trigger'],
+        'after': ['_on_submit'],
+    },
+    {
+        # A single admin approves an approvable resource
         'trigger': 'approve',  # Approval from an individual admin
-        'source': [SanctionStates.UNAPPROVED],
+        'source': [ApprovalStates.UNAPPROVED],
         'dest': None,
-        'before': ['_validate_request'],
+        'before': ['_validate_trigger'],
         'after': ['_on_approve'],
     },
     {
         # Allow delayed admin approvals as a noop in non-rejected states
         'trigger': 'approve',
         'source': [
-            SanctionStates.PENDING_MODERATION,
-            SanctionStates.APPROVED,
-            SanctionStates.COMPLETED
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            ApprovalStates.COMPLETED
         ],
         'dest': None,
     },
     {
-        # A moderated sanction has satisfied its Admin approval requirements
-        # and is submitted for moderation.
-        # Allow calling without validation for use by OSF admins
+        # A moderated approvable resource has satisfied its Admin approval
+        # requirements and is submitted for moderation.
         'trigger': 'accept',
-        'source': [SanctionStates.UNAPPROVED],
-        'dest': SanctionStates.PENDING_MODERATION,
+        'source': [ApprovalStates.UNAPPROVED],
+        'dest': ApprovalStates.PENDING_MODERATION,
         'conditions': ['is_moderated'],
-        'before': ['_validate_request'],
+        'before': ['_validate_trigger'],
         'after': [],  # send moderator emails here?
     },
     {
-        # An un moderated sanction has satisfied its Admin approval requirements
+        # An un moderated approvable resource has satisfied its Admin approval requirements
         # or a moderated sanction recieves moderator approval and takes effect
         'trigger': 'accept',
-        'source': [SanctionStates.UNAPPROVED, SanctionStates.PENDING_MODERATION],
-        'dest': SanctionStates.APPROVED,
-        'before': ['_validate_request'],
+        'source': [ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION],
+        'dest': ApprovalStates.APPROVED,
+        'before': ['_validate_trigger'],
         'after': ['_on_complete'],
     },
     {
         # Allow delayed accept triggers as a noop in completed states
         'trigger': 'accept',
-        'source': [SanctionStates.APPROVED, SanctionStates.COMPLETED],
+        'source': [ApprovalStates.APPROVED, ApprovalStates.COMPLETED],
         'dest': None,
     },
     {
-        # A sanction is rejected by an admin
+        # A revisable, approvable resource is rejected by an admin or moderator
         'trigger': 'reject',
-        'source': [SanctionStates.UNAPPROVED],
-        'dest': SanctionStates.REJECTED,
-        'before': ['_validate_request'],
+        'source': [ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION],
+        'dest': ApprovalStates.IN_PROGRESS,
+        'conditions': ['revisable'],
+        'before': ['_validate_trigger'],
         'after': ['_on_reject'],
     },
     {
-        # A sanction is rejected by a moderator
+        # An unrevisable, approvable resource is rejected by an admin
         'trigger': 'reject',
-        'source': [SanctionStates.PENDING_MODERATION],
-        'dest': SanctionStates.MODERATOR_REJECTED,
-        'before': ['_validate_request'],
+        'source': [ApprovalStates.UNAPPROVED],
+        'dest': ApprovalStates.REJECTED,
+        'before': ['_validate_trigger'],
+        'after': ['_on_reject'],
+    },
+    {
+        # An unrevisable, approvable entity is rejected by a moderator
+        'trigger': 'reject',
+        'source': [ApprovalStates.PENDING_MODERATION],
+        'dest': ApprovalStates.MODERATOR_REJECTED,
+        'before': ['_validate_trigger'],
         'after': ['_on_reject'],
     },
     {
         # Allow delayed reject triggers as a noop in rejected states
         'trigger': 'reject',
-        'source': [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED],
+        'source': [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED],
         'dest': None,
     },
 ]
