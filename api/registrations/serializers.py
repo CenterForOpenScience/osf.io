@@ -353,6 +353,11 @@ class RegistrationSerializer(NodeSerializer):
 
     provider_specific_metadata = ser.JSONField(required=False)
 
+    schema_responses = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:schema-responses-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin

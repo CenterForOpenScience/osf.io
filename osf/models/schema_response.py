@@ -141,6 +141,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         make sure to call in an atomic context.
         '''
         # TODO: Add check for state once that stuff is here
+        if not updated_responses:
+            return
 
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating dictionary values
@@ -156,7 +158,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(f'Encountered unexpected keys: {updated_responses.keys()}')
+            raise ValueError(f'Encountered unexpected keys: {",".join(updated_responses.keys())}')
 
     def _response_reverted(self, current_block, latest_response):
         '''Handle the case where an answer is reverted over the course of editing a Response.'''

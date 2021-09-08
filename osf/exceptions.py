@@ -154,3 +154,9 @@ class SchemaBlockConversionError(OSFError):
     'schema block' format.
     """
     pass
+
+
+class SchemaResponseStateError(OSFError):
+    """Raised if a SchemaResponse object's state is not suitable for the requested action
+    """
+    pass

@@ -5,7 +5,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 class SchemaResponseBlock(ObjectIDMixin, BaseModel):
 
-    # The SchemaResponses instance where this response originated
+    # The SchemaResponse instance where this response originated
     source_schema_response = models.ForeignKey(
         'osf.SchemaResponse',
         null=False,
@@ -14,7 +14,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     # The RegistrationSchemaBlock that defines the question being answered
     source_schema_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
 
-    # Should match source_block.registration_response_key
+    # Should match source_schema_block.registration_response_key
     schema_key = models.CharField(max_length=255)
     response = DateTimeAwareJSONField(blank=True, null=True)
 
