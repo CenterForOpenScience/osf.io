@@ -8,10 +8,10 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 
+from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
 from osf.models import (
     Registration,
     SchemaResponse,
-    RegistrationSchema,
 )
 
 
@@ -33,8 +33,8 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
-    reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
-    is_pending_current_user_approval = ser.SerializerMethodField()
+    reviews_state = ser.CharField(required=False)
+    is_pending_current_user_approval = ser.BooleanField(required=False)
     revision_responses = ser.JSONField(source='all_responses', required=False)
 
     links = LinksField(
@@ -77,10 +77,6 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             },
         )
 
-    def get_is_pending_current_user_approval(self, obj):
-        # TBD
-        return False
-
     def create(self, validated_data):
         try:
             registration_id = validated_data.pop('_id')
@@ -93,36 +89,35 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             request=self.context['request'],
         )
 
-        try:
-            schema = registration.registration_schema
-        except RegistrationSchema.DoesNotExist:
-            raise exceptions.ValidationError(f'Resource {registration._id} must have schema')
-
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        if not registration.schema_responses.exists():
-            schema_response = SchemaResponse.create_initial_response(
-                initiator=initiator,
-                parent=registration,
-                schema=schema,
-                justification=justification,
+        try:
+            return SchemaResponse.create_initial_response(
+                parent=registration, initiator=initiator, justification=justification,
             )
-        else:
-            schema_response = SchemaResponse.create_from_previous_response(
-                initiator=initiator,
-                previous_response=registration.schema_responses.order_by('-created').first(),
-                justification=justification,
-            )
+        except ValueError:  # Value error when no schema available
+            raise exceptions.ValidationError(f'Resource {registration._id} must specify a schema')
+        except SchemaResponseStateError:
+            # SchemaResponse already exists on parent, try creating from previous response
+            pass
 
-        return schema_response
+        previous_response = registration.schema_responses.order_by('-created').first()
+        try:
+            return SchemaResponse.create_from_previous_response(
+                initiator=initiator,
+                previous_response=previous_response,
+                justification=justification,
+            )
+        except PreviousPendingSchemaResponseError as e:
+            raise exceptions.ValidationError(str(e))
 
     def update(self, schema_response, validated_data):
         revision_responses = validated_data.get('revision_responses')
 
         try:
             schema_response.update_responses(revision_responses)
-        except ValueError as exc:
+        except (ValueError, SchemaResponseStateError) as exc:
             raise exceptions.ValidationError(detail=str(exc))
 
         return schema_response
