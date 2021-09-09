@@ -533,6 +533,8 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
+        from osf_tests.utils import get_default_metaschema
+
         title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
