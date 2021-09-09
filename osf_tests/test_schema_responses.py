@@ -23,7 +23,9 @@ def schema():
 
 @pytest.fixture
 def registration(schema):
-    return RegistrationFactory(schema=schema)
+    registration = RegistrationFactory(schema=schema)
+    registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
+    return registration
 
 
 @pytest.fixture
@@ -137,6 +139,8 @@ class TestCreateSchemaResponse():
         )
 
         alternate_registration = RegistrationFactory(schema=schema)
+        alternate_registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
+
         alternate_registration_response = SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
