@@ -353,6 +353,11 @@ class RegistrationSerializer(NodeSerializer):
 
     provider_specific_metadata = ser.JSONField(required=False)
 
+    schema_responses = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:schema-responses-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -383,6 +388,8 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
+        if obj.schema_responses.exists():
+            return self.anonymize_fields(obj, obj.schema_responses.order_by('-created').first().all_responses)
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
         return None
