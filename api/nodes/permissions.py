@@ -17,8 +17,10 @@ from osf.models import (
     Preprint,
     PrivateLink,
     Registration,
+    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
+from osf.utils.workflows import ApprovalStates
 
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
 from api.base.parsers import JSONSchemaParser
@@ -155,33 +157,51 @@ class AdminContributorOrPublic(permissions.BasePermission):
 class SchemaResponseDetailPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
-    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
-    deleting.
+
+    Any user can GET an APPROVED schema resposne on a public parent resource.
+    Otherwise, the contributor must have "read" permissions on the parent resource.
+    To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
+    To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
+    To GET a SchemaResponse, one of three conditions must be true:
+      * The prarent resource is public AND the SchemaResponse is APPROVED
+      * The SchemaResponse is PENDING_MODERATION and the user is a moderator on the
+        parent resource's provider
+      * The user has "read" permissions on the parent resource
     '''
-    acceptable_models = (AbstractNode, )
+    acceptable_models = (SchemaResponse, )
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+        parent = obj.parent
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return (
+                (parent.is_public and obj.state is ApprovalStates.APPROVED)
+                or (
+                    auth.user is not None
+                    and obj.state is ApprovalStates.PENDING_MODERATION
+                    and auth.user.has_perm('view_submissions', parent.provider)
+                )
+                or parent.has_permission(auth.user, 'read')
+            )
         elif request.method == 'PATCH':
-            return obj.has_permission(auth.user, 'write')
+            return parent.has_permission(auth.user, 'write')
         elif request.method == 'DELETE':
-            return obj.has_permission(auth.user, 'admin')
+            return parent.has_permission(auth.user, 'admin')
         else:
             raise exceptions.MethodNotAllowed(request.method)
 
     def has_permission(self, request, view):
         obj = view.get_object()
-        return self.has_object_permission(request, view, obj.parent)
+        return self.has_object_permission(request, view, obj)
 
 
 class RegistrationSchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for the registration relationship view for schema responses.
-    This endpoint only allows the user to view and filter the schema responses for that Registration if it is public or
-    the user has read permission.
+
+    This endpoint only allows the user to view and filter the APPROVED schema responses for
+    that Registration if the Registration is public or the user has "read" permission.
     '''
     acceptable_models = (Registration, )
 

@@ -1,21 +1,24 @@
-from rest_framework import generics, permissions as drf_permissions
 from django.db.models import BooleanField, Exists, OuterRef, Q, Subquery
+from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
+
 from api.base import permissions as base_permissions
+from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONSchemaParser, JSONAPIParser
 from api.nodes.permissions import SchemaResponseDetailPermission, SchemaResponseListPermission
-
+from api.schema_responses.schemas import create_schema_response_payload
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
-from osf.models import Contributor, SchemaResponse, Registration
-from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
-from api.base.filters import ListFilterMixin
-from api.schema_responses.schemas import create_schema_response_payload
+
 from framework.auth.oauth_scopes import CoreScopes
 
+from osf.models import Contributor, SchemaResponse, Registration
+from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
-# Assigns None for deleted and withdrawn Registrations.
+
+# Assigns None for deleted and withdrawn Registrations
 _is_public_registration_subquery = Subquery(
     Registration.objects.filter(
         id=OuterRef('object_id'), deleted__isnull=True,
@@ -104,17 +107,21 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
     def get_object(self):
         user = self.request.user
-        available_schema_responses = SchemaResponse.objects.annotate(
-            is_contributor=_is_contributor_subquery_for_user(user),
+        annotated_schema_responses = SchemaResponse.objects.annotate(
             is_public=_is_public_registration_subquery,
-        ).filter(
-            Q(is_contributor=True) |
-            (Q(is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
+            is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
         )
 
-        return available_schema_responses.filter(_id=self.kwargs['schema_response_id']).annotate(
-            _is_pending_current_user_approal=_pending_approval_subquery_for_user(user),
-        )[0]
+        try:
+            response = annotated_schema_responses.get(_id=self.kwargs['schema_response_id'])
+        except SchemaResponse.DoesNotExist:
+            raise NotFound
+
+        # is_public annotation is None if the parent registration is withdrawn or deleted
+        if response.is_public is None:
+            raise NotFound
+
+        return response
 
     def perform_destroy(self, instance):
         ## check state

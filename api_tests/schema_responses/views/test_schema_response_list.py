@@ -32,11 +32,21 @@ def url():
 
 
 @pytest.mark.django_db
-class TestSchemaResponseListGET:
-    '''Tests for the GET method on the top-level SchemaResponseList Endpoint.
+class TestSchemaResponseListGETPermissions:
+    '''Checks the status code for the GET requests to the SchemaResponseList Endpoint.
 
     All users should be able to call GET without receiving an error, the difference
     should be in the resulting queryset.
+    '''
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_get_status_code(self, app, url, perms_user, use_auth):
+        resp = app.get(url, auth=perms_user.auth if use_auth else None, expect_errors=True)
+        assert resp.status_code == 200
+
+@pytest.mark.django_db
+class TestSchemaResponseLsitGETBehavior:
+    '''Tests the visibility of SchemaResponses through the List endpoint under various conditions.
 
     All users should be able to see APPROVED responses on (non-withdrawn) public registrations.
     No users should be able to see responses on WITHDRAWN registrations
@@ -104,17 +114,6 @@ class TestSchemaResponseListGET:
         response.save()
         return response
 
-    @pytest.mark.parametrize('role', [None, 'read', 'write', 'admin'])
-    def test_response_code_with_auth(self, app, url, public_registration, perms_user, role):
-        if role:
-            public_registration.add_contributor(perms_user, role)
-        resp = app.get(url, auth=perms_user.auth)
-        assert resp.status_code == 200
-
-    def test_response_code_no_auth(self, app, url):
-        resp = app.get(url, expect_errors=True)
-        assert resp.status_code == 200
-
     @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
     @pytest.mark.parametrize('use_auth', [True, False])
     def test_non_contributor_response_visibility(
@@ -122,10 +121,9 @@ class TestSchemaResponseListGET:
         unapproved_schema_response.approvals_state_machine.set_state(response_state)
         unapproved_schema_response.save()
 
-        auth = perms_user.auth if use_auth else None
-        resp = app.get(url, auth=auth, expect_errors=True)
+        resp = app.get(url, auth=perms_user.auth if use_auth else None, expect_errors=True)
 
-        # non-contributor/non-logged-in user  should not get results for the
+        # non-contributor/non-logged-in user should not get results for the
         # non-approved response, the private registration, or the withdrawn registration
         expected_ids = {approved_schema_response._id}
         encountered_ids = {entry['id'] for entry in resp.json['data']}
@@ -164,6 +162,66 @@ class TestSchemaResponseListGET:
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
+
+@pytest.mark.django_db
+class TestSchemaResponseListPOSTPermissions:
+    '''Checks the status code for the POST requests to the SchemaResponseList Endpoint.
+
+    Only ADMIN users on the parent registration should be able to POST to SchemaResponseList.
+    ADMIN users should be allowed to POST even if the parent registration is private, so
+    long as other preconditions are not violated.
+    '''
+
+    @pytest.fixture()
+    def registration(self, admin_user):
+        return RegistrationFactory(creator=admin_user)
+
+    @pytest.fixture()
+    def payload(self, registration):
+        return {
+            'data': {
+                'type': 'revisions',
+                'relationships': {
+                    'registration': {
+                        'data': {
+                            'id': registration._id,
+                            'type': 'registrations'
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 403), ('admin', 201)])
+    @pytest.mark.parametrize('is_public', [True, False])
+    def test_response_code_as_non_contributor(
+            self, app, url, registration, payload, perms_user, role, is_public, expected_code):
+        registration.add_contributor(perms_user, role)
+        registration.is_public = is_public
+        registration.save()
+
+        resp = app.post_json_api(
+            url,
+            payload,
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    @pytest.mark.parametrize('is_public', [True, False])
+    def test_response_code_as_contributor(
+            self, app, url, registration, payload, perms_user, use_auth, is_public):
+        registration.is_public = is_public
+        registration.save()
+
+        resp = app.post_json_api(
+            url,
+            payload,
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == (403 if use_auth else 401)
 
 @pytest.mark.django_db
 class TestSchemaResponseListPOST:
@@ -233,35 +291,6 @@ class TestSchemaResponseListPOST:
             }
         }
 
-    @pytest.mark.parametrize(
-        'role, expected_response',
-        [
-            (None, 403, ),
-            ('read', 403, ),
-            ('write', 403, ),
-            ('admin', 201, ),
-        ]
-    )
-    @pytest.mark.parametrize('is_public', [True, False])
-    def test_response_code_with_auth(
-            self, app, url, registration, payload, perms_user, role, is_public, expected_response):
-        if role:
-            # registration fixture inherited from payload
-            registration.add_contributor(perms_user, role)
-        registration.is_public = is_public
-        registration.save()
-
-        resp = app.post_json_api(url, payload, auth=perms_user.auth, expect_errors=True)
-        assert resp.status_code == expected_response
-
-    @pytest.mark.parametrize('is_public', [True, False])
-    def test_response_code_no_auth(self, app, url, registration, payload, is_public):
-        registration.is_public = is_public
-        registration.save()
-
-        resp = app.post_json_api(url, payload, auth=None, expect_errors=True)
-        assert resp.status_code == 401
-
     def test_post_creates_response(self, app, url, registration, payload, admin_user):
         assert not registration.schema_responses.exists()
         resp = app.post_json_api(url, payload, auth=admin_user.auth)
@@ -291,7 +320,7 @@ class TestSchemaResponseListPOST:
 
     @pytest.mark.parametrize('registration_state', UNSUPPORTED_REGISTRATION_STATES)
     def test_cannot_post_if_invalid_registration_state(
-            self, app, url, registration, payload, registration_state):
+            self, app, url, registration, payload, admin_user, registration_state):
         registration.moderation_state = registration_state.db_name
         registration.save()
         resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
