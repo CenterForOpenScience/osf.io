@@ -3,7 +3,8 @@ import re
 import csv
 import io
 import functools
-import json
+import string
+from math import floor
 
 from rest_framework.exceptions import NotFound, ValidationError
 
@@ -26,6 +27,20 @@ METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
                    'project guid': {'format': 'string'},
                    'external id': {'format': 'string'}}
 CONTRIBUTOR_METADATA_FIELDS = ['admin', 'read-write', 'read-only', 'bibliographic contributors']
+MAX_EXCEL_COLUMN_NUMBER = 16384
+
+@functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
+def get_excel_column_name(column_index):
+    column_name = ''
+    # Fix zero indexing
+    current_column = column_index + 1
+
+    while current_column > 0:
+        modulo = (current_column - 1) % 26
+        column_name = '{}{}'.format(string.ascii_uppercase[modulo], column_name)
+        current_column = floor((current_column - modulo) / 26)
+
+    return column_name
 
 class BulkRegistrationUpload():
     @property
@@ -79,12 +94,12 @@ class BulkRegistrationUpload():
     def log_error(self, **kwargs):
         self.errors.append({
             'header': kwargs['header'],
-            # TODO: add a method to generate human friendly excel column index
-            'column_index': kwargs['column_index'],
+            'column_index': get_excel_column_name(kwargs['column_index']),
             'row_index': kwargs['row_index'],
             'missing': kwargs.get('missing', False),
             'invalid': kwargs.get('invalid', False),
-            'external_id': kwargs.get('external_id', '')
+            'external_id': kwargs.get('external_id', ''),
+            'type': kwargs.get('type', '')
         })
 
     def validate_csv_header_list(self):
@@ -159,9 +174,9 @@ class Cell():
         self.value = value
         self.validations = validations
         self.field = Cell.field_instance_for(self.header.lower(),
-                                             value=self.value,
-                                             validations=self.validations,
-                                             log_error=functools.partial(log_error, header=self.header))
+                                             self.value,
+                                             self.validations,
+                                             functools.partial(log_error, header=self.header))
 
     def validate(self):
         self.field.parse()
@@ -173,25 +188,25 @@ class Cell():
         return self.value
 
     @classmethod
-    def field_instance_for(cls, name, **kwargs):
+    def field_instance_for(cls, name, *args):
         field_instance = None
         if name in METADATA_FIELDS.keys():
             if name in CONTRIBUTOR_METADATA_FIELDS:
-                field_instance = ContributorField(**kwargs)
+                field_instance = ContributorField(*args)
             elif name == 'license':
-                field_instance = LicenseField(**kwargs)
+                field_instance = LicenseField(*args)
             elif name == 'category':
-                field_instance = CategoryField(**kwargs)
+                field_instance = CategoryField(*args)
             elif name == 'subjects':
-                field_instance = SubjectsField(**kwargs)
+                field_instance = SubjectsField(*args)
             elif name == 'affiliated institutions':
-                field_instance = InstitutionsField(**kwargs)
+                field_instance = InstitutionsField(*args)
             elif name == 'project guid':
-                field_instance = ProjectIDField(**kwargs)
+                field_instance = ProjectIDField(*args)
             else:
-                field_instance = MetadataField(**kwargs)
+                field_instance = MetadataField(*args)
         else:
-            field_instance = RegistrationResponseField(**kwargs)
+            field_instance = RegistrationResponseField(*args)
         return field_instance
 
 
@@ -210,15 +225,17 @@ class UploadField():
         return self._parsed_value if self._parsed_value is not None else ''
 
 class RegistrationResponseField(UploadField):
-    def __init__(self, **kwargs):
+    def __init__(self, value, validations, log_error):
         super(RegistrationResponseField, self).__init__()
-        response_validations = kwargs['validations']
-        self.required = response_validations.get('required', False)
-        self.type = response_validations.get('type', 'string')
-        self.format = response_validations.get('format')
-        self.options = response_validations.get('options', [])
-        self.value = kwargs.get('value', '').strip()
-        self.log_error = kwargs['log_error']
+        self.required = validations.get('required', False)
+        self.type = validations.get('type', 'string')
+        self.format = validations.get('format')
+        self.options = validations.get('options', [])
+        self.value = value.strip()
+        self.log_error = functools.partial(log_error, type=self.get_field_type())
+
+    def get_field_type(self):
+        return self.format if self.type == 'choose' else self.type
 
     def _validate(self):
         parsed_value = None
@@ -244,13 +261,15 @@ class RegistrationResponseField(UploadField):
             self._parsed_value = parsed_value
 
 class MetadataField(UploadField):
-    def __init__(self, **kwargs):
+    def __init__(self, value, validations, log_error):
         super(MetadataField, self).__init__()
-        metadata_validations = kwargs['validations']
-        self.format = metadata_validations.get('format', 'string')
-        self.required = metadata_validations.get('required', False)
-        self.value = kwargs.get('value', '').strip()
-        self.log_error = kwargs.get('log_error')
+        self.format = validations.get('format', 'string')
+        self.required = validations.get('required', False)
+        self.value = value.strip()
+        self.log_error = log_error
+
+    def get_field_type(self):
+        return self.format
 
     def _validate(self):
         parsed_value = None
