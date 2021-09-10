@@ -480,3 +480,28 @@ INSTITUTION_DEACTIVATION = Mail(
     'institution_deactivation',
     subject='Your OSF login has changed - here\'s what you need to know!'
 )
+
+REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
+    'registration_bulk_upload_product_owner',
+    subject='Here goes the email subject'
+)
+
+REGISTRATION_BULK_UPLOAD_INITIATOR_SUCCESS = Mail(
+    'registration_bulk_upload_initiator_success',
+    subject='Here goes the email subject'
+)
+
+REGISTRATION_BULK_UPLOAD_INITIATOR_PARTIAL = Mail(
+    'registration_bulk_upload_initiator_partial',
+    subject='Here goes the email subject'
+)
+
+REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_RETRY = Mail(
+    'registration_bulk_upload_initiator_failed_retry',
+    subject='Here goes the email subject'
+)
+
+REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD = Mail(
+    'registration_bulk_upload_initiator_failed_on_hold',
+    subject='Here goes the email subject'
+)
