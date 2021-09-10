@@ -342,6 +342,7 @@ class TestSchemaResponseListPOST:
 
 @pytest.mark.django_db
 class TestSchemaResponseListUnsupportedMethods:
+    '''Confirm that SchemaResponseList endpoint does not support PATCH or DELETE methods.'''
 
     @pytest.fixture()
     def registration(self, admin_user):
@@ -371,25 +372,36 @@ class TestSchemaResponseListUnsupportedMethods:
             }
         }
 
-    @pytest.mark.parametrize('role', [None, 'read', 'write', 'admin'])
-    def test_patch_response_code_with_auth(self, app, url, registration, payload, perms_user, role):
-        if role:
-            registration.add_contributor(perms_user, role)
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_cannot_patch_as_contributor(self, app, url, registration, payload, perms_user, role):
+        registration.add_contributor(perms_user, role)
         resp = app.patch_json_api(url, payload, auth=perms_user.auth, expect_errors=True)
         assert resp.status_code == 405
 
-    def test_patch_response_code_no_auth(self, app, url, registration, payload):
-        resp = app.patch_json_api(url, payload, auth=None, expect_errors=True)
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_cannot_patch_as_non_contributor(
+            self, app, url, registration, payload, perms_user, use_auth):
+        resp = app.patch_json_api(
+            url,
+            payload,
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
         assert resp.status_code == 405
 
-    @pytest.mark.parametrize('role', [None, 'read', 'write', 'admin'])
-    def test_delete_response_code_with_auth(
-            self, app, url, registration, payload, perms_user, role):
-        if role:
-            registration.add_contributor(perms_user, role)
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_cannot_delete_as_contributor(self, app, url, registration, payload, perms_user, role):
+        registration.add_contributor(perms_user, role)
         resp = app.delete_json_api(url, payload, auth=perms_user.auth, expect_errors=True)
         assert resp.status_code == 405
 
-    def test_delete_response_code_no_auth(self, app, url, registration, payload):
-        resp = app.delete_json_api(url, payload, auth=None, expect_errors=True)
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_cannot_delete_as_non_contributor(
+            self, app, url, registration, payload, perms_user, use_auth):
+        resp = app.delete_json_api(
+            url,
+            payload,
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
         assert resp.status_code == 405

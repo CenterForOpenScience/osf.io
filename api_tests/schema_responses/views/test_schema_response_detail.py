@@ -123,7 +123,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_private_response_status_code_as_contributor(
+    def test_get_response__of_private_registration_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.is_public = False
@@ -136,7 +136,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_private_response_status_code_non_contributor(
+    def test_get_response_of_private_registration_status_code_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.is_public = False
         registration.save()
@@ -149,7 +149,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_withdrawn_response_status_code_as_contributor(
+    def test_get_response_of_withdrawn_registration_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
@@ -163,7 +163,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_withdrawn_response_status_code_as_non_contributor(
+    def test_get_response_of_withdrawn_registration_status_code_as_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
         registration.save()
@@ -176,7 +176,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_deleted_response_status_code_as_contributor(
+    def test_get_response_of_deleted_registration_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.deleted = timezone.now()
         registration.save()
@@ -191,7 +191,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_deleted_response_status_code_as_non_contributor(
+    def test_get_response_of_deleted_registration_status_code_as_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.deleted = timezone.now()
         registration.save()
@@ -206,6 +206,15 @@ class TestSchemaResponseDetailGETPermissions:
 
 @pytest.mark.django_db
 class TestSchemaResponseGETBehavior:
+    '''Confirms behavior of GET requests agaisnt the SchemaResponseList Endpoint.
+
+    GET should return a serialized instance of the SchemaResponse with the requested ID
+    as it exists in the database at the time of the call.
+
+    Additionally, the serialized version should include an 'is_pending_current_user_approval'
+    field that is True if the current user is in the SchemaResponse's `pending_approvers` and
+    False otherwise.
+    '''
 
     def test_schema_response_detail(self, app, schema_response):
         resp = app.get(url_for_schema_response(schema_response))
@@ -307,7 +316,7 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 200), ('admin', 200)])
-    def test_patch_private_response_status_code_as_contributor(
+    def test_patch_response_of_private_registration_status_code_as_contributor(
             self, app, registration, in_progress_schema_response, payload, perms_user, role, expected_code):
         registration.add_contributor(perms_user, role)
         registration.is_public = False
@@ -322,7 +331,7 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_patch_private_response_status_code_as_non_contributor(
+    def test_patch_response_of_private_registration_status_code_as_non_contributor(
             self, app, registration, in_progress_schema_response, payload, perms_user, use_auth):
         registration.is_public = False
         registration.save()
@@ -367,8 +376,8 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_patch_withdrawn_response_status_code_as_contributor(
-            self, app, registration, in_progress_schema_response, payload, perms_user, role, expected_code):
+    def test_patch_response_of_withdrawn_registration_status_code_as_contributor(
+            self, app, registration, in_progress_schema_response, payload, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
         registration.save()
@@ -382,7 +391,7 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_patch_withdrawn_response_status_code_as_non_contributor(
+    def test_patch_response_of_withdrawn_registration_status_code_as_non_contributor(
             self, app, registration, in_progress_schema_response, payload, perms_user, use_auth):
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
         registration.save()
@@ -396,8 +405,8 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_patch_deleted_response_status_code_as_contributor(
-            self, app, registration, in_progress_schema_response, payload, perms_user, role, expected_code):
+    def test_patch_response_of_deleted_registration_status_code_as_contributor(
+            self, app, registration, in_progress_schema_response, payload, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.deleted = timezone.now()
         registration.save()
@@ -411,7 +420,7 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_patch_deleted_response_status_code_as_non_contributor(
+    def test_patch_response_of_deleted_registration_status_code_as_non_contributor(
             self, app, registration, in_progress_schema_response, payload, perms_user, use_auth):
         registration.deleted = timezone.now()
         registration.save()
@@ -520,59 +529,192 @@ class TestSchemaResponseDetailPATCHBehavior:
         assert errors[0]['detail'] == 'Encountered unexpected keys: oops'
 
 
-class TestSchemaResponseDetailDELETE:
+@pytest.mark.djangodb
+class TestSchemaResponseDetailDELETEPermissions:
+    '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.
 
-    def test_schema_response_detail_delete(self, app, schema_response, user, url):
-        schema_response.parent.add_contributor(user, 'admin')
-        resp = app.delete_json_api(url, auth=user.auth)
-        assert resp.status_code == 204
+    Only users with ADMIN permissions on the parent resource should be able to
+    DELETE a SchemaResponse, so long as the SchemaResponse is IN_PROGRESS, even if the
+    parent resource is not public.
+
+    DELETING a SchemaResponse with a parent resource that has been deleted or withdrawn
+    should result in a 404
+    '''
+
+    @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 403), ('admin', 200)])
+    def test_delete_public_response_status_code_as_contributor(
+            self, app, registration, schema_response, perms_user, role, expected_code):
+        registration.add_contributor(perms_user, role)
+
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_delete_public_response_status_code_as_non_contributor(
+            self, app, schema_response, perms_user, use_auth):
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == (403 if use_auth else 401)
+
+    @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 403), ('admin', 200)])
+    def test_delete_response_of_private_registration_status_code_as_contributor(
+            self, app, registration, schema_response, perms_user, role, expected_code):
+        registration.add_contributor(perms_user, role)
+        registration.is_public = False
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_delete_response_of_private_registration_status_code_as_non_contributor(
+            self, app, registration, schema_response, payload, perms_user, use_auth):
+        registration.is_public = False
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == (403 if use_auth else 401)
+
+    @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 403), ('admin', 400)])
+    @pytest.mark.parametrize('response_state', UNPATCHABLE_RESPONSE_STATES)
+    def test_delete_response_in_unsupported_state_status_code_as_contributor(
+            self, app, registration, schema_response, perms_user, role, response_state, expected_code):
+        registration.add_contributor(perms_user, role)
+        schema_response.approvals_state_machine.set_state(response_state)
+        schema_response.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    @pytest.mark.parametrize('response_state', UNPATCHABLE_RESPONSE_STATES)
+    def test_delete_response_in_unsupported_state_status_code_as_non_contributor(
+            self, app, registration, schema_response, perms_user, use_auth, response_state):
+        schema_response.approvals_state_machine.set_state(response_state)
+        schema_response.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == (403 if use_auth else 401)
+
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_delete_response_of_withdrawn_registration_status_code_as_contributor(
+            self, app, registration, schema_response, perms_user, role):
+        registration.add_contributor(perms_user, role)
+        registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_delete_response_of_withdrawn_registration_status_code_as_non_contributor(
+            self, app, registration, schema_response, perms_user, use_auth):
+        registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_delete_response_of_deleted_registration_status_code_as_contributor(
+            self, app, registration, schema_response, perms_user, role):
+        registration.add_contributor(perms_user, role)
+        registration.deleted = timezone.now()
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 404
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_delete_response_of_deleted_registration_status_code_as_non_contributor(
+            self, app, registration, schema_response, perms_user, use_auth):
+        registration.deleted = timezone.now()
+        registration.save()
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == 404
+
+
+@pytest.mark.djangodb
+class TestSchemaResponseDetailDELETEBehavior:
+    '''Tests behavior of DELETE requests to the SchemaResponseDetail endpoint.
+
+    DELETE requests should delete the specified SchemaResponse from the database.
+    '''
+
+    def test_schema_response_detail_delete(self, app, schema_response, admin_user):
+        app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=admin_user
+        )
 
         with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted
             schema_response.refresh_from_db()
 
+
+@pytest.mark.djangodb
 class TestSchemaResponseListUnsupportedMethods:
+    '''Confirm that POST and PUT'''
 
-    @pytest.mark.parametrize(
-        'permission,expected_response',
-        [
-            (None, 405, ),
-            ('read', 405, ),
-            ('write', 405, ),
-            ('admin', 405, ),
-        ]
-    )
-    def test_schema_response_auth_post(self, app, schema_response, payload, permission, user, expected_response, url):
-        if permission:
-            schema_response.parent.add_contributor(user, permission)
-        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == expected_response
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_cannot_post_as_contributor(
+            self, app, schema_response, payload, perms_user, role):
+        schema_response.parent.add_contributor(perms_user, role)
+        resp = app.post_json_api(
+            url_for_schema_response(schema_response),
+            None,
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 405
 
-    @pytest.mark.parametrize(
-        'permission,expected_response',
-        [
-            (None, 403, ),
-            ('read', 403, ),
-            ('write', 200, ),
-            ('admin', 200, ),
-        ]
-    )
-    def test_schema_response_auth_patch(self, app, schema_response, payload, permission, user, expected_response, url):
-        if permission:
-            schema_response.parent.add_contributor(user, permission)
-        resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == expected_response
+    @pytest.mark.parametrize('use_ath', [True, False])
+    def test_cannot_post_as_non_contributor(
+            self, app, schema_response, payload, perms_user, use_auth):
+        resp = app.post_json_api(
+            url_for_schema_response(schema_response),
+            None,
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
 
-    @pytest.mark.parametrize(
-        'permission,expected_response',
-        [
-            (None, 403, ),
-            ('read', 403, ),
-            ('write', 403, ),
-            ('admin', 204, ),
-        ]
-    )
-    def test_schema_response_auth_delete(self, app, schema_response, payload, permission, user, expected_response, url):
-        if permission:
-            schema_response.parent.add_contributor(user, permission)
-        resp = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert resp.status_code == expected_response
+        assert resp.status_code == 405
