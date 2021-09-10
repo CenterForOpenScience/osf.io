@@ -88,6 +88,10 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             query_or_pk=registration_id,
             request=self.context['request'],
         )
+        if registration.moderation_state not in ['accepted', 'embargo']:
+            raise exceptions.ValidationError(
+                'Cannot create new SchemaResponse for unapproved Parent resource',
+            )
 
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')

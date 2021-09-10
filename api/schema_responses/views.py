@@ -1,6 +1,6 @@
 from django.db.models import BooleanField, Exists, OuterRef, Q, Subquery
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
@@ -14,6 +14,7 @@ from api.schema_responses.serializers import (
 
 from framework.auth.oauth_scopes import CoreScopes
 
+from osf.exceptions import SchemaResponseStateError
 from osf.models import Contributor, SchemaResponse, Registration
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
@@ -125,4 +126,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
     def perform_destroy(self, instance):
         ## check state
-        instance.delete()
+        try:
+            instance.delete()
+        except SchemaResponseStateError as e:
+            raise ValidationError(str(e))

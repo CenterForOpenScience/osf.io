@@ -240,7 +240,10 @@ class TestSchemaResponseListPOST:
     '''
     @pytest.fixture()
     def registration(self, admin_user):
-        return RegistrationFactory(creator=admin_user)
+        registration = RegistrationFactory(creator=admin_user)
+        registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+        registration.save()
+        return registration
 
     @pytest.fixture()
     def schema_response(self, registration):
