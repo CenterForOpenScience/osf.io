@@ -70,8 +70,9 @@ class TestSchemaResponseDetailGETPermissions:
 
     SchemaResponses whose parent registration has been deleted or withdrawn should 404.
     '''
+
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_public_response_response_as_contributor(
+    def test_get_public_response_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.add_contributor(perms_user, role)
 
@@ -83,7 +84,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_public_response_response_code_as_non_contributor(
+    def test_get_public_response_status_code_as_non_contributor(
             self, app, schema_response, perms_user, use_auth):
         resp = app.get(
             url_for_schema_response(schema_response),
@@ -94,7 +95,7 @@ class TestSchemaResponseDetailGETPermissions:
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     @pytest.mark.parametrize('response_state', NONAPPROVED_RESPONSE_STATES)
-    def test_get_unapproved_response_response_code_as_contributor(
+    def test_get_unapproved_response_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role, response_state):
         registration.add_contributor(perms_user, role)
         schema_response.approvals_state_machine.set_state(response_state)
@@ -109,7 +110,7 @@ class TestSchemaResponseDetailGETPermissions:
 
     @pytest.mark.parametrize('use_auth', [True, False])
     @pytest.mark.parametrize('response_state', NONAPPROVED_RESPONSE_STATES)
-    def test_get_unapproved_response_response_code_as_non_contributor(
+    def test_get_unapproved_response_status_code_as_non_contributor(
             self, app, schema_response, response_state, perms_user, use_auth):
         schema_response.approvals_state_machine.set_state(response_state)
         schema_response.save()
@@ -122,7 +123,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_private_response_response_code_as_contributor(
+    def test_get_private_response_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.is_public = False
@@ -135,7 +136,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_private_response_response_code_non_contributor(
+    def test_get_private_response_status_code_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.is_public = False
         registration.save()
@@ -148,7 +149,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_withdrawn_response_response_code_as_contributor(
+    def test_get_withdrawn_response_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.add_contributor(perms_user, role)
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
@@ -162,7 +163,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_withdrawn_response_response_code_as_non_contributor(
+    def test_get_withdrawn_response_status_code_as_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
         registration.save()
@@ -175,7 +176,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_get_deleted_response_response_code_as_contributor(
+    def test_get_deleted_response_status_code_as_contributor(
             self, app, registration, schema_response, perms_user, role):
         registration.deleted = timezone.now()
         registration.save()
@@ -190,7 +191,7 @@ class TestSchemaResponseDetailGETPermissions:
         assert resp.status_code == 404
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_deleted_response_response_code_as_non_contributor(
+    def test_get_deleted_response_status_code_as_non_contributor(
             self, app, registration, schema_response, perms_user, use_auth):
         registration.deleted = timezone.now()
         registration.save()
@@ -249,7 +250,7 @@ class TestSchemaResponseGETBehavior:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailPATCHCodes:
+class TestSchemaResponseDetailPATCHPermissions:
     '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.
 
     Only 'ADMIN' and 'WRITE' contributors should be able to PATCH to a SchemaResponse.
