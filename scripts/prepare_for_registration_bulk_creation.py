@@ -109,17 +109,15 @@ def handle_error(initiator, inform_product=False, error_message=None):
         sentry.log_message(error_message)
 
     if inform_product:
-        # mails.send_mail(
-        #     to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
-        #     mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER
-        # )
-        pass
+        mails.send_mail(
+            to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
+            mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER
+        )
 
     if initiator:
-        # mails.send_mail(
-        #     to_addr=initiator.username,
-        #     mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
-        #     user=initiator,
-        #     osf_support_email=settings.OSF_SUPPORT_EMAIL
-        # )
-        pass
+        mails.send_mail(
+            to_addr=initiator.username,
+            mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
+            user=initiator,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL
+        )
