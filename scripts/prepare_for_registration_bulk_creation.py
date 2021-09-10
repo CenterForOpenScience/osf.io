@@ -42,10 +42,10 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     schema_id = parsing_output.get('schema_id', None)
     try:
         schema = RegistrationSchema.objects.get(_id=schema_id)
-    except RegistrationProvider.DoesNotExist:
+    except RegistrationSchema.DoesNotExist:
         message = 'Registration schema not found: [_id={}] '.format(schema_id)
         return handle_error(initiator, inform_product=True, error_message=message)
-    except RegistrationProvider.MultipleObjectsReturned:
+    except RegistrationSchema.MultipleObjectsReturned:
         message = 'Multiple registration schemas returned: [_id={}] '.format(schema_id)
         return handle_error(initiator, inform_product=True, error_message=message)
 
