@@ -30,7 +30,11 @@ CONTRIBUTOR_METADATA_FIELDS = ['admin', 'read-write', 'read-only', 'bibliographi
 class BulkRegistrationUpload():
     @property
     def is_valid(self):
-        return not len(self.errors)
+        return self.is_validated and not len(self.errors)
+
+    @property
+    def is_validated(self):
+        return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
         self.raw_csv = bulk_upload_csv.read()
@@ -48,7 +52,7 @@ class BulkRegistrationUpload():
                 raise NotFound(detail='Schema with id "{}" was not found'.format(self.schema_id))
             except RegistrationProvider.DoesNotExist:
                 raise NotFound(detail='Registration provider with id "{}" was not found').format(self.provider_id)
-        self.schema_questions = BulkRegistrationUpload.get_questions_validations(self.registration_schema)
+        self.schema_questions = BulkRegistrationUpload.get_schema_questions_validations(self.registration_schema)
         self.validations = {**self.schema_questions, **METADATA_FIELDS}
         self.errors = []
         self.rows = [Row(row,
@@ -57,7 +61,7 @@ class BulkRegistrationUpload():
                      for row in self.reader]
 
     @classmethod
-    def get_questions_validations(cls, registration_schema):
+    def get_schema_questions_validations(cls, registration_schema):
         schema_questions = {}
         get_question_validations = lambda question: {'required': question.get('required', False),
                                    'format': question.get('format', ''),
@@ -68,7 +72,7 @@ class BulkRegistrationUpload():
                 schema_questions[question['qid']] = get_question_validations(question)
                 if 'properties' in question:
                     for nested_question in question['properties']:
-                        qid = '{}{}'.format(question['qid'], nested_question['id'])
+                        qid = '{}.{}'.format(question['qid'], nested_question['id'])
                         schema_questions[qid] = get_question_validations(nested_question)
         return schema_questions
 
@@ -79,7 +83,8 @@ class BulkRegistrationUpload():
             'column_index': kwargs['column_index'],
             'row_index': kwargs['row_index'],
             'missing': kwargs.get('missing', False),
-            'invalid': kwargs.get('invalid', False)
+            'invalid': kwargs.get('invalid', False),
+            'external_id': kwargs.get('external_id', '')
         })
 
     def validate_csv_header_list(self):
@@ -87,7 +92,7 @@ class BulkRegistrationUpload():
         actual_headers = self.headers
         diff = set(expected_headers) - set(actual_headers)
         if len(diff):
-            raise ValidationError('Invalid csv headers: {}'.format(','.join(diff)))
+            raise ValidationError('Missing csv headers: {}'.format(','.join(diff)))
 
     def get_parsed(self):
         parsed = []
@@ -101,18 +106,16 @@ class BulkRegistrationUpload():
             row.validate()
 
 class Row():
+    @property
+    def is_validated(self):
+        return all([cell.is_validated for cell in self.cells])
+
     def __init__(self, row_dict, validations, log_error):
         self.row_dict = row_dict
         self.cells = [Cell(header.lower(),
                            value, validations[header.lower()],
-                           functools.partial(log_error, column_index=column_index))
+                           functools.partial(log_error, external_id=row_dict.get('External ID', ''), column_index=column_index))
                            for column_index, (header, value) in enumerate(row_dict.items())]
-
-    def to_json(self):
-        json_value = {}
-        for cell in self.cells:
-            json_value.update(cell.get_parsed_value())
-        return json.dumps(json_value)
 
     def get_metadata(self):
         parsed_metadata = {}
@@ -147,6 +150,10 @@ class Cell():
     def is_metadata(self):
         return self.header in METADATA_FIELDS.keys()
 
+    @property
+    def is_validated(self):
+        return self.field.is_validated
+
     def __init__(self, header, value, validations, log_error):
         self.header = header
         self.value = value
@@ -164,9 +171,6 @@ class Cell():
 
     def get_raw_value(self):
         return self.value
-
-    def to_json(self):
-        return json.dumps({self.header: self.field.parse()})
 
     @classmethod
     def field_instance_for(cls, name, **kwargs):
@@ -190,8 +194,24 @@ class Cell():
             field_instance = RegistrationResponseField(**kwargs)
         return field_instance
 
-class RegistrationResponseField():
+
+class UploadField():
+    def __init__(self):
+        self.is_validated = None
+        self._parsed_value = None
+
+    def _validate(self):
+        raise NotImplementedError('UploadField subclasses must define a _validate method')
+
+    def parse(self):
+        if self.is_validated is None:
+            self._validate()
+            self.is_validated = True
+        return self._parsed_value if self._parsed_value is not None else ''
+
+class RegistrationResponseField(UploadField):
     def __init__(self, **kwargs):
+        super(RegistrationResponseField, self).__init__()
         response_validations = kwargs['validations']
         self.required = response_validations.get('required', False)
         self.type = response_validations.get('type', 'string')
@@ -199,7 +219,6 @@ class RegistrationResponseField():
         self.options = response_validations.get('options', [])
         self.value = kwargs.get('value', '').strip()
         self.log_error = kwargs['log_error']
-        self._parsed_value = None
 
     def _validate(self):
         parsed_value = None
@@ -224,19 +243,14 @@ class RegistrationResponseField():
                             parsed_value.append(choice)
             self._parsed_value = parsed_value
 
-    def parse(self):
-        if self._parsed_value is None:
-            self._validate()
-        return self._parsed_value if self._parsed_value is not None else ''
-
-class MetadataField():
+class MetadataField(UploadField):
     def __init__(self, **kwargs):
+        super(MetadataField, self).__init__()
         metadata_validations = kwargs['validations']
         self.format = metadata_validations.get('format', 'string')
         self.required = metadata_validations.get('required', False)
         self.value = kwargs.get('value', '').strip()
         self.log_error = kwargs.get('log_error')
-        self._parsed_value = None
 
     def _validate(self):
         parsed_value = None
@@ -249,11 +263,6 @@ class MetadataField():
                 parsed_value = [val.strip() for val in self.value.split(';')]
             self._parsed_value = parsed_value
 
-    def parse(self):
-        if self._parsed_value is None:
-            self._validate()
-        return self._parsed_value if self._parsed_value is not None else ''
-
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
     contributor_regex = re.compile(r'(?P<full_name>[\w -]+)<(?P<email>.*?)>')
@@ -264,7 +273,6 @@ class ContributorField(MetadataField):
         else:
             parsed_value = []
             parsed_contributor_list = [val.strip() for val in self.value.split(';')]
-            # TODO: maybe use re.findall()
             for contrib in parsed_contributor_list:
                 match = self.contributor_regex.match(contrib.strip())
                 if match:
