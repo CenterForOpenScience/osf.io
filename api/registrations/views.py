@@ -878,7 +878,14 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         return self.get_node()
 
     def get_default_queryset(self):
-        return self.get_node().schema_responses.all()
+        user = self.request.user
+        registration = self.get_node()
+
+        all_responses = registration.schema_responses.all()
+        if not user or not registration.has_permission(user, 'read'):
+            return all_responses.filter(reviews_state='approved')
+
+        return all_responses
 
     def get_queryset(self):
         return self.get_queryset_from_request()
