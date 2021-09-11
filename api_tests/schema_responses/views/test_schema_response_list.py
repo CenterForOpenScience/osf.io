@@ -174,7 +174,10 @@ class TestSchemaResponseListPOSTPermissions:
 
     @pytest.fixture()
     def registration(self, admin_user):
-        return RegistrationFactory(creator=admin_user)
+        registration = RegistrationFactory(creator=admin_user)
+        registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+        registration.save()
+        return registration
 
     @pytest.fixture()
     def payload(self, registration):
@@ -194,7 +197,7 @@ class TestSchemaResponseListPOSTPermissions:
 
     @pytest.mark.parametrize('role, expected_code', [('read', 403), ('write', 403), ('admin', 201)])
     @pytest.mark.parametrize('is_public', [True, False])
-    def test_response_code_as_non_contributor(
+    def test_response_code_as_contributor(
             self, app, url, registration, payload, perms_user, role, is_public, expected_code):
         registration.add_contributor(perms_user, role)
         registration.is_public = is_public
@@ -210,7 +213,7 @@ class TestSchemaResponseListPOSTPermissions:
 
     @pytest.mark.parametrize('use_auth', [True, False])
     @pytest.mark.parametrize('is_public', [True, False])
-    def test_response_code_as_contributor(
+    def test_response_code_as_non_contributor(
             self, app, url, registration, payload, perms_user, use_auth, is_public):
         registration.is_public = is_public
         registration.save()
@@ -224,7 +227,7 @@ class TestSchemaResponseListPOSTPermissions:
         assert resp.status_code == (403 if use_auth else 401)
 
 @pytest.mark.django_db
-class TestSchemaResponseListPOST:
+class TestSchemaResponseListPOSTBehavior:
     '''Tests for the POST method on the top-level SchemaResponseList endpoint.
 
     Only admin users on the registration associated with the SchemaResponse should

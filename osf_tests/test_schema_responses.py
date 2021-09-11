@@ -133,7 +133,7 @@ class TestCreateSchemaResponse():
             parent=registration,
         )
 
-        with assert_raises(AssertionError):
+        with assert_raises(SchemaResponseStateError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,

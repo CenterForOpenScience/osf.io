@@ -502,7 +502,7 @@ class TestSchemaResponseDetailPATCHBehavior:
     def test_patch_with_old_answer_removes_updated_response_keys(
             self, app, in_progress_schema_response, payload, admin_user):
         in_progress_schema_response.update_responses({'q1': 'update_value'})
-        assert in_progress_schema_response.update_response_keys == {'q1'}
+        assert in_progress_schema_response.updated_response_keys == {'q1'}
 
         payload['data']['attributes']['revision_responses']['q1'] == INITIAL_SCHEMA_RESPONSES['q1']
         app.patch_json_api(
@@ -692,7 +692,7 @@ class TestSchemaResponseDetailDELETEBehavior:
     def test_schema_response_detail_delete(self, app, schema_response, admin_user):
         app.delete_json_api(
             url_for_schema_response(schema_response),
-            auth=admin_user.admin
+            auth=admin_user.auth
         )
 
         with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted
