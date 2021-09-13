@@ -17,6 +17,7 @@ from osf.models import (
     Preprint,
     PrivateLink,
     Registration,
+    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -222,6 +223,40 @@ class SchemaResponseListPermission(permissions.BasePermission):
                 request=request,
             )
 
+            return self.has_object_permission(request, view, obj)
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        return obj.has_permission(auth.user, 'admin')
+
+
+class SchemaResponseActionListPermission(permissions.BasePermission):
+    '''
+    Permissions for top-level `schema_responses` list endpoints.
+    To create a schema response a user must be an admin contributor on that Registration.
+    '''
+    acceptable_models = (Registration,)
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        elif request.method == 'POST':
+            # Validate json before using id to check for permissions
+            request_json = JSONSchemaParser().parse(
+                io.BytesIO(request.body),
+                parser_context={
+                    'request': request,
+                    'json_schema': view.create_payload_schema,
+                },
+            )
+            obj = get_object_or_error(
+                SchemaResponse,
+                query_or_pk=request_json['data']['relationships']['target']['data']['id'],
+                request=request,
+            ).parent
             return self.has_object_permission(request, view, obj)
         else:
             raise exceptions.MethodNotAllowed(request.method)

@@ -948,6 +948,7 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+
 class ScheduledBannerFactory(DjangoModelFactory):
     # Banners are set for 24 hours from start_date if no end date is given
     class Meta:
@@ -1151,3 +1152,18 @@ class SchemaResponseFactory(DjangoModelFactory):
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
         else:
             return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
+
+
+class SchemaResponseActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.SchemaResponseAction
+
+    trigger = FuzzyChoice(choices=DefaultTriggers.values())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=DefaultStates.values())
+    to_state = FuzzyChoice(choices=DefaultStates.values())
+
+    target = factory.SubFactory(SchemaResponseFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False

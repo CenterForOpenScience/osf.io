@@ -20,16 +20,24 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import Preprint, NodeRequest, PreprintRequest, Registration
+from osf.models import (
+    Preprint,
+    NodeRequest,
+    PreprintRequest,
+    Registration,
+    SchemaResponse,
+)
+
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
     ReviewTriggers,
     RegistrationModerationTriggers,
+    SchemaResponseTriggers,
 )
 from osf.utils import permissions
-
+from api.schema_responses.schemas import create_schema_response_action_payload
 
 class ReviewableCountsRelationshipField(RelationshipField):
 
@@ -313,5 +321,62 @@ class RegistrationActionSerializer(BaseActionSerializer):
                 http_status.HTTP_400_BAD_REQUEST,
                 data={'message_short': short_message, 'message_long': long_message},
             )
+
+        return target.actions.last()
+
+
+class SchemaResponseActionSerializer(BaseActionSerializer):
+
+    create_payload_schema = create_schema_response_action_payload
+
+    class Meta:
+        type_ = 'revision_actions'
+
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)
+    trigger = ser.ChoiceField(choices=SchemaResponseTriggers.char_field_choices())
+
+    target = TargetRelationshipField(
+        target_class=SchemaResponse,
+        read_only=False,
+        required=True,
+        related_view='schema_responses:schema-response-action-list',
+        related_view_kwargs={'schema_response_id': '<target._id>'},
+        filter_key='target__guids___id',
+    )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        trigger = validated_data.get('trigger')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        try:
+            if trigger == SchemaResponseTriggers.SUBMIT.db_name:
+                required_approvers = target.parent.get_users_with_perm('admin')
+                target.submit(user=user, comment=comment, required_approvers=required_approvers)
+            elif trigger == SchemaResponseTriggers.APPROVE.db_name:
+                target.approve(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.ACCEPT.db_name:
+                target.accept(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            else:
+                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+        except InvalidTriggerError:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    'message_short': 'Operation not allowed at this time',
+                    'message_long': f'This {trigger} is invalid for the current state of the registration',
+                },
+            )
+        except PermissionsError as exc:
+            raise PermissionDenied(exc)
+        except ValueError as exc:
+            raise PermissionDenied(exc)
+        except MachineError as exc:
+            raise PermissionDenied(exc)
 
         return target.actions.last()
