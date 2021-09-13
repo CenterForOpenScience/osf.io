@@ -15,9 +15,9 @@ from website import settings
 
 METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
                    'description': {'format': 'string', 'required': True},
-                   'admin': {'format': 'list', 'required': True},
-                   'read-write': {'format': 'list'},
-                   'read-only': {'format': 'list'},
+                   'admin contributors': {'format': 'list', 'required': True},
+                   'read-write contributors': {'format': 'list'},
+                   'read-only contributors': {'format': 'list'},
                    'bibliographic contributors': {'format': 'list'},
                    'category': {'format': 'string'},
                    'affiliated institutions': {'format': 'list'},
@@ -26,7 +26,10 @@ METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
                    'tags': {'format': 'list'},
                    'project guid': {'format': 'string'},
                    'external id': {'format': 'string'}}
-CONTRIBUTOR_METADATA_FIELDS = ['admin', 'read-write', 'read-only', 'bibliographic contributors']
+CONTRIBUTOR_METADATA_FIELDS = ['admin contributors',
+                               'read-write contributors',
+                               'read-only contributors',
+                               'bibliographic contributors']
 MAX_EXCEL_COLUMN_NUMBER = 16384
 
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
@@ -59,14 +62,15 @@ class BulkRegistrationUpload():
         schema_id_row = next(self.reader)
         self.schema_id = schema_id_row[self.reader.fieldnames[0]]
         self.provider_id = provider_id
-        if self.schema_id:
-            try:
-                self.registration_provider = RegistrationProvider.load(self.provider_id)
-                self.registration_schema = self.registration_provider.schemas.get(_id=self.schema_id)
-            except RegistrationSchema.DoesNotExist:
-                raise NotFound(detail='Schema with id "{}" was not found'.format(self.schema_id))
-            except RegistrationProvider.DoesNotExist:
-                raise NotFound(detail='Registration provider with id "{}" was not found').format(self.provider_id)
+
+        self.registration_provider = RegistrationProvider.load(self.provider_id)
+        if self.registration_provider is None:
+            raise NotFound(detail='Registration provider with id "{}" was not found').format(self.provider_id)
+
+        try:
+            self.registration_schema = self.registration_provider.schemas.get(_id=self.schema_id)
+        except RegistrationSchema.DoesNotExist:
+            raise NotFound(detail='Schema with id "{}" was not found'.format(self.schema_id))
         self.schema_questions = BulkRegistrationUpload.get_schema_questions_validations(self.registration_schema)
         self.validations = {**self.schema_questions, **METADATA_FIELDS}
         self.errors = []
