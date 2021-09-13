@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
-from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -103,7 +103,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         a parent object. Every subsequent time new Responses are being created, they
         should be based on existing responses to simplify diffing between versions.
         '''
-        assert not parent.schema_responses.exists()
+        if parent.schema_responses.exists():
+            raise PreviousSchemaResponseError(
+                f'Cannot create initial SchemaResponse for parent resource {parent}, '
+                f'as {parent} already has an associated SchemaResponse'
+            )
 
         # TODO: Decide on a fixed property/field name that parent types should implement
         # to access a supported schema. Just use registration_schema for now.
@@ -159,7 +163,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # Cannot create new response if parent has another response in-progress or pending approval
         parent = previous_response.parent
         if parent.schema_responses.exclude(reviews_state=ApprovalStates.APPROVED.db_name).exists():
-            raise PreviousPendingSchemaResponseError(
+            raise PreviousSchemaResponseError(
                 f'Cannot create new SchemaResponse for {parent} because {parent} already '
                 'has non-terminal SchemaResponse'
             )

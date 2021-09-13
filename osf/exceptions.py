@@ -168,8 +168,8 @@ class SchemaResponseStateError(SchemaResponseError):
     pass
 
 
-class PreviousPendingSchemaResponseError(SchemaResponseError):
-    """Raised when attempting to create a new SchemaResponse for a parent
-    that already has an in-progress/pending SchemaResponse.
+class PreviousSchemaResponseError(SchemaResponseError):
+    """Raised when attempting to create a new SchemaResponse for a parent that
+    already has a SchemaResponse in an unsupported state
     """
     pass

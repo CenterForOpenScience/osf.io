@@ -72,6 +72,7 @@ class TestSchemaResponseDetail:
         }
 
     def test_schema_response_detail_revised_responses(self, app, schema_response, payload, url):
+        schema_response.approvals_state_machine.set_state('approved')
         revised_schema = SchemaResponse.create_from_previous_response(
             schema_response.initiator,
             schema_response
