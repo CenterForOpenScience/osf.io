@@ -357,6 +357,7 @@ API_TESTS2 = [
     'api_tests/nodes',
     'api_tests/osf_groups',
     'api_tests/requests',
+    'api_tests/schema_responses'
     'api_tests/subscriptions',
     'api_tests/waffle',
     'api_tests/wb',
