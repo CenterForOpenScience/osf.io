@@ -53,6 +53,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent = GenericForeignKey('content_type', 'object_id')
 
+    class Meta:
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['reviews_state'])
+        ]
+
     # Attribute for controlling flow from 'reject' triggers on the state machine.
     # True -> IN_PROGRESS
     # False -> [MODERATOR_]REJECTED
@@ -173,7 +179,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             schema=previous_response.schema,
             initiator=initiator,
             previous_response=previous_response,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
