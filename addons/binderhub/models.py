@@ -35,3 +35,7 @@ class NodeSettings(BaseNodeSettings):
     def set_binder_url(self, binder_url):
         self.binder_url = binder_url
         self.save()
+
+    @property
+    def complete(self):
+        return True
