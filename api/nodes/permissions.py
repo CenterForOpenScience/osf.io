@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import io
 from rest_framework import permissions
 from rest_framework import exceptions
 
@@ -15,10 +16,12 @@ from osf.models import (
     OSFUser,
     Preprint,
     PrivateLink,
+    Registration,
 )
 from osf.utils import permissions as osf_permissions
 
-from api.base.utils import get_user_auth, is_deprecated, assert_resource_type
+from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
+from api.base.parsers import JSONSchemaParser
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -147,6 +150,86 @@ class AdminContributorOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.is_admin_contributor(auth.user)
+
+
+class SchemaResponseDetailPermission(permissions.BasePermission):
+    '''
+    Permissions for top-level `schema_response` detail endpoints.
+    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
+    deleting.
+    '''
+    acceptable_models = (AbstractNode, )
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        elif request.method == 'PATCH':
+            return obj.has_permission(auth.user, 'write')
+        elif request.method == 'DELETE':
+            return obj.has_permission(auth.user, 'admin')
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+    def has_permission(self, request, view):
+        obj = view.get_object()
+        return self.has_object_permission(request, view, obj.parent)
+
+
+class RegistrationSchemaResponseListPermission(permissions.BasePermission):
+    '''
+    Permissions for the registration relationship view for schema responses.
+    This endpoint only allows the user to view and filter the schema responses for that Registration if it is public or
+    the user has read permission.
+    '''
+    acceptable_models = (Registration, )
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+    def has_permission(self, request, view):
+        return self.has_object_permission(request, view, view.get_object())
+
+
+class SchemaResponseListPermission(permissions.BasePermission):
+    '''
+    Permissions for top-level `schema_responses` list endpoints.
+    To create a schema response a user must be an admin contributor on that Registration.
+    '''
+    acceptable_models = (Registration, )
+
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        elif request.method == 'POST':
+            # Validate json before using id to check for permissions
+            request_json = JSONSchemaParser().parse(
+                io.BytesIO(request.body),
+                parser_context={
+                    'request': request,
+                    'json_schema': view.create_payload_schema,
+                },
+            )
+            obj = get_object_or_error(
+                Registration,
+                query_or_pk=request_json['data']['relationships']['registration']['data']['id'],
+                request=request,
+            )
+
+            return self.has_object_permission(request, view, obj)
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        return obj.has_permission(auth.user, 'admin')
 
 
 class ExcludeWithdrawals(permissions.BasePermission):

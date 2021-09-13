@@ -1,3 +1,7 @@
+import json
+import jsonschema
+import codecs
+
 import time
 import collections
 from django.core.exceptions import ImproperlyConfigured
@@ -13,6 +17,36 @@ NO_RELATIONSHIPS_ERROR = 'Request must include /data/relationships.'
 NO_DATA_ERROR = 'Request must include /data.'
 NO_TYPE_ERROR = 'Request must include /type.'
 NO_ID_ERROR = 'Request must include /data/id.'
+
+
+class JSONSchemaParser(JSONParser):
+    """
+    Parses JSON-serialized data and validates it against a jsonscehma on the view.
+    """
+    media_type = 'application/vnd.api+json'
+    renderer_class = JSONAPIRenderer
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        """
+        Parses the incoming bytestream as JSON and returns the resulting data checking it against a jsonschema.
+        """
+        parser_context = parser_context or {}
+        encoding = parser_context.get('encoding', 'utf-8')
+
+        try:
+            decoded_stream = codecs.getreader(encoding)(stream)
+            json_payload = json.load(decoded_stream)
+        except ValueError as exc:
+            raise ParseError('JSON parse error - %s' % str(exc))
+
+        json_schema = parser_context['json_schema']
+
+        try:
+            jsonschema.validate(json_payload, json_schema)
+        except jsonschema.exceptions.ValidationError as exc:
+            raise ParseError(exc)
+
+        return json_payload
 
 
 class JSONAPIParser(JSONParser):

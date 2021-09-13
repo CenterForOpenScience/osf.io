@@ -17,7 +17,7 @@ from osf.utils import tokens
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
-    SanctionStates
+    ApprovalStates
 )
 from tests.base import OsfTestCase
 from transitions import MachineError
@@ -174,7 +174,7 @@ class TestUnmoderatedFlows():
         sanction_object.approve(user=registration.creator, token=approval_token)
         registration.refresh_from_db()
         assert registration.moderation_state == registration_accepted_state
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
 
     @pytest.mark.parametrize('sanction_fixture', [registration_approval, embargo, retraction])
     def test_approve_after_reject_is_noop(self, sanction_fixture):
@@ -189,7 +189,7 @@ class TestUnmoderatedFlows():
         sanction_object.reject(user=registration.creator, token=rejection_token)
         registration.refresh_from_db()
         assert registration.moderation_state == registration_rejected_state
-        assert sanction_object.approval_stage is SanctionStates.REJECTED
+        assert sanction_object.approval_stage is ApprovalStates.REJECTED
 
 
 @pytest.mark.enable_bookmark_creation
@@ -339,7 +339,7 @@ class TestModeratedFlows():
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         sanction_object.approve(user=registration.creator, token=approval_token)
-        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATION
+        assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         with assert_raises(PermissionsError):
             sanction_object.accept(user=registration.creator)
@@ -389,7 +389,7 @@ class TestModeratedFlows():
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         sanction_object.approve(user=registration.creator, token=approval_token)
         registration.refresh_from_db()
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.moderation_state == registration_accepted_state
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
@@ -404,7 +404,7 @@ class TestModeratedFlows():
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
         sanction_object.accept(user=registration.creator, token=approval_token)
         registration.refresh_from_db()
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.moderation_state == registration_accepted_state
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
@@ -418,7 +418,7 @@ class TestModeratedFlows():
 
         sanction_object.accept(user=moderator)
         registration.refresh_from_db()
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.moderation_state == registration_accepted_state
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
@@ -445,7 +445,7 @@ class TestModeratedFlows():
             sanction_object.reject(user=moderator)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
-    @pytest.mark.parametrize('rejection_state', [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED])
+    @pytest.mark.parametrize('rejection_state', [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED])
     def test_admin_reject_after_rejected_is_noop(self, sanction_object, rejection_state, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
@@ -464,7 +464,7 @@ class TestModeratedFlows():
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
-        'rejection_state', [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED])
+        'rejection_state', [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED])
     def test_moderator_reject_after_rejected_is_noop(
         self, sanction_object, rejection_state, provider, moderator):
         # using fixtures in parametrize returns the function
@@ -483,7 +483,7 @@ class TestModeratedFlows():
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
-        'rejection_state', [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED])
+        'rejection_state', [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED])
     def test_admin_approve_after_rejected_raises_machine_error(
         self, sanction_object, rejection_state, provider):
         # using fixtures in parametrize returns the function
@@ -497,7 +497,7 @@ class TestModeratedFlows():
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
-        'rejection_state', [SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED])
+        'rejection_state', [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED])
     def test_moderator_approve_after_rejected_raises_machine_error(
         self, sanction_object, rejection_state, provider, moderator):
         # using fixtures in parametrize returns the function
@@ -514,20 +514,20 @@ class TestModeratedFlows():
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
         sanction_object.accept()
-        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATION
+        assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         sanction_object.accept(user=provider_admin)
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_provider_admin_can_reject_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
         sanction_object.accept()
-        assert sanction_object.approval_stage is SanctionStates.PENDING_MODERATION
+        assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         sanction_object.reject(user=provider_admin)
-        assert sanction_object.approval_stage is SanctionStates.MODERATOR_REJECTED
+        assert sanction_object.approval_stage is ApprovalStates.MODERATOR_REJECTED
 
 @pytest.mark.enable_bookmark_creation
 class TestEmbargoTerminationFlows(OsfTestCase):
@@ -566,7 +566,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo_termination.approve(user=self.user, token=approval_token)
         self.registration.refresh_from_db()
         assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
-        assert self.embargo.approval_stage is SanctionStates.COMPLETED
+        assert self.embargo.approval_stage is ApprovalStates.COMPLETED
 
     def test_embargo_termination_rejected_by_admin(self):
         assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
@@ -585,7 +585,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo_termination.approve(user=self.user, token=approval_token)
         self.registration.refresh_from_db()
         assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
-        assert self.embargo.approval_stage is SanctionStates.COMPLETED
+        assert self.embargo.approval_stage is ApprovalStates.COMPLETED
 
     def test_moderator_cannot_approve_embargo_termination(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
@@ -604,8 +604,8 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo_termination.approve(user=self.user, token=approval_token)
 
         embargo_termination.approve(user=self.user, token=approval_token)
-        assert embargo_termination.approval_stage is SanctionStates.APPROVED
-        assert self.embargo.approval_stage is SanctionStates.COMPLETED
+        assert embargo_termination.approval_stage is ApprovalStates.APPROVED
+        assert self.embargo.approval_stage is ApprovalStates.COMPLETED
         assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
     def test_reject_afer_reject_is_noop(self):
@@ -615,8 +615,8 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo_termination.reject(user=self.user, token=rejection_token)
 
         embargo_termination.reject(user=self.user, token=rejection_token)
-        assert embargo_termination.approval_stage is SanctionStates.REJECTED
-        assert self.embargo.approval_stage is SanctionStates.APPROVED
+        assert embargo_termination.approval_stage is ApprovalStates.REJECTED
+        assert self.embargo.approval_stage is ApprovalStates.APPROVED
         assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
     def test_reject_after_accept_raises_machine_error(self):
@@ -738,7 +738,7 @@ class TestModerationActions:
 
         sanction_object.accept()
         registration.refresh_from_db()
-        assert sanction_object.approval_stage is SanctionStates.APPROVED
+        assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.actions.count() == 0
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
@@ -749,7 +749,7 @@ class TestModerationActions:
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
         sanction_object.reject(user=registration.creator, token=rejection_token)
         registration.refresh_from_db()
-        assert sanction_object.approval_stage is SanctionStates.REJECTED
+        assert sanction_object.approval_stage is ApprovalStates.REJECTED
         assert registration.actions.count() == 0
 
 

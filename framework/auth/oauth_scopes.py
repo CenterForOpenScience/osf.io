@@ -186,6 +186,9 @@ class CoreScopes(object):
     METRICS_BASIC = 'metrics_basic'
     METRICS_RESTRICTED = 'metrics_restricted'
 
+    READ_SCHEMA_RESPONSES = 'read_schema_responses'
+    WRITE_SCHEMA_RESPONSES = 'write_schema_responses'
+
 
 class ComposedScopes(object):
     """
