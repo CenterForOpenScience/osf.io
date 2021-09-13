@@ -113,7 +113,7 @@ class TestSchemaResponseDetail:
         assert resp.status_code == 400
         errors = resp.json['errors']
         assert len(errors) == 1
-        assert errors[0]['detail'] == 'Encountered unexpected keys: oops'
+        assert 'oops' in errors[0]['detail']
 
     def test_schema_response_detail_delete(self, app, schema_response, user, url):
         schema_response.parent.add_contributor(user, 'admin')
