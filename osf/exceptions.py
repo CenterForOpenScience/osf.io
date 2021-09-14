@@ -156,7 +156,20 @@ class SchemaBlockConversionError(OSFError):
     pass
 
 
-class SchemaResponseStateError(OSFError):
-    """Raised if a SchemaResponse object's state is not suitable for the requested action
+class SchemaResponseError(OSFError):
+    """Superclass for errors ariseing from unexpected SchemaResponse behavior."""
+    pass
+
+
+class SchemaResponseStateError(SchemaResponseError):
+    """Raised when attempting to perform an operation against a
+    SchemaResponse with an invalid state.
+    """
+    pass
+
+
+class PreviousSchemaResponseError(SchemaResponseError):
+    """Raised when attempting to create a new SchemaResponse for a parent that
+    already has a SchemaResponse in an unsupported state
     """
     pass
