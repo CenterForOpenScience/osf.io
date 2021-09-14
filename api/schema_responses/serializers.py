@@ -8,7 +8,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 
-from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models import (
     Registration,
     SchemaResponse,
@@ -102,7 +102,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             )
         except ValueError:  # Value error when no schema available
             raise exceptions.ValidationError(f'Resource {registration._id} must specify a schema')
-        except SchemaResponseStateError:
+        except PreviousSchemaResponseError:
             # SchemaResponse already exists on parent, try creating from previous response
             pass
 
@@ -113,7 +113,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 previous_response=previous_response,
                 justification=justification,
             )
-        except PreviousPendingSchemaResponseError as e:
+        except PreviousSchemaResponseError as e:
             raise exceptions.ValidationError(str(e))
 
     def update(self, schema_response, validated_data):

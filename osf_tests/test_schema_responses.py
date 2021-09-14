@@ -4,7 +4,7 @@ from nose.tools import assert_raises
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
-from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
@@ -133,7 +133,7 @@ class TestCreateSchemaResponse():
             parent=registration,
         )
 
-        with assert_raises(SchemaResponseStateError):
+        with assert_raises(PreviousSchemaResponseError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
@@ -220,7 +220,7 @@ class TestCreateSchemaResponse():
 
         schema_response.approvals_state_machine.set_state(invalid_response_state)
         schema_response.save()
-        with assert_raises(PreviousPendingSchemaResponseError):
+        with assert_raises(PreviousSchemaResponseError):
             SchemaResponse.create_from_previous_response(
                 initiator=schema_response.initiator,
                 previous_response=intermediate_response
