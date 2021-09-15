@@ -110,16 +110,16 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
     def get_object(self):
         user = self.request.user
-        annotated_schema_responses = SchemaResponse.objects.annotate(
+        annotated_schema_response = SchemaResponse.objects.filter(
+            _id=self.kwargs['schema_response_id'],
+        ).annotate(
             is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
         )
 
         try:
-            response = annotated_schema_responses.get(_id=self.kwargs['schema_response_id'])
+            return annotated_schema_response.get()
         except SchemaResponse.DoesNotExist:
             raise NotFound
-
-        return response
 
     def perform_destroy(self, instance):
         ## check state
