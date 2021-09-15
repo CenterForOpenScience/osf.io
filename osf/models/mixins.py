@@ -2215,21 +2215,6 @@ class RegistrationResponseMixin(models.Model):
             self.file_storage_resource,
         )
 
-    def copy_registration_responses_into_schema_response(self, draft_registration):
-        """Copies registration metadata into schema responses"""
-        from osf.models.schema_response import SchemaResponse
-        schema_response = SchemaResponse.create_initial_response(
-            self.creator,
-            self,
-            self.registration_schema
-        )
-        self.registration_responses = draft_registration.registration_responses
-        schema_response.update_responses(
-            self.registration_responses
-        )
-        schema_response.reviews_state = ApprovalStates.APPROVED.db_name
-        schema_response.save()
-
     class Meta:
         abstract = True
 
