@@ -258,6 +258,18 @@ class HideIfWikiDisabled(ConditionalField):
         has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
         return not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon
 
+class HideIfWithdrawalOrWikiDisabled(ConditionalField):
+    """
+    If wiki is disabled or registration is withdrawn, don't show relationship field, only available after 2.7
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
+        return instance.is_retracted or (not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 class HideIfNotNodePointerLog(ConditionalField):
     """

@@ -1826,7 +1826,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
 
     def get_default_queryset(self):
         node = self.get_node()
-        if node.addons_wiki_node_settings.deleted:
+        if not node.has_addon('wiki') or node.addons_wiki_node_settings.deleted:
             raise NotFound(detail='The wiki for this node has been disabled.')
         return node.wikis.filter(deleted__isnull=True)
 
