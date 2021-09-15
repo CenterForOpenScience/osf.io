@@ -14,6 +14,8 @@ from osf.models import (
     RegistrationSchema,
 )
 
+from osf.utils.workflows import ApprovalStates
+
 
 class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -33,7 +35,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
-    reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
+    reviews_state = ser.ChoiceField(choices=ApprovalStates.char_field_choices(), required=False)
     is_pending_current_user_approval = ser.SerializerMethodField()
     revision_responses = ser.JSONField(source='all_responses', required=False)
 
@@ -52,7 +54,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<parent.schema>'},
+        related_view_kwargs={'schema_id': '<schema._id>'},
         read_only=True,
         required=False,
     )
@@ -120,9 +122,10 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     def update(self, schema_response, validated_data):
         revision_responses = validated_data.get('revision_responses')
 
-        try:
-            schema_response.update_responses(revision_responses)
-        except ValueError as exc:
-            raise exceptions.ValidationError(detail=str(exc))
+        if revision_responses:
+            try:
+                schema_response.update_responses(revision_responses)
+            except ValueError as exc:
+                raise exceptions.ValidationError(detail=str(exc))
 
         return schema_response
