@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
-from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -52,6 +52,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     object_id = models.PositiveIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['reviews_state'])
+        ]
 
     # Attribute for controlling flow from 'reject' triggers on the state machine.
     # True -> IN_PROGRESS
@@ -103,7 +109,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         a parent object. Every subsequent time new Responses are being created, they
         should be based on existing responses to simplify diffing between versions.
         '''
-        assert not parent.schema_responses.exists()
+        if parent.schema_responses.exists():
+            raise PreviousSchemaResponseError(
+                f'Cannot create initial SchemaResponse for parent resource {parent}, '
+                f'as {parent} already has an associated SchemaResponse'
+            )
 
         # TODO: Decide on a fixed property/field name that parent types should implement
         # to access a supported schema. Just use registration_schema for now.
@@ -159,7 +169,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # Cannot create new response if parent has another response in-progress or pending approval
         parent = previous_response.parent
         if parent.schema_responses.exclude(reviews_state=ApprovalStates.APPROVED.db_name).exists():
-            raise PreviousPendingSchemaResponseError(
+            raise PreviousSchemaResponseError(
                 f'Cannot create new SchemaResponse for {parent} because {parent} already '
                 'has non-terminal SchemaResponse'
             )
@@ -169,7 +179,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             schema=previous_response.schema,
             initiator=initiator,
             previous_response=previous_response,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
@@ -198,7 +208,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
-                f'SchemaResponse with id {self._id}  has state {self.reviews_state}. '
+                f'SchemaResponse with id [{self.id}]  has state {self.reviews_state}. '
                 'Must have state "in_progress" to update responses'
             )
 
@@ -218,7 +228,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if updated_responses:
             raise ValueError(
                 'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
+                f'SchemaResponse with id [{self.id}]: {", ".join(updated_responses.keys())}'
             )
 
     def _response_reverted(self, current_block, latest_response):
