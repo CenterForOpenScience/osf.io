@@ -121,6 +121,16 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     def update(self, schema_response, validated_data):
         revision_responses = validated_data.get('revision_responses')
+        justification = validated_data.get('revision_justification')
+
+        if justification:
+            if schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name:
+                schema_response.revision_justification = justification
+            else:
+                raise exceptions.ValidationError(
+                    detail='The `revision_justification` can only be changed when a SchemaResponse object has the'
+                           ' `reviews_state` `in_progress`'
+                )
 
         if revision_responses:
             try:
@@ -128,4 +138,5 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             except ValueError as exc:
                 raise exceptions.ValidationError(detail=str(exc))
 
+        schema_response.save()
         return schema_response
