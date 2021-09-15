@@ -864,9 +864,9 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
     required_write_scopes = [CoreScopes.NULL]
 
     permission_classes = (
+        RegistrationSchemaResponseListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        RegistrationSchemaResponseListPermission,
         ExcludeWithdrawals,
     )
 

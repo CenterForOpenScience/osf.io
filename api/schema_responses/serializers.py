@@ -119,7 +119,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             raise Conflict(str(exc))
 
     def update(self, schema_response, validated_data):
-        if self.schema_response.state is not ApprovalStates.IN_PROGRESS:
+        if schema_response.state is not ApprovalStates.IN_PROGRESS:
             raise Conflict('Cannot patch to SchemaResponse when reviews_state is not in_progress')
 
         revision_responses = validated_data.get('revision_responses')
