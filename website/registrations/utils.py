@@ -6,6 +6,7 @@ import functools
 import string
 from math import floor
 
+from django.db.models import Q
 from rest_framework.exceptions import NotFound, ValidationError
 
 from osf.models.licenses import NodeLicense
@@ -82,19 +83,45 @@ class BulkRegistrationUpload():
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
-        schema_questions = {}
-        get_question_validations = lambda question: {'required': question.get('required', False),
-                                   'format': question.get('format', ''),
-                                   'type': question.get('type', 'string'),
-                                   'options': question.get('options', [])}
-        for page in registration_schema.schema['pages']:
-            for question in page['questions']:
-                schema_questions[question['qid']] = get_question_validations(question)
-                if 'properties' in question:
-                    for nested_question in question['properties']:
-                        qid = '{}.{}'.format(question['qid'], nested_question['id'])
-                        schema_questions[qid] = get_question_validations(nested_question)
-        return schema_questions
+        get_multiple_choice_options = lambda schema_block, schema_blocks: [
+            block['display_text']
+            for block in schema_blocks
+            if block['block_type'] == 'select-input-option'
+            and block['schema_block_group_key'] == schema_block['schema_block_group_key']
+        ]
+
+        schema_blocks = list(registration_schema.schema_blocks.filter(
+            Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
+                'registration_response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
+
+        validations = {}
+        for schema_block in schema_blocks:
+            if schema_block['block_type'] == 'single-select-input':
+                validations.update({
+                    schema_block['registration_response_key']: {
+                        'type': 'choose',
+                        'options': get_multiple_choice_options(schema_block, schema_blocks),
+                        'format': 'singleselect',
+                        'required': schema_block.get('required'),
+                    }
+                })
+            elif schema_block['block_type'] == 'multi-select-input':
+                validations.update({
+                    schema_block['registration_response_key']: {
+                        'type': 'choose',
+                        'options': get_multiple_choice_options(schema_block, schema_blocks),
+                        'format': 'multiselect',
+                        'required': schema_block.get('required'),
+                    }
+                })
+            elif schema_block['block_type'] in ('short-text-input', 'long-text-input'):
+                validations.update({
+                    schema_block['registration_response_key']: {
+                        'type': 'string',
+                        'required': schema_block.get('required'),
+                    }
+                })
+        return validations
 
     def log_error(self, **kwargs):
         self.errors.append({
@@ -334,7 +361,7 @@ class LicenseField(MetadataField):
                             copyright_holders = match.group('copyright_holders')
                             copyright_holders = [val.strip() for val in copyright_holders.split(',')]
                             parsed_value = {'name': name,
-                                            'required_field': {'year': year,
+                                            'required_fields': {'year': year,
                                                                'copyright_holders': copyright_holders}}
                     else:
                         parsed_value = {'name': node_license_name}
