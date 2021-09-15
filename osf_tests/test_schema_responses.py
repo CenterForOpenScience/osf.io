@@ -32,8 +32,8 @@ def schema():
 
 
 @pytest.fixture
-def registration(schema):
-    registration = RegistrationFactory(schema=schema)
+def registration(schema, admin_user):
+    registration = RegistrationFactory(schema=schema, creator=admin_user)
     registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
     return registration
 
@@ -623,10 +623,7 @@ class TestModeratedSchemaResponseApprovalFlows():
 
     @pytest.fixture
     def moderated_response(self, moderated_registration):
-        return SchemaResponse.create_initial_response(
-            initiator=moderated_registration.creator,
-            parent=moderated_registration,
-        )
+        return moderated_registration.schema_responses.get()
 
     def test_moderated_response_requires_moderation(self, moderated_response, admin_user):
         moderated_response.submit(user=admin_user, required_approvers=[admin_user])

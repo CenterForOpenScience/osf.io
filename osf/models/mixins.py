@@ -52,7 +52,6 @@ from osf.utils.workflows import (
 )
 
 from osf.utils.requests import get_request_and_user_id
-from osf.utils.workflows import ApprovalStates
 from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license

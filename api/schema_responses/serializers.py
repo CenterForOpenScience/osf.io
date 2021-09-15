@@ -34,7 +34,6 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
-    is_pending_current_user_approval = ser.SerializerMethodField()
     revision_responses = ser.JSONField(source='all_responses', required=False)
 
     links = LinksField(
@@ -76,10 +75,6 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 'schema_response_id': obj._id,
             },
         )
-
-    def get_is_pending_current_user_approval(self, obj):
-        # TBD
-        return False
 
     def create(self, validated_data):
         try:

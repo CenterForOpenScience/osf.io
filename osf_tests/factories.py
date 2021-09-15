@@ -28,7 +28,7 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ApprovalStates
 from addons.osfstorage.models import OsfStorageFile, Region
 
 fake = Factory.create()
@@ -1142,12 +1142,14 @@ class SchemaResponseFactory(DjangoModelFactory):
         registration.registered_schema.clear()
         registration.registered_schema.add(schema)
         registration.save()
-
-        if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=ContentType.objects.get_for_model(registration)).exists():
+        content_type = ContentType.objects.get_for_model(registration)
+        if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=content_type).exists():
             previous_schema_response = SchemaResponse.objects.filter(
                 object_id=registration.id,
-                content_type_id=ContentType.objects.get_for_model(registration)
-            ).order_by('-created').first()
+                content_type_id=content_type
+            ).get()
+            previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            previous_schema_response.save()
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
         else:
             return SchemaResponse.create_initial_response(initiator, registration, schema, justification)

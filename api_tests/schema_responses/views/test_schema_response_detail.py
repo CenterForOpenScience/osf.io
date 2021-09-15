@@ -2,7 +2,8 @@ import pytest
 
 from osf_tests.factories import (
     AuthUserFactory,
-    RegistrationFactory
+    RegistrationFactory,
+    SchemaResponseFactory
 )
 
 from osf.models import SchemaResponse
@@ -75,26 +76,24 @@ class TestSchemaResponseDetail:
             'q6': '',
         }
 
-    def test_schema_response_detail_revised_responses(self, app, schema_response, payload, url):
-        schema_response.save()
-        revised_schema = SchemaResponse.create_from_previous_response(
-            schema_response.initiator,
-            schema_response
+    def test_schema_response_detail_revised_responses(self, app, registration, schema_response, payload, url):
+        revised_schema_response = SchemaResponseFactory(
+            registration=registration
         )
 
         schema_response.parent.is_public = True
         schema_response.parent.save()
-        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/')
+        resp = app.get(f'/v2/schema_responses/{revised_schema_response._id}/')
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == revised_schema._id
+        assert data['id'] == revised_schema_response._id
         assert data['attributes']['updated_response_keys'] == []
 
-        revised_schema.update_responses({'q1': 'update value', 'q2': None})
-        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/')
+        revised_schema_response.update_responses({'q1': 'update value', 'q2': None})
+        resp = app.get(f'/v2/schema_responses/{revised_schema_response._id}/')
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == revised_schema._id
+        assert data['id'] == revised_schema_response._id
         assert data['attributes']['updated_response_keys'] == ['q1']
 
     def test_schema_response_detail_update(self, app, schema_response, user, payload, url):
