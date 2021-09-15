@@ -215,6 +215,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating dictionary values
         updated_responses = dict(updated_responses)
+
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
@@ -234,6 +235,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Handle the case where an answer is reverted over the course of editing a Response.'''
         if not self.previous_response:
             return False
+
         previous_response_block = self.previous_response.response_blocks.get(
             schema_key=current_block.schema_key
         )
