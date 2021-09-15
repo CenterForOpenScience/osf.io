@@ -1141,6 +1141,7 @@ class SchemaResponseFactory(DjangoModelFactory):
 
         registration.registered_schema.clear()
         registration.registered_schema.add(schema)
+        registration.save()
 
         if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=ContentType.objects.get_for_model(registration)).exists():
             previous_schema_response = SchemaResponse.objects.filter(

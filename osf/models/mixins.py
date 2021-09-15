@@ -52,6 +52,7 @@ from osf.utils.workflows import (
 )
 
 from osf.utils.requests import get_request_and_user_id
+from osf.utils.workflows import ApprovalStates
 from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license
@@ -2226,6 +2227,8 @@ class RegistrationResponseMixin(models.Model):
         schema_response.update_responses(
             self.registration_responses
         )
+        schema_response.reviews_state = ApprovalStates.APPROVED.db_name
+        schema_response.save()
 
     class Meta:
         abstract = True
