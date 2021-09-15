@@ -55,8 +55,8 @@ class BulkRegistrationUpload():
         return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
-        self.raw_csv = bulk_upload_csv.read()
-        # self.raw_csv = bulk_upload_csv.read().decode('utf-8')
+        # self.raw_csv = bulk_upload_csv.read()
+        self.raw_csv = bulk_upload_csv.read().decode('utf-8')
         self.reader = csv.DictReader(io.StringIO(self.raw_csv))
         self.headers = [header.lower() for header in self.reader.fieldnames]
         schema_id_row = next(self.reader)
@@ -74,6 +74,7 @@ class BulkRegistrationUpload():
         self.schema_questions = BulkRegistrationUpload.get_schema_questions_validations(self.registration_schema)
         self.validations = {**self.schema_questions, **METADATA_FIELDS}
         self.errors = []
+        self.validate_csv_header_list()
         self.rows = [Row(row,
                          self.validations,
                          functools.partial(self.log_error, row_index=self.reader.line_num))
@@ -109,9 +110,8 @@ class BulkRegistrationUpload():
     def validate_csv_header_list(self):
         expected_headers = self.validations.keys()
         actual_headers = self.headers
-        diff = set(expected_headers) - set(actual_headers)
-        if len(diff):
-            raise ValidationError('Missing csv headers: {}'.format(','.join(diff)))
+        if set(expected_headers) != set(actual_headers):
+            raise ValidationError({'Invalid headers.'})
 
     def get_parsed(self):
         parsed = []
@@ -120,7 +120,6 @@ class BulkRegistrationUpload():
         return {'schema_id': self.schema_id, 'registrations': parsed}
 
     def validate(self):
-        self.validate_csv_header_list()
         for row in self.rows:
             row.validate()
 
