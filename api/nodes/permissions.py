@@ -159,7 +159,7 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
 
-    Any user can GET an APPROVED schema resposne on a public parent resource.
+    Any user can GET an APPROVED schema response on a public parent resource.
     Otherwise, the contributor must have "read" permissions on the parent resource.
     To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
     To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.

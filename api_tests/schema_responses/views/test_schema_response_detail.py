@@ -268,7 +268,7 @@ class TestSchemaResponseDetailPATCHPermissions:
 
     Only 'ADMIN' and 'WRITE' contributors should be able to PATCH to a SchemaResponse.
     'ADMIN' and 'WRITE' contributors can PATCH whether the parent registration is public
-    or private, but cannot PATCH a SchemaResposne with a state other than IN_PROGRESS.
+    or private, but cannot PATCH a SchemaResponse with a state other than IN_PROGRESS.
 
     PATCHing to a SchemaResponse whose parent registration has been deleted or withdrawn should
     result in a 410 or a 403, respectively
@@ -447,7 +447,7 @@ class TestSchemaResponseDetailPATCHBehavior:
             'data': {
                 'type': 'revisions',
                 'attributes': {
-                    'revision_justifiction': 'why not?',
+                    'revision_justification': 'why not?',
                     'revision_responses': {
                         'q1': 'update value',
                         'q2': INITIAL_SCHEMA_RESPONSES['q2'],  # fake it out by adding an old value
