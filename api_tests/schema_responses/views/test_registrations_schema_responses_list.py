@@ -194,7 +194,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         registration.save()
         resp = app.get(url, auth=perms_user.auth)
 
-        expected_ids = {approved_response.id, non_approved_response.id}
+        expected_ids = {approved_response._id, non_approved_response._id}
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 
@@ -206,7 +206,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         registration.save()
         resp = app.get(url, auth=perms_user.auth if use_auth else None)
 
-        expected_ids = {approved_response.id}
+        expected_ids = {approved_response._id}
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 
@@ -219,7 +219,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         registration.save()
         resp = app.get(url, auth=perms_user.auth)
 
-        expected_ids = {approved_response.id, non_approved_response.id}
+        expected_ids = {approved_response._id, non_approved_response._id}
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 

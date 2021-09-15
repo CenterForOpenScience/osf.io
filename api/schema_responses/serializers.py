@@ -14,6 +14,7 @@ from osf.models import (
     Registration,
     SchemaResponse,
 )
+from osf.utils.workflows import ApprovalStates
 
 
 class RegistrationSchemaResponseSerializer(JSONAPISerializer):
@@ -53,7 +54,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<parent.schema>'},
+        related_view_kwargs={'schema_id': '<schema._id>'},
         read_only=True,
         required=False,
     )
@@ -118,16 +119,23 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             raise Conflict(str(exc))
 
     def update(self, schema_response, validated_data):
+        if self.schema_response.state is not ApprovalStates.IN_PROGRESS:
+            raise Conflict('Cannot patch to SchemaResponse when reviews_state is not in_progress')
+
         revision_responses = validated_data.get('revision_responses')
+        revision_justification = validated_data.get('revision_justification')
 
-        if not revision_responses:
-            return
+        if revision_justification:
+            schema_response.revision_justification = revision_justification
+            schema_response.save()
 
-        try:
-            schema_response.update_responses(revision_responses)
-        except ValueError as exc:
-            raise ValidationError(detail=str(exc))
-        except SchemaResponseStateError as exc:
-            raise Conflict(str(exc))
+        if revision_responses:
+            try:
+                schema_response.update_responses(revision_responses)
+            except ValueError as exc:
+                raise ValidationError(detail=str(exc))
+            except SchemaResponseStateError as exc:
+                # should have been handled above, but catch again just in case
+                raise Conflict(str(exc))
 
         return schema_response

@@ -177,8 +177,9 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
         parent = obj.parent
 
         if parent.deleted:
+            # Mimics get_object_or_error logic
             raise Gone
-        if parent.moderation_state == 'withdrawn':
+        if parent.is_retracted:
             # Mimics behavior of ExcludeWithdrawals
             return False
 

@@ -87,6 +87,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
 
 
 class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+
     permission_classes = (
         SchemaResponseDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -110,7 +111,6 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     def get_object(self):
         user = self.request.user
         annotated_schema_responses = SchemaResponse.objects.annotate(
-            is_public=_is_public_registration_subquery,
             is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
         )
 

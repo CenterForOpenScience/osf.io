@@ -174,7 +174,7 @@ class TestSchemaResponseDetailGETPermissions:
             auth=perms_user.auth if use_auth else None,
             expect_errors=True,
         )
-        assert resp.status_code == (403 if use_auth else None)
+        assert resp.status_code == (403 if use_auth else 401)
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     def test_get_response_of_deleted_registration_status_code_as_contributor(
@@ -206,7 +206,7 @@ class TestSchemaResponseDetailGETPermissions:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseGETBehavior:
+class TestSchemaResponseDetailGETBehavior:
     '''Confirms behavior of GET requests agaisnt the SchemaResponseList Endpoint.
 
     GET should return a serialized instance of the SchemaResponse with the requested ID
@@ -225,6 +225,9 @@ class TestSchemaResponseGETBehavior:
         assert data['attributes']['revision_justification'] == schema_response.revision_justification
         assert data['attributes']['revision_responses'] == INITIAL_SCHEMA_RESPONSES
         assert data['attributes']['reviews_state'] == schema_response.reviews_state
+        assert data['relationships']['registration']['data']['id'] == schema_response.parent._id
+        assert data['relationships']['registration_schema']['data']['id'] == schema_response.schema._id
+        assert data['relationships']['initiated_by']['data']['id'] == schema_response.initiator._id
 
     def test_schema_response_displays_updated_responses(self, app, schema_response, admin_user):
         revised_response = SchemaResponse.create_from_previous_response(
@@ -444,6 +447,7 @@ class TestSchemaResponseDetailPATCHBehavior:
             'data': {
                 'type': 'revisions',
                 'attributes': {
+                    'revision_justifiction': 'why not?',
                     'revision_responses': {
                         'q1': 'update value',
                         'q2': INITIAL_SCHEMA_RESPONSES['q2'],  # fake it out by adding an old value
@@ -529,6 +533,17 @@ class TestSchemaResponseDetailPATCHBehavior:
         assert len(errors) == 1
         # Check for the invalid key in the error message
         assert 'oops' in errors[0]['detail']
+
+    def test_patch_updates_revision_response(
+            self, app, in_progress_schema_response, payload, admin_user):
+        app.patch_json_api(
+            url_for_schema_response(in_progress_schema_response),
+            payload,
+            auth=admin_user.auth
+        )
+
+        in_progress_schema_response.refresh_from_db()
+        assert in_progress_schema_response.revision_justification == 'why not?'
 
 
 @pytest.mark.django_db

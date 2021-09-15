@@ -45,8 +45,8 @@ class TestSchemaResponseLsitGETBehavior:
     '''Tests the visibility of SchemaResponses through the List endpoint under various conditions.
 
     All users should be able to see APPROVED responses on (non-withdrawn) public registrations.
-    No users should be able to see responses on WITHDRAWN registrations
-    Only contributors should be able to see non-APPROVED responses on public registrations.
+    No users should be able to see responses on WITHDRAWN or deleted registrations
+    Only contributors should be able to see non-APPROVED responses.
     Only contributors should be able to see responses on private registrations.
     '''
 
@@ -226,15 +226,11 @@ class TestSchemaResponseListPOSTPermissions:
 class TestSchemaResponseListPOSTBehavior:
     '''Tests for the POST method on the top-level SchemaResponseList endpoint.
 
-    Only admin users on the registration associated with the SchemaResponse should
-    be able to call POST. All other logged-in users should get a 403, while
-    non-logged in users should get a 401. This is true for both public and private
-    registrations.
-
     The create payload must include the relationship to the registration and must
     not include any unexpected data. The parent registration must not already have
     a SchemaResponse that is in-progress or pending approval.
     '''
+
     @pytest.fixture()
     def registration(self, admin_user):
         registration = RegistrationFactory(creator=admin_user)
@@ -297,7 +293,11 @@ class TestSchemaResponseListPOSTBehavior:
 
         registration.refresh_from_db()
         assert registration.schema_responses.count() == 1
-        assert registration.schema_responses.first()._id == resp.json['data']['id']
+
+        created_response = registration.schema_responses.first()
+        assert created_response._id == resp.json['data']['id']
+        assert created_response.parent == registration
+        assert created_response.schema == registration.registration_schema
 
     def test_post_with_previous_approved_response(
             self, app, url, registration, schema_response, payload, admin_user):
@@ -307,7 +307,8 @@ class TestSchemaResponseListPOSTBehavior:
 
         new_response = SchemaResponse.objects.get(_id=resp.json['data']['id'])
         assert new_response.previous_response == schema_response
-        assert new_response in registration.schema_responses.all()
+        assert new_response.schema == schema_response.schema
+        assert new_response == registration.schema_responses.first()
 
     @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
     def test_cannot_post_if_non_approved_response(
@@ -335,19 +336,8 @@ class TestSchemaResponseListPOSTBehavior:
 class TestSchemaResponseListUnsupportedMethods:
     '''Confirm that SchemaResponseList endpoint does not support PATCH, PUT, or DELETE methods.'''
 
-    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_cannot_patch_as_contributor(self, app, url, registration, payload, perms_user, role):
-        registration.add_contributor(perms_user, role)
-        resp = app.patch_json_api(
-            url,
-            auth=perms_user.auth,
-            expect_errors=True
-        )
-        assert resp.status_code == 405
-
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_patch_as_non_contributor(
-            self, app, url, registration, payload, perms_user, use_auth):
+    def test_cannot_patch(self, app, url, perms_user, use_auth):
         resp = app.patch_json_api(
             url,
             auth=perms_user.auth if use_auth else None,
@@ -355,19 +345,8 @@ class TestSchemaResponseListUnsupportedMethods:
         )
         assert resp.status_code == 405
 
-    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_cannot_put_as_contributor(self, app, url, registration, payload, perms_user, role):
-        registration.add_contributor(perms_user, role)
-        resp = app.put_json_api(
-            url,
-            auth=perms_user.auth,
-            expect_errors=True
-        )
-        assert resp.status_code == 405
-
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_put_as_non_contributor(
-            self, app, url, registration, payload, perms_user, use_auth):
+    def test_cannot_put(self, app, url, perms_user, use_auth):
         resp = app.put_json_api(
             url,
             auth=perms_user.auth if use_auth else None,
@@ -375,22 +354,10 @@ class TestSchemaResponseListUnsupportedMethods:
         )
         assert resp.status_code == 405
 
-    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    def test_cannot_delete_as_contributor(self, app, url, registration, payload, perms_user, role):
-        registration.add_contributor(perms_user, role)
-        resp = app.delete_json_api(
-            url,
-            auth=perms_user.auth,
-            expect_errors=True
-        )
-        assert resp.status_code == 405
-
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_delete_as_non_contributor(
-            self, app, url, registration, payload, perms_user, use_auth):
+    def test_cannot_delete_as_non_contributor(self, app, url, perms_user, use_auth):
         resp = app.delete_json_api(
             url,
-            payload,
             auth=perms_user.auth if use_auth else None,
             expect_errors=True
         )
