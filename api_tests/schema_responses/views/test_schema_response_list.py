@@ -13,10 +13,6 @@ from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 UNAPPROVED_RESPONSE_STATES = [
     state for state in ApprovalStates if state is not ApprovalStates.APPROVED
 ]
-UNSUPPORTED_REGISTRATION_STATES = [
-    state for state in RegistrationModerationStates
-    if state not in {RegistrationModerationStates.ACCEPTED, RegistrationModerationStates.EMBARGO}
-]
 
 @pytest.fixture()
 def perms_user():
@@ -236,10 +232,8 @@ class TestSchemaResponseListPOSTBehavior:
     registrations.
 
     The create payload must include the relationship to the registration and must
-    not include any unexpected data.
-
-    New SchemaResponses cannot be created on a Registration that has not been
-    approved or that already has a non-approved SchemaResponse
+    not include any unexpected data. The parent registration must not already have
+    a SchemaResponse that is in-progress or pending approval.
     '''
     @pytest.fixture()
     def registration(self, admin_user):
@@ -322,16 +316,7 @@ class TestSchemaResponseListPOSTBehavior:
         schema_response.save()
         resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
 
-        assert resp.status_code == 400
-
-    @pytest.mark.parametrize('registration_state', UNSUPPORTED_REGISTRATION_STATES)
-    def test_cannot_post_if_invalid_registration_state(
-            self, app, url, registration, payload, admin_user, registration_state):
-        registration.moderation_state = registration_state.db_name
-        registration.save()
-        resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
-
-        assert resp.status_code == 400
+        assert resp.status_code == 409
 
     def test_cannot_post_payload_without_registration_relationship(
             self, app, url, no_relationship_payload, admin_user):
@@ -348,40 +333,16 @@ class TestSchemaResponseListPOSTBehavior:
 
 @pytest.mark.django_db
 class TestSchemaResponseListUnsupportedMethods:
-    '''Confirm that SchemaResponseList endpoint does not support PATCH or DELETE methods.'''
-
-    @pytest.fixture()
-    def registration(self, admin_user):
-        return RegistrationFactory(creator=admin_user)
-
-    @pytest.fixture()
-    def schema_response(self, registration):
-        '''An unapproved schema_response on the registration.'''
-        return SchemaResponse.create_initial_response(
-            parent=registration,
-            initiator=registration.creator
-        )
-
-    @pytest.fixture()
-    def payload(self, registration):
-        return {
-            'data': {
-                'type': 'revisions',
-                'relationships': {
-                    'registration': {
-                        'data': {
-                            'id': registration._id,
-                            'type': 'registrations'
-                        }
-                    }
-                }
-            }
-        }
+    '''Confirm that SchemaResponseList endpoint does not support PATCH, PUT, or DELETE methods.'''
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     def test_cannot_patch_as_contributor(self, app, url, registration, payload, perms_user, role):
         registration.add_contributor(perms_user, role)
-        resp = app.patch_json_api(url, payload, auth=perms_user.auth, expect_errors=True)
+        resp = app.patch_json_api(
+            url,
+            auth=perms_user.auth,
+            expect_errors=True
+        )
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('use_auth', [True, False])
@@ -389,7 +350,26 @@ class TestSchemaResponseListUnsupportedMethods:
             self, app, url, registration, payload, perms_user, use_auth):
         resp = app.patch_json_api(
             url,
-            payload,
+            auth=perms_user.auth if use_auth else None,
+            expect_errors=True
+        )
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
+    def test_cannot_put_as_contributor(self, app, url, registration, payload, perms_user, role):
+        registration.add_contributor(perms_user, role)
+        resp = app.put_json_api(
+            url,
+            auth=perms_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('use_auth', [True, False])
+    def test_cannot_put_as_non_contributor(
+            self, app, url, registration, payload, perms_user, use_auth):
+        resp = app.put_json_api(
+            url,
             auth=perms_user.auth if use_auth else None,
             expect_errors=True
         )
@@ -398,7 +378,11 @@ class TestSchemaResponseListUnsupportedMethods:
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     def test_cannot_delete_as_contributor(self, app, url, registration, payload, perms_user, role):
         registration.add_contributor(perms_user, role)
-        resp = app.delete_json_api(url, payload, auth=perms_user.auth, expect_errors=True)
+        resp = app.delete_json_api(
+            url,
+            auth=perms_user.auth,
+            expect_errors=True
+        )
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('use_auth', [True, False])

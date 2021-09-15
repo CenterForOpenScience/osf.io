@@ -1,8 +1,9 @@
 from django.db.models import BooleanField, Exists, OuterRef, Q, Subquery
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 
 from api.base import permissions as base_permissions
+from api.base.exceptions import Conflict
 from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import JSONSchemaParser, JSONAPIParser
@@ -118,10 +119,6 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         except SchemaResponse.DoesNotExist:
             raise NotFound
 
-        # is_public annotation is None if the parent registration is withdrawn or deleted
-        if response.is_public is None:
-            raise NotFound
-
         return response
 
     def perform_destroy(self, instance):
@@ -129,4 +126,4 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         try:
             instance.delete()
         except SchemaResponseStateError as e:
-            raise ValidationError(str(e))
+            raise Conflict(str(e))

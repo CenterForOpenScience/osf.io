@@ -22,6 +22,7 @@ from osf.models import (
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import ApprovalStates
 
+from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
 from api.base.parsers import JSONSchemaParser
 
@@ -174,6 +175,13 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
         parent = obj.parent
+
+        if parent.deleted:
+            raise Gone
+        if parent.moderation_state == 'withdrawn':
+            # Mimics behavior of ExcludeWithdrawals
+            return False
+
         if request.method in permissions.SAFE_METHODS:
             return (
                 (parent.is_public and obj.state is ApprovalStates.APPROVED)

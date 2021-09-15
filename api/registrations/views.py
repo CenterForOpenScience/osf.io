@@ -867,6 +867,7 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
         RegistrationSchemaResponseListPermission,
+        ExcludeWithdrawals,
     )
 
     view_category = 'schema-responses'

@@ -1,7 +1,8 @@
+from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.serializers import JSONAPISerializer, LinksField, TypeField
 from rest_framework import serializers as ser
-from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
 
 from api.base.serializers import (
     RelationshipField,
@@ -81,7 +82,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         try:
             registration_id = validated_data.pop('_id')
         except KeyError:
-            raise exceptions.ValidationError('payload must contain valid Registration id')
+            raise ValidationError('payload must contain valid Registration id')
 
         registration = get_object_or_error(
             Registration,
@@ -89,7 +90,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             request=self.context['request'],
         )
         if registration.moderation_state not in ['accepted', 'embargo']:
-            raise exceptions.ValidationError(
+            raise ValidationError(
                 'Cannot create new SchemaResponse for unapproved Parent resource',
             )
 
@@ -101,7 +102,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 parent=registration, initiator=initiator, justification=justification,
             )
         except ValueError:  # Value error when no schema available
-            raise exceptions.ValidationError(f'Resource {registration._id} must specify a schema')
+            raise ValidationError(f'Resource {registration._id} must specify a schema')
         except PreviousSchemaResponseError:
             # SchemaResponse already exists on parent, try creating from previous response
             pass
@@ -113,15 +114,20 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 previous_response=previous_response,
                 justification=justification,
             )
-        except PreviousSchemaResponseError as e:
-            raise exceptions.ValidationError(str(e))
+        except PreviousSchemaResponseError as exc:
+            raise Conflict(str(exc))
 
     def update(self, schema_response, validated_data):
         revision_responses = validated_data.get('revision_responses')
 
+        if not revision_responses:
+            return
+
         try:
             schema_response.update_responses(revision_responses)
-        except (ValueError, SchemaResponseStateError) as exc:
-            raise exceptions.ValidationError(detail=str(exc))
+        except ValueError as exc:
+            raise ValidationError(detail=str(exc))
+        except SchemaResponseStateError as exc:
+            raise Conflict(str(exc))
 
         return schema_response
