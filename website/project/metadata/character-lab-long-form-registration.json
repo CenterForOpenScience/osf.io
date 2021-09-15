@@ -269,10 +269,10 @@
 		"display_text": "Intervention, Longitudinal"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Measure Validation, Cross-Sectional"
+		"display_text": "Measurement Validation, Cross-Sectional"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Measure Validation, Longitudinal"
+		"display_text": "Measurement Validation, Longitudinal"
 	}, {
 		"block_type": "page-heading",
 		"display_text": "Contact Information"
