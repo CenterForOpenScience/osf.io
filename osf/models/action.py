@@ -7,12 +7,14 @@ from include import IncludeManager
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import (
+    ApprovalStates,
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
     ReviewTriggers,
     RegistrationModerationTriggers,
-    RegistrationModerationStates
+    RegistrationModerationStates,
+    SchemaResponseTriggers
 )
 from osf.utils import permissions
 
@@ -70,3 +72,9 @@ class RegistrationAction(BaseAction):
         max_length=31, choices=RegistrationModerationStates.char_field_choices())
     to_state = models.CharField(
         max_length=31, choices=RegistrationModerationStates.char_field_choices())
+
+class SchemaResponseAction(BaseAction):
+    target = models.ForeignKey('SchemaResponse', related_name='actions', on_delete=models.CASCADE)
+    trigger = models.CharField(max_length=31, choices=SchemaResponseTriggers.char_field_choices())
+    from_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+    to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())

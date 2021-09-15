@@ -1,16 +1,23 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from osf.models import RegistrationSchemaBlock
+from django.utils import timezone
+
+from framework.exceptions import PermissionsError
+
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.machines import ApprovalsMachine
+from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
-    SchemaResponse manages to creation, surfacing, updating, and approval of
+    SchemaResponse manages the creation, surfacing, updating, and approval of
     "responses" to the questions on a Registration schema (for example).
 
     Individual answers are stored in SchemaResponseBlocks and aggregated here
@@ -35,10 +42,36 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     revision_justification = models.CharField(max_length=2048, null=True, blank=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True, blank=True)
 
+    pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
+    reviews_state = models.CharField(
+        choices=ApprovalStates.char_field_choices(),
+        default=ApprovalStates.IN_PROGRESS.db_name,
+        max_length=255
+    )
+
     # Allow schema responses for non-Registrations
     object_id = models.PositiveIntegerField()
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     parent = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        ordering = ['-created']
+        indexes = [
+            models.Index(fields=['reviews_state'])
+        ]
+
+    # Attribute for controlling flow from 'reject' triggers on the state machine.
+    # True -> IN_PROGRESS
+    # False -> [MODERATOR_]REJECTED
+    revisable = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.approvals_state_machine = ApprovalsMachine(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
 
     @property
     def all_responses(self):
@@ -55,6 +88,20 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         revised_keys = self.updated_response_blocks.values_list('schema_key', flat=True)
         return set(revised_keys)
 
+    @property
+    def state(self):
+        '''Property to translate between ApprovalState Enum and DB string.'''
+        return ApprovalStates.from_db_name(self.reviews_state)
+
+    @state.setter
+    def state(self, new_state):
+        self.reviews_state = new_state.db_name
+
+    @property
+    def is_moderated(self):
+        '''Determine if this SchemaResponseResponse belong to a moderated resource'''
+        return getattr(self.parent, 'is_moderated', False)
+
     @classmethod
     def create_initial_response(cls, initiator, parent, schema=None, justification=None):
         '''Create SchemaResponse and all initial SchemaResponseBlocks.
@@ -63,25 +110,34 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         a parent object. Every subsequent time new Responses are being created, they
         should be based on existing responses to simplify diffing between versions.
         '''
-        assert not parent.schema_responses.exists()
+        if parent.schema_responses.exists():
+            raise PreviousSchemaResponseError(
+                f'Cannot create initial SchemaResponse for parent resource {parent}, '
+                f'as {parent} already has an associated SchemaResponse'
+            )
 
         # TODO: Decide on a fixed property/field name that parent types should implement
         # to access a supported schema. Just use registration_schema for now.
         parent_schema = parent.registration_schema
         schema = schema or parent_schema
         if not schema:
-            raise ValueError('Must pass a schema if parent resource does not define one.')
+            raise ValueError(
+                'Must pass a schema when creating SchemaResponse if '
+                'parent resource does not define one.'
+            )
         if schema != parent_schema:
             raise ValueError(
                 f'Provided schema ({schema.name}) does not match '
-                f'schema on parent ({parent_schema.name})'
+                f'schema on parent resource ({parent_schema.name})'
             )
 
         new_response = cls(
             parent=parent,
             schema=schema,
             initiator=initiator,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
+            submitted_timestamp=None,
+            previous_response=None,
         )
         new_response.save()
 
@@ -107,15 +163,24 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         On creation, the new SchemaResponses will share all of its response_blocks with the
         previous_version (as no responses have changed). As responses are updated via
         response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
-        '''
 
-        # TODO confirm that no other non-Approved responses exist
+        A new SchemaResponse cannot be created for a given parent object if it already has another
+        SchemaResponse in a non-APPROVED state.
+        '''
+        # Cannot create new response if parent has another response in-progress or pending approval
+        parent = previous_response.parent
+        if parent.schema_responses.exclude(reviews_state=ApprovalStates.APPROVED.db_name).exists():
+            raise PreviousSchemaResponseError(
+                f'Cannot create new SchemaResponse for {parent} because {parent} already '
+                'has non-terminal SchemaResponse'
+            )
+
         new_response = cls(
-            parent=previous_response.parent,
+            parent=parent,
             schema=previous_response.schema,
             initiator=initiator,
             previous_response=previous_response,
-            revision_justification=justification or ''
+            revision_justification=justification or '',
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
@@ -123,6 +188,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def update_responses(self, updated_responses):
         '''Updates any response_blocks with keys listed in updated_responses
+
+        Only SchemaResponses in state IN_PROGRESS can have their responses updated.
 
         If this is the first time a given key has been updated on this SchemaResponse, a
         new SchemaResponseBlock (with source_schema_response=self) will be created to hold the
@@ -140,9 +207,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         If you do not want any writes to persist if called with unsupported keys,
         make sure to call in an atomic context.
         '''
-        # TODO: Add check for state once that stuff is here
-        if not updated_responses:
-            return
+        if self.state is not ApprovalStates.IN_PROGRESS:
+            raise SchemaResponseStateError(
+                f'SchemaResponse with id [{self.id}]  has state {self.reviews_state}. '
+                'Must have state "in_progress" to update responses'
+            )
 
         # make a local copy of the responses so we can pop with impunity
         # no need for deepcopy, since we aren't mutating dictionary values
@@ -158,7 +227,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(f'Encountered unexpected keys: {",".join(updated_responses.keys())}')
+            raise ValueError(
+                'Encountered unexpected keys while trying to update responses for '
+                f'SchemaResponse with id [{self.id}]: {", ".join(updated_responses.keys())}'
+            )
 
     def _response_reverted(self, current_block, latest_response):
         '''Handle the case where an answer is reverted over the course of editing a Response.'''
@@ -193,3 +265,158 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             revised_block.save()
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
+
+    def delete(self, *args, **kwargs):
+        if self.state is not ApprovalStates.IN_PROGRESS:
+            raise SchemaResponseStateError(
+                'Cannot delete SchemaResponse with id [{self.id}]. In order to delete, '
+                'state must be "in_progress", but is "{self.reviews_state}" instead.'
+            )
+        super().delete(*args, **kwargs)
+
+# *** Callbcks in support of ApprovalsMachine ***
+
+    def _validate_trigger(self, event_data):
+        '''Any additional validation to confirm that a trigger is being used correctly.
+
+        For SchemaResponses, use this to confirm that the provided user has permission to
+        execute the trigger, including enforcing correct usage of the internal "accept" shortcut.
+        '''
+        user = event_data.kwargs.get('user')
+        trigger = event_data.event.name
+
+        # The only valid case for not providing a user is the internal accept shortcut
+        # See _validate_accept_trigger docstring for more information
+        if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
+            raise ValueError(
+                f'Trigger {trigger} from state {self.state} for '
+                f'SchemaResponse with id [{self.id}] must be called with a user.'
+            )
+
+        trigger_specific_validator = getattr(self, f'_validate_{trigger}_trigger')
+        trigger_specific_validator(user)
+
+    def _validate_submit_trigger(self, user):
+        """Validate usage of the "submit" trigger on the underlying ApprovalsMachine.
+
+        Only admins on the parent resource can submit the SchemaResponse for review.
+
+        submit can only be called from IN_PROGRESS, calling from any other state will
+        result in a MachineError prior to this validation.
+        """
+        if not self.parent.is_admin_contributor(user):
+            raise PermissionsError(
+                f'User {user} is not an admin contributor on parent resource {self.parent} '
+                f'and does not have permission to "submit" SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_approve_trigger(self, user):
+        """Validate usage of the "approve" trigger on the underlying ApprovalsMachine
+
+        Only users listed in self.pending_approvers can approve.
+
+        "approve" can only be invoked from UNAPPROVED, calling from any other state will
+        result in a MachineError prior to this validation.
+        """
+        if user not in self.pending_approvers.all():
+            raise PermissionsError(
+                f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_accept_trigger(self, user):
+        """Validate usage of the "accept" trigger on the underlying ApprovalsMachine
+
+        "accept" has three valid usages:
+        First, "accept" is called from within the"approve" trigger once all required approvals
+        have been granted. This call should receive the user who issued the final "approve"
+        so that the correct SchemaResponseAction can be logged.
+
+        Secone, moderators "accept" a SchemaResponse if it belongs to a moderated parent resource.
+        In this case, the user must have the correct permission on the parent's provider.
+
+        Finally, "accept" can be called without a user in order to bypass the need for approvals
+        (the "internal accept shortcut") to make life easier for OSF scripts and utilities.
+
+        "accept" can only be invoked from UNAPPROVED and PENDING_MODERATION, calling from any
+        other state will result in a MachineError prior to this validation.
+        """
+        if self.state is ApprovalStates.UNAPPROVED:
+            # user = None -> internal accept shortcut
+            # not self.pending_approvers.exists() -> called from within "approve"
+            if user is None or not self.pending_approvers.exists():
+                return
+            raise ValueError(
+                'Invalid usage of "accept" trigger from UNAPPROVED state '
+                f'against SchemaResponse with id [{self.id}]'
+            )
+
+        if not user.has_perm('accept_submissions', self.parent.provider):
+            raise PermissionsError(
+                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'have permission to "accept" SchemaResponse with id [{self.id}]'
+            )
+
+    def _validate_reject_trigger(self, user):
+        """Validate usage of the "reject" trigger on the underlying ApprovalsMachine
+
+        "reject" must be called by a pending approver or a moderator, depending on the state.
+
+        "reject" can only be invoked from UNAPPROVED and PENDING_MODERATION, calling from any
+        other state will result in a MachineError prior to this validation.
+        """
+        if self.state is ApprovalStates.UNAPPROVED:
+            if user not in self.pending_approvers.all():
+                raise PermissionsError(
+                    f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+                )
+            return
+
+        if not user.has_perm('reject_submissions', self.parent.provider):
+            raise PermissionsError(
+                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'have permission to "reject" SchemaResponse with id [{self.id}]'
+            )
+
+    def _on_submit(self, event_data):
+        '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
+        approvers = event_data.kwargs.get('required_approvers', None)
+        if not approvers:
+            raise ValueError(
+                f'Cannot submit SchemaResponses with id [{self.id}] '
+                'for review with no required approvers'
+            )
+        self.pending_approvers.set(approvers)
+        self.submitted_timestamp = timezone.now()
+
+    def _on_approve(self, event_data):
+        '''Remove the user from pending_approvers; call accept when no approvers remain.'''
+        approving_user = event_data.kwargs.get('user', None)
+        self.pending_approvers.remove(approving_user)
+        if not self.pending_approvers.exists():
+            self.accept(**event_data.kwargs)
+
+    def _on_complete(self, event_data):
+        '''Clear out any lingering pending_approvers in the case of an internal accept.'''
+        self.pending_approvers.clear()
+
+    def _on_reject(self, event_data):
+        '''Clear out pending_approvers to start fresh on resubmit.'''
+        self.pending_approvers.clear()
+
+    def _save_transition(self, event_data):
+        '''Save changes here and write the action.'''
+        self.save()
+        # Skip writing the final UNAPPROVED -> UNAPPROVED transition and wait for the accept trigger
+        if self.state is ApprovalStates.UNAPPROVED and not self.pending_approvers.exists():
+            return
+
+        from_state = ApprovalStates[event_data.transition.source]
+        to_state = self.state
+        trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
+        self.actions.create(
+            from_state=from_state.db_name,
+            to_state=to_state.db_name,
+            trigger=trigger.db_name,
+            creator=event_data.kwargs.get('user', self.initiator),
+            comment=event_data.kwargs.get('comment', '')
+        )
