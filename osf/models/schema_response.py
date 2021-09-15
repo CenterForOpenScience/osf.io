@@ -208,7 +208,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
-                f'SchemaResponse with id [{self.id}]  has state {self.reviews_state}. '
+                f'SchemaResponse with id [{self._id}]  has state {self.reviews_state}. '
                 'Must have state "in_progress" to update responses'
             )
 
@@ -228,7 +228,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if updated_responses:
             raise ValueError(
                 'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id {self._id}: {", ".join(updated_responses.keys())}'
+                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
             )
 
     def _response_reverted(self, current_block, latest_response):
@@ -268,8 +268,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def delete(self, *args, **kwargs):
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
-                'Cannot delete SchemaResponse with id [{self.id}]. In order to delete, '
-                'state must be "in_progress", but is "{self.reviews_state}" instead.'
+                f'Cannot delete SchemaResponse with id [{self._id}]. In order to delete, '
+                f'state must be "in_progress", but is "{self.reviews_state}" instead.'
             )
         super().delete(*args, **kwargs)
 
@@ -289,7 +289,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
             raise ValueError(
                 f'Trigger {trigger} from state {self.state} for '
-                f'SchemaResponse with id [{self.id}] must be called with a user.'
+                f'SchemaResponse with id [{self._id}] must be called with a user.'
             )
 
         trigger_specific_validator = getattr(self, f'_validate_{trigger}_trigger')
@@ -306,7 +306,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if not self.parent.is_admin_contributor(user):
             raise PermissionsError(
                 f'User {user} is not an admin contributor on parent resource {self.parent} '
-                f'and does not have permission to "submit" SchemaResponse with id [{self.id}]'
+                f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
             )
 
     def _validate_approve_trigger(self, user):
@@ -319,7 +319,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         """
         if user not in self.pending_approvers.all():
             raise PermissionsError(
-                f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+                f'User {user} is not a pending approver for SchemaResponse with id [{self._id}]'
             )
 
     def _validate_accept_trigger(self, user):
@@ -346,13 +346,13 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 return
             raise ValueError(
                 'Invalid usage of "accept" trigger from UNAPPROVED state '
-                f'against SchemaResponse with id [{self.id}]'
+                f'against SchemaResponse with id [{self._id}]'
             )
 
         if not user.has_perm('accept_submissions', self.parent.provider):
             raise PermissionsError(
                 f'User {user} is not a modrator on {self.parent.provider} and does not '
-                f'have permission to "accept" SchemaResponse with id [{self.id}]'
+                f'have permission to "accept" SchemaResponse with id [{self._id}]'
             )
 
     def _validate_reject_trigger(self, user):
@@ -366,14 +366,14 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.UNAPPROVED:
             if user not in self.pending_approvers.all():
                 raise PermissionsError(
-                    f'User {user} is not a pending approver for SchemaResponse with id [{self.id}]'
+                    f'User {user} is not a pending approver for SchemaResponse with id [{self._id}]'
                 )
             return
 
         if not user.has_perm('reject_submissions', self.parent.provider):
             raise PermissionsError(
                 f'User {user} is not a modrator on {self.parent.provider} and does not '
-                f'have permission to "reject" SchemaResponse with id [{self.id}]'
+                f'have permission to "reject" SchemaResponse with id [{self._id}]'
             )
 
     def _on_submit(self, event_data):
@@ -381,7 +381,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
-                f'Cannot submit SchemaResponses with id [{self.id}] '
+                f'Cannot submit SchemaResponses with id [{self._id}] '
                 'for review with no required approvers'
             )
         self.pending_approvers.set(approvers)

@@ -1,5 +1,6 @@
 from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.serializers import JSONAPISerializer, LinksField, TypeField
+from api.base.exceptions import Conflict
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -120,17 +121,17 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return schema_response
 
     def update(self, schema_response, validated_data):
+        if schema_response.reviews_state != ApprovalStates.IN_PROGRESS.db_name:
+            raise Conflict(
+                detail=f'Schema Response is in `{schema_response.reviews_state}` state must be'
+                       f' {ApprovalStates.IN_PROGRESS.db_name}',
+            )
+
         revision_responses = validated_data.get('revision_responses')
         justification = validated_data.get('revision_justification')
 
         if justification:
-            if schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name:
-                schema_response.revision_justification = justification
-            else:
-                raise exceptions.ValidationError(
-                    detail='The `revision_justification` can only be changed when a SchemaResponse object has the'
-                           ' `reviews_state` `in_progress`'
-                )
+            schema_response.revision_justification = justification
 
         if revision_responses:
             try:
