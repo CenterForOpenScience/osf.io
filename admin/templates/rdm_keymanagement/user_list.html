@@ -1,4 +1,5 @@
 {% include "util/pagination.html" with items=page status=status %}
+{% load render_bundle from webpack_loader %}
 {% load i18n %}
 {% if form_action %}
 <form action={{form_action}} method="POST">
@@ -43,4 +44,4 @@
         {% endfor %}
     </tbody>
 </table>
-<script src="{{ '/static/public/js/rdm-keymanagement-page.js' }}"></script>
+{% render_bundle 'rdm-keymanagement-page' %}
