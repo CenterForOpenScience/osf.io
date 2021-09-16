@@ -16,7 +16,9 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def registration(self):
-        return RegistrationFactory()
+        registration = RegistrationFactory()
+        registration.update_moderation_state()
+        return registration
 
     @pytest.fixture()
     def schema_response(self, registration):
@@ -65,7 +67,7 @@ class TestSchemaResponseList:
         assert len(data) == 1
         assert registration.schema_responses.get()._id == data[0]['id']
 
-    def test_schema_responses_list_create(self, app, registration, payload, user, url):
+    def test_schema_responses_list_create(self, app, registration, schema_response, payload, user, url):
         registration.add_contributor(user, 'admin')
         resp = app.post_json_api(url, payload, auth=user.auth)
         data = resp.json['data']

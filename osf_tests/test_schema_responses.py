@@ -623,7 +623,9 @@ class TestModeratedSchemaResponseApprovalFlows():
 
     @pytest.fixture
     def moderated_response(self, moderated_registration):
-        return moderated_registration.schema_responses.get()
+        moderated_response = moderated_registration.schema_responses.get()
+        moderated_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        return moderated_response
 
     def test_moderated_response_requires_moderation(self, moderated_response, admin_user):
         moderated_response.submit(user=admin_user, required_approvers=[admin_user])
