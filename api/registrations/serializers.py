@@ -389,13 +389,15 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        if obj.schema_responses.exists():
-            latest_approved_response = obj.schema_responses.filter(
-                reviews_state=ApprovalStates.APPROVED.db_name,
-            ).first()
+        latest_approved_response = obj.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved_response is not None:
             return self.anonymize_fields(obj, latest_approved_response.all_responses)
+
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
+
         return None
 
     def get_embargo_end_date(self, obj):
@@ -422,6 +424,13 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_revision_state(self, obj):
+        # State of initial response is tracked with moderation_state
+        if obj.schema_responses.count() == 1:
+            return None
+
+        return obj.schema_response.first().reviews_state
 
     def anonymize_registered_meta(self, obj):
         """

@@ -2,14 +2,17 @@ import pytest
 
 from django.utils import timezone
 
-from osf_tests.factories import (
-    AuthUserFactory,
-    RegistrationFactory,
-)
+from api.providers.workflows import Workflows
 
+from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
+from osf_tests.factories import (
+    AuthUserFactory,
+    RegistrationFactory,
+    RegistrationProviderFactory,
+)
 
 NONAPPROVED_RESPONSE_STATES = [
     state for state in ApprovalStates if state is not ApprovalStates.APPROVED
@@ -57,6 +60,15 @@ def schema_response(registration):
     response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
     response.save()
     return response
+
+
+@pytest.fixture()
+def provider():
+    provider = RegistrationProviderFactory()
+    update_provider_auth_groups()
+    provider.reviews_workflow = Workflows.PRE_MODERATION.value
+    provider.save()
+    return provider
 
 
 @pytest.mark.django_db
@@ -148,6 +160,41 @@ class TestSchemaResponseDetailGETPermissions:
             expect_errors=True,
         )
         assert resp.status_code == (403 if use_auth else 401)
+
+    @pytest.mark.parametrize('is_public', [True, False])
+    @pytest.mark.parametrize(
+        'response_state, expected_code',
+        [
+            # Should not be able to see responses prior to moderation
+            (ApprovalStates.UNDEFINED, 403),
+            (ApprovalStates.IN_PROGRESS, 403),
+            (ApprovalStates.UNAPPROVED, 403),
+            # Should not be able to see responses in unsupported states
+            (ApprovalStates.REJECTED, 403),
+            (ApprovalStates.MODERATOR_REJECTED, 403),
+            (ApprovalStates.COMPLETE, 403),
+            # Should be able to see responses pending moderation and post-moderator approval
+            (ApprovalStates.PENDING_MODERATION, 200),
+            (ApprovalStates.APPROVED, 200)
+        ]
+    )
+    def test_get_moderated_response_status_code_as_moderator(
+            self, app, registration, provider, schema_response, perms_user, is_public, response_state, expected_code):
+        provider.get_group('moderator').user_set.add(perms_user)
+
+        registration.provider = provider
+        registration.is_public = is_public
+        registration.save()
+
+        schema_response.approvals_state_machine.set_state(response_state)
+        schema_response.save()
+
+        resp = app.get(
+            url_for_schema_response(schema_response),
+            auth=perms_user.auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     def test_get_response_of_withdrawn_registration_status_code_as_contributor(

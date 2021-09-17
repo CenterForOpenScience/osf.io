@@ -4,6 +4,8 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
 from osf.utils.permissions import WRITE_NODE
+from osf.utils.workflows import ApprovalStates
+
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.filters import ListFilterMixin
@@ -883,10 +885,20 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         registration = self.get_node()
 
         all_responses = registration.schema_responses.all()
-        if not user or not registration.has_permission(user, 'read'):
-            return all_responses.filter(reviews_state='approved')
+        is_contributor = registration.has_permission(user, 'read') if user else False
+        if is_contributor:
+            return all_responses
 
-        return all_responses
+        is_moderator = (
+            user.has_perm('view_submissions') if (user and registration.is_moderated) else False
+        )
+        if is_moderator:
+            moderator_visible_states = [
+                ApprovalStates.APPROVED.db_name, ApprovalStates.PENDING_MODERATION.db_name,
+            ]
+            return all_responses.filter(reviews_state__in=moderator_visible_states)
+
+        return all_responses.filter(reviews_state=ApprovalStates.APPROVED.db_name)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
