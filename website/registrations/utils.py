@@ -78,8 +78,8 @@ class BulkRegistrationUpload():
         self.validate_csv_header_list()
         self.rows = [Row(row,
                          self.validations,
-                         functools.partial(self.log_error, row_index=self.reader.line_num))
-                     for row in self.reader]
+                         functools.partial(self.log_error, row_index=index+3))
+                     for index, row in enumerate(self.reader)]
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
@@ -262,7 +262,7 @@ class RegistrationResponseField(UploadField):
         self.format = validations.get('format')
         self.options = validations.get('options', [])
         self.value = value.strip()
-        self.log_error = functools.partial(log_error, type=self.get_field_type())
+        self.log_error = functools.partial(log_error, type='invalidResponse')
 
     def get_field_type(self):
         return self.format if self.type == 'choose' else self.type
@@ -318,7 +318,7 @@ class ContributorField(MetadataField):
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True)
+            self.log_error(missing=True, type='invalidContributors')
         else:
             parsed_value = []
             parsed_contributor_list = [val.strip() for val in self.value.split(';')]
@@ -329,7 +329,7 @@ class ContributorField(MetadataField):
                         full_name = match.group('full_name')
                         email = match.group('email')
                     except AttributeError:
-                        self.log_error(invalid=True)
+                        self.log_error(invalid=True, type='invalidContributors')
                     else:
                         parsed_value.append({'full_name': full_name, 'email': email})
             self._parsed_value = parsed_value
@@ -342,7 +342,7 @@ class LicenseField(MetadataField):
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True)
+            self.log_error(missing=True, type='invalidLicenseName')
         else:
             license_name_match = self.no_required_fields_regex.match(self.value)
             if license_name_match is not None:
@@ -367,14 +367,14 @@ class LicenseField(MetadataField):
                         parsed_value = {'name': node_license_name}
                     self._parsed_value = parsed_value
             else:
-                self.log_error(invalid=True)
+                self.log_error(invalid=True, type='invalidLicenseName')
 
 class CategoryField(MetadataField):
     def _validate(self):
         try:
-            self._parsed_value = settings.NODE_CATEGORY_MAP[self.value]
+            self._parsed_value = settings.NODE_CATEGORY_MAP[self.value.lower()]
         except KeyError:
-            self.log_error(invalid=True)
+            self.log_error(invalid=True, type='invalidCategoryName')
 
 class SubjectsField(MetadataField):
     def _validate(self):
@@ -382,25 +382,29 @@ class SubjectsField(MetadataField):
         valid_subjects = list(Subject.objects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
-            self.log_error(invalid=True)
+            self.log_error(invalid=True, type='invalidSubjectName')
         else:
             self._parsed_value = valid_subjects
 
 class InstitutionsField(MetadataField):
     def _validate(self):
+        if not self.value:
+            return
         institutions = [val.strip() for val in self.value.split(';')]
         valid_institutions = list(Institution.objects.filter(name__in=institutions).values_list('name', flat=True))
         invalid_institutions = list(set(institutions) - set(valid_institutions))
         if len(invalid_institutions):
-            self.log_error(invalid=True)
+            self.log_error(invalid=True, type='invalidInstitutionName')
         else:
             self._parsed_value = valid_institutions
 
 class ProjectIDField(MetadataField):
     def _validate(self):
+        if not self.value:
+            return
         try:
             AbstractNode.objects.get(guids___id=self.value, is_deleted=False, type='osf.node')
         except AbstractNode.DoesNotExist:
-            self.log_error(invalid=True)
+            self.log_error(invalid=True, type='invalidProjectId')
         else:
             self._parsed_value = self.value

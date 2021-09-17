@@ -1,4 +1,6 @@
+import hashlib
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
+from django.http import JsonResponse
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -53,10 +55,13 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
+    RegistrationBulkUploadJob
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
+
+from website.registrations.utils import BulkRegistrationUpload
 
 
 class ProviderMixin:
@@ -804,19 +809,66 @@ class RegistrationBulkCreate(APIView):
         CanAddModerator,
     )
 
+    def get_hash(self, file_obj):
+        BLOCK_SIZE = 65536
+        file_hash = hashlib.md5()
+        block = file_obj.read(BLOCK_SIZE)
+        while len(block) > 0:
+            file_hash.update(block)
+            block = file_obj.read(BLOCK_SIZE)
+        file_obj.seek(0) #resets the cursor
+        return file_hash.hexdigest()
+
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
         file_obj = request.data['file']
-        # Get hash of the file_obj
-        # Search among the existing Uploads, if an Upload with same hash exists
-        # return Response(status=409)
+        
         if file_obj.size > file_size_limit:
-            return Response(status=413)
+            return JsonResponse(
+                {'errors': [{'type': 'sizeExceedsLimit'}]},
+                status=413,
+                content_type='application/vnd.api+json; application/json',
+            )
+
         if file_obj.content_type != 'text/csv':
-            return Response(status=415)
-        # Validate the content of the csv file
-        # return Response(status=400) if validation fails
+            return JsonResponse(
+                {'errors': [{'type': 'invalidFileType'}]},
+                status=413,
+                content_type='application/vnd.api+json; application/json',
+            )
+        
+        file_md5 = self.get_hash(file_obj)
+        if RegistrationBulkUploadJob.objects.filter(payload_hash=file_md5).exists():
+            return JsonResponse(
+                {'errors': [{'type': 'bulkUploadJobExists'}]},
+                status=409,
+                content_type='application/vnd.api+json; application/json',
+            )
+        try:
+            upload = BulkRegistrationUpload(file_obj, provider_id)
+            upload.validate()
+            errors = upload.errors
+            parsed = upload.get_parsed()
+        except ValidationError:
+            return JsonResponse(
+                {'errors': [{'type': 'invalidColumnId'}]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+        except NotFound:
+            return JsonResponse(
+                {'errors': [{'type': 'invalidSchemaId'}]},
+                status=404,
+                content_type='application/vnd.api+json; application/json',
+            )
+        
+        if errors:
+            return JsonResponse(
+                {'errors': errors},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
         # Otherwise, queue a celery task for creating database rows:
         # enqueue_task(create_upload.s(provider_id, file_obj, file_obj_hash))
         return Response(status=204)
