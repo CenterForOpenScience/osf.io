@@ -36,6 +36,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.CharField(required=False)
+    # Populated via annotation on relevant API views
     is_pending_current_user_approval = ser.BooleanField(required=False)
     revision_responses = ser.JSONField(source='all_responses', required=False)
 

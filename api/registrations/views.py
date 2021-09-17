@@ -1,8 +1,9 @@
+from django.db.models import Exists, OuterRef
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
+from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider, SchemaResponse
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
@@ -877,6 +878,14 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
 
     serializer_class = RegistrationSchemaResponseSerializer
 
+    def _make_is_pending_current_user_approval_subquery(self):
+        user = self.request.user
+        return Exists(
+            SchemaResponse.pending_approvers.through.objects.filter(
+                schemaresponse_id=OuterRef('id'), osfuser_id=user.id,
+            ),
+        )
+
     def get_object(self):
         return self.get_node()
 
@@ -884,7 +893,9 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         user = self.request.user
         registration = self.get_node()
 
-        all_responses = registration.schema_responses.all()
+        all_responses = registration.schema_responses.annotate(
+            is_pending_current_user_approval=self._make_is_pending_current_user_approval_subquery(),
+        )
         is_contributor = registration.has_permission(user, 'read') if user else False
         if is_contributor:
             return all_responses
