@@ -77,7 +77,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
 
     if dry_run:
         logger.info('Dry run: bulk insertion not run')
-        logger.info("Dry run: complete")
+        logger.info('Dry run: complete')
         return
 
     try:
