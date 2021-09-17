@@ -30,7 +30,6 @@ from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers, ApprovalStates
 from addons.osfstorage.models import OsfStorageFile, Region
-
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -404,8 +403,12 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
+        if draft_registration:
+            schema = draft_registration.registration_schema
+        else:
+            schema = schema or get_default_metaschema()
+
         # Default registration parameters
-        schema = schema or getattr(draft_registration, 'registration_schema', False) or get_default_metaschema()
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
@@ -533,8 +536,6 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        from osf_tests.utils import get_default_metaschema
-
         title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
@@ -1131,19 +1132,15 @@ class SchemaResponseFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         from django.contrib.contenttypes.models import ContentType
-        from osf_tests.utils import get_default_test_schema
-
         SchemaResponse = models.SchemaResponse
         justification = kwargs.get('revision_justification')
         initiator = kwargs.get('initiator')
         registration = kwargs.get('registration')
-        schema = get_default_test_schema()
-
-        registration.registered_schema.clear()
-        registration.registered_schema.add(schema)
-        registration.save()
         content_type = ContentType.objects.get_for_model(registration)
-        if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=content_type).exists():
+        schema = registration.registered_schema.get()
+        if not registration.schema_responses.exists():
+            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
+        else:
             previous_schema_response = SchemaResponse.objects.filter(
                 object_id=registration.id,
                 content_type_id=content_type
@@ -1151,5 +1148,3 @@ class SchemaResponseFactory(DjangoModelFactory):
             previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
             previous_schema_response.save()
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
-        else:
-            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
