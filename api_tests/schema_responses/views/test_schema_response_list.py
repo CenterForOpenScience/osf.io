@@ -1,7 +1,6 @@
 import pytest
 
 from osf_tests.factories import (
-    SchemaResponseFactory,
     AuthUserFactory,
     RegistrationFactory
 )
@@ -17,7 +16,13 @@ class TestSchemaResponseList:
 
     @pytest.fixture()
     def registration(self):
-        return RegistrationFactory()
+        registration = RegistrationFactory()
+        registration.update_moderation_state()
+        return registration
+
+    @pytest.fixture()
+    def schema_response(self, registration):
+        return registration.schema_responses.get()
 
     @pytest.fixture()
     def payload(self, registration):
@@ -52,13 +57,6 @@ class TestSchemaResponseList:
         }
 
     @pytest.fixture()
-    def schema_response(self, registration):
-        return SchemaResponseFactory(
-            registration=registration,
-            initiator=registration.creator,
-        )
-
-    @pytest.fixture()
     def url(self):
         return '/v2/schema_responses/'
 
@@ -69,13 +67,13 @@ class TestSchemaResponseList:
         assert len(data) == 1
         assert registration.schema_responses.get()._id == data[0]['id']
 
-    def test_schema_responses_list_create(self, app, registration, payload, user, url):
+    def test_schema_responses_list_create(self, app, registration, schema_response, payload, user, url):
         registration.add_contributor(user, 'admin')
         resp = app.post_json_api(url, payload, auth=user.auth)
         data = resp.json['data']
         assert resp.status_code == 201
-        assert SchemaResponse.objects.count() == 1
-        schema_response = SchemaResponse.objects.last()
+        assert SchemaResponse.objects.count() == 2  # one approved on registration and this new one
+        schema_response = SchemaResponse.objects.first()
 
         assert data['id'] == schema_response._id
 

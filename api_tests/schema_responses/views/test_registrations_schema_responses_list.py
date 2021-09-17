@@ -36,7 +36,7 @@ class TestRegistrationsSchemaResponseList:
         assert resp.status_code == 200
         data = resp.json['data']
 
-        assert len(data) == 1
+        assert len(data) == 2  # one created on registration, one by the factory
         assert schema_response._id == data[0]['id']
 
     @pytest.mark.parametrize(

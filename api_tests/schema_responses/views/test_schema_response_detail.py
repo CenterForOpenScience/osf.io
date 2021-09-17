@@ -2,12 +2,13 @@ import pytest
 
 from osf_tests.factories import (
     AuthUserFactory,
+    RegistrationFactory,
     SchemaResponseFactory
 )
 
 from osf.models import SchemaResponse
-from osf_tests.utils import DEFAULT_TEST_SCHEMA
-
+from osf_tests.utils import DEFAULT_TEST_SCHEMA, get_default_test_schema
+from osf.utils.workflows import ApprovalStates
 
 @pytest.mark.django_db
 class TestSchemaResponseDetail:
@@ -17,8 +18,12 @@ class TestSchemaResponseDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def schema_response(self):
-        return SchemaResponseFactory()
+    def registration(self):
+        return RegistrationFactory(schema=get_default_test_schema())
+
+    @pytest.fixture()
+    def schema_response(self, registration):
+        return registration.schema_responses.get()
 
     @pytest.fixture()
     def payload(self):
@@ -63,38 +68,37 @@ class TestSchemaResponseDetail:
 
         # default test schema
         assert data['attributes']['revision_responses'] == {
-            'q1': None,
-            'q2': None,
-            'q3': None,
-            'q4': None,
-            'q5': None,
-            'q6': None,
+            'q1': '',
+            'q2': '',
+            'q3': '',
+            'q4': '',
+            'q5': '',
+            'q6': '',
         }
 
-    def test_schema_response_detail_revised_responses(self, app, schema_response, payload, url):
-        schema_response.approvals_state_machine.set_state('APPROVED')
-        schema_response.save()
-        revised_schema = SchemaResponse.create_from_previous_response(
-            schema_response.initiator,
-            schema_response
+    def test_schema_response_detail_revised_responses(self, app, registration, schema_response, payload, url):
+        revised_schema_response = SchemaResponseFactory(
+            registration=registration
         )
 
         schema_response.parent.is_public = True
         schema_response.parent.save()
-        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/')
+        resp = app.get(f'/v2/schema_responses/{revised_schema_response._id}/')
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == revised_schema._id
+        assert data['id'] == revised_schema_response._id
         assert data['attributes']['updated_response_keys'] == []
 
-        revised_schema.update_responses({'q1': 'update value', 'q2': None})
-        resp = app.get(f'/v2/schema_responses/{revised_schema._id}/')
+        revised_schema_response.update_responses({'q1': 'update value', 'q2': None})
+        resp = app.get(f'/v2/schema_responses/{revised_schema_response._id}/')
         assert resp.status_code == 200
         data = resp.json['data']
-        assert data['id'] == revised_schema._id
+        assert data['id'] == revised_schema_response._id
         assert data['attributes']['updated_response_keys'] == ['q1']
 
     def test_schema_response_detail_update(self, app, schema_response, user, payload, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         schema_response.parent.add_contributor(user, 'write')
         resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 200
@@ -110,6 +114,8 @@ class TestSchemaResponseDetail:
         assert block.response == 'update value'
 
     def test_schema_response_detail_validation(self, app, invalid_payload, schema_response, user, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         schema_response.parent.add_contributor(user, 'write')
         resp = app.patch_json_api(url, invalid_payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 400
@@ -118,6 +124,8 @@ class TestSchemaResponseDetail:
         assert 'oops' in errors[0]['detail']
 
     def test_schema_response_detail_delete(self, app, schema_response, user, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         schema_response.parent.add_contributor(user, 'admin')
         resp = app.delete_json_api(url, auth=user.auth)
         assert resp.status_code == 204
@@ -150,6 +158,8 @@ class TestSchemaResponseDetail:
         ]
     )
     def test_schema_response_auth_post(self, app, schema_response, payload, permission, user, expected_response, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         if permission:
             schema_response.parent.add_contributor(user, permission)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
@@ -165,6 +175,8 @@ class TestSchemaResponseDetail:
         ]
     )
     def test_schema_response_auth_patch(self, app, schema_response, payload, permission, user, expected_response, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         if permission:
             schema_response.parent.add_contributor(user, permission)
         resp = app.patch_json_api(url, payload, auth=user.auth, expect_errors=True)
@@ -180,6 +192,8 @@ class TestSchemaResponseDetail:
         ]
     )
     def test_schema_response_auth_delete(self, app, schema_response, payload, permission, user, expected_response, url):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
         if permission:
             schema_response.parent.add_contributor(user, permission)
         resp = app.delete_json_api(url, payload, auth=user.auth, expect_errors=True)

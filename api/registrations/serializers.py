@@ -389,7 +389,7 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_registration_responses(self, obj):
         if obj.schema_responses.exists():
-            return self.anonymize_fields(obj, obj.schema_responses.order_by('-created').first().all_responses)
+            return self.anonymize_fields(obj, obj.schema_responses.first().all_responses)
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
         return None
