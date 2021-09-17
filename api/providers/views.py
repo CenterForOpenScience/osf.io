@@ -1,4 +1,6 @@
+from framework.celery_tasks.handlers import enqueue_task
 import hashlib
+from scripts.prepare_for_registration_bulk_creation import prepare_for_registration_bulk_creation
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
 from guardian.shortcuts import get_objects_for_user
@@ -55,7 +57,7 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
-    RegistrationBulkUploadJob
+    RegistrationBulkUploadJob,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
@@ -816,14 +818,15 @@ class RegistrationBulkCreate(APIView):
         while len(block) > 0:
             file_hash.update(block)
             block = file_obj.read(BLOCK_SIZE)
-        file_obj.seek(0) #resets the cursor
+        file_obj.seek(0)
         return file_hash.hexdigest()
 
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
+        user_id = self.request.user.id
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
         file_obj = request.data['file']
-        
+
         if file_obj.size > file_size_limit:
             return JsonResponse(
                 {'errors': [{'type': 'sizeExceedsLimit'}]},
@@ -837,7 +840,7 @@ class RegistrationBulkCreate(APIView):
                 status=413,
                 content_type='application/vnd.api+json; application/json',
             )
-        
+
         file_md5 = self.get_hash(file_obj)
         if RegistrationBulkUploadJob.objects.filter(payload_hash=file_md5).exists():
             return JsonResponse(
@@ -849,7 +852,6 @@ class RegistrationBulkCreate(APIView):
             upload = BulkRegistrationUpload(file_obj, provider_id)
             upload.validate()
             errors = upload.errors
-            parsed = upload.get_parsed()
         except ValidationError:
             return JsonResponse(
                 {'errors': [{'type': 'invalidColumnId'}]},
@@ -862,13 +864,13 @@ class RegistrationBulkCreate(APIView):
                 status=404,
                 content_type='application/vnd.api+json; application/json',
             )
-        
+
         if errors:
             return JsonResponse(
                 {'errors': errors},
                 status=400,
                 content_type='application/vnd.api+json; application/json',
             )
-        # Otherwise, queue a celery task for creating database rows:
-        # enqueue_task(create_upload.s(provider_id, file_obj, file_obj_hash))
+        parsed = upload.get_parsed()
+        enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed))
         return Response(status=204)

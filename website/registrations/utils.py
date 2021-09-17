@@ -78,7 +78,7 @@ class BulkRegistrationUpload():
         self.validate_csv_header_list()
         self.rows = [Row(row,
                          self.validations,
-                         functools.partial(self.log_error, row_index=index+3))
+                         functools.partial(self.log_error, row_index=index + 3))
                      for index, row in enumerate(self.reader)]
 
     @classmethod
