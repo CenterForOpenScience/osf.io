@@ -61,7 +61,7 @@ def schema_response(registration):
 def configure_permissions_test_preconditions(registration_state, schema_response_state, moderation_type):
     '''Configure registration, provider, and schema_response for Permissions tests.'''
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups(provider)
+    update_provider_auth_groups()
     if moderation_type == 'unmoderated':
         provider.reviews_workflow = None
     elif moderation_type == 'moderated':
@@ -118,7 +118,7 @@ def configure_permissions_test_auth(registration, provider, role):
 class TestSchemaResponseDetailGETPermissions:
     '''Checks the status codes for GET requests to the SchemaResponseDetail Endpoint'''
 
-    def get_status_code_for_precondition_and_role(
+    def get_status_code_for_preconditions_and_role(
             self, registration_state, moderation_workflow, schema_response_state, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
         if registration_state == 'deleted':
@@ -262,7 +262,7 @@ class TestSchemaResponseDetailPATCHPermissions:
             }
         }
 
-    def get_status_code_for_precondition_and_role(
+    def get_status_code_for_preconditions_and_role(
             self, registration_state, schema_response_state, moderation_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
         if registration_state == 'deleted':

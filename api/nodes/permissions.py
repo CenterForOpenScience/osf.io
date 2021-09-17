@@ -188,7 +188,7 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
                 (parent.is_public and obj.state is ApprovalStates.APPROVED)
                 or (
                     auth.user is not None
-                    and obj.state is ApprovalStates.PENDING_MODERATION
+                    and obj.state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
                     and auth.user.has_perm('view_submissions', parent.provider)
                 )
                 or parent.has_permission(auth.user, 'read')
