@@ -38,10 +38,7 @@ def registration(admin_user):
 
 @pytest.fixture()
 def schema_response(registration):
-    response = SchemaResponse.create_initial_response(
-        parent=registration,
-        initiator=registration.creator,
-    )
+    response = registration.schema_responses.last()
     response.update_responses(INITIAL_SCHEMA_RESPONSES)
     response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
     response.save()
@@ -74,11 +71,7 @@ def configure_permissions_test_preconditions(
         registration.deleted = timezone.now()
     registration.save()
 
-    # RegistrationFactory creates a SchemaRersponse as part of its process
-    schema_response = SchemaResponse.create_initial_response(
-        parent=registration, initiator=registration.creator
-    )
-#    schema_response = registration.schema_responses.first()
+    schema_response = registration.schema_responses.last()
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
 

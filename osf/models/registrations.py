@@ -582,36 +582,6 @@ class Registration(AbstractNode):
             block_type='contributors-input', registration_response_key__isnull=False,
         ).values_list('registration_response_key', flat=True)
 
-    def copy_registered_meta_and_registration_responses(self, draft, save=True):
-        """
-        Sets the registration's registered_meta and registration_responses from the draft.
-
-        If contributor information is in a question, build an accurate bibliographic
-        contributors list on the registration
-        """
-        if not self.registered_meta:
-            self.registered_meta = {}
-
-        registration_metadata = draft.registration_metadata
-        registration_responses = draft.registration_responses
-
-        bibliographic_contributors = ', '.join(
-            draft.branched_from.visible_contributors.values_list('fullname', flat=True)
-        )
-        contributor_keys = self.get_contributor_registration_response_keys()
-
-        for key in contributor_keys:
-            if key in registration_metadata:
-                registration_metadata[key]['value'] = bibliographic_contributors
-            if key in registration_responses:
-                registration_responses[key] = bibliographic_contributors
-
-        self.registered_meta[self.registration_schema._id] = registration_metadata
-        self.registration_responses = registration_responses
-
-        if save:
-            self.save()
-
     def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
@@ -708,6 +678,12 @@ class Registration(AbstractNode):
         :param str comment: Any comment moderator comment associated with the state change;
                 used in reporting Actions.
         '''
+        if self.sanction.SANCTION_TYPE in [SanctionTypes.REGISTRATION_APPROVAL, SanctionTypes.EMBARGO]:
+            if not self.sanction.state == ApprovalStates.COMPLETED.db_name:  # no action needed when Embargo "completes"
+                initial_response = self.schema_responses.last()
+                initial_response.reviews_state = self.sanction.state
+                initial_response.save()
+
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
 
         active_sanction = self.sanction
@@ -855,6 +831,19 @@ class Registration(AbstractNode):
 
         if settings.SHARE_ENABLED:
             update_share(self)
+
+    def copy_registration_responses_into_schema_response(self, draft_registration):
+        """Copies registration metadata into schema responses"""
+        from osf.models.schema_response import SchemaResponse
+        schema_response = SchemaResponse.create_initial_response(
+            self.creator,
+            self,
+            self.registration_schema
+        )
+        self.registration_responses = draft_registration.registration_responses
+        schema_response.update_responses(
+            self.registration_responses
+        )
 
     class Meta:
         # custom permissions for use in the OSF Admin App

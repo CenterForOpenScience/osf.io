@@ -3,7 +3,6 @@ import pytest
 from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
-    SchemaResponseFactory,
 )
 
 from osf.models import SchemaResponse
@@ -61,10 +60,7 @@ class TestSchemaResponseLsitGETBehavior:
     @pytest.fixture()
     def approved_schema_response(self, public_registration):
         '''A public schema_response'''
-        response = SchemaResponseFactory(
-            registration=public_registration,
-            initiator=public_registration.creator,
-        )
+        response = public_registration.schema_responses.last()
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
         return response
@@ -84,10 +80,7 @@ class TestSchemaResponseLsitGETBehavior:
     # Tests will also inherit private_registration
     @pytest.fixture(autouse=True)
     def private_schema_response(self, private_registration):
-        response = SchemaResponse.create_initial_response(
-            parent=private_registration,
-            initiator=private_registration.creator
-        )
+        response = private_registration.schema_responses.last()
         response.approvals_state_machine.set_state('APPROVED')
         response.save()
         return response
@@ -102,10 +95,7 @@ class TestSchemaResponseLsitGETBehavior:
     # Tests will also inherit withdrawn_registration
     @pytest.fixture(autouse=True)
     def withdrawn_schema_response(self, withdrawn_registration):
-        response = SchemaResponse.create_initial_response(
-            parent=withdrawn_registration,
-            initiator=withdrawn_registration.creator
-        )
+        response = withdrawn_registration.schema_responses.last()
         response.approvals_state_machine.set_state('APPROVED')
         response.save()
         return response
@@ -240,11 +230,8 @@ class TestSchemaResponseListPOSTBehavior:
 
     @pytest.fixture()
     def schema_response(self, registration):
-        '''An pre-existing schema_response on the registration.'''
-        return SchemaResponse.create_initial_response(
-            parent=registration,
-            initiator=registration.creator
-        )
+        '''A pre-existing schema_response on the registration.'''
+        return registration.schema_responses.last()
 
     @pytest.fixture()
     def payload(self, registration):

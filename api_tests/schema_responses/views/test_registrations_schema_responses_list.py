@@ -32,10 +32,7 @@ def registration(admin_user):
 
 @pytest.fixture()
 def approved_response(registration, admin_user):
-    response = SchemaResponse.create_initial_response(
-        parent=registration,
-        initiator=admin_user
-    )
+    response = registration.schema_responses.last()
     response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
     response.save()
     return response
