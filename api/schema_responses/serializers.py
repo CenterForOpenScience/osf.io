@@ -1,6 +1,6 @@
 from api.base.exceptions import Conflict
-from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.serializers import JSONAPISerializer, LinksField, TypeField
+from api.base.utils import absolute_reverse, get_object_or_error
 from rest_framework import serializers as ser
 from rest_framework.exceptions import ValidationError
 
@@ -120,14 +120,16 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     def update(self, schema_response, validated_data):
         if schema_response.state is not ApprovalStates.IN_PROGRESS:
-            raise Conflict('Cannot patch to SchemaResponse when reviews_state is not in_progress')
+            raise Conflict(
+                detail=f'Schema Response is in `{schema_response.reviews_state}` state must be'
+                       f' {ApprovalStates.IN_PROGRESS.db_name}',
+            )
 
         revision_responses = validated_data.get('revision_responses')
-        revision_justification = validated_data.get('revision_justification')
+        justification = validated_data.get('revision_justification')
 
-        if revision_justification:
-            schema_response.revision_justification = revision_justification
-            schema_response.save()
+        if justification:
+            schema_response.revision_justification = justification
 
         if revision_responses:
             try:
@@ -138,4 +140,5 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 # should have been handled above, but catch again just in case
                 raise Conflict(str(exc))
 
+        schema_response.save()
         return schema_response
