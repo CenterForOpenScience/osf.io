@@ -1,5 +1,6 @@
 from api.base.utils import absolute_reverse, get_object_or_error
 from api.base.serializers import JSONAPISerializer, LinksField, TypeField
+from api.base.exceptions import Conflict
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
@@ -13,6 +14,8 @@ from osf.models import (
     SchemaResponse,
     RegistrationSchema,
 )
+
+from osf.utils.workflows import ApprovalStates
 
 
 class RegistrationSchemaResponseSerializer(JSONAPISerializer):
@@ -33,7 +36,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
-    reviews_state = ser.ChoiceField(choices=['revision_in_progress', 'revision_pending_admin_approval', 'revision_pending_moderation', 'approved'], required=False)
+    reviews_state = ser.ChoiceField(choices=ApprovalStates.char_field_choices(), required=False)
     revision_responses = ser.JSONField(source='all_responses', required=False)
 
     links = LinksField(
@@ -51,7 +54,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<parent.schema>'},
+        related_view_kwargs={'schema_id': '<schema._id>'},
         read_only=True,
         required=False,
     )
@@ -113,11 +116,23 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         return schema_response
 
     def update(self, schema_response, validated_data):
+        if schema_response.reviews_state != ApprovalStates.IN_PROGRESS.db_name:
+            raise Conflict(
+                detail=f'Schema Response is in `{schema_response.reviews_state}` state must be'
+                       f' {ApprovalStates.IN_PROGRESS.db_name}',
+            )
+
         revision_responses = validated_data.get('revision_responses')
+        justification = validated_data.get('revision_justification')
 
-        try:
-            schema_response.update_responses(revision_responses)
-        except ValueError as exc:
-            raise exceptions.ValidationError(detail=str(exc))
+        if justification:
+            schema_response.revision_justification = justification
 
+        if revision_responses:
+            try:
+                schema_response.update_responses(revision_responses)
+            except ValueError as exc:
+                raise exceptions.ValidationError(detail=str(exc))
+
+        schema_response.save()
         return schema_response

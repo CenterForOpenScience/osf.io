@@ -11,6 +11,7 @@ from osf.models import SchemaResponse, Registration
 from api.base.filters import ListFilterMixin
 from api.schema_responses.schemas import create_schema_response_payload
 from framework.auth.oauth_scopes import CoreScopes
+from api.base.utils import get_object_or_error
 
 
 class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
@@ -64,7 +65,11 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
             raise NotImplementedError()
 
     def get_object(self):
-        return SchemaResponse.objects.get(_id=self.kwargs['schema_response_id'])
+        return get_object_or_error(
+            SchemaResponse,
+            self.kwargs['schema_response_id'],
+            request=self.request,
+        )
 
     def perform_destroy(self, instance):
         ## check state
