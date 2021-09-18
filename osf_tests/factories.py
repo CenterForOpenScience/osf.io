@@ -28,9 +28,8 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import DefaultStates, DefaultTriggers, ApprovalStates
 from addons.osfstorage.models import OsfStorageFile, Region
-
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -387,7 +386,6 @@ class RegistrationFactory(BaseNodeFactory):
                 archive=False, embargo=None, registration_approval=None, retraction=None,
                 provider=None,
                 *args, **kwargs):
-        from osf_tests.utils import get_default_test_schema
         user = None
         if project:
             user = project.creator
@@ -405,8 +403,12 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
+        if draft_registration:
+            schema = draft_registration.registration_schema
+        else:
+            schema = schema or get_default_metaschema()
+
         # Default registration parameters
-        schema = schema or get_default_test_schema()
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
@@ -534,8 +536,6 @@ class DraftRegistrationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        from osf_tests.utils import get_default_test_schema
-
         title = kwargs.pop('title', None)
         initiator = kwargs.get('initiator', None)
         description = kwargs.pop('description', None)
@@ -545,7 +545,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or get_default_test_schema()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
         provider = provider or models.RegistrationProvider.get_default()
         provider.schemas.add(registration_schema)
@@ -1133,25 +1133,22 @@ class SchemaResponseFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         from django.contrib.contenttypes.models import ContentType
-        from osf_tests.utils import get_default_test_schema
-
         SchemaResponse = models.SchemaResponse
         justification = kwargs.get('revision_justification')
         initiator = kwargs.get('initiator')
         registration = kwargs.get('registration')
-        schema = get_default_test_schema()
-
-        registration.registered_schema.clear()
-        registration.registered_schema.add(schema)
-
-        if SchemaResponse.objects.filter(object_id=registration.id, content_type_id=ContentType.objects.get_for_model(registration)).exists():
+        content_type = ContentType.objects.get_for_model(registration)
+        schema = registration.registered_schema.get()
+        if not registration.schema_responses.exists():
+            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
+        else:
             previous_schema_response = SchemaResponse.objects.filter(
                 object_id=registration.id,
-                content_type_id=ContentType.objects.get_for_model(registration)
-            ).order_by('-created').first()
+                content_type_id=content_type
+            ).get()
+            previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            previous_schema_response.save()
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
-        else:
-            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
 
 
 class SchemaResponseActionFactory(DjangoModelFactory):
