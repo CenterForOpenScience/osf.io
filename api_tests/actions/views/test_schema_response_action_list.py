@@ -29,6 +29,13 @@ class TestSchemaResponseActionList:
         )
 
     @pytest.fixture()
+    def unapproved_schema_response(self, schema_response, user):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        schema_response.pending_approvers.add(user)
+        schema_response.save()
+        return schema_response
+
+    @pytest.fixture()
     def schema_response_action(self, schema_response):
         return SchemaResponseActionFactory(
             target=schema_response,
@@ -62,56 +69,44 @@ class TestSchemaResponseActionList:
         assert schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
         registration.add_contributor(user, 'admin')
         assert not schema_response.pending_approvers.count()
-
-        schema_response.pending_approvers.add(user)
         payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.SUBMIT)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
         schema_response.refresh_from_db()
         assert schema_response.reviews_state == ApprovalStates.UNAPPROVED.db_name
 
-    def test_schema_response_action_approve(self, app, registration, schema_response, user, url):
-        schema_response.reviews_state = ApprovalStates.UNAPPROVED.db_name
-        schema_response.pending_approvers.add(user)
-        schema_response.save()
-
-        payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.APPROVE)
+    def test_schema_response_action_approve(self, app, registration, unapproved_schema_response, user, url):
+        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.APPROVE)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
-        schema_response.refresh_from_db()
-        assert schema_response.reviews_state == ApprovalStates.APPROVED.db_name
+        unapproved_schema_response.refresh_from_db()
+        assert unapproved_schema_response.reviews_state == ApprovalStates.APPROVED.db_name
 
-    def test_schema_response_action_accept(self, app, registration, schema_response, user, url):
-        schema_response.reviews_state = ApprovalStates.UNAPPROVED.db_name
-        schema_response.save()
-
-        payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.ACCEPT)
+    def test_schema_response_action_accept(self, app, registration, unapproved_schema_response, user, url):
+        """
+        Accept behavior is explained in the docstring for _validate_accept_trigger function. There are 3 methods of
+        using this trigger.
+        """
+        unapproved_schema_response.pending_approvers.clear()
+        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.ACCEPT)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
-        schema_response.refresh_from_db()
-        assert schema_response.reviews_state == ApprovalStates.APPROVED.db_name
+        unapproved_schema_response.refresh_from_db()
+        assert unapproved_schema_response.reviews_state == ApprovalStates.APPROVED.db_name
 
-    def test_schema_response_action_moderator_reject(self, app, registration, schema_response, user, url):
-        schema_response.reviews_state = ApprovalStates.UNAPPROVED.db_name
-        schema_response.pending_approvers.add(user)
-        schema_response.save()
-
-        payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.MODERATOR_REJECT)
+    def test_schema_response_action_moderator_reject(self, app, registration, unapproved_schema_response, user, url):
+        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.MODERATOR_REJECT)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
-        schema_response.refresh_from_db()
-        assert schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+        unapproved_schema_response.refresh_from_db()
+        assert unapproved_schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
 
-    def test_schema_response_action_admin_reject(self, app, registration, schema_response, user, url):
-        schema_response.reviews_state = ApprovalStates.UNAPPROVED.db_name
-        schema_response.pending_approvers.add(user)
-        schema_response.save()
-
-        payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.ADMIN_REJECT)
+    def test_schema_response_action_admin_reject(self, app, registration, unapproved_schema_response, user, url):
+        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.ADMIN_REJECT)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
-        schema_response.refresh_from_db()
-        assert schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+        unapproved_schema_response.refresh_from_db()
+        assert unapproved_schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
 
     def test_schema_response_action_list(self, app, schema_response_action, schema_response, user, url):
         resp = app.get(url, auth=user.auth)

@@ -39,7 +39,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
     view_name = 'schema-responses-list'
     create_payload_schema = create_schema_response_payload
 
-    def get_default_queryset(self):
+    def get_queryset(self):
         return SchemaResponse.objects.all()
 
     def get_parser_context(self, http_request):

@@ -4,14 +4,14 @@ from nose.tools import assert_raises
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
-from osf.exceptions import PreviousPendingSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
 
-# See osft_tests.utils.default_test_schema for block types and valid answers
+# See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
     'q1': 'Some answer',
     'q2': 'Some even longer answer',
@@ -224,7 +224,7 @@ class TestCreateSchemaResponse():
 
         schema_response.approvals_state_machine.set_state(invalid_response_state)
         schema_response.save()
-        with assert_raises(PreviousPendingSchemaResponseError):
+        with assert_raises(PreviousSchemaResponseError):
             SchemaResponse.create_from_previous_response(
                 initiator=schema_response.initiator,
                 previous_response=intermediate_response
