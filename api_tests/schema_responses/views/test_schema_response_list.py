@@ -28,7 +28,7 @@ class TestSchemaResponseList:
     def payload(self, registration):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'relationships': {
                     'registration': {
                         'data': {
@@ -44,7 +44,7 @@ class TestSchemaResponseList:
     def invalid_payload(self, registration):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'relationships': {
                     'registration': {
                         'data': {

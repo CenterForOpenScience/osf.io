@@ -948,7 +948,6 @@ class ReviewActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
-
 class ScheduledBannerFactory(DjangoModelFactory):
     # Banners are set for 24 hours from start_date if no end date is given
     class Meta:

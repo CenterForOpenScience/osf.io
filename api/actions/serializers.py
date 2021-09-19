@@ -330,7 +330,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
     create_payload_schema = create_schema_response_action_payload
 
     class Meta:
-        type_ = 'schema_response_actions'
+        type_ = 'schema-response-actions'
 
     permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
     visible = ser.BooleanField(default=True, required=False)
