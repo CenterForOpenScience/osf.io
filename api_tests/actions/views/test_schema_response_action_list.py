@@ -45,7 +45,7 @@ class TestSchemaResponseActionList:
         return {
             'data':
                 {
-                    'type': 'revision-actions',
+                    'type': 'schema_response_actions',
                     'attributes': {
                         'trigger': trigger.db_name,
                         'comment': "It's Party time!",
@@ -54,7 +54,7 @@ class TestSchemaResponseActionList:
                         'target': {
                             'data': {
                                 'id': schema_response._id,
-                                'type': 'revisions'
+                                'type': 'schema_responses'
                             }
                         }
                     }
