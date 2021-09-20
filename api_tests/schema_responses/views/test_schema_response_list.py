@@ -29,7 +29,7 @@ def admin_user():
 def provider():
     provider = RegistrationProviderFactory()
     update_provider_auth_groups()
-    provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION
+    provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
     provider.save()
     return provider
 
@@ -39,7 +39,7 @@ def url():
     return '/v2/schema_responses/'
 
 
-def configure_auth(role, registration=None, schema_response=None):
+def configure_auth(registration, role):
     if role == 'unauthenticated':
         return None
 
@@ -47,11 +47,10 @@ def configure_auth(role, registration=None, schema_response=None):
     if role == 'non-contributor':
         return user.auth
 
-    registration = registration or schema_response.parent
     if role == 'moderator' and registration.provider is not None:
         registration.provider.get_group('moderator').user_set.add(user)
     else:
-        registration.parent.add_contributor(user, role)
+        registration.add_contributor(user, role)
 
     return user.auth
 
@@ -60,7 +59,7 @@ class TestSchemaResponseListGETPermissions:
     '''Checks access for GET requests to the SchemaResponseList Endpoint.'''
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_get_status_code(self, app, url, perms_user, use_auth):
+    def test_get_status_code(self, app, url, use_auth):
         resp = app.get(url, auth=AuthUserFactory().auth if use_auth else None)
         assert resp.status_code == 200
 
@@ -69,118 +68,104 @@ class TestSchemaResponseLsitGETBehavior:
     '''Tests the visibility of SchemaResponses through the List endpoint under various conditions.
 
     APPROVED SchemaResponses on public registrations should appear for all users.
-    Only contributors (READ, WRITE, or ADMIN) should see non-APPROVED Schemaresponses or
+    Only contributors (READ, WRITE, or ADMIN) should see non-APPROVED SchemaResponses or
     SchemaResponses for private registrations -- moderators have no special powers on this endpoint.
     SchemaResponses on deleted or withdrawn registrations should never appear.
     '''
 
     @pytest.fixture()
-    def approved_schema_response(self, admin_user):
-        '''A public schema_response'''
+    def control_response(self, admin_user):
+        '''A public SchemaResponse to ensure is present for all requests'''
         parent = RegistrationFactory(creator=admin_user, is_public=True)
         response = parent.schema_responses.last()
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
         return response
 
-    @pytest.fixture(params=UNAPPROVED_RESPONSE_STATES)
-    def unapproved_schema_response(self, approved_schema_response):
-        return SchemaResponse.create_from_previous_response(
-            previous_response=approved_schema_response,
-            initiator=approved_schema_response.initiator
-        )
-
     @pytest.fixture()
-    def private_registration_response(self, admin_user):
-        parent = RegistrationFactory(creator=admin_user, is_public=False)
+    def test_response(self, admin_user):
+        '''A SchemaResponse to configure per-test'''
+        parent = RegistrationFactory(creator=admin_user, is_public=True)
         response = parent.schema_responses.last()
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
         return response
 
-    @pytest.fixture()
-    def moderated_response(self, admin_user, provider):
-        parent = RegistrationFactory(creator=admin_user, provider=provider, is_public=True)
-        response = parent.schema_responses.last()
-        response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
-        response.save()
-        return response
-
-    @pytest.fixture()
-    def withdrawn_registration_response(self, admin_user):
-        parent = RegistrationFactory(creator=admin_user, is_public=True)
-        parent.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
-        parent.save()
-
-        response = parent.schema_responses.last()
-        response.approvals_state_machine.set_state('APPROVED')
-        response.save()
-        return response
-
-    @pytest.fixture()
-    def deleted_registration_response(self):
-        parent = RegistrationFactory(creator=admin_user)
-        parent.deleted = timezone.now()
-        parent.save()
-
-        response = parent.schema_responses.last()
-        response.approvals_state_machine.set_state('APPROVED')
-        response.save()
-        return response
-
+    @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_unapproved_response_visibility(
-            self, app, url, approved_response, unapproved_response, role):
-        auth = configure_auth(unapproved_response.parent, role)
+    def test_GET__unapproved_response_visibility(
+            self, app, url, control_response, test_response, response_state, role):
+        test_response.approvals_state_machine.set_state(response_state)
+        test_response.save()
+
+        auth = configure_auth(test_response.parent, role)
         resp = app.get(url, auth=auth)
 
-        expected_ids = {approved_response._id}
+        expected_ids = {control_response._id}
         if role in CONTRIBUTOR_ROLES:
-            expected_ids.add(unapproved_response._id)
+            expected_ids.add(test_response._id)
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_private_registration_response_visibility(
-            self, app, url, approved_response, private_registration_response, role):
-        auth = configure_auth(private_registration_response.parent, role)
+    def test_GET__private_registration_response_visibility(
+            self, app, url, control_response, test_response, role):
+        test_registration = test_response.parent
+        test_registration.is_public = False
+        test_registration.save()
+
+        auth = configure_auth(test_registration, role)
         resp = app.get(url, auth=auth)
 
-        expected_ids = {approved_response._id}
+        expected_ids = {control_response._id}
         if role in CONTRIBUTOR_ROLES:
-            expected_ids.add(private_registration_response._id)
+            expected_ids.add(test_response._id)
+        encountered_ids = {entry['id'] for entry in resp.json['data']}
+        assert encountered_ids == expected_ids
+
+    @pytest.mark.parametrize('is_public', [True, False])
+    def test_GET__moderated_response_visibility(
+            self, app, url, control_response, test_response, provider, is_public):
+        test_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        test_response.save()
+
+        test_registration = test_response.parent
+        test_registration.is_public = is_public
+        test_registration.provider = provider
+        test_registration.save()
+
+        auth = configure_auth(test_registration, 'moderator')
+        resp = app.get(url, auth=auth)
+
+        expected_ids = {control_response._id}
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_moderated_response_visibility(
-            self, app, url, approved_response, moderated_response, role):
-        auth = configure_auth(moderated_response.parent, role)
+    def test_GET__withdrawn_registration_response_visibility(
+            self, app, url, control_response, test_response, role):
+        test_registration = test_response.parent
+        test_registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
+        test_registration.save()
+
+        auth = configure_auth(test_registration, role)
         resp = app.get(url, auth=auth)
 
-        expected_ids = {approved_response._id}
-        if role in CONTRIBUTOR_ROLES:
-            expected_ids.add(moderated_response._id)
+        expected_ids = {control_response._id}
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_withdrawn_registration_response_visibility(
-            self, app, url, approved_response, withdrawn_registration_response, role):
-        auth = configure_auth(withdrawn_registration_response.parent, role)
+    def test_GET__deleted_registration_response_visibility(
+            self, app, url, control_response, test_response, role):
+        test_registration = test_response.parent
+        test_registration.deleted = timezone.now()
+        test_registration.save()
+
+        auth = configure_auth(test_registration, role)
         resp = app.get(url, auth=auth)
 
-        expected_ids = {approved_response._id}
-        encountered_ids = {entry['id'] for entry in resp.json['data']}
-        assert encountered_ids == expected_ids
-
-    @pytest.mark.parametrize('role', USER_ROLES)
-    def test_contributor_cannot_see_deleted_registration_responses(
-            self, app, url, approved_response, deleted_registration_response, role):
-        auth = configure_auth(deleted_registration_response.parent, role)
-        resp = app.get(url, auth=auth)
-
-        expected_ids = {approved_response._id}
+        expected_ids = {control_response._id}
         encountered_ids = {entry['id'] for entry in resp.json['data']}
         assert encountered_ids == expected_ids
 
@@ -223,7 +208,7 @@ class TestSchemaResponseListPOSTPermissions:
     @pytest.mark.parametrize('role', USER_ROLES)
     @pytest.mark.parametrize('is_public', [True, False])
     def test_status_code(self, app, url, registration, payload, role, is_public):
-        auth = configure_auth(registration)
+        auth = configure_auth(registration, role)
         registration.is_public = is_public
         registration.save()
 
@@ -237,7 +222,7 @@ class TestSchemaResponseListPOSTPermissions:
 
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__withdrawn_registration(self, app, url, registration, payload, role):
-        auth = configure_auth(registration)
+        auth = configure_auth(registration, role)
         registration.moderation_state = RegistrationModerationStates.WITHDRAWN.db_name
         registration.save()
 
@@ -251,7 +236,7 @@ class TestSchemaResponseListPOSTPermissions:
 
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__deleted_registration(self, app, url, registration, payload, role):
-        auth = configure_auth(registration)
+        auth = configure_auth(registration, role)
         registration.deleted = timezone.now()
         registration.save()
 
@@ -289,7 +274,7 @@ class TestSchemaResponseListPOSTBehavior:
         )
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
-        return response()
+        return response
 
     @pytest.fixture()
     def payload(self, registration):
@@ -332,7 +317,7 @@ class TestSchemaResponseListPOSTBehavior:
             }
         }
 
-    def test_post_creates_response(self, app, url, registration, payload, admin_user):
+    def test_POST_creates_response(self, app, url, registration, payload, admin_user):
         assert not registration.schema_responses.exists()
         resp = app.post_json_api(url, payload, auth=admin_user.auth)
 
@@ -343,8 +328,9 @@ class TestSchemaResponseListPOSTBehavior:
         assert created_response._id == resp.json['data']['id']
         assert created_response.parent == registration
         assert created_response.schema == registration.registration_schema
+        assert created_response.state is ApprovalStates.IN_PROGRESS
 
-    def test_post_with_previous_approved_response(
+    def test_POST_with_previous_approved_response(
             self, app, url, registration, schema_response, payload, admin_user):
         resp = app.post_json_api(url, payload, auth=admin_user.auth)
 
@@ -354,7 +340,7 @@ class TestSchemaResponseListPOSTBehavior:
         assert new_response == registration.schema_responses.first()
 
     @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
-    def test_cannot_post_if_non_approved_response(
+    def test_POST_fails_with_prior_non_approved_response(
             self, app, url, schema_response, payload, admin_user, response_state):
         schema_response.approvals_state_machine.set_state(response_state)
         schema_response.save()
@@ -362,13 +348,13 @@ class TestSchemaResponseListPOSTBehavior:
 
         assert resp.status_code == 409
 
-    def test_cannot_post_payload_without_registration_relationship(
+    def test_POST_fails_if_registration_relationship_not_in_payload(
             self, app, url, no_relationship_payload, admin_user):
         resp = app.post_json_api(url, no_relationship_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
         print(resp.json['errors'][0]['detail'])
 
-    def test_cannot_post_payload_with_incorrect_relationship_type(
+    def test_POST_fails_if_incorrect_relationship_type_in_payload(
             self, app, url, registration, invalid_payload, admin_user):
         resp = app.post_json_api(url, invalid_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
@@ -380,7 +366,7 @@ class TestSchemaResponseListUnsupportedMethods:
     '''Confirm that SchemaResponseList endpoint does not support PATCH, PUT, or DELETE methods.'''
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_patch(self, app, url, use_auth):
+    def test_cannot_PATCH(self, app, url, use_auth):
         resp = app.patch_json_api(
             url,
             auth=AuthUserFactory().auth if use_auth else None,
@@ -389,7 +375,7 @@ class TestSchemaResponseListUnsupportedMethods:
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_put(self, app, url, use_auth):
+    def test_cannot_PUT(self, app, url, use_auth):
         resp = app.put_json_api(
             url,
             auth=AuthUserFactory().auth if use_auth else None,
@@ -398,7 +384,7 @@ class TestSchemaResponseListUnsupportedMethods:
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('use_auth', [True, False])
-    def test_cannot_delete_as_non_contributor(self, app, url, use_auth):
+    def test_cannot_DELETE(self, app, url, use_auth):
         resp = app.delete_json_api(
             url,
             auth=AuthUserFactory if use_auth else None,

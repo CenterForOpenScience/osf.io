@@ -70,7 +70,7 @@ def configure_permissions_test_preconditions(
     provider.reviews_workflow = moderator_workflow
     provider.save()
 
-    registration = RegistrationFactory(provider=provider)
+    registration = RegistrationFactory(schema=get_default_test_schema(), provider=provider)
     registration.provider = provider
     if registration_status == 'public':
         registration.is_public = True
@@ -355,6 +355,8 @@ class TestSchemaResponseDetailPATCHPermissions:
             auth=auth,
             expect_errors=True,
         )
+        if resp.status_code == 400:
+            print(resp.json['errors'])
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
@@ -682,7 +684,7 @@ class TestSchemaResponseDetailDELETEBehavior:
 
     @pytest.mark.parametrize('response_state', IMMUTABLE_STATES)
     def test_DELETE_fails_in_unsupported_state(
-            self, app, schema_response, payload, admin_user, response_state):
+            self, app, schema_response, admin_user, response_state):
         schema_response.approvals_state_machine.set_state(response_state)
         schema_response.save()
         resp = app.delete_json_api(
@@ -697,7 +699,7 @@ class TestSchemaResponseListUnsupportedMethods:
     '''Confirm that the SchemaResponseDetail endpoint does not support POST or PUT'''
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_post(self, app, role):
+    def test_cannot_POST(self, app, role):
         # Most permissive preconditions
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             role=role
@@ -711,7 +713,7 @@ class TestSchemaResponseListUnsupportedMethods:
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_put(self, app, role):
+    def test_cannot_PUT(self, app, role):
         # Most permissive preconditions
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             role=role
