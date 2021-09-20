@@ -272,6 +272,8 @@ class RegistrationResponseField(UploadField):
         if self.required and not bool(self.value):
             self.log_error(missing=True)
         else:
+            if not self.value:
+                return
             if self.type == 'string':
                 parsed_value = self.value
             elif self.type == 'choose' and self.format in ['singleselect', 'multiselect']:
@@ -320,6 +322,8 @@ class ContributorField(MetadataField):
         if self.required and not bool(self.value):
             self.log_error(missing=True, type='invalidContributors')
         else:
+            if not self.value:
+                return
             parsed_value = []
             parsed_contributor_list = [val.strip() for val in self.value.split(';')]
             for contrib in parsed_contributor_list:
@@ -344,6 +348,8 @@ class LicenseField(MetadataField):
         if self.required and not bool(self.value):
             self.log_error(missing=True, type='invalidLicenseName')
         else:
+            if not self.value:
+                return
             license_name_match = self.no_required_fields_regex.match(self.value)
             if license_name_match is not None:
                 node_license_name = license_name_match.group('name')

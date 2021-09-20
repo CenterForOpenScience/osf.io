@@ -1,6 +1,6 @@
 from framework.celery_tasks.handlers import enqueue_task
 import hashlib
-from scripts.prepare_for_registration_bulk_creation import prepare_for_registration_bulk_creation
+from api.providers.tasks import prepare_for_registration_bulk_creation
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
 from guardian.shortcuts import get_objects_for_user
@@ -823,7 +823,7 @@ class RegistrationBulkCreate(APIView):
 
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
-        user_id = self.request.user.id
+        user_id = self.request.user._id
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
         file_obj = request.data['file']
 
