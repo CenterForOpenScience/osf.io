@@ -823,7 +823,7 @@ class RegistrationBulkCreate(APIView):
 
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
-        user_id = self.request.user.id
+        user_id = self.request.user._id
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
         file_obj = request.data['file']
 
