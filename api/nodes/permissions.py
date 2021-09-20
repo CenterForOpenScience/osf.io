@@ -235,8 +235,8 @@ class SchemaResponseListPermission(permissions.BasePermission):
 
 class SchemaResponseActionListPermission(permissions.BasePermission):
     '''
-    Permissions for top-level `schema_responses` list endpoints.
-    To create a schema response a user must be an admin contributor on that Registration.
+    Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
+    To create a schema response action a user must be an admin contributor on that Registration.
     '''
     acceptable_models = (Registration,)
 
