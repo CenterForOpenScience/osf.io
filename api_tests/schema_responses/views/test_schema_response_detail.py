@@ -13,6 +13,7 @@ from osf_tests.factories import (
     RegistrationFactory,
     RegistrationProviderFactory,
 )
+from osf_tests.utils import get_default_test_schema
 
 USER_ROLES = ['unauthenticated', 'non-contributor', 'read', 'write', 'admin', 'moderator']
 
@@ -25,6 +26,8 @@ INITIAL_SCHEMA_RESPONSES = {
     'q6': None
 }
 
+IMMUTABLE_STATES = [state for state in ApprovalStates if state is not ApprovalStates.IN_PROGRESS]
+
 
 @pytest.fixture()
 def admin_user():
@@ -32,14 +35,21 @@ def admin_user():
 
 
 @pytest.fixture()
-def registration(admin_user):
-    return RegistrationFactory(creator=admin_user, is_public=True)
+def schema():
+    return get_default_test_schema()
+
+
+@pytest.fixture()
+def registration(admin_user, schema):
+    return RegistrationFactory(creator=admin_user, schema=schema, is_public=True)
 
 
 @pytest.fixture()
 def schema_response(registration):
     response = registration.schema_responses.last()
-    response.update_responses(INITIAL_SCHEMA_RESPONSES)
+    for block in response.response_blocks.all():
+        block.response = INITIAL_SCHEMA_RESPONSES[block.schema_key]
+        block.save()
     response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
     response.save()
     return response
@@ -300,8 +310,7 @@ class TestSchemaResponseDetailPATCHPermissions:
         }
     }
 
-    def get_status_code_for_preconditions(
-            self, registration_status, schema_response_state, moderator_workflow, role):
+    def get_status_code_for_preconditions(self, registration_status, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
         if registration_status == 'deleted':
             return 410
@@ -314,13 +323,10 @@ class TestSchemaResponseDetailPATCHPermissions:
                 return 401
             return 403
 
-        # PATCH succeeds for write and admin contributors on the parent registratoin
-        # so long as the schema_response is IN_PROGRESS.
-        # All other states return CONFLICT
+        # PATCH succeeds for write and admin contributors on the parent registration
+        # (state-related failures are tested elsewhere)
         if role in ['write', 'admin']:
-            if schema_response_state is ApprovalStates.IN_PROGRESS:
-                return 200
-            return 409
+            return 200
 
         # In all other cases, return:
         # UNAUTHORIZED for unauthenticated users
@@ -330,17 +336,15 @@ class TestSchemaResponseDetailPATCHPermissions:
         return 403
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
     @pytest.mark.parametrize('role', ['read', 'write', 'admin', 'non-contributor', 'unauthenticated'])
-    def test_status_code__as_user(self, app, registration_status, schema_response_state, role):
+    def test_status_code__as_user(self, app, registration_status, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
+            schema_response_state=ApprovalStates.IN_PROGRESS,
             role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -354,19 +358,16 @@ class TestSchemaResponseDetailPATCHPermissions:
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
     @pytest.mark.parametrize('moderator_workflow', [Workflows.PRE_MODERATION.value, None])
-    def test_status_code__as_moderator(
-            self, app, registration_status, schema_response_state, moderator_workflow):
+    def test_status_code__as_moderator(self, app, registration_status, moderator_workflow):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
+            schema_response_state=ApprovalStates.IN_PROGRESS,
             moderator_workflow=moderator_workflow,
             role='moderator'
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
             moderator_workflow=moderator_workflow,
             role='moderator'
         )
@@ -382,11 +383,12 @@ class TestSchemaResponseDetailPATCHPermissions:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__deleted_parent(self, app, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
-            registration_status='deleted', role=role
+            registration_status='deleted',
+            schema_response_state=ApprovalStates.IN_PROGRESS,
+            role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status='deleted',
-            schema_response_state=schema_response.state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -402,11 +404,12 @@ class TestSchemaResponseDetailPATCHPermissions:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__withdrawn_parent(self, app, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
-            registration_status='withdrawn', role=role
+            registration_status='withdrawn',
+            schema_response_state=ApprovalStates.IN_PROGRESS,
+            role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status='withdrawn',
-            schema_response_state=schema_response.state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -464,12 +467,13 @@ class TestSchemaResponseDetailPATCHBehavior:
 
     @pytest.fixture()
     def schema_response(self, schema_response):
+        # Use create_from_previous_response to better test update_response_keys behavior
         return SchemaResponse.create_from_previous_response(
             previous_response=schema_response,
             initiator=schema_response.initiator
         )
 
-    def test_patch_sets_responses(self, app, schema_response, payload, admin_user):
+    def test_PATCH_sets_responses(self, app, schema_response, payload, admin_user):
         assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
 
         app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
@@ -478,7 +482,7 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.all_responses == expected_responses
 
-    def test_patch_sets_updated_response_keys(self, app, schema_response, payload, admin_user):
+    def test_PATCH_sets_updated_response_keys(self, app, schema_response, payload, admin_user):
         assert not schema_response.updated_response_keys
 
         app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
@@ -486,7 +490,7 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.updated_response_keys == {'q1'}
 
-    def test_patch_with_old_answer_removes_updated_response_keys(
+    def test_PATCH_with_old_answer_removes_updated_response_keys(
             self, app, schema_response, payload, admin_user):
         schema_response.update_responses({'q1': 'update_value'})
         assert schema_response.updated_response_keys == {'q1'}
@@ -497,7 +501,26 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert not schema_response.updated_response_keys
 
-    def test_patch_fails_with_invalid_keys(self, app, schema_response, invalid_payload, admin_user):
+    def test_PATCH_updates_revision_justification(self, app, schema_response, payload, admin_user):
+        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
+
+        schema_response.refresh_from_db()
+        assert schema_response.revision_justification == 'why not?'
+
+    @pytest.mark.parametrize('response_state', IMMUTABLE_STATES)
+    def test_PATCH_fails_in_unsupported_state(
+            self, app, schema_response, payload, admin_user, response_state):
+        schema_response.approvals_state_machine.set_state(response_state)
+        schema_response.save()
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            payload,
+            auth=admin_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 409
+
+    def test_PATCH_fails_with_invalid_keys(self, app, schema_response, invalid_payload, admin_user):
         resp = app.patch_json_api(
             url_for_schema_response(schema_response),
             invalid_payload,
@@ -511,7 +534,7 @@ class TestSchemaResponseDetailPATCHBehavior:
         # Check for the invalid key in the error message
         assert 'oops' in errors[0]['detail']
 
-    def test_patch_with_invalid_keys_fails_atomically(
+    def test_PATCH_with_invalid_keys_fails_atomically(
             self, app, schema_response, invalid_payload, admin_user):
         before_responses = schema_response.all_responses
         app.patch_json_api(
@@ -524,19 +547,12 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.all_responses == before_responses
 
-    def test_patch_updates_revision_justification(self, app, schema_response, payload, admin_user):
-        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
-
-        schema_response.refresh_from_db()
-        assert schema_response.revision_justification == 'why not?'
-
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailDELETEPermissions:
     '''Checks access for DELETE requests to the SchemaResponseDetail Endpoint.'''
 
-    def get_status_code_for_preconditions(
-            self, registration_status, schema_response_state, moderator_workflow, role):
+    def get_status_code_for_preconditions(self, registration_status, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
         if registration_status == 'deleted':
             return 410
@@ -549,12 +565,10 @@ class TestSchemaResponseDetailDELETEPermissions:
                 return 401
             return 403
 
-        # Admin users on the parent registration can delete schema_responses in state IN_PROGRESS
-        # All other schema_response_states return CONFLICT
+        # Admin users on the parent registration can DELETE SchemaResponses
+        # (state-related failures are tested elsewhere)
         if role == 'admin':
-            if schema_response_state is ApprovalStates.IN_PROGRESS:
-                return 204
-            return 409
+            return 204
 
         # In all other cases, return:
         # UNAUTHORIZED for unauthenticated users
@@ -564,17 +578,15 @@ class TestSchemaResponseDetailDELETEPermissions:
         return 403
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
     @pytest.mark.parametrize('role', ['read', 'write', 'admin', 'non-contributor', 'unauthenticated'])
-    def test_status_code__as_user(self, app, registration_status, schema_response_state, role):
+    def test_status_code__as_user(self, app, registration_status, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
+            schema_response_state=ApprovalStates.IN_PROGRESS,
             role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -587,19 +599,16 @@ class TestSchemaResponseDetailDELETEPermissions:
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
     @pytest.mark.parametrize('moderator_workflow', [Workflows.PRE_MODERATION.value, None])
-    def test_status_code__as_moderator(
-            self, app, registration_status, schema_response_state, moderator_workflow):
+    def test_status_code__as_moderator(self, app, registration_status, moderator_workflow):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
+            schema_response_state=ApprovalStates.IN_PROGRESS,
             moderator_workflow=moderator_workflow,
             role='moderator'
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
-            schema_response_state=schema_response_state,
             moderator_workflow=moderator_workflow,
             role='moderator'
         )
@@ -614,11 +623,12 @@ class TestSchemaResponseDetailDELETEPermissions:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__deleted_parent(self, app, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
-            registration_status='deleted', role=role
+            registration_status='deleted',
+            schema_response_state=ApprovalStates.IN_PROGRESS,
+            role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status='deleted',
-            schema_response_state=schema_response.state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -633,11 +643,12 @@ class TestSchemaResponseDetailDELETEPermissions:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_status_code__withdrawn_parent(self, app, role):
         registration, schema_response, provider, auth = configure_permissions_test_preconditions(
-            registration_status='withdrawn', role=role
+            registration_status='withdrawn',
+            schema_response_state=ApprovalStates.IN_PROGRESS,
+            role=role
         )
         expected_code = self.get_status_code_for_preconditions(
             registration_status='withdrawn',
-            schema_response_state=schema_response.state,
             moderator_workflow=provider.reviews_workflow,
             role=role
         )
@@ -663,12 +674,23 @@ class TestSchemaResponseDetailDELETEBehavior:
         schema_response.save()
         return schema_response
 
-    def test_schema_response_detail_delete(self, app, schema_response, admin_user):
+    def test_DELETE(self, app, schema_response, admin_user):
         app.delete_json_api(url_for_schema_response(schema_response), auth=admin_user.auth)
 
         with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted
             schema_response.refresh_from_db()
 
+    @pytest.mark.parametrize('response_state', IMMUTABLE_STATES)
+    def test_DELETE_fails_in_unsupported_state(
+            self, app, schema_response, payload, admin_user, response_state):
+        schema_response.approvals_state_machine.set_state(response_state)
+        schema_response.save()
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=admin_user.auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 409
 
 @pytest.mark.django_db
 class TestSchemaResponseListUnsupportedMethods:
