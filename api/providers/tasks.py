@@ -67,9 +67,11 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     logger.info('Preparing [{}] registration rows for bulk creation ...'.format(len(registration_rows)))
     bulk_upload_rows = []
     for registration_row in registration_rows:
-        bulk_upload_row = RegistrationBulkUploadRow(upload=upload, draft_registration=None, is_completed=False,
-                                                    is_picked_up=False, csv_raw=registration_row.get('csv_raw', ''),
-                                                    csv_parsed=registration_row.get('csv_parsed'))
+        bulk_upload_row = RegistrationBulkUploadRow(
+            upload=upload, draft_registration=None, is_completed=False,
+            is_picked_up=False, csv_raw=registration_row.get('csv_raw', ''),
+            csv_parsed=registration_row.get('csv_parsed')
+        )
         bulk_upload_rows.append(bulk_upload_row)
 
     if dry_run:
@@ -108,7 +110,7 @@ def handle_error(initiator, inform_product=False, error_message=None):
     if inform_product:
         mails.send_mail(
             to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
-            mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER
+            mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
         )
 
     if initiator:
@@ -116,5 +118,5 @@ def handle_error(initiator, inform_product=False, error_message=None):
             to_addr=initiator.username,
             mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
             user=initiator,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
         )
