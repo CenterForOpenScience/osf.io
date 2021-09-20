@@ -10,12 +10,13 @@ from api.base.parsers import (
 from api.nodes.permissions import (
     SchemaResponseDetailPermission,
     SchemaResponseListPermission,
+    SchemaResponseActionPermission,
 )
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
 from api.actions.serializers import SchemaResponseActionSerializer
-from osf.models import SchemaResponse, Registration, SchemaResponseAction
+from osf.models import SchemaResponse, Registration
 from api.base.filters import ListFilterMixin
 from api.schema_responses.schemas import create_schema_response_payload, create_schema_response_action_payload
 from framework.auth.oauth_scopes import CoreScopes
@@ -86,6 +87,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
 class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
+        SchemaResponseActionPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -101,7 +103,11 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     serializer_class = SchemaResponseActionSerializer
 
     def get_object(self):
-        return SchemaResponse.objects.get(_id=self.kwargs['schema_response_id'])
+        return get_object_or_error(
+            SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_action_id'],
+            request=self.request,
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -120,6 +126,7 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
+        SchemaResponseActionPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -133,4 +140,8 @@ class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     serializer_class = SchemaResponseActionSerializer
 
     def get_object(self):
-        return SchemaResponseAction.objects.get(_id=self.kwargs['schema_response_action_id'])
+        return get_object_or_error(
+            SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_action_id'],
+            request=self.request,
+        )

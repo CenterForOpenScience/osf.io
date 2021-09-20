@@ -38,6 +38,7 @@ from osf.utils.workflows import (
 )
 from osf.utils import permissions
 from api.schema_responses.schemas import create_schema_response_action_payload
+from django.core.exceptions import ValidationError
 
 class ReviewableCountsRelationshipField(RelationshipField):
 
@@ -352,7 +353,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         comment = validated_data.pop('comment', '')
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
-                required_approvers = target.parent.get_users_with_perm('admin')
+                required_approvers = target.parent.get_admin_contributors_recursive(unique_users=True)
                 target.submit(user=user, comment=comment, required_approvers=required_approvers)
             elif trigger == SchemaResponseTriggers.APPROVE.db_name:
                 target.approve(user=user, comment=comment)
@@ -364,19 +365,11 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 target.reject(user=user, comment=comment)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
-        except InvalidTriggerError:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Operation not allowed at this time',
-                    'message_long': f'This {trigger} is invalid for the current state of the registration',
-                },
-            )
         except PermissionsError as exc:
             raise PermissionDenied(exc)
         except ValueError as exc:
-            raise PermissionDenied(exc)
+            raise ValidationError(exc)
         except MachineError as exc:
-            raise PermissionDenied(exc)
+            raise Conflict(exc)
 
         return target.actions.last()

@@ -17,7 +17,6 @@ from osf.models import (
     Preprint,
     PrivateLink,
     Registration,
-    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
 
@@ -233,7 +232,7 @@ class SchemaResponseListPermission(permissions.BasePermission):
         return obj.has_permission(auth.user, 'admin')
 
 
-class SchemaResponseActionListPermission(permissions.BasePermission):
+class SchemaResponseActionPermission(permissions.BasePermission):
     '''
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
     To create a schema response action a user must be an admin contributor on that Registration.
@@ -244,27 +243,9 @@ class SchemaResponseActionListPermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         elif request.method == 'POST':
-            # Validate json before using id to check for permissions
-            request_json = JSONSchemaParser().parse(
-                io.BytesIO(request.body),
-                parser_context={
-                    'request': request,
-                    'json_schema': view.create_payload_schema,
-                },
-            )
-            obj = get_object_or_error(
-                SchemaResponse,
-                query_or_pk=request_json['data']['relationships']['target']['data']['id'],
-                request=request,
-            ).parent
-            return self.has_object_permission(request, view, obj)
+            return True  # these permissions are checked by the SchemaResponse state machine.
         else:
             raise exceptions.MethodNotAllowed(request.method)
-
-    def has_object_permission(self, request, view, obj):
-        assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
-        return obj.has_permission(auth.user, 'admin')
 
 
 class ExcludeWithdrawals(permissions.BasePermission):
