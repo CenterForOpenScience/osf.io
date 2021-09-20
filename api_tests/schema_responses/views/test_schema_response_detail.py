@@ -50,24 +50,25 @@ def url_for_schema_response(schema_response):
 
 
 def configure_permissions_test_preconditions(
-        registration_state, schema_response_state, moderation_workflow):
+        registration_status='public',
+        schema_response_state=ApprovalStates.APPROVED,
+        moderator_workflow=Workflows.PRE_MODERATION.value,
+        role='admin'):
     '''Create and configure a Registration, RegistrationProvider and SchemaResponse.'''
     provider = RegistrationProviderFactory()
     update_provider_auth_groups()
-    if moderation_workflow == 'unmoderated':
-        provider.reviews_workflow = None
-    elif moderation_workflow == 'moderated':
-        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+    provider.reviews_workflow = moderator_workflow
     provider.save()
 
     registration = RegistrationFactory(provider=provider)
-    if registration_state == 'public':
+    registration.provider = provider
+    if registration_status == 'public':
         registration.is_public = True
-    elif registration_state == 'private':
+    elif registration_status == 'private':
         registration.is_public = False
-    elif registration_state == 'withdrawn':
+    elif registration_status == 'withdrawn':
         registration.moderation_state = 'withdrawn'
-    elif registration_state == 'deleted':
+    elif registration_status == 'deleted':
         registration.deleted = timezone.now()
     registration.save()
 
@@ -75,14 +76,12 @@ def configure_permissions_test_preconditions(
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
 
-    return registration, schema_response, provider
+    auth = _configure_permissions_test_auth(registration, provider, role)
+    return registration, schema_response, provider, auth
 
 
-def configure_permissions_test_auth(registration, provider, role):
+def _configure_permissions_test_auth(registration, provider, role):
     '''Create a user and assign appropriate permissions for the given role.'''
-    if role not in USER_ROLES:
-        raise ValueError(f'Unsupported test role {role}')
-
     if role == 'unauthenticated':
         return None
 
@@ -99,65 +98,124 @@ def configure_permissions_test_auth(registration, provider, role):
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailGETPermissions:
-    '''Checks the status codes for GET requests to the SchemaResponseDetail Endpoint'''
+    '''Checks access for GET requests to the SchemaResponseDetail Endpoint'''
 
-    def get_status_code_for_preconditions_and_role(
-            self, registration_state, schema_response_state, moderation_workflow, role):
+    def get_status_code_for_preconditions(
+            self, registration_status, schema_response_state, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
-        if registration_state == 'deleted':
+        if registration_status == 'deleted':
             return 410
 
         # All requests for SchemaResponses on a withdrawn parent registration return:
         # FORBIDDEN for authenticated users,
         # UNAUTHORIZED for unauthenticated users
-        if registration_state == 'withdrawn':
+        if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
             return 403
 
         # All users can GET APPROVED responses on public registrations
-        if registration_state == 'public' and schema_response_state is ApprovalStates.APPROVED:
+        if registration_status == 'public' and schema_response_state is ApprovalStates.APPROVED:
             return 200
+
+        # unauthenticated users and non-contributors cannot see any other responses
+        if role == 'unauthenticated':
+            return 401
+        if role == 'non-contributor':
+            return 403
+
+        # Moderators can GET PENDING_MODERATION and APPROVED SchemaResponses on
+        # public or private registrations that are part of a moderated registry
+        if role == 'moderator':
+            moderator_visible_states = [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+            if schema_response_state in moderator_visible_states and moderator_workflow is not None:
+                return 200
+            else:
+                return 403
 
         # Contributors on the parent registration can GET schema responses in any state,
         # even if the parent_registration is private
         if role in ['read', 'write', 'admin']:
             return 200
 
-        # Moderators can GET PENDING_MODERATION and APPROVED SchemaResponses on
-        # public or private registrations that are part of a moderated registry
-        if (
-            moderation_workflow is not None
-            and role == 'moderator'
-            and schema_response_state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
-        ):
-            return 200
+        raise ValueError(f'Unrecognized role {role}')
 
-        # In all other cases return:
-        # UNAUTHORIZED for unauthenticated users
-        # FORBIDDEN for logged-in users
-        if role == 'unauthenticated':
-            return 401
-        return 403
-
-    @pytest.mark.parametrize('registration_state', ['public', 'private', 'deleted', 'withdrawn'])
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
     @pytest.mark.parametrize('schema_response_state', ApprovalStates)
-    @pytest.mark.parametrize('moderation_workflow', [Workflows.PRE_MODERATION.value, None])
-    @pytest.mark.parametrize('role', USER_ROLES)
-    def test_schema_response_detail_get_status_code(
-            self, app, registration_state, schema_response_state, moderation_workflow, role):
-        registration, schema_response, provider = configure_permissions_test_preconditions(
-            registration_state=registration_state,
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin', 'non-contributor', 'unauthenticated'])
+    def test_status_code__as_user(self, app, registration_status, schema_response_state, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
             schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow
-        )
-        auth = configure_permissions_test_auth(
-            registration=registration, provider=provider, role=role
+            role=role
         )
         expected_code = self.get_status_code_for_preconditions_and_role(
-            registration_state=registration_state,
+            registration_status=registration_status,
             schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
+        )
+
+        resp = app.get(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
+    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
+    @pytest.mark.parametrize('moderator_workflow', [Workflows.PRE_MODERATION.value, None])
+    def test_status_code__as_moderator(
+            self, app, registration_status, schema_response_state, moderator_workflow):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+
+        resp = app.get(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('role', USER_ROLES)
+    def test_status_code__deleted_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='deleted', role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='deleted',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
+        )
+
+        resp = app.get(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('role', USER_ROLES)
+    def test_status_code__withdrawn_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='withdrawn', role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='withdrawn',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
             role=role
         )
 
@@ -228,40 +286,30 @@ class TestSchemaResponseDetailGETBehavior:
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailPATCHPermissions:
-    '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.
+    '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.'''
 
-    Only 'ADMIN' and 'WRITE' contributors should be able to PATCH to a SchemaResponse.
-    'ADMIN' and 'WRITE' contributors can PATCH whether the parent registration is public
-    or private, but cannot PATCH a SchemaResponse with a state other than IN_PROGRESS.
-
-    PATCHing to a SchemaResponse whose parent registration has been deleted or withdrawn should
-    result in a 410 or a 403, respectively
-    '''
-
-    @pytest.fixture()
-    def payload(self):
-        return {
-            'data': {
-                'type': 'revisions',
-                'attributes': {
-                    'revision_responses': {
-                        'q1': 'update value',
-                        'q2': INITIAL_SCHEMA_RESPONSES['q2'],  # fake it out by adding an old value
-                    }
+    PAYLOAD = {
+        'data': {
+            'type': 'revisions',
+            'attributes': {
+                'revision_responses': {
+                    'q1': 'update value',
+                    'q2': INITIAL_SCHEMA_RESPONSES['q2'],  # fake it out by adding an old value
                 }
             }
         }
+    }
 
-    def get_status_code_for_preconditions_and_role(
-            self, registration_state, schema_response_state, moderation_workflow, role):
+    def get_status_code_for_preconditions(
+            self, registration_status, schema_response_state, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
-        if registration_state == 'deleted':
+        if registration_status == 'deleted':
             return 410
 
         # All requests for SchemaResponses on a withdrawn parent registration return:
         # UNAUTHORIZED for unauthenticated users
         # FORBIDDEN for all others
-        if registration_state == 'withdrawn':
+        if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
             return 403
@@ -281,30 +329,91 @@ class TestSchemaResponseDetailPATCHPermissions:
             return 401
         return 403
 
-    @pytest.mark.parametrize('registration_state', ['public', 'private', 'deleted', 'withdrawn'])
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
     @pytest.mark.parametrize('schema_response_state', ApprovalStates)
-    @pytest.mark.parametrize('moderation_workflow', [Workflows.PRE_MODERATION.value, None])
-    @pytest.mark.parametrize('role', USER_ROLES)
-    def test_schema_response_detail_patch_status_code(
-            self, app, payload, registration_state, schema_response_state, moderation_workflow, role):
-        registration, schema_response, provider = configure_permissions_test_preconditions(
-            registration_state=registration_state,
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin', 'non-contributor', 'unauthenticated'])
+    def test_status_code__as_user(self, app, registration_status, schema_response_state, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
             schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow
+            role=role
         )
-        auth = configure_permissions_test_auth(
-            registration=registration, provider=provider, role=role
-        )
-        expected_code = self.get_status_code_for_preconditions_and_role(
-            registration_state=registration_state,
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status=registration_status,
             schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow,
+            moderator_workflow=provider.reviews_workflow,
             role=role
         )
 
         resp = app.patch_json_api(
             url_for_schema_response(schema_response),
-            payload,
+            self.PAYLOAD,
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
+    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
+    @pytest.mark.parametrize('moderator_workflow', [Workflows.PRE_MODERATION.value, None])
+    def test_status_code__as_moderator(
+            self, app, registration_status, schema_response_state, moderator_workflow):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            self.PAYLOAD,
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('role', USER_ROLES)
+    def test_status_code__deleted_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='deleted', role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='deleted',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
+        )
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            self.PAYLOAD,
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('role', USER_ROLES)
+    def test_status_code__withdrawn_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='withdrawn', role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='withdrawn',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
+        )
+
+        resp = app.patch_json_api(
+            url_for_schema_response(schema_response),
+            self.PAYLOAD,
             auth=auth,
             expect_errors=True,
         )
@@ -431,15 +540,15 @@ class TestSchemaResponseDetailDELETEPermissions:
     '''
 
     def get_status_code_for_preconditions_and_role(
-            self, registration_state, schema_response_state, moderation_workflow, role):
+            self, registration_status, schema_response_state, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
-        if registration_state == 'deleted':
+        if registration_status == 'deleted':
             return 410
 
         # All requests for SchemaResponses on a withdrawn parent registration return:
         # FORBIDDEN for authenticated users,
         # UNAUTHORIZED for unauthenticated users
-        if registration_state == 'withdrawn':
+        if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
             return 403
@@ -458,24 +567,82 @@ class TestSchemaResponseDetailDELETEPermissions:
             return 401
         return 403
 
-    @pytest.mark.parametrize('registration_state', ['public', 'private', 'deleted', 'withdrawn'])
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
     @pytest.mark.parametrize('schema_response_state', ApprovalStates)
-    @pytest.mark.parametrize('moderation_workflow', [Workflows.PRE_MODERATION.value, None])
+    @pytest.mark.parametrize('role', ['read', 'write', 'admin', 'non-contributor', 'unauthenticated'])
+    def test_status_code__as_user(self, app, registration_status, schema_response_state, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
+        )
+
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
+    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
+    @pytest.mark.parametrize('moderator_workflow', [Workflows.PRE_MODERATION.value, None])
+    def test_status_code__as_moderator(
+            self, app, registration_status, schema_response_state, moderator_workflow):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status=registration_status,
+            schema_response_state=schema_response_state,
+            moderator_workflow=moderator_workflow,
+            role='moderator'
+        )
+
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_schema_response_detail_delete_status_code(
-            self, app, registration_state, schema_response_state, moderation_workflow, role):
-        registration, schema_response, provider = configure_permissions_test_preconditions(
-            registration_state=registration_state,
-            schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow
+    def test_status_code__deleted_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='deleted', role=role
         )
-        auth = configure_permissions_test_auth(
-            registration=registration, provider=provider, role=role
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='deleted',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
+            role=role
         )
-        expected_code = self.get_status_code_for_preconditions_and_role(
-            registration_state=registration_state,
-            schema_response_state=schema_response_state,
-            moderation_workflow=moderation_workflow,
+
+        resp = app.delete_json_api(
+            url_for_schema_response(schema_response),
+            auth=auth,
+            expect_errors=True,
+        )
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('role', USER_ROLES)
+    def test_status_code__withdrawn_parent(self, app, role):
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            registration_status='withdrawn', role=role
+        )
+        expected_code = self.get_status_code_for_preconditions(
+            registration_status='withdrawn',
+            schema_response_state=schema_response.state,
+            moderator_workflow=provider.reviews_workflow,
             role=role
         )
 
@@ -518,13 +685,8 @@ class TestSchemaResponseListUnsupportedMethods:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_cannot_post(self, app, role):
         # Most permissive preconditions
-        registration, schema_response, provider = configure_permissions_test_preconditions(
-            registration_state='public',
-            schema_response_state=ApprovalStates.APPROVED,
-            moderation_workflow=Workflows.PRE_MODERATION.value
-        )
-        auth = configure_permissions_test_auth(
-            registration, provider, role
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            role=role
         )
 
         resp = app.post_json_api(
@@ -537,13 +699,8 @@ class TestSchemaResponseListUnsupportedMethods:
     @pytest.mark.parametrize('role', USER_ROLES)
     def test_cannot_put(self, app, role):
         # Most permissive preconditions
-        registration, schema_response, provider = configure_permissions_test_preconditions(
-            registration_state='public',
-            schema_response_state=ApprovalStates.APPROVED,
-            moderation_workflow=Workflows.PRE_MODERATION.value
-        )
-        auth = configure_permissions_test_auth(
-            registration, provider, role
+        registration, schema_response, provider, auth = configure_permissions_test_preconditions(
+            role=role
         )
 
         resp = app.put_json_api(
