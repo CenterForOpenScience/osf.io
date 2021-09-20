@@ -4,9 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 
 from framework.celery_tasks import app as celery_app
-from website.app import setup_django
-setup_django()
-
 from framework import sentry
 from osf.models import OSFUser, RegistrationProvider, RegistrationBulkUploadJob, \
                        RegistrationBulkUploadRow, RegistrationSchema
@@ -17,7 +14,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-@celery_app.task(name='scripts.prepare_for_registration_bulk_creation')
+@celery_app.task()
 def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_id, parsing_output, dry_run=False):
 
     logger.info('Preparing OSF DB for registration bulk creation ...')

@@ -510,7 +510,8 @@ class CeleryConfig:
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
-        'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.archive_registrations_on_IA',
+        'api.providers.tasks'
     )
 
     # Modules that need metrics and release requirements

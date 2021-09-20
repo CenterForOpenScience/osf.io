@@ -1,6 +1,6 @@
 from framework.celery_tasks.handlers import enqueue_task
 import hashlib
-from scripts.prepare_for_registration_bulk_creation import prepare_for_registration_bulk_creation
+from api.providers.tasks import prepare_for_registration_bulk_creation
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
 from guardian.shortcuts import get_objects_for_user
