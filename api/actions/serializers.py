@@ -37,7 +37,6 @@ from osf.utils.workflows import (
     SchemaResponseTriggers,
 )
 from osf.utils import permissions
-from api.schema_responses.schemas import create_schema_response_action_payload
 from django.core.exceptions import ValidationError
 
 class ReviewableCountsRelationshipField(RelationshipField):
@@ -327,9 +326,6 @@ class RegistrationActionSerializer(BaseActionSerializer):
 
 
 class SchemaResponseActionSerializer(BaseActionSerializer):
-
-    create_payload_schema = create_schema_response_action_payload
-
     class Meta:
         type_ = 'schema-response-actions'
 
@@ -353,7 +349,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         comment = validated_data.pop('comment', '')
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
-                required_approvers = target.parent.get_admin_contributors_recursive(unique_users=True)
+                required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
                 target.submit(user=user, comment=comment, required_approvers=required_approvers)
             elif trigger == SchemaResponseTriggers.APPROVE.db_name:
                 target.approve(user=user, comment=comment)

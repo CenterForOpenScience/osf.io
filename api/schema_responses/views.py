@@ -16,9 +16,9 @@ from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
 from api.actions.serializers import SchemaResponseActionSerializer
-from osf.models import SchemaResponse, Registration
+from osf.models import SchemaResponse, SchemaResponseAction, Registration
 from api.base.filters import ListFilterMixin
-from api.schema_responses.schemas import create_schema_response_payload, create_schema_response_action_payload
+from api.schema_responses.schemas import create_schema_response_payload
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.utils import get_object_or_error
 
@@ -96,32 +96,13 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     required_write_scopes = [CoreScopes.WRITE_SCHEMA_RESPONSES]
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
-    create_payload_schema = create_schema_response_action_payload
 
     view_category = 'schema_responses'
     view_name = 'schema-response-action-list'
     serializer_class = SchemaResponseActionSerializer
 
-    def get_object(self):
-        return get_object_or_error(
-            SchemaResponse,
-            query_or_pk=self.kwargs['schema_response_action_id'],
-            request=self.request,
-        )
-
     def get_queryset(self):
-        return self.get_queryset_from_request()
-
-    def get_default_queryset(self):
-        return self.get_object().actions.all()
-
-    def get_parser_context(self, http_request):
-        """
-        Tells parser what json schema we are checking againest.
-        """
-        res = super().get_parser_context(http_request)
-        res['json_schema'] = self.create_payload_schema
-        return res
+        return SchemaResponseAction.objects.all()  # TODO: What to do here?
 
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -141,7 +122,7 @@ class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     def get_object(self):
         return get_object_or_error(
-            SchemaResponse,
+            SchemaResponseAction,
             query_or_pk=self.kwargs['schema_response_action_id'],
             request=self.request,
         )

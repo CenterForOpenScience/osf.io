@@ -39,6 +39,9 @@ class TestSchemaResponseActionList:
     def schema_response_action(self, schema_response):
         return SchemaResponseActionFactory(
             target=schema_response,
+            trigger=SchemaResponseTriggers.SUBMIT.db_name,
+            from_state=ApprovalStates.IN_PROGRESS.db_name,
+            to_state=ApprovalStates.APPROVED.db_name
         )
 
     def make_payload(self, schema_response, trigger):
@@ -108,7 +111,7 @@ class TestSchemaResponseActionList:
         unapproved_schema_response.refresh_from_db()
         assert unapproved_schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
 
-    def test_schema_response_action_list(self, app, schema_response_action, schema_response, user, url):
+    def test_schema_response_action_list(self, app, schema_response_action, user, url):
         resp = app.get(url, auth=user.auth)
         assert resp.status_code == 200
         data = resp.json['data']

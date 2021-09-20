@@ -7,6 +7,8 @@ from osf_tests.factories import (
     SchemaResponseActionFactory
 )
 
+from osf.utils.workflows import SchemaResponseTriggers, ApprovalStates
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -31,6 +33,9 @@ class TestSchemaResponseActionDetail:
     def schema_response_action(self, schema_response):
         return SchemaResponseActionFactory(
             target=schema_response,
+            trigger=SchemaResponseTriggers.SUBMIT.db_name,
+            from_state=ApprovalStates.IN_PROGRESS.db_name,
+            to_state=ApprovalStates.APPROVED.db_name
         )
 
     @pytest.fixture()
@@ -52,7 +57,7 @@ class TestSchemaResponseActionDetail:
             ('admin', 200, ),
         ]
     )
-    def test_schema_response_action_auth_get(self, app, registration, permission, user, expected_response, url):
+    def test_schema_response_action_auth_get(self, app, registration, schema_response_action, permission, user, expected_response, url):
         if permission:
             registration.add_contributor(user, permission)
         resp = app.get(url, auth=user.auth, expect_errors=True)
@@ -67,7 +72,7 @@ class TestSchemaResponseActionDetail:
             ('admin', 405, ),
         ]
     )
-    def test_schema_response_action_auth_post(self, app, registration, permission, user, expected_response, url):
+    def test_schema_response_action_auth_post(self, app, registration, schema_response_action, permission, user, expected_response, url):
         if permission:
             registration.add_contributor(user, permission)
         resp = app.post_json_api(url, auth=user.auth, expect_errors=True)
@@ -82,7 +87,7 @@ class TestSchemaResponseActionDetail:
             ('admin', 405, ),
         ]
     )
-    def test_schema_response_action_auth_patch(self, app, registration, permission, user, expected_response, url):
+    def test_schema_response_action_auth_patch(self, app, registration, schema_response_action, permission, user, expected_response, url):
         if permission:
             registration.add_contributor(user, permission)
         resp = app.patch_json_api(url, auth=user.auth, expect_errors=True)
@@ -97,7 +102,7 @@ class TestSchemaResponseActionDetail:
             ('admin', 405, ),
         ]
     )
-    def test_schema_response_action_delete(self, app, registration, permission, user, expected_response, url):
+    def test_schema_response_action_delete(self, app, registration, schema_response_action, permission, user, expected_response, url):
         if permission:
             registration.add_contributor(user, permission)
         resp = app.delete_json_api(url, auth=user.auth, expect_errors=True)
