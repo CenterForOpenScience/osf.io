@@ -149,7 +149,7 @@ class TestSchemaResponseDetailGETPermissions:
             schema_response_state=schema_response_state,
             role=role
         )
-        expected_code = self.get_status_code_for_preconditions_and_role(
+        expected_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             schema_response_state=schema_response_state,
             moderator_workflow=provider.reviews_workflow,
@@ -286,7 +286,7 @@ class TestSchemaResponseDetailGETBehavior:
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailPATCHPermissions:
-    '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.'''
+    '''Checks access for PATCH request to the SchemaResponseDetail Endpoint.'''
 
     PAYLOAD = {
         'data': {
@@ -422,6 +422,16 @@ class TestSchemaResponseDetailPATCHPermissions:
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailPATCHBehavior:
+    '''Confirms behavior of PATCH requests to the SchemaResponseDetail Endpoint.
+
+    Successful PATCH requests should update the specified SchemaResponse in the database
+    to match the provided "revision_responses" and/or "revision_justification".
+
+    Additionally, changes to "revision_responses" relative to any "previous_response" on
+    the SchemaResponse should appear in the list of "updated_response_keys".
+
+    Requests that pass an unsupported key in "revision_responses" should return a 400 error.
+    '''
 
     @pytest.fixture()
     def payload(self):
@@ -446,64 +456,50 @@ class TestSchemaResponseDetailPATCHBehavior:
                 'attributes': {
                     'revision_responses': {
                         'oops': {'value': 'test'},
-                        'q2': {'value': 'test2'},
+                        'q2': {'value': 'updated value 2'},
                     }
                 }
             }
         }
 
     @pytest.fixture()
-    def in_progress_schema_response(self, schema_response):
+    def schema_response(self, schema_response):
         return SchemaResponse.create_from_previous_response(
             previous_response=schema_response,
             initiator=schema_response.initiator
         )
 
-    def test_patch_sets_responses(self, app, in_progress_schema_response, payload, admin_user):
-        assert in_progress_schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
+    def test_patch_sets_responses(self, app, schema_response, payload, admin_user):
+        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
 
-        app.patch_json_api(
-            url_for_schema_response(in_progress_schema_response),
-            payload,
-            auth=admin_user.auth
-        )
+        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
 
         expected_responses = dict(INITIAL_SCHEMA_RESPONSES, q1='update value')
-        in_progress_schema_response.refresh_from_db()
-        assert in_progress_schema_response.all_responses == expected_responses
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses == expected_responses
 
-    def test_patch_sets_updated_response_keys(
-            self, app, in_progress_schema_response, payload, admin_user):
-        assert not in_progress_schema_response.updated_response_keys
+    def test_patch_sets_updated_response_keys(self, app, schema_response, payload, admin_user):
+        assert not schema_response.updated_response_keys
 
-        app.patch_json_api(
-            url_for_schema_response(in_progress_schema_response),
-            payload,
-            auth=admin_user.auth
-        )
+        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
 
-        in_progress_schema_response.refresh_from_db()
-        assert in_progress_schema_response.updated_response_keys == {'q1'}
+        schema_response.refresh_from_db()
+        assert schema_response.updated_response_keys == {'q1'}
 
     def test_patch_with_old_answer_removes_updated_response_keys(
-            self, app, in_progress_schema_response, payload, admin_user):
-        in_progress_schema_response.update_responses({'q1': 'update_value'})
-        assert in_progress_schema_response.updated_response_keys == {'q1'}
+            self, app, schema_response, payload, admin_user):
+        schema_response.update_responses({'q1': 'update_value'})
+        assert schema_response.updated_response_keys == {'q1'}
 
         payload['data']['attributes']['revision_responses']['q1'] = INITIAL_SCHEMA_RESPONSES['q1']
-        app.patch_json_api(
-            url_for_schema_response(in_progress_schema_response),
-            payload,
-            auth=admin_user.auth
-        )
+        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
 
-        in_progress_schema_response.refresh_from_db()
-        assert not in_progress_schema_response.updated_response_keys
+        schema_response.refresh_from_db()
+        assert not schema_response.updated_response_keys
 
-    def test_patch_fails_with_invalid_keys(
-            self, app, in_progress_schema_response, invalid_payload, admin_user):
+    def test_patch_fails_with_invalid_keys(self, app, schema_response, invalid_payload, admin_user):
         resp = app.patch_json_api(
-            url_for_schema_response(in_progress_schema_response),
+            url_for_schema_response(schema_response),
             invalid_payload,
             auth=admin_user.auth,
             expect_errors=True
@@ -515,31 +511,31 @@ class TestSchemaResponseDetailPATCHBehavior:
         # Check for the invalid key in the error message
         assert 'oops' in errors[0]['detail']
 
-    def test_patch_updates_revision_response(
-            self, app, in_progress_schema_response, payload, admin_user):
+    def test_patch_with_invalid_keys_fails_atomically(
+            self, app, schema_response, invalid_payload, admin_user):
+        before_responses = schema_response.all_responses
         app.patch_json_api(
-            url_for_schema_response(in_progress_schema_response),
-            payload,
-            auth=admin_user.auth
+            url_for_schema_response(schema_response),
+            invalid_payload,
+            auth=admin_user.auth,
+            expect_errors=True
         )
 
-        in_progress_schema_response.refresh_from_db()
-        assert in_progress_schema_response.revision_justification == 'why not?'
+        schema_response.refresh_from_db()
+        assert schema_response.all_responses == before_responses
+
+    def test_patch_updates_revision_justification(self, app, schema_response, payload, admin_user):
+        app.patch_json_api(url_for_schema_response(schema_response), payload, auth=admin_user.auth)
+
+        schema_response.refresh_from_db()
+        assert schema_response.revision_justification == 'why not?'
 
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailDELETEPermissions:
-    '''Checks the status codes for PATCHing to SchemaResponseDetail under various conditions.
+    '''Checks access for DELETE requests to the SchemaResponseDetail Endpoint.'''
 
-    Only users with ADMIN permissions on the parent resource should be able to
-    DELETE a SchemaResponse, so long as the SchemaResponse is IN_PROGRESS, even if the
-    parent resource is not public.
-
-    DELETEing a SchemaResponse with a parent resource that has been deleted or withdrawn
-    should result in a 410 or 403, respectively.
-    '''
-
-    def get_status_code_for_preconditions_and_role(
+    def get_status_code_for_preconditions(
             self, registration_status, schema_response_state, moderator_workflow, role):
         # All requests for SchemaResponses on a deleted parent Registration return GONE
         if registration_status == 'deleted':
@@ -658,24 +654,20 @@ class TestSchemaResponseDetailDELETEPermissions:
 class TestSchemaResponseDetailDELETEBehavior:
     '''Tests behavior of DELETE requests to the SchemaResponseDetail endpoint.
 
-    DELETE requests should delete the specified SchemaResponse from the database.
+    Successful DELETE requests should delete the specified SchemaResponse from the database.
     '''
 
     @pytest.fixture()
-    def in_progress_schema_response(self, schema_response):
-        return SchemaResponse.create_from_previous_response(
-            previous_response=schema_response,
-            initiator=schema_response.initiator
-        )
+    def schema_response(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        schema_response.save()
+        return schema_response
 
-    def test_schema_response_detail_delete(self, app, in_progress_schema_response, admin_user):
-        app.delete_json_api(
-            url_for_schema_response(in_progress_schema_response),
-            auth=admin_user.auth
-        )
+    def test_schema_response_detail_delete(self, app, schema_response, admin_user):
+        app.delete_json_api(url_for_schema_response(schema_response), auth=admin_user.auth)
 
         with pytest.raises(SchemaResponse.DoesNotExist):  # shows it was really deleted
-            in_progress_schema_response.refresh_from_db()
+            schema_response.refresh_from_db()
 
 
 @pytest.mark.django_db
