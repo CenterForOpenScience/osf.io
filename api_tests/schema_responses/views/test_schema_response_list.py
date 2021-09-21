@@ -172,12 +172,7 @@ class TestSchemaResponseLsitGETBehavior:
 
 @pytest.mark.django_db
 class TestSchemaResponseListPOSTPermissions:
-    '''Checks access for POST requests to the SchemaResponseList Endpoint.
-
-    Only ADMIN users on the parent registration should be able to POST to SchemaResponseList.
-    ADMIN users should be allowed to POST even if the parent registration is private, so
-    long as other preconditions are not violated.
-    '''
+    '''Checks access for POST requests to the SchemaResponseList Endpoint.'''
 
     @pytest.fixture()
     def registration(self, admin_user, provider):

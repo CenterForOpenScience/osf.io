@@ -19,52 +19,21 @@ USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthe
 UNAPPROVED_RESPONSE_STATES = [
     state for state in ApprovalStates if state is not ApprovalStates.APPROVED
 ]
-
-@pytest.fixture()
-def admin_user():
-    return AuthUserFactory()
+DEFAULT_REVIEWS_WORKFLOW = ModerationWorkflows.PRE_MODERATION.value
 
 
-@pytest.fixture()
-def provider():
-    provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
-    provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
-    provider.save()
-    return provider
-
-@pytest.fixture()
-def perms_user():
-    return AuthUserFactory()
-
-
-@pytest.fixture()
-def registration(admin_user, provider):
-    return RegistrationFactory(creator=admin_user, provider=provider)
-
-
-@pytest.fixture()
-def approved_response(registration, admin_user):
-    response = registration.schema_responses.last()
-    response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
-    response.save()
-    return response
-
-
-@pytest.fixture()
-def non_approved_response(approved_response, admin_user):
-    return SchemaResponse.create_from_previous_response(
-        previous_response=approved_response,
-        initiator=admin_user
-    )
+def make_api_url(registration):
+    return f'/v2/registrations/{registration._id}/schema_responses/'
 
 
 def configure_test_preconditions(
-        registration,
         registration_status='public',
-        moderator_workflow=ModerationWorkflows.PRE_MODERATION.value):
-    '''Configure a given Registration and return a user with appropraite auth.'''
-    provider = registration.provider
+        moderator_workflow=DEFAULT_REVIEWS_WORKFLOW,
+        updated_response_state=None,
+        role='admin'):
+    '''Create and Configure a RegistrationProvider, Registration, SchemaResponse, and User.'''
+    provider = RegistrationProviderFactory()
+    update_provider_auth_groups()
     provider.reviews_workflow = moderator_workflow
     provider.save()
 
@@ -73,11 +42,29 @@ def configure_test_preconditions(
         registration.is_public = True
     elif registration_status == 'private':
         registration.is_public = False
+        # set moderation state to a realistic value for a private
+        # registration with an approved response
+        registration.moderation_state = 'embargo'
     elif registration_status == 'withdrawn':
         registration.moderation_state = 'withdrawn'
     elif registration_status == 'deleted':
         registration.deleted = timezone.now()
     registration.save()
+
+    initial_response = registration.schema_responses.last()
+    initial_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+    initial_response.save()
+
+    updated_response = None
+    if updated_response_state is not None:
+        updated_response = SchemaResponse.create_from_previous_response(
+            previous_response=initial_response, initiator=initial_response.initiator
+        )
+        updated_response.approvals_state_machine.set_state(updated_response_state)
+        updated_response.save()
+
+    auth = configure_auth(registration, role)
+    return auth, updated_response, registration, provider
 
 
 def configure_auth(registration, role):
@@ -95,20 +82,10 @@ def configure_auth(registration, role):
 
     return user.auth
 
-@pytest.fixture()
-def url(registration):
-    return f'/v2/registrations/{registration._id}/schema_responses/'
 
 @pytest.mark.django_db
-class TestRegistrationsSchemaResponseListGETPermissions:
-    '''Checks the status code for the GET requests to the RegistrationSchemaResponseList Endpoint.
-
-    All users should be able to GET the SchemaResponseList for public registrations, while only
-    contributors should be able to GET the SchemaResponseList for private registrations.
-
-    Deleted and withdrawn registrations should return 410 and 403, respectively, when
-    trying to GET the SchemaResponseList,
-    '''
+class TestRegistrationSchemaResponseListGETPermissions:
+    '''Checks access for GET requests to the RegistrationSchemaResponseList Endpoint.'''
 
     def _get_status_code_for_preconditions(self, registration_status, moderator_workflow, role):
         # Deleted registrations always return GONE
@@ -140,12 +117,11 @@ class TestRegistrationsSchemaResponseListGETPermissions:
     @pytest.mark.parametrize('registration_status', ['public', 'private'])
     @pytest.mark.parametrize('moderator_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_status_code(
-            self, app, url, registration, registration_status, moderator_workflow, role):
-        configure_test_preconditions(
-            registration=registration,
+    def test_status_code(self, app, registration_status, moderator_workflow, role):
+        auth, _, registration, _ = configure_test_preconditions(
             registration_status=registration_status,
-            moderator_workflow=moderator_workflow
+            moderator_workflow=moderator_workflow,
+            role=role
         )
         expected_code = self._get_status_code_for_preconditions(
             registration_status=registration_status,
@@ -153,42 +129,37 @@ class TestRegistrationsSchemaResponseListGETPermissions:
             role=role
         )
 
-        auth = configure_auth(registration, role)
-        resp = app.get(url, auth=auth, expect_errors=True)
+        resp = app.get(make_api_url(registration), auth=auth, expect_errors=True)
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_status_code__deleted_registration(self, app, url, registration, role):
-        configure_test_preconditions(
-            registration=registration,
+    def test_status_code__deleted_registration(self, app, role):
+        auth, _, registration, _ = configure_test_preconditions(
             registration_status='deleted',
-            moderator_workflow=ModerationWorkflows.PRE_MODERATION.value
+            role=role
         )
         expected_code = self._get_status_code_for_preconditions(
             registration_status='deleted',
-            moderator_workflow=ModerationWorkflows.PRE_MODERATION.value,
+            moderator_workflow=DEFAULT_REVIEWS_WORKFLOW,
             role=role
         )
 
-        auth = configure_auth(registration, role)
-        resp = app.get(url, auth=auth, expect_errors=True)
+        resp = app.get(make_api_url(registration), auth=auth, expect_errors=True)
         assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_status_code__withdrawn_registration(self, app, url, registration, role):
-        configure_test_preconditions(
-            registration=registration,
+    def test_status_code__withdrawn_registration(self, app, role):
+        auth, _, registration, _ = configure_test_preconditions(
             registration_status='withdrawn',
-            moderator_workflow=ModerationWorkflows.PRE_MODERATION.value
+            role=role
         )
         expected_code = self._get_status_code_for_preconditions(
             registration_status='withdrawn',
-            moderator_workflow=ModerationWorkflows.PRE_MODERATION.value,
+            moderator_workflow=DEFAULT_REVIEWS_WORKFLOW,
             role=role
         )
 
-        auth = configure_auth(registration, role)
-        resp = app.get(url, auth=auth, expect_errors=True)
+        resp = app.get(make_api_url(registration), auth=auth, expect_errors=True)
         assert resp.status_code == expected_code
 
 
@@ -197,8 +168,10 @@ class TestRegistrationSchemaResponseListGETBehavior:
     '''Test the results from GET requests against the RegistrationSchemaResponse endpoint.
 
     Contributors on the base Registration should be able to see all SchemaResponses
-    on a registration, whether approved or not, whether the Registration is public
-    or private.
+    on a registration, whether approved or not, for both public and private Registrations.
+
+    Moderators should be able to see both PENDING_MODERATION and APPROVED SchemaResponses
+    on Registrations that are part of the moderated provider.
 
     Non-contributors should only see APPROVED SchemaResponses on Public registrations
     (permissions tests verify 403/401 response for non-contributors on a private registration).
@@ -206,60 +179,55 @@ class TestRegistrationSchemaResponseListGETBehavior:
 
     @pytest.mark.parametrize('role', USER_ROLES)
     @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
-    def test_GET__public_registration_with_unapproved_response(
-            self, app, url, registration, non_approved_response, role, response_state):
-        registration.is_public = True
-        registration.save()
+    def test_GET__public_registration_with_unapproved_response(self, app, role, response_state):
+        auth, updated_response, registration, _ = configure_test_preconditions(
+            registration_status='public',
+            moderator_workflow=None,
+            updated_response_state=response_state,
+            role=role
+        )
+        resp = app.get(make_api_url(registration), auth=auth)
 
-        non_approved_response.approvals_state_machine.set_state(response_state)
-        non_approved_response.save()
-
-        auth = configure_auth(registration, role)
-        resp = app.get(url, auth=auth)
-
-        expected_ids = registration.schema_responses.last()._id
+        # Always expect the APPROVED response
+        expected_ids = {updated_response.previous_response._id}
         if role in ['read', 'write', 'admin']:
-            expected_ids.add(non_approved_response._id)
+            expected_ids.add(updated_response._id)
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 
+    # Only test contributors here.
+    # Moderators tested elsehwere, and permissions tests confirm that unauthenticated users
+    # and non-contributors cannot GET SchemaResponses for private registrations
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
-    @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)
-    def test_GET__private_registration_with_unapproved_response(
-            self, app, url, registration, non_approved_response, role, response_state):
-        registration.is_public = True
-        registration.save()
-
-        non_approved_response.approvals_state_machine.set_state(response_state)
-        non_approved_response.save()
-
-        auth = configure_auth(registration, role)
-        resp = app.get(url, auth=auth)
+    @pytest.mark.parametrize('response_state', ApprovalStates)
+    def test_GET__private_registration_responses_as_contributor(self, app, role, response_state):
+        auth, updated_response, registration, _ = configure_test_preconditions(
+            registration_status='private',
+            updated_response_state=response_state,
+            role=role
+        )
+        resp = app.get(make_api_url(registration), auth=auth)
 
         expected_ids = set(registration.schema_responses.values_list('_id', flat=True))
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 
-    @pytest.mark.parametrize('is_public', [True, False])
+    @pytest.mark.parametrize('registration_status', ['public', 'private'])
     @pytest.mark.parametrize('response_state', ApprovalStates)
-    def test_GET__moderated_registration_with_unapproved_response(
-            self, app, url, registration, non_approved_response, is_public, response_state):
-        registration.is_public = True
-        registration.save()
+    def test_GET__moderated_registration_responses_as_moderator(
+            self, app, registration_status, response_state):
+        auth, updated_response, registration, _ = configure_test_preconditions(
+            registration_status=registration_status,
+            moderator_workflow=ModerationWorkflows.PRE_MODERATION.value,
+            updated_response_state=response_state,
+            role='moderator'
+        )
+        resp = app.get(make_api_url(registration), auth=auth)
 
-        provider = registration.provider
-        provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
-        provider.save()
-
-        non_approved_response.approvals_state_machine.set_state(response_state)
-        non_approved_response.save()
-
-        auth = configure_auth(registration, 'moderator')
-        resp = app.get(url, auth=auth)
-
-        expected_ids = {registration.schema_responses.last()._id}
+        # Always expect the APPROVED response
+        expected_ids = {updated_response.previous_response._id}
         if response_state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]:
-            expected_ids.add(non_approved_response._id)
+            expected_ids.add(updated_response._id)
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
 
@@ -268,30 +236,34 @@ class TestRegistrationSchemaResponseListGETBehavior:
 class TestRegistrationSchemaResponseListUnsupportedMethods:
     '''Make sure that RegistrationSchemaResponseList does not support POST, PUT, PATCH or DELETE.'''
 
+    @pytest.fixture
+    def registration(self):
+        return RegistrationFactory()
+
+    @pytest.fixture()
+    def url(registration):
+        return f'/v2/registrations/{registration._id}/schema_responses/'
+
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_POST(
-            self, app, url, registration, role):
+    def test_cannot_POST(self, app, url, registration, role):
         auth = configure_auth(registration, role)
         resp = app.post_json_api(url, auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_PATCH(
-            self, app, url, registration, role):
+    def test_cannot_PATCH(self, app, url, registration, role):
         auth = configure_auth(registration, role)
         resp = app.patch_json_api(url, auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_PUT(
-            self, app, url, registration, role):
+    def test_cannot_PUT(self, app, url, registration, role):
         auth = configure_auth(registration, role)
         resp = app.put_json_api(url, auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    def test_cannot_DELETE(
-            self, app, url, registration, role):
+    def test_cannot_DELETE(self, app, url, registration, role):
         auth = configure_auth(registration, role)
         resp = app.delete_json_api(url, auth=auth, expect_errors=True)
         assert resp.status_code == 405

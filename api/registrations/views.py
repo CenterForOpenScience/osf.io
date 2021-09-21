@@ -890,22 +890,31 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         return self.get_node()
 
     def get_default_queryset(self):
+        '''Return all SchemaResponses on the Registration that should be visible to the user.
+
+        For contributors to the Registration, this should be all of its SchemaResponses.
+        For moderators, this should be all PENDING_MODERATION or APPROVED SchemaResponses
+        For all others, this should be only the APPROVED responses.
+        '''
         user = self.request.user
         registration = self.get_node()
 
         all_responses = registration.schema_responses.annotate(
             is_pending_current_user_approval=self._make_is_pending_current_user_approval_subquery(),
         )
+
         is_contributor = registration.has_permission(user, 'read') if user else False
         if is_contributor:
             return all_responses
 
         is_moderator = (
-            user.has_perm('view_submissions') if (user and registration.is_moderated) else False
+            user and
+            registration.is_moderated and
+            user.has_perm('view_submissions', registration.provider)
         )
         if is_moderator:
             moderator_visible_states = [
-                ApprovalStates.APPROVED.db_name, ApprovalStates.PENDING_MODERATION.db_name,
+                ApprovalStates.PENDING_MODERATION.db_name, ApprovalStates.APPROVED.db_name,
             ]
             return all_responses.filter(reviews_state__in=moderator_visible_states)
 

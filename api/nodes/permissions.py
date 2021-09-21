@@ -159,15 +159,18 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
 
-    Any user can GET an APPROVED schema response on a public parent resource.
-    Otherwise, the contributor must have "read" permissions on the parent resource.
+    To GET a SchemaResponse, one of three conditions must be met:
+      *  The user must have "read" permissions on the parent resource
+      *  The user must be a moderator on the parent resource's Provider and the
+         SchemaResponse must be in an APPROVED or PENDING_MODERATION state
+      *  The SchemaResponse must be APPROVED and the parent resource must be public
+
     To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
+
     To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
-    To GET a SchemaResponse, one of three conditions must be true:
-      * The prarent resource is public AND the SchemaResponse is APPROVED
-      * The SchemaResponse is PENDING_MODERATION and the user is a moderator on the
-        parent resource's provider
-      * The user has "read" permissions on the parent resource
+
+    Note: SchemaResponses on deleted parent resources should appear to be deleted, while
+    access should be denied to SchemaResponses on withdrawn parent resources.
     '''
     acceptable_models = (SchemaResponse, )
 
@@ -210,8 +213,7 @@ class RegistrationSchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for the registration relationship view for schema responses.
 
-    This endpoint only allows the user to view and filter the APPROVED schema responses for
-    that Registration if the Registration is public or the user has "read" permission.
+    To GET a registration's SchemaResponses, the registration must be visible to the user.
     '''
     acceptable_models = (Registration, )
 
@@ -230,7 +232,11 @@ class RegistrationSchemaResponseListPermission(permissions.BasePermission):
 class SchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_responses` list endpoints.
-    To create a schema response a user must be an admin contributor on that Registration.
+
+    All users can GET the list of schema responses
+
+    To POST a SchemaResponse, the user must have "admin" permissions on the
+    specified parent resource.
     '''
     acceptable_models = (Registration, )
 

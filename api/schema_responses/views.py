@@ -20,7 +20,8 @@ from osf.models import Contributor, SchemaResponse, Registration
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
 
-# Assigns None for deleted and withdrawn Registrations
+# Excluding deleted and withdrawn registrations gives a NULL value for their SchemaResponses
+# This lets us exclude those SchemaResponses for all results
 _is_public_registration_subquery = Subquery(
     Registration.objects.filter(
         id=OuterRef('object_id'), deleted__isnull=True,
@@ -62,17 +63,36 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
     view_name = 'schema-responses-list'
     create_payload_schema = create_schema_response_payload
 
+    PARENT_IS_PUBLIC_SUBQUERY = Subquery(
+        Registration.objects.filter(
+            id=OuterRef('object_id'), deleted__isnull=True,
+        ).exclude(
+            moderation_state=RegistrationModerationStates.WITHDRAWN.db_name,
+        ).values('is_public')[:1],
+        output_field=BooleanField(),
+    )
+
+    def _make_user_is_contributor_subquery(self):
+        '''Construct a subquery to determine if user is a contributor to the parent Registration'''
+        user = self.request.user
+        return Exists(Contributor.objects.filter(user__id=user.id, node__id=OuterRef('object_id')))
+
     def get_queryset(self):
+        '''Retrieve the list of SchemaResponses visible to the user.
+
+        This should be the union of all APPROVED SchemaResponses on Public registrations
+        and all SchemaResponses for registrations on which the caller is a contributor
+        (excluding any SchemaResponses on WITHDRAWN or deleted registrations).
+        '''
         user = self.request.user
         return SchemaResponse.objects.annotate(
-            is_contributor=_is_contributor_subquery_for_user(user),
-            is_public=_is_public_registration_subquery,
+            user_is_contributor=self._make_user_is_contributor_subquery(),
+            parent_is_public=self.PARENT_IS_PUBLIC_SUBQUERY,
+        ).exclude(
+            Q(parent_is_public__isnull=True),  # Withdrawn or deleted parent, always exclude
         ).filter(
-            # Only surface responses where the user is a contributor
-            # and the registration is not withdrawn or deleted
-            # or where the registration is public and the response is APPROVED
-            (Q(is_contributor=True) & Q(is_public__isnull=False)) |
-            (Q(is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
+            Q(user_is_contributor=True) |
+            (Q(parent_is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
         ).annotate(
             is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
         )

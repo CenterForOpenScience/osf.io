@@ -426,10 +426,6 @@ class RegistrationSerializer(NodeSerializer):
         return obj.files_count or 0
 
     def get_revision_state(self, obj):
-        # State of initial response is tracked with moderation_state
-        if obj.schema_responses.count() == 1:
-            return None
-
         return obj.schema_response.first().reviews_state
 
     def anonymize_registered_meta(self, obj):
