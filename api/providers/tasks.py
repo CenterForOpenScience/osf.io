@@ -83,6 +83,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         logger.info('Bulk creating [{}] registration bulk upload rows ...'.format(len(bulk_upload_rows)))
         created_objects = RegistrationBulkUploadRow.objects.bulk_create(bulk_upload_rows)
     except (ValueError, IntegrityError) as e:
+        upload.delete()
         message = 'Bulk insertion failed: [error={}, cause={}]'.format(type(e), e.__cause__)
         return handle_error(initiator, inform_product=True, error_message=message)
     logger.info('[{}] rows successfully inserted.'.format(len(created_objects)))
