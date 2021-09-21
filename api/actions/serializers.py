@@ -337,7 +337,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         target_class=SchemaResponse,
         read_only=False,
         required=True,
-        related_view='schema_responses:schema-response-action-list',
+        related_view='schema_responses:schema-responses-detail',
         related_view_kwargs={'schema_response_id': '<target._id>'},
         filter_key='target__guids___id',
     )
