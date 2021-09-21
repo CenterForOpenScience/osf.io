@@ -90,39 +90,36 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             query_or_pk=registration_id,
             request=self.context['request'],
         )
-        if registration.moderation_state not in ['accepted', 'embargo']:
-            raise ValidationError(
-                'Cannot create new SchemaResponse for unapproved Parent resource',
-            )
 
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        try:
-            return SchemaResponse.create_initial_response(
-                parent=registration, initiator=initiator, justification=justification,
-            )
-        except ValueError:  # Value error when no schema available
-            raise ValidationError(f'Resource {registration._id} must specify a schema')
-        except PreviousSchemaResponseError:
-            # SchemaResponse already exists on parent, try creating from previous response
-            pass
+        latest_response = registration.schema_responses.first()
+        if not latest_response:
+            try:
+                return SchemaResponse.create_initial_response(
+                    parent=registration, initiator=initiator, justification=justification,
+                )
+            # Value Error when no schema provided
+            except ValueError:
+                raise ValidationError(f'Resource {registration._id} must specify a schema')
 
-        previous_response = registration.schema_responses.order_by('-created').first()
         try:
             return SchemaResponse.create_from_previous_response(
                 initiator=initiator,
-                previous_response=previous_response,
+                previous_response=latest_response,
                 justification=justification,
             )
         except PreviousSchemaResponseError as exc:
-            raise Conflict(str(exc))
+            raise Conflict(detail=str(exc))
 
     def update(self, schema_response, validated_data):
         if schema_response.state is not ApprovalStates.IN_PROGRESS:
             raise Conflict(
-                detail=f'Schema Response is in `{schema_response.reviews_state}` state must be'
-                       f' {ApprovalStates.IN_PROGRESS.db_name}',
+                detail=(
+                    f'SchemaResponse has state `{schema_response.reviews_state}` '
+                    f'state must be {ApprovalStates.IN_PROGRESS.db_name}',
+                ),
             )
 
         revision_responses = validated_data.get('revision_responses')
@@ -138,7 +135,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
                 raise ValidationError(detail=str(exc))
             except SchemaResponseStateError as exc:
                 # should have been handled above, but catch again just in case
-                raise Conflict(str(exc))
+                raise Conflict(detail=str(exc))
 
         schema_response.save()
         return schema_response

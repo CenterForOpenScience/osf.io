@@ -241,7 +241,7 @@ class TestRegistrationSchemaResponseListUnsupportedMethods:
         return RegistrationFactory()
 
     @pytest.fixture()
-    def url(registration):
+    def url(self, registration):
         return f'/v2/registrations/{registration._id}/schema_responses/'
 
     @pytest.mark.parametrize('role', USER_ROLES)

@@ -20,24 +20,7 @@ from osf.models import Contributor, SchemaResponse, Registration
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
 
-# Excluding deleted and withdrawn registrations gives a NULL value for their SchemaResponses
-# This lets us exclude those SchemaResponses for all results
-_is_public_registration_subquery = Subquery(
-    Registration.objects.filter(
-        id=OuterRef('object_id'), deleted__isnull=True,
-    ).exclude(
-        moderation_state=RegistrationModerationStates.WITHDRAWN.db_name,
-    ).values('is_public')[:1],
-    output_field=BooleanField(),
-)
-
-
-def _is_contributor_subquery_for_user(user):
-    '''Construct a subquery to determine if user is a contributor to the parent Registration'''
-    return Exists(Contributor.objects.filter(user__id=user.id, node__id=OuterRef('object_id')))
-
-
-def _pending_approval_subquery_for_user(user):
+def _make_is_pending_current_user_approval_subquery(user):
     '''Construct a subquery to see if a given user is a pending_approver for a SchemaResponse.'''
     return Exists(
         SchemaResponse.pending_approvers.through.objects.filter(
@@ -63,6 +46,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
     view_name = 'schema-responses-list'
     create_payload_schema = create_schema_response_payload
 
+    # NOTE: Conveniently assigns None for withdrawn/deleted parents
     PARENT_IS_PUBLIC_SUBQUERY = Subquery(
         Registration.objects.filter(
             id=OuterRef('object_id'), deleted__isnull=True,
@@ -94,7 +78,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
             Q(user_is_contributor=True) |
             (Q(parent_is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
         ).annotate(
-            is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
+            is_pending_current_user_approval=_make_is_pending_current_user_approval_subquery(user),
         )
 
     def get_parser_context(self, http_request):
@@ -133,7 +117,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
         annotated_schema_response = SchemaResponse.objects.filter(
             _id=self.kwargs['schema_response_id'],
         ).annotate(
-            is_pending_current_user_approval=_pending_approval_subquery_for_user(user),
+            is_pending_current_user_approval=_make_is_pending_current_user_approval_subquery(user),
         )
 
         try:

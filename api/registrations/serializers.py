@@ -426,7 +426,10 @@ class RegistrationSerializer(NodeSerializer):
         return obj.files_count or 0
 
     def get_revision_state(self, obj):
-        return obj.schema_response.first().reviews_state
+        latest_revision = obj.schema_responses.first()
+        if latest_revision:
+            return latest_revision.reviews_state
+        return None
 
     def anonymize_registered_meta(self, obj):
         """
