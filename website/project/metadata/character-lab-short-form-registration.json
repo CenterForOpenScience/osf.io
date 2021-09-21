@@ -10,13 +10,15 @@
 		"block_type": "question-label",
 		"display_text": "Study description"
 	}, {
-		"block_type": "long-text-input"
+		"block_type": "long-text-input",
+		"registration_response_key": "Q1"
 	}, {
 		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. To learn more, go to impactgenome.org",
 		"block_type": "question-label",
 		"display_text": "Expected outcomes"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q2"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Access to Trustworthy Personal/Professional Networks"
@@ -90,12 +92,14 @@
 		"block_type": "question-label",
 		"display_text": "Primary outcomes"
 	}, {
-		"block_type": "long-text-input"
+		"block_type": "long-text-input",
+		"registration_response_key": "Q3"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Character strengths"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q4"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Creativity"
@@ -169,7 +173,8 @@
 		"block_type": "question-label",
 		"display_text": "Number of conditions"
 	}, {
-		"block_type": "single-select-input"
+		"block_type": "single-select-input",
+		"registration_response_key": "Q5"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "1"
@@ -186,7 +191,8 @@
 		"block_type": "question-label",
 		"display_text": "Total number of students"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q6"
 	}, {
 		"block_type": "page-heading",
 		"display_text": "Sample"
@@ -194,7 +200,8 @@
 		"block_type": "question-label",
 		"display_text": "Study Grade Assignment"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q7"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "6th grade"
@@ -220,7 +227,8 @@
 		"block_type": "question-label",
 		"display_text": "School Stratum Assignment"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q8"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US."
@@ -243,7 +251,8 @@
 		"block_type": "question-label",
 		"display_text": "Is this a pilot?"
 	}, {
-		"block_type": "single-input-option"
+		"block_type": "single-select-input",
+		"registration_response_key": "Q9"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
@@ -254,7 +263,8 @@
 		"block_type": "question-label",
 		"display_text": "Study design"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q10"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Correlational, Cross-Sectional"
@@ -283,17 +293,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q11"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q12"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q13"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -325,17 +338,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q14"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q15"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q16"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -367,17 +383,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q17"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q18"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q19"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -409,17 +428,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q20"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q21"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q22"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -451,17 +473,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q23"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input"
+		"block_type": "short-text-input",
+		"registration_response_key": "Q24"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input"
+		"block_type": "multi-select-input",
+		"registration_response_key": "Q25"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
