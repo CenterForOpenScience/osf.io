@@ -4,10 +4,14 @@ from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
     SchemaResponseFactory,
-    SchemaResponseActionFactory
+    SchemaResponseActionFactory,
+    RegistrationProviderFactory
 )
 
+from api.providers.workflows import Workflows
+from osf.migrations import update_provider_auth_groups
 from osf.utils.workflows import SchemaResponseTriggers, ApprovalStates
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_quickfiles_creation
@@ -18,8 +22,23 @@ class TestSchemaResponseActionList:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def registration(self):
-        return RegistrationFactory()
+    def provider(self):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture()
+    def moderator(self, provider):
+        moderator = AuthUserFactory()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.save()
+        return moderator
+
+    @pytest.fixture()
+    def registration(self, provider):
+        return RegistrationFactory(provider=provider)
 
     @pytest.fixture()
     def schema_response(self, registration):
@@ -32,6 +51,12 @@ class TestSchemaResponseActionList:
     def unapproved_schema_response(self, schema_response, user):
         schema_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         schema_response.pending_approvers.add(user)
+        schema_response.save()
+        return schema_response
+
+    @pytest.fixture()
+    def pending_moderation_schema_response(self, schema_response, user):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         schema_response.save()
         return schema_response
 
@@ -69,47 +94,62 @@ class TestSchemaResponseActionList:
         return f'/v2/schema_responses/{schema_response._id}/actions/'
 
     def test_schema_response_action_submit(self, app, registration, schema_response, user, url):
-        assert schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
         registration.add_contributor(user, 'admin')
         assert not schema_response.pending_approvers.count()
         payload = self.make_payload(schema_response=schema_response, trigger=SchemaResponseTriggers.SUBMIT)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
         schema_response.refresh_from_db()
-        assert schema_response.reviews_state == ApprovalStates.UNAPPROVED.db_name
+        assert schema_response.pending_approvers.count() == 2
+        assert user in schema_response.pending_approvers.all()
+        assert registration.creator in schema_response.pending_approvers.all()
+        assert schema_response.state is ApprovalStates.UNAPPROVED
 
     def test_schema_response_action_approve(self, app, registration, unapproved_schema_response, user, url):
         payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.APPROVE)
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
         unapproved_schema_response.refresh_from_db()
-        assert unapproved_schema_response.reviews_state == ApprovalStates.APPROVED.db_name
 
-    def test_schema_response_action_accept(self, app, registration, unapproved_schema_response, user, url):
+        # if provider is not moderated this is `APPROVED`, otherwise `PENDING_MODERATION`
+        assert unapproved_schema_response.state is ApprovalStates.PENDING_MODERATION
+
+    def test_schema_response_action_accept(self, app, registration, pending_moderation_schema_response, moderator, url):
         """
         Accept behavior is explained in the docstring for _validate_accept_trigger function. There are 3 methods of
         using this trigger.
         """
-        unapproved_schema_response.pending_approvers.clear()
-        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.ACCEPT)
-        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert pending_moderation_schema_response.state is ApprovalStates.PENDING_MODERATION
+        payload = self.make_payload(
+            schema_response=pending_moderation_schema_response,
+            trigger=SchemaResponseTriggers.ACCEPT
+        )
+        resp = app.post_json_api(url, payload, auth=moderator.auth, expect_errors=True)
         assert resp.status_code == 201
-        unapproved_schema_response.refresh_from_db()
-        assert unapproved_schema_response.reviews_state == ApprovalStates.APPROVED.db_name
+        pending_moderation_schema_response.refresh_from_db()
+        assert pending_moderation_schema_response.state is ApprovalStates.APPROVED
 
-    def test_schema_response_action_moderator_reject(self, app, registration, unapproved_schema_response, user, url):
-        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.MODERATOR_REJECT)
-        resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+    def test_schema_response_action_moderator_reject(
+            self, app, registration, pending_moderation_schema_response, moderator, url):
+        payload = self.make_payload(
+            schema_response=pending_moderation_schema_response,
+            trigger=SchemaResponseTriggers.MODERATOR_REJECT
+        )
+        resp = app.post_json_api(url, payload, auth=moderator.auth, expect_errors=True)
         assert resp.status_code == 201
-        unapproved_schema_response.refresh_from_db()
-        assert unapproved_schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+        pending_moderation_schema_response.refresh_from_db()
+        assert pending_moderation_schema_response.state is ApprovalStates.IN_PROGRESS
 
     def test_schema_response_action_admin_reject(self, app, registration, unapproved_schema_response, user, url):
-        payload = self.make_payload(schema_response=unapproved_schema_response, trigger=SchemaResponseTriggers.ADMIN_REJECT)
+        payload = self.make_payload(
+            schema_response=unapproved_schema_response,
+            trigger=SchemaResponseTriggers.ADMIN_REJECT
+        )
         resp = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert resp.status_code == 201
         unapproved_schema_response.refresh_from_db()
-        assert unapproved_schema_response.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+        assert unapproved_schema_response.state is ApprovalStates.IN_PROGRESS
 
     def test_schema_response_action_list(self, app, schema_response_action, user, url):
         resp = app.get(url, auth=user.auth)
@@ -142,7 +182,8 @@ class TestSchemaResponseActionList:
             ('admin', 201, ),
         ]
     )
-    def test_schema_response_action_auth_post(self, app, registration, schema_response, permission, user, expected_response, url):
+    def test_schema_response_action_auth_post(
+            self, app, registration, schema_response, permission, user, expected_response, url):
         if permission:
             registration.add_contributor(user, permission)
 

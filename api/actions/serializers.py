@@ -368,4 +368,15 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         except MachineError as exc:
             raise Conflict(exc)
 
+        determined_trigger = target.actions.last().trigger
+        if determined_trigger != trigger:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    'message_short': 'Operation not allowed at this time',
+                    'message_long': f'This trigger `{trigger}` is invalid for the {target} in state '
+                                    f'`{target.reviews_state}`.',
+                },
+            )
+
         return target.actions.last()
