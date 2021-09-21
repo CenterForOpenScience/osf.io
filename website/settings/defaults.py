@@ -671,6 +671,11 @@ class CeleryConfig:
                     'batch_size_stuck': 10
                 }
             },
+            'monitor_registration_bulk_upload_jobs': {
+                'task': 'api.providers.tasks.monitor_registration_bulk_upload_jobs',
+                'schedule': crontab(minute=0, hour=7),  # Daily 03:00 a.m. EDT
+                'kwargs': {'dry_run': False}
+            },
         }
 
         # Tasks that need metrics and release requirements

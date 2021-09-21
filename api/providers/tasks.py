@@ -100,6 +100,52 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
                 'initiator={}]'.format(upload.id, upload.provider._id, upload.schema._id, upload.initiator._id))
 
 
+@celery_app.task(name='api.providers.tasks.monitor_registration_bulk_upload_jobs')
+def monitor_registration_bulk_upload_jobs(dry_run=True):
+
+    logger.info("Checking registration bulk upload jobs ...")
+    bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED)
+    logger.info("[{}] pending jobs found.".format(len(bulk_uploads)))
+
+    for upload in bulk_uploads:
+        logger.info("Picked up job [upload={}, hash={}]".format(upload.id, upload.payload_hash))
+        upload.state = JobState.PICKED_UP
+        bulk_create_registrations.delay(upload.id, dry_run=dry_run)
+        if not dry_run:
+            upload.save()
+    if dry_run:
+        logger.info("Dry run: bulk creation started in dry-run mode and job state wasn't updated")
+    logger.info("[{}] jobs have been picked up and kicked off. This monitor task ends.".format(len(bulk_uploads)))
+
+
+@celery_app.task()
+def bulk_create_registrations(upload_id, dry_run=True):
+
+    try:
+        upload = RegistrationBulkUploadJob.objects.get(id=upload_id)
+    except RegistrationBulkUploadJob.DoesNotExist:
+        message = 'Registration bulk upload job not found: [_id={}] '.format(upload_id)
+        return handle_error(initiator=None, inform_product=True, error_message=message)
+    except RegistrationBulkUploadJob.MultipleObjectsReturned:
+        message = 'Multiple registration bulk upload jobs returned: [_id={}] '.format(upload_id)
+        return handle_error(initiator=None, inform_product=True, error_message=message)
+
+    auto_approval = upload.provider.bulk_upload_auto_approval
+    logger.info("Bulk creating registrations ({}): [provider={}, schema={}, initiator={}]".format(
+        'contributor admin auto approved' if auto_approval else 'draft',
+        upload.provider._id,
+        upload.schema._id,
+        upload.initiator._id
+    ))
+
+    registration_rows = RegistrationBulkUploadRow.objects.filter(upload__id=upload_id)
+    logger.info("Picked up [{}] registrations to create".format(len(registration_rows)))
+    index = 0
+    for row in registration_rows:
+        index += 1
+        logger.info("[{}, {}, {}, {}]".format(index, row.is_picked_up, row.is_completed, row.draft_registration))
+
+
 def handle_error(initiator, inform_product=False, error_message=None):
     """Send emails information OSF product owner and/or registration admin about failures.
     """
