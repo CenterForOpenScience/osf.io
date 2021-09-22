@@ -181,10 +181,11 @@ class Row():
                 'registration_responses': self.get_registration_responses()}
 
     def get_raw_value(self):
-        raw_value = []
-        for cell in self.cells:
-            raw_value.append(cell.get_raw_value())
-        return ','.join(raw_value)
+        raw_value = io.StringIO()
+        cell_values = [cell.value for cell in self.cells]
+        csv_writer = csv.writer(raw_value)
+        csv_writer.writerow(cell_values)
+        return raw_value.getvalue()
 
     def validate(self):
         for cell in self.cells:
