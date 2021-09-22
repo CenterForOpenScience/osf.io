@@ -366,7 +366,7 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
-    revision_state = HideIfWithdrawal(ser.CharField())
+    revision_state = HideIfWithdrawal(ser.CharField(allow_null=True, default=None))
 
     @property
     def subjects_related_view(self):
