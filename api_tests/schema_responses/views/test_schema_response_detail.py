@@ -290,7 +290,7 @@ class TestSchemaResponseDetailPATCHPermissions:
 
     PAYLOAD = {
         'data': {
-            'type': 'revisions',
+            'type': 'schema-responses',
             'attributes': {
                 'revision_responses': {
                     'q1': 'update value',
@@ -419,7 +419,7 @@ class TestSchemaResponseDetailPATCHBehavior:
     def payload(self):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'attributes': {
                     'revision_justification': 'why not?',
                     'revision_responses': {
@@ -434,7 +434,7 @@ class TestSchemaResponseDetailPATCHBehavior:
     def invalid_payload(self):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'attributes': {
                     'revision_responses': {
                         'oops': {'value': 'test'},

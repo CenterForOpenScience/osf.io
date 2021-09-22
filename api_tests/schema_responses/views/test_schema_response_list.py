@@ -186,7 +186,7 @@ class TestSchemaResponseListPOSTPermissions:
     def payload(self, registration):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'relationships': {
                     'registration': {
                         'data': {
@@ -275,7 +275,7 @@ class TestSchemaResponseListPOSTBehavior:
     def payload(self, registration):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'relationships': {
                     'registration': {
                         'data': {
@@ -291,7 +291,7 @@ class TestSchemaResponseListPOSTBehavior:
     def no_relationship_payload(self):
         return {
             'data': {
-                'type': 'revisions'
+                'type': 'schema-responses'
             }
         }
 
@@ -299,7 +299,7 @@ class TestSchemaResponseListPOSTBehavior:
     def invalid_payload(self, registration):
         return {
             'data': {
-                'type': 'revisions',
+                'type': 'schema-responses',
                 'relationships': {
                     'registration': {
                         'data': {

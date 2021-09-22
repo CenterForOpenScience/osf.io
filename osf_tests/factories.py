@@ -28,7 +28,12 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers, ApprovalStates
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ApprovalStates,
+    SchemaResponseTriggers
+)
 from addons.osfstorage.models import OsfStorageFile, Region
 fake = Factory.create()
 
@@ -1148,3 +1153,18 @@ class SchemaResponseFactory(DjangoModelFactory):
             previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
             previous_schema_response.save()
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+
+
+class SchemaResponseActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.SchemaResponseAction
+
+    trigger = FuzzyChoice(choices=SchemaResponseTriggers.char_field_choices())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+    to_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+
+    target = factory.SubFactory(SchemaResponseFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False
