@@ -34,7 +34,9 @@ OSF_META_SCHEMA_FILES = [
     'qualitative-research.json',
     'secondary-data.json',
     'hypothesis-testing-studies-using-youth-data.json',
-    'other-studies-using-youth-data.json'
+    'other-studies-using-youth-data.json',
+    'character-lab-short-form-registration.json',
+    'character-lab-long-form-registration.json',
 ]
 
 METASCHEMA_ORDERING = (
