@@ -17,9 +17,12 @@ from osf.models import (
     Preprint,
     PrivateLink,
     Registration,
+    SchemaResponse,
 )
 from osf.utils import permissions as osf_permissions
+from osf.utils.workflows import ApprovalStates
 
+from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, is_deprecated, assert_resource_type, get_object_or_error
 from api.base.parsers import JSONSchemaParser
 
@@ -155,33 +158,62 @@ class AdminContributorOrPublic(permissions.BasePermission):
 class SchemaResponseDetailPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
-    To make changes to a schema responses to user must be a write contributor, an admin permission is necessary for
-    deleting.
+
+    To GET a SchemaResponse, one of three conditions must be met:
+      *  The user must have "read" permissions on the parent resource
+      *  The user must be a moderator on the parent resource's Provider and the
+         SchemaResponse must be in an APPROVED or PENDING_MODERATION state
+      *  The SchemaResponse must be APPROVED and the parent resource must be public
+
+    To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
+
+    To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
+
+    Note: SchemaResponses on deleted parent resources should appear to be deleted, while
+    access should be denied to SchemaResponses on withdrawn parent resources.
     '''
-    acceptable_models = (AbstractNode, )
+    acceptable_models = (SchemaResponse, )
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
+        parent = obj.parent
+
+        if parent.deleted:
+            # Mimics get_object_or_error logic
+            raise Gone
+        if parent.is_retracted:
+            # Mimics behavior of ExcludeWithdrawals
+            return False
+
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return (
+                (parent.is_public and obj.state is ApprovalStates.APPROVED)
+                or (
+                    auth.user is not None
+                    and parent.is_moderated
+                    and obj.state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+                    and auth.user.has_perm('view_submissions', parent.provider)
+                )
+                or parent.has_permission(auth.user, 'read')
+            )
         elif request.method == 'PATCH':
-            return obj.has_permission(auth.user, 'write')
+            return parent.has_permission(auth.user, 'write')
         elif request.method == 'DELETE':
-            return obj.has_permission(auth.user, 'admin')
+            return parent.has_permission(auth.user, 'admin')
         else:
             raise exceptions.MethodNotAllowed(request.method)
 
     def has_permission(self, request, view):
         obj = view.get_object()
-        return self.has_object_permission(request, view, obj.parent)
+        return self.has_object_permission(request, view, obj)
 
 
 class RegistrationSchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for the registration relationship view for schema responses.
-    This endpoint only allows the user to view and filter the schema responses for that Registration if it is public or
-    the user has read permission.
+
+    To GET a registration's SchemaResponses, the registration must be visible to the user.
     '''
     acceptable_models = (Registration, )
 
@@ -200,7 +232,11 @@ class RegistrationSchemaResponseListPermission(permissions.BasePermission):
 class SchemaResponseListPermission(permissions.BasePermission):
     '''
     Permissions for top-level `schema_responses` list endpoints.
-    To create a schema response a user must be an admin contributor on that Registration.
+
+    All users can GET the list of schema responses
+
+    To POST a SchemaResponse, the user must have "admin" permissions on the
+    specified parent resource.
     '''
     acceptable_models = (Registration, )
 

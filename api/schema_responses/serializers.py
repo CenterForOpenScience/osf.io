@@ -1,20 +1,19 @@
-from api.base.utils import absolute_reverse, get_object_or_error
-from api.base.serializers import JSONAPISerializer, LinksField, TypeField
 from api.base.exceptions import Conflict
+from api.base.serializers import JSONAPISerializer, LinksField, TypeField
+from api.base.utils import absolute_reverse, get_object_or_error
 from rest_framework import serializers as ser
-from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
 
 from api.base.serializers import (
     RelationshipField,
     VersionedDateTimeField,
 )
 
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models import (
     Registration,
     SchemaResponse,
-    RegistrationSchema,
 )
-
 from osf.utils.workflows import ApprovalStates
 
 
@@ -35,9 +34,11 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
     revision_justification = ser.CharField(required=False)
-    updated_response_keys = ser.JSONField(required=False, read_only=True)
-    reviews_state = ser.ChoiceField(choices=ApprovalStates.char_field_choices(), required=False)
     revision_responses = ser.JSONField(source='all_responses', required=False)
+    updated_response_keys = ser.JSONField(required=False, read_only=True)
+    reviews_state = ser.CharField(required=False)
+    # Populated via annotation on relevant API views
+    is_pending_current_user_approval = ser.BooleanField(required=False)
 
     links = LinksField(
         {
@@ -64,7 +65,6 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<initiator._id>'},
         read_only=True,
         required=False,
-
     )
 
     class Meta:
@@ -83,7 +83,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         try:
             registration_id = validated_data.pop('_id')
         except KeyError:
-            raise exceptions.ValidationError('payload must contain valid Registration id')
+            raise ValidationError('payload must contain valid Registration id')
 
         registration = get_object_or_error(
             Registration,
@@ -91,35 +91,35 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             request=self.context['request'],
         )
 
-        try:
-            schema = registration.registration_schema
-        except RegistrationSchema.DoesNotExist:
-            raise exceptions.ValidationError(f'Resource {registration._id} must have schema')
-
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')
 
-        if not registration.schema_responses.exists():
-            schema_response = SchemaResponse.create_initial_response(
-                initiator=initiator,
-                parent=registration,
-                schema=schema,
-                justification=justification,
-            )
-        else:
-            schema_response = SchemaResponse.create_from_previous_response(
-                initiator=initiator,
-                previous_response=registration.schema_responses.order_by('-created').first(),
-                justification=justification,
-            )
+        latest_response = registration.schema_responses.first()
+        if not latest_response:
+            try:
+                return SchemaResponse.create_initial_response(
+                    parent=registration, initiator=initiator, justification=justification,
+                )
+            # Value Error when no schema provided
+            except ValueError:
+                raise ValidationError(f'Resource {registration._id} must specify a schema')
 
-        return schema_response
+        try:
+            return SchemaResponse.create_from_previous_response(
+                initiator=initiator,
+                previous_response=latest_response,
+                justification=justification,
+            )
+        except PreviousSchemaResponseError as exc:
+            raise Conflict(detail=str(exc))
 
     def update(self, schema_response, validated_data):
-        if schema_response.reviews_state != ApprovalStates.IN_PROGRESS.db_name:
+        if schema_response.state is not ApprovalStates.IN_PROGRESS:
             raise Conflict(
-                detail=f'Schema Response is in `{schema_response.reviews_state}` state must be'
-                       f' {ApprovalStates.IN_PROGRESS.db_name}',
+                detail=(
+                    f'SchemaResponse has state `{schema_response.reviews_state}` '
+                    f'state must be {ApprovalStates.IN_PROGRESS.db_name}',
+                ),
             )
 
         revision_responses = validated_data.get('revision_responses')
@@ -132,7 +132,10 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             try:
                 schema_response.update_responses(revision_responses)
             except ValueError as exc:
-                raise exceptions.ValidationError(detail=str(exc))
+                raise ValidationError(detail=str(exc))
+            except SchemaResponseStateError as exc:
+                # should have been handled above, but catch again just in case
+                raise Conflict(detail=str(exc))
 
         schema_response.save()
         return schema_response

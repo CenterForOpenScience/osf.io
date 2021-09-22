@@ -277,6 +277,8 @@ class Registration(AbstractNode):
     @property
     def is_retracted(self):
         root = self._dirty_root
+        if self.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name:
+            return True
         if root.retraction is None:
             return False
         return root.retraction.is_approved

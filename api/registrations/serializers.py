@@ -34,6 +34,7 @@ from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node, AbstractNode
 from osf.utils.registrations import strip_registered_meta_comments
+from osf.utils.workflows import ApprovalStates
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -388,10 +389,15 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        if obj.schema_responses.exists():
-            return self.anonymize_fields(obj, obj.schema_responses.first().all_responses)
+        latest_approved_response = obj.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved_response is not None:
+            return self.anonymize_fields(obj, latest_approved_response.all_responses)
+
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
+
         return None
 
     def get_embargo_end_date(self, obj):
@@ -418,6 +424,12 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_revision_state(self, obj):
+        latest_revision = obj.schema_responses.first()
+        if latest_revision:
+            return latest_revision.reviews_state
+        return None
 
     def anonymize_registered_meta(self, obj):
         """
