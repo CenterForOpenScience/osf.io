@@ -232,6 +232,20 @@ class SchemaResponseListPermission(permissions.BasePermission):
         return obj.has_permission(auth.user, 'admin')
 
 
+class SchemaResponseActionPermission(permissions.BasePermission):
+    '''
+    Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
+    To create a schema response action a user must be an admin contributor on that Registration.
+    '''
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        elif request.method == 'POST':
+            return True  # these permissions are checked by the SchemaResponse state machine.
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+
 class ExcludeWithdrawals(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):

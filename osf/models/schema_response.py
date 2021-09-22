@@ -327,11 +327,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         """Validate usage of the "accept" trigger on the underlying ApprovalsMachine
 
         "accept" has three valid usages:
-        First, "accept" is called from within the"approve" trigger once all required approvals
+        First, "accept" is called from within the "approve" trigger once all required approvals
         have been granted. This call should receive the user who issued the final "approve"
         so that the correct SchemaResponseAction can be logged.
 
-        Secone, moderators "accept" a SchemaResponse if it belongs to a moderated parent resource.
+        Second, moderators "accept" a SchemaResponse if it belongs to a moderated parent resource.
         In this case, the user must have the correct permission on the parent's provider.
 
         Finally, "accept" can be called without a user in order to bypass the need for approvals

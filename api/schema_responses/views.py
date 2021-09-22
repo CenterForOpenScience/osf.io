@@ -1,13 +1,22 @@
 from rest_framework import generics, permissions as drf_permissions
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.base.parsers import JSONSchemaParser, JSONAPIParser
-from api.nodes.permissions import SchemaResponseDetailPermission, SchemaResponseListPermission
-
+from api.base.parsers import (
+    JSONSchemaParser,
+    JSONAPIParser,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
+from api.nodes.permissions import (
+    SchemaResponseDetailPermission,
+    SchemaResponseListPermission,
+    SchemaResponseActionPermission,
+)
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
-from osf.models import SchemaResponse, Registration
+from api.actions.serializers import SchemaResponseActionSerializer
+from osf.models import SchemaResponse, SchemaResponseAction, Registration
 from api.base.filters import ListFilterMixin
 from api.schema_responses.schemas import create_schema_response_payload
 from framework.auth.oauth_scopes import CoreScopes
@@ -74,3 +83,46 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     def perform_destroy(self, instance):
         ## check state
         instance.delete()
+
+
+class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
+    permission_classes = (
+        SchemaResponseActionPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
+    required_write_scopes = [CoreScopes.WRITE_SCHEMA_RESPONSES]
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+
+    view_category = 'schema_responses'
+    view_name = 'schema-response-action-list'
+    serializer_class = SchemaResponseActionSerializer
+
+    def get_queryset(self):
+        return SchemaResponseAction.objects.all()  # TODO: What to do here?
+
+
+class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    permission_classes = (
+        SchemaResponseActionPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
+    required_write_scopes = [CoreScopes.WRITE_SCHEMA_RESPONSES]
+
+    view_category = 'schema_responses'
+    view_name = 'schema-responses-detail'
+
+    serializer_class = SchemaResponseActionSerializer
+
+    def get_object(self):
+        return get_object_or_error(
+            SchemaResponseAction,
+            query_or_pk=self.kwargs['schema_response_action_id'],
+            request=self.request,
+        )

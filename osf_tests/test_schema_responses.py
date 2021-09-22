@@ -11,7 +11,7 @@ from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
 
-# See osft_tests.utils.default_test_schema for block types and valid answers
+# See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
     'q1': 'Some answer',
     'q2': 'Some even longer answer',

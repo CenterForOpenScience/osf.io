@@ -309,7 +309,7 @@ APPROVAL_TRANSITIONS = [
     },
     {
         # An un moderated approvable resource has satisfied its Admin approval requirements
-        # or a moderated sanction recieves moderator approval and takes effect
+        # or a moderated sanction receives moderator approval and takes effect
         'trigger': 'accept',
         'source': [ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION],
         'dest': ApprovalStates.APPROVED,
