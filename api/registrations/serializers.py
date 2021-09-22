@@ -434,12 +434,6 @@ class RegistrationSerializer(NodeSerializer):
     def get_files_count(self, obj):
         return obj.files_count or 0
 
-    def get_revision_state(self, obj):
-        latest_revision = obj.schema_responses.first()
-        if latest_revision:
-            return latest_revision.reviews_state
-        return None
-
     def anonymize_registered_meta(self, obj):
         """
         Looks at every question on every page of the schema, for any titles
