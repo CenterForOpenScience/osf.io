@@ -118,6 +118,7 @@ from api.nodes.serializers import (
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
 from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
+from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationCreateSerializer,
@@ -705,7 +706,9 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     # overrides ListCreateAPIView
     # TODO: Filter out withdrawals by default
     def get_queryset(self):
-        nodes = self.get_node().registrations_all
+        nodes = self.get_node().registrations_all.annotate(
+            revision_state=registration_annotations.REVISION_STATE,
+        )
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
