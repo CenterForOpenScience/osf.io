@@ -480,3 +480,45 @@ INSTITUTION_DEACTIVATION = Mail(
     'institution_deactivation',
     subject='Your OSF login has changed - here\'s what you need to know!'
 )
+
+
+class ApprovalEmail(Mail):
+
+    TEMPLATE_FOR_ROLE = {}
+    DEFAULT_TEMPLATE = None
+    SUBJECT_TEMPLATE = None
+
+    def __init__(self, resource, role):
+        subject = self.SUBJECT_TEMPLATE.format(name=resource.name)
+        super().__init__(
+            subject=subject,
+            tpl_prefix=self.TEMPLATE_FOR_ROLE.get(role, self.DEFAULT_TEMPLATE)
+        )
+
+class SchemaResponseInitiated(ApprovalEmail):
+
+    SUBJECT_TEMPLATE = 'Updates are in-progress for your registration {name}'
+    DEFAULT_TEMPLATE = 'updates_initiated'
+
+class SchemaResponseSubmitted(ApprovalEmail):
+
+    SUBJECT_TEMPLATE = 'Updates to your registration {name} are pending admin approval'
+    DEFAULT_TEMPLATE = 'updates_pending_approval'
+
+
+class SchemaResponseRejected(ApprovalEmail):
+
+    SUBJECT_TEMPLATE = 'Updates NOT accepted for your registration {name}'
+    DEFAULT_TEMPLATE = 'updates_rejected'
+
+
+class SchemaResponsePendingModeration(ApprovalEmail):
+
+    SUBJECT_TEMPLATE = 'Updates to your registration {name} are pending moderator approval'
+    DEFAULT_TEMPLATE = 'udpates_pending_moderation'
+
+
+class SchemaResponseApproved(ApprovalEmail):
+
+    SUBJECT_TEMPLATE = 'Updates to your registration {name} have been approved'
+    DEFAULT_TEMPLATE = 'udpates_approved'
