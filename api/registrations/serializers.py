@@ -70,10 +70,9 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
-    # Fields not on the model that should be usable for filtering
-    # must be added here
-    filterable_fields = frozenset([
-        'reviews_state',
+    # Union filterable fields unique to the RegistrationSerializer with
+    # filterable fields from the NodeSerializer
+    filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
         'revision_state',
     ])
 
@@ -366,7 +365,7 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
-    revision_state = HideIfWithdrawal(ser.CharField(allow_null=True, default=None))
+    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
 
     @property
     def subjects_related_view(self):
