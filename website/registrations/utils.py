@@ -10,7 +10,7 @@ from django.db.models import Q
 from rest_framework.exceptions import NotFound, ValidationError
 
 from osf.models.licenses import NodeLicense
-from osf.models import AbstractNode, RegistrationProvider, Subject, RegistrationSchema, Institution
+from osf.models import AbstractNode, RegistrationProvider, RegistrationSchema, Institution
 from website import settings
 
 
@@ -27,11 +27,17 @@ METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
                    'tags': {'format': 'list'},
                    'project guid': {'format': 'string'},
                    'external id': {'format': 'string'}}
+
 CONTRIBUTOR_METADATA_FIELDS = ['admin contributors',
                                'read-write contributors',
                                'read-only contributors',
                                'bibliographic contributors']
+
+CATEGORY_REVERSE_LOOKUP = {display_name: name for name, display_name in settings.NODE_CATEGORY_MAP.items()}
+
 MAX_EXCEL_COLUMN_NUMBER = 16384
+
+STORE = None
 
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
 def get_excel_column_name(column_index):
@@ -46,6 +52,15 @@ def get_excel_column_name(column_index):
 
     return column_name
 
+class Store():
+    def __init__(self, registration_provider):
+        self.licenses = registration_provider.licenses_acceptable.all()
+        self.subjects = registration_provider.subjects.all()
+        self.institutions = Institution.objects.get_all_institutions()
+
+class InvalidHeadersError(ValidationError):
+    pass
+
 class BulkRegistrationUpload():
     @property
     def is_valid(self):
@@ -56,9 +71,10 @@ class BulkRegistrationUpload():
         return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
-        # self.raw_csv = bulk_upload_csv.read()
-        self.raw_csv = bulk_upload_csv.read().decode('utf-8')
-        self.reader = csv.DictReader(io.StringIO(self.raw_csv))
+        self.raw_csv = bulk_upload_csv.read()
+        # self.raw_csv = bulk_upload_csv.read().decode('utf-8')
+        csv_io = io.StringIO(self.raw_csv)
+        self.reader = csv.DictReader(csv_io)
         self.headers = [header.lower() for header in self.reader.fieldnames]
         schema_id_row = next(self.reader)
         self.schema_id = schema_id_row[self.reader.fieldnames[0]]
@@ -80,6 +96,14 @@ class BulkRegistrationUpload():
                          self.validations,
                          functools.partial(self.log_error, row_index=index + 3))
                      for index, row in enumerate(self.reader)]
+        csv_io.close()
+        BulkRegistrationUpload.init_store(self.registration_provider)
+
+    @classmethod
+    def init_store(cls, registration_provider):
+        global STORE
+        if STORE is None:
+            STORE = Store(registration_provider)
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
@@ -137,8 +161,10 @@ class BulkRegistrationUpload():
     def validate_csv_header_list(self):
         expected_headers = self.validations.keys()
         actual_headers = self.headers
-        if set(expected_headers) != set(actual_headers):
-            raise ValidationError({'Invalid headers.'})
+        invalid_headers = list(set(actual_headers) - set(expected_headers))
+        missing_headers = list(set(expected_headers) - set(actual_headers))
+        if invalid_headers or missing_headers:
+            raise InvalidHeadersError({'invalid_headers': invalid_headers, 'missing_headers': missing_headers})
 
     def get_parsed(self):
         parsed = []
@@ -336,12 +362,12 @@ class ContributorField(MetadataField):
                     except AttributeError:
                         self.log_error(invalid=True, type='invalidContributors')
                     else:
-                        parsed_value.append({'full_name': full_name, 'email': email})
+                        parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
             self._parsed_value = parsed_value
 
 class LicenseField(MetadataField):
     # format: license_name;year;copyright_holder_one,copyright_holder_two,...
-    with_required_fields_regex = re.compile(r'(?P<name>[\w ]+);(?P<year>[ ][1-3][0-9]{3});(?P<copyright_holders>[\w -,]+)')
+    with_required_fields_regex = re.compile(r'(?P<name>[\w ]+);(?P<year>[ ][1-3][0-9]{3});(?P<copyright_holders>[\w -,/]+)')
     no_required_fields_regex = re.compile(r'(?P<name>[\w ]+)')
 
     def _validate(self):
@@ -351,11 +377,14 @@ class LicenseField(MetadataField):
         else:
             if not self.value:
                 return
+
+            assert hasattr(STORE, 'licenses') is not None, 'STORE.licenses was not initialized!'
+
             license_name_match = self.no_required_fields_regex.match(self.value)
             if license_name_match is not None:
                 node_license_name = license_name_match.group('name')
                 try:
-                    node_license = NodeLicense.objects.get(name__iexact=node_license_name)
+                    node_license = STORE.licenses.get(name__iexact=node_license_name)
                 except NodeLicense.DoesNotExist:
                     self.log_error(invalid=True)
                 else:
@@ -363,15 +392,14 @@ class LicenseField(MetadataField):
                     if has_required_fields:
                         match = self.with_required_fields_regex.match(self.value)
                         if match is not None:
-                            name = match.group('name')
-                            year = match.group('year')
-                            copyright_holders = match.group('copyright_holders')
+                            year = match.group('year').strip()
+                            copyright_holders = match.group('copyright_holders').strip()
                             copyright_holders = [val.strip() for val in copyright_holders.split(',')]
-                            parsed_value = {'name': name,
+                            parsed_value = {'name': node_license.name,
                                             'required_fields': {'year': year,
                                                                'copyright_holders': copyright_holders}}
                     else:
-                        parsed_value = {'name': node_license_name}
+                        parsed_value = {'name': node_license.name}
                     self._parsed_value = parsed_value
             else:
                 self.log_error(invalid=True, type='invalidLicenseName')
@@ -379,14 +407,16 @@ class LicenseField(MetadataField):
 class CategoryField(MetadataField):
     def _validate(self):
         try:
-            self._parsed_value = settings.NODE_CATEGORY_MAP[self.value.lower()]
+            self._parsed_value = CATEGORY_REVERSE_LOOKUP[self.value if self.value else 'Uncategorized']
         except KeyError:
             self.log_error(invalid=True, type='invalidCategoryName')
 
 class SubjectsField(MetadataField):
     def _validate(self):
+        assert hasattr(STORE, 'subjects'), 'STORE.subjects was not initialized!'
+
         subjects = [val.strip() for val in self.value.split(';')]
-        valid_subjects = list(Subject.objects.filter(text__in=subjects).values_list('text', flat=True))
+        valid_subjects = list(STORE.subjects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
             self.log_error(invalid=True, type='invalidSubjectName')
@@ -397,8 +427,11 @@ class InstitutionsField(MetadataField):
     def _validate(self):
         if not self.value:
             return
+
+        assert hasattr(STORE, 'institutions'), 'STORE.institutions was not initialized!'
+
         institutions = [val.strip() for val in self.value.split(';')]
-        valid_institutions = list(Institution.objects.filter(name__in=institutions).values_list('name', flat=True))
+        valid_institutions = list(STORE.institutions.filter(name__in=institutions).values_list('name', flat=True))
         invalid_institutions = list(set(institutions) - set(valid_institutions))
         if len(invalid_institutions):
             self.log_error(invalid=True, type='invalidInstitutionName')
