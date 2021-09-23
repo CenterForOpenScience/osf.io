@@ -14,24 +14,23 @@ from osf.models import AbstractNode, RegistrationProvider, RegistrationSchema, I
 from website import settings
 
 
-METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
-                   'description': {'format': 'string', 'required': True},
-                   'admin contributors': {'format': 'list', 'required': True},
-                   'read-write contributors': {'format': 'list'},
-                   'read-only contributors': {'format': 'list'},
-                   'bibliographic contributors': {'format': 'list'},
-                   'category': {'format': 'string'},
-                   'affiliated institutions': {'format': 'list'},
-                   'license': {'format': 'object', 'required': True},
-                   'subjects': {'format': 'list', 'required': True},
-                   'tags': {'format': 'list'},
-                   'project guid': {'format': 'string'},
-                   'external id': {'format': 'string'}}
-
-CONTRIBUTOR_METADATA_FIELDS = ['admin contributors',
-                               'read-write contributors',
-                               'read-only contributors',
-                               'bibliographic contributors']
+METADATA_FIELDS = {'Title': {'format': 'string', 'required': True},
+                   'Description': {'format': 'string', 'required': True},
+                   'Admin Contributors': {'format': 'list', 'required': True},
+                   'Read-Write Contributors': {'format': 'list'},
+                   'Read-Only Contributors': {'format': 'list'},
+                   'Bibliographic Contributors': {'format': 'list'},
+                   'Category': {'format': 'string'},
+                   'Affiliated Institutions': {'format': 'list'},
+                   'License': {'format': 'object', 'required': True},
+                   'Subjects': {'format': 'list', 'required': True},
+                   'Tags': {'format': 'list'},
+                   'Project GUID': {'format': 'string'},
+                   'External ID': {'format': 'string'}}
+CONTRIBUTOR_METADATA_FIELDS = ['Admin Contributors',
+                               'Read-Write Contributors',
+                               'Read-Only Contributors',
+                               'Bibliographic Contributors']
 
 CATEGORY_REVERSE_LOOKUP = {display_name: name for name, display_name in settings.NODE_CATEGORY_MAP.items()}
 
@@ -71,11 +70,10 @@ class BulkRegistrationUpload():
         return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
-        self.raw_csv = bulk_upload_csv.read()
-        # self.raw_csv = bulk_upload_csv.read().decode('utf-8')
+        self.raw_csv = bulk_upload_csv.read().decode('utf-8')
         csv_io = io.StringIO(self.raw_csv)
         self.reader = csv.DictReader(csv_io)
-        self.headers = [header.lower() for header in self.reader.fieldnames]
+        self.headers = self.reader.fieldnames
         schema_id_row = next(self.reader)
         self.schema_id = schema_id_row[self.reader.fieldnames[0]]
         self.provider_id = provider_id
@@ -183,8 +181,8 @@ class Row():
 
     def __init__(self, row_dict, validations, log_error):
         self.row_dict = row_dict
-        self.cells = [Cell(header.lower(),
-                           value, validations[header.lower()],
+        self.cells = [Cell(header,
+                           value, validations[header],
                            functools.partial(log_error, external_id=row_dict.get('External ID', ''), column_index=column_index))
                            for column_index, (header, value) in enumerate(row_dict.items())]
 
@@ -230,7 +228,7 @@ class Cell():
         self.header = header
         self.value = value
         self.validations = validations
-        self.field = Cell.field_instance_for(self.header.lower(),
+        self.field = Cell.field_instance_for(self.header,
                                              self.value,
                                              self.validations,
                                              functools.partial(log_error, header=self.header))
@@ -250,15 +248,15 @@ class Cell():
         if name in METADATA_FIELDS.keys():
             if name in CONTRIBUTOR_METADATA_FIELDS:
                 field_instance = ContributorField(*args)
-            elif name == 'license':
+            elif name == 'License':
                 field_instance = LicenseField(*args)
-            elif name == 'category':
+            elif name == 'Category':
                 field_instance = CategoryField(*args)
-            elif name == 'subjects':
+            elif name == 'Subjects':
                 field_instance = SubjectsField(*args)
-            elif name == 'affiliated institutions':
+            elif name == 'Affiliated Institutions':
                 field_instance = InstitutionsField(*args)
-            elif name == 'project guid':
+            elif name == 'Project GUID':
                 field_instance = ProjectIDField(*args)
             else:
                 field_instance = MetadataField(*args)
