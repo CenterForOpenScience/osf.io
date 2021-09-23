@@ -1,11 +1,17 @@
 import pytest
 
 from nose.tools import assert_raises
+
+from api.providers.workflows import Workflows
+from framework.exceptions import PermissionsError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
-from osf_tests.factories import RegistrationFactory
+from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
+from osf_tests.factories import AuthUserFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
 
-# See osft_tests.utils.default_test_schema for block types and valid answers
+# See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
     'q1': 'Some answer',
     'q2': 'Some even longer answer',
@@ -17,13 +23,19 @@ INITIAL_SCHEMA_RESPONSES = {
 
 
 @pytest.fixture
+def admin_user():
+    return AuthUserFactory()
+
+@pytest.fixture
 def schema():
     return get_default_test_schema()
 
 
 @pytest.fixture
-def registration(schema):
-    return RegistrationFactory(schema=schema)
+def registration(schema, admin_user):
+    registration = RegistrationFactory(schema=schema, creator=admin_user)
+    registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
+    return registration
 
 
 @pytest.fixture
@@ -123,7 +135,7 @@ class TestCreateSchemaResponse():
             parent=registration,
         )
 
-        with assert_raises(AssertionError):
+        with assert_raises(PreviousSchemaResponseError):
             SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
@@ -137,6 +149,8 @@ class TestCreateSchemaResponse():
         )
 
         alternate_registration = RegistrationFactory(schema=schema)
+        alternate_registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
+
         alternate_registration_response = SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
@@ -163,6 +177,8 @@ class TestCreateSchemaResponse():
         ).exists()
 
     def test_create_from_previous_response(self, registration, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
         revised_response = SchemaResponse.create_from_previous_response(
             initiator=registration.creator,
             previous_response=schema_response,
@@ -179,6 +195,41 @@ class TestCreateSchemaResponse():
         assert not revised_response.updated_response_blocks.exists()
         assert set(revised_response.response_blocks.all()) == set(schema_response.response_blocks.all())
 
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.IN_PROGRESS,
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_create_from_previous_response_fails_if_parent_has_unapproved_response(
+            self, invalid_response_state, schema_response):
+        # Making a valid revised response, then pushing the initial response into an
+        # invalid state to ensure that `create_from_previous_response` fails if
+        # *any* schema_response on the parent is unapproved
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
+
+        intermediate_response = SchemaResponse.create_from_previous_response(
+            initiator=schema_response.initiator,
+            previous_response=schema_response
+        )
+        intermediate_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        intermediate_response.save()
+
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        schema_response.save()
+        with assert_raises(PreviousSchemaResponseError):
+            SchemaResponse.create_from_previous_response(
+                initiator=schema_response.initiator,
+                previous_response=intermediate_response
+            )
+
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
@@ -186,6 +237,8 @@ class TestUpdateSchemaResponses():
 
     @pytest.fixture
     def revised_response(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
         return SchemaResponse.create_from_previous_response(
             initiator=schema_response.initiator,
             previous_response=schema_response,
@@ -340,3 +393,325 @@ class TestUpdateSchemaResponses():
         schema_response.refresh_from_db()
         assert schema_response.all_responses['q1'] == updated_responses['q1']
         assert schema_response.all_responses['q2'] == updated_responses['q2']
+
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_update_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        with assert_raises(SchemaResponseStateError):
+            schema_response.update_responses({'q1': 'harrumph'})
+
+
+@pytest.mark.django_db
+class TestDeleteSchemaResponse():
+
+    def test_delete_schema_response_deletes_schema_response_blocks(self, schema_response):
+        # schema_response is the only current source of SchemaResponseBlocks,
+        # so all should be deleted
+        schema_response.delete()
+        assert not SchemaResponseBlock.objects.exists()
+
+    def test_delete_revised_response_only_deletes_updated_blocks(self, schema_response):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
+
+        revised_response = SchemaResponse.create_from_previous_response(
+            previous_response=schema_response,
+            initiator=schema_response.initiator
+        )
+        revised_response.update_responses({'q1': 'blahblahblah', 'q2': 'whoopdedoo'})
+
+        old_blocks = schema_response.response_blocks.all()
+        updated_blocks = revised_response.updated_response_blocks.all()
+
+        revised_response.delete()
+        for block in old_blocks:
+            assert SchemaResponseBlock.objects.filter(id=block.id).exists()
+        for block in updated_blocks:
+            assert not SchemaResponseBlock.objects.filter(id=block.id).exists()
+
+    @pytest.mark.parametrize(
+        'invalid_response_state',
+        [
+            ApprovalStates.UNAPPROVED,
+            ApprovalStates.PENDING_MODERATION,
+            ApprovalStates.APPROVED,
+            # The following states are, in-theory, unreachable, but check to be sure
+            ApprovalStates.REJECTED,
+            ApprovalStates.MODERATOR_REJECTED,
+            ApprovalStates.COMPLETED,
+        ]
+    )
+    def test_delete_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
+        schema_response.approvals_state_machine.set_state(invalid_response_state)
+        with assert_raises(SchemaResponseStateError):
+            schema_response.delete()
+
+
+@pytest.mark.enable_bookmark_creation
+@pytest.mark.django_db
+class TestUnmoderatedSchemaResponseApprovalFlows():
+
+    @pytest.fixture
+    def alternate_user(self):
+        return AuthUserFactory()
+
+    def test_submit_response_adds_pending_approvers(
+            self, schema_response, admin_user, alternate_user):
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+
+        assert schema_response.state is ApprovalStates.UNAPPROVED
+        for user in [schema_response.initiator, alternate_user]:
+            assert user in schema_response.pending_approvers.all()
+
+    def test_submit_response_writes_schema_response_action(self, schema_response, admin_user):
+        assert not schema_response.actions.exists()
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+
+        new_action = schema_response.actions.last()
+        assert new_action.creator == admin_user
+        assert new_action.from_state == ApprovalStates.IN_PROGRESS.db_name
+        assert new_action.to_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.trigger == SchemaResponseTriggers.SUBMIT.db_name
+
+    def test_submit_response_requires_user(self, schema_response, admin_user):
+        with assert_raises(ValueError):
+            schema_response.submit(required_approvers=[admin_user])
+
+    def test_submit_resposne_requires_required_approvers(self, schema_response, admin_user):
+        with assert_raises(ValueError):
+            schema_response.submit(user=admin_user)
+
+    def test_non_parent_admin_cannot_submit_response(self, schema_response, alternate_user):
+        with assert_raises(PermissionsError):
+            schema_response.submit(user=alternate_user)
+
+    def test_approve_response_requires_all_approvers(
+            self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+
+        schema_response.approve(user=schema_response.initiator)
+        assert schema_response.state is ApprovalStates.UNAPPROVED
+
+        schema_response.approve(user=alternate_user)
+        assert schema_response.state is ApprovalStates.APPROVED
+
+    def test_approve_response_writes_schema_response_action(
+            self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+        schema_response.approve(user=admin_user)
+
+        # Confirm that action for first "approve" still has to_state of UNAPPROVED
+        new_action = schema_response.actions.last()
+        assert new_action.creator == admin_user
+        assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.to_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
+
+        schema_response.approve(user=alternate_user)
+
+        # Confifm that action for final "approve" has to_state of APPROVED
+        new_action = schema_response.actions.last()
+        assert new_action.creator == alternate_user
+        assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.to_state == ApprovalStates.APPROVED.db_name
+        assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
+
+        # Confirm that final approval writes only one action
+        assert schema_response.actions.filter(
+            trigger=SchemaResponseTriggers.APPROVE.db_name
+        ).count() == 2
+
+    def test_approve_response_requires_user(self, schema_response, admin_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+        with assert_raises(ValueError):
+            schema_response.approve()
+
+    def test_non_approver_cannot_approve_response(
+            self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+
+        with assert_raises(PermissionsError):
+            schema_response.approve(user=alternate_user)
+
+    def test_reject_response_moves_state_to_in_progress(self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+
+        # Implicitly confirm that only one reject call is needed to advance state
+        schema_response.reject(user=admin_user)
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+
+    def test_reject_response_clears_pending_approvers(
+            self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+        schema_response.reject(user=schema_response.initiator)
+
+        assert not schema_response.pending_approvers.exists()
+
+    def test_reject_response_writes_schema_response_action(self, schema_response, admin_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+        schema_response.reject(user=admin_user)
+        new_action = schema_response.actions.last()
+
+        assert new_action.creator == admin_user
+        assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.to_state == ApprovalStates.IN_PROGRESS.db_name
+        assert new_action.trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name
+
+    def test_reject_response_requires_user(self, schema_response, admin_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+        with assert_raises(ValueError):
+            schema_response.reject()
+
+    def test_non_approver_cannnot_reject_response(
+            self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+
+        with assert_raises(PermissionsError):
+            schema_response.reject(user=alternate_user)
+
+    def test_approver_cannot_call_accept_directly(self, schema_response, admin_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+
+        with assert_raises(ValueError):
+            schema_response.accept(user=schema_response.initiator)
+
+    def test_internal_accept_advances_state(self, schema_response, admin_user, alternate_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+        schema_response.accept()
+
+        assert schema_response.state is ApprovalStates.APPROVED
+
+    def test_internal_accept_clears_pending_approvers(self, schema_response, admin_user):
+        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+        schema_response.accept()
+        assert not schema_response.pending_approvers.exists()
+
+
+@pytest.mark.django_db
+class TestModeratedSchemaResponseApprovalFlows():
+
+    @pytest.fixture
+    def provider(self):
+        provider = RegistrationProviderFactory()
+        update_provider_auth_groups()
+        provider.reviews_workflow = Workflows.PRE_MODERATION.value
+        provider.save()
+        return provider
+
+    @pytest.fixture
+    def moderator(self, provider):
+        moderator = AuthUserFactory()
+        provider.get_group('moderator').user_set.add(moderator)
+        provider.save()
+        return moderator
+
+    @pytest.fixture
+    def moderated_registration(self, schema, admin_user, provider):
+        return RegistrationFactory(schema=schema, creator=admin_user, provider=provider)
+
+    @pytest.fixture
+    def moderated_response(self, moderated_registration):
+        moderated_response = moderated_registration.schema_responses.get()
+        moderated_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        return moderated_response
+
+    def test_moderated_response_requires_moderation(self, moderated_response, admin_user):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+
+        assert moderated_response.state is ApprovalStates.PENDING_MODERATION
+
+    def test_schema_response_action_to_state_following_moderated_approve_is_pending_moderation(
+            self, moderated_response, admin_user):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+
+        new_action = moderated_response.actions.last()
+        assert new_action.creator == admin_user
+        assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
+        assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
+        assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
+
+    def test_moderator_accept(self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        moderated_response.accept(user=moderator)
+
+        assert moderated_response.state is ApprovalStates.APPROVED
+
+    def test_moderator_accept_writes_schema_response_action(
+            self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        moderated_response.accept(user=moderator)
+
+        new_action = moderated_response.actions.last()
+        assert new_action.creator == moderator
+        assert new_action.from_state == ApprovalStates.PENDING_MODERATION.db_name
+        assert new_action.to_state == ApprovalStates.APPROVED.db_name
+        assert new_action.trigger == SchemaResponseTriggers.ACCEPT.db_name
+
+    def test_moderator_reject(self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        moderated_response.reject(user=moderator)
+
+        assert moderated_response.state is ApprovalStates.IN_PROGRESS
+
+    def test_moderator_reject_writes_schema_response_action(
+            self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        moderated_response.reject(user=moderator)
+
+        new_action = moderated_response.actions.last()
+        assert new_action.creator == moderator
+        assert new_action.from_state == ApprovalStates.PENDING_MODERATION.db_name
+        assert new_action.to_state == ApprovalStates.IN_PROGRESS.db_name
+        assert new_action.trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name
+
+    def test_moderator_cannot_submit(self, moderated_response, moderator):
+        with assert_raises(PermissionsError):
+            moderated_response.submit(user=moderator, required_approvers=[moderator])
+
+    def test_moderator_cannot_approve_in_unapproved_state(
+            self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        with assert_raises(PermissionsError):
+            moderated_response.approve(user=moderator)
+
+    def test_moderator_cannot_reject_in_unapproved_state(
+            self, moderated_response, admin_user, moderator):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        with assert_raises(PermissionsError):
+            moderated_response.reject(user=moderator)
+
+    def test_admin_cannot_accept_in_pending_moderation(self, moderated_response, admin_user):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        with assert_raises(PermissionsError):
+            moderated_response.accept(user=admin_user)
+
+    def test_admin_cannot_reject_in_pending_moderation(self, moderated_response, admin_user):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        with assert_raises(PermissionsError):
+            moderated_response.reject(user=admin_user)
+
+    def test_user_required_to_accept_in_pending_moderation(self, moderated_response, admin_user):
+        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+        moderated_response.approve(user=admin_user)
+        with assert_raises(ValueError):
+            moderated_response.accept()
