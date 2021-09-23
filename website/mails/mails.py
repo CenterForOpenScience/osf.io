@@ -482,43 +482,25 @@ INSTITUTION_DEACTIVATION = Mail(
 )
 
 
-class ApprovalEmail(Mail):
-
-    TEMPLATE_FOR_ROLE = {}
-    DEFAULT_TEMPLATE = None
-    SUBJECT_TEMPLATE = None
-
-    def __init__(self, resource, role):
-        subject = self.SUBJECT_TEMPLATE.format(name=resource.name)
-        super().__init__(
-            subject=subject,
-            tpl_prefix=self.TEMPLATE_FOR_ROLE.get(role, self.DEFAULT_TEMPLATE)
-        )
-
-class SchemaResponseInitiated(ApprovalEmail):
-
-    SUBJECT_TEMPLATE = 'Updates are in-progress for your registration {name}'
-    DEFAULT_TEMPLATE = 'updates_initiated'
-
-class SchemaResponseSubmitted(ApprovalEmail):
-
-    SUBJECT_TEMPLATE = 'Updates to your registration {name} are pending admin approval'
-    DEFAULT_TEMPLATE = 'updates_pending_approval'
+SCHEMA_RESPONSE_INITIATED = Mail(
+    'updates_initiated',
+    subject='Updates in in-progress for your {resource_type} {title}'
+)
 
 
-class SchemaResponseRejected(ApprovalEmail):
-
-    SUBJECT_TEMPLATE = 'Updates NOT accepted for your registration {name}'
-    DEFAULT_TEMPLATE = 'updates_rejected'
-
-
-class SchemaResponsePendingModeration(ApprovalEmail):
-
-    SUBJECT_TEMPLATE = 'Updates to your registration {name} are pending moderator approval'
-    DEFAULT_TEMPLATE = 'udpates_pending_moderation'
+SCHEMA_RESPONSE_SUBMITTED = Mail(
+    'updates_pending_approval',
+    subject='Updates to your {resource_type} {title} are pending admin approval'
+)
 
 
-class SchemaResponseApproved(ApprovalEmail):
+SCHEMA_RESPONSE_APPROVED = Mail(
+    'updates_approved',
+    subject='Updates to your {resource_type} {title} have been approved'
+)
 
-    SUBJECT_TEMPLATE = 'Updates to your registration {name} have been approved'
-    DEFAULT_TEMPLATE = 'udpates_approved'
+
+SCHEMA_RESPONSE_REJECTED = Mail(
+    'updates_rejected',
+    subject='Changes requested for the proposed updates to your {resource_type} {title}'
+)
