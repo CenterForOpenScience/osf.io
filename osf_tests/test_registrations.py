@@ -15,7 +15,7 @@ from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema, DraftRegistrationFactory
+from osf_tests.factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.providers.workflows import Workflows
 from osf.migrations import update_provider_auth_groups

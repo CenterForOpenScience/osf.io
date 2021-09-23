@@ -872,5 +872,5 @@ class RegistrationBulkCreate(APIView):
                 content_type='application/vnd.api+json; application/json',
             )
         parsed = upload.get_parsed()
-        enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed))
+        enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed, dry_run=True))
         return Response(status=204)

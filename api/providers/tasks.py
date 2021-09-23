@@ -6,7 +6,7 @@ from django.db.utils import IntegrityError
 from framework.celery_tasks import app as celery_app
 from framework import sentry
 from osf.models import OSFUser, RegistrationProvider, RegistrationBulkUploadJob, \
-                       RegistrationBulkUploadRow, RegistrationSchema
+    RegistrationBulkUploadRow, RegistrationSchema
 from osf.models.registration_bulk_upload_job import JobState
 from website import mails, settings
 
@@ -70,7 +70,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         bulk_upload_row = RegistrationBulkUploadRow(
             upload=upload, draft_registration=None, is_completed=False,
             is_picked_up=False, csv_raw=registration_row.get('csv_raw', ''),
-            csv_parsed=registration_row.get('csv_parsed')
+            csv_parsed=registration_row.get('csv_parsed'),
         )
         bulk_upload_rows.append(bulk_upload_row)
 

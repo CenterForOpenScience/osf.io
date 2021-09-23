@@ -2076,7 +2076,7 @@ class TestRegisterNode:
         draft_reg = DraftRegistrationFactory(branched_from=root)
 
         data = {
-            'q2': {
+            'q1': {
                 'comments': [],
                 'value': 'Dawn Pattison, James Brown, Carrie Skinner',
                 'extra': []
@@ -2088,7 +2088,7 @@ class TestRegisterNode:
             }
         }
         flat_data = {
-            'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+            'q1': 'Dawn Pattison, James Brown, Carrie Skinner',
             'q3': 'research questions'
         }
 
