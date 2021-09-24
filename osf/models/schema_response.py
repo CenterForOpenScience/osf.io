@@ -453,6 +453,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'update_link': self.absolute_url
         }
 
-        for contrib, _ in self.parent.get_active_contributors_recursive(unique_users=True):
-            email_context['user'] = contrib
-            mails.send(contrib.user_name, template, **email_context)
+        for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
+            email_context['user'] = contributor
+            email_context['can_write'] = self.parent.has_permission(contributor, 'write')
+            email_context['is_approver'] = contributor in self.pending_approvers.all()
+            mails.send(to_addr=contributor.user_name, mail=template, **email_context)
