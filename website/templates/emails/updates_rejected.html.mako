@@ -12,7 +12,7 @@
         You can view and contribute to the updates in-progress by clicking
         <a href="${update_url}">here</a>.
     % else:
-        You can view the updates in-progress by clocking <a href="${update_url}">here</a>.
+        You can view the updates in-progress by clicking <a href="${update_url}">here</a>.
     % endif
     <p>
     Sincerely yours,<br>

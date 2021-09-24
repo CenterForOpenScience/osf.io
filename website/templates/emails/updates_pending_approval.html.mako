@@ -6,10 +6,10 @@
     <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    Your ${resource_type} <a href="${parent_link}">"${title}"</a> has updates that are
+    Your ${resource_type} <a href="${parent_url}">"${title}"</a> has updates that are
     pending approval.
     <p>
-    You can review the updated responses by clicking <a href="${update_link}">here</a>.
+    You can review the updated responses by clicking <a href="${update_url}">here</a>.
     % if is_approver:
         From that page, You will be able to either approve the updates or request further changes.
     % endif

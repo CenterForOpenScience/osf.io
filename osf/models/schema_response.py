@@ -1,3 +1,5 @@
+from future.moves.urllib.parse import urljoin
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -14,9 +16,10 @@ from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 from website.mails import mails
+from website.settings import DOMAIN
 
 
-EMAIL_TEMPLATES_PER_TRIGGER = {
+EMAIL_TEMPLATES_PER_EVENT = {
     'create': mails.SCHEMA_RESPONSE_INITIATED,
     'submit': mails.SCHEMA_RESPONSE_SUBMITTED,
     'accept': mails.SCHEMA_RESPONSE_APPROVED,
@@ -81,8 +84,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             active_state=self.state,
             state_property_name='state'
         )
-        # Add a callback to notify users on every state change
-        self.approvals_state_machine.after_state_change.append('_notify_users')
+
+    @property
+    def absolute_url(self):
+        relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        return urljoin(DOMAIN, relative_url_path)
 
     @property
     def all_responses(self):
@@ -195,7 +201,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        new_response._notify_users(trigger='create')
+        new_response._notify_users(event='create')
         return new_response
 
     def update_responses(self, updated_responses):
@@ -414,7 +420,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''
         self.pending_approvers.clear()
-        self.notify_users(mails.SchemaResposneRejected(self.parent.title))
 
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
@@ -433,28 +438,28 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
+        self._notify_users(event=event_data.event.name)
 
-        self.notify_users(event_data.event.name)
-
-    def _notify_users(self, trigger):
+    def _notify_users(self, event):
+        '''Notify users of relevant state transitions.'''
         #  These notifications will be handled by the registration workflow
         #  Revisit this once more parent types are supported
         if not self.previous_response:
             return
 
-        template = EMAIL_TEMPLATES_PER_TRIGGER.get(trigger)
+        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
         if not template:
             return
 
         email_context = {
             'resource_type': self.parent.__class__.__name__,
             'title': self.parent.title,
-            'parent_link': self.parent.absolute_url,
-            'update_link': self.absolute_url
+            'parent_url': self.parent.absolute_url,
+            'update_url': self.absolute_url
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             email_context['user'] = contributor
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
             email_context['is_approver'] = contributor in self.pending_approvers.all()
-            mails.send(to_addr=contributor.user_name, mail=template, **email_context)
+            mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
