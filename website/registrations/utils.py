@@ -54,7 +54,7 @@ def get_excel_column_name(column_index):
 class Store():
     def __init__(self, registration_provider):
         self.licenses = registration_provider.licenses_acceptable.all()
-        self.subjects = registration_provider.subjects.all()
+        self.subjects = registration_provider.subjects.all_subjects.all()
         self.institutions = Institution.objects.get_all_institutions()
 
 class InvalidHeadersError(ValidationError):
@@ -341,7 +341,7 @@ class MetadataField(UploadField):
 
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
-    contributor_regex = re.compile(r'(?P<full_name>[\w -]+)<(?P<email>.*?)>')
+    contributor_regex = re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.*?)>')
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
@@ -365,8 +365,8 @@ class ContributorField(MetadataField):
 
 class LicenseField(MetadataField):
     # format: license_name;year;copyright_holder_one,copyright_holder_two,...
-    with_required_fields_regex = re.compile(r'(?P<name>[\w ]+);(?P<year>[ ][1-3][0-9]{3});(?P<copyright_holders>[\w -,/]+)')
-    no_required_fields_regex = re.compile(r'(?P<name>[\w ]+)')
+    with_required_fields_regex = re.compile(r'(?P<name>[\w\W]+);\s*?(?P<year>[1-3][0-9]{3});(?P<copyright_holders>[\w\W]+)')
+    no_required_fields_regex = re.compile(r'(?P<name>[\w\W]+)')
 
     def _validate(self):
         parsed_value = None
