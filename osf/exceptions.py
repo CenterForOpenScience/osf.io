@@ -173,3 +173,15 @@ class PreviousSchemaResponseError(SchemaResponseError):
     already has a SchemaResponse in an unsupported state
     """
     pass
+
+
+class RegistrationBulkCreationRowError(OSFError):
+    """Raised if a draft registration failed creation during bulk upload"""
+
+    def __init__(self, upload_id, row_id, title, external_id, draft_id=None, error=None, approval_failure=False):
+        self.short_message = 'Title: {}, External ID: {}'.format(title, external_id)
+        self.long_message = 'Draft registration creation failed: [upload_id={}, row_id={}, ' \
+                            'title={}, external_id={}]'.format(upload_id, row_id, title, external_id)
+        self.draft_id = draft_id
+        self.error = error if error else 'Draft registration creation error'
+        self.approval_failure = approval_failure
