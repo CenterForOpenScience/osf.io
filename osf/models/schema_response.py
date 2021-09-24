@@ -443,8 +443,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _notify_users(self, event):
         '''Notify users of relevant state transitions.'''
         #  These notifications will be handled by the registration workflow
-        #  Revisit this once more parent types are supported
         if not self.previous_response:
+            return
+
+        # Don't notify of approval until *all* approvals are finished
+        if event == 'accept' and self.state is ApprovalStates.PENDING_MODERATION:
             return
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)
@@ -455,7 +458,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'resource_type': self.parent.__class__.__name__,
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
-            'update_url': self.absolute_url
+            'update_url': self.absolute_url,
+            'is_moderated': self.is_moderated
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):

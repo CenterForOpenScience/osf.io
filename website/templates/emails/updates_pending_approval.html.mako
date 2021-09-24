@@ -14,7 +14,7 @@
         From that page, You will be able to either approve the updates or request further changes.
     % endif
     <p>
-    %if resposne.is_moderated:
+    %if is_moderated:
     If the proposed updates are approved by all "admin" users on the ${resource_type},
     they will be submitted for moderator review.
     %endif

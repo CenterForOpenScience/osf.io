@@ -11,7 +11,7 @@
 	<p>
     The updated responses will be visible by default to all viewers of the ${resource_type}
     along with the reason for the changes. All previously approved updates will remain accessible
-    for comparrison through the "Updates" dropdown on the Registration overview page.
+    for comparrison through the "Updates" dropdown on the ${resource_type} overview page.
 	<p>
     Sincerely yours,<br>
     The OSF Robots<br>
