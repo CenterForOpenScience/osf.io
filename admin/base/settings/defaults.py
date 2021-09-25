@@ -136,6 +136,7 @@ INSTALLED_APPS = (
     'addons.nextcloudinstitutions',
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
+    'addons.onedrivebusiness',
 )
 
 MIGRATION_MODULES = {
@@ -170,6 +171,7 @@ MIGRATION_MODULES = {
     'addons_nextcloudinstitutions': None,
     'addons_s3compatinstitutions': None,
     'addons_ociinstitutions': None,
+    'addons_onedrivebusiness': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [

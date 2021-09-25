@@ -1,0 +1,9 @@
+{
+    "onedrivebusiness_file_added" : "A user added a file to an OneDrive team folder in a project",
+    "onedrivebusiness_file_removed" : "A user removed a file in an OneDrive team folder in a project",
+    "onedrivebusiness_file_updated" : "A user updated a file in an OneDrive team folder in a project",
+    "onedrivebusiness_folder_created" : "A user created a folder in an OneDrive team folder in a project",
+    "onedrivebusiness_node_authorized" : "A user authorized the OneDrive for Office365 addon for a project",
+    "onedrivebusiness_node_deauthorized" : "A user deauthorized the OneDrive for Office365 addon for a project",
+    "onedrivebusiness_node_deauthorized_no_user" : "OneDrive for Office365 addon for a project deauthorized"
+}

@@ -124,6 +124,7 @@ INSTALLED_APPS = (
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
     'addons.binderhub',
+    'addons.onedrivebusiness',
 )
 
 # local development using https
