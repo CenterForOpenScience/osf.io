@@ -56,10 +56,17 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         url = web_url_for(
             'oauth_callback',
             service_name=self.ADDON_SHORT_NAME
-        ) + '?state=abc123'
+        )
+        if self.Provider._oauth_version == 1:
+            url += '?oauth_token=abc123&oauth_token_secret=def456'
+        elif self.Provider._oauth_version == 2:
+            url += '?state=abc123'
         with mock.patch.object(self.Provider, 'auth_callback') as mock_callback:
             mock_callback.return_value = True
-            mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
+            if self.Provider._oauth_version == 1:
+                mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'token': 'abc123', 'secret': 'def456'}}}
+            elif self.Provider._oauth_version == 2:
+                mock_session.data = {'oauth_states': {self.ADDON_SHORT_NAME: {'state': 'abc123'}}}
             res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         name, args, kwargs = mock_callback.mock_calls[0]

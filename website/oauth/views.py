@@ -75,13 +75,31 @@ def osf_oauth_callback(service_name, auth):
 
     return {}
 
-def oauth_callback(service_name):
+@must_be_logged_in
+def oauth_callback(service_name, auth):
     try:
-        session_oauth_state = session.data['oauth_states'][service_name]['state']
+        validate_rdm_addons_allowed(auth, service_name)
+    except PermissionsError as e:
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data=dict(message_long=str(e))
+        )
+
+    service = get_service(service_name)
+
+    if service._oauth_version == 1:
+        session_key_name = 'token'
+        request_key_name = 'oauth_token'
+    elif service._oauth_version == 2:
+        session_key_name = 'state'
+        request_key_name = 'state'
+
+    try:
+        session_oauth_state = session.data['oauth_states'][service_name][session_key_name]
     except KeyError:
         session_oauth_state = None
 
-    request_oauth_state = request.args.get('state')
+    request_oauth_state = request.args.get(request_key_name)
     if session_oauth_state is not None and request_oauth_state is not None and \
             session_oauth_state in request_oauth_state:
         # Request was created from web
