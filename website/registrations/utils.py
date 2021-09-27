@@ -10,28 +10,33 @@ from django.db.models import Q
 from rest_framework.exceptions import NotFound, ValidationError
 
 from osf.models.licenses import NodeLicense
-from osf.models import AbstractNode, RegistrationProvider, Subject, RegistrationSchema, Institution
+from osf.models import AbstractNode, RegistrationProvider, RegistrationSchema, Institution
 from website import settings
 
 
-METADATA_FIELDS = {'title': {'format': 'string', 'required': True},
-                   'description': {'format': 'string', 'required': True},
-                   'admin contributors': {'format': 'list', 'required': True},
-                   'read-write contributors': {'format': 'list'},
-                   'read-only contributors': {'format': 'list'},
-                   'bibliographic contributors': {'format': 'list'},
-                   'category': {'format': 'string'},
-                   'affiliated institutions': {'format': 'list'},
-                   'license': {'format': 'object', 'required': True},
-                   'subjects': {'format': 'list', 'required': True},
-                   'tags': {'format': 'list'},
-                   'project guid': {'format': 'string'},
-                   'external id': {'format': 'string'}}
-CONTRIBUTOR_METADATA_FIELDS = ['admin contributors',
-                               'read-write contributors',
-                               'read-only contributors',
-                               'bibliographic contributors']
+METADATA_FIELDS = {'Title': {'format': 'string', 'required': True},
+                   'Description': {'format': 'string', 'required': True},
+                   'Admin Contributors': {'format': 'list', 'required': True},
+                   'Read-Write Contributors': {'format': 'list'},
+                   'Read-Only Contributors': {'format': 'list'},
+                   'Bibliographic Contributors': {'format': 'list'},
+                   'Category': {'format': 'string'},
+                   'Affiliated Institutions': {'format': 'list'},
+                   'License': {'format': 'object', 'required': True},
+                   'Subjects': {'format': 'list', 'required': True},
+                   'Tags': {'format': 'list'},
+                   'Project GUID': {'format': 'string'},
+                   'External ID': {'format': 'string'}}
+CONTRIBUTOR_METADATA_FIELDS = ['Admin Contributors',
+                               'Read-Write Contributors',
+                               'Read-Only Contributors',
+                               'Bibliographic Contributors']
+
+CATEGORY_REVERSE_LOOKUP = {display_name: name for name, display_name in settings.NODE_CATEGORY_MAP.items()}
+
 MAX_EXCEL_COLUMN_NUMBER = 16384
+
+STORE = None
 
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
 def get_excel_column_name(column_index):
@@ -46,6 +51,15 @@ def get_excel_column_name(column_index):
 
     return column_name
 
+class Store():
+    def __init__(self, registration_provider):
+        self.licenses = registration_provider.licenses_acceptable.all()
+        self.subjects = registration_provider.subjects.all_subjects.all()
+        self.institutions = Institution.objects.get_all_institutions()
+
+class InvalidHeadersError(ValidationError):
+    pass
+
 class BulkRegistrationUpload():
     @property
     def is_valid(self):
@@ -56,10 +70,10 @@ class BulkRegistrationUpload():
         return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
-        # self.raw_csv = bulk_upload_csv.read()
         self.raw_csv = bulk_upload_csv.read().decode('utf-8')
-        self.reader = csv.DictReader(io.StringIO(self.raw_csv))
-        self.headers = [header.lower() for header in self.reader.fieldnames]
+        csv_io = io.StringIO(self.raw_csv)
+        self.reader = csv.DictReader(csv_io)
+        self.headers = self.reader.fieldnames
         schema_id_row = next(self.reader)
         self.schema_id = schema_id_row[self.reader.fieldnames[0]]
         self.provider_id = provider_id
@@ -80,6 +94,14 @@ class BulkRegistrationUpload():
                          self.validations,
                          functools.partial(self.log_error, row_index=index + 3))
                      for index, row in enumerate(self.reader)]
+        csv_io.close()
+        BulkRegistrationUpload.init_store(self.registration_provider)
+
+    @classmethod
+    def init_store(cls, registration_provider):
+        global STORE
+        if STORE is None:
+            STORE = Store(registration_provider)
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
@@ -137,8 +159,10 @@ class BulkRegistrationUpload():
     def validate_csv_header_list(self):
         expected_headers = self.validations.keys()
         actual_headers = self.headers
-        if set(expected_headers) != set(actual_headers):
-            raise ValidationError({'Invalid headers.'})
+        invalid_headers = list(set(actual_headers) - set(expected_headers))
+        missing_headers = list(set(expected_headers) - set(actual_headers))
+        if invalid_headers or missing_headers:
+            raise InvalidHeadersError({'invalid_headers': invalid_headers, 'missing_headers': missing_headers})
 
     def get_parsed(self):
         parsed = []
@@ -157,8 +181,8 @@ class Row():
 
     def __init__(self, row_dict, validations, log_error):
         self.row_dict = row_dict
-        self.cells = [Cell(header.lower(),
-                           value, validations[header.lower()],
+        self.cells = [Cell(header,
+                           value, validations[header],
                            functools.partial(log_error, external_id=row_dict.get('External ID', ''), column_index=column_index))
                            for column_index, (header, value) in enumerate(row_dict.items())]
 
@@ -204,7 +228,7 @@ class Cell():
         self.header = header
         self.value = value
         self.validations = validations
-        self.field = Cell.field_instance_for(self.header.lower(),
+        self.field = Cell.field_instance_for(self.header,
                                              self.value,
                                              self.validations,
                                              functools.partial(log_error, header=self.header))
@@ -224,15 +248,15 @@ class Cell():
         if name in METADATA_FIELDS.keys():
             if name in CONTRIBUTOR_METADATA_FIELDS:
                 field_instance = ContributorField(*args)
-            elif name == 'license':
+            elif name == 'License':
                 field_instance = LicenseField(*args)
-            elif name == 'category':
+            elif name == 'Category':
                 field_instance = CategoryField(*args)
-            elif name == 'subjects':
+            elif name == 'Subjects':
                 field_instance = SubjectsField(*args)
-            elif name == 'affiliated institutions':
+            elif name == 'Affiliated Institutions':
                 field_instance = InstitutionsField(*args)
-            elif name == 'project guid':
+            elif name == 'Project GUID':
                 field_instance = ProjectIDField(*args)
             else:
                 field_instance = MetadataField(*args)
@@ -317,7 +341,7 @@ class MetadataField(UploadField):
 
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
-    contributor_regex = re.compile(r'(?P<full_name>[\w -]+)<(?P<email>.*?)>')
+    contributor_regex = re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.*?)>')
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
@@ -336,13 +360,13 @@ class ContributorField(MetadataField):
                     except AttributeError:
                         self.log_error(invalid=True, type='invalidContributors')
                     else:
-                        parsed_value.append({'full_name': full_name, 'email': email})
+                        parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
             self._parsed_value = parsed_value
 
 class LicenseField(MetadataField):
     # format: license_name;year;copyright_holder_one,copyright_holder_two,...
-    with_required_fields_regex = re.compile(r'(?P<name>[\w ]+);(?P<year>[ ][1-3][0-9]{3});(?P<copyright_holders>[\w -,]+)')
-    no_required_fields_regex = re.compile(r'(?P<name>[\w ]+)')
+    with_required_fields_regex = re.compile(r'(?P<name>[\w\W]+);\s*?(?P<year>[1-3][0-9]{3});(?P<copyright_holders>[\w\W]+)')
+    no_required_fields_regex = re.compile(r'(?P<name>[\w\W]+)')
 
     def _validate(self):
         parsed_value = None
@@ -351,11 +375,14 @@ class LicenseField(MetadataField):
         else:
             if not self.value:
                 return
+
+            assert hasattr(STORE, 'licenses') is not None, 'STORE.licenses was not initialized!'
+
             license_name_match = self.no_required_fields_regex.match(self.value)
             if license_name_match is not None:
                 node_license_name = license_name_match.group('name')
                 try:
-                    node_license = NodeLicense.objects.get(name__iexact=node_license_name)
+                    node_license = STORE.licenses.get(name__iexact=node_license_name)
                 except NodeLicense.DoesNotExist:
                     self.log_error(invalid=True)
                 else:
@@ -363,15 +390,14 @@ class LicenseField(MetadataField):
                     if has_required_fields:
                         match = self.with_required_fields_regex.match(self.value)
                         if match is not None:
-                            name = match.group('name')
-                            year = match.group('year')
-                            copyright_holders = match.group('copyright_holders')
+                            year = match.group('year').strip()
+                            copyright_holders = match.group('copyright_holders').strip()
                             copyright_holders = [val.strip() for val in copyright_holders.split(',')]
-                            parsed_value = {'name': name,
+                            parsed_value = {'name': node_license.name,
                                             'required_fields': {'year': year,
                                                                'copyright_holders': copyright_holders}}
                     else:
-                        parsed_value = {'name': node_license_name}
+                        parsed_value = {'name': node_license.name}
                     self._parsed_value = parsed_value
             else:
                 self.log_error(invalid=True, type='invalidLicenseName')
@@ -379,14 +405,16 @@ class LicenseField(MetadataField):
 class CategoryField(MetadataField):
     def _validate(self):
         try:
-            self._parsed_value = settings.NODE_CATEGORY_MAP[self.value.lower()]
+            self._parsed_value = CATEGORY_REVERSE_LOOKUP[self.value if self.value else 'Uncategorized']
         except KeyError:
             self.log_error(invalid=True, type='invalidCategoryName')
 
 class SubjectsField(MetadataField):
     def _validate(self):
+        assert hasattr(STORE, 'subjects'), 'STORE.subjects was not initialized!'
+
         subjects = [val.strip() for val in self.value.split(';')]
-        valid_subjects = list(Subject.objects.filter(text__in=subjects).values_list('text', flat=True))
+        valid_subjects = list(STORE.subjects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
             self.log_error(invalid=True, type='invalidSubjectName')
@@ -397,8 +425,11 @@ class InstitutionsField(MetadataField):
     def _validate(self):
         if not self.value:
             return
+
+        assert hasattr(STORE, 'institutions'), 'STORE.institutions was not initialized!'
+
         institutions = [val.strip() for val in self.value.split(';')]
-        valid_institutions = list(Institution.objects.filter(name__in=institutions).values_list('name', flat=True))
+        valid_institutions = list(STORE.institutions.filter(name__in=institutions).values_list('name', flat=True))
         invalid_institutions = list(set(institutions) - set(valid_institutions))
         if len(invalid_institutions):
             self.log_error(invalid=True, type='invalidInstitutionName')
