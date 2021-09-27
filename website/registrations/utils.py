@@ -353,7 +353,7 @@ class ContributorField(MetadataField):
             parsed_contributor_list = [val.strip() for val in self.value.split(';')]
             for contrib in parsed_contributor_list:
                 match = self.contributor_regex.match(contrib.strip())
-                if match:
+                if match is not None:
                     try:
                         full_name = match.group('full_name')
                         email = match.group('email')
@@ -361,6 +361,8 @@ class ContributorField(MetadataField):
                         self.log_error(invalid=True, type='invalidContributors')
                     else:
                         parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
+                else:
+                    self.log_error(invalid=True, type='invalidContributors')
             self._parsed_value = parsed_value
 
 class LicenseField(MetadataField):
