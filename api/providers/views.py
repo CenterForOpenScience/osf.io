@@ -63,7 +63,7 @@ from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
 
-from website.registrations.utils import BulkRegistrationUpload
+from website.registrations.utils import BulkRegistrationUpload, InvalidHeadersError
 
 
 class ProviderMixin:
@@ -852,9 +852,11 @@ class RegistrationBulkCreate(APIView):
             upload = BulkRegistrationUpload(file_obj, provider_id)
             upload.validate()
             errors = upload.errors
-        except ValidationError:
+        except InvalidHeadersError as e:
+            invalid_headers = [str(detail) for detail in e.detail['invalid_headers']]
+            missing_headers = [str(detail) for detail in e.detail['missing_headers']]
             return JsonResponse(
-                {'errors': [{'type': 'invalidColumnId'}]},
+                {'errors': [{'type': 'invalidColumnId', 'invalidHeaders': invalid_headers, 'missingHeaders': missing_headers}]},
                 status=400,
                 content_type='application/vnd.api+json; application/json',
             )
