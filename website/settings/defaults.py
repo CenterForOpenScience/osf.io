@@ -673,7 +673,8 @@ class CeleryConfig:
             },
             'monitor_registration_bulk_upload_jobs': {
                 'task': 'api.providers.tasks.monitor_registration_bulk_upload_jobs',
-                'schedule': crontab(hour='*/3'),  # Every 3 hours
+                # 'schedule': crontab(hour='*/3'),  # Every 3 hours
+                'schedule': crontab(minute='*/5'),  # Every 5 minutes for staging server QA test
                 'kwargs': {'dry_run': False}
             },
         }

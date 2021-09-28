@@ -222,7 +222,6 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             error = 'Duplicate subjects found: [text={}]'.format(text)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         subject_ids.append(subject_list.first()._id)
-    logger.error(subject_ids)
 
     # Prepare node licences
     license_name = metadata.get('license').get('name')
