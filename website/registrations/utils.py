@@ -54,7 +54,7 @@ def get_excel_column_name(column_index):
 class Store():
     def __init__(self, registration_provider):
         self.licenses = registration_provider.licenses_acceptable.all()
-        self.subjects = registration_provider.subjects.all_subjects.all()
+        self.subjects = registration_provider.all_subjects.all()
         self.institutions = Institution.objects.get_all_institutions()
 
 class InvalidHeadersError(ValidationError):
@@ -386,7 +386,7 @@ class LicenseField(MetadataField):
                 try:
                     node_license = STORE.licenses.get(name__iexact=node_license_name)
                 except NodeLicense.DoesNotExist:
-                    self.log_error(invalid=True)
+                    self.log_error(invalid=True, type='invalidLicenseName')
                 else:
                     has_required_fields = bool(node_license.properties)
                     if has_required_fields:
