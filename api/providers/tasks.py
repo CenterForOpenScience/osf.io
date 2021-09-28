@@ -8,9 +8,16 @@ from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 from osf.exceptions import RegistrationBulkCreationRowError, UserNotAffiliatedError, ValidationValueError
-from osf.models import (AbstractNode, DraftRegistration, Institution, OSFUser,
-                        RegistrationBulkUploadJob, RegistrationBulkUploadRow,
-                        RegistrationProvider, RegistrationSchema)
+from osf.models import (
+    AbstractNode,
+    DraftRegistration,
+    Institution,
+    OSFUser,
+    RegistrationBulkUploadJob,
+    RegistrationBulkUploadRow,
+    RegistrationProvider,
+    RegistrationSchema,
+)
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
 from osf.utils.permissions import READ, WRITE, ADMIN
@@ -110,19 +117,19 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
 @celery_app.task(name='api.providers.tasks.monitor_registration_bulk_upload_jobs')
 def monitor_registration_bulk_upload_jobs(dry_run=True):
 
-    logger.info("Checking registration bulk upload jobs ...")
+    logger.info('Checking registration bulk upload jobs ...')
     bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED)
-    logger.info("[{}] pending jobs found.".format(len(bulk_uploads)))
+    logger.info('[{}] pending jobs found.'.format(len(bulk_uploads)))
 
     for upload in bulk_uploads:
-        logger.info("Picked up job [upload={}, hash={}]".format(upload.id, upload.payload_hash))
+        logger.info('Picked up job [upload={}, hash={}]'.format(upload.id, upload.payload_hash))
         upload.state = JobState.PICKED_UP
         bulk_create_registrations.delay(upload.id, dry_run=dry_run)
         if not dry_run:
             upload.save()
     if dry_run:
-        logger.info("Dry run: bulk creation started in dry-run mode and job state wasn't updated")
-    logger.info("[{}] jobs have been picked up and kicked off. This monitor task ends.".format(len(bulk_uploads)))
+        logger.info('Dry run: bulk creation started in dry-run mode and job state was not updated')
+    logger.info('[{}] jobs have been picked up and kicked off. This monitor task ends.'.format(len(bulk_uploads)))
 
 
 @celery_app.task()
@@ -145,8 +152,8 @@ def bulk_create_registrations(upload_id, dry_run=True):
             provider._id,
             schema._id,
             initiator._id,
-            auto_approval
-        )
+            auto_approval,
+        ),
     )
 
     # Check and pick up registration rows for creation
@@ -156,7 +163,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
     draft_error_list = []
     approval_error_list = []
     for index, row in enumerate(registration_rows, 1):
-        logger.info("Processing row [{}]".format(index))
+        logger.info('Processing row [{}]'.format(index))
         row.is_picked_up = True
         if dry_run:
             continue
@@ -295,7 +302,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             schema,
             node=node,
             data=data,
-            provider=provider
+            provider=provider,
         )
         # Remove the initiator from the citation list
         initiator_contributor = draft.contributor_set.get(user=initiator)
@@ -307,8 +314,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         # If the has been created already but failure happens before it is related to the registration row,
         # provide the draft_id to the exception for deletion after the it is caught by the caller.
         draft_id = draft.id if draft else None
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id,
-                                               draft_id=draft_id, error=repr(e))
+        raise RegistrationBulkCreationRowError(
+            row.upload.id, row.id, row_title, row_external_id,
+            draft_id=draft_id, error=repr(e),
+        )
 
     # Set subjects
     draft.set_subjects_from_relationships(subject_ids, auth)
@@ -337,8 +346,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         bibliographic = email in author_set
         permission = ADMIN if email in admin_set else (WRITE if email in read_write_set else READ)
         try:
-            draft.add_contributor_registered_or_not(auth, full_name=full_name, email=email,
-                                                    permissions=permission, bibliographic=bibliographic)
+            draft.add_contributor_registered_or_not(
+                auth, full_name=full_name, email=email,
+                permissions=permission, bibliographic=bibliographic,
+            )
         except ValidationValueError:
             logger.warning('Contributor already exists: [{}]'.format(email))
             continue
@@ -357,8 +368,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             registration.require_approval(initiator)
             registration.sanction.accept()
         except Exception as e:
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id,
-                                                   error=repr(e), approval_failure=True)
+            raise RegistrationBulkCreationRowError(
+                row.upload.id, row.id, row_title, row_external_id,
+                error=repr(e), approval_failure=True,
+            )
         logger.info('Registration approved but pending moderation: [{}]'.format(registration.id))
 
 
