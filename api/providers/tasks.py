@@ -192,13 +192,13 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     """
 
     metadata = row.csv_parsed.get('metadata', {})
-    row_external_id = metadata.get('external id', 'N/A')
-    row_title = metadata.get('title', 'N/A')
+    row_external_id = metadata.get('External Id', 'N/A')
+    row_title = metadata.get('Title', '')
     responses = row.csv_parsed.get('registration_responses', {})
     auth = Auth(user=initiator)
 
     # Check node
-    node_id = metadata.get('project guid', '')
+    node_id = metadata.get('Project GUID', '')
     node = None
     if node_id:
         try:
@@ -211,7 +211,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare subjects
-    subject_texts = metadata.get('subjects', [])
+    subject_texts = metadata.get('Subjects', [])
     subject_ids = []
     for text in subject_texts:
         subject_list = provider.all_subjects.filter(text=text)
@@ -224,9 +224,9 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         subject_ids.append(subject_list.first()._id)
 
     # Prepare node licences
-    license_name = metadata.get('license').get('name')
-    year = metadata.get('license').get('required_fields', {}).get('year', None),
-    copyright_holders = metadata.get('license').get('required_fields', {}).get('copyright_holders', None),
+    license_name = metadata.get('License').get('name')
+    year = metadata.get('License').get('required_fields', {}).get('year', None),
+    copyright_holders = metadata.get('License').get('required_fields', {}).get('copyright_holders', None),
     try:
         node_license = NodeLicense.objects.get(name=license_name)
     except NodeLicense.DoesNotExist:
@@ -244,14 +244,14 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     # Prepare editable fields
     data = {
         'title': row_title,
-        'category': metadata.get('category').lower(),
-        'description': metadata.get('description'),
+        'category': metadata.get('Category'),
+        'description': metadata.get('Description'),
         'node_license': node_license,
     }
 
     # Prepare institutions
     affiliated_institutions = []
-    institution_names = metadata.get('affiliated institutions')
+    institution_names = metadata.get('Affiliated Institutions', [])
     for name in institution_names:
         try:
             institution = Institution.objects.get(name=name, is_delete=False)
@@ -261,22 +261,22 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         affiliated_institutions.append(institution)
 
     # Prepare tags
-    tags = metadata.get('tags')
+    tags = metadata.get('Tags')
 
     # Prepare contributors
-    admin_list = metadata.get('admin contributors', [])
+    admin_list = metadata.get('Admin Contributors', [])
     if not admin_list:
         admin_list = []
     admin_set = {contributor.get('email') for contributor in admin_list}
-    read_only_list = metadata.get('read-only contributors', [])
+    read_only_list = metadata.get('Read-Only Contributors', [])
     if not read_only_list:
         read_only_list = []
     read_only_set = {contributor.get('email') for contributor in read_only_list}
-    read_write_list = metadata.get('read-write contributors', [])
+    read_write_list = metadata.get('Read-Write Contributors', [])
     if not read_write_list:
         read_write_list = []
     read_write_set = {contributor.get('email') for contributor in read_write_list}
-    author_list = metadata.get('bibliographic contributors', [])
+    author_list = metadata.get('Bibliographic Contributors', [])
     if not author_list:
         author_list = []
     author_set = {contributor.get('email') for contributor in author_list}
