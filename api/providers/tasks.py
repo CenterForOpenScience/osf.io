@@ -22,7 +22,7 @@ from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
 from osf.utils.permissions import READ, WRITE, ADMIN
 
-from website import mails, settings
+# from website import mails, settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -138,8 +138,9 @@ def bulk_create_registrations(upload_id, dry_run=True):
     try:
         upload = RegistrationBulkUploadJob.objects.get(id=upload_id)
     except RegistrationBulkUploadJob.DoesNotExist:
-        # TODO: handle should-not-happen error
+        # This error should not happen since this task is only called by `monitor_registration_bulk_upload_jobs`
         logger.error('Registration bulk upload job not found: [id={}] '.format(upload_id))
+        sentry.log_exception()
         return
 
     # Retrieve bulk upload job
@@ -158,7 +159,8 @@ def bulk_create_registrations(upload_id, dry_run=True):
 
     # Check and pick up registration rows for creation
     registration_rows = RegistrationBulkUploadRow.objects.filter(upload__id=upload_id)
-    logger.info('Picked up [{}] registration rows for creation'.format(len(registration_rows)))
+    initial_row_count = len(registration_rows)
+    logger.info('Picked up [{}] registration rows for creation'.format(initial_row_count))
 
     draft_error_list = []
     approval_error_list = []
@@ -172,6 +174,8 @@ def bulk_create_registrations(upload_id, dry_run=True):
             handle_registration_row(row, initiator, provider, schema, auto_approval=auto_approval)
         except RegistrationBulkCreationRowError as e:
             logger.error(e.long_message)
+            logger.error(e.error)
+            sentry.log_exception()
             if e.approval_failure:
                 approval_error_list.append(e.short_message)
             else:
@@ -184,11 +188,16 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     row.delete()
                 else:
                     row.delete()
-    if len(draft_error_list) == len(registration_rows):
+    if len(draft_error_list) == initial_row_count:
         upload.state = JobState.DONE_ERROR
+        sentry.log_message('All registration rows failed during bulk creation. '
+                           'Upload ID: [{}], Draft Errors: [{}]'.format(upload_id, draft_error_list))
     elif len(draft_error_list) > 1 or len(approval_error_list) > 1:
         upload.state = JobState.DONE_PARTIAL
+        sentry.log_message('Some registration rows failed during bulk creation. Upload ID: [{}]; Draft Errors: [{}]; '
+                           'Approval Errors: [{}]'.format(upload_id, draft_error_list, approval_error_list))
     else:
+        logger.info('All registration rows succeeded for bulk creation. Upload ID: [{}].'.format(upload_id))
         upload.state = JobState.DONE_FULL
     upload.save()
     # TODO: send emails with information form the two error list
@@ -199,7 +208,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     """
 
     metadata = row.csv_parsed.get('metadata', {})
-    row_external_id = metadata.get('External Id', 'N/A')
+    row_external_id = metadata.get('External ID', 'N/A')
     row_title = metadata.get('Title', '')
     responses = row.csv_parsed.get('registration_responses', {})
     auth = Auth(user=initiator)
@@ -363,7 +372,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     if auto_approval:
         draft = row.draft_registration
         try:
-            draft.register(Auth(user=initiator), save=True)
+            draft.register(auth, save=True)
             registration = draft.registered_node
             registration.require_approval(initiator)
             registration.sanction.accept()
@@ -384,15 +393,17 @@ def handle_error(initiator, inform_product=False, error_message=None):
         sentry.log_message(error_message)
 
     if inform_product:
-        mails.send_mail(
-            to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
-            mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
-        )
-
+        pass
+    #     mails.send_mail(
+    #         to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
+    #         mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
+    #     )
+    #
     if initiator:
-        mails.send_mail(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
-            user=initiator,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        )
+        pass
+    #     mails.send_mail(
+    #         to_addr=initiator.username,
+    #         mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
+    #         user=initiator,
+    #         osf_support_email=settings.OSF_SUPPORT_EMAIL,
+    #     )
