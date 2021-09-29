@@ -16,10 +16,10 @@ from website import settings
 
 METADATA_FIELDS = {'Title': {'format': 'string', 'required': True, 'error_type': {'missing': 'missingTitle'}},
                    'Description': {'format': 'string', 'required': True, 'error_type': {'missing': 'missingDescription'}},
-                   'Admin Contributors': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingContributors', 'invalid': 'invalidContributors'}},
+                   'Admin Contributors': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingAdminContributor', 'invalid': 'invalidContributors'}},
                    'Read-Write Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
                    'Read-Only Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
-                   'Bibliographic Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
+                   'Bibliographic Contributors': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingBibliographicContributor', 'invalid': 'invalidContributors'}},
                    'Category': {'format': 'string', 'error_type': {'invalid': 'invalidCategoryName'}},
                    'Affiliated Institutions': {'format': 'list', 'error_type': {'invalid': 'invalidInstitutionName'}},
                    'License': {'format': 'object', 'required': True, 'error_type': {'missing': 'missingLicenseName', 'invalid': 'invalidLicenseName'}},
