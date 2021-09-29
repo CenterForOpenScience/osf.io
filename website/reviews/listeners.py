@@ -83,9 +83,10 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     context['profile_image_url'] = get_profile_image_url(context['referrer'])
 
     # Set message
-    if context['revision_id']:
+    revision_id = context.get('revision_id')
+    if revision_id:
         context['message'] = f'submitted updates to "{resource.title}".'
-        context['reviews_submission_url'] += '&revisionId=<revision_id>'
+        context['reviews_submission_url'] += f'&revisionId={revision_id}'
     else:
         context['message'] = f'submitted "{resource.title}".'
 
