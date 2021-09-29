@@ -81,10 +81,10 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     logger.info('Preparing [{}] registration rows for bulk creation ...'.format(len(registration_rows)))
     bulk_upload_rows = []
     for registration_row in registration_rows:
-        bulk_upload_row = RegistrationBulkUploadRow(
-            upload=upload, draft_registration=None, is_completed=False,
-            is_picked_up=False, csv_raw=registration_row.get('csv_raw', ''),
-            csv_parsed=registration_row.get('csv_parsed'),
+        bulk_upload_row = RegistrationBulkUploadRow.create(
+            upload,
+            registration_row.get('csv_raw', ''),
+            registration_row.get('csv_parsed'),
         )
         bulk_upload_rows.append(bulk_upload_row)
 

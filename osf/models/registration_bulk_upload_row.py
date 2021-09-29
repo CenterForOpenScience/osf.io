@@ -3,6 +3,7 @@ from django.db import models
 
 from osf.models.base import BaseModel
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import ensure_bytes
 
 
 class RegistrationBulkUploadRow(BaseModel):
@@ -32,8 +33,7 @@ class RegistrationBulkUploadRow(BaseModel):
 
     @classmethod
     def create(cls, upload, csv_raw, csv_parsed):
-        row_hash = hashlib.md5(csv_raw).hexdigest()
         registration_row = cls(upload=upload, draft_registration=None, is_completed=False,
                                is_picked_up=False, csv_raw=csv_raw, csv_parsed=csv_parsed,
-                               row_hash=row_hash)
+                               row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest())
         return registration_row
