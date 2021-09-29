@@ -1284,7 +1284,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
-        draft.update(data)
+        draft.update(data, auth=Auth(user))
 
         if node.type == 'osf.draftnode':
             initiator_permissions = draft.contributor_set.get(user=user).permission

@@ -14,18 +14,18 @@ from osf.models import AbstractNode, RegistrationProvider, RegistrationSchema, I
 from website import settings
 
 
-METADATA_FIELDS = {'Title': {'format': 'string', 'required': True},
-                   'Description': {'format': 'string', 'required': True},
-                   'Admin Contributors': {'format': 'list', 'required': True},
-                   'Read-Write Contributors': {'format': 'list'},
-                   'Read-Only Contributors': {'format': 'list'},
-                   'Bibliographic Contributors': {'format': 'list'},
-                   'Category': {'format': 'string'},
-                   'Affiliated Institutions': {'format': 'list'},
-                   'License': {'format': 'object', 'required': True},
-                   'Subjects': {'format': 'list', 'required': True},
+METADATA_FIELDS = {'Title': {'format': 'string', 'required': True, 'error_type': {'missing': 'missingTitle'}},
+                   'Description': {'format': 'string', 'required': True, 'error_type': {'missing': 'missingDescription'}},
+                   'Admin Contributors': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingContributors', 'invalid': 'invalidContributors'}},
+                   'Read-Write Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
+                   'Read-Only Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
+                   'Bibliographic Contributors': {'format': 'list', 'error_type': {'invalid': 'invalidContributors'}},
+                   'Category': {'format': 'string', 'error_type': {'invalid': 'invalidCategoryName'}},
+                   'Affiliated Institutions': {'format': 'list', 'error_type': {'invalid': 'invalidInstitutionName'}},
+                   'License': {'format': 'object', 'required': True, 'error_type': {'missing': 'missingLicenseName', 'invalid': 'invalidLicenseName'}},
+                   'Subjects': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingSubjectName', 'invalid': 'invalidSubjectName'}},
                    'Tags': {'format': 'list'},
-                   'Project GUID': {'format': 'string'},
+                   'Project GUID': {'format': 'string', 'error_type': {'invalid': 'invalidProjectId'}},
                    'External ID': {'format': 'string'}}
 CONTRIBUTOR_METADATA_FIELDS = ['Admin Contributors',
                                'Read-Write Contributors',
@@ -150,8 +150,6 @@ class BulkRegistrationUpload():
             'header': kwargs['header'],
             'column_index': get_excel_column_name(kwargs['column_index']),
             'row_index': kwargs['row_index'],
-            'missing': kwargs.get('missing', False),
-            'invalid': kwargs.get('invalid', False),
             'external_id': kwargs.get('external_id', ''),
             'type': kwargs.get('type', '')
         })
@@ -205,11 +203,13 @@ class Row():
                 'registration_responses': self.get_registration_responses()}
 
     def get_raw_value(self):
-        raw_value = io.StringIO()
+        raw_value_buffer = io.StringIO()
+        csv_writer = csv.writer(raw_value_buffer)
         cell_values = [cell.value for cell in self.cells]
-        csv_writer = csv.writer(raw_value)
         csv_writer.writerow(cell_values)
-        return raw_value.getvalue()
+        raw_value = raw_value_buffer.getvalue()
+        raw_value_buffer.close()
+        return raw_value
 
     def validate(self):
         for cell in self.cells:
@@ -295,7 +295,7 @@ class RegistrationResponseField(UploadField):
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True)
+            self.log_error()
         else:
             if not self.value:
                 return
@@ -304,7 +304,7 @@ class RegistrationResponseField(UploadField):
             elif self.type == 'choose' and self.format in ['singleselect', 'multiselect']:
                 if self.format == 'singleselect':
                     if self.value not in self.options:
-                        self.log_error(invalid=True)
+                        self.log_error()
                     else:
                         parsed_value = self.value
                 else:
@@ -312,7 +312,7 @@ class RegistrationResponseField(UploadField):
                     choices = [val.strip() for val in self.value.split(';')]
                     for choice in choices:
                         if choice not in self.options:
-                            self.log_error(invalid=True)
+                            self.log_error()
                         else:
                             parsed_value.append(choice)
             self._parsed_value = parsed_value
@@ -324,6 +324,7 @@ class MetadataField(UploadField):
         self.required = validations.get('required', False)
         self.value = value.strip()
         self.log_error = log_error
+        self.error_type = validations.get('error_type')
 
     def get_field_type(self):
         return self.format
@@ -331,7 +332,7 @@ class MetadataField(UploadField):
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True)
+            self.log_error(type=self.error_type['missing'])
         else:
             if self.format == 'string':
                 parsed_value = self.value
@@ -345,7 +346,7 @@ class ContributorField(MetadataField):
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True, type='invalidContributors')
+            self.log_error(type=self.error_type['missing'])
         else:
             if not self.value:
                 return
@@ -358,22 +359,22 @@ class ContributorField(MetadataField):
                         full_name = match.group('full_name')
                         email = match.group('email')
                     except AttributeError:
-                        self.log_error(invalid=True, type='invalidContributors')
+                        self.log_error(type=self.error_type['invalid'])
                     else:
                         parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
                 else:
-                    self.log_error(invalid=True, type='invalidContributors')
+                    self.log_error(type=self.error_type['invalid'])
             self._parsed_value = parsed_value
 
 class LicenseField(MetadataField):
     # format: license_name;year;copyright_holder_one,copyright_holder_two,...
     with_required_fields_regex = re.compile(r'(?P<name>[\w\W]+);\s*?(?P<year>[1-3][0-9]{3});(?P<copyright_holders>[\w\W]+)')
-    no_required_fields_regex = re.compile(r'(?P<name>[\w\W]+)')
+    no_required_fields_regex = re.compile(r'(?P<name>[\w\W][^;]+)')
 
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
-            self.log_error(missing=True, type='invalidLicenseName')
+            self.log_error(type=self.error_type['missing'])
         else:
             if not self.value:
                 return
@@ -386,7 +387,7 @@ class LicenseField(MetadataField):
                 try:
                     node_license = STORE.licenses.get(name__iexact=node_license_name)
                 except NodeLicense.DoesNotExist:
-                    self.log_error(invalid=True, type='invalidLicenseName')
+                    self.log_error(type=self.error_type['invalid'])
                 else:
                     has_required_fields = bool(node_license.properties)
                     if has_required_fields:
@@ -402,14 +403,14 @@ class LicenseField(MetadataField):
                         parsed_value = {'name': node_license.name}
                     self._parsed_value = parsed_value
             else:
-                self.log_error(invalid=True, type='invalidLicenseName')
+                self.log_error(type=self.error_type['invalid'])
 
 class CategoryField(MetadataField):
     def _validate(self):
         try:
             self._parsed_value = CATEGORY_REVERSE_LOOKUP[self.value if self.value else 'Uncategorized']
         except KeyError:
-            self.log_error(invalid=True, type='invalidCategoryName')
+            self.log_error(type=self.error_type['invalid'])
 
 class SubjectsField(MetadataField):
     def _validate(self):
@@ -419,7 +420,7 @@ class SubjectsField(MetadataField):
         valid_subjects = list(STORE.subjects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
-            self.log_error(invalid=True, type='invalidSubjectName')
+            self.log_error(type=self.error_type['invalid'])
         else:
             self._parsed_value = valid_subjects
 
@@ -434,7 +435,7 @@ class InstitutionsField(MetadataField):
         valid_institutions = list(STORE.institutions.filter(name__in=institutions).values_list('name', flat=True))
         invalid_institutions = list(set(institutions) - set(valid_institutions))
         if len(invalid_institutions):
-            self.log_error(invalid=True, type='invalidInstitutionName')
+            self.log_error(type=self.error_type['invalid'])
         else:
             self._parsed_value = valid_institutions
 
@@ -445,6 +446,6 @@ class ProjectIDField(MetadataField):
         try:
             AbstractNode.objects.get(guids___id=self.value, is_deleted=False, type='osf.node')
         except AbstractNode.DoesNotExist:
-            self.log_error(invalid=True, type='invalidProjectId')
+            self.log_error(type=self.error_type['invalid'])
         else:
             self._parsed_value = self.value

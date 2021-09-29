@@ -199,6 +199,7 @@ def serialize_share_data(resource, old_subjects=None):
     """
     from osf.models import (
         Node,
+        DraftNode,
         Preprint,
         Registration,
     )
@@ -211,6 +212,8 @@ def serialize_share_data(resource, old_subjects=None):
         serializer = serialize_osf_node
     elif isinstance(resource, Registration):
         serializer = serialize_registration
+    elif isinstance(resource, DraftNode):
+        return {}
     else:
         raise NotImplementedError()
 
