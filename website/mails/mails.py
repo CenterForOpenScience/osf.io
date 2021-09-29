@@ -484,23 +484,23 @@ INSTITUTION_DEACTIVATION = Mail(
 
 SCHEMA_RESPONSE_INITIATED = Mail(
     'updates_initiated',
-    subject='Updates in in-progress for your {resource_type} {title}'
+    subject='Updates in in-progress for your ${resource_type} ${title}'
 )
 
 
 SCHEMA_RESPONSE_SUBMITTED = Mail(
     'updates_pending_approval',
-    subject='Updates to your {resource_type} {title} are pending admin approval'
+    subject='Updates to your ${resource_type} ${title} are pending admin approval'
 )
 
 
 SCHEMA_RESPONSE_APPROVED = Mail(
     'updates_approved',
-    subject='Updates to your {resource_type} {title} have been approved'
+    subject='Updates to your ${resource_type} ${title} have been approved'
 )
 
 
 SCHEMA_RESPONSE_REJECTED = Mail(
     'updates_rejected',
-    subject='Changes requested for the proposed updates to your {resource_type} {title}'
+    subject='Changes requested for the proposed updates to your ${resource_type} ${title}'
 )
