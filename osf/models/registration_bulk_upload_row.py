@@ -1,3 +1,4 @@
+import hashlib
 from django.db import models
 
 from osf.models.base import BaseModel
@@ -21,14 +22,18 @@ class RegistrationBulkUploadRow(BaseModel):
     is_picked_up = models.BooleanField(default=False)
 
     # The raw text string of a row in the CSV template
-    csv_raw = models.TextField(default='', blank=False, null=False, unique=True)
+    csv_raw = models.TextField(default='', blank=False, null=False)
 
     # The parsed version of the above raw text string.
     # TODO: add a comment here for the expected format of the value
     csv_parsed = DateTimeAwareJSONField(default=dict, blank=False, null=False)
 
+    row_hash = models.CharField(default='', blank=False, null=False, unique=True, max_length=255)
+
     @classmethod
     def create(cls, upload, csv_raw, csv_parsed):
+        row_hash = hashlib.md5(csv_raw).hexdigest()
         registration_row = cls(upload=upload, draft_registration=None, is_completed=False,
-                               is_picked_up=False, csv_raw=csv_raw, csv_parsed=csv_parsed)
+                               is_picked_up=False, csv_raw=csv_raw, csv_parsed=csv_parsed,
+                               row_hash=row_hash)
         return registration_row
