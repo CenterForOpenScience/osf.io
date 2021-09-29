@@ -25,7 +25,7 @@ METADATA_FIELDS = {'Title': {'format': 'string', 'required': True, 'error_type':
                    'License': {'format': 'object', 'required': True, 'error_type': {'missing': 'missingLicenseName', 'invalid': 'invalidLicenseName'}},
                    'Subjects': {'format': 'list', 'required': True, 'error_type': {'missing': 'missingSubjectName', 'invalid': 'invalidSubjectName'}},
                    'Tags': {'format': 'list'},
-                   'Project GUID': {'format': 'string', 'error_type': { 'invalid': 'invalidProjectId'}},
+                   'Project GUID': {'format': 'string', 'error_type': {'invalid': 'invalidProjectId'}},
                    'External ID': {'format': 'string'}}
 CONTRIBUTOR_METADATA_FIELDS = ['Admin Contributors',
                                'Read-Write Contributors',
@@ -150,8 +150,6 @@ class BulkRegistrationUpload():
             'header': kwargs['header'],
             'column_index': get_excel_column_name(kwargs['column_index']),
             'row_index': kwargs['row_index'],
-            'missing': kwargs.get('missing', False),
-            'invalid': kwargs.get('invalid', False),
             'external_id': kwargs.get('external_id', ''),
             'type': kwargs.get('type', '')
         })
@@ -205,11 +203,13 @@ class Row():
                 'registration_responses': self.get_registration_responses()}
 
     def get_raw_value(self):
-        raw_value = io.StringIO()
+        raw_value_buffer = io.StringIO()
+        csv_writer = csv.writer(raw_value_buffer)
         cell_values = [cell.value for cell in self.cells]
-        csv_writer = csv.writer(raw_value)
         csv_writer.writerow(cell_values)
-        return raw_value.getvalue()
+        raw_value = raw_value_buffer.getvalue()
+        raw_value_buffer.close()
+        return raw_value
 
     def validate(self):
         for cell in self.cells:
