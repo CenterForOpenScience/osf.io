@@ -14,6 +14,7 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFac
 from osf_tests.utils import get_default_test_schema
 
 from website.mails import mails
+from website.notifications import emails
 
 # See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
@@ -784,8 +785,7 @@ class TestModeratedSchemaResponseApprovalFlows():
     @pytest.fixture
     def moderator(self, provider):
         moderator = AuthUserFactory()
-        provider.get_group('moderator').user_set.add(moderator)
-        provider.save()
+        provider.add_to_group(moderator, 'moderator')
         return moderator
 
     @pytest.fixture
@@ -817,7 +817,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_no_notification_sent_on_admin_approval(self, revised_response, admin_user):
+    def test_no_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
@@ -825,6 +825,29 @@ class TestModeratedSchemaResponseApprovalFlows():
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             revised_response.approve(user=admin_user)
         assert not mock_send.called
+
+    def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        revised_response.save()
+        revised_response.pending_approvers.add(admin_user)
+
+        store_emails = emails.store_emails
+        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+            mock_store.side_effect = store_emails
+            revised_response.approve(user=admin_user)
+
+        assert mock_store.called
+        assert mock_store.call_args[0][0] == [moderator._id]
+
+    def test_no_moderator_notification_on_admin_approval_of_initial_response(
+            self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
+        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+            initial_response.approve(user=admin_user)
+        assert not mock_store.called
 
     def test_moderator_accept(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)

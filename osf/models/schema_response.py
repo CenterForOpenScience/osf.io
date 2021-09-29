@@ -11,11 +11,13 @@ from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
+from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 from website.mails import mails
+from website.reviews.signals import reviews_email_submit_moderators_notifications
 from website.settings import DOMAIN
 
 
@@ -442,12 +444,18 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def _notify_users(self, event):
         '''Notify users of relevant state transitions.'''
-        #  These notifications will be handled by the registration workflow
+        #  Notifications on the original response will be handled by the registration workflow
         if not self.previous_response:
             return
 
-        # Don't notify of approval until *all* approvals are finished
-        if event == 'accept' and self.state is ApprovalStates.PENDING_MODERATION:
+        # Generate the "reviews" email context and notify moderators
+        if self.state is ApprovalStates.PENDING_MODERATION:
+            email_context = notifications.get_email_template_context(resource=self.parent)
+            email_context['revision_id'] = self._id
+            email_context['referrer'] = self.initiator
+            reviews_email_submit_moderators_notifications.send(
+                timestamp=timezone.now(), context=email_context
+            )
             return
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)
