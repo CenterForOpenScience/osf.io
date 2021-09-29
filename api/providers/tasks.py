@@ -270,7 +270,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     institution_names = metadata.get('Affiliated Institutions', [])
     for name in institution_names:
         try:
-            institution = Institution.objects.get(name=name, is_delete=False)
+            institution = Institution.objects.get(name=name, is_deleted=False)
         except Institution.DoesNotExist:
             error = 'Institution not found: [name={}]'.format(name)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
