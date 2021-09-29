@@ -342,7 +342,7 @@ class MetadataField(UploadField):
 
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
-    contributor_regex = re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.*?)>')
+    contributor_regex = re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.+?)>')
     def _validate(self):
         parsed_value = None
         if self.required and not bool(self.value):
