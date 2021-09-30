@@ -109,7 +109,7 @@ def _configure_permissions_test_auth(registration, provider, role):
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailGETPermissions:
+class TestGETPermissions:
     '''Checks access for GET requests to the SchemaResponseDetail Endpoint'''
 
     def get_status_code_for_preconditions(
@@ -228,7 +228,7 @@ class TestSchemaResponseDetailGETPermissions:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailGETBehavior:
+class TestGETBehavior:
     '''Confirms behavior of GET requests agaisnt the SchemaResponseList Endpoint.
 
     GET should return a serialized instance of the SchemaResponse with the requested ID
@@ -285,7 +285,7 @@ class TestSchemaResponseDetailGETBehavior:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailPATCHPermissions:
+class TestPATCHPermissions:
     '''Checks access for PATCH request to the SchemaResponseDetail Endpoint.'''
 
     PAYLOAD = {
@@ -402,7 +402,7 @@ class TestSchemaResponseDetailPATCHPermissions:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailPATCHBehavior:
+class TestPATCHBehavior:
     '''Confirms behavior of PATCH requests to the SchemaResponseDetail Endpoint.
 
     Successful PATCH requests should update the specified SchemaResponse in the database
@@ -519,7 +519,7 @@ class TestSchemaResponseDetailPATCHBehavior:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailDELETEPermissions:
+class TestDELETEPermissions:
     '''Checks access for DELETE requests to the SchemaResponseDetail Endpoint.'''
 
     def get_status_code_for_preconditions(self, registration_status, reviews_workflow, role):
@@ -616,7 +616,7 @@ class TestSchemaResponseDetailDELETEPermissions:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseDetailDELETEBehavior:
+class TestDELETEBehavior:
     '''Tests behavior of DELETE requests to the SchemaResponseDetail endpoint.
 
     Successful DELETE requests should delete the specified SchemaResponse from the database.
@@ -646,7 +646,7 @@ class TestSchemaResponseDetailDELETEBehavior:
         assert resp.status_code == 409
 
 @pytest.mark.django_db
-class TestSchemaResponseListUnsupportedMethods:
+class TestUnsupportedMethods:
     '''Confirm that the SchemaResponseDetail endpoint does not support POST or PUT'''
 
     @pytest.mark.parametrize('role', USER_ROLES)

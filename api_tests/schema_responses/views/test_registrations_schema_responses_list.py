@@ -84,7 +84,7 @@ def configure_auth(registration, role):
 
 
 @pytest.mark.django_db
-class TestRegistrationSchemaResponseListGETPermissions:
+class TestGETPermissions:
     '''Checks access for GET requests to the RegistrationSchemaResponseList Endpoint.'''
 
     def _get_status_code_for_preconditions(self, registration_status, moderator_workflow, role):
@@ -164,7 +164,7 @@ class TestRegistrationSchemaResponseListGETPermissions:
 
 
 @pytest.mark.django_db
-class TestRegistrationSchemaResponseListGETBehavior:
+class TestGETBehavior:
     '''Test the results from GET requests against the RegistrationSchemaResponse endpoint.
 
     Contributors on the base Registration should be able to see all SchemaResponses
@@ -233,7 +233,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
 
 
 @pytest.mark.django_db
-class TestRegistrationSchemaResponseListUnsupportedMethods:
+class TestUnsupportedMethods:
     '''Make sure that RegistrationSchemaResponseList does not support POST, PUT, PATCH or DELETE.'''
 
     @pytest.fixture

@@ -55,7 +55,7 @@ def configure_auth(registration, role):
     return user.auth
 
 @pytest.mark.django_db
-class TestSchemaResponseListGETPermissions:
+class TestGETPermissions:
     '''Checks access for GET requests to the SchemaResponseList Endpoint.'''
 
     @pytest.mark.parametrize('use_auth', [True, False])
@@ -64,7 +64,7 @@ class TestSchemaResponseListGETPermissions:
         assert resp.status_code == 200
 
 @pytest.mark.django_db
-class TestSchemaResponseLsitGETBehavior:
+class TestGETBehavior:
     '''Tests the visibility of SchemaResponses through the List endpoint under various conditions.
 
     APPROVED SchemaResponses on public registrations should appear for all users.
@@ -171,7 +171,7 @@ class TestSchemaResponseLsitGETBehavior:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseListPOSTPermissions:
+class TestPOSTPermissions:
     '''Checks access for POST requests to the SchemaResponseList Endpoint.'''
 
     @pytest.fixture()
@@ -245,7 +245,7 @@ class TestSchemaResponseListPOSTPermissions:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseListPOSTBehavior:
+class TestPOSTBehavior:
     '''Tests for the POST method on the top-level SchemaResponseList endpoint.
 
     The create payload must include the relationship to the registration and must
@@ -357,7 +357,7 @@ class TestSchemaResponseListPOSTBehavior:
 
 
 @pytest.mark.django_db
-class TestSchemaResponseListUnsupportedMethods:
+class TestUnsupportedMethods:
     '''Confirm that SchemaResponseList endpoint does not support PATCH, PUT, or DELETE methods.'''
 
     @pytest.mark.parametrize('use_auth', [True, False])
