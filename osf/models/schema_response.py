@@ -288,7 +288,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # The only valid case for not providing a user is the internal accept shortcut
         # See _validate_accept_trigger docstring for more information
         if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
-            raise ValueError(
+            raise PermissionsError(
                 f'Trigger {trigger} from state {self.state} for '
                 f'SchemaResponse with id [{self._id}] must be called with a user.'
             )
@@ -413,6 +413,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         from_state = ApprovalStates[event_data.transition.source]
         to_state = self.state
         trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
+        if trigger is None:
+            return
+
         self.actions.create(
             from_state=from_state.db_name,
             to_state=to_state.db_name,
