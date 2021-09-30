@@ -36,8 +36,6 @@ CATEGORY_REVERSE_LOOKUP = {display_name: name for name, display_name in settings
 
 MAX_EXCEL_COLUMN_NUMBER = 16384
 
-STORE = None
-
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
 def get_excel_column_name(column_index):
     column_name = ''
@@ -90,18 +88,13 @@ class BulkRegistrationUpload():
         self.validations = {**self.schema_questions, **METADATA_FIELDS}
         self.errors = []
         self.validate_csv_header_list()
+        self.store = Store(self.registration_provider)
         self.rows = [Row(row,
                          self.validations,
+                         self.store,
                          functools.partial(self.log_error, row_index=index + 3))
                      for index, row in enumerate(self.reader)]
         csv_io.close()
-        BulkRegistrationUpload.init_store(self.registration_provider)
-
-    @classmethod
-    def init_store(cls, registration_provider):
-        global STORE
-        if STORE is None:
-            STORE = Store(registration_provider)
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
@@ -177,10 +170,10 @@ class Row():
     def is_validated(self):
         return all([cell.is_validated for cell in self.cells])
 
-    def __init__(self, row_dict, validations, log_error):
+    def __init__(self, row_dict, validations, store, log_error):
         self.row_dict = row_dict
         self.cells = [Cell(header,
-                           value, validations[header],
+                           value, validations[header], store,
                            functools.partial(log_error, external_id=row_dict.get('External ID', ''), column_index=column_index))
                            for column_index, (header, value) in enumerate(row_dict.items())]
 
@@ -224,14 +217,14 @@ class Cell():
     def is_validated(self):
         return self.field.is_validated
 
-    def __init__(self, header, value, validations, log_error):
+    def __init__(self, header, value, validations, store, log_error):
         self.header = header
         self.value = value
         self.validations = validations
         self.field = Cell.field_instance_for(self.header,
                                              self.value,
                                              self.validations,
-                                             functools.partial(log_error, header=self.header))
+                                             functools.partial(log_error, header=self.header), store)
 
     def validate(self):
         self.field.parse()
@@ -280,7 +273,7 @@ class UploadField():
         return self._parsed_value if self._parsed_value is not None else ''
 
 class RegistrationResponseField(UploadField):
-    def __init__(self, value, validations, log_error):
+    def __init__(self, value, validations, log_error, _):
         super(RegistrationResponseField, self).__init__()
         self.required = validations.get('required', False)
         self.type = validations.get('type', 'string')
@@ -318,13 +311,14 @@ class RegistrationResponseField(UploadField):
             self._parsed_value = parsed_value
 
 class MetadataField(UploadField):
-    def __init__(self, value, validations, log_error):
+    def __init__(self, value, validations, log_error, store):
         super(MetadataField, self).__init__()
         self.format = validations.get('format', 'string')
         self.required = validations.get('required', False)
         self.value = value.strip()
         self.log_error = log_error
         self.error_type = validations.get('error_type')
+        self.store = store
 
     def get_field_type(self):
         return self.format
@@ -379,13 +373,13 @@ class LicenseField(MetadataField):
             if not self.value:
                 return
 
-            assert hasattr(STORE, 'licenses') is not None, 'STORE.licenses was not initialized!'
+            assert hasattr(self.store, 'licenses') is not None, 'store.licenses was not initialized!'
 
             license_name_match = self.no_required_fields_regex.match(self.value)
             if license_name_match is not None:
                 node_license_name = license_name_match.group('name')
                 try:
-                    node_license = STORE.licenses.get(name__iexact=node_license_name)
+                    node_license = self.store.licenses.get(name__iexact=node_license_name)
                 except NodeLicense.DoesNotExist:
                     self.log_error(type=self.error_type['invalid'])
                 else:
@@ -414,10 +408,10 @@ class CategoryField(MetadataField):
 
 class SubjectsField(MetadataField):
     def _validate(self):
-        assert hasattr(STORE, 'subjects'), 'STORE.subjects was not initialized!'
+        assert hasattr(self.store, 'subjects'), 'store.subjects was not initialized!'
 
         subjects = [val.strip() for val in self.value.split(';')]
-        valid_subjects = list(STORE.subjects.filter(text__in=subjects).values_list('text', flat=True))
+        valid_subjects = list(self.store.subjects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
             self.log_error(type=self.error_type['invalid'])
@@ -429,10 +423,10 @@ class InstitutionsField(MetadataField):
         if not self.value:
             return
 
-        assert hasattr(STORE, 'institutions'), 'STORE.institutions was not initialized!'
+        assert hasattr(self.store, 'institutions'), 'store.institutions was not initialized!'
 
         institutions = [val.strip() for val in self.value.split(';')]
-        valid_institutions = list(STORE.institutions.filter(name__in=institutions).values_list('name', flat=True))
+        valid_institutions = list(self.store.institutions.filter(name__in=institutions).values_list('name', flat=True))
         invalid_institutions = list(set(institutions) - set(valid_institutions))
         if len(invalid_institutions):
             self.log_error(type=self.error_type['invalid'])
