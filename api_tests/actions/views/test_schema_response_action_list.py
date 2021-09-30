@@ -24,8 +24,8 @@ DEFAULT_SCHEMA_RESPONSE_STATE = ApprovalStates.APPROVED
 DEFAULT_TRIGGER = Triggers.SUBMIT
 
 
-def make_api_url(registration):
-    return f'/v2/registrations/{registration._id}/schema_responses/actions'
+def make_api_url(schema_response):
+    return f'/v2/schema_responses/{schema_response._id}/actions/'
 
 
 def configure_test_preconditions(
@@ -242,6 +242,7 @@ class TestSchemaResponseActionListGETBehavior:
         assert data[1]['attributes']['trigger'] == Triggers.APPROVE.db_value
 
 
+@pytest.mark.django_db
 class TestSchemaResponseActionListPOSTPermissions:
 
     def get_status_code_for_preconditions(self, registration_status, trigger, role):
@@ -278,7 +279,6 @@ class TestSchemaResponseActionListPOSTPermissions:
 
     @pytest.mark.parametrize('role', USER_ROLES)
     @pytest.mark.parametrize('trigger', Triggers)
-    @pytest.mark.parametrize('schema_response_state', ApprovalStates)
     @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
     def test_post_status_code__withdrawn_parent(self, app, reviews_workflow, trigger, role):
         auth, schema_response, _, _ = configure_test_preconditions(
@@ -292,7 +292,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status='withdrawn',
             trigger=trigger,
             role=role
@@ -314,7 +314,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status='deleted',
             trigger=trigger,
             role=role
@@ -337,7 +337,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             trigger=Triggers.SUBMIT,
             role=role
@@ -360,7 +360,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             trigger=Triggers.APPROVE,
             role=role
@@ -383,7 +383,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             trigger=Triggers.ADMIN_REJECT,
             role=role
@@ -405,7 +405,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             trigger=Triggers.ACCEPT,
             role=role
@@ -427,7 +427,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
-        expected_status_code = self.get_status_code_for_precondition(
+        expected_status_code = self.get_status_code_for_preconditions(
             registration_status=registration_status,
             trigger=Triggers.MODERATOR_REJECT,
             role=role

@@ -139,6 +139,13 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     def get_queryset(self):
         return SchemaResponseAction.objects.all()  # TODO: What to do here?
 
+    def get_base_resource(self):
+        return get_object_or_error(
+            model_or_qs=SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_id'],
+            check_deleted=False,
+        )
+
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
@@ -154,6 +161,13 @@ class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'schema-responses-detail'
 
     serializer_class = SchemaResponseActionSerializer
+
+    def get_base_resource(self):
+        return get_object_or_error(
+            model_or_qs=SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_id'],
+            check_deleted=False,
+        )
 
     def get_object(self):
         return get_object_or_error(
