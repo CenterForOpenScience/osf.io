@@ -143,6 +143,7 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
         return get_object_or_error(
             model_or_qs=SchemaResponse,
             query_or_pk=self.kwargs['schema_response_id'],
+            request=self.request,
             check_deleted=False,
         )
 
@@ -166,6 +167,7 @@ class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(
             model_or_qs=SchemaResponse,
             query_or_pk=self.kwargs['schema_response_id'],
+            request=self.request,
             check_deleted=False,
         )
 

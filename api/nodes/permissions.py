@@ -271,7 +271,11 @@ class SchemaResponseListPermission(permissions.BasePermission):
 class SchemaResponseActionPermission(permissions.BasePermission):
     '''
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
-    To create a schema response action a user must be an admin contributor on that Registration.
+
+    GET permissions for SchemaResponseActionList and SchemaResponseActionDetail should mimic
+    the permissions for SchemaResponseDetail
+
+    POST permissions are state-sensitive and should be enforced by the model
     '''
 
     def has_object_permission(self, request, view, obj):

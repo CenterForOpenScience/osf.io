@@ -61,8 +61,8 @@ def configure_test_preconditions(
 
     # Do this step after configuring auth to ensure any new admin user gets added
     if schema_response_state is ApprovalStates.UNAPPROVED:
-        schema_response_state.pending_approvers.add(
-            *registration.get_admin_contributors_recursive()
+        schema_response.pending_approvers.add(
+            *[user for user, _ in registration.get_admin_contributors_recursive()]
         )
     return auth, schema_response, registration, provider
 
@@ -243,6 +243,7 @@ class TestSchemaResponseActionListGETBehavior:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTPermissions:
 
     def get_status_code_for_preconditions(self, registration_status, trigger, role):
@@ -278,56 +279,10 @@ class TestSchemaResponseActionListPOSTPermissions:
         return 403
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('trigger', Triggers)
-    @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
-    def test_post_status_code__withdrawn_parent(self, app, reviews_workflow, trigger, role):
-        auth, schema_response, _, _ = configure_test_preconditions(
-            registration_status='withdrawn',
-            reviews_workflow=reviews_workflow,
-            role=role,
-        )
-        payload = make_payload(schema_response)
-
-        resp = app.post_json_api(
-            make_api_url(schema_response), payload, auth=auth, expect_errors=True
-        )
-
-        expected_status_code = self.get_status_code_for_preconditions(
-            registration_status='withdrawn',
-            trigger=trigger,
-            role=role
-        )
-        assert resp.status_code == expected_status_code
-
-    @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('trigger', Triggers)
-    @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
-    def test_post_status_code__deleted_parent(self, app, reviews_workflow, trigger, role):
-        auth, schema_response, _, _ = configure_test_preconditions(
-            registration_status='deleted',
-            reviews_workflow=reviews_workflow,
-            role=role,
-        )
-        payload = make_payload(schema_response)
-
-        resp = app.post_json_api(
-            make_api_url(schema_response), payload, auth=auth, expect_errors=True
-        )
-
-        expected_status_code = self.get_status_code_for_preconditions(
-            registration_status='deleted',
-            trigger=trigger,
-            role=role
-        )
-        assert resp.status_code == expected_status_code
-
-    @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
-    @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    def test_post_status_code__submit(self, app, registration_status, reviews_workflow, role):
+    @pytest.mark.parametrize('registration_status', ['public', 'private', 'deleted', 'withdrawn'])
+    def test_post_status_code__submit(self, app, registration_status, role):
         auth, schema_response, _, _ = configure_test_preconditions(
             registration_status=registration_status,
-            reviews_workflow=reviews_workflow,
             schema_response_state=ApprovalStates.IN_PROGRESS,
             role=role,
         )
@@ -345,12 +300,10 @@ class TestSchemaResponseActionListPOSTPermissions:
         assert resp.status_code == expected_status_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
-    @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    def test_post_status_code__approve(self, app, registration_status, reviews_workflow, role):
+    @pytest.mark.parametrize('registration_status', ['public', 'private', 'deleted', 'withdrawn'])
+    def test_post_status_code__approve(self, app, registration_status, role):
         auth, schema_response, _, _ = configure_test_preconditions(
             registration_status=registration_status,
-            reviews_workflow=reviews_workflow,
             schema_response_state=ApprovalStates.UNAPPROVED,
             role=role,
         )
@@ -368,12 +321,10 @@ class TestSchemaResponseActionListPOSTPermissions:
         assert resp.status_code == expected_status_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('reviews_workflow', [None, ModerationWorkflows.PRE_MODERATION.value])
-    @pytest.mark.parametrize('registration_status', ['public', 'private'])
-    def test_post_status_code__admin_reject(self, app, registration_status, reviews_workflow, role):
+    @pytest.mark.parametrize('registration_status', ['public', 'private', 'deleted', 'withdrawn'])
+    def test_post_status_code__admin_reject(self, app, registration_status, role):
         auth, schema_response, _, _ = configure_test_preconditions(
             registration_status=registration_status,
-            reviews_workflow=reviews_workflow,
             schema_response_state=ApprovalStates.UNAPPROVED,
             role=role,
         )
@@ -391,7 +342,7 @@ class TestSchemaResponseActionListPOSTPermissions:
         assert resp.status_code == expected_status_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('registration_status', ['public', 'private'])
+    @pytest.mark.parametrize('registration_status', ['public', 'private', 'deleted', 'withdrawn'])
     def test_post_status_code__accept(self, app, registration_status, role):
         auth, schema_response, _, _ = configure_test_preconditions(
             registration_status=registration_status,
@@ -413,7 +364,7 @@ class TestSchemaResponseActionListPOSTPermissions:
         assert resp.status_code == expected_status_code
 
     @pytest.mark.parametrize('role', USER_ROLES)
-    @pytest.mark.parametrize('registration_status', ['public', 'private'])
+    @pytest.mark.parametrize('registration_status', ['public', 'private', 'deleted', 'withdrawn'])
     def test_post_status_code__moderator_reject(self, app, registration_status, role):
         auth, schema_response, _, _ = configure_test_preconditions(
             registration_status=registration_status,
@@ -436,5 +387,206 @@ class TestSchemaResponseActionListPOSTPermissions:
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTBehavior:
-    pass
+
+    def test_post_submit__writes_action_and_advances_state(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
+        )
+        assert not schema_response.actions.exists()
+
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.SUBMIT.db_value
+        assert action.creator == auth.user
+        assert action.from_state == ApprovalStates.IN_PROGRESS.db_value
+        assert action.to_state == ApprovalStates.UNAPPROVED.db_value
+        assert schema_response.state is ApprovalStates.UNAPPROVED
+
+    def test_post_submit__assigns_pending_approvers(self, app):
+        auth, schema_response, registration, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        pending_approver_ids = set(schema_response.pending_approvers.values_list('id', flat=True))
+        assert pending_approver_ids == {auth.user.id, registration.creator.id}
+
+    @pytest.mark.parametrize(
+        'schema_response_state',
+        [state for state in ApprovalStates if state is not ApprovalStates.IN_PROGRESS]
+    )
+    def test_post_submit__fails_with_invalid_schema_response_state(
+            self, app, schema_response_state):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=schema_response_state, role='admin'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+
+        assert resp.status_code == 409
+
+    @pytest.mark.parametrize(
+        'reviews_workflow, end_state',
+        [
+            (ModerationWorkflows.PRE_MODERATION.value, ApprovalStates.PENDING_MODERATION)
+            (None, ApprovalStates.APPROVED)
+        ]
+    )
+    def test_post_approve__writes_action_and_advances_state(self, app, reviews_workflow, end_state):
+        auth, schema_response, registration, _ = configure_test_preconditions(
+            reviews_workflow=reviews_workflow,
+            schema_response_state=ApprovalStates.UNAPPROVED,
+            role='admin'
+        )
+        assert not schema_response.actions.exists()
+
+        payload = make_payload(schema_response, trigger=Triggers.APPROVE)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.APPROVE.db_value
+        assert action.creator == auth.user
+        assert action.from_state == ApprovalStates.UNAPPROVED.db_value
+        assert action.to_state == ApprovalStates.UNAPPROVED.db_value
+        assert schema_response.state is ApprovalStates.UNAPPROVED
+
+        app.post_json_api(make_api_url(schema_response), payload, auth=registration.creator.auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.APPROVE.db_value
+        assert action.creator == registration.creator
+        assert action.from_state == ApprovalStates.UNAPPROVED.db_value
+        assert action.to_state == end_state.db_value
+        assert schema_response.state is end_state
+
+    @pytest.mark.parametrize(
+        'schema_response_state',
+        [state for state in ApprovalStates if state is not ApprovalStates.UNAPPROVED]
+    )
+    def test_post_approve__fails_with_invalid_schema_response_state(
+            self, app, schema_response_state):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=schema_response_state, role='admin'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.APPROVE)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+
+        assert resp.status_code == 409
+
+    def test_post_admin_reject__writes_action_and_advances_state(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.UNAPPROVED, role='admin'
+        )
+        assert not schema_response.actions.exists()
+
+        payload = make_payload(schema_response, trigger=Triggers.ADMIN_REJECT)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.ADMIN_REJECT.db_value
+        assert action.creator == auth.user
+        assert action.from_state == ApprovalStates.UNAPPROVED.db_value
+        assert action.to_state == ApprovalStates.IN_PROGRESS.db_value
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+
+    @pytest.mark.parametrize(
+        'schema_response_state',
+        [state for state in ApprovalStates if state is not ApprovalStates.UNAPPROVED]
+    )
+    def test_post_admin_reject__fails_with_invalid_schema_response_state(
+            self, app, schema_response_state):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=schema_response_state, role='admin'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.ADMIN_REJECT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+
+        assert resp.status_code == 409
+
+    def test_post_accept__writes_action_and_advances_state(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.PENDING_MODERATION, role='moderator'
+        )
+        assert not schema_response.actions.exists()
+
+        payload = make_payload(schema_response, trigger=Triggers.ACCEPT)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.ACCEPT.db_value
+        assert action.creator == auth.user
+        assert action.from_state == ApprovalStates.PENDING_MODERATION.db_value
+        assert action.to_state == ApprovalStates.APPROVED.db_value
+        assert schema_response.state is ApprovalStates.APPROVED
+
+    @pytest.mark.parametrize(
+        'schema_response_state',
+        [state for state in ApprovalStates if state is not ApprovalStates.PENDING_MODERATION]
+    )
+    def test_post_accept__fails_with_invalid_schema_response_state(
+            self, app, schema_response_state):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=schema_response_state, role='moderator'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.ACCEPT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+
+        assert resp.status_code == 409
+
+    def test_post_moderator_reject__writes_action_and_advances_state(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.PENDING_MODERATION, role='moderator'
+        )
+        assert not schema_response.actions.exists()
+
+        payload = make_payload(schema_response, trigger=Triggers.MODERATOR_REJECT)
+        app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+
+        schema_response.refresh_from_db()
+        action = schema_response.actions.last()
+        assert action.trigger == Triggers.MODERATOR_REJECT.db_value
+        assert action.creator == auth.user
+        assert action.from_state == ApprovalStates.PENDING_MODERATION.db_value
+        assert action.to_state == ApprovalStates.IN_PROGRESS.db_value
+        assert schema_response.state is ApprovalStates.IN_PROGRESS
+
+    @pytest.mark.parametrize(
+        'schema_response_state',
+        [state for state in ApprovalStates if state is not ApprovalStates.PENDING_MODERATION]
+    )
+    def test_post_moderator_reject__fails_with_invalid_schema_response_state(
+            self, app, schema_response_state):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=schema_response_state, role='moderator'
+        )
+
+        payload = make_payload(schema_response, trigger=Triggers.MODERATOR_REJECT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+
+        assert resp.status_code == 409
