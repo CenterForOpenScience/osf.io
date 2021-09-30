@@ -122,6 +122,7 @@ def get_globals():
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
         'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': settings.OSF_PAGE_NAME,
+        'use_change_password': settings.to_bool('USE_CHANGE_PASSWORD', True),
         'use_tfa': settings.to_bool('USE_TFA', True),
         'global_support_url': getattr(settings, 'GLOBAL_SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
         'global_support_target': '_blank' if hasattr(settings, 'GLOBAL_SUPPORT_URL') else '_self',
