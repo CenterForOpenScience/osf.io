@@ -35,5 +35,5 @@ class RegistrationBulkUploadRow(BaseModel):
     def create(cls, upload, csv_raw, csv_parsed):
         registration_row = cls(upload=upload, draft_registration=None, is_completed=False,
                                is_picked_up=False, csv_raw=csv_raw, csv_parsed=csv_parsed,
-                               row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest())
+                               row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest(),)
         return registration_row
