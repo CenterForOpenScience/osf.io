@@ -285,7 +285,7 @@
                                 %if node['is_public']:
                                     <p class="text">${_("Control who can edit the wiki of <b>%(title)s</b>") % dict(title=h(node['title'])) | n}</p>
                                 %else:
-                                    <p class="text">${_("Control who can edit your wiki. To allow all GakuNin RDM users to edit the wiki, <b>%(title)s</b> must be public.") % dict(title=h(node['title'])) | n}</p>
+                                    <p class="text">${_("Control who can edit your wiki")}</p>
                                 %endif
                             </div>
 

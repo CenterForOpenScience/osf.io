@@ -3448,8 +3448,7 @@ msgstr ""
 #: website/templates/project/settings.mako:288
 #, python-format
 msgid ""
-"Control who can edit your wiki. To allow all GakuNin RDM users to edit "
-"the wiki, <b>%(title)s</b> must be public."
+"Control who can edit your wiki"
 msgstr ""
 
 #: website/templates/project/settings.mako:298
