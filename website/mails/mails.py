@@ -487,12 +487,12 @@ REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
 )
 
 REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
-    'registration_bulk_upload_initiator_success_all',
+    'registration_bulk_upload_success_all',
     subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
 )
 
 REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
-    'registration_bulk_upload_initiator_success_partial',
+    'registration_bulk_upload_success_partial',
     subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
 )
 
@@ -501,7 +501,7 @@ REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )
 
-REGISTRATION_BULK_UPLOAD_PREPARATION_FAILURE = Mail(
+REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
     'registration_bulk_upload_unexpected_failure',
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )

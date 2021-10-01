@@ -278,10 +278,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     """Create a draft registration for one registration row in a given bulk upload job.
     """
 
-    metadata = row.csv_parsed.get('metadata', {})
+    metadata = row.csv_parsed.get('metadata', {}) or {}
     row_external_id = metadata.get('External ID', 'N/A')
     row_title = metadata.get('Title', 'N/A')
-    responses = row.csv_parsed.get('registration_responses', {})
+    responses = row.csv_parsed.get('registration_responses', {}) or {}
     auth = Auth(user=initiator)
 
     # Check node
@@ -290,14 +290,13 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     if node_id:
         try:
             node = AbstractNode.objects.get(guids___id=node_id, is_deleted=False, type='osf.node')
+            initiator_contributor = node.contributor_set.get(user=initiator)
         except AbstractNode.DoesNotExist:
             error = 'Node does not exist: [node_id={}]'.format(node_id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         except AbstractNode.MultipleObjectsReturned:
             error = 'Multiple nodes returned: [node_id={}]'.format(node_id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        try:
-            initiator_contributor = node.contributor_set.get(user=initiator)
         except Contributor.DoesNotExist:
             error = 'Initiator [{}] must be a contributor on the project [{}]'.format(initiator._id, node._id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
@@ -306,9 +305,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare subjects
-    subject_texts = metadata.get('Subjects', [])
-    if not subject_texts:
-        subject_texts = []
+    subject_texts = metadata.get('Subjects', []) or []
     subject_ids = []
     for text in subject_texts:
         subject_list = provider.all_subjects.filter(text=text)
@@ -324,13 +321,9 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare node licences
-    parsed_license = metadata.get('License', {})
-    if not parsed_license:
-        parsed_license = {}
+    parsed_license = metadata.get('License', {}) or {}
     license_name = parsed_license.get('name')
-    require_fields = parsed_license.get('required_fields', {})
-    if not require_fields:
-        require_fields = {}
+    require_fields = parsed_license.get('required_fields', {}) or {}
     year = require_fields.get('year')
     copyright_holders = require_fields.get('copyright_holders')
     try:
@@ -357,9 +350,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
 
     # Prepare institutions
     affiliated_institutions = []
-    institution_names = metadata.get('Affiliated Institutions', [])
-    if not institution_names:
-        institution_names = []
+    institution_names = metadata.get('Affiliated Institutions', []) or []
     for name in institution_names:
         try:
             institution = Institution.objects.get(name=name, is_deleted=False)
@@ -372,27 +363,19 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     tags = metadata.get('Tags', [])
 
     # Prepare contributors
-    admin_list = metadata.get('Admin Contributors', [])
-    if not admin_list:
-        admin_list = []
+    admin_list = metadata.get('Admin Contributors', []) or []
     if len(admin_list) == 0:
         error = 'Missing admin contributors'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     admin_set = {contributor.get('email') for contributor in admin_list}
 
-    read_only_list = metadata.get('Read-Only Contributors', [])
-    if not read_only_list:
-        read_only_list = []
+    read_only_list = metadata.get('Read-Only Contributors', []) or []
     read_only_set = {contributor.get('email') for contributor in read_only_list}
 
-    read_write_list = metadata.get('Read-Write Contributors', [])
-    if not read_write_list:
-        read_write_list = []
+    read_write_list = metadata.get('Read-Write Contributors', []) or []
     read_write_set = {contributor.get('email') for contributor in read_write_list}
 
-    author_list = metadata.get('Bibliographic Contributors', [])
-    if not author_list:
-        author_list = []
+    author_list = metadata.get('Bibliographic Contributors', []) or []
     if len(author_list) == 0:
         error = 'Missing bibliographic contributors'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
@@ -523,7 +506,7 @@ def handle_internal_error(initiator=None, provider=None, message=None):
     if initiator:
         mails.send_mail(
             to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_PREPARATION_FAILURE,
+            mail=mails.REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
             fullname=initiator.fullname,
         )
 
