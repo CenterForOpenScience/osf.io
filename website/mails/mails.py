@@ -504,6 +504,7 @@ REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
 REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
     'registration_bulk_upload_unexpected_failure',
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
 
 SCHEMA_RESPONSE_INITIATED = Mail(
     'updates_initiated',
