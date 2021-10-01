@@ -35,8 +35,10 @@
 
                         <li><a href="#configureWikiAnchor">${_("Wiki")}</a></li>
 
+                        % if use_project_comment_settings:
                         % if permissions.ADMIN in user['permissions']:
                             <li><a href="#configureCommentingAnchor">${_("Commenting")}</a></li>
+                        % endif
                         % endif
 
                         <li><a href="#configureNotificationsAnchor">${_("Email Notifications")}</a></li>
@@ -308,6 +310,7 @@
             %endif
         %endif ## End Wiki Config
 
+        % if use_project_comment_settings:
         % if permissions.ADMIN in user['permissions']:  ## Begin Configure Commenting
 
             % if not node['is_registration']:
@@ -348,6 +351,7 @@
                 </div>
                 %endif
             % endif  ## End Configure Commenting
+        % endif
 
         % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 

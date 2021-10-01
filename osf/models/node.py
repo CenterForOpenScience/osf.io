@@ -338,7 +338,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     # One of 'public', 'private'
     # TODO: Add validator
-    comment_level = models.CharField(default='public', max_length=10)
+    comment_level = models.CharField(default='private', max_length=10)
 
     root = models.ForeignKey('AbstractNode',
                                 default=None,
