@@ -483,7 +483,7 @@ INSTITUTION_DEACTIVATION = Mail(
 
 REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
     'registration_bulk_upload_product_owner',
-    subject='Registration Bulk Upload Failure Notification'
+    subject='Registry Could Not Bulk Upload Registrations'
 )
 
 REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
@@ -502,6 +502,6 @@ REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
 )
 
 REGISTRATION_BULK_UPLOAD_PREPARATION_FAILURE = Mail(
-    'registration_bulk_upload_preparation_failure',
+    'registration_bulk_upload_unexpected_failure',
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )

@@ -38,85 +38,99 @@ logging.basicConfig(level=logging.INFO)
 def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_id, parsing_output, dry_run=False):
 
     logger.info('Preparing OSF DB for registration bulk creation ...')
+    # Check initiator
     initiator = OSFUser.load(initiator_id)
     if not initiator:
-        message = 'Initiator not found: [id={}]'.format(initiator_id)
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: initiator [id={}] not found'.format(initiator_id)
+        return handle_internal_error(initiator=None, provider=None, message=message)
 
+    # Check provider
     try:
         provider = RegistrationProvider.objects.get(_id=provider_id)
     except RegistrationProvider.DoesNotExist:
-        message = 'Registration provider not found: [_id={}] '.format(provider_id)
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: registration provider [_id={}] not found'.format(provider_id)
+        return handle_internal_error(initiator=initiator, provider=None, message=message)
     except RegistrationProvider.MultipleObjectsReturned:
-        message = 'Multiple registration providers returned: [_id={}] '.format(provider_id)
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: multiple registration ' \
+                  'providers returned for [_id={}] '.format(provider_id)
+        return handle_internal_error(initiator=initiator, provider=None, message=message)
 
+    # Check parsing output
     if not parsing_output:
-        message = 'Missing task input: `parsing_output`'
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: missing parser output as task input'
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
 
+    # Check schema
     schema_id = parsing_output.get('schema_id', None)
     try:
         schema = RegistrationSchema.objects.get(_id=schema_id)
     except RegistrationSchema.DoesNotExist:
-        message = 'Registration schema not found: [_id={}] '.format(schema_id)
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: registration schema [_id={}] not found'.format(schema_id)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
     except RegistrationSchema.MultipleObjectsReturned:
-        message = 'Multiple registration schemas returned: [_id={}] '.format(schema_id)
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: multiple registration schemas [_id={}] returned'.format(schema_id)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
 
+    # Create the bulk upload job
     upload = RegistrationBulkUploadJob.create(payload_hash, initiator, provider, schema)
     logger.info('Creating a registration bulk upload job with [hash={}] ...'.format(upload.payload_hash))
     if not dry_run:
         try:
             upload.save()
-        except ValidationError as e:
-            message = 'Insertion failed: [hash={}, error={}, msg={}]'.format(upload.payload_hash, type(e), e.messages)
-            return handle_error(initiator, inform_product=True, error_message=message)
+        except ValidationError:
+            sentry.log_exception()
+            message = 'Bulk upload preparation failure: failed to create the job'
+            return handle_internal_error(initiator=initiator, provider=provider, message=message)
         upload.reload()
-        logger.info('Insertion successful: [pk={}, hash={}] '.format(upload.id, upload.payload_hash))
+        logger.info('Bulk upload job created: [pk={}, hash={}]'.format(upload.id, upload.payload_hash))
     else:
         logger.info('Dry run: insertion did not happen')
 
+    # Create registration rows for the bulk upload job
     registration_rows = parsing_output.get('registrations', [])
     if not registration_rows:
-        message = 'Missing registration rows'
-        return handle_error(initiator, inform_product=True, error_message=message)
+        message = 'Bulk upload preparation failure: missing registration rows'
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
 
     logger.info('Preparing [{}] registration rows for bulk creation ...'.format(len(registration_rows)))
     bulk_upload_rows = []
-    for registration_row in registration_rows:
-        bulk_upload_row = RegistrationBulkUploadRow.create(
-            upload,
-            registration_row.get('csv_raw', ''),
-            registration_row.get('csv_parsed'),
-        )
-        bulk_upload_rows.append(bulk_upload_row)
-
+    try:
+        for registration_row in registration_rows:
+            bulk_upload_row = RegistrationBulkUploadRow.create(
+                upload,
+                registration_row.get('csv_raw', ''),
+                registration_row.get('csv_parsed'),
+            )
+            bulk_upload_rows.append(bulk_upload_row)
+    except Exception as e:
+        upload.delete()
+        return handle_internal_error(initiator=initiator, provider=provider, message=repr(e))
     if dry_run:
         logger.info('Dry run: bulk insertion not run')
         logger.info('Dry run: complete')
         return
 
     try:
-        logger.info('Bulk creating [{}] registration bulk upload rows ...'.format(len(bulk_upload_rows)))
+        logger.info('Bulk creating [{}] registration rows ...'.format(len(bulk_upload_rows)))
         created_objects = RegistrationBulkUploadRow.objects.bulk_create(bulk_upload_rows)
-    except (ValueError, IntegrityError) as e:
+    except (ValueError, IntegrityError):
         upload.delete()
-        message = 'Bulk insertion failed: [error={}, cause={}]'.format(type(e), e.__cause__)
-        return handle_error(initiator, inform_product=True, error_message=message)
-    logger.info('[{}] rows successfully inserted.'.format(len(created_objects)))
+        sentry.log_exception()
+        message = 'Bulk upload preparation failure: failed to create the rows.'
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+    logger.info('[{}] rows successfully prepared.'.format(len(created_objects)))
 
     logger.info('Updating job state ...')
     upload.state = JobState.INITIALIZED
     try:
         upload.save()
-    except ValidationError as e:
-        message = 'Job state update failed: [error={}, message={}]'.format(type(e), e.messages)
-        return handle_error(initiator, inform_product=True, error_message=message)
+    except ValidationError:
+        upload.delete()
+        sentry.log_exception()
+        message = 'Bulk upload preparation failure: job state update failed'
+        return handle_internal_error(initiator=initiator, provider=provider, message=message)
     logger.info('Job state updated')
-    logger.info('Preparation finished: [upload={}, provider={}, schema={}, '
+    logger.info('Bulk upload preparation finished: [upload={}, provider={}, schema={}, '
                 'initiator={}]'.format(upload.id, upload.provider._id, upload.schema._id, upload.initiator._id))
 
 
@@ -145,9 +159,9 @@ def bulk_create_registrations(upload_id, dry_run=True):
         upload = RegistrationBulkUploadJob.objects.get(id=upload_id)
     except RegistrationBulkUploadJob.DoesNotExist:
         # This error should not happen since this task is only called by `monitor_registration_bulk_upload_jobs`
-        logger.error('Registration bulk upload job not found: [id={}] '.format(upload_id))
         sentry.log_exception()
-        return
+        message = 'Registration bulk upload job not found: [id={}]'.format(upload_id)
+        return handle_internal_error(initiator=None, provider=None, message=message)
 
     # Retrieve bulk upload job
     provider = upload.provider
@@ -210,13 +224,13 @@ def bulk_create_registrations(upload_id, dry_run=True):
         message = 'All registration rows failed during bulk creation. ' \
                   'Upload ID: [{}], Draft Errors: [{}]'.format(upload_id, draft_error_list)
         sentry.log_message(message)
-        logger.warning(message)
+        logger.error(message)
     elif len(draft_error_list) > 1 or len(approval_error_list) > 1:
         upload.state = JobState.DONE_PARTIAL
         message = 'Some registration rows failed during bulk creation. Upload ID: [{}]; Draft Errors: [{}]; ' \
                   'Approval Errors: [{}]'.format(upload_id, draft_error_list, approval_error_list)
         sentry.log_message(message)
-        logger.error(message)
+        logger.warning(message)
     else:
         upload.state = JobState.DONE_FULL
         logger.info('All registration rows succeeded for bulk creation. Upload ID: [{}].'.format(upload_id))
@@ -496,29 +510,46 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         logger.info('Registration approved but pending moderation: [{}]'.format(registration.id))
 
 
-def handle_error(initiator, inform_product=False, error_message=None):
-    """Send emails information OSF product owner and/or registration admin about failures.
+def handle_internal_error(initiator=None, provider=None, message=None):
+    """Log errors that happened due to unexpected bug and send emails the uploader (if available)
+    about failures. Product owner (if available) is informed as well with more details.
     """
 
-    if error_message:
-        logger.error(error_message)
-        sentry.log_message(error_message)
+    if not message:
+        message = 'Registration bulk upload failure'
+    sentry.log_message(message)
+    logger.error(message)
 
-    if inform_product:
-        pass
-    #     mails.send_mail(
-    #         to_addr=settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration'),
-    #         mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
-    #     )
-    #
     if initiator:
-        pass
-    #     mails.send_mail(
-    #         to_addr=initiator.username,
-    #         mail=mails.REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD,
-    #         user=initiator,
-    #         osf_support_email=settings.OSF_SUPPORT_EMAIL,
-    #     )
+        mails.send_mail(
+            to_addr=initiator.username,
+            mail=mails.REGISTRATION_BULK_UPLOAD_PREPARATION_FAILURE,
+            fullname=initiator.fullname,
+        )
+
+    inform_product_of_errors(initiator=initiator, provider=provider, message=message)
+
+
+def inform_product_of_errors(initiator=None, provider=None, message=None):
+    """Inform product owner of internal errors.
+    """
+
+    email = settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration')
+    if not email:
+        logger.warning('Missing email for OSF Registration product owner.')
+        return
+
+    if not message:
+        message = 'Bulk upload preparation failure'
+    user = f'{initiator._id}, {initiator.fullname}, {initiator.username}' if initiator else 'UNIDENTIFIED'
+    provider_name = provider.name if provider else 'UNIDENTIFIED'
+    mails.send_mail(
+        to_addr=email,
+        mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
+        message=message,
+        user=user,
+        provider_name=provider_name,
+    )
 
 
 def get_provider_submission_url(provider):
