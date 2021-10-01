@@ -483,25 +483,25 @@ INSTITUTION_DEACTIVATION = Mail(
 
 REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
     'registration_bulk_upload_product_owner',
-    subject='Here goes the email subject'
+    subject='Registration Bulk Upload Failure Notification'
 )
 
-REGISTRATION_BULK_UPLOAD_INITIATOR_SUCCESS = Mail(
-    'registration_bulk_upload_initiator_success',
-    subject='Here goes the email subject'
+REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
+    'registration_bulk_upload_initiator_success_all',
+    subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
 )
 
-REGISTRATION_BULK_UPLOAD_INITIATOR_PARTIAL = Mail(
-    'registration_bulk_upload_initiator_partial',
-    subject='Here goes the email subject'
+REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
+    'registration_bulk_upload_initiator_success_partial',
+    subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
 )
 
-REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_RETRY = Mail(
-    'registration_bulk_upload_initiator_failed_retry',
-    subject='Here goes the email subject'
+REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
+    'registration_bulk_upload_failure_all',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )
 
-REGISTRATION_BULK_UPLOAD_INITIATOR_FAILED_ON_HOLD = Mail(
-    'registration_bulk_upload_initiator_failed_on_hold',
-    subject='Here goes the email subject'
+REGISTRATION_BULK_UPLOAD_PREPARATION_FAILURE = Mail(
+    'registration_bulk_upload_preparation_failure',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )

@@ -28,7 +28,7 @@ from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
 from osf.utils.permissions import READ, WRITE, ADMIN
 
-# from website import mails, settings
+from website import mails, settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -170,6 +170,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
 
     draft_error_list = []  # a list that stores rows that have failed the draft creation
     approval_error_list = []  # a list that stores rows that have failed the approval process
+    successful_row_count = 0
     for index, row in enumerate(registration_rows, 1):
         logger.info('Processing registration row [{}: upload={}, row={}]'.format(index, upload.id, row.id))
         row.is_picked_up = True
@@ -177,6 +178,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
             row.save()
         try:
             handle_registration_row(row, initiator, provider, schema, auto_approval=auto_approval, dry_run=dry_run)
+            successful_row_count += 1
         except RegistrationBulkCreationRowError as e:
             logger.error(e.long_message)
             logger.error(e.error)
@@ -220,7 +222,42 @@ def bulk_create_registrations(upload_id, dry_run=True):
         logger.info('All registration rows succeeded for bulk creation. Upload ID: [{}].'.format(upload_id))
     if not dry_run:
         upload.save()
-    # TODO: send emails with information form the two error list
+        logger.info('Sending emails to initiator/uploader ...')
+        if upload.state == JobState.DONE_FULL:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
+                fullname=initiator.fullname,
+                auto_approval=auto_approval,
+                count=initial_row_count,
+                pending_submissions_url=get_provider_submission_url(provider),
+            )
+        elif upload.state == JobState.DONE_PARTIAL:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
+                fullname=initiator.fullname,
+                auto_approval=auto_approval,
+                total=initial_row_count,
+                successes=successful_row_count,
+                draft_errors=draft_error_list,
+                failures=len(draft_error_list),
+                pending_submissions_url=get_provider_submission_url(provider),
+            )
+        elif upload.state == JobState.DONE_ERROR:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
+                fullname=initiator.fullname,
+                count=initial_row_count,
+                draft_errors=draft_error_list,
+            )
+        else:
+            message = 'Failed to send registration bulk upload outcome email due to invalid ' \
+                      'upload state: [upload={}, state={}]'.format(upload.id, upload.state.name)
+            logger.error(message)
+            sentry.log_message(message)
+        logger.info('Email sent to bulk upload initiator [{}]'.format(initiator._id))
 
 
 def handle_registration_row(row, initiator, provider, schema, auto_approval=False, dry_run=True):
@@ -482,3 +519,7 @@ def handle_error(initiator, inform_product=False, error_message=None):
     #         user=initiator,
     #         osf_support_email=settings.OSF_SUPPORT_EMAIL,
     #     )
+
+
+def get_provider_submission_url(provider):
+    return f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions/'
