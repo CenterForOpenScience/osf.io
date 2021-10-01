@@ -24,8 +24,6 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
-from api.registrations.serializers import RegistrationSerializer
-from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -36,6 +34,9 @@ from api.providers.serializers import (
     RegistrationProviderSerializer,
     RegistrationModeratorSerializer,
 )
+from api.registrations import annotations as registration_annotations
+from api.registrations.serializers import RegistrationSerializer
+from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
@@ -734,6 +735,8 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
+        ).annotate(
+            revision_state=registration_annotations.REVISION_STATE,
         )
 
     # overrides ListAPIView

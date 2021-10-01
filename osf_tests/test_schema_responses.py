@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from nose.tools import assert_raises
@@ -6,10 +7,14 @@ from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.migrations import update_provider_auth_groups
-from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponse, SchemaResponseBlock
+from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
+from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
-from osf_tests.factories import AuthUserFactory, RegistrationFactory, RegistrationProviderFactory
+from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
+
+from website.mails import mails
+from website.notifications import emails
 
 # See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
@@ -26,6 +31,7 @@ INITIAL_SCHEMA_RESPONSES = {
 def admin_user():
     return AuthUserFactory()
 
+
 @pytest.fixture
 def schema():
     return get_default_test_schema()
@@ -39,13 +45,63 @@ def registration(schema, admin_user):
 
 
 @pytest.fixture
-def schema_response(registration):
-    response = SchemaResponse.create_initial_response(
+def alternate_user(registration):
+    user = AuthUserFactory()
+    registration.add_contributor(user, 'read')
+    return user
+
+
+@pytest.fixture
+def nested_registration(registration, schema):
+    project = ProjectFactory(parent=registration.registered_from)
+    project.save()
+    return RegistrationFactory(project=project, parent=registration, schema=schema)
+
+
+@pytest.fixture
+def nested_contributor(nested_registration):
+    return nested_registration.creator
+
+
+@pytest.fixture
+def notification_recipients(admin_user, alternate_user, nested_contributor):
+    return {user.username for user in [admin_user, alternate_user, nested_contributor]}
+
+
+@pytest.fixture
+def initial_response(registration):
+    response = schema_response.SchemaResponse.create_initial_response(
         initiator=registration.creator,
         parent=registration
     )
-    response.update_responses(INITIAL_SCHEMA_RESPONSES)
+    response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+    response.save()
+    for block in response.response_blocks.all():
+        block.response = INITIAL_SCHEMA_RESPONSES[block.schema_key]
+        block.save()
     return response
+
+
+@pytest.fixture
+def revised_response(initial_response):
+    return schema_response.SchemaResponse.create_from_previous_response(
+        previous_response=initial_response,
+        initiator=initial_response.initiator
+    )
+
+
+def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
+    '''Confirms that a mocked send_mail function contains the appropriate calls.'''
+    assert send_mail_mock.call_count == len(expected_recipients)
+
+    recipients = set()
+    templates = set()
+    for _, call_kwargs in send_mail_mock.call_args_list:
+        recipients.add(call_kwargs['to_addr'])
+        templates.add(call_kwargs['mail'])
+
+    assert recipients == expected_recipients
+    assert templates == {expected_template}
 
 
 @pytest.mark.enable_bookmark_creation
@@ -53,7 +109,7 @@ def schema_response(registration):
 class TestCreateSchemaResponse():
 
     def test_create_initial_response_sets_attributes(self, registration, schema):
-        response = SchemaResponse.create_initial_response(
+        response = schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
             schema=schema
@@ -66,7 +122,7 @@ class TestCreateSchemaResponse():
         assert not response.submitted_timestamp
 
     def test_create_initial_response_uses_parent_schema_if_none_provided(self, registration):
-        response = SchemaResponse.create_initial_response(
+        response = schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration
         )
@@ -76,7 +132,7 @@ class TestCreateSchemaResponse():
     def test_create_initial_response_assigns_response_blocks_and_source_revision(
             self, registration, schema):
         assert not SchemaResponseBlock.objects.exists()
-        response = SchemaResponse.create_initial_response(
+        response = schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
             schema=schema
@@ -90,11 +146,18 @@ class TestCreateSchemaResponse():
         assert created_response_blocks == set(response.updated_response_blocks.all())
         assert created_response_blocks == set(response.response_blocks.all())
 
+    def test_create_initial_response_does_not_notify(self, registration, admin_user):
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            schema_response.SchemaResponse.create_initial_response(
+                parent=registration, initiator=admin_user
+            )
+        assert not mock_send.called
+
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
         registration.save()
         with assert_raises(ValueError):
-            SchemaResponse.create_initial_response(
+            schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration
             )
@@ -104,7 +167,7 @@ class TestCreateSchemaResponse():
             id=registration.registration_schema.id
         ).first()
         with assert_raises(ValueError):
-            SchemaResponse.create_initial_response(
+            schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
                 schema=alt_schema
@@ -113,7 +176,7 @@ class TestCreateSchemaResponse():
     def test_create_initial_response_creates_blocks_for_each_schema_question(self, registration):
         assert not SchemaResponseBlock.objects.exists()
         schema = registration.registration_schema
-        SchemaResponse.create_initial_response(
+        schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
             schema=schema
@@ -130,20 +193,20 @@ class TestCreateSchemaResponse():
             assert created_response_blocks.filter(schema_key=key).exists()
 
     def test_cannot_create_initial_response_twice(self, registration):
-        SchemaResponse.create_initial_response(
+        schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
         )
 
         with assert_raises(PreviousSchemaResponseError):
-            SchemaResponse.create_initial_response(
+            schema_response.SchemaResponse.create_initial_response(
                 initiator=registration.creator,
                 parent=registration,
             )
 
     def test_create_initial_response_for_different_parent(self, registration):
         schema = registration.registration_schema
-        first_response = SchemaResponse.create_initial_response(
+        first_response = schema_response.SchemaResponse.create_initial_response(
             initiator=registration.creator,
             parent=registration,
         )
@@ -151,7 +214,7 @@ class TestCreateSchemaResponse():
         alternate_registration = RegistrationFactory(schema=schema)
         alternate_registration.schema_responses.clear()  # so we can use `create_initial_response` without validation
 
-        alternate_registration_response = SchemaResponse.create_initial_response(
+        alternate_registration_response = schema_response.SchemaResponse.create_initial_response(
             initiator=alternate_registration.creator,
             parent=alternate_registration,
         )
@@ -176,24 +239,35 @@ class TestCreateSchemaResponse():
             alternate_registration_response.response_blocks.all()
         ).exists()
 
-    def test_create_from_previous_response(self, registration, schema_response):
-        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
-        schema_response.save()
-        revised_response = SchemaResponse.create_from_previous_response(
+    def test_create_from_previous_response(self, registration, initial_response):
+        revised_response = schema_response.SchemaResponse.create_from_previous_response(
             initiator=registration.creator,
-            previous_response=schema_response,
+            previous_response=initial_response,
             justification='Leeeeerooooy Jeeeenkiiiinns'
         )
 
         assert revised_response.initiator == registration.creator
         assert revised_response.parent == registration
-        assert revised_response.schema == schema_response.schema
-        assert revised_response.previous_response == schema_response
+        assert revised_response.schema == initial_response.schema
+        assert revised_response.previous_response == initial_response
         assert revised_response.revision_justification == 'Leeeeerooooy Jeeeenkiiiinns'
 
-        assert revised_response != schema_response
+        assert revised_response != initial_response
         assert not revised_response.updated_response_blocks.exists()
-        assert set(revised_response.response_blocks.all()) == set(schema_response.response_blocks.all())
+        assert set(revised_response.response_blocks.all()) == set(initial_response.response_blocks.all())
+
+    def test_create_from_previous_response_notification(
+            self, initial_response, admin_user, notification_recipients):
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            schema_response.SchemaResponse.create_from_previous_response(
+                previous_response=initial_response, initiator=admin_user
+            )
+
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_INITIATED, notification_recipients
+        )
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -208,25 +282,22 @@ class TestCreateSchemaResponse():
         ]
     )
     def test_create_from_previous_response_fails_if_parent_has_unapproved_response(
-            self, invalid_response_state, schema_response):
+            self, invalid_response_state, initial_response):
         # Making a valid revised response, then pushing the initial response into an
         # invalid state to ensure that `create_from_previous_response` fails if
         # *any* schema_response on the parent is unapproved
-        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
-        schema_response.save()
-
-        intermediate_response = SchemaResponse.create_from_previous_response(
-            initiator=schema_response.initiator,
-            previous_response=schema_response
+        intermediate_response = schema_response.SchemaResponse.create_from_previous_response(
+            initiator=initial_response.initiator,
+            previous_response=initial_response
         )
         intermediate_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         intermediate_response.save()
 
-        schema_response.approvals_state_machine.set_state(invalid_response_state)
-        schema_response.save()
+        initial_response.approvals_state_machine.set_state(invalid_response_state)
+        initial_response.save()
         with assert_raises(PreviousSchemaResponseError):
-            SchemaResponse.create_from_previous_response(
-                initiator=schema_response.initiator,
+            schema_response.SchemaResponse.create_from_previous_response(
+                initiator=initial_response.initiator,
                 previous_response=intermediate_response
             )
 
@@ -235,30 +306,20 @@ class TestCreateSchemaResponse():
 @pytest.mark.django_db
 class TestUpdateSchemaResponses():
 
-    @pytest.fixture
-    def revised_response(self, schema_response):
-        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
-        schema_response.save()
-        return SchemaResponse.create_from_previous_response(
-            initiator=schema_response.initiator,
-            previous_response=schema_response,
-            justification='Leeeeerooooy Jeeeenkiiiinns'
-        )
+    def test_all_responses_property(self, initial_response):
+        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
+        for block in initial_response.response_blocks.all():
+            assert initial_response.all_responses[block.schema_key] == block.response
 
-    def test_all_responses_property(self, schema_response):
-        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
-        for block in schema_response.response_blocks.all():
-            assert schema_response.all_responses[block.schema_key] == block.response
-
-    def test_uodated_response_keys_property(self, schema_response, revised_response, schema):
-        # schema_response "updates" all keys
+    def test_uodated_response_keys_property(self, initial_response, revised_response, schema):
+        # initial_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
                 schema=schema, registration_response_key__isnull=False
             ).values_list('registration_response_key', flat=True)
         )
 
-        assert schema_response.updated_response_keys == all_keys
+        assert initial_response.updated_response_keys == all_keys
 
         # No updated_responses on the standard revised_response
         assert not revised_response.updated_response_keys
@@ -266,40 +327,44 @@ class TestUpdateSchemaResponses():
         revised_response.update_responses({'q1': 'I has a new  answer'})
         assert revised_response.updated_response_keys == {'q1'}
 
-    def test_update_responses(self, schema_response):
-        assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES
+    def test_update_responses(self, initial_response):
+        assert initial_response.all_responses == INITIAL_SCHEMA_RESPONSES
 
         updated_responses = {
             'q1': 'Hello there',
             'q2': 'This is a new response',
             'q3': 'B',
             'q4': ['E'],
-            'q5': [schema_response.initiator.id],
+            'q5': [initial_response.initiator.id],
             'q6': 'SomeFile',
         }
-        schema_response.update_responses(updated_responses)
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        initial_response.update_responses(updated_responses)
 
-        schema_response.refresh_from_db()
-        assert schema_response.all_responses == updated_responses
-        for block in schema_response.response_blocks.all():
+        initial_response.refresh_from_db()
+        assert initial_response.all_responses == updated_responses
+        for block in initial_response.response_blocks.all():
             assert block.response == updated_responses[block.schema_key]
 
-    def test_update_to_schema_response_updates_response_blocks_in_place(self, schema_response):
+    def test_update_to_initial_response_updates_response_blocks_in_place(self, initial_response):
         # Call set to force evaluation
-        initial_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
+        initial_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
 
-        schema_response.update_responses(
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        initial_response.update_responses(
             {
                 'q1': 'Hello there',
                 'q2': 'This is a new response',
                 'q3': 'B',
                 'q4': ['E'],
-                'q5': [schema_response.initiator.id],
+                'q5': [initial_response.initiator.id],
                 'q6': 'SomeFile'
             }
         )
-        schema_response.refresh_from_db()
-        updated_block_ids = set(schema_response.response_blocks.values_list('id', flat=True))
+        initial_response.refresh_from_db()
+        updated_block_ids = set(initial_response.response_blocks.values_list('id', flat=True))
         assert initial_block_ids == updated_block_ids
 
     def test_initial_update_to_revised_response_creates_new_block(self, revised_response):
@@ -373,9 +438,9 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q3').id == original_q3_block.id
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
-    def test_update_with_unsupported_key_raises(self, schema_response):
+    def test_update_with_unsupported_key_raises(self, revised_response):
         with assert_raises(ValueError):
-            schema_response.update_responses({'q7': 'sneaky'})
+            revised_response.update_responses({'q7': 'sneaky'})
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -386,13 +451,13 @@ class TestUpdateSchemaResponses():
         ]
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
-            self, updated_responses, schema_response):
+            self, updated_responses, revised_response):
         with assert_raises(ValueError):
-            schema_response.update_responses(updated_responses)
+            revised_response.update_responses(updated_responses)
 
-        schema_response.refresh_from_db()
-        assert schema_response.all_responses['q1'] == updated_responses['q1']
-        assert schema_response.all_responses['q2'] == updated_responses['q2']
+        revised_response.refresh_from_db()
+        assert revised_response.all_responses['q1'] == updated_responses['q1']
+        assert revised_response.all_responses['q2'] == updated_responses['q2']
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -406,32 +471,31 @@ class TestUpdateSchemaResponses():
             ApprovalStates.COMPLETED,
         ]
     )
-    def test_update_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
-        schema_response.approvals_state_machine.set_state(invalid_response_state)
+    def test_update_fails_if_state_is_invalid(self, invalid_response_state, initial_response):
+        initial_response.approvals_state_machine.set_state(invalid_response_state)
         with assert_raises(SchemaResponseStateError):
-            schema_response.update_responses({'q1': 'harrumph'})
+            initial_response.update_responses({'q1': 'harrumph'})
 
 
 @pytest.mark.django_db
 class TestDeleteSchemaResponse():
 
-    def test_delete_schema_response_deletes_schema_response_blocks(self, schema_response):
-        # schema_response is the only current source of SchemaResponseBlocks,
+    def test_delete_schema_response_deletes_schema_response_blocks(self, initial_response):
+        # initial_response is the only current source of SchemaResponseBlocks,
         # so all should be deleted
-        schema_response.delete()
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        initial_response.delete()
         assert not SchemaResponseBlock.objects.exists()
 
-    def test_delete_revised_response_only_deletes_updated_blocks(self, schema_response):
-        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
-        schema_response.save()
-
-        revised_response = SchemaResponse.create_from_previous_response(
-            previous_response=schema_response,
-            initiator=schema_response.initiator
+    def test_delete_revised_response_only_deletes_updated_blocks(self, initial_response):
+        revised_response = schema_response.SchemaResponse.create_from_previous_response(
+            previous_response=initial_response,
+            initiator=initial_response.initiator
         )
         revised_response.update_responses({'q1': 'blahblahblah', 'q2': 'whoopdedoo'})
 
-        old_blocks = schema_response.response_blocks.all()
+        old_blocks = initial_response.response_blocks.all()
         updated_blocks = revised_response.updated_response_blocks.all()
 
         revised_response.delete()
@@ -452,151 +516,259 @@ class TestDeleteSchemaResponse():
             ApprovalStates.COMPLETED,
         ]
     )
-    def test_delete_fails_if_state_is_invalid(self, invalid_response_state, schema_response):
-        schema_response.approvals_state_machine.set_state(invalid_response_state)
+    def test_delete_fails_if_state_is_invalid(self, invalid_response_state, initial_response):
+        initial_response.approvals_state_machine.set_state(invalid_response_state)
+        initial_response.save()
         with assert_raises(SchemaResponseStateError):
-            schema_response.delete()
+            initial_response.delete()
 
 
-@pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
 class TestUnmoderatedSchemaResponseApprovalFlows():
 
-    @pytest.fixture
-    def alternate_user(self):
-        return AuthUserFactory()
-
     def test_submit_response_adds_pending_approvers(
-            self, schema_response, admin_user, alternate_user):
-        assert schema_response.state is ApprovalStates.IN_PROGRESS
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
 
-        assert schema_response.state is ApprovalStates.UNAPPROVED
-        for user in [schema_response.initiator, alternate_user]:
-            assert user in schema_response.pending_approvers.all()
+        initial_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
 
-    def test_submit_response_writes_schema_response_action(self, schema_response, admin_user):
-        assert not schema_response.actions.exists()
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+        assert initial_response.state is ApprovalStates.UNAPPROVED
+        for user in [admin_user, alternate_user]:
+            assert user in initial_response.pending_approvers.all()
 
-        new_action = schema_response.actions.last()
+    def test_submit_response_writes_schema_response_action(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        assert not initial_response.actions.exists()
+
+        initial_response.submit(user=admin_user, required_approvers=[admin_user])
+
+        new_action = initial_response.actions.last()
         assert new_action.creator == admin_user
         assert new_action.from_state == ApprovalStates.IN_PROGRESS.db_name
         assert new_action.to_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.trigger == SchemaResponseTriggers.SUBMIT.db_name
 
-    def test_submit_response_requires_user(self, schema_response, admin_user):
-        with assert_raises(ValueError):
-            schema_response.submit(required_approvers=[admin_user])
+    def test_submit_response_notification(
+            self, revised_response, admin_user, notification_recipients):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        revised_response.save()
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            revised_response.submit(user=admin_user, required_approvers=[admin_user])
 
-    def test_submit_resposne_requires_required_approvers(self, schema_response, admin_user):
-        with assert_raises(ValueError):
-            schema_response.submit(user=admin_user)
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_SUBMITTED, notification_recipients
+        )
 
-    def test_non_parent_admin_cannot_submit_response(self, schema_response, alternate_user):
+    def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            initial_response.submit(user=admin_user, required_approvers=[admin_user])
+        assert not mock_send.called
+
+    def test_submit_response_requires_user(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        with assert_raises(ValueError):
+            initial_response.submit(required_approvers=[admin_user])
+
+    def test_submit_resposne_requires_required_approvers(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        with assert_raises(ValueError):
+            initial_response.submit(user=admin_user)
+
+    def test_non_parent_admin_cannot_submit_response(self, initial_response, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
         with assert_raises(PermissionsError):
-            schema_response.submit(user=alternate_user)
+            initial_response.submit(user=alternate_user)
 
     def test_approve_response_requires_all_approvers(
-            self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user, alternate_user)
 
-        schema_response.approve(user=schema_response.initiator)
-        assert schema_response.state is ApprovalStates.UNAPPROVED
+        initial_response.approve(user=admin_user)
+        assert initial_response.state is ApprovalStates.UNAPPROVED
 
-        schema_response.approve(user=alternate_user)
-        assert schema_response.state is ApprovalStates.APPROVED
+        initial_response.approve(user=alternate_user)
+        assert initial_response.state is ApprovalStates.APPROVED
 
     def test_approve_response_writes_schema_response_action(
-            self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
-        schema_response.approve(user=admin_user)
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user, alternate_user)
+
+        initial_response.approve(user=admin_user)
 
         # Confirm that action for first "approve" still has to_state of UNAPPROVED
-        new_action = schema_response.actions.last()
+        new_action = initial_response.actions.last()
         assert new_action.creator == admin_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.to_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-        schema_response.approve(user=alternate_user)
+        initial_response.approve(user=alternate_user)
 
         # Confifm that action for final "approve" has to_state of APPROVED
-        new_action = schema_response.actions.last()
+        new_action = initial_response.actions.last()
         assert new_action.creator == alternate_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.to_state == ApprovalStates.APPROVED.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
         # Confirm that final approval writes only one action
-        assert schema_response.actions.filter(
+        assert initial_response.actions.filter(
             trigger=SchemaResponseTriggers.APPROVE.db_name
         ).count() == 2
 
-    def test_approve_response_requires_user(self, schema_response, admin_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+    def test_approve_response_notification(
+            self, revised_response, admin_user, alternate_user, notification_recipients):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        revised_response.save()
+        revised_response.pending_approvers.add(admin_user, alternate_user)
+
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            revised_response.approve(user=admin_user)
+            assert not mock_send.called  # Should only send email on final approval
+            revised_response.approve(user=alternate_user)
+
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
+        )
+
+    def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            initial_response.approve(user=admin_user)
+        assert not mock_send.called
+
+    def test_approve_response_requires_user(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
         with assert_raises(ValueError):
-            schema_response.approve()
+            initial_response.approve()
 
     def test_non_approver_cannot_approve_response(
-            self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
 
         with assert_raises(PermissionsError):
-            schema_response.approve(user=alternate_user)
+            initial_response.approve(user=alternate_user)
 
-    def test_reject_response_moves_state_to_in_progress(self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
+    def test_reject_response_moves_state_to_in_progress(self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user, alternate_user)
 
         # Implicitly confirm that only one reject call is needed to advance state
-        schema_response.reject(user=admin_user)
-        assert schema_response.state is ApprovalStates.IN_PROGRESS
+        initial_response.reject(user=admin_user)
+        assert initial_response.state is ApprovalStates.IN_PROGRESS
 
     def test_reject_response_clears_pending_approvers(
-            self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
-        schema_response.reject(user=schema_response.initiator)
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user, alternate_user)
 
-        assert not schema_response.pending_approvers.exists()
+        initial_response.reject(user=admin_user)
 
-    def test_reject_response_writes_schema_response_action(self, schema_response, admin_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
-        schema_response.reject(user=admin_user)
-        new_action = schema_response.actions.last()
+        assert not initial_response.pending_approvers.exists()
 
+    def test_reject_response_writes_schema_response_action(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.pending_approvers.add(admin_user)
+        initial_response.save()
+
+        initial_response.reject(user=admin_user)
+
+        new_action = initial_response.actions.last()
         assert new_action.creator == admin_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.to_state == ApprovalStates.IN_PROGRESS.db_name
         assert new_action.trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name
 
-    def test_reject_response_requires_user(self, schema_response, admin_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+    def test_reject_response_notification(
+            self, revised_response, admin_user, notification_recipients):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        revised_response.save()
+        revised_response.pending_approvers.add(admin_user)
+
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            revised_response.reject(user=admin_user)
+
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
+        )
+
+    def test_no_reject_notification_on_initial_response(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            initial_response.reject(user=admin_user)
+        assert not mock_send.called
+
+    def test_reject_response_requires_user(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
         with assert_raises(ValueError):
-            schema_response.reject()
+            initial_response.reject()
 
     def test_non_approver_cannnot_reject_response(
-            self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+            self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
 
         with assert_raises(PermissionsError):
-            schema_response.reject(user=alternate_user)
+            initial_response.reject(user=alternate_user)
 
-    def test_approver_cannot_call_accept_directly(self, schema_response, admin_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
+    def test_approver_cannot_call_accept_directly(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
 
         with assert_raises(ValueError):
-            schema_response.accept(user=schema_response.initiator)
+            initial_response.accept(user=admin_user)
 
-    def test_internal_accept_advances_state(self, schema_response, admin_user, alternate_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
-        schema_response.accept()
+    def test_internal_accept_advances_state(self, initial_response, admin_user, alternate_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user, alternate_user)
 
-        assert schema_response.state is ApprovalStates.APPROVED
+        initial_response.accept()
 
-    def test_internal_accept_clears_pending_approvers(self, schema_response, admin_user):
-        schema_response.submit(user=admin_user, required_approvers=[admin_user])
-        schema_response.accept()
-        assert not schema_response.pending_approvers.exists()
+        assert initial_response.state is ApprovalStates.APPROVED
+
+    def test_internal_accept_clears_pending_approvers(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
+        initial_response.accept()
+
+        assert not initial_response.pending_approvers.exists()
 
 
 @pytest.mark.django_db
@@ -613,105 +785,197 @@ class TestModeratedSchemaResponseApprovalFlows():
     @pytest.fixture
     def moderator(self, provider):
         moderator = AuthUserFactory()
-        provider.get_group('moderator').user_set.add(moderator)
-        provider.save()
+        provider.add_to_group(moderator, 'moderator')
         return moderator
 
     @pytest.fixture
-    def moderated_registration(self, schema, admin_user, provider):
-        return RegistrationFactory(schema=schema, creator=admin_user, provider=provider)
+    def registration(self, registration, provider):
+        registration.provider = provider
+        registration.save()
+        return registration
 
-    @pytest.fixture
-    def moderated_response(self, moderated_registration):
-        moderated_response = moderated_registration.schema_responses.get()
-        moderated_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
-        return moderated_response
+    def test_moderated_response_requires_moderation(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
 
-    def test_moderated_response_requires_moderation(self, moderated_response, admin_user):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
+        initial_response.approve(user=admin_user)
 
-        assert moderated_response.state is ApprovalStates.PENDING_MODERATION
+        assert initial_response.state is ApprovalStates.PENDING_MODERATION
 
     def test_schema_response_action_to_state_following_moderated_approve_is_pending_moderation(
-            self, moderated_response, admin_user):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
+            self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
 
-        new_action = moderated_response.actions.last()
+        initial_response.approve(user=admin_user)
+
+        new_action = initial_response.actions.last()
         assert new_action.creator == admin_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_moderator_accept(self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
-        moderated_response.accept(user=moderator)
+    def test_no_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        revised_response.save()
+        revised_response.pending_approvers.add(admin_user)
 
-        assert moderated_response.state is ApprovalStates.APPROVED
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            revised_response.approve(user=admin_user)
+        assert not mock_send.called
 
-    def test_moderator_accept_writes_schema_response_action(
-            self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
-        moderated_response.accept(user=moderator)
+    def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        revised_response.save()
+        revised_response.pending_approvers.add(admin_user)
 
-        new_action = moderated_response.actions.last()
+        store_emails = emails.store_emails
+        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+            mock_store.side_effect = store_emails
+            revised_response.approve(user=admin_user)
+
+        assert mock_store.called
+        assert mock_store.call_args[0][0] == [moderator._id]
+
+    def test_no_moderator_notification_on_admin_approval_of_initial_response(
+            self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+        initial_response.pending_approvers.add(admin_user)
+
+        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+            initial_response.approve(user=admin_user)
+        assert not mock_store.called
+
+    def test_moderator_accept(self, initial_response, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        initial_response.accept(user=moderator)
+
+        assert initial_response.state is ApprovalStates.APPROVED
+
+    def test_moderator_accept_writes_schema_response_action(self, initial_response, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        initial_response.accept(user=moderator)
+
+        new_action = initial_response.actions.last()
         assert new_action.creator == moderator
         assert new_action.from_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.to_state == ApprovalStates.APPROVED.db_name
         assert new_action.trigger == SchemaResponseTriggers.ACCEPT.db_name
 
-    def test_moderator_reject(self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
-        moderated_response.reject(user=moderator)
+    def test_moderator_accept_notification(
+            self, revised_response, moderator, notification_recipients):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        revised_response.save()
 
-        assert moderated_response.state is ApprovalStates.IN_PROGRESS
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            revised_response.accept(user=moderator)
+
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
+        )
+
+    def test_no_moderator_accept_notification_on_initial_response(
+            self, initial_response, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            initial_response.accept(user=moderator)
+        assert not mock_send.called
+
+    def test_moderator_reject(self, initial_response, admin_user, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        initial_response.reject(user=moderator)
+
+        assert initial_response.state is ApprovalStates.IN_PROGRESS
 
     def test_moderator_reject_writes_schema_response_action(
-            self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
-        moderated_response.reject(user=moderator)
+            self, initial_response, admin_user, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
 
-        new_action = moderated_response.actions.last()
+        initial_response.reject(user=moderator)
+
+        new_action = initial_response.actions.last()
         assert new_action.creator == moderator
         assert new_action.from_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.to_state == ApprovalStates.IN_PROGRESS.db_name
         assert new_action.trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name
 
-    def test_moderator_cannot_submit(self, moderated_response, moderator):
+    def test_moderator_reject_notification(
+            self, revised_response, moderator, notification_recipients):
+        revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        revised_response.save()
+
+        send_mail = mails.send_mail
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            revised_response.reject(user=moderator)
+
+        assert_notification_correctness(
+            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
+        )
+
+    def test_no_moderator_reject_notification_on_initial_response(
+            self, initial_response, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            initial_response.reject(user=moderator)
+        assert not mock_send.called
+
+    def test_moderator_cannot_submit(self, initial_response, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+
         with assert_raises(PermissionsError):
-            moderated_response.submit(user=moderator, required_approvers=[moderator])
+            initial_response.submit(user=moderator, required_approvers=[moderator])
 
     def test_moderator_cannot_approve_in_unapproved_state(
-            self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
+            self, initial_response, admin_user, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
+
         with assert_raises(PermissionsError):
-            moderated_response.approve(user=moderator)
+            initial_response.approve(user=moderator)
 
     def test_moderator_cannot_reject_in_unapproved_state(
-            self, moderated_response, admin_user, moderator):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        with assert_raises(PermissionsError):
-            moderated_response.reject(user=moderator)
+            self, initial_response, admin_user, moderator):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
+        initial_response.save()
 
-    def test_admin_cannot_accept_in_pending_moderation(self, moderated_response, admin_user):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
         with assert_raises(PermissionsError):
-            moderated_response.accept(user=admin_user)
+            initial_response.reject(user=moderator)
 
-    def test_admin_cannot_reject_in_pending_moderation(self, moderated_response, admin_user):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
+    def test_admin_cannot_accept_in_pending_moderation(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
         with assert_raises(PermissionsError):
-            moderated_response.reject(user=admin_user)
+            initial_response.accept(user=admin_user)
 
-    def test_user_required_to_accept_in_pending_moderation(self, moderated_response, admin_user):
-        moderated_response.submit(user=admin_user, required_approvers=[admin_user])
-        moderated_response.approve(user=admin_user)
+    def test_admin_cannot_reject_in_pending_moderation(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
+        with assert_raises(PermissionsError):
+            initial_response.reject(user=admin_user)
+
+    def test_user_required_to_accept_in_pending_moderation(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
+        initial_response.save()
+
         with assert_raises(ValueError):
-            moderated_response.accept()
+            initial_response.accept()

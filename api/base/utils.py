@@ -155,12 +155,12 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
-def default_node_list_permission_queryset(user, model_cls):
+def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
     qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
-    return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
+    return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'), **annotations)
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlsplit(url)

@@ -69,54 +69,58 @@ def reviews_submit_notification_moderators(self, timestamp, context):
     resource = context['reviewable']
     provider = resource.provider
 
+    # Set submission url
+    if provider.type == 'osf.preprintprovider':
+        context['reviews_submission_url'] = (
+            f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
+        )
+    elif provider.type == 'osf.registrationprovider':
+        context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
+    else:
+        raise NotImplementedError(f'unsupported provider type {provider.type}')
+
+    # Set url for profile image of the submitter
+    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+
+    # Set message
+    revision_id = context.get('revision_id')
+    if revision_id:
+        context['message'] = f'submitted updates to "{resource.title}".'
+        context['reviews_submission_url'] += f'&revisionId={revision_id}'
+    else:
+        context['message'] = f'submitted "{resource.title}".'
+
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription, created = NotificationSubscription.objects.get_or_create(
         _id=f'{provider._id}_new_pending_submissions',
         provider=provider
     )
 
-    # Set message
-    context['message'] = f'submitted "{resource.title}".'
-    # Set url for profile image of the submitter
-    context['profile_image_url'] = get_profile_image_url(context['referrer'])
-    # Set submission url
-    if provider.type == 'osf.preprintprovider':
-        url_segment = 'preprints'
-        flag_suffix = ''
-    elif provider.type == 'osf.registrationprovider':
-        url_segment = 'registries'
-        flag_suffix = '?mode=moderator'
-    else:
-        raise NotImplementedError(f'unsupported provider type {provider.type}')
+    # "transactional" subscribers receive notifications "Immediately" (i.e. at 5 minute intervals)
+    # "digest" subscribers receive emails daily
+    recipients_per_subscription_type = {
+        'email_transactional': list(
+            provider_subscription.email_transactional.all().values_list('guids___id', flat=True)
+        ),
+        'email_digest': list(
+            provider_subscription.email_digest.all().values_list('guids___id', flat=True)
+        )
+    }
 
-    context['reviews_submission_url'] = f'{DOMAIN}reviews/{url_segment}/{provider._id}/{resource._id}{flag_suffix}'
+    for subscription_type, recipient_ids in recipients_per_subscription_type.items():
+        if not recipient_ids:
+            continue
 
-    email_transactional_ids = list(provider_subscription.email_transactional.all().values_list('guids___id', flat=True))
-    email_digest_ids = list(provider_subscription.email_digest.all().values_list('guids___id', flat=True))
-
-    # Store emails to be sent to subscribers instantly (at a 5 min interval)
-    store_emails(
-        email_transactional_ids,
-        'email_transactional',
-        'new_pending_submissions',
-        context['referrer'],
-        resource,
-        timestamp,
-        abstract_provider=provider,
-        **context
-    )
-
-    # Store emails to be sent to subscribers daily
-    store_emails(
-        email_digest_ids,
-        'email_digest',
-        'new_pending_submissions',
-        context['referrer'],
-        resource,
-        timestamp,
-        abstract_provider=provider,
-        **context
-    )
+        store_emails(
+            recipient_ids,
+            subscription_type,
+            'new_pending_submissions',
+            context['referrer'],
+            resource,
+            timestamp,
+            abstract_provider=provider,
+            **context
+        )
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect

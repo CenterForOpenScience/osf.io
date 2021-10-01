@@ -70,6 +70,12 @@ class RegistrationSerializer(NodeSerializer):
         'withdrawn',
     ]
 
+    # Union filterable fields unique to the RegistrationSerializer with
+    # filterable fields from the NodeSerializer
+    filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
+        'revision_state',
+    ])
+
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
@@ -359,6 +365,8 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -424,12 +432,6 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
-
-    def get_revision_state(self, obj):
-        latest_revision = obj.schema_responses.first()
-        if latest_revision:
-            return latest_revision.reviews_state
-        return None
 
     def anonymize_registered_meta(self, obj):
         """

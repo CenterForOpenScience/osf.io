@@ -1,3 +1,5 @@
+from future.moves.urllib.parse import urljoin
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -9,10 +11,22 @@ from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
+from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
+from website.mails import mails
+from website.reviews.signals import reviews_email_submit_moderators_notifications
+from website.settings import DOMAIN
+
+
+EMAIL_TEMPLATES_PER_EVENT = {
+    'create': mails.SCHEMA_RESPONSE_INITIATED,
+    'submit': mails.SCHEMA_RESPONSE_SUBMITTED,
+    'accept': mails.SCHEMA_RESPONSE_APPROVED,
+    'reject': mails.SCHEMA_RESPONSE_REJECTED,
+}
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
@@ -72,6 +86,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             active_state=self.state,
             state_property_name='state'
         )
+
+    @property
+    def absolute_url(self):
+        relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        return urljoin(DOMAIN, relative_url_path)
 
     @property
     def all_responses(self):
@@ -184,6 +203,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
+        new_response._notify_users(event='create')
         return new_response
 
     def update_responses(self, updated_responses):
@@ -420,3 +440,38 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
+        self._notify_users(event=event_data.event.name)
+
+    def _notify_users(self, event):
+        '''Notify users of relevant state transitions.'''
+        #  Notifications on the original response will be handled by the registration workflow
+        if not self.previous_response:
+            return
+
+        # Generate the "reviews" email context and notify moderators
+        if self.state is ApprovalStates.PENDING_MODERATION:
+            email_context = notifications.get_email_template_context(resource=self.parent)
+            email_context['revision_id'] = self._id
+            email_context['referrer'] = self.initiator
+            reviews_email_submit_moderators_notifications.send(
+                timestamp=timezone.now(), context=email_context
+            )
+            return
+
+        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
+        if not template:
+            return
+
+        email_context = {
+            'resource_type': self.parent.__class__.__name__,
+            'title': self.parent.title,
+            'parent_url': self.parent.absolute_url,
+            'update_url': self.absolute_url,
+            'is_moderated': self.is_moderated
+        }
+
+        for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
+            email_context['user'] = contributor
+            email_context['can_write'] = self.parent.has_permission(contributor, 'write')
+            email_context['is_approver'] = contributor in self.pending_approvers.all()
+            mails.send_mail(to_addr=contributor.username, mail=template, **email_context)

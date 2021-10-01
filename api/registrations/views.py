@@ -1,14 +1,14 @@
-from django.db.models import Exists, OuterRef
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider, SchemaResponse
+from osf.models import Registration, OSFUser, RegistrationProvider
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
+from api.base.exceptions import Gone
 from api.base.filters import ListFilterMixin
 from api.base.views import (
     JSONAPIBaseView,
@@ -81,7 +81,9 @@ from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
+from api.registrations import annotations
 
+from api.schema_responses import annotations as schema_response_annotations
 from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 
@@ -93,21 +95,21 @@ class RegistrationMixin(NodeMixin):
     serializer_class = RegistrationSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            AbstractNode,
-            self.kwargs[self.node_lookup_url_kwarg],
-            self.request,
-            display_name='node',
+    def get_node(self, check_object_permissions=True, **annotations):
+        guid = self.kwargs[self.node_lookup_url_kwarg]
+        node = Registration.objects.filter(guids___id=guid).annotate(**annotations)
 
-        )
-        # Nodes that are folders/collections are treated as a separate resource, so if the client
-        # requests a collection through a node endpoint, we return a 404
-        if node.is_collection or not node.is_registration:
+        try:
+            node = node.get()
+        except Registration.DoesNotExist:
             raise NotFound
-        # May raise a permission denied
+
+        if node.deleted:
+            raise Gone(detail='The requested registration is no longer available.')
+
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
+
         return node
 
 
@@ -145,7 +147,11 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
+        return default_node_list_permission_queryset(
+            user=self.request.user,
+            model_cls=Registration,
+            revision_state=annotations.REVISION_STATE,
+        )
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -232,7 +238,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
 
     # overrides RetrieveAPIView
     def get_object(self):
-        registration = self.get_node()
+        registration = self.get_node(revision_state=annotations.REVISION_STATE)
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
@@ -873,18 +879,10 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         ExcludeWithdrawals,
     )
 
-    view_category = 'schema-responses'
+    view_category = 'registrations'
     view_name = 'schema-responses-list'
 
     serializer_class = RegistrationSchemaResponseSerializer
-
-    def _make_is_pending_current_user_approval_subquery(self):
-        user = self.request.user
-        return Exists(
-            SchemaResponse.pending_approvers.through.objects.filter(
-                schemaresponse_id=OuterRef('id'), osfuser_id=user.id,
-            ),
-        )
 
     def get_object(self):
         return self.get_node()
@@ -900,7 +898,9 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         registration = self.get_node()
 
         all_responses = registration.schema_responses.annotate(
-            is_pending_current_user_approval=self._make_is_pending_current_user_approval_subquery(),
+            is_pending_current_user_approval=(
+                schema_response_annotations.is_pending_current_user_approval(user)
+            ),
         )
 
         is_contributor = registration.has_permission(user, 'read') if user else False
