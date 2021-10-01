@@ -9,13 +9,13 @@
   <td style="border-collapse: collapse;">
       Hello ${fullname},<br>
       <br>
-      Our system fails to prepare your registration for bulk upload. Our team was notified of the issue and will
+      Your reigistrations were not uploaded. Our team was notified of the issue and will
       follow up after they start looking into the issue. Contact the Help Desk at support@osf.io if you continue to
       have questions.<br>
       <br>
       Sincerely,<br>
       <br>
-      Open Science Framework Robot<br>
+      The OSF Team<br>
   </td>
 </tr>
 </%def>
