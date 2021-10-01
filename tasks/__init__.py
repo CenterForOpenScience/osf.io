@@ -350,7 +350,6 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
-    'api_tests/actions',
     'api_tests/chronos',
     'api_tests/meetings',
     'api_tests/metrics',
@@ -363,6 +362,7 @@ API_TESTS2 = [
     'api_tests/wb',
 ]
 API_TESTS3 = [
+    'api_tests/actions',
     'api_tests/addons_tests',
     'api_tests/alerts',
     'api_tests/applications',

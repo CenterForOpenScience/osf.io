@@ -486,7 +486,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.SUBMIT.db_name
 
     def test_submit_response_requires_user(self, schema_response, admin_user):
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             schema_response.submit(required_approvers=[admin_user])
 
     def test_submit_resposne_requires_required_approvers(self, schema_response, admin_user):
@@ -535,7 +535,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_approve_response_requires_user(self, schema_response, admin_user):
         schema_response.submit(user=admin_user, required_approvers=[admin_user])
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             schema_response.approve()
 
     def test_non_approver_cannot_approve_response(
@@ -571,7 +571,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_reject_response_requires_user(self, schema_response, admin_user):
         schema_response.submit(user=admin_user, required_approvers=[admin_user])
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             schema_response.reject()
 
     def test_non_approver_cannnot_reject_response(
@@ -713,5 +713,5 @@ class TestModeratedSchemaResponseApprovalFlows():
     def test_user_required_to_accept_in_pending_moderation(self, moderated_response, admin_user):
         moderated_response.submit(user=admin_user, required_approvers=[admin_user])
         moderated_response.approve(user=admin_user)
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             moderated_response.accept()
