@@ -109,7 +109,7 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
-                    % if 'admin' in user['permissions']:
+                    % if 'admin' in user['permissions'] and 0:
                         <div class="form-group">
                             <label for="description">${_("Select Timestamp Function:")}</label>
                             <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
