@@ -276,8 +276,8 @@ class TestNodeSettingsUpdate:
         assert res.json['data']['attributes']['access_requests_enabled'] is True
 
     def test_patch_anyone_can_comment(self, app, project, payload, admin_contrib, write_contrib, url):
-        assert project.comment_level == 'public'
-        payload['data']['attributes']['anyone_can_comment'] = False
+        assert project.comment_level == 'private'
+        payload['data']['attributes']['anyone_can_comment'] = True
 
         # Write cannot modify this field
         res = app.patch_json_api(url, payload, auth=write_contrib.auth, expect_errors=True)
@@ -287,16 +287,16 @@ class TestNodeSettingsUpdate:
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         project.reload()
-        assert project.comment_level == 'private'
-        assert res.json['data']['attributes']['anyone_can_comment'] is False
+        assert project.comment_level == 'public'
+        assert res.json['data']['attributes']['anyone_can_comment'] is True
 
-        payload['data']['attributes']['anyone_can_comment'] = True
+        payload['data']['attributes']['anyone_can_comment'] = False
         # Logged in admin
         res = app.patch_json_api(url, payload, auth=admin_contrib.auth)
         assert res.status_code == 200
         project.reload()
-        assert project.comment_level == 'public'
-        assert res.json['data']['attributes']['anyone_can_comment'] is True
+        assert project.comment_level == 'private'
+        assert res.json['data']['attributes']['anyone_can_comment'] is False
 
     def test_patch_anyone_can_edit_wiki(self, app, project, payload, admin_contrib, write_contrib, url):
         project.is_public = True

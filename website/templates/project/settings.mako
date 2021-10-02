@@ -35,8 +35,10 @@
 
                         <li><a href="#configureWikiAnchor">${_("Wiki")}</a></li>
 
+                        % if use_project_comment_settings:
                         % if permissions.ADMIN in user['permissions']:
                             <li><a href="#configureCommentingAnchor">${_("Commenting")}</a></li>
+                        % endif
                         % endif
 
                         <li><a href="#configureNotificationsAnchor">${_("Email Notifications")}</a></li>
@@ -109,7 +111,7 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
-                    % if 'admin' in user['permissions']:
+                    % if 'admin' in user['permissions'] and 0:
                         <div class="form-group">
                             <label for="description">${_("Select Timestamp Function:")}</label>
                             <select id="timestamp_pattern" data-bind="value: selectedTimestampPattern">
@@ -285,7 +287,7 @@
                                 %if node['is_public']:
                                     <p class="text">${_("Control who can edit the wiki of <b>%(title)s</b>") % dict(title=h(node['title'])) | n}</p>
                                 %else:
-                                    <p class="text">${_("Control who can edit your wiki. To allow all GakuNin RDM users to edit the wiki, <b>%(title)s</b> must be public.") % dict(title=h(node['title'])) | n}</p>
+                                    <p class="text">${_("Control who can edit your wiki")}</p>
                                 %endif
                             </div>
 
@@ -308,6 +310,7 @@
             %endif
         %endif ## End Wiki Config
 
+        % if use_project_comment_settings:
         % if permissions.ADMIN in user['permissions']:  ## Begin Configure Commenting
 
             % if not node['is_registration']:
@@ -348,6 +351,7 @@
                 </div>
                 %endif
             % endif  ## End Configure Commenting
+        % endif
 
         % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 

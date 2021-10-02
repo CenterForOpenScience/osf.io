@@ -278,7 +278,7 @@ class TestReportDetailView(ReportDetailViewMixin):
     # private_project_comment_reports
     @pytest.fixture()
     def private_project(self, user, contributor):
-        private_project = ProjectFactory.create(is_public=False, creator=user)
+        private_project = ProjectFactory.create(is_public=False, creator=user, comment_level='public')
         private_project.add_contributor(contributor=contributor, save=True)
         return private_project
 
@@ -302,7 +302,7 @@ class TestReportDetailView(ReportDetailViewMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user)
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -329,7 +329,7 @@ class TestFileCommentReportDetailView(ReportDetailViewMixin):
     # private_project_comment_reports
     @pytest.fixture()
     def private_project(self, user, contributor):
-        private_project = ProjectFactory.create(is_public=False, creator=user)
+        private_project = ProjectFactory.create(is_public=False, creator=user, comment_level='public')
         private_project.add_contributor(contributor=contributor, save=True)
         return private_project
 
@@ -360,7 +360,7 @@ class TestFileCommentReportDetailView(ReportDetailViewMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user)
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
@@ -394,7 +394,7 @@ class TestWikiCommentReportDetailView(ReportDetailViewMixin):
     # private_project_comment_reports
     @pytest.fixture()
     def private_project(self, user, contributor):
-        private_project = ProjectFactory.create(is_public=False, creator=user)
+        private_project = ProjectFactory.create(is_public=False, creator=user, comment_level='public')
         private_project.add_contributor(contributor=contributor, save=True)
         return private_project
 
@@ -430,7 +430,7 @@ class TestWikiCommentReportDetailView(ReportDetailViewMixin):
     # public_project_comment_reports
     @pytest.fixture()
     def public_project(self, user, contributor):
-        public_project = ProjectFactory.create(is_public=True, creator=user)
+        public_project = ProjectFactory.create(is_public=True, creator=user, comment_level='public')
         public_project.add_contributor(contributor=contributor, save=True)
         return public_project
 
