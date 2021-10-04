@@ -18,7 +18,8 @@ from api.schema_responses import annotations
 from api.schema_responses.permissions import (
     SchemaResponseDetailPermission,
     SchemaResponseListPermission,
-    SchemaResponseActionPermission,
+    SchemaResponseActionDetailPermission,
+    SchemaResponseActionListPermission,
 )
 from api.schema_responses.schemas import create_schema_response_payload
 from api.schema_responses.serializers import (
@@ -122,7 +123,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
 class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -150,7 +151,7 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

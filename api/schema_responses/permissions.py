@@ -11,30 +11,27 @@ from osf.models import Registration, SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
 
-class SchemaResponseDetailPermission(permissions.BasePermission):
-    '''
-    Permissions for top-level `schema_response` detail endpoints.
+class SchemaResponseParentPermission:
+    '''Base permissions class for an individual SchemaResponse and subpaths
 
-    To GET a SchemaResponse, one of three conditions must be met:
+    To GET a SchemaResponse (or a subpath), one of three conditions must be met:
       *  The user must have "read" permissions on the parent resource
       *  The user must be a moderator on the parent resource's Provider and the
          SchemaResponse must be in an APPROVED or PENDING_MODERATION state
       *  The SchemaResponse must be APPROVED and the parent resource must be public
 
-    To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
+    For DELETE/PATCH/POST/PUT, the required permission should be added in the
+    REQUIRED_PERMISSIONS dictionary.
 
-    To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
-
-    Note: SchemaResponses on deleted parent resources should appear to be deleted, while
-    access should be denied to SchemaResponses on withdrawn parent resources.
+    No entry means the method is not allowed, None means no permission is required
     '''
     acceptable_models = (SchemaResponse, )
+    REQUIRED_PERMISSIONS = {}
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
-        auth = get_user_auth(request)
-        parent = obj.parent
 
+        parent = obj.parent
         if parent.deleted:
             # Mimics get_object_or_error logic
             raise Gone
@@ -42,6 +39,7 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
             # Mimics behavior of ExcludeWithdrawals
             return False
 
+        auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return (
                 (parent.is_public and obj.state is ApprovalStates.APPROVED)
@@ -53,12 +51,30 @@ class SchemaResponseDetailPermission(permissions.BasePermission):
                 )
                 or parent.has_permission(auth.user, 'read')
             )
-        elif request.method == 'PATCH':
-            return parent.has_permission(auth.user, 'write')
-        elif request.method == 'DELETE':
-            return parent.has_permission(auth.user, 'admin')
-        else:
+
+        if request.method not in self.REQUIRED_PERMISSIONS:
             raise exceptions.MethodNotAllowed(request.method)
+
+        required_permission = self.REQURED_PERMISSIONS[request.method]
+        if required_permission:
+            return parent.has_permission(auth.user, required_permission)
+        return True
+
+
+class SchemaResponseDetailPermission(permissions.BasePermission, SchemaResponseParentPermission):
+    '''
+    Permissions for top-level `schema_response` detail endpoints.
+
+    See SchemaResponseParentPermission for GET permission requirements
+
+    To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
+
+    To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
+
+    Note: SchemaResponses on deleted parent resources should appear to be deleted, while
+    access should be denied to SchemaResponses on withdrawn parent resources.
+    '''
+    REQUIRED_PERMISSIONS = {'DELETE': 'admin', 'PATCH': 'write'}
 
     def has_permission(self, request, view):
         obj = view.get_object()
@@ -124,44 +140,30 @@ class SchemaResponseListPermission(permissions.BasePermission):
         return obj.has_permission(auth.user, 'admin')
 
 
-class SchemaResponseActionPermission(permissions.BasePermission):
+class SchemaResponseActionListPermission(permissions.BasePermission, SchemaResponseParentPermission):
     '''
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
 
-    GET permissions for SchemaResponseActionList and SchemaResponseActionDetail should mimic
-    the permissions for SchemaResponseDetail
+    See SchemaResponseParentPermission for GET permission requirements
 
     POST permissions are state-sensitive and should be enforced by the model
     '''
 
-    def has_object_permission(self, request, view, obj):
-        if request.method not in permissions.SAFE_METHODS:
-            raise exceptions.MethodNotAllowed(request.method)
-
-        parent = obj.parent
-        if parent.deleted:
-            # Mimics get_object_or_error logic
-            raise Gone
-        if parent.is_retracted:
-            # Mimics behavior of ExcludeWithdrawals
-            return False
-        if parent.deleted:
-            raise Gone
-
-        auth = get_user_auth(request)
-        return (
-            (parent.is_public and obj.state is ApprovalStates.APPROVED)
-            or (
-                auth.user is not None
-                and parent.is_moderated
-                and obj.state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
-                and auth.user.has_perm('view_submissions', parent.provider)
-            )
-            or parent.has_permission(auth.user, 'read')
-        )
+    REQUIRED_PERMISSIONS = {'POST': None}
 
     def has_permission(self, request, view):
-        if request.method == 'POST':
-            return True  # these permissions are checked by the SchemaResponse state machine.
+        schema_response = view.get_base_resource()
+        return self.has_object_permission(request, view, schema_response)
+
+class SchemaResponseActionDetailPermission(permissions.BasePermission, SchemaResponseParentPermission):
+    '''
+    Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
+
+    See SchemaResponseParentPermission for GET permission requirements
+
+    No additional methods supported
+    '''
+
+    def has_permission(self, request, view):
         schema_response = view.get_base_resource()
         return self.has_object_permission(request, view, schema_response)
