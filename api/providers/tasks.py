@@ -534,7 +534,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
 
     # Register the draft since responses have been validated already
     try:
-        registration = draft.register(auth, save=True)
+        registration = row.draft_registration.register(auth, save=True)
     except NodeStateError as e:
         error = f'Fail to register draft: {repr(e)}'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
