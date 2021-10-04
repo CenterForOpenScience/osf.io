@@ -366,6 +366,9 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         except Institution.DoesNotExist:
             error = 'Institution not found: [name={}]'.format(name)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        if not initiator.is_affiliated_with_institution(institution):
+            error = 'Initiator [{}] is not affiliated with institution [{}]'.format(initiator._id, institution._id)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         affiliated_institutions.append(institution)
 
     # Prepare tags
