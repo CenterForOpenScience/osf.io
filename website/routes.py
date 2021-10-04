@@ -122,6 +122,7 @@ def get_globals():
         'project_registrations': settings.to_bool('PROJECT_REGISTRATIONS', True),
         'project_makepublic': settings.to_bool('PROJECT_MAKEPUBLIC', True),
         'osf_page_name': settings.OSF_PAGE_NAME,
+        'use_external_identity': settings.to_bool('USE_EXTERNAL_IDENTITY', True),
         'use_change_password': settings.to_bool('USE_CHANGE_PASSWORD', True),
         'use_project_comment_settings': settings.to_bool('USE_PROJECT_COMMENT_SETTINGS', True),
         'use_tfa': settings.to_bool('USE_TFA', True),
