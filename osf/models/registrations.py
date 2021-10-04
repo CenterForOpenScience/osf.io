@@ -335,6 +335,12 @@ class Registration(AbstractNode):
         return self.provider.is_reviewed
 
     @property
+    def updatable(self):
+        if not self.provider:
+            return False
+        return self.provider.allow_updates
+
+    @property
     def _dirty_root(self):
         """Equivalent to `self.root`, but don't let Django fetch a clean copy
         when `self == self.root`. Use when it's important to reflect unsaved
