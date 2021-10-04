@@ -2075,6 +2075,4 @@ ID_VERSION = 'staging_v2'
 IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
 
-PRODUCT_OWNER_EMAIL_ADDRESS = {
-    'Registration': 'mark@cos.io',
-}
+PRODUCT_OWNER_EMAIL_ADDRESS = {}
