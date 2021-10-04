@@ -55,13 +55,13 @@ class SchemaResponseParentPermission:
         if request.method not in self.REQUIRED_PERMISSIONS:
             raise exceptions.MethodNotAllowed(request.method)
 
-        required_permission = self.REQURED_PERMISSIONS[request.method]
+        required_permission = self.REQUIRED_PERMISSIONS[request.method]
         if required_permission:
             return parent.has_permission(auth.user, required_permission)
         return True
 
 
-class SchemaResponseDetailPermission(permissions.BasePermission, SchemaResponseParentPermission):
+class SchemaResponseDetailPermission(SchemaResponseParentPermission, permissions.BasePermission):
     '''
     Permissions for top-level `schema_response` detail endpoints.
 
@@ -140,7 +140,7 @@ class SchemaResponseListPermission(permissions.BasePermission):
         return obj.has_permission(auth.user, 'admin')
 
 
-class SchemaResponseActionListPermission(permissions.BasePermission, SchemaResponseParentPermission):
+class SchemaResponseActionListPermission(SchemaResponseParentPermission, permissions.BasePermission):
     '''
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
 
@@ -155,7 +155,7 @@ class SchemaResponseActionListPermission(permissions.BasePermission, SchemaRespo
         schema_response = view.get_base_resource()
         return self.has_object_permission(request, view, schema_response)
 
-class SchemaResponseActionDetailPermission(permissions.BasePermission, SchemaResponseParentPermission):
+class SchemaResponseActionDetailPermission(SchemaResponseParentPermission, permissions.BasePermission):
     '''
     Permissions for `schema_responses/<schema_responses>/actions/` list endpoints.
 
