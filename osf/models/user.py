@@ -43,6 +43,7 @@ from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
 from osf.models.nodelog import NodeLog
+from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -1430,12 +1431,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def confirm_spam(self, save=True):
         super().confirm_spam(save=save)
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
-            node.confirm_spam()
+            node.confirm_spam(train_akismet=False)
+        for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
+            preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
         super().confirm_ham(save=save)
         for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
-            node.confirm_ham(save=save)
+            node.confirm_ham(save=save, train_akismet=False)
+        for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
+            preprint.confirm_ham(save=save, train_akismet=False)
 
     def update_search(self):
         from website.search.search import update_user

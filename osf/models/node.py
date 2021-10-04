@@ -370,6 +370,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
     custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
 
+    schema_responses = GenericRelation('osf.SchemaResponse', related_query_name='nodes')
+
     class Meta:
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
@@ -1421,8 +1423,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered.registered_schema.add(schema)
 
-        # Sets registration_metadata and registration_responses
-        registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
+        # copies registration_responses in SchemaResponse
+        registered.copy_registration_responses_into_schema_response(draft_registration)
 
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
@@ -1850,12 +1852,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.
         """
-        visited_user_ids = []
+        visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.active_contributors(*args, **kwargs):
                 if unique_users:
                     if contrib._id not in visited_user_ids:
-                        visited_user_ids.append(contrib._id)
+                        visited_user_ids.add(contrib._id)
                         yield (contrib, node)
                 else:
                     yield (contrib, node)
@@ -1868,13 +1870,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.
         """
-        visited_user_ids = []
+        visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.contributors.all():
                 if node.has_permission(contrib, ADMIN) and contrib.is_active:
                     if unique_users:
                         if contrib._id not in visited_user_ids:
-                            visited_user_ids.append(contrib._id)
+                            visited_user_ids.add(contrib._id)
                             yield (contrib, node)
                     else:
                         yield (contrib, node)

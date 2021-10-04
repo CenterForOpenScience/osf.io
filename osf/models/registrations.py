@@ -57,7 +57,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
-    SanctionStates,
+    ApprovalStates,
     SanctionTypes
 )
 
@@ -277,6 +277,8 @@ class Registration(AbstractNode):
     @property
     def is_retracted(self):
         root = self._dirty_root
+        if self.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name:
+            return True
         if root.retraction is None:
             return False
         return root.retraction.is_approved
@@ -331,6 +333,12 @@ class Registration(AbstractNode):
         if not self.provider:
             return False
         return self.provider.is_reviewed
+
+    @property
+    def updatable(self):
+        if not self.provider:
+            return False
+        return self.provider.allow_updates
 
     @property
     def _dirty_root(self):
@@ -580,36 +588,6 @@ class Registration(AbstractNode):
             block_type='contributors-input', registration_response_key__isnull=False,
         ).values_list('registration_response_key', flat=True)
 
-    def copy_registered_meta_and_registration_responses(self, draft, save=True):
-        """
-        Sets the registration's registered_meta and registration_responses from the draft.
-
-        If contributor information is in a question, build an accurate bibliographic
-        contributors list on the registration
-        """
-        if not self.registered_meta:
-            self.registered_meta = {}
-
-        registration_metadata = draft.registration_metadata
-        registration_responses = draft.registration_responses
-
-        bibliographic_contributors = ', '.join(
-            draft.branched_from.visible_contributors.values_list('fullname', flat=True)
-        )
-        contributor_keys = self.get_contributor_registration_response_keys()
-
-        for key in contributor_keys:
-            if key in registration_metadata:
-                registration_metadata[key]['value'] = bibliographic_contributors
-            if key in registration_responses:
-                registration_responses[key] = bibliographic_contributors
-
-        self.registered_meta[self.registration_schema._id] = registration_metadata
-        self.registration_responses = registration_responses
-
-        if save:
-            self.save()
-
     def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
@@ -662,7 +640,7 @@ class Registration(AbstractNode):
 
         # Automatically accept moderator_initiated retractions
         if moderator_initiated:
-            self.retraction.approval_stage = SanctionStates.PENDING_MODERATION
+            self.retraction.approval_stage = ApprovalStates.PENDING_MODERATION
             self.retraction.accept(user=user, comment=justification)
             self.refresh_from_db()  # grab updated state
 
@@ -706,6 +684,12 @@ class Registration(AbstractNode):
         :param str comment: Any comment moderator comment associated with the state change;
                 used in reporting Actions.
         '''
+        if self.sanction.SANCTION_TYPE in [SanctionTypes.REGISTRATION_APPROVAL, SanctionTypes.EMBARGO]:
+            if not self.sanction.state == ApprovalStates.COMPLETED.db_name:  # no action needed when Embargo "completes"
+                initial_response = self.schema_responses.last()
+                initial_response.reviews_state = self.sanction.state
+                initial_response.save()
+
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
 
         active_sanction = self.sanction
@@ -743,7 +727,13 @@ class Registration(AbstractNode):
         if trigger is None:
             return  # Not a moderated event, no need to write an action
 
-        initiated_by = initiated_by or self.sanction.initiated_by
+        # IF fegistration is moving into moderation, "creator" should reflect the
+        # Registration Admin who initiated the Registration/Withdrawal
+        if not initiated_by or trigger in [
+                RegistrationModerationTriggers.SUBMIT,
+                RegistrationModerationTriggers.REQUEST_WITHDRAWAL
+        ]:
+            initiated_by = self.sanction.initiated_by
 
         if not comment and trigger is RegistrationModerationTriggers.REQUEST_WITHDRAWAL:
             comment = self.withdrawal_justification or ''  # Withdrawal justification is null by default
@@ -817,8 +807,8 @@ class Registration(AbstractNode):
             # Alter embargo state to make sure registration doesn't accidentally get published
             self.embargo.state = self.retraction.REJECTED
             self.embargo.approval_stage = (
-                SanctionStates.MODERATOR_REJECTED if self.is_moderated
-                else SanctionStates.REJECTED
+                ApprovalStates.MODERATOR_REJECTED if self.is_moderated
+                else ApprovalStates.REJECTED
             )
 
             self.registered_from.add_log(
@@ -847,6 +837,19 @@ class Registration(AbstractNode):
 
         if settings.SHARE_ENABLED:
             update_share(self)
+
+    def copy_registration_responses_into_schema_response(self, draft_registration):
+        """Copies registration metadata into schema responses"""
+        from osf.models.schema_response import SchemaResponse
+        schema_response = SchemaResponse.create_initial_response(
+            self.creator,
+            self,
+            self.registration_schema
+        )
+        self.registration_responses = draft_registration.registration_responses
+        schema_response.update_responses(
+            self.registration_responses
+        )
 
     class Meta:
         # custom permissions for use in the OSF Admin App
@@ -1287,7 +1290,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
-        draft.update(data)
+        draft.update(data, auth=Auth(user))
 
         if node.type == 'osf.draftnode':
             initiator_permissions = draft.contributor_set.get(user=user).permission

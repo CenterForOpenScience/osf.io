@@ -150,11 +150,12 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False):
+    def confirm_ham(self, save=False, train_akismet=True):
         # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
+            self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM] and
+            train_akismet
         ):
             client = _get_akismet_client()
             client.submit_ham(
@@ -170,11 +171,12 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_spam(self, save=False):
+    def confirm_spam(self, save=False, train_akismet=True):
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]
+            self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM] and
+            train_akismet
         ):
             client = _get_akismet_client()
             client.submit_spam(
