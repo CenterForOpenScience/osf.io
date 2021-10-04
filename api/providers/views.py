@@ -805,17 +805,18 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
         return self.get_queryset_from_request()
 
 
-class RegistrationBulkCreate(APIView):
+class RegistrationBulkCreate(APIView, ProviderMixin):
+    provider_class = RegistrationProvider
     parser_classes = [FileUploadParser]
 
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
-        CanAddModerator,
+        CanUpdateModerator,
     )
 
     def get_hash(self, file_obj):
-        BLOCK_SIZE = 65536
+        BLOCK_SIZE = 2**16
         file_hash = hashlib.md5()
         block = file_obj.read(BLOCK_SIZE)
         while len(block) > 0:

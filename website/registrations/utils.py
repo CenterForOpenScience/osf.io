@@ -198,7 +198,7 @@ class Row():
     def get_raw_value(self):
         raw_value_buffer = io.StringIO()
         csv_writer = csv.writer(raw_value_buffer)
-        cell_values = [cell.value for cell in self.cells]
+        cell_values = [cell.get_raw_value() for cell in self.cells]
         csv_writer.writerow(cell_values)
         raw_value = raw_value_buffer.getvalue()
         raw_value_buffer.close()
