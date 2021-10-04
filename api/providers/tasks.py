@@ -240,6 +240,9 @@ def bulk_create_registrations(upload_id, dry_run=True):
     else:
         upload.state = JobState.DONE_FULL
         logger.info('All registration rows succeeded for bulk creation. Upload ID: [{}].'.format(upload_id))
+    # Reverse the error lists so that users see failed rows in the same order as the original CSV
+    draft_error_list.reverse()
+    approval_error_list.reverse()
     if not dry_run:
         upload.save()
         logger.info('Sending emails to initiator/uploader ...')
