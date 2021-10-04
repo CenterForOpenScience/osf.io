@@ -8,10 +8,11 @@ from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 
 from osf.exceptions import (
+    NodeStateError,
     RegistrationBulkCreationRowError,
     UserNotAffiliatedError,
-    ValidationValueError,
     UserStateError,
+    ValidationValueError,
 )
 from osf.models import (
     AbstractNode,
@@ -486,9 +487,16 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             error = 'Initiator [{}] is not affiliated with institution [{}]'.format(initiator._id, institution._id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
-    # Set registration responses
-    # TODO: if available, capture specific exceptions during setting responses
-    draft.update_registration_responses(responses)
+    # Validate and set registration responses
+    try:
+        # TODO: figure out why validation fails when `required_fields=True`
+        draft.validate_registration_responses(responses, required_fields=False)
+        draft.update_registration_responses(responses)
+    except ValidationError as e:
+        error = f'Fail to validate registration responses: {e.message}'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+    except Exception as e:
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
 
     # Set tags
     # TODO: if available, capture specific exceptions during setting tags
@@ -522,24 +530,41 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     draft.save()
     row.is_completed = True
     row.save()
-    logger.info('Draft registration created: [{}]'.format(row.draft_registration.id))
+    logger.info('Draft registration created: [{}]'.format(row.draft_registration._id))
 
-    # Once draft registration has been created, bulk creation of this row is considered completed.
-    # Any error that happens during auto approval doesn't affect the state of upload job and registration row.
+    # Register the draft since responses have been validated already
+    try:
+        registration = draft.register(auth, save=True)
+    except NodeStateError as e:
+        error = f'Fail to register draft: {repr(e)}'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+    except Exception as e:
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
+    logger.info('Registration [{}] created from draft [{}]'.format(registration._id, row.draft_registration._id))
+
+    # Requires approval
+    try:
+        registration.require_approval(initiator)
+    except NodeStateError as e:
+        error = f'Fail to require approval: {repr(e)}'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+    except Exception as e:
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
+    logger.info('Approval required for registration [{}]'.format(registration._id))
+
+    # Once draft registration and registrations have been created, bulk creation of this row is considered completed.
+    # Any error that happens during `registration.sanction.accept()` doesn't affect the state of upload job and the
+    # registration row.
     if auto_approval:
         logger.info('Provider [{}] has enabled auto approval.'.format(provider._id))
-        draft = row.draft_registration
         try:
-            draft.register(auth, save=True)
-            registration = draft.registered_node
-            registration.require_approval(initiator)
             registration.sanction.accept()
         except Exception as e:
             raise RegistrationBulkCreationRowError(
                 row.upload.id, row.id, row_title, row_external_id,
                 error=repr(e), approval_failure=True,
             )
-        logger.info('Registration approved but pending moderation: [{}]'.format(registration.id))
+        logger.info('Registration approved but pending moderation: [{}]'.format(registration._id))
 
 
 def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):
