@@ -9,9 +9,9 @@
   <td style="border-collapse: collapse;">
       Hello ${fullname},<br>
       <br>
-      Your reigistrations were not uploaded. Our team was notified of the issue and will
-      follow up after they start looking into the issue. Contact the Help Desk at support@osf.io if you continue to
-      have questions.<br>
+      Your registrations were not uploaded. Our team was notified of the issue and will follow up after they start
+      looking into the issue. Contact the Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a>
+      if you continue to have questions.<br>
       <br>
       Sincerely,<br>
       <br>

@@ -11,7 +11,7 @@
       <br>
       [${user}] from registry [${provider_name}] attempted to upload the registrations from a csv file. Review the
       file and inform the engineers of the issue. The registry has been notified of the problem and is waiting on a
-      response. Below is the error message.<br>
+      response. Below is the error message provided by the system.<br>
       <br>
       ${message}<br>
       <br>

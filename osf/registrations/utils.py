@@ -98,33 +98,29 @@ class BulkRegistrationUpload():
 
     @classmethod
     def get_schema_questions_validations(cls, registration_schema):
-        get_multiple_choice_options = lambda schema_block, schema_blocks: [
-            block['display_text']
-            for block in schema_blocks
-            if block['block_type'] == 'select-input-option'
-            and block['schema_block_group_key'] == schema_block['schema_block_group_key']
-        ]
-
         schema_blocks = list(registration_schema.schema_blocks.filter(
             Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
                 'registration_response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
 
         validations = {}
+        response_key_for_group_key = {}
         for schema_block in schema_blocks:
             if schema_block['block_type'] == 'single-select-input':
+                response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
                 validations.update({
                     schema_block['registration_response_key']: {
                         'type': 'choose',
-                        'options': get_multiple_choice_options(schema_block, schema_blocks),
+                        'options': [],
                         'format': 'singleselect',
                         'required': schema_block.get('required'),
                     }
                 })
             elif schema_block['block_type'] == 'multi-select-input':
+                response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
                 validations.update({
                     schema_block['registration_response_key']: {
                         'type': 'choose',
-                        'options': get_multiple_choice_options(schema_block, schema_blocks),
+                        'options': [],
                         'format': 'multiselect',
                         'required': schema_block.get('required'),
                     }
@@ -136,6 +132,9 @@ class BulkRegistrationUpload():
                         'required': schema_block.get('required'),
                     }
                 })
+            elif schema_block['block_type'] == 'select-input-option':
+                qid = response_key_for_group_key[schema_block['schema_block_group_key']]
+                validations[qid]['options'].append(schema_block['display_text'])
         return validations
 
     def log_error(self, **kwargs):
