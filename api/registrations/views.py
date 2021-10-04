@@ -50,7 +50,6 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
-    RegistrationSchemaResponseListPermission,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -84,6 +83,7 @@ from api.providers.views import ProviderMixin
 from api.registrations import annotations
 
 from api.schema_responses import annotations as schema_response_annotations
+from api.schema_responses.permissions import RegistrationSchemaResponseListPermission
 from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 

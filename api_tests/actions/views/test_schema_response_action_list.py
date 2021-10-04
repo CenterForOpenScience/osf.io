@@ -106,7 +106,7 @@ def make_payload(schema_response, trigger=DEFAULT_TRIGGER):
 
 
 def get_user_for_auth(auth):
-    return OSFUser.get(username=auth[0])
+    return OSFUser.objects.get(username=auth[0])
 
 @pytest.mark.django_db
 class TestSchemaResponseActionListGETPermissions:
@@ -355,7 +355,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             role=role
         )
 
-        payload = make_payload(schema_response, trigger=Triggers.ADMIN_REJECT)
+        payload = make_payload(schema_response, trigger=Triggers.ACCEPT)
         resp = app.post_json_api(
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
@@ -376,7 +376,7 @@ class TestSchemaResponseActionListPOSTPermissions:
             role=role
         )
 
-        payload = make_payload(schema_response, trigger=Triggers.ADMIN_REJECT)
+        payload = make_payload(schema_response, trigger=Triggers.MODERATOR_REJECT)
         resp = app.post_json_api(
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
@@ -510,13 +510,13 @@ class TestSchemaResponseActionListPOSTBehavior:
     )
     def test_POST_admin_reject__fails_with_invalid_schema_response_state(
             self, app, schema_response_state):
-        user, schema_response, _, _ = configure_test_preconditions(
+        auth, schema_response, _, _ = configure_test_preconditions(
             schema_response_state=schema_response_state, role='admin'
         )
 
         payload = make_payload(schema_response, trigger=Triggers.ADMIN_REJECT)
         resp = app.post_json_api(
-            make_api_url(schema_response), payload, auth=user.auth, expect_errors=True
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
 
         # handle the weirdness of MODERATOR_REJECT and ADMIN_REJECT getting squashed down
