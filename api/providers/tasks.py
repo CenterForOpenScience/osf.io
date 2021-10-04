@@ -266,7 +266,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                   'Upload ID: [{}], Draft Errors: [{}]'.format(upload_id, draft_error_list)
         sentry.log_message(message)
         logger.error(message)
-    elif len(draft_error_list) > 1 or len(approval_error_list) > 1:
+    elif len(draft_error_list) > 0 or len(approval_error_list) > 0:
         upload.state = JobState.DONE_PARTIAL
         message = 'Some registration rows failed during bulk creation. Upload ID: [{}]; Draft Errors: [{}]; ' \
                   'Approval Errors: [{}]'.format(upload_id, draft_error_list, approval_error_list)
