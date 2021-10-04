@@ -501,6 +501,11 @@ REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
 )
 
+REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
+    'registration_bulk_upload_failure_duplicates',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
 REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
     'registration_bulk_upload_unexpected_failure',
     subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
