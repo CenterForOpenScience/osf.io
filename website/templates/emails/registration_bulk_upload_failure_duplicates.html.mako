@@ -9,9 +9,10 @@
   <td style="border-collapse: collapse;">
       Hello ${fullname},<br>
       <br>
-      All ${count} registrations could not be uploaded due to duplicate rows found either within the uploaded CSV
-      file or in our system. Duplicates are listed below. Review the file and try to upload the registrations
-      again after removing duplicates. Contact the Help Desk at support@osf.io if you continue to have issues.<br>
+      All ${count} registrations could not be uploaded due to duplicate rows found either within the uploaded csv file
+      or in our system. Duplicates are listed below. Review the file and try to upload the registrations again after
+      removing duplicates. Contact the Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a> if
+      you continue to have issues.<br>
       <br>
       <ul>
           % for error in draft_errors:

@@ -10,12 +10,15 @@
       Hello ${fullname},<br>
       <br>
       % if auto_approval:
-          All ${count} of your registrations were successfully uploaded! Click the link below to begin moderating the recently submitted registrations.<br>
+          All ${count} of your registrations were successfully uploaded! Click the link below to begin moderating the
+          recently submitted registrations.<br>
           <br>
           <a href="${pending_submissions_url}">${pending_submissions_url}</a><br>
           <br>
       % else:
-          All ${count} of your registration were successfully uploaded! An email was recently sent out to all the admin contributors asking them to approve the registration. You may begin moderating the registrations once the registrations are approved by their contributors or after 48 hours have passed.<br>
+          All ${count} of your registration were successfully uploaded! An email was recently sent out to all the
+          admin contributors asking them to approve the registration. You may begin moderating the registrations
+          once the registrations are approved by their contributors or after 48 hours have passed.<br>
       % endif
       <br>
       Sincerely,<br>
