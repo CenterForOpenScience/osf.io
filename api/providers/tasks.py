@@ -42,23 +42,23 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     initiator = OSFUser.load(initiator_id)
     if not initiator:
         message = 'Bulk upload preparation failure: initiator [id={}] not found'.format(initiator_id)
-        return handle_internal_error(initiator=None, provider=None, message=message)
+        return handle_internal_error(initiator=None, provider=None, message=message, dry_run=dry_run)
 
     # Check provider
     try:
         provider = RegistrationProvider.objects.get(_id=provider_id)
     except RegistrationProvider.DoesNotExist:
         message = 'Bulk upload preparation failure: registration provider [_id={}] not found'.format(provider_id)
-        return handle_internal_error(initiator=initiator, provider=None, message=message)
+        return handle_internal_error(initiator=initiator, provider=None, message=message, dry_run=dry_run)
     except RegistrationProvider.MultipleObjectsReturned:
         message = 'Bulk upload preparation failure: multiple registration ' \
                   'providers returned for [_id={}] '.format(provider_id)
-        return handle_internal_error(initiator=initiator, provider=None, message=message)
+        return handle_internal_error(initiator=initiator, provider=None, message=message, dry_run=dry_run)
 
     # Check parsing output
     if not parsing_output:
         message = 'Bulk upload preparation failure: missing parser output as task input'
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
 
     # Check schema
     schema_id = parsing_output.get('schema_id', None)
@@ -66,10 +66,10 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         schema = RegistrationSchema.objects.get(_id=schema_id)
     except RegistrationSchema.DoesNotExist:
         message = 'Bulk upload preparation failure: registration schema [_id={}] not found'.format(schema_id)
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     except RegistrationSchema.MultipleObjectsReturned:
         message = 'Bulk upload preparation failure: multiple registration schemas [_id={}] returned'.format(schema_id)
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
 
     # Create the bulk upload job
     upload = RegistrationBulkUploadJob.create(payload_hash, initiator, provider, schema)
@@ -80,7 +80,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         except ValidationError:
             sentry.log_exception()
             message = 'Bulk upload preparation failure: failed to create the job'
-            return handle_internal_error(initiator=initiator, provider=provider, message=message)
+            return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
         upload.reload()
         logger.info('Bulk upload job created: [pk={}, hash={}]'.format(upload.id, upload.payload_hash))
     else:
@@ -90,9 +90,10 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     registration_rows = parsing_output.get('registrations', [])
     if not registration_rows:
         message = 'Bulk upload preparation failure: missing registration rows'
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
+    initial_row_count = len(registration_rows)
+    logger.info('Preparing [{}] registration rows for bulk creation ...'.format(initial_row_count))
 
-    logger.info('Preparing [{}] registration rows for bulk creation ...'.format(len(registration_rows)))
     bulk_upload_rows = []
     try:
         for registration_row in registration_rows:
@@ -104,9 +105,10 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
             bulk_upload_rows.append(bulk_upload_row)
     except Exception as e:
         upload.delete()
-        return handle_internal_error(initiator=initiator, provider=provider, message=repr(e))
+        return handle_internal_error(initiator=initiator, provider=provider, message=repr(e), dry_run=dry_run)
+
     if dry_run:
-        logger.info('Dry run: bulk insertion not run')
+        logger.info('Dry run: bulk creation did not run and emails are not sent')
         logger.info('Dry run: complete')
         return
 
@@ -117,7 +119,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         upload.delete()
         sentry.log_exception()
         message = 'Bulk upload preparation failure: failed to create the rows.'
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info('[{}] rows successfully prepared.'.format(len(created_objects)))
 
     logger.info('Updating job state ...')
@@ -128,7 +130,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         upload.delete()
         sentry.log_exception()
         message = 'Bulk upload preparation failure: job state update failed'
-        return handle_internal_error(initiator=initiator, provider=provider, message=message)
+        return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info('Job state updated')
     logger.info('Bulk upload preparation finished: [upload={}, provider={}, schema={}, '
                 'initiator={}]'.format(upload.id, upload.provider._id, upload.schema._id, upload.initiator._id))
@@ -161,7 +163,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
         # This error should not happen since this task is only called by `monitor_registration_bulk_upload_jobs`
         sentry.log_exception()
         message = 'Registration bulk upload job not found: [id={}]'.format(upload_id)
-        return handle_internal_error(initiator=None, provider=None, message=message)
+        return handle_internal_error(initiator=None, provider=None, message=message, dry_run=dry_run)
 
     # Retrieve bulk upload job
     provider = upload.provider
@@ -493,24 +495,25 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         logger.info('Registration approved but pending moderation: [{}]'.format(registration.id))
 
 
-def handle_internal_error(initiator=None, provider=None, message=None):
+def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):
     """Log errors that happened due to unexpected bug and send emails the uploader (if available)
-    about failures. Product owner (if available) is informed as well with more details.
+    about failures. Product owner (if available) is informed as well with more details. Emails are
+    not sent during dry run.
     """
 
     if not message:
         message = 'Registration bulk upload failure'
-    sentry.log_message(message)
     logger.error(message)
+    sentry.log_message(message)
 
-    if initiator:
-        mails.send_mail(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
-            fullname=initiator.fullname,
-        )
-
-    inform_product_of_errors(initiator=initiator, provider=provider, message=message)
+    if not dry_run:
+        if initiator:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
+                fullname=initiator.fullname,
+            )
+        inform_product_of_errors(initiator=initiator, provider=provider, message=message)
 
 
 def inform_product_of_errors(initiator=None, provider=None, message=None):
@@ -536,4 +539,6 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
 
 
 def get_provider_submission_url(provider):
+    """Return the submission URL for a given registration provider
+    """
     return f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions/'
