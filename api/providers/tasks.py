@@ -347,8 +347,8 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         except Contributor.DoesNotExist:
             error = 'Initiator [{}] must be a contributor on the project [{}]'.format(initiator._id, node._id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        if initiator_contributor.permission not in [WRITE, ADMIN]:
-            error = 'Initiator [{}] must at least have WRITE permission on the project [{}]'.format(initiator._id, node._id)
+        if initiator_contributor.permission != ADMIN:
+            error = 'Initiator [{}] must have admin permission on the project [{}]'.format(initiator._id, node._id)
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare subjects
