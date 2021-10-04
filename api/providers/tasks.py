@@ -489,14 +489,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
 
     # Validate and set registration responses
     try:
-        # TODO: figure out why validation fails when `required_fields=True`
-        draft.validate_registration_responses(responses, required_fields=False)
         draft.update_registration_responses(responses)
-    except ValidationError as e:
-        error = f'Fail to validate registration responses: {e.message}'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     except Exception as e:
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
+        error = f'Fail to update registration responses: {repr(e)}'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Set tags
     # TODO: if available, capture specific exceptions during setting tags
@@ -532,7 +528,8 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     row.save()
     logger.info('Draft registration created: [{}]'.format(row.draft_registration._id))
 
-    # Register the draft since responses have been validated already
+    # Register the draft
+    # TODO: figure out why `draft.validate_metadata()` fails
     try:
         registration = row.draft_registration.register(auth, save=True)
     except NodeStateError as e:
