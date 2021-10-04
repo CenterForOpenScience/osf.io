@@ -94,7 +94,9 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     initial_row_count = len(registration_rows)
     logger.info('Preparing [{}] registration rows for bulk creation ...'.format(initial_row_count))
 
+    row_hash_set = set()
     bulk_upload_rows = []
+    draft_error_list = []
     try:
         for registration_row in registration_rows:
             bulk_upload_row = RegistrationBulkUploadRow.create(
@@ -102,10 +104,42 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
                 registration_row.get('csv_raw', ''),
                 registration_row.get('csv_parsed'),
             )
-            bulk_upload_rows.append(bulk_upload_row)
+            metadata = bulk_upload_row.csv_parsed.get('metadata', {}) or {}
+            row_external_id = metadata.get('External ID', 'N/A')
+            row_title = metadata.get('Title', 'N/A')
+            # Check duplicates with the database
+            if RegistrationBulkUploadRow.objects.filter(row_hash=bulk_upload_row.row_hash).exists():
+                error = 'Duplicate rows - existing row found in the system'
+                exception = RegistrationBulkCreationRowError(upload.id, 'N/A', row_title, row_external_id, error=error)
+                logger.error(exception.long_message)
+                sentry.log_message(exception.long_message)
+                draft_error_list.append(exception.short_message)
+            # Continue to check duplicates within the CSV
+            if bulk_upload_row.row_hash in row_hash_set:
+                error = 'Duplicate rows - CSV contains duplicate rows'
+                exception = RegistrationBulkCreationRowError(upload.id, 'N/A', row_title, row_external_id, error=error)
+                logger.error(exception.long_message)
+                sentry.log_message(exception.long_message)
+                draft_error_list.append(exception.short_message)
+            else:
+                row_hash_set.add(bulk_upload_row.row_hash)
+                bulk_upload_rows.append(bulk_upload_row)
     except Exception as e:
         upload.delete()
         return handle_internal_error(initiator=initiator, provider=provider, message=repr(e), dry_run=dry_run)
+
+    # Cancel the preparation task if duplicates are found in the CSV and/or in DB
+    if len(draft_error_list) > 0:
+        upload.delete()
+        logger.info('Sending emails to initiator/uploader ...')
+        mails.send_mail(
+            to_addr=initiator.username,
+            mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES,
+            fullname=initiator.fullname,
+            count=initial_row_count,
+            draft_errors=draft_error_list,
+        )
+        return
 
     if dry_run:
         logger.info('Dry run: bulk creation did not run and emails are not sent')
