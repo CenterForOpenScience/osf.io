@@ -212,9 +212,13 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     else:
                         row.delete()
         except Exception as e:
-            logger.error('Draft registration creation unexpected exception: [{}]'.format(repr(e)))
+            error = 'Bulk upload registration creation encountered an unexpected exception: ' \
+                    '[row="{}", error="{}"]'.format(row.id, repr(e))
+            logger.error(error)
+            sentry.log_message(error)
             sentry.log_exception()
-            draft_error_list.append('Row: {}'.format(row.id))
+            draft_error_list.append('Title: N/A, External ID: N/A, Row Hash: {}, '
+                                    'Error: Unexpected'.format(row.row_hash))
             if not dry_run:
                 if row.draft_registration:
                     row.draft_registration.delete()
