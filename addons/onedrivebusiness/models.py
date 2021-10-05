@@ -224,17 +224,19 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     continue
                 if 'user' not in permission['grantedTo']:
                     continue
+                if 'id' not in permission['grantedTo']['user']:
+                    continue
                 if permission['grantedTo']['user']['id'] == contributor['id']:
                     matched_permission = permission
             if matched_permission is None:
                 # New user
                 roles = ['write'] if editable else ['read']
                 region_client.invite_user(self.folder_id, contributor['mail'], roles)
-            elif editable and len(set(permission['roles']) & {'write', 'owner'}) == 0:
+            elif editable and len(set(matched_permission['roles']) & {'write', 'owner'}) == 0:
                 # Make writable
                 roles = ['write']
                 region_client.update_permission(self.folder_id, matched_permission['id'], roles)
-            elif not editable and len(set(permission['roles']) & {'write', 'owner'}) > 0:
+            elif not editable and len(set(matched_permission['roles']) & {'write', 'owner'}) > 0:
                 # Make not writable
                 roles = ['read']
                 region_client.update_permission(self.folder_id, matched_permission['id'], roles)
@@ -243,6 +245,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             if 'grantedTo' not in permission:
                 continue
             if 'user' not in permission['grantedTo']:
+                continue
+            if 'id' not in permission['grantedTo']['user']:
                 continue
             if 'owner' in permission['roles']:
                 continue
