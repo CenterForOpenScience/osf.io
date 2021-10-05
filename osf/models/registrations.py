@@ -687,8 +687,9 @@ class Registration(AbstractNode):
         if self.sanction.SANCTION_TYPE in [SanctionTypes.REGISTRATION_APPROVAL, SanctionTypes.EMBARGO]:
             if not self.sanction.state == ApprovalStates.COMPLETED.db_name:  # no action needed when Embargo "completes"
                 initial_response = self.schema_responses.last()
-                initial_response.reviews_state = self.sanction.state
-                initial_response.save()
+                if initial_response:
+                    initial_response.reviews_state = self.sanction.state
+                    initial_response.save()
 
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
 
