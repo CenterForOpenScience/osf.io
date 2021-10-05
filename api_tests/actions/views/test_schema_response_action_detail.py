@@ -24,7 +24,7 @@ DEFAULT_TRIGGER = SchemaResponseTriggers.SUBMIT
 
 def make_api_url(schema_response):
     action = schema_response.actions.last()
-    return f'/v2/schema_responses/{schema_response._id}/#actions/{action._id}/'
+    return f'/v2/schema_responses/{schema_response._id}/actions/{action._id}/'
 
 
 def configure_test_preconditions(

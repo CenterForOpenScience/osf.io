@@ -7,7 +7,7 @@ from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, assert_resource_type, get_object_or_error
 from api.base.parsers import JSONSchemaParser
 
-from osf.models import Registration, SchemaResponse
+from osf.models import Registration, SchemaResponse, SchemaResponseAction
 from osf.utils.workflows import ApprovalStates
 
 
@@ -26,12 +26,28 @@ class SchemaResponseParentPermission:
     No entry means the method is not allowed, None means no permission is required
     '''
     acceptable_models = (SchemaResponse, )
-    REQUIRED_PERMISSIONS = {}
+    REQUIRED_PERMISSIONS = None
+
+    def _get_schema_response(self, obj):
+        '''Get the SchemaResponse from the result of a get_object call on the view.'''
+        return obj
+
+    def has_permission(self, request, view):
+        print('has_permission!')
+        obj = view.get_object()
+        return self.has_object_permission(request, view, obj)
 
     def has_object_permission(self, request, view, obj):
+        print('has_object_permission!')
+        print(request.method)
+        print(self.REQUIRED_PERMISSIONS.keys())
+        if request.method not in ['GET', *self.REQUIRED_PERMISSIONS.keys()]:
+            print('raise!')
+            raise exceptions.MethodNotAllowed(request.method)
         assert_resource_type(obj, self.acceptable_models)
 
-        parent = obj.parent
+        schema_response = self._get_schema_response(obj)
+        parent = schema_response.parent
         if parent.deleted:
             # Mimics get_object_or_error logic
             raise Gone
@@ -51,9 +67,6 @@ class SchemaResponseParentPermission:
                 )
                 or parent.has_permission(auth.user, 'read')
             )
-
-        if request.method not in self.REQUIRED_PERMISSIONS:
-            raise exceptions.MethodNotAllowed(request.method)
 
         required_permission = self.REQUIRED_PERMISSIONS[request.method]
         if required_permission:
@@ -151,9 +164,6 @@ class SchemaResponseActionListPermission(SchemaResponseParentPermission, permiss
 
     REQUIRED_PERMISSIONS = {'POST': None}
 
-    def has_permission(self, request, view):
-        schema_response = view.get_base_resource()
-        return self.has_object_permission(request, view, schema_response)
 
 class SchemaResponseActionDetailPermission(SchemaResponseParentPermission, permissions.BasePermission):
     '''
@@ -164,6 +174,7 @@ class SchemaResponseActionDetailPermission(SchemaResponseParentPermission, permi
     No additional methods supported
     '''
 
-    def has_permission(self, request, view):
-        schema_response = view.get_base_resource()
-        return self.has_object_permission(request, view, schema_response)
+    acceptable_models = (SchemaResponseAction, )
+
+    def _get_schema_response(self, obj):
+        return obj.target
