@@ -11,6 +11,9 @@ from osf.models import Registration, SchemaResponse, SchemaResponseAction
 from osf.utils.workflows import ApprovalStates
 
 
+MODERATOR_VISIBLE_STATES = [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+
+
 class SchemaResponseParentPermission:
     '''Base permissions class for an individual SchemaResponse and subpaths
 
@@ -26,23 +29,18 @@ class SchemaResponseParentPermission:
     No entry means the method is not allowed, None means no permission is required
     '''
     acceptable_models = (SchemaResponse, )
-    REQUIRED_PERMISSIONS = None
+    REQUIRED_PERMISSIONS = {}
 
     def _get_schema_response(self, obj):
         '''Get the SchemaResponse from the result of a get_object call on the view.'''
         return obj
 
     def has_permission(self, request, view):
-        print('has_permission!')
         obj = view.get_object()
         return self.has_object_permission(request, view, obj)
 
     def has_object_permission(self, request, view, obj):
-        print('has_object_permission!')
-        print(request.method)
-        print(self.REQUIRED_PERMISSIONS.keys())
         if request.method not in ['GET', *self.REQUIRED_PERMISSIONS.keys()]:
-            print('raise!')
             raise exceptions.MethodNotAllowed(request.method)
         assert_resource_type(obj, self.acceptable_models)
 
@@ -58,11 +56,11 @@ class SchemaResponseParentPermission:
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
             return (
-                (parent.is_public and obj.state is ApprovalStates.APPROVED)
+                (parent.is_public and schema_response.state is ApprovalStates.APPROVED)
                 or (
                     auth.user is not None
                     and parent.is_moderated
-                    and obj.state in [ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED]
+                    and schema_response.state in MODERATOR_VISIBLE_STATES
                     and auth.user.has_perm('view_submissions', parent.provider)
                 )
                 or parent.has_permission(auth.user, 'read')

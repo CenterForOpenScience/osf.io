@@ -3,7 +3,6 @@ import pytest
 from django.utils import timezone
 
 from api.providers.workflows import Workflows as ModerationWorkflows
-from osf.migrations import update_provider_auth_groups
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import (
     AuthUserFactory,
@@ -34,10 +33,8 @@ def configure_test_preconditions(
         role='admin'):
     '''Create and Configure a RegistrationProvider, Registration, SchemaResponse, and User.'''
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
     provider.reviews_workflow = reviews_workflow
     provider.save()
-
     registration = RegistrationFactory(provider=provider, schema=get_default_test_schema())
     if registration_status == 'public':
         registration.is_public = True
@@ -51,7 +48,6 @@ def configure_test_preconditions(
     elif registration_status == 'deleted':
         registration.deleted = timezone.now()
     registration.save()
-
     schema_response = registration.schema_responses.last()
     schema_response.actions.create(
         creator=schema_response.initiator,
@@ -61,9 +57,7 @@ def configure_test_preconditions(
     )
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
-
     auth = configure_user_auth(registration, role)
-
     return auth, schema_response, registration, provider
 
 
@@ -74,7 +68,7 @@ def configure_user_auth(registration, role):
 
     user = AuthUserFactory()
     if role == 'moderator':
-        registration.provider.get_group('moderator').user_set.add(user)
+        registration.provider.add_to_group(user, 'moderator')
     elif role == 'non-contributor':
         pass
     else:
@@ -84,6 +78,7 @@ def configure_user_auth(registration, role):
 
 
 @pytest.mark.django_db
+@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionDetailGETPermissions:
     '''Checks access for GET requests to the RegistrationSchemaResponseList Endpoint.
 
