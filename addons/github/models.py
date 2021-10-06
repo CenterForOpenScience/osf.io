@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import logging
 from future.moves.urllib.parse import urljoin
 
 import markupsafe
@@ -21,6 +22,8 @@ from addons.github.exceptions import ApiError, NotFoundError
 from addons.github.serializer import GitHubSerializer
 from website.util import web_url_for
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
+logger = logging.getLogger(__name__)
 
 
 class GithubFileNode(BaseFileNode):
@@ -213,7 +216,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 repo_data = []
             return repo_data
 
-    # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         ret = super(NodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
@@ -222,8 +224,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'is_registration': self.owner.is_registration,
         })
         if self.has_auth:
-            owner = self.user_settings.owner
+            valid_credentials = True
+            try:
+                gh_client = GitHubClient(external_account=self.external_account)
+                gh_client.check_authorization()
+            except Exception:
+                valid_credentials = False
 
+            owner = self.user_settings.owner
             if owner == user:
                 ret.update({'repo_names': self.get_folders()})
 
@@ -238,7 +246,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'github_user_name': self.external_account.display_name,
                 'github_user_url': self.external_account.profile_url,
                 'is_owner': owner == user,
-                'valid_credentials': GitHubClient(external_account=self.external_account).check_authorization(),
+                'valid_credentials': valid_credentials,
                 'addons_url': web_url_for('user_addons'),
                 'files_url': self.owner.web_url_for('collect_file_trees')
             })
@@ -293,11 +301,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     #############
 
     def before_page_load(self, node, user):
-        """
+        """This method SHOULD NOT throw an exception.  Doing so will break the project page, even
+        if Github is the only broken provider. Instead it should return a list of error messages.
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :return list(str): Alert messages
         """
         messages = []
 
@@ -317,8 +326,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         try:
             repo = connect.repo(self.user, self.repo)
-        except (ApiError, GitHubError):
-            return
+        except (ApiError, GitHubError) as exc:
+            logger.debug('Got the following osf+github exception when trying to retrieve the '
+                         'connected repo: {}'.format(exc))
+            return []
+        except Exception as exc:
+            logger.debug('Got the following github exception when trying to retrieve the '
+                         'connected repo: {}'.format(exc))
+            return ['Failed to load GitHub provider.']
 
         node_permissions = 'public' if node.is_public else 'private'
         repo_permissions = 'private' if repo.private else 'public'
