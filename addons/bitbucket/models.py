@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 import markupsafe
 
 from django.db import models
@@ -19,6 +21,8 @@ from website import settings
 from website.util import web_url_for
 
 hook_domain = bitbucket_settings.HOOK_DOMAIN or settings.DOMAIN
+
+logger = logging.getLogger(__name__)
 
 
 class BitbucketFileNode(BaseFileNode):
@@ -209,19 +213,22 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def fetch_access_token(self):
         return self.api.fetch_access_token()
 
-    # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
+        """This method SHOULD NOT raise an exception.  Instead it should make sure that the
+        ``valid_credentials`` key in the returned ``dict`` is ``False``.
+        """
+
         ret = super(NodeSettings, self).to_json(user)
         user_settings = user.get_addon('bitbucket')
         ret.update({
             'user_has_auth': user_settings and user_settings.has_auth,
             'is_registration': self.owner.is_registration,
         })
-        if self.user_settings and self.user_settings.has_auth:
-            connection = BitbucketClient(access_token=self.api.fetch_access_token())
 
+        if self.user_settings and self.user_settings.has_auth:
             valid_credentials = True
             try:
+                connection = BitbucketClient(access_token=self.api.fetch_access_token())
                 mine = connection.repos()
                 repo_names = [
                     repo['full_name'].replace('/', ' / ')
@@ -234,6 +241,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             owner = self.user_settings.owner
             if owner == user:
                 ret.update({'repo_names': repo_names})
+
             ret.update({
                 'node_has_auth': True,
                 'bitbucket_user': self.user or '',
@@ -301,11 +309,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     #############
 
     def before_page_load(self, node, user):
-        """
+        """This method SHOULD NOT throw an exception.  Doing so will break the project page, even
+        if Bitbucket is the only broken provider. Instead it should return a list of error messages.
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :return list(str): Alert messages
         """
         messages = []
 
@@ -321,7 +330,14 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if self.user_settings is None:
             return messages
 
-        repo_data = self.fetch_repo()
+        repo_data = None
+        try:
+            repo_data = self.fetch_repo()
+        except Exception as e:
+            logger.debug('Got the following exception when trying to retrieve the connected '
+                         'repo: {}'.format(e))
+            return ['Failed to load Bitbucket provider.']
+
         if repo_data:
             node_permissions = 'public' if node.is_public else 'private'
             repo_permissions = 'private' if repo_data['is_private'] else 'public'

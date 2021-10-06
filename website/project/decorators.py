@@ -19,7 +19,6 @@ from website.util import web_url_for
 
 _load_node_or_fail = lambda pk: get_or_http_error(AbstractNode, pk)
 
-
 def _kwargs_to_nodes(kwargs):
     """Retrieve project and component objects from keyword arguments.
 
