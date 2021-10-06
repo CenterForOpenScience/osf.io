@@ -191,3 +191,8 @@ class RegistrationBulkCreationRowError(OSFError):
         # The long error message for logging and sentry
         self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
                             'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, error)
+
+
+class DryRun(OSFError):
+    """Raised in Management Commands to escape transactions in dry_run mode."""
+    pass

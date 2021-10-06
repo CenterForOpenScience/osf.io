@@ -336,9 +336,21 @@ class Registration(AbstractNode):
 
     @property
     def updatable(self):
-        if not self.provider:
+        """Reports whether the registration can have new SchemaResponses created.
+
+        Only root registrations are updatable.
+        Only registrations whose provider allows updates are updatable.
+
+        To support internal flexibility, This is enforced through the API but not by the
+        SchemaResponse model.
+        """
+        if self.root is not self:
             return False
-        return self.provider.allow_updates
+        if self.deleted or self.is_retracted:
+            return False
+        if not (self.provider and self.provider.allow_updates):
+            return False
+        return True
 
     @property
     def _dirty_root(self):
@@ -839,18 +851,18 @@ class Registration(AbstractNode):
         if settings.SHARE_ENABLED:
             update_share(self)
 
-    def copy_registration_responses_into_schema_response(self, draft_registration):
+    def copy_registration_responses_into_schema_response(self, draft_registration=None):
         """Copies registration metadata into schema responses"""
         from osf.models.schema_response import SchemaResponse
+        if draft_registration:
+            self.registration_responses = draft_registration.registration_responses
+
         schema_response = SchemaResponse.create_initial_response(
             self.creator,
             self,
             self.registration_schema
         )
-        self.registration_responses = draft_registration.registration_responses
-        schema_response.update_responses(
-            self.registration_responses
-        )
+        schema_response.update_responses(self.registration_responses)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
