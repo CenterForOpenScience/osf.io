@@ -394,7 +394,7 @@ class RegistrationFactory(BaseNodeFactory):
         user = None
         if project:
             user = project.creator
-        user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
+        user = kwargs.pop('user', None) or kwargs.get('creator') or user or AuthUserFactory()
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
