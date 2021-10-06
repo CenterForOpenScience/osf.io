@@ -481,6 +481,35 @@ INSTITUTION_DEACTIVATION = Mail(
     subject='Your OSF login has changed - here\'s what you need to know!'
 )
 
+REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
+    'registration_bulk_upload_product_owner',
+    subject='Registry Could Not Bulk Upload Registrations'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
+    'registration_bulk_upload_success_all',
+    subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
+    'registration_bulk_upload_success_partial',
+    subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
+    'registration_bulk_upload_failure_all',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
+    'registration_bulk_upload_failure_duplicates',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
+    'registration_bulk_upload_unexpected_failure',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
 
 SCHEMA_RESPONSE_INITIATED = Mail(
     'updates_initiated',

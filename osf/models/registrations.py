@@ -335,6 +335,12 @@ class Registration(AbstractNode):
         return self.provider.is_reviewed
 
     @property
+    def updatable(self):
+        if not self.provider:
+            return False
+        return self.provider.allow_updates
+
+    @property
     def _dirty_root(self):
         """Equivalent to `self.root`, but don't let Django fetch a clean copy
         when `self == self.root`. Use when it's important to reflect unsaved
@@ -681,8 +687,9 @@ class Registration(AbstractNode):
         if self.sanction.SANCTION_TYPE in [SanctionTypes.REGISTRATION_APPROVAL, SanctionTypes.EMBARGO]:
             if not self.sanction.state == ApprovalStates.COMPLETED.db_name:  # no action needed when Embargo "completes"
                 initial_response = self.schema_responses.last()
-                initial_response.reviews_state = self.sanction.state
-                initial_response.save()
+                if initial_response:
+                    initial_response.reviews_state = self.sanction.state
+                    initial_response.save()
 
         from_state = RegistrationModerationStates.from_db_name(self.moderation_state)
 
@@ -1284,7 +1291,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         )
         draft.save()
         draft.copy_editable_fields(node, Auth(user), save=True)
-        draft.update(data)
+        draft.update(data, auth=Auth(user))
 
         if node.type == 'osf.draftnode':
             initiator_permissions = draft.contributor_set.get(user=user).permission

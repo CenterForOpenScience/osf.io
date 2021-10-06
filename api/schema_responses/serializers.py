@@ -90,6 +90,8 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
             query_or_pk=registration_id,
             request=self.context['request'],
         )
+        if not registration.updatable:
+            raise Conflict(detail=f'Registration with guid {registration._id} cannot be updated.')
 
         initiator = self.context['request'].user
         justification = validated_data.pop('revision_justification', '')

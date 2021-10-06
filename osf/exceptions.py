@@ -173,3 +173,21 @@ class PreviousSchemaResponseError(SchemaResponseError):
     already has a SchemaResponse in an unsupported state
     """
     pass
+
+
+class RegistrationBulkCreationRowError(OSFError):
+    """Raised if a draft registration failed creation during bulk upload"""
+
+    def __init__(self, upload_id, row_id, title, external_id, draft_id=None, error=None, approval_failure=False):
+
+        # `draft_id` is provided when the draft is created but not related to the row object
+        self.draft_id = draft_id
+        # `approval_failure` determines whether the error happens during the approval process
+        self.approval_failure = approval_failure
+        # The error information for logging, sentry and email
+        self.error = error if error else 'Draft registration creation error'
+        # The short error message to be added to the error list that will be returned to the initiator via email
+        self.short_message = 'Title: {}, External ID: {}, Error: {}'.format(title, external_id, error)
+        # The long error message for logging and sentry
+        self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
+                            'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, error)

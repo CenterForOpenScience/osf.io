@@ -29,6 +29,7 @@ def provider():
     provider = RegistrationProviderFactory()
     provider.update_group_permissions()
     provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
+    provider.allow_updates = True
     provider.save()
     return provider
 
@@ -179,6 +180,9 @@ class TestSchemaResponseListPOSTPermissions:
         registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
         registration.schema_responses.clear()  # Avoid conflicts arising from previous responses
         registration.save()
+        provider = registration.provider
+        provider.allow_updates = True
+        provider.save()
         return registration
 
     @pytest.fixture()
@@ -258,6 +262,9 @@ class TestSchemaResponseListPOSTBehavior:
         registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
         registration.schema_responses.clear()
         registration.save()
+        provider = registration.provider
+        provider.allow_updates = True
+        provider.save()
         return registration
 
     @pytest.fixture()
