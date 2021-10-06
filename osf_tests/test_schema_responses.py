@@ -6,7 +6,6 @@ from nose.tools import assert_raises
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
-from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
 from osf.models import schema_response  # import module for mocking purposes
 from osf.models.notifications import NotificationSubscription
@@ -793,7 +792,8 @@ class TestModeratedSchemaResponseApprovalFlows():
     @pytest.fixture
     def provider(self):
         provider = RegistrationProviderFactory()
-        update_provider_auth_groups()
+        provider.update_group_permissions()
+        _ensure_subscriptions(provider)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
