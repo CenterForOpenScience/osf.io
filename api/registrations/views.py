@@ -916,8 +916,9 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
             user.has_perm('view_submissions', registration.provider)
         )
         if is_moderator:
-            return all_responses.filter(reviews_state__in=MODERATOR_VISIBLE_STATES)
-
+            return all_responses.filter(
+                reviews_state__in=[state.db_name for state in MODERATOR_VISIBLE_STATES],
+            )
         return all_responses.filter(reviews_state=ApprovalStates.APPROVED.db_name)
 
     def get_queryset(self):

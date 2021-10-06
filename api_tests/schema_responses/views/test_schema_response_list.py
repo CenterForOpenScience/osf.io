@@ -7,7 +7,6 @@ from osf_tests.factories import (
     RegistrationFactory,
     RegistrationProviderFactory
 )
-from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
@@ -28,7 +27,7 @@ def admin_user():
 @pytest.fixture()
 def provider():
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
+    provider.update_group_permissions()
     provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
     provider.save()
     return provider

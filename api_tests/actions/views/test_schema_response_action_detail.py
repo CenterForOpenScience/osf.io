@@ -33,6 +33,7 @@ def configure_test_preconditions(
         role='admin'):
     '''Create and Configure a RegistrationProvider, Registration, SchemaResponse, and User.'''
     provider = RegistrationProviderFactory()
+    provider.update_group_permissions()
     provider.reviews_workflow = reviews_workflow
     provider.save()
     registration = RegistrationFactory(provider=provider, schema=get_default_test_schema())
@@ -68,7 +69,7 @@ def configure_user_auth(registration, role):
 
     user = AuthUserFactory()
     if role == 'moderator':
-        registration.provider.add_to_group(user, 'moderator')
+        registration.provider.get_group('moderator').user_set.add(user)
     elif role == 'non-contributor':
         pass
     else:

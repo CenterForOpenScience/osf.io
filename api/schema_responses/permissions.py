@@ -24,9 +24,11 @@ class SchemaResponseParentPermission:
       *  The SchemaResponse must be APPROVED and the parent resource must be public
 
     For DELETE/PATCH/POST/PUT, the required permission should be added in the
-    REQUIRED_PERMISSIONS dictionary.
+    REQUIRED_PERMISSIONS dictionary. No entry means the method is not allowed,
+    None means no permission is required.
 
-    No entry means the method is not allowed, None means no permission is required
+    Note: SchemaResponses for deleted parent resources should appear to be deleted,
+    while access should be denied to SchemaResponses on withdrawn parent resources.
     '''
     acceptable_models = (SchemaResponse, )
     REQUIRED_PERMISSIONS = {}
@@ -81,15 +83,8 @@ class SchemaResponseDetailPermission(SchemaResponseParentPermission, permissions
     To PATCH to a SchemaResponse, a user must have "write" permissions on the parent resource.
 
     To DELETE a SchemaResponse, a user must have "admin" permissions on the parent resource.
-
-    Note: SchemaResponses on deleted parent resources should appear to be deleted, while
-    access should be denied to SchemaResponses on withdrawn parent resources.
     '''
     REQUIRED_PERMISSIONS = {'DELETE': 'admin', 'PATCH': 'write'}
-
-    def has_permission(self, request, view):
-        obj = view.get_object()
-        return self.has_object_permission(request, view, obj)
 
 
 class RegistrationSchemaResponseListPermission(permissions.BasePermission):

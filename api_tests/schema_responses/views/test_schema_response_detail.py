@@ -67,6 +67,7 @@ def configure_permissions_test_preconditions(
         role='admin'):
     '''Create and configure a RegistrationProvider, Registration, SchemaResponse and User.'''
     provider = RegistrationProviderFactory()
+    provider.update_group_permissions()
     provider.reviews_workflow = reviews_workflow
     provider.save()
 
@@ -86,18 +87,18 @@ def configure_permissions_test_preconditions(
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
 
-    auth = _configure_permissions_test_auth(registration, provider, role)
+    auth = _configure_permissions_test_auth(registration, role)
     return auth, schema_response, registration, provider
 
 
-def _configure_permissions_test_auth(registration, provider, role):
+def _configure_permissions_test_auth(registration, role):
     '''Create a user and assign appropriate permissions for the given role.'''
     if role == 'unauthenticated':
         return None
 
     user = AuthUserFactory()
     if role == 'moderator':
-        provider.add_to_group(user, 'moderator')
+        registration.provider.get_group('moderator').user_set.add(user)
     elif role == 'non-contributor':
         pass
     else:
