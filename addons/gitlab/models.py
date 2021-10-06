@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
 from future.moves.urllib.parse import urljoin
 
 from django.db import models
@@ -21,6 +22,8 @@ from website import settings
 from website.util import web_url_for
 
 hook_domain = gitlab_settings.HOOK_DOMAIN or settings.DOMAIN
+
+logger = logging.getLogger(__name__)
 
 
 class GitLabFileNode(BaseFileNode):
@@ -157,6 +160,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return connection.repo(self.repo_id).visibility == 'private'
 
     def to_json(self, user):
+        """This method SHOULD NOT raise an exception.  Instead it should make sure that the
+        ``valid_credentials`` key in the returned ``dict`` is ``False``.
+        """
 
         ret = super(NodeSettings, self).to_json(user)
         user_settings = user.get_addon('gitlab')
@@ -166,17 +172,24 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         })
 
         if self.user_settings and self.user_settings.has_auth:
-
             owner = self.user_settings.owner
             connection = GitLabClient(external_account=self.external_account)
 
-            valid_credentials = True
+            valid_credentials = False
             try:
                 repos = [repo.attributes for repo in connection.repos(all=True)]
-            except GitLabError:
-                valid_credentials = False
+                valid_credentials = True
+            except (ApiError, GitLabError) as exc:
+                logger.debug('Got the following OSF GitLab exception when trying to retrieve the '
+                             'connected repo: {}'.format(exc))
+            except gitlab.exceptions.GitlabError as exc:
+                logger.debug('Got the following exception from the upstream GitLab library when '
+                             'trying to retrieve the connected repo: {}'.format(exc))
+            except Exception as exc:
+                logger.debug('Got the following unexpected exception when trying to retrieve the '
+                             'connected repo: {}'.format(exc))
 
-            if owner == user:
+            if valid_credentials and (owner == user):
                 ret.update({'repos': repos})
 
             ret.update({
@@ -250,11 +263,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     #############
 
     def before_page_load(self, node, user):
-        """
+        """This method SHOULD NOT throw an exception.  Doing so will break the project page, even
+        if GitLab is the only broken provider. Instead it should return a list of error messages.
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :return list(str): Alert messages
         """
         messages = []
 
@@ -274,14 +288,23 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         try:
             repo = connect.repo(self.repo_id)
-        except (ApiError, GitLabError):
-            return
+        except (ApiError, GitLabError) as exc:
+            logger.debug('Got the following GitLab exception when trying to retrieve the '
+                         'connected repo: {}'.format(exc))
+            return []
         except gitlab.exceptions.GitlabError as exc:
+            logger.debug('Got the following exception from the upstream GitLab library when trying '
+                         'to retrieve the connected repo: {}'.format(exc))
             if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
-                return [('Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
-                         'current Terms of Service by disabling and re-enabling your account.')]
+                return [('Your gitlab account does not have proper authentication. Ensure you have '
+                         'agreed to Gitlab\'s current Terms of Service by disabling and re-enabling '
+                         'your account.')]
             else:
-                raise exc
+                return ['Failed to load GitLab provider.  Reason:({})'.format(exc)]
+        except Exception as exc:
+            logger.debug('Got the following unexpected exception when trying to retrieve the '
+                         'connected repo: {}'.format(exc))
+            return ['Failed to load GitLab provider.']
 
         # GitLab has visibility types: public, private, internal.
         node_permissions = 'public' if node.is_public else 'private'
