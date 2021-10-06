@@ -39,6 +39,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     reviews_state = ser.CharField(required=False)
     # Populated via annotation on relevant API views
     is_pending_current_user_approval = ser.BooleanField(required=False)
+    is_original_response = ser.BooleanField(required=False)
 
     links = LinksField(
         {

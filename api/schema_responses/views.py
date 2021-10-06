@@ -106,6 +106,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
             _id=self.kwargs['schema_response_id'],
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(user),
+            is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
 
         try:
