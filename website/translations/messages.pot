@@ -1287,7 +1287,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
+"href=\"https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers/GakuNin+RDM+Privacy+Policy\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
