@@ -162,7 +162,7 @@ function gotoFile (item) {
 
 function _fangornGitLabTitle(item, col)  {
     var tb = this;
-    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+    if (item.data.isAddonRoot && item.data.unavailable) {
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
 
