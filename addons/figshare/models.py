@@ -208,10 +208,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
     def before_page_load(self, node, user):
-        """
+        """This method SHOULD NOT throw an exception.  Doing so will break the project page, even
+        if Figshare is the only broken provider. Instead it should return a list of error messages.
+
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :return list(str): Alert messages
         """
         if not self.configured:
             return []
