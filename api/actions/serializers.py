@@ -37,7 +37,6 @@ from osf.utils.workflows import (
     SchemaResponseTriggers,
 )
 from osf.utils import permissions
-from django.core.exceptions import ValidationError
 
 class ReviewableCountsRelationshipField(RelationshipField):
 
@@ -347,6 +346,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         trigger = validated_data.get('trigger')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+        previous_action = target.actions.last()
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
                 required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
@@ -363,20 +363,17 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except PermissionsError as exc:
             raise PermissionDenied(exc)
-        except ValueError as exc:
-            raise ValidationError(exc)
-        except MachineError as exc:
-            raise Conflict(exc)
+        except (MachineError, ValueError):
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{target.reviews_state}"',
+            )
 
-        determined_trigger = target.actions.last().trigger
-        if determined_trigger != trigger:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Operation not allowed at this time',
-                    'message_long': f'This trigger `{trigger}` is invalid for the {target} in state '
-                                    f'`{target.reviews_state}`.',
-                },
+        new_action = target.actions.last()
+        if new_action is previous_action or new_action.trigger != trigger:
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{target.reviews_state}"',
             )
 
         return target.actions.last()

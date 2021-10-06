@@ -6,9 +6,9 @@ from nose.tools import assert_raises
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
-from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
 from osf.models import schema_response  # import module for mocking purposes
+from osf.models.notifications import NotificationSubscription
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
@@ -25,6 +25,21 @@ INITIAL_SCHEMA_RESPONSES = {
     'q5': None,
     'q6': None
 }
+
+
+def _ensure_subscriptions(provider):
+    '''Make sure a provider's subscriptions exist.
+
+    Provider subscriptions are populated by an on_save signal when the provider is created.
+    This has led to observed race conditions and probabalistic test failures.
+    Avoid that.
+    '''
+    for subscription in provider.DEFAULT_SUBSCRIPTIONS:
+        NotificationSubscription.objects.get_or_create(
+            _id=f'{provider._id}_{subscription}',
+            event_name=subscription,
+            provider=provider
+        )
 
 
 @pytest.fixture
@@ -573,7 +588,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             initial_response.submit(required_approvers=[admin_user])
 
     def test_submit_resposne_requires_required_approvers(self, initial_response, admin_user):
@@ -659,7 +674,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             initial_response.approve()
 
     def test_non_approver_cannot_approve_response(
@@ -732,7 +747,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             initial_response.reject()
 
     def test_non_approver_cannnot_reject_response(
@@ -777,7 +792,8 @@ class TestModeratedSchemaResponseApprovalFlows():
     @pytest.fixture
     def provider(self):
         provider = RegistrationProviderFactory()
-        update_provider_auth_groups()
+        provider.update_group_permissions()
+        _ensure_subscriptions(provider)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
@@ -977,5 +993,5 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with assert_raises(ValueError):
+        with assert_raises(PermissionsError):
             initial_response.accept()

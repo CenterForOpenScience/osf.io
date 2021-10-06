@@ -14,12 +14,13 @@ from api.base.parsers import (
 )
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
-from api.nodes.permissions import (
+from api.schema_responses import annotations
+from api.schema_responses.permissions import (
     SchemaResponseDetailPermission,
     SchemaResponseListPermission,
-    SchemaResponseActionPermission,
+    SchemaResponseActionDetailPermission,
+    SchemaResponseActionListPermission,
 )
-from api.schema_responses import annotations
 from api.schema_responses.schemas import create_schema_response_payload
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
@@ -122,7 +123,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
 class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -139,10 +140,18 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     def get_queryset(self):
         return SchemaResponseAction.objects.all()  # TODO: What to do here?
 
+    def get_object(self):
+        return get_object_or_error(
+            model_or_qs=SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_id'],
+            request=self.request,
+            check_deleted=False,
+        )
+
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

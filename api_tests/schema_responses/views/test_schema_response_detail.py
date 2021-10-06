@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from api.providers.workflows import Workflows as ModerationWorkflows
 
-from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
@@ -68,7 +67,7 @@ def configure_permissions_test_preconditions(
         role='admin'):
     '''Create and configure a RegistrationProvider, Registration, SchemaResponse and User.'''
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
+    provider.update_group_permissions()
     provider.reviews_workflow = reviews_workflow
     provider.save()
 
@@ -88,18 +87,18 @@ def configure_permissions_test_preconditions(
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
 
-    auth = _configure_permissions_test_auth(registration, provider, role)
+    auth = _configure_permissions_test_auth(registration, role)
     return auth, schema_response, registration, provider
 
 
-def _configure_permissions_test_auth(registration, provider, role):
+def _configure_permissions_test_auth(registration, role):
     '''Create a user and assign appropriate permissions for the given role.'''
     if role == 'unauthenticated':
         return None
 
     user = AuthUserFactory()
     if role == 'moderator':
-        provider.get_group('moderator').user_set.add(user)
+        registration.provider.get_group('moderator').user_set.add(user)
     elif role == 'non-contributor':
         pass
     else:
@@ -646,7 +645,7 @@ class TestSchemaResponseDetailDELETEBehavior:
         assert resp.status_code == 409
 
 @pytest.mark.django_db
-class TestSchemaResponseListUnsupportedMethods:
+class TestSchemaResponseDetailUnsupportedMethods:
     '''Confirm that the SchemaResponseDetail endpoint does not support POST or PUT'''
 
     @pytest.mark.parametrize('role', USER_ROLES)

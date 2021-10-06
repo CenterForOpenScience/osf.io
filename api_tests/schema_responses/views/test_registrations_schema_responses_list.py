@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from api.providers.workflows import Workflows as ModerationWorkflows
 
-from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
@@ -33,7 +32,7 @@ def configure_test_preconditions(
         role='admin'):
     '''Create and Configure a RegistrationProvider, Registration, SchemaResponse, and User.'''
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
+    provider.update_group_permissions()
     provider.reviews_workflow = moderator_workflow
     provider.save()
 
