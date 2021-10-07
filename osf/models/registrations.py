@@ -848,13 +848,16 @@ class Registration(AbstractNode):
         if settings.SHARE_ENABLED:
             update_share(self)
 
-    def copy_registration_responses_into_schema_response(self, draft_registration=None):
+    def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
         from osf.models.schema_response import SchemaResponse
         # TODO: stop populating registration_responses once all registrations
         #       have had initial responses backfilled
         if draft_registration:
             self.registration_responses = draft_registration.registration_responses
+            if save:
+                self.save()
+
         if self.root is self:  # only create SchemaResposnes on the root registration
             schema_response = SchemaResponse.create_initial_response(
                 self.creator,
