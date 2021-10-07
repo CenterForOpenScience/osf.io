@@ -1481,12 +1481,16 @@ class TestRegistrationResponses:
         'q3': 'A',
         'q4': ['D', 'G'],
         'q5': None,
-        'q6': None
+        'q6': None,
     }
 
     @pytest.fixture
-    def registration(self):
-        return RegistrationFactory(schema=get_default_test_schema())
+    def admin(self):
+        return AuthUserFactory()
+
+    @pytest.fixture
+    def registration(self, admin):
+        return RegistrationFactory(schema=get_default_test_schema(), creator=admin)
 
     @pytest.fixture
     def approved_schema_response(self, registration):
@@ -1498,7 +1502,7 @@ class TestRegistrationResponses:
         return response
 
     @pytest.fixture
-    def in_progress_schema_response(self, approved_schema_response):
+    def revised_schema_response(self, approved_schema_response):
         response = SchemaResponse.create_from_previous_response(
             previous_response=approved_schema_response,
             initiator=approved_schema_response.initiator
@@ -1518,24 +1522,27 @@ class TestRegistrationResponses:
         return f'/{API_BASE}registrations/{registration._id}/'
 
     def test_registration_responses_surfaces_latest_approved_responses(
-            self, app, registration, approved_schema_response, in_progress_schema_response):
-        assert not registration.registration_responses
+            self, app, registration, approved_schema_response, revised_schema_response, admin):
 
-        resp = app.get(
-            self.get_registration_detail_url(registration), auth=registration.creator.auth
-        )
-
+        resp = app.get(self.get_registration_detail_url(registration), auth=admin.auth)
         responses = resp.json['data']['attributes']['registration_responses']
         assert responses == approved_schema_response.all_responses
+        assert registration.registration_responses != approved_schema_response.all_responses
+
+        revised_schema_response.state = ApprovalStates.APPROVED
+        revised_schema_response.save()
+
+        resp = app.get(self.get_registration_detail_url(registration), auth=admin.auth)
+        responses = resp.json['data']['attributes']['registration_responses']
+        assert responses == revised_schema_response.all_responses
+        assert registration.registration_responses != revised_schema_response.all_responses
 
     def test_nested_registration_surfaces_root_schema_responses(
             self, app, nested_registration, approved_schema_response):
-        assert not nested_registration.registration_responses
         assert not nested_registration.schema_responses.exists()
 
-        resp = app.get(
-            self.get_registration_detail_url(nested_registration)
-        )
+        resp = app.get(self.get_registration_detail_url(nested_registration))
 
         responses = resp.json['data']['attributes']['registration_responses']
         assert responses == approved_schema_response.all_responses
+        assert nested_registration.registration_responses != approved_schema_response.all_responses
