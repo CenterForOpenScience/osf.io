@@ -42,18 +42,17 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     # Check initiator
     initiator = OSFUser.load(initiator_id)
     if not initiator:
-        message = 'Bulk upload preparation failure: initiator [id={}] not found'.format(initiator_id)
+        message = f'Bulk upload preparation failure: initiator [id={initiator_id}] not found'
         return handle_internal_error(initiator=None, provider=None, message=message, dry_run=dry_run)
 
     # Check provider
     try:
         provider = RegistrationProvider.objects.get(_id=provider_id)
     except RegistrationProvider.DoesNotExist:
-        message = 'Bulk upload preparation failure: registration provider [_id={}] not found'.format(provider_id)
+        message = f'Bulk upload preparation failure: registration provider [_id={provider_id}] not found'
         return handle_internal_error(initiator=initiator, provider=None, message=message, dry_run=dry_run)
     except RegistrationProvider.MultipleObjectsReturned:
-        message = 'Bulk upload preparation failure: multiple registration ' \
-                  'providers returned for [_id={}] '.format(provider_id)
+        message = f'Bulk upload preparation failure: multiple registration providers returned for [_id={provider_id}]'
         return handle_internal_error(initiator=initiator, provider=None, message=message, dry_run=dry_run)
 
     # Check parsing output
@@ -66,15 +65,15 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     try:
         schema = RegistrationSchema.objects.get(_id=schema_id)
     except RegistrationSchema.DoesNotExist:
-        message = 'Bulk upload preparation failure: registration schema [_id={}] not found'.format(schema_id)
+        message = f'Bulk upload preparation failure: registration schema [_id={schema_id}] not found'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     except RegistrationSchema.MultipleObjectsReturned:
-        message = 'Bulk upload preparation failure: multiple registration schemas [_id={}] returned'.format(schema_id)
+        message = f'Bulk upload preparation failure: multiple registration schemas [_id={schema_id}] returned'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
 
     # Create the bulk upload job
     upload = RegistrationBulkUploadJob.create(payload_hash, initiator, provider, schema)
-    logger.info('Creating a registration bulk upload job with [hash={}] ...'.format(upload.payload_hash))
+    logger.info(f'Creating a registration bulk upload job with [hash={upload.payload_hash}] ...')
     if not dry_run:
         try:
             upload.save()
@@ -83,7 +82,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
             message = 'Bulk upload preparation failure: failed to create the job'
             return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
         upload.reload()
-        logger.info('Bulk upload job created: [pk={}, hash={}]'.format(upload.id, upload.payload_hash))
+        logger.info(f'Bulk upload job created: [pk={upload.id}, hash={upload.payload_hash}]')
     else:
         logger.info('Dry run: insertion did not happen')
 
@@ -93,7 +92,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         message = 'Bulk upload preparation failure: missing registration rows'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     initial_row_count = len(registration_rows)
-    logger.info('Preparing [{}] registration rows for bulk creation ...'.format(initial_row_count))
+    logger.info(f'Preparing [{initial_row_count}] registration rows for bulk creation ...')
 
     row_hash_set = set()
     bulk_upload_rows = []
@@ -149,27 +148,29 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         return
 
     try:
-        logger.info('Bulk creating [{}] registration rows ...'.format(len(bulk_upload_rows)))
+        logger.info(f'Bulk creating [{len(bulk_upload_rows)}] registration rows ...')
         created_objects = RegistrationBulkUploadRow.objects.bulk_create(bulk_upload_rows)
     except (ValueError, IntegrityError):
         upload.delete()
         sentry.log_exception()
         message = 'Bulk upload preparation failure: failed to create the rows.'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
-    logger.info('[{}] rows successfully prepared.'.format(len(created_objects)))
+    logger.info(f'[{len(created_objects)}] rows successfully prepared.')
 
     logger.info('Updating job state ...')
     upload.state = JobState.INITIALIZED
     try:
         upload.save()
+        logger.info('Job state updated')
     except ValidationError:
         upload.delete()
         sentry.log_exception()
         message = 'Bulk upload preparation failure: job state update failed'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
-    logger.info('Job state updated')
-    logger.info('Bulk upload preparation finished: [upload={}, provider={}, schema={}, '
-                'initiator={}]'.format(upload.id, upload.provider._id, upload.schema._id, upload.initiator._id))
+    logger.info(
+        f'Bulk upload preparation finished: [upload={upload.id}, '
+        f'provider={upload.provider._id}, schema={upload.schema._id}, initiator={upload.initiator._id}]',
+    )
 
 
 @celery_app.task(name='api.providers.tasks.monitor_registration_bulk_upload_jobs')
@@ -177,17 +178,18 @@ def monitor_registration_bulk_upload_jobs(dry_run=True):
 
     logger.info('Checking registration bulk upload jobs ...')
     bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED)
-    logger.info('[{}] pending jobs found.'.format(len(bulk_uploads)))
+    number_of_jobs = len(bulk_uploads)
+    logger.info(f'[{number_of_jobs}] pending jobs found.')
 
     for upload in bulk_uploads:
-        logger.info('Picked up job [upload={}, hash={}]'.format(upload.id, upload.payload_hash))
+        logger.info(f'Picked up job [upload={upload.id}, hash={upload.payload_hash}]')
         upload.state = JobState.PICKED_UP
         bulk_create_registrations.delay(upload.id, dry_run=dry_run)
         if not dry_run:
             upload.save()
     if dry_run:
         logger.info('Dry run: bulk creation started in dry-run mode and job state was not updated')
-    logger.info('[{}] jobs have been picked up and kicked off. This monitor task ends.'.format(len(bulk_uploads)))
+    logger.info(f'[{number_of_jobs}] jobs have been picked up and kicked off. This monitor task ends.')
 
 
 @celery_app.task()
@@ -198,7 +200,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
     except RegistrationBulkUploadJob.DoesNotExist:
         # This error should not happen since this task is only called by `monitor_registration_bulk_upload_jobs`
         sentry.log_exception()
-        message = 'Registration bulk upload job not found: [id={}]'.format(upload_id)
+        message = f'Registration bulk upload job not found: [id={upload_id}]'
         return handle_internal_error(initiator=None, provider=None, message=message, dry_run=dry_run)
 
     # Retrieve bulk upload job
@@ -207,24 +209,20 @@ def bulk_create_registrations(upload_id, dry_run=True):
     schema = upload.schema
     initiator = upload.initiator
     logger.info(
-        'Bulk creating draft registrations: [provider={}, schema={}, initiator={}, auto_approval={}]'.format(
-            provider._id,
-            schema._id,
-            initiator._id,
-            auto_approval,
-        ),
+        f'Bulk creating draft registrations: [provider={provider._id}, '
+        f'schema={schema._id}, initiator={initiator._id}, auto_approval={auto_approval}]',
     )
 
     # Check registration rows and pick up them one by one to create draft registrations
     registration_rows = RegistrationBulkUploadRow.objects.filter(upload__id=upload_id)
     initial_row_count = len(registration_rows)
-    logger.info('Picked up [{}] registration rows for creation'.format(initial_row_count))
+    logger.info(f'Picked up [{initial_row_count}] registration rows for creation')
 
     draft_error_list = []  # a list that stores rows that have failed the draft creation
     approval_error_list = []  # a list that stores rows that have failed the approval process
     successful_row_count = 0
     for index, row in enumerate(registration_rows, 1):
-        logger.info('Processing registration row [{}: upload={}, row={}]'.format(index, upload.id, row.id))
+        logger.info(f'Processing registration row [{index}: upload={upload.id}, row={row.id}]')
         row.is_picked_up = True
         if not dry_run:
             row.save()
@@ -248,13 +246,12 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     else:
                         row.delete()
         except Exception as e:
-            error = 'Bulk upload registration creation encountered an unexpected exception: ' \
-                    '[row="{}", error="{}"]'.format(row.id, repr(e))
+            error = f'Bulk upload registration creation encountered ' \
+                    f'an unexpected exception: [row="{row.id}", error="{repr(e)}"]'
             logger.error(error)
             sentry.log_message(error)
             sentry.log_exception()
-            draft_error_list.append('Title: N/A, External ID: N/A, Row Hash: {}, '
-                                    'Error: Unexpected'.format(row.row_hash))
+            draft_error_list.append(f'Title: N/A, External ID: N/A, Row Hash: {row.row_hash}, Error: Unexpected')
             if not dry_run:
                 if row.draft_registration:
                     row.draft_registration.delete()
@@ -263,19 +260,19 @@ def bulk_create_registrations(upload_id, dry_run=True):
 
     if len(draft_error_list) == initial_row_count:
         upload.state = JobState.DONE_ERROR
-        message = 'All registration rows failed during bulk creation. ' \
-                  'Upload ID: [{}], Draft Errors: [{}]'.format(upload_id, draft_error_list)
+        message = f'All registration rows failed during bulk creation. ' \
+                  f'Upload ID: [{upload_id}], Draft Errors: [{draft_error_list}]'
         sentry.log_message(message)
         logger.error(message)
     elif len(draft_error_list) > 0 or len(approval_error_list) > 0:
         upload.state = JobState.DONE_PARTIAL
-        message = 'Some registration rows failed during bulk creation. Upload ID: [{}]; Draft Errors: [{}]; ' \
-                  'Approval Errors: [{}]'.format(upload_id, draft_error_list, approval_error_list)
+        message = f'Some registration rows failed during bulk creation. Upload ID: [{upload_id}]; ' \
+                  f'Draft Errors: [{draft_error_list}]; Approval Errors: [{approval_error_list}]'
         sentry.log_message(message)
         logger.warning(message)
     else:
         upload.state = JobState.DONE_FULL
-        logger.info('All registration rows succeeded for bulk creation. Upload ID: [{}].'.format(upload_id))
+        logger.info(f'All registration rows succeeded for bulk creation. Upload ID: [{upload_id}].')
     # Reverse the error lists so that users see failed rows in the same order as the original CSV
     draft_error_list.reverse()
     approval_error_list.reverse()
@@ -314,11 +311,11 @@ def bulk_create_registrations(upload_id, dry_run=True):
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
         else:
-            message = 'Failed to send registration bulk upload outcome email due to invalid ' \
-                      'upload state: [upload={}, state={}]'.format(upload.id, upload.state.name)
+            message = f'Failed to send registration bulk upload outcome email due to invalid ' \
+                      f'upload state: [upload={upload.id}, state={upload.state.name}]'
             logger.error(message)
             sentry.log_message(message)
-        logger.info('Email sent to bulk upload initiator [{}]'.format(initiator._id))
+        logger.info(f'Email sent to bulk upload initiator [{initiator._id}]')
 
 
 def handle_registration_row(row, initiator, provider, schema, auto_approval=False, dry_run=True):
@@ -339,16 +336,16 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             node = AbstractNode.objects.get(guids___id=node_id, is_deleted=False, type='osf.node')
             initiator_contributor = node.contributor_set.get(user=initiator)
         except AbstractNode.DoesNotExist:
-            error = 'Node does not exist: [node_id={}]'.format(node_id)
+            error = f'Node does not exist: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         except AbstractNode.MultipleObjectsReturned:
-            error = 'Multiple nodes returned: [node_id={}]'.format(node_id)
+            error = f'Multiple nodes returned: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         except Contributor.DoesNotExist:
-            error = 'Initiator [{}] must be a contributor on the project [{}]'.format(initiator._id, node._id)
+            error = f'Initiator [{initiator._id}] must be a contributor on the project [{node._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         if initiator_contributor.permission != ADMIN:
-            error = 'Initiator [{}] must have admin permission on the project [{}]'.format(initiator._id, node._id)
+            error = f'Initiator [{initiator._id}] must have admin permission on the project [{node._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare subjects
@@ -357,10 +354,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     for text in subject_texts:
         subject_list = provider.all_subjects.filter(text=text)
         if not subject_list:
-            error = 'Subject not found: [text={}]'.format(text)
+            error = f'Subject not found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         if len(subject_list) > 1:
-            error = 'Duplicate subjects found: [text={}]'.format(text)
+            error = f'Duplicate subjects found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         subject_ids.append(subject_list.first()._id)
     if len(subject_ids) == 0:
@@ -376,7 +373,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     try:
         node_license = NodeLicense.objects.get(name=license_name)
     except NodeLicense.DoesNotExist:
-        error = 'License not found: [license_name={}]'.format(license_name)
+        error = f'License not found: [license_name={license_name}]'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     node_license = {
         'id': node_license.license_id,
@@ -402,10 +399,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         try:
             institution = Institution.objects.get(name=name, is_deleted=False)
         except Institution.DoesNotExist:
-            error = 'Institution not found: [name={}]'.format(name)
+            error = f'Institution not found: [name={name}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         if not initiator.is_affiliated_with_institution(institution):
-            error = 'Initiator [{}] is not affiliated with institution [{}]'.format(initiator._id, institution._id)
+            error = f'Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         affiliated_institutions.append(institution)
 
@@ -484,7 +481,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         try:
             draft.add_affiliated_institution(institution, initiator)
         except UserNotAffiliatedError:
-            error = 'Initiator [{}] is not affiliated with institution [{}]'.format(initiator._id, institution._id)
+            error = f'Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Validate and set registration responses
@@ -516,17 +513,17 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             # `add_contributor_registered_or_not` throws several ValidationError / ValidationValueError that
             # needs to be treated differently.
             if e.message.endswith(' is already a contributor.'):
-                logger.warning('Contributor already exists: [{}]'.format(email))
+                logger.warning(f'Contributor already exists: [{email}]')
             else:
-                error = 'This contributor cannot be added: [email="{}", error="{}"]'.format(email, e.message)
+                error = f'This contributor cannot be added: [email="{email}", error="{e.message}"]'
                 raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         except UserStateError as e:
-            error = 'This contributor cannot be added: [email="{}", error="{}"]'.format(email, repr(e))
+            error = f'This contributor cannot be added: [email="{email}", error="{repr(e)}"]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     draft.save()
     row.is_completed = True
     row.save()
-    logger.info('Draft registration created: [{}]'.format(row.draft_registration._id))
+    logger.info(f'Draft registration created: [{row.draft_registration._id}]')
 
     # Register the draft
     # TODO: figure out why `draft.validate_metadata()` fails
@@ -537,7 +534,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     except Exception as e:
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
-    logger.info('Registration [{}] created from draft [{}]'.format(registration._id, row.draft_registration._id))
+    logger.info(f'Registration [{registration._id}] created from draft [{row.draft_registration._id}]')
 
     # Requires approval
     try:
@@ -547,13 +544,13 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     except Exception as e:
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
-    logger.info('Approval required for registration [{}]'.format(registration._id))
+    logger.info(f'Approval required for registration [{registration._id}]')
 
     # Once draft registration and registrations have been created, bulk creation of this row is considered completed.
     # Any error that happens during `registration.sanction.accept()` doesn't affect the state of upload job and the
     # registration row.
     if auto_approval:
-        logger.info('Provider [{}] has enabled auto approval.'.format(provider._id))
+        logger.info(f'Provider [{provider._id}] has enabled auto approval.')
         try:
             registration.sanction.accept()
         except Exception as e:
@@ -561,7 +558,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
                 row.upload.id, row.id, row_title, row_external_id,
                 error=repr(e), approval_failure=True,
             )
-        logger.info('Registration approved but pending moderation: [{}]'.format(registration._id))
+        logger.info(f'Registration approved but pending moderation: [{registration._id}]')
 
 
 def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):
