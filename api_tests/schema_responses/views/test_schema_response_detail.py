@@ -282,6 +282,16 @@ class TestSchemaResponseDetailGETBehavior:
         resp = app.get(make_api_url(schema_response), auth=alternate_user.auth)
         assert resp.json['data']['attributes']['is_pending_current_user_approval'] is False
 
+    def test_schema_response_is_original_response(self, app, schema_response, admin_user):
+        resp = app.get(make_api_url(schema_response), auth=admin_user.auth)
+        assert resp.json['data']['attributes']['is_original_response'] is True
+
+        revision = SchemaResponse.create_from_previous_response(
+            previous_response=schema_response, initiator=admin_user
+        )
+        resp = app.get(make_api_url(revision), auth=admin_user.auth)
+        assert resp.json['data']['attributes']['is_original_response'] is False
+
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailPATCHPermissions:
