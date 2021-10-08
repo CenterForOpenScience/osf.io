@@ -10,17 +10,21 @@ from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
 logger = logging.getLogger(__name__)
 
-def get_response_state_for_registration_state(moderation_state):
+def _update_schema_response_state(schema_response):
+    '''Set the schema_response's state based on the current state of the parent rgistration.'''
+    moderation_state = schema_response.parent.moderation_state
     if moderation_state == RegistrationModerationStates.INITIAL.db_name:
-        return ApprovalStates.UNAPPROVED
-    if moderation_state == RegistrationModerationStates.PENDING.db_name:
-        return ApprovalStates.PENDING_MODERATION
-
-    # All remaining states mean the initial responses have been approved by users
-    # or else the Registration will be excluded by our filters
-    return ApprovalStates.APPROVED
+        schema_response.state = ApprovalStates.UNAPPROVED
+    elif moderation_state == RegistrationModerationStates.PENDING.db_name:
+        schema_response.state = ApprovalStates.PENDING_MODERATION
+    else:
+        # All remaining states mean the initial responses have been approved by users
+        # (or else the Registration will be excluded by our filters)
+        schema_response.state = ApprovalStates.APPROVED
+    schema_response.save()
 
 def populate_initial_schema_responses(dry_run=False, batch_size=None):
+    '''Migrate registration_responses into a SchemaResponse for historical registrations.'''
     # Find all root registrations that do not yet have SchemaResponses
     qs = Registration.objects.prefetch_related('root').annotate(
         has_schema_response=Exists(SchemaResponse.objects.filter(nodes__id=OuterRef('id')))
@@ -41,16 +45,13 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
         try:
             with transaction.atomic:
                 registration.copy_schema_responses_into_initial_responses()
-                response = registration.schema_responses.last()
-                response.state = get_response_state_for_registration_state(
-                    registration.moderation_state
-                )
-                response.save()
+                _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:
                     raise DryRun
         except (ValueError, PreviousSchemaResponseError):
             logger.exception(
+                f'{"[DRY RUN] " if dry_run else ""}'
                 f'Failure creating SchemaResponse for Registration with guid {registration._id}'
             )
         except DryRun:
