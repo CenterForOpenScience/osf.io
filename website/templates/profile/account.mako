@@ -105,6 +105,7 @@
                         </div>
                     </div>
                 % endif
+                %if use_external_identity:
                 <div id="externalIdentity" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Identities")}</h3></div>
                     <div class="panel-body">
@@ -141,6 +142,8 @@
                         </tbody>
                     </div>
                 </div>
+                %endif
+                %if use_change_password:
                 <div id="changePassword" class="panel panel-default">
                     <div class="panel-heading clearfix"><h3 class="panel-title">${_("Change Password")}</h3></div>
                     <div class="panel-body">
@@ -218,6 +221,7 @@
                         </form>
                     </div>
                 </div>
+                %endif
                 %if use_tfa:
                 <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">${_("Security Settings")}</h3></div>

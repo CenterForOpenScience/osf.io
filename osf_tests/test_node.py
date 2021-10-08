@@ -2198,14 +2198,14 @@ def test_find_by_institutions():
 
 def test_can_comment():
     contrib = UserFactory()
-    public_node = NodeFactory(is_public=True)
+    public_node = NodeFactory(is_public=True, comment_level='public')
     Contributor.objects.create(node=public_node, user=contrib)
     public_node.add_permission(contrib, WRITE)
     assert public_node.can_comment(Auth(contrib)) is True
     noncontrib = UserFactory()
     assert public_node.can_comment(Auth(noncontrib)) is True
 
-    private_node = NodeFactory(is_public=False)
+    private_node = NodeFactory(is_public=False, comment_level='public')
     Contributor.objects.create(node=private_node, user=contrib)
     private_node.add_permission(contrib, READ)
     assert private_node.can_comment(Auth(contrib)) is True
