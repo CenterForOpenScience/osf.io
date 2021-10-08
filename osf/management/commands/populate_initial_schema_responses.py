@@ -43,8 +43,8 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
             f'Creating initial SchemaResponses for Registration with guid {registration._id}'
         )
         try:
-            with transaction.atomic:
-                registration.copy_schema_responses_into_initial_responses()
+            with transaction.atomic():
+                registration.copy_registration_responses_into_schema_response()
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:

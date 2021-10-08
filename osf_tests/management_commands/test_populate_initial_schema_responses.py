@@ -23,7 +23,7 @@ def test_registration():
         'q3': 'A',
         'q4': ['E'],
         'q5': '',
-        'q5': '',
+        'q6': '',
     }
     registration.save()
     return registration
@@ -36,6 +36,7 @@ def nested_registration(test_registration):
         parent=test_registration
     )
     registration.schema_responses.clear()
+    return registration
 
 
 @pytest.mark.django_db
@@ -47,8 +48,7 @@ class TestPopulateInitialSchemaResponses:
         count = populate_initial_schema_responses()
         assert count == 1
 
-        test_registration.refresh_from_db()
-        assert test_registration.schema_response.count() == 1
+        assert test_registration.schema_responses.count() == 1
 
         schema_response = test_registration.schema_responses.get()
         assert schema_response.schema == test_registration.registration_schema
@@ -73,7 +73,6 @@ class TestPopulateInitialSchemaResponses:
 
         populate_initial_schema_responses()
 
-        test_registration.refresh_from_db()
         schema_response = test_registration.schema_responses.get()
         assert schema_response.state == schema_response_state
 
@@ -81,7 +80,6 @@ class TestPopulateInitialSchemaResponses:
         count = populate_initial_schema_responses(dry_run=True)
         assert count == 1
 
-        test_registration.refresh_from_db()
         assert not test_registration.schema_responses.exists()
 
     def test_batch_size(self):
@@ -101,8 +99,19 @@ class TestPopulateInitialSchemaResponses:
         count = populate_initial_schema_responses()
         assert count == 0
 
-        control_registration.refresh_from_db()
         assert control_registration.schema_responses.get() == control_registration_response
+
+    def test_populate_responses_is_atomic_per_registration(self, test_registration):
+        invalid_registration = RegistrationFactory()
+        invalid_registration.schema_responses.clear()
+        invalid_registration.registration_responses = {'invalid_key': 'lolololol'}
+        invalid_registration.save()
+
+        count = populate_initial_schema_responses()
+        assert count == 1
+
+        assert test_registration.schema_responses.exists()
+        assert not invalid_registration.schema_responses.exists()
 
     def test_schema_response_not_created_for_deleted_registration(self, test_registration):
         test_registration.deleted = timezone.now()
@@ -111,7 +120,6 @@ class TestPopulateInitialSchemaResponses:
         count = populate_initial_schema_responses()
         assert count == 0
 
-        test_registration.refresh_from_db()
         assert not test_registration.schema_responses.exists()
 
     def test_schema_response_not_created_for_withdrawn_registration(self, test_registration):
@@ -121,12 +129,9 @@ class TestPopulateInitialSchemaResponses:
         count = populate_initial_schema_responses()
         assert count == 0
 
-        test_registration.refresh_from_db()
         assert not test_registration.schema_responses.exists()
 
     def test_schema_response_not_created_for_nested_registration(self, nested_registration):
         count = populate_initial_schema_responses()
         assert count == 1  # parent registration
-
-        nested_registration.refresh_from_db()
         assert not nested_registration.schema_responses.exists()
