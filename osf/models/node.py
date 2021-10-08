@@ -1423,9 +1423,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered.registered_schema.add(schema)
 
-        # copies registration_responses in SchemaResponse
-        registered.copy_registration_responses_into_schema_response(draft_registration)
-
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
 
@@ -1492,6 +1489,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             alternative_resource = None
 
         registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
+        registered.copy_registration_responses_into_schema_response(draft_registration)
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()

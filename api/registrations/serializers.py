@@ -397,7 +397,7 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        latest_approved_response = obj.schema_responses.filter(
+        latest_approved_response = obj.root.schema_responses.filter(
             reviews_state=ApprovalStates.APPROVED.db_name,
         ).first()
         if latest_approved_response is not None:

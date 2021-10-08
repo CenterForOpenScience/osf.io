@@ -900,7 +900,8 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         user = self.request.user
         registration = self.get_node()
 
-        all_responses = registration.schema_responses.annotate(
+        # Get the SchemaResponses from the root
+        all_responses = registration.root.schema_responses.annotate(
             is_pending_current_user_approval=(
                 schema_response_annotations.is_pending_current_user_approval(user)
             ),

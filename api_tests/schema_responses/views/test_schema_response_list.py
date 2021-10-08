@@ -4,6 +4,7 @@ from django.utils import timezone
 from api.providers.workflows import Workflows as ModerationWorkflows
 from osf_tests.factories import (
     AuthUserFactory,
+    ProjectFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
@@ -353,13 +354,30 @@ class TestSchemaResponseListPOSTBehavior:
             self, app, url, no_relationship_payload, admin_user):
         resp = app.post_json_api(url, no_relationship_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
-        print(resp.json['errors'][0]['detail'])
 
     def test_POST_fails_if_incorrect_relationship_type_in_payload(
             self, app, url, registration, invalid_payload, admin_user):
         resp = app.post_json_api(url, invalid_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
-        assert "'not yours' does not match 'registrations'\n\nFailed validating 'pattern'" in resp.json['errors'][0]['detail']
+
+    def test_POST_fails_for_nested_registration(self, app, url, registration, payload, admin_user):
+        nested_registration = RegistrationFactory(
+            project=ProjectFactory(parent=registration.registered_from, creator=admin_user),
+            parent=registration,
+            creator=admin_user
+        )
+        payload['data']['relationships']['registration']['data']['id'] = nested_registration._id
+        resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
+        assert resp.status_code == 409
+
+    def test_POST_fails_if_provider_does_not_allow_updates(
+            self, app, url, registration, payload, admin_user):
+        provider = registration.provider
+        provider.allow_updates = False
+        provider.save()
+
+        resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
+        assert resp.status_code == 409
 
 
 @pytest.mark.django_db
