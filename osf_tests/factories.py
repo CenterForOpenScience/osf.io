@@ -414,6 +414,11 @@ class RegistrationFactory(BaseNodeFactory):
             schema = schema or get_default_metaschema()
 
         # Default registration parameters
+        parent_registration = kwargs.get('parent')
+        if parent_registration:
+            schema = parent_registration.registration_schema
+            draft_registration = parent_registration.draft_registration.get()
+
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
@@ -427,7 +432,7 @@ class RegistrationFactory(BaseNodeFactory):
             auth=auth,
             draft_registration=draft_registration,
             provider=provider,
-            parent=kwargs.get('parent')
+            parent=parent_registration
         )
 
         def add_approval_step(reg):

@@ -336,17 +336,14 @@ class Registration(AbstractNode):
 
     @property
     def updatable(self):
-        """Reports whether the registration can have new SchemaResponses created.
+        '''Boolean that tells whether a Registration should support adding new SchemaResponses.
 
-        Only root registrations are updatable.
-        Only registrations whose provider allows updates are updatable.
-
-        To support internal flexibility, This is enforced through the API but not by the
-        SchemaResponse model.
-        """
-        if self.root is not self:
-            return False
+        By convention, in order to allow internal flexiblity, this is used to limit creation of
+        SchemaResponses through the API but not on the models.
+        '''
         if self.deleted or self.is_retracted:
+            return False
+        if self.root_id != self.id:
             return False
         if not (self.provider and self.provider.allow_updates):
             return False
@@ -851,18 +848,25 @@ class Registration(AbstractNode):
         if settings.SHARE_ENABLED:
             update_share(self)
 
-    def copy_registration_responses_into_schema_response(self, draft_registration=None):
+    def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
         from osf.models.schema_response import SchemaResponse
+        # TODO: stop populating registration_responses once all registrations
+        #       have had initial responses backfilled
         if draft_registration:
             self.registration_responses = draft_registration.registration_responses
+            if save:
+                self.save()
 
-        schema_response = SchemaResponse.create_initial_response(
-            self.creator,
-            self,
-            self.registration_schema
-        )
-        schema_response.update_responses(self.registration_responses)
+        if self.root_id == self.id:  # only create SchemaResposnes on the root registration
+            schema_response = SchemaResponse.create_initial_response(
+                self.creator,
+                self,
+                self.registration_schema
+            )
+            schema_response.update_responses(
+                self.registration_responses
+            )
 
     class Meta:
         # custom permissions for use in the OSF Admin App

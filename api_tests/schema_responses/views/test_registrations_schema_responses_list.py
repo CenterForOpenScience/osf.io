@@ -8,8 +8,8 @@ from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
 from osf_tests.factories import (
-    # SchemaResponseFactory,
     AuthUserFactory,
+    ProjectFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
@@ -161,6 +161,21 @@ class TestRegistrationSchemaResponseListGETPermissions:
         resp = app.get(make_api_url(registration), auth=auth, expect_errors=True)
         assert resp.status_code == expected_code
 
+    def test_nested_registration_does_not_use_parent_permissions(self, app):
+        auth, _, root_registration, _ = configure_test_preconditions(role='read')
+        universal_admin = root_registration.creator
+
+        nested_registration = RegistrationFactory(
+            project=ProjectFactory(parent=root_registration.registered_from),
+            parent=root_registration,
+            user=universal_admin,
+            is_public=False
+        )
+
+        # read user on parent shouldn't be able to GET SchemaResponses from child
+        resp = app.get(make_api_url(nested_registration), auth=auth, expect_errors=True)
+        assert resp.status_code == 403
+
 
 @pytest.mark.django_db
 class TestRegistrationSchemaResponseListGETBehavior:
@@ -229,6 +244,25 @@ class TestRegistrationSchemaResponseListGETBehavior:
             expected_ids.add(updated_response._id)
         encountered_ids = set(entry['id'] for entry in resp.json['data'])
         assert encountered_ids == expected_ids
+
+    def test_GET__nested_registration_returns_root_responses(self, app):
+        root_registration = RegistrationFactory()
+        admin = root_registration.creator
+
+        nested_registration = RegistrationFactory(
+            project=ProjectFactory(parent=root_registration.registered_from),
+            parent=root_registration,
+            user=admin
+        )
+
+        assert root_registration.schema_responses.exists()
+        assert not nested_registration.schema_responses.exists()
+
+        resp = app.get(make_api_url(nested_registration), auth=admin.auth)
+        data = resp.json['data']
+
+        encountered_ids = {entry['id'] for entry in data}
+        assert encountered_ids == {root_registration.schema_responses.get()._id}
 
 
 @pytest.mark.django_db
