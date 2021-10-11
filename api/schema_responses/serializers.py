@@ -47,6 +47,13 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         },
     )
 
+    actions = RelationshipField(
+        related_view='schema_responses:schema-response-action-list',
+        related_view_kwargs={'schema_response_id': '<_id>'},
+        read_only=True,
+        required=False,
+    )
+
     registration = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent._id>'},
