@@ -4,9 +4,9 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Exists, F, OuterRef
 
-from osf.exceptions import DryRun, PreviousSchemaResponseError, UnsupportedSchemaKeysError
+from osf.exceptions import PreviousSchemaResponseError, UnsupportedSchemaKeysError
 from osf.models import Registration, SchemaResponse
-from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
+from osf.utils.workflows import ApprovalStates, RegistrationModerationStates as RegStates
 
 logger = logging.getLogger(__name__)
 
@@ -14,17 +14,20 @@ logger = logging.getLogger(__name__)
 # some past backfills/migrations have created known mismatches. Handle these.
 EXPECTED_UNSUPPORTED_KEYS = {'EGAP Registration': {'q2'}, 'Prereg Challenge': {'q2'}}
 
+# Initial response pending amin approval or rejected while awaiting it
+UNAPPROVED_STATES = [RegStates.INITIAL.db_name, RegStates.REVERTED.db_name]
+# Initial response pending moderator approval or rejected while awaiting it
+PENDING_MODERATION_STATES = [RegStates.PENDING.db_name, RegStates.REJECTED.db_name]
+
 
 def _update_schema_response_state(schema_response):
     '''Set the schema_response's state based on the current state of the parent rgistration.'''
     moderation_state = schema_response.parent.moderation_state
-    if moderation_state == RegistrationModerationStates.INITIAL.db_name:
+    if moderation_state in UNAPPROVED_STATES:
         schema_response.state = ApprovalStates.UNAPPROVED
-    elif moderation_state == RegistrationModerationStates.PENDING.db_name:
+    elif moderation_state in PENDING_MODERATION_STATES:
         schema_response.state = ApprovalStates.PENDING_MODERATION
-    else:
-        # All remaining states mean the initial responses have been approved by users
-        # (or else the Registration will be excluded by our filters)
+    else:  # All remainint states imply initial responses were approved by users at some point
         schema_response.state = ApprovalStates.APPROVED
     schema_response.save()
 
@@ -34,7 +37,7 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
     qs = Registration.objects.prefetch_related('root').annotate(
         has_schema_response=Exists(SchemaResponse.objects.filter(nodes__id=OuterRef('id')))
     ).filter(
-        has_schema_response=False, root=F('id'), deleted__isnull=True
+        has_schema_response=False, root=F('id')
     )
     if batch_size:
         qs = qs[:batch_size]
@@ -43,7 +46,7 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
     for registration in qs:
         logger.info(
             f'{"[DRY RUN] " if dry_run else ""}'
-            f'Creating initial SchemaResponses for Registration with guid {registration._id}'
+            f'Creating initial SchemaResponse for Registration with guid {registration._id}'
         )
         try:
             with transaction.atomic():
@@ -56,14 +59,12 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:
-                    raise DryRun
+                    registration.schema_responses.clear()
         except (ValueError, PreviousSchemaResponseError, UnsupportedSchemaKeysError):
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
                 f'Failure creating SchemaResponse for Registration with guid {registration._id}'
             )
-        except DryRun:
-            pass
 
     logger.info(
         f'{"[DRY RUN] " if dry_run else ""}'
@@ -92,8 +93,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        try:
-            with transaction.atomic():
-                populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
-        except DryRun:
-            pass
+        populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)

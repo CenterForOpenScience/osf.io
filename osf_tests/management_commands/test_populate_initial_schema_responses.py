@@ -1,6 +1,5 @@
 import pytest
 
-from django.utils import timezone
 from osf.management.commands.populate_initial_schema_responses import populate_initial_schema_responses
 from osf.models import RegistrationSchema, SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates as RegStates
@@ -64,7 +63,9 @@ class TestPopulateInitialSchemaResponses:
             (RegStates.PENDING_EMBARGO_TERMINATION, ApprovalStates.APPROVED),
             (RegStates.PENDING_WITHDRAW_REQUEST, ApprovalStates.APPROVED),
             (RegStates.PENDING_WITHDRAW, ApprovalStates.APPROVED),
-            (RegStates.WITHDRAWN, ApprovalStates.APPROVED)
+            (RegStates.WITHDRAWN, ApprovalStates.APPROVED),
+            (RegStates.REVERTED, ApprovalStates.UNAPPROVED),
+            (RegStates.REJECTED, ApprovalStates.PENDING_MODERATION),
         ]
     )
     def test_schema_response_state(
@@ -108,6 +109,7 @@ class TestPopulateInitialSchemaResponses:
         assert count == 1
 
         assert not test_registration.schema_responses.exists()
+        assert not SchemaResponse.objects.exists()
 
     def test_batch_size(self):
         for _ in range(5):
@@ -127,15 +129,6 @@ class TestPopulateInitialSchemaResponses:
         assert count == 0
 
         assert control_registration.schema_responses.get() == control_registration_response
-
-    def test_schema_response_not_created_for_deleted_registration(self, test_registration):
-        test_registration.deleted = timezone.now()
-        test_registration.save()
-
-        count = populate_initial_schema_responses()
-        assert count == 0
-
-        assert not test_registration.schema_responses.exists()
 
     def test_schema_response_not_created_for_nested_registration(self, nested_registration):
         count = populate_initial_schema_responses()

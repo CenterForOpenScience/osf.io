@@ -193,11 +193,6 @@ class RegistrationBulkCreationRowError(OSFError):
                             'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, error)
 
 
-class DryRun(OSFError):
-    """Raised in Management Commands to escape transactions in dry_run mode."""
-    pass
-
-
 class UnsupportedSchemaKeysError(KeyError, OSFError):
 
     def __init__(self, *args, **kwargs):
