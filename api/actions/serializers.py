@@ -347,6 +347,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         previous_action = target.actions.last()
+        old_state = target.reviews_state
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
                 required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
@@ -373,7 +374,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         if new_action is previous_action or new_action.trigger != trigger:
             raise Conflict(
                 f'Trigger "{trigger}" is not supported for the target SchemaResponse '
-                f'with id [{target._id}] in state "{target.reviews_state}"',
+                f'with id [{target._id}] in state "{old_state}"',
             )
 
         return target.actions.last()
