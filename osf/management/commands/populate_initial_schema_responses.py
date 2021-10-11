@@ -4,11 +4,16 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Exists, F, OuterRef
 
-from osf.exceptions import DryRun, PreviousSchemaResponseError
+from osf.exceptions import DryRun, PreviousSchemaResponseError, UnsupportedSchemaKeysError
 from osf.models import Registration, SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
 logger = logging.getLogger(__name__)
+
+# Registrations have not previously been validated for unsupported keys,
+# some past backfills/migrations have created known mismatches. Handle these.
+EXPECTED_UNSUPPORTED_KEYS = {'EGAP Registration': {'q2'}, 'Prereg Challenge': {'q2'}}
+
 
 def _update_schema_response_state(schema_response):
     '''Set the schema_response's state based on the current state of the parent rgistration.'''
@@ -30,8 +35,6 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
         has_schema_response=Exists(SchemaResponse.objects.filter(nodes__id=OuterRef('id')))
     ).filter(
         has_schema_response=False, root=F('id'), deleted__isnull=True
-    ).exclude(
-        moderation_state=RegistrationModerationStates.WITHDRAWN.db_name
     )
     if batch_size:
         qs = qs[:batch_size]
@@ -44,12 +47,17 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
         )
         try:
             with transaction.atomic():
-                registration.copy_registration_responses_into_schema_response()
+                try:
+                    registration.copy_registration_responses_into_schema_response()
+                except UnsupportedSchemaKeysError as e:
+                    schema_name = registration.registration_schema.name
+                    if not e.keys.issubset(EXPECTED_UNSUPPORTED_KEYS.get(schema_name, set())):
+                        raise e
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:
                     raise DryRun
-        except (ValueError, PreviousSchemaResponseError):
+        except (ValueError, PreviousSchemaResponseError, UnsupportedSchemaKeysError):
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
                 f'Failure creating SchemaResponse for Registration with guid {registration._id}'
@@ -61,6 +69,7 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
         f'{"[DRY RUN] " if dry_run else ""}'
         f'Created initial SchemaResponses for {count} registrations'
     )
+
     return count
 
 
@@ -83,4 +92,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
+        try:
+            with transaction.atomic():
+                populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
+        except DryRun:
+            pass

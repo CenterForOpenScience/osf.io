@@ -2,7 +2,7 @@ import pytest
 
 from django.utils import timezone
 from osf.management.commands.populate_initial_schema_responses import populate_initial_schema_responses
-from osf.models import SchemaResponse
+from osf.models import RegistrationSchema, SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates as RegStates
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 from osf_tests.utils import get_default_test_schema
@@ -63,7 +63,8 @@ class TestPopulateInitialSchemaResponses:
             (RegStates.EMBARGO, ApprovalStates.APPROVED),
             (RegStates.PENDING_EMBARGO_TERMINATION, ApprovalStates.APPROVED),
             (RegStates.PENDING_WITHDRAW_REQUEST, ApprovalStates.APPROVED),
-            (RegStates.PENDING_WITHDRAW, ApprovalStates.APPROVED)
+            (RegStates.PENDING_WITHDRAW, ApprovalStates.APPROVED),
+            (RegStates.WITHDRAWN, ApprovalStates.APPROVED)
         ]
     )
     def test_schema_response_state(
@@ -75,6 +76,32 @@ class TestPopulateInitialSchemaResponses:
 
         schema_response = test_registration.schema_responses.get()
         assert schema_response.state == schema_response_state
+
+    @pytest.mark.parametrize('misbehaving_schema', ['EGAP Registration', 'Prereg Challenge'])
+    def test_errors_from_known_invalid_keys_are_ignored(self, misbehaving_schema):
+        schema = RegistrationSchema.objects.get_latest_version(misbehaving_schema)
+        registration = RegistrationFactory(schema=schema)
+        registration.schema_responses.clear()
+        registration.registration_responses.update({'q1': 'Valid key', 'q2': 'Invalid key'})
+        registration.save()
+
+        populate_initial_schema_responses()
+
+        schema_response = registration.schema_responses.get()
+        assert schema_response.all_responses['q1'] == 'Valid key'
+        assert not schema_response.all_responses.get('q2')
+
+    def test_populate_responses_is_atomic_per_registration(self, test_registration):
+        invalid_registration = RegistrationFactory()
+        invalid_registration.schema_responses.clear()
+        invalid_registration.registration_responses = {'invalid_key': 'lolololol'}
+        invalid_registration.save()
+
+        count = populate_initial_schema_responses()
+        assert count == 1
+
+        assert test_registration.schema_responses.exists()
+        assert not invalid_registration.schema_responses.exists()
 
     def test_dry_run(self, test_registration):
         count = populate_initial_schema_responses(dry_run=True)
@@ -101,29 +128,8 @@ class TestPopulateInitialSchemaResponses:
 
         assert control_registration.schema_responses.get() == control_registration_response
 
-    def test_populate_responses_is_atomic_per_registration(self, test_registration):
-        invalid_registration = RegistrationFactory()
-        invalid_registration.schema_responses.clear()
-        invalid_registration.registration_responses = {'invalid_key': 'lolololol'}
-        invalid_registration.save()
-
-        count = populate_initial_schema_responses()
-        assert count == 1
-
-        assert test_registration.schema_responses.exists()
-        assert not invalid_registration.schema_responses.exists()
-
     def test_schema_response_not_created_for_deleted_registration(self, test_registration):
         test_registration.deleted = timezone.now()
-        test_registration.save()
-
-        count = populate_initial_schema_responses()
-        assert count == 0
-
-        assert not test_registration.schema_responses.exists()
-
-    def test_schema_response_not_created_for_withdrawn_registration(self, test_registration):
-        test_registration.moderation_state = RegStates.WITHDRAWN.db_name
         test_registration.save()
 
         count = populate_initial_schema_responses()

@@ -7,7 +7,11 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import (
+    PreviousSchemaResponseError,
+    SchemaResponseStateError,
+    UnsupportedSchemaKeysError
+)
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -247,9 +251,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 self._update_response(block, latest_response)
 
         if updated_responses:
-            raise ValueError(
+            raise UnsupportedSchemaKeysError(
                 'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
+                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}',
+                keys=updated_responses.keys()
             )
 
     def _response_reverted(self, current_block, latest_response):

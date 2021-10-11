@@ -196,3 +196,10 @@ class RegistrationBulkCreationRowError(OSFError):
 class DryRun(OSFError):
     """Raised in Management Commands to escape transactions in dry_run mode."""
     pass
+
+
+class UnsupportedSchemaKeysError(KeyError, OSFError):
+
+    def __init__(self, *args, **kwargs):
+        self.keys = set(kwargs.get('keys'))
+        super().__init__(*args)

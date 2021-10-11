@@ -5,7 +5,7 @@ from nose.tools import assert_raises
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, UnsupportedSchemaKeysError
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
 from osf.models import schema_response  # import module for mocking purposes
 from osf.models.notifications import NotificationSubscription
@@ -454,7 +454,7 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
     def test_update_with_unsupported_key_raises(self, revised_response):
-        with assert_raises(ValueError):
+        with assert_raises(UnsupportedSchemaKeysError):
             revised_response.update_responses({'q7': 'sneaky'})
 
     @pytest.mark.parametrize(
@@ -467,7 +467,7 @@ class TestUpdateSchemaResponses():
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
             self, updated_responses, revised_response):
-        with assert_raises(ValueError):
+        with assert_raises(UnsupportedSchemaKeysError):
             revised_response.update_responses(updated_responses)
 
         revised_response.refresh_from_db()
