@@ -371,7 +371,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
             )
 
         new_action = target.actions.last()
-        if new_action is previous_action or new_action.trigger != trigger:
+        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
             raise Conflict(
                 f'Trigger "{trigger}" is not supported for the target SchemaResponse '
                 f'with id [{target._id}] in state "{old_state}"',
