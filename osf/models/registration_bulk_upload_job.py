@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import Enum
 
 from django.db import models
 
@@ -6,7 +6,7 @@ from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
 
-class JobState(IntEnum):
+class JobState(Enum):
     """Defines the six states of registration bulk upload jobs.
     """
 
@@ -26,14 +26,7 @@ class RegistrationBulkUploadJob(BaseModel):
     payload_hash = models.CharField(blank=False, null=False, unique=True, max_length=255)
 
     # The status/state of the bulk upload
-    state = models.IntegerField(choices=[
-        (JobState.PENDING, JobState.PENDING.name),
-        (JobState.INITIALIZED, JobState.INITIALIZED.name),
-        (JobState.PICKED_UP, JobState.PICKED_UP.name),
-        (JobState.DONE_FULL, JobState.DONE_FULL.name),
-        (JobState.DONE_PARTIAL, JobState.DONE_PARTIAL.name),
-        (JobState.DONE_ERROR, JobState.DONE_ERROR.name),
-    ], default=JobState.PENDING)
+    state = models.IntegerField(choices=[(state.value, state.name) for state in JobState], default=JobState.PENDING)
 
     # The user / admin who started this bulk upload
     initiator = models.ForeignKey('OSFUser', blank=False, null=True, on_delete=models.CASCADE)
