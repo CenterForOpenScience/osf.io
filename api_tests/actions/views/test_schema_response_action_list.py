@@ -594,6 +594,39 @@ class TestSchemaResponseActionListPOSTBehavior:
         expected_code = 403 if schema_response_state is ApprovalStates.UNAPPROVED else 409
         assert resp.status_code == expected_code
 
+    def test_POST__no_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        del(payload['data']['attributes']['comment'])
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
+
+    def test_POST__empty_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        payload['data']['attributes']['comment'] = ''
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
+
+    def test_POST__null_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        payload['data']['attributes']['comment'] = None
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
+
 
 @pytest.mark.django_db
 class TestSchemaResponseActionListUnsupportedMethods:

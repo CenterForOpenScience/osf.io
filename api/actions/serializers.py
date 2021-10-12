@@ -113,7 +113,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = ser.CharField(max_length=65535, required=False)
+    comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
