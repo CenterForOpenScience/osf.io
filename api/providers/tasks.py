@@ -129,7 +129,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         return handle_internal_error(initiator=initiator, provider=provider, message=repr(e), dry_run=dry_run)
 
     # Cancel the preparation task if duplicates are found in the CSV and/or in DB
-    if len(draft_error_list) > 0:
+    if draft_error_list:
         upload.delete()
         logger.info('Sending emails to initiator/uploader ...')
         mails.send_mail(
@@ -264,7 +264,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                   f'Upload ID: [{upload_id}], Draft Errors: [{draft_error_list}]'
         sentry.log_message(message)
         logger.error(message)
-    elif len(draft_error_list) > 0 or len(approval_error_list) > 0:
+    elif draft_error_list or approval_error_list:
         upload.state = JobState.DONE_PARTIAL
         message = f'Some registration rows failed during bulk creation. Upload ID: [{upload_id}]; ' \
                   f'Draft Errors: [{draft_error_list}]; Approval Errors: [{approval_error_list}]'
@@ -360,7 +360,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             error = f'Duplicate subjects found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         subject_ids.append(subject_list.first()._id)
-    if len(subject_ids) == 0:
+    if not subject_ids:
         error = 'Missing subjects'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
@@ -411,7 +411,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
 
     # Prepare contributors
     admin_list = metadata.get('Admin Contributors', []) or []
-    if len(admin_list) == 0:
+    if not admin_list:
         error = 'Missing admin contributors'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     admin_set = {contributor.get('email') for contributor in admin_list}
@@ -423,7 +423,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     read_write_set = {contributor.get('email') for contributor in read_write_list}
 
     author_list = metadata.get('Bibliographic Contributors', []) or []
-    if len(author_list) == 0:
+    if not author_list:
         error = 'Missing bibliographic contributors'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
