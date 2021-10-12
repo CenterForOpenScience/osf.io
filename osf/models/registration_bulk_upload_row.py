@@ -43,3 +43,18 @@ class RegistrationBulkUploadRow(BaseModel):
             row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest(),
         )
         return registration_row
+
+    # Overrides Django model's default `__hash__()` method to support pre-save hashing without PK
+    def __hash__(self):
+        if self._get_pk_val() is None:
+            return self.row_hash
+        return hash(self._get_pk_val())
+
+    # Overrides Django model's default `__eq__()` method to support pre-save equality check without PK
+    def __eq__(self, other):
+        if not isinstance(other, RegistrationBulkUploadRow):
+            return False
+        my_pk = self._get_pk_val()
+        if my_pk is None:
+            return self.row_hash == other.row_hash
+        return my_pk == other._get_pk_val()

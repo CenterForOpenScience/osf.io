@@ -95,8 +95,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     initial_row_count = len(registration_rows)
     logger.info(f'Preparing [{initial_row_count}] registration rows for bulk creation ...')
 
-    row_hash_set = set()
-    bulk_upload_rows = []
+    bulk_upload_rows = set()
     draft_error_list = []
     try:
         for registration_row in registration_rows:
@@ -115,16 +114,18 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
                 logger.error(exception.long_message)
                 sentry.log_message(exception.long_message)
                 draft_error_list.append(exception.short_message)
-            # Continue to check duplicates within the CSV
-            if bulk_upload_row.row_hash in row_hash_set:
+            else:
+                # Don't `return` or `continue` so that duplicates within the rows can be detected
+                pass
+            # Check duplicates within the CSV
+            if bulk_upload_row in bulk_upload_rows:
                 error = 'Duplicate rows - CSV contains duplicate rows'
                 exception = RegistrationBulkCreationRowError(upload.id, 'N/A', row_title, row_external_id, error=error)
                 logger.error(exception.long_message)
                 sentry.log_message(exception.long_message)
                 draft_error_list.append(exception.short_message)
             else:
-                row_hash_set.add(bulk_upload_row.row_hash)
-                bulk_upload_rows.append(bulk_upload_row)
+                bulk_upload_rows.add(bulk_upload_row)
     except Exception as e:
         upload.delete()
         return handle_internal_error(initiator=initiator, provider=provider, message=repr(e), dry_run=dry_run)
