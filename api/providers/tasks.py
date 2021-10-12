@@ -24,6 +24,7 @@ from osf.models import (
     RegistrationBulkUploadRow,
     RegistrationProvider,
     RegistrationSchema,
+    Subject,
 )
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
@@ -352,14 +353,15 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     subject_texts = metadata.get('Subjects', []) or []
     subject_ids = []
     for text in subject_texts:
-        subject_list = provider.all_subjects.filter(text=text)
-        if not subject_list:
+        try:
+            subject = provider.all_subjects.get(text=text)
+        except Subject.DoesNotExist:
             error = f'Subject not found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        if len(subject_list) > 1:
+        except Subject.MultipleObjectsReturned:
             error = f'Duplicate subjects found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        subject_ids.append(subject_list.first()._id)
+        subject_ids.append(subject._id)
     if not subject_ids:
         error = 'Missing subjects'
         raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
