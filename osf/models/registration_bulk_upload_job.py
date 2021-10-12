@@ -41,7 +41,13 @@ class RegistrationBulkUploadJob(BaseModel):
     email_sent = NonNaiveDateTimeField(blank=True, null=True)
 
     @classmethod
-    def create(cls, payload_hash, initiator, provider, schema):
-        upload = cls(payload_hash=payload_hash, state=JobState.PENDING,
-                     initiator=initiator, provider=provider, schema=schema, email_sent=None)
+    def create(cls, payload_hash, initiator, provider, schema, state=JobState.PENDING, email_sent=None):
+        upload = cls(
+            payload_hash=payload_hash,
+            state=state,
+            initiator=initiator,
+            provider=provider,
+            schema=schema,
+            email_sent=email_sent,
+        )
         return upload
