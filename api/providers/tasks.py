@@ -215,7 +215,11 @@ def bulk_create_registrations(upload_id, dry_run=True):
     )
 
     # Check registration rows and pick up them one by one to create draft registrations
-    registration_rows = RegistrationBulkUploadRow.objects.filter(upload__id=upload_id)
+    registration_rows = RegistrationBulkUploadRow.objects.filter(
+        upload__id=upload_id,
+        is_picked_up=False,
+        is_completed=False,
+    )
     initial_row_count = len(registration_rows)
     logger.info(f'Picked up [{initial_row_count}] registration rows for creation')
 
