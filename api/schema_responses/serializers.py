@@ -9,7 +9,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, UnsupportedSchemaKeysError
 from osf.models import (
     Registration,
     SchemaResponse,
@@ -134,7 +134,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         if revision_responses:
             try:
                 schema_response.update_responses(revision_responses)
-            except ValueError as exc:
+            except UnsupportedSchemaKeysError as exc:
                 raise ValidationError(detail=str(exc))
             except SchemaResponseStateError as exc:
                 # should have been handled above, but catch again just in case
