@@ -351,6 +351,9 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
 
     # Prepare subjects
     subject_texts = metadata.get('Subjects', []) or []
+    if not subject_texts:
+        error = 'Missing subjects'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
     subject_ids = []
     for text in subject_texts:
         try:
@@ -362,9 +365,6 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             error = f'Duplicate subjects found: [text={text}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
         subject_ids.append(subject._id)
-    if not subject_ids:
-        error = 'Missing subjects'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
 
     # Prepare node licences
     parsed_license = metadata.get('License', {}) or {}
