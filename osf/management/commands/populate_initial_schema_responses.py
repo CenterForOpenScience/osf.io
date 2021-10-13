@@ -56,7 +56,7 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:  # delete created SchemaResponse (and SchemaResponseBlocks)
-                    registration.schema_responses.clear()
+                    registration.schema_responses.all().delete()
         except (ValueError, PreviousSchemaResponseError):
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
@@ -90,4 +90,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
+        with transaction.atomic():
+            populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
+            if dry_run:
+                raise RuntimeError('Dry run, transaction rolled back')

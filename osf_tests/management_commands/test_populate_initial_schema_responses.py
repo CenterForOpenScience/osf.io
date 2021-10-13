@@ -95,6 +95,9 @@ class TestPopulateInitialSchemaResponses:
         assert not invalid_registration.schema_responses.exists()
 
     def test_dry_run(self, test_registration):
+        # donfirm that the delete works even if the schema_response isn't IN_PROGRESS
+        test_registration.moderation_state = RegStates.ACCEPTED.db_name
+        test_registration.save()
         count = populate_initial_schema_responses(dry_run=True)
         assert count == 1
 
