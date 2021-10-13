@@ -1,11 +1,14 @@
 import pytest
 
 from osf.management.commands.populate_initial_schema_responses import populate_initial_schema_responses
-from osf.models import RegistrationSchema, SchemaResponse
+from osf.models import SchemaResponse, SchemaResponseBlock
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates as RegStates
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 from osf_tests.utils import get_default_test_schema
 
+DEFAULT_RESPONSES = {
+    'q1': 'An answer', 'q2': 'Another answer', 'q3': 'A', 'q4': ['E'], 'q5': '', 'q6': '',
+}
 
 @pytest.fixture
 def control_registration():
@@ -16,14 +19,7 @@ def control_registration():
 def test_registration():
     registration = RegistrationFactory(schema=get_default_test_schema())
     registration.schema_responses.clear()
-    registration.registration_responses = {
-        'q1': 'An answer',
-        'q2': 'Another answer',
-        'q3': 'A',
-        'q4': ['E'],
-        'q5': '',
-        'q6': '',
-    }
+    registration.registration_responses = dict(DEFAULT_RESPONSES)
     registration.save()
     return registration
 
@@ -78,25 +74,19 @@ class TestPopulateInitialSchemaResponses:
         schema_response = test_registration.schema_responses.get()
         assert schema_response.state == schema_response_state
 
-    @pytest.mark.parametrize('misbehaving_schema', ['EGAP Registration', 'Prereg Challenge'])
-    def test_errors_from_known_invalid_keys_are_ignored(self, misbehaving_schema):
-        schema = RegistrationSchema.objects.get_latest_version(misbehaving_schema)
-        registration = RegistrationFactory(schema=schema)
-        registration.schema_responses.clear()
-        registration.registration_responses.update({'q1': 'Valid key', 'q2': 'Invalid key'})
-        registration.save()
+    def test_errors_from_invalid_keys_are_ignored(self, test_registration):
+        test_registration.registration_responses.update({'invalid_key': 'lolol'})
+        test_registration.save()
 
         populate_initial_schema_responses()
 
-        schema_response = registration.schema_responses.get()
-        assert schema_response.all_responses['q1'] == 'Valid key'
-        assert not schema_response.all_responses.get('q2')
+        schema_response = test_registration.schema_responses.get()
+        assert schema_response.all_responses == DEFAULT_RESPONSES
 
     def test_populate_responses_is_atomic_per_registration(self, test_registration):
         invalid_registration = RegistrationFactory()
         invalid_registration.schema_responses.clear()
-        invalid_registration.registration_responses = {'invalid_key': 'lolololol'}
-        invalid_registration.save()
+        invalid_registration.registered_schema.clear()
 
         count = populate_initial_schema_responses()
         assert count == 1
@@ -110,6 +100,7 @@ class TestPopulateInitialSchemaResponses:
 
         assert not test_registration.schema_responses.exists()
         assert not SchemaResponse.objects.exists()
+        assert not SchemaResponseBlock.objects.exists()
 
     def test_batch_size(self):
         for _ in range(5):

@@ -10,10 +10,6 @@ from osf.utils.workflows import ApprovalStates, RegistrationModerationStates as 
 
 logger = logging.getLogger(__name__)
 
-# Registrations have not previously been validated for unsupported keys,
-# some past backfills/migrations have created known mismatches. Handle these.
-EXPECTED_UNSUPPORTED_KEYS = {'EGAP Registration': {'q2'}, 'Prereg Challenge': {'q2'}}
-
 # Initial response pending amin approval or rejected while awaiting it
 UNAPPROVED_STATES = [RegStates.INITIAL.db_name, RegStates.REVERTED.db_name]
 # Initial response pending moderator approval or rejected while awaiting it
@@ -53,12 +49,13 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
                 try:
                     registration.copy_registration_responses_into_schema_response()
                 except UnsupportedSchemaKeysError as e:
-                    schema_name = registration.registration_schema.name
-                    if not e.keys.issubset(EXPECTED_UNSUPPORTED_KEYS.get(schema_name, set())):
-                        raise e
+                    logger.info(
+                        f'Ignoring unsupported keys in "registration_responses" for registration '
+                        f'with guid [{registration._id}]: {e.keys}'
+                    )
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
-                if dry_run:
+                if dry_run:  # delete created SchemaResponse (and SchemaResponseBlocks)
                     registration.schema_responses.clear()
         except (ValueError, PreviousSchemaResponseError, UnsupportedSchemaKeysError):
             logger.exception(
