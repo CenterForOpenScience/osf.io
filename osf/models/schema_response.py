@@ -292,7 +292,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             self.response_blocks.add(revised_block)
 
     def delete(self, *args, **kwargs):
-        if self.state is not ApprovalStates.IN_PROGRESS:
+        force = kwargs.pop('force', False)
+        if self.state is not ApprovalStates.IN_PROGRESS and not force:
             raise SchemaResponseStateError(
                 f'Cannot delete SchemaResponse with id [{self._id}]. In order to delete, '
                 f'state must be "in_progress", but is "{self.reviews_state}" instead.'
