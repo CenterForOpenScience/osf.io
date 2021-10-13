@@ -140,7 +140,7 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     serializer_class = SchemaResponseActionSerializer
 
     def get_queryset(self):
-        return SchemaResponseAction.objects.all()  # TODO: What to do here?
+        return self.get_object().actions.all()
 
     def get_object(self):
         return get_object_or_error(
