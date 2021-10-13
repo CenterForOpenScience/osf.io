@@ -50,14 +50,14 @@ def populate_initial_schema_responses(dry_run=False, batch_size=None):
                     registration.copy_registration_responses_into_schema_response()
                 except UnsupportedSchemaKeysError as e:
                     logger.info(
-                        f'Ignoring unsupported keys in "registration_responses" for registration '
+                        f'Ignoring unexpected keys in "registration_responses" for registration '
                         f'with guid [{registration._id}]: {e.keys}'
                     )
                 _update_schema_response_state(registration.schema_responses.last())
                 count += 1
                 if dry_run:  # delete created SchemaResponse (and SchemaResponseBlocks)
                     registration.schema_responses.clear()
-        except (ValueError, PreviousSchemaResponseError, UnsupportedSchemaKeysError):
+        except (ValueError, PreviousSchemaResponseError):
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
                 f'Failure creating SchemaResponse for Registration with guid {registration._id}'
