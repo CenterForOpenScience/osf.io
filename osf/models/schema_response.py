@@ -291,9 +291,32 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
 
+    def _update_file_references(self, updated_responses):
+        '''Update refernces in file-input responses post-archival for initial SchemaResponses.'''
+        if self.previous_response:
+            raise PreviousSchemaResponseError(
+                'Updating of file references only supported for initial responses'
+            )
+
+        updated_keys = set()
+        file_input_blocks = self.schema.schema_blocks.filter(
+            block_type='file-input'
+        )
+        if not file_input_blocks.exists():
+            return updated_keys
+
+        file_response_blocks = self.response_blocks.filter(
+            source_schema_block__in=file_input_blocks
+        )
+        for block in file_response_blocks:
+            block.response = updated_responses[block.schema_key]
+            block.save()
+            updated_keys.add(block.schema_key)
+
+        return updated_keys
+
     def delete(self, *args, **kwargs):
-        force = kwargs.pop('force', False)
-        if self.state is not ApprovalStates.IN_PROGRESS and not force:
+        if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(
                 f'Cannot delete SchemaResponse with id [{self._id}]. In order to delete, '
                 f'state must be "in_progress", but is "{self.reviews_state}" instead.'
