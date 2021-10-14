@@ -1,5 +1,3 @@
-import logging
-
 import furl
 from django.utils import timezone
 from rest_framework import status as http_status
@@ -11,11 +9,10 @@ import requests
 
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
+from framework.auth.utils import print_cas_log, LogLevel
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
-
-logger = logging.getLogger(__name__)
 
 
 class CasError(HTTPError):
@@ -117,10 +114,19 @@ class CasClient(object):
         url.args['ticket'] = ticket
         url.args['service'] = service_url
 
+        print_cas_log(f'Validating service ticket ["{ticket}"]', LogLevel.INFO)
         resp = requests.get(url.url)
         if resp.status_code == 200:
+            print_cas_log(
+                f'Service ticket validation response: ticket=[{ticket}], status=[{resp.status_code}]',
+                LogLevel.INFO,
+            )
             return self._parse_service_validation(resp.content)
         else:
+            print_cas_log(
+                f'Service ticket validation failed: ticket=[{ticket}], status=[{resp.status_code}]',
+                LogLevel.ERROR,
+            )
             self._handle_error(resp)
 
     def profile(self, access_token):
@@ -157,6 +163,7 @@ class CasClient(object):
         auth_doc = doc.xpath('/cas:serviceResponse/*[1]', namespaces=doc.nsmap)[0]
         resp.status = str(auth_doc.xpath('local-name()'))
         if (resp.status == 'authenticationSuccess'):
+            print_cas_log(f'Service validation succeeded with status: ["{resp.status}"]', LogLevel.INFO)
             resp.authenticated = True
             resp.user = str(auth_doc.xpath('string(./cas:user)', namespaces=doc.nsmap))
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
@@ -165,7 +172,10 @@ class CasClient(object):
             scopes = resp.attributes.get('accessTokenScope')
             resp.attributes['accessTokenScope'] = set(scopes.split(' ') if scopes else [])
         else:
+            print_cas_log(f'Service validation failed with status: ["{resp.status}"]', LogLevel.ERROR)
             resp.authenticated = False
+        resp_attributes = [f'({key}: {val})' for key, val in resp.attributes.items()]
+        print_cas_log(f'Parsed CAS response: attributes=[{resp_attributes}]', LogLevel.INFO)
         return resp
 
     def _parse_profile(self, raw, access_token):
@@ -267,6 +277,11 @@ def make_response_from_ticket(ticket, service_url):
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
         # user found and authenticated
         if user and action == 'authenticate':
+            print_cas_log(
+                f'CAS response - authenticating user: user=[{user._id}], '
+                f'external=[{external_credential}], action=[{action}]',
+                LogLevel.INFO,
+            )
             # If users check the TOS consent checkbox via CAS, CAS sets the attribute `termsOfServiceChecked` to `true`
             # and then release it to OSF among other authentication attributes. When OSF receives it, it trusts CAS and
             # updates the user object if this is THE FINAL STEP of the login flow. DON'T update TOS consent status when
@@ -275,7 +290,7 @@ def make_response_from_ticket(ticket, service_url):
             if cas_resp.attributes.get('termsOfServiceChecked', False):
                 user.accepted_terms_of_service = timezone.now()
                 user.save()
-                logger.info('CAS TOS consent checked: {}, {}'.format(user.guids.first()._id, user.username))
+                print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
                 user.verification_key = None
@@ -287,6 +302,10 @@ def make_response_from_ticket(ticket, service_url):
             if external_credential:
                 user.verification_key = generate_verification_key()
                 user.save()
+                print_cas_log(
+                    f'CAS response - redirect existing external IdP login to verification key login: user=[{user._id}]',
+                    LogLevel.INFO
+                )
                 return redirect(get_logout_url(get_login_url(
                     service_url,
                     username=user.username,
@@ -295,6 +314,7 @@ def make_response_from_ticket(ticket, service_url):
 
             # if user is authenticated by CAS
             # TODO [CAS-27]: Remove Access Token From Service Validation
+            print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
@@ -302,6 +322,11 @@ def make_response_from_ticket(ticket, service_url):
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
+            print_cas_log(
+                f'CAS response - first login from external IdP: '
+                f'external=[{external_credential}], action=[{action}]',
+                LogLevel.INFO,
+            )
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
@@ -313,11 +338,13 @@ def make_response_from_ticket(ticket, service_url):
                 'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
+            print_cas_log(f'CAS response - creating anonymous session: external=[{external_credential}]', LogLevel.INFO)
             return external_first_login_authenticate(
                 user,
                 redirect(web_url_for('external_login_email_get'))
             )
     # Unauthorized: ticket could not be validated, or user does not exist.
+    print_cas_log('Ticket validation failed or user does not exist. Redirect back to service URL (logged out).', LogLevel.ERROR)
     return redirect(service_furl.url)
 
 
@@ -341,6 +368,7 @@ def get_user_from_cas_resp(cas_resp):
             external_credential = validate_external_credential(cas_resp.user)
             # invalid cas response
             if not external_credential:
+                print_cas_log('CAS response error - missing user or external identity', LogLevel.ERROR)
                 return None, None, None
             # cas returns a valid external credential
             user = get_user(external_id_provider=external_credential['provider'],
@@ -351,6 +379,8 @@ def get_user_from_cas_resp(cas_resp):
             # user first time login through external identity provider
             else:
                 return None, external_credential, 'external_first_login'
+    print_cas_log('CAS response error - `cas_resp.user` is empty', LogLevel.ERROR)
+    return None, None, None
 
 
 def validate_external_credential(external_credential):
