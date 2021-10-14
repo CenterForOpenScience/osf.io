@@ -168,10 +168,10 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         assert res.json['data']['attributes']['current_user_permissions'] == [READ]
 
         res = app.get(url_draft_registrations, auth=user_write_contrib.auth, expect_errors=False)
-        assert res.json['data']['attributes']['current_user_permissions'] == [WRITE, READ]
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set([WRITE, READ])
 
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=False)
-        assert res.json['data']['attributes']['current_user_permissions'] == [ADMIN, WRITE, READ]
+        assert set(res.json['data']['attributes']['current_user_permissions']) == set([ADMIN, WRITE, READ])
 
 
 class TestUpdateEditableFieldsTestCase:

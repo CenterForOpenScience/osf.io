@@ -10,7 +10,6 @@ from api.nodes.serializers import (
     DraftRegistrationDetailLegacySerializer,
     update_institutions,
     get_license_details,
-    NodeSerializer,
     NodeLicenseSerializer,
     NodeLicenseRelationshipField,
     NodeContributorsSerializer,
@@ -124,7 +123,8 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         return validated_data.pop('branched_from', None)
 
     def get_current_user_permissions(self, obj):
-        return NodeSerializer.get_current_user_permissions(self, obj)
+        user = self.context['request'].user
+        return obj.get_permissions(user)
 
     def expect_subjects_as_relationships(self, request):
         """Determines whether subjects should be serialized as a relationship.
