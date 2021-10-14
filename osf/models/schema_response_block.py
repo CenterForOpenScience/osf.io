@@ -55,43 +55,43 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     def set_response(self, response_value=None):
         if response_value is None:
             response_value = SUPPORTED_TYPE_FOR_BLOCK_TYPE[self.block_type]()
-        if not self.is_valid(check_required=False):
+        if not self.is_valid(response_value, check_required=False):
             raise SchemaResponseUpdateError(
                 response=self.source_schema_response,
                 invalid_responses={self.schema_key: response_value})
         self.response = _sanitize_response(response_value, self.block_type)
         self.save()
 
-    def is_valid_response(self, response=None, check_required=True):
+    def is_valid(self, response_value=None, check_required=True):
         '''Confirms that the block has been assigned a valid value.'''
-        if response is None:
-            response = self.response
+        if response_value is None:
+            response_value = self.response
         block_type = self.block_type
-        if not isinstance(response, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
+        if not isinstance(response_value, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
             return False
-        if not self._has_valid_selections(response):
+        if not self._has_valid_selections(response_value):
             return False
-        if check_required and self.required and not response:
+        if check_required and self.required and not response_value:
             return False
 
         return True
 
-    def _has_valid_selections(self, response):
+    def _has_valid_selections(self, response_value):
         '''Validate the contents of a `*-select-input` block.'''
         block_type = self.block_type
         if block_type not in ['single-select-input', 'multi-select-input']:
             return True
 
         # Listify the response value
-        responses = response
+        values = response_value
         if block_type == 'single-select-input':
-            responses = [responses] if responses else []
+            values = [values] if values else []
 
-        if not responses:  # validation of required fields occurs elsewhere
+        if not values:  # validation of required fields occurs elsewhere
             return True
 
         allowed_options = self._get_select_input_options()
-        return all(entry in allowed_options for entry in responses)
+        return all(entry in allowed_options for entry in values)
 
     def _get_select_input_options(self):
         group_key = self.source_schema_block.schema_block_group_key
