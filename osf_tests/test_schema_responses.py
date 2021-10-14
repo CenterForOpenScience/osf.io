@@ -359,8 +359,8 @@ class TestUpdateSchemaResponses():
             'q2': 'This is a new response',
             'q3': 'B',
             'q4': ['E'],
-            'q5': [initial_response.initiator.id],
-            'q6': 'SomeFile',
+            'q5': 'Roonil Wazlib, et al',
+            'q6': ['some', 'file', 'metadata'],
         }
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
@@ -383,8 +383,8 @@ class TestUpdateSchemaResponses():
                 'q2': 'This is a new response',
                 'q3': 'B',
                 'q4': ['E'],
-                'q5': [initial_response.initiator.id],
-                'q6': 'SomeFile'
+                'q5': 'Roonil Wazlib, et al',
+                'q6': ['some', 'file', 'metadata'],
             }
         )
         initial_response.refresh_from_db()
@@ -463,8 +463,10 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
     def test_update_with_unsupported_key_raises(self, revised_response):
-        with assert_raises(ValueError):
+        with assert_raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses({'q7': 'sneaky'})
+
+        assert manager.exception.unsupported_keys == {'q7'}
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -476,7 +478,7 @@ class TestUpdateSchemaResponses():
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
             self, updated_responses, revised_response):
-        with assert_raises(ValueError):
+        with assert_raises(SchemaResponseUpdateError):
             revised_response.update_responses(updated_responses)
 
         revised_response.refresh_from_db()
@@ -484,20 +486,20 @@ class TestUpdateSchemaResponses():
         assert revised_response.all_responses['q2'] == updated_responses['q2']
 
     def test_update_fails_with_invalid_response_types(self, revised_response):
-        with assert_raises(SchemaResponseUpdateError) as e:
+        with assert_raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses(
                 {'q1': 1, 'q2': ['this is a list'], 'q3': 'B', 'q4': 'this is a string'}
             )
 
-        assert set(e.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
+        assert set(manager.exception.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
 
     def test_update_fails_with_invalid_response_values(self, revised_response):
-        with assert_raises(SchemaResponseUpdateError) as e:
+        with assert_raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses(
                 {'q3': 'Q', 'q4': ['D', 'A']}
             )
 
-        assert set(e.invalid_responses.keys()) == {'q3', 'q4'}
+        assert set(manager.exception.invalid_responses.keys()) == {'q3', 'q4'}
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -617,6 +619,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
             initial_response.submit(required_approvers=[admin_user])
 
     def test_submit_fails_with_invalid_response_value(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
         invalid_block = initial_response.response_blocks.get(schema_key='q1')
         invalid_block.response = 1
         invalid_block.save()
@@ -625,6 +629,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
 
     def test_submit_fails_with_missing_required_response(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
         invalid_block = initial_response.response_blocks.get(schema_key='q1')
         invalid_block.response = ''
         invalid_block.save()

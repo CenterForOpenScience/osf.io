@@ -55,31 +55,35 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     def set_response(self, response_value=None):
         if response_value is None:
             response_value = SUPPORTED_TYPE_FOR_BLOCK_TYPE[self.block_type]()
-        self.response = sanitize.strip_html(response_value)
         if not self.is_valid(check_required=False):
-            raise SchemaResponseUpdateError(invalid_responses={self.schema_key: response_value})
+            raise SchemaResponseUpdateError(
+                response=self.source_schema_response,
+                invalid_responses={self.schema_key: response_value})
+        self.response = _sanitize_response(response_value, self.block_type)
         self.save()
 
-    def is_valid(self, check_required=True):
+    def is_valid_response(self, response=None, check_required=True):
         '''Confirms that the block has been assigned a valid value.'''
+        if response is None:
+            response = self.response
         block_type = self.block_type
-        if not isinstance(self.response, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
+        if not isinstance(response, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
             return False
-        if not self._has_valid_selections():
+        if not self._has_valid_selections(response):
             return False
-        if check_required and self.required and not self.response:
+        if check_required and self.required and not response:
             return False
 
         return True
 
-    def _has_valid_selections(self):
+    def _has_valid_selections(self, response):
         '''Validate the contents of a `*-select-input` block.'''
         block_type = self.block_type
         if block_type not in ['single-select-input', 'multi-select-input']:
             return True
 
         # Listify the response value
-        responses = self.response
+        responses = response
         if block_type == 'single-select-input':
             responses = [responses] if responses else []
 
@@ -95,3 +99,12 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
             schema_block_group_key=group_key, block_type='select-input-option'
         ).values_list('display_text', flat=True)
         return list(allowed_values)
+
+
+def _sanitize_response(response_value, block_type):
+    if block_type == 'file-input':
+        return response_value  # don't mess with this magic
+    elif block_type == 'multi-select-input':
+        return [sanitize.strip_html(entry) for entry in response_value]
+    else:
+        return sanitize.strip_html(response_value)

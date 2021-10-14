@@ -250,7 +250,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if invalid_responses or updated_responses:
             raise SchemaResponseUpdateError(
-                invalid_responses=invalid_responses, unsupported_keys=updated_responses.keys()
+                response=self,
+                invalid_responses=invalid_responses,
+                unsupported_keys=updated_responses.keys()
             )
 
     def _response_reverted(self, current_block, latest_response):
@@ -331,7 +333,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         # Only check newly udpated keys, as old keys have previously passed validation
         invalid_response_keys = [
-            block.schema_key for block in self.updated_response_blocks if not block.is_valid()
+            block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
         ]
         if invalid_response_keys:
             raise SchemaResponseStateError(
