@@ -35,11 +35,11 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         unique_together = ('source_schema_response', 'source_schema_block')
 
     @classmethod
-    def create(cls, source_response, source_block, response_value=None):
+    def create(cls, source_schema_response, source_schema_block, response_value=None):
         new_response_block = cls(
-            source_schema_response=source_response,
-            source_Schema_block=source_block,
-            schema_key=source_block.registration_response_key
+            source_schema_response=source_schema_response,
+            source_schema_block=source_schema_block,
+            schema_key=source_schema_block.registration_response_key
         )
         new_response_block.set_response(response_value)
         return new_response_block
@@ -52,34 +52,6 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     def required(self):
         return self.source_schema_block.required
 
-    def _get_select_input_options(self):
-        group_key = self.source_block.schema_block_group_key
-        allowed_values = self.source_block.schema.schema_blocks.filter(
-            schema_block_group_key=group_key, block_type='select-input-option'
-        ).values_list('display_text', flat=True)
-        return list(allowed_values)
-
-    def is_valid(self, check_required=True):
-        '''Confirms that the block has been assigned a valid value.'''
-        block_type = self.block_type
-        if not isinstance(self.response, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
-            return False
-
-        if block_type in ['single-select-input', 'multi-select-input']:
-            responses = self.response
-            if block_type == 'single-select-input':  # listify `single-select-ninput` response value
-                responses = [responses] if responses else []
-            allowed_options = self._get_select_input_options()
-            if not all(response in allowed_options for response in responses):
-                return False
-        elif self.block_type == 'file-input':
-            pass  # TODO have somebody who understands this add validation
-
-        if check_required and self.required and not self.response:
-            return False
-
-        return True
-
     def set_response(self, response_value=None):
         if response_value is None:
             response_value = SUPPORTED_TYPE_FOR_BLOCK_TYPE[self.block_type]()
@@ -87,3 +59,39 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         if not self.is_valid(check_required=False):
             raise SchemaResponseUpdateError(invalid_responses={self.schema_key: response_value})
         self.save()
+
+    def is_valid(self, check_required=True):
+        '''Confirms that the block has been assigned a valid value.'''
+        block_type = self.block_type
+        if not isinstance(self.response, SUPPORTED_TYPE_FOR_BLOCK_TYPE[block_type]):
+            return False
+        if not self._has_valid_selections():
+            return False
+        if check_required and self.required and not self.response:
+            return False
+
+        return True
+
+    def _has_valid_selections(self):
+        '''Validate the contents of a `*-select-input` block.'''
+        block_type = self.block_type
+        if block_type not in ['single-select-input', 'multi-select-input']:
+            return True
+
+        # Listify the response value
+        responses = self.response
+        if block_type == 'single-select-input':
+            responses = [responses] if responses else []
+
+        if not responses:  # validation of required fields occurs elsewhere
+            return True
+
+        allowed_options = self._get_select_input_options()
+        return all(entry in allowed_options for entry in responses)
+
+    def _get_select_input_options(self):
+        group_key = self.source_schema_block.schema_block_group_key
+        allowed_values = self.source_schema_block.schema.schema_blocks.filter(
+            schema_block_group_key=group_key, block_type='select-input-option'
+        ).values_list('display_text', flat=True)
+        return list(allowed_values)
