@@ -2,14 +2,12 @@
 import csv
 import io
 import pytest
-import re
 
-from nose.tools import assert_equal, assert_true, assert_raises
+from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import AuthUserFactory, ProjectFactory, SubjectFactory
 from osf.models import RegistrationSchema, RegistrationProvider
-from rest_framework.exceptions import NotFound, ValidationError
 
 from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
                                      FileUploadNotSupportedError, DuplicateHeadersError,
@@ -199,7 +197,7 @@ class TestBulkUploadParserValidationErrors:
         test_csv = write_csv(header_row, {'Title': ''}, valid_row)
 
         with pytest.raises(NotFound) as exc_info:
-            upload = BulkRegistrationUpload(test_csv, registration_provider._id)
+            BulkRegistrationUpload(test_csv, registration_provider._id)
         assert str(exc_info.value.detail) == 'Schema with id "" was not found'
         test_csv.close()
 
@@ -211,7 +209,7 @@ class TestBulkUploadParserValidationErrors:
         test_csv = write_csv(header_row, {'Title': open_ended_schema._id}, valid_row)
 
         with pytest.raises(DuplicateHeadersError) as exc_info:
-            upload = BulkRegistrationUpload(test_csv, registration_provider._id)
+            BulkRegistrationUpload(test_csv, registration_provider._id)
 
         assert exc_info.value.args[0]['duplicate_headers'] == ['Subjects', 'summary']
         test_csv.close()
@@ -226,7 +224,7 @@ class TestBulkUploadParserValidationErrors:
         test_csv = write_csv(header_row, {'Title': open_ended_schema._id}, valid_row)
 
         with pytest.raises(FileUploadNotSupportedError) as exc_info:
-            upload = BulkRegistrationUpload(test_csv, registration_provider._id)
+            BulkRegistrationUpload(test_csv, registration_provider._id)
 
         assert exc_info.value.args[0] == 'File uploads are not supported'
         test_csv.close()
@@ -241,7 +239,7 @@ class TestBulkUploadParserValidationErrors:
         expected_invalid_headers = ['Uploader', 'license', 'description', 'Summary']
 
         with pytest.raises(InvalidHeadersError) as exc_info:
-            upload = BulkRegistrationUpload(test_csv, registration_provider._id)
+            BulkRegistrationUpload(test_csv, registration_provider._id)
 
         actual_invalid_headers = exc_info.value.args[0]['invalid_headers']
         actual_missing_headers = exc_info.value.args[0]['missing_headers']

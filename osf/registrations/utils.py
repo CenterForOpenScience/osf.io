@@ -178,7 +178,7 @@ class BulkRegistrationUpload():
     def validate_csv_header_list(self):
         duplicate_headers = self.find_duplicate_headers()
         if duplicate_headers:
-            raise DuplicateHeadersError({'duplicate_headers': duplicate_headers })
+            raise DuplicateHeadersError({'duplicate_headers': duplicate_headers})
         expected_headers = self.validations.keys()
         actual_headers = self.headers
         invalid_headers = list(set(actual_headers) - set(expected_headers))
