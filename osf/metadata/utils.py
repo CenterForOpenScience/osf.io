@@ -41,9 +41,17 @@ def datacite_format_creators(creators):
         ]
         affiliated_institutions = [{
             'affiliation': institution.name,
-            'affiliationIdentifier': 'OSF',
+            'affiliationIdentifier': creator._id,
             'schemeURI': settings.DOMAIN
         } for institution in creator.affiliated_institutions.all()]
+
+        affiliated_institutions.append(
+            {
+                'affiliationIdentifier': f'https://ror.org/{settings.OSF_ROR_ID}',
+                'affiliationIdentifierScheme': 'ROR',
+                'SchemeURI': 'https://ror.org/',
+            }
+        )
 
         if creator.external_identity.get('ORCID'):
             verified = list(creator.external_identity['ORCID'].values())[0] == 'VERIFIED'
