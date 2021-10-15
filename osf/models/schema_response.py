@@ -249,7 +249,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if updated_responses:
             raise ValueError(
                 'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}',
+                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
             )
 
     def _response_reverted(self, current_block, latest_response):
