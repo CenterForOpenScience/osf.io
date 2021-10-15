@@ -827,6 +827,13 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
 
     def put(self, request, *args, **kwargs):
         provider_id = kwargs['provider_id']
+        provider = get_object_or_error(RegistrationProvider, provider_id, request)
+        if not provider.allow_bulk_uploads:
+            return JsonResponse(
+                {'errors': [{'type': 'bulkUploadNotAllowed'}]},
+                status=405,
+                content_type='application/vnd.api+json; application/json',
+            )
         user_id = self.request.user._id
         file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
         file_obj = request.data['file']
