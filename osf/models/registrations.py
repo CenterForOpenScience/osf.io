@@ -864,11 +864,7 @@ class Registration(AbstractNode):
                 self,
                 self.registration_schema
             )
-            # Stick with the  SchemaResponseBlock-generated default values
-            non_empty_responses = {
-                key: value for key, value in self.registration_responses.items() if value
-            }
-            schema_response.update_responses(non_empty_responses)
+            schema_response.update_responses(self.registration_responses)
 
     class Meta:
         # custom permissions for use in the OSF Admin App

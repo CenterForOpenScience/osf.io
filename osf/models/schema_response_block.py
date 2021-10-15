@@ -53,7 +53,13 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         return self.source_schema_block.required
 
     def set_response(self, response_value=None):
-        if response_value is None:
+        '''Set the response for the block.
+
+        Validates and sanitizes the value before assigning.
+        Assigns a sane default for the block type if no value or a
+        False-equivalent value is passed.
+        '''
+        if not response_value:
             response_value = SUPPORTED_TYPE_FOR_BLOCK_TYPE[self.block_type]()
         if not self.is_valid(response_value, check_required=False):
             raise SchemaResponseUpdateError(
@@ -63,7 +69,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         self.save()
 
     def is_valid(self, response_value=None, check_required=True):
-        '''Confirms that the block has been assigned a valid value.'''
+        '''Confirms that a response value is valid for this block.'''
         if response_value is None:
             response_value = self.response
         block_type = self.block_type
