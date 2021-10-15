@@ -491,6 +491,19 @@ class TestUpdateSchemaResponses():
         with assert_raises(SchemaResponseStateError):
             initial_response.update_responses({'q1': 'harrumph'})
 
+    def test_update_file_references(self, initial_response):
+        original_responses = initial_response.all_responses
+        new_responses = dict(
+            original_responses, q1='new value', q6=['some', 'file', 'metadata']
+        )
+
+        initial_response._update_file_references(new_responses)
+
+        updated_responses = initial_response.all_responses
+
+        assert updated_responses['q1'] == original_responses['q1']
+        assert updated_responses['q6'] == new_responses['q6']
+
 
 @pytest.mark.django_db
 class TestDeleteSchemaResponse():
