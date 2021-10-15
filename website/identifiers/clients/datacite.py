@@ -33,7 +33,7 @@ class DataCiteClient(AbstractIdentifierClient):
         """Return the formatted datacite metadata XML as a string.
          """
 
-        contributors = datacite_format_contributors(node.contributors)
+        contributors = datacite_format_contributors(node.visible_contributors)
         contributors.append({
             'nameType': 'Organizational',
             'contributorType': 'HostingInstitution',
