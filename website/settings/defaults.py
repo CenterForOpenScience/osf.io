@@ -342,6 +342,7 @@ ECSARXIV_CROSSREF_PASSWORD = None
 
 # ror
 OSF_ROR_ID = '05d5mza29'
+OSF_GRID_ID = 'grid.466501.0'
 
 # if our DOIs cannot be confirmed after X amount of days email the admin
 DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
