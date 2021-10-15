@@ -6,6 +6,7 @@ from framework.auth import signals
 from framework.auth.core import Auth
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.utils import LogLevel, print_cas_log
 from framework.sessions import session, create_session
 from framework.sessions.utils import remove_session
 
@@ -33,11 +34,14 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
+    print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     user.update_date_last_login()
     user.clean_email_verifications()
     user.update_affiliated_institutions_by_email_domain()
     user.save()
+    print_cas_log(f'Finalizing authentication - user updated: user=[{user._id}]', LogLevel.INFO)
     response = create_session(response, data=data)
+    print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 
 
@@ -59,7 +63,16 @@ def external_first_login_authenticate(user, response):
         'auth_user_external_first_login': True,
         'service_url': user['service_url'],
     })
+    user_identity = '{}#{}'.format(user['external_id_provider'], user['external_id'])
+    print_cas_log(
+        f'Finalizing first-time login from external IdP - data updated: user=[{user_identity}]',
+        LogLevel.INFO,
+    )
     response = create_session(response, data=data)
+    print_cas_log(
+        f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
+        LogLevel.INFO,
+    )
     return response
 
 
