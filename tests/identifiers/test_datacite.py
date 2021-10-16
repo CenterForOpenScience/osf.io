@@ -21,7 +21,7 @@ from website.identifiers.clients import DataCiteClient
 class TestDataCiteClient:
 
     @pytest.fixture()
-    def datacite_client(self, registration):
+    def datacite_client(self, registration, mock_datacite):
         return registration.get_doi_client()
 
     @pytest.fixture()

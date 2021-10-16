@@ -51,7 +51,6 @@ class DataCiteClient(AbstractIdentifierClient):
                     'SchemeURI': 'https://grid.ac/institutes/',
                 }
             ],
-            'SchemeURI': 'https://ror.org/',
         })
 
         data = {
