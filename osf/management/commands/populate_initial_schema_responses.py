@@ -97,7 +97,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        with transaction.atomic():
-            populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
-            if dry_run:
-                raise RuntimeError('Dry run, transaction rolled back')
+        populate_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
