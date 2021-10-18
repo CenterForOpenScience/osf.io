@@ -41,14 +41,14 @@ class DataCiteClient(AbstractIdentifierClient):
             'name': 'Open Science Framework',
             'nameIdentifiers': [
                 {
+                    'name': 'Open Science Framework',
                     'nameIdentifier': f'https://ror.org/{settings.OSF_ROR_ID}/',
                     'nameIdentifierScheme': 'ROR',
-                    'SchemeURI': 'https://ror.org/',
                 },
                 {
+                    'name': 'Open Science Framework',
                     'nameIdentifier': f'https://grid.ac/institutes/{settings.OSF_GRID_ID}/',
                     'nameIdentifierScheme': 'GRID',
-                    'SchemeURI': 'https://grid.ac/institutes/',
                 }
             ],
         })

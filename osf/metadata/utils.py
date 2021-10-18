@@ -38,6 +38,9 @@ def datacite_format_affilations(user, data=None):
 
     data['affiliation'] = []
     for affiliated_institution in user.affiliated_institutions.all():
+        data['affiliation'].append({
+            'name': affiliated_institution.name,
+        })
         for domain in affiliated_institution.domains:
             data['affiliation'].append({
                 'name': affiliated_institution.name,
@@ -49,7 +52,7 @@ def datacite_format_affilations(user, data=None):
             data['affiliation'].append(
                 {
                     'name': affiliated_institution.name,
-                    'affiliationIdentifier': f'https://ror.org/{affiliated_institution.ror}/',
+                    'affiliationIdentifier': affiliated_institution.ror,
                     'affiliationIdentifierScheme': 'ROR',
                     'SchemeURI': 'https://ror.org/',
                 }
