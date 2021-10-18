@@ -316,6 +316,6 @@ class TestBulkUploadParserValidationErrors:
         assert not errors
 
     def test_get_excel_column_name(self):
-        columns = [*[[i,string.ascii_uppercase[i]] for i in range(26)], [MAX_EXCEL_COLUMN_NUMBER - 1, 'XFD']]
+        columns = [*[[i, string.ascii_uppercase[i]] for i in range(26)], [MAX_EXCEL_COLUMN_NUMBER - 1, 'XFD']]
         for index, expected_column_name in columns:
             assert get_excel_column_name(index) == expected_column_name

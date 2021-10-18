@@ -141,7 +141,7 @@ class BulkRegistrationUpload():
             raise NotFound(detail=f'Schema with id "{self.schema_id}" was not found')
 
         if self.registration_schema.has_files and self.registration_schema.schema_blocks.filter(
-            block_type='file-input', required=True).exists():
+                block_type='file-input', required=True).exists():
             raise FileUploadNotSupportedError('File uploads are not supported')
 
         self.schema_questions = get_schema_questions_validations(self.registration_schema)
