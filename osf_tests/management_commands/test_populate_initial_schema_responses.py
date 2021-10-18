@@ -7,7 +7,7 @@ from osf_tests.factories import ProjectFactory, RegistrationFactory
 from osf_tests.utils import get_default_test_schema
 
 DEFAULT_RESPONSES = {
-    'q1': 'An answer', 'q2': 'Another answer', 'q3': 'A', 'q4': ['E'], 'q5': '', 'q6': '',
+    'q1': 'An answer', 'q2': 'Another answer', 'q3': 'A', 'q4': ['E'], 'q5': '', 'q6': [],
 }
 
 @pytest.fixture
@@ -98,8 +98,8 @@ class TestPopulateInitialSchemaResponses:
         # donfirm that the delete works even if the schema_response isn't IN_PROGRESS
         test_registration.moderation_state = RegStates.ACCEPTED.db_name
         test_registration.save()
-        count = populate_initial_schema_responses(dry_run=True)
-        assert count == 1
+        with pytest.raises(RuntimeError):
+            populate_initial_schema_responses(dry_run=True)
 
         assert not test_registration.schema_responses.exists()
         assert not SchemaResponse.objects.exists()

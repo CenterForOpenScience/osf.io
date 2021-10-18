@@ -12,7 +12,7 @@ FILE_INPUT_KEY = 'q6'  # File input key from DEFAULT_TEST_SCHEMA
 @pytest.fixture
 def registration():
     registration = RegistrationFactory(schema=get_default_test_schema())
-    registration.registration_responses[FILE_INPUT_KEY] = 'Archiver fixed me like magic'
+    registration.registration_responses[FILE_INPUT_KEY] = ['some', 'updated', 'file', 'metadata']
     registration.save()
     return registration
 
@@ -34,7 +34,9 @@ class TestFixEarlySchemaResponses:
         fixed_count, _ = fix_initial_schema_responses()
         assert fixed_count == 1
 
-        assert schema_response.all_responses == registration.registration_responses
+        schema_response_file_value = schema_response.all_responses[FILE_INPUT_KEY]
+        registration_file_value = registration.registration_responses[FILE_INPUT_KEY]
+        assert schema_response_file_value == registration_file_value
 
     def test_fix_initial_schema_responses_does_not_update_non_file_keys(
             self, registration, schema_response):
@@ -44,7 +46,7 @@ class TestFixEarlySchemaResponses:
 
         fix_initial_schema_responses()
 
-        assert schema_response.all_responses != registration.registration_responses
+        assert schema_response.all_responses['q1'] != registration.registration_responses['q1']
 
     def test_updated_responses_inherit_fixes(self, registration, schema_response):
         schema_response.state = ApprovalStates.APPROVED
@@ -68,7 +70,7 @@ class TestFixEarlySchemaResponses:
         updated_response = SchemaResponse.create_from_previous_response(
             previous_response=schema_response, initiator=schema_response.initiator
         )
-        updated_response.update_responses({FILE_INPUT_KEY: 'I was changed later!'})
+        updated_response.update_responses({FILE_INPUT_KEY: ['intentionall', 'updated', 'value']})
 
         fixed_count, _ = fix_initial_schema_responses()
         assert fixed_count == 1  # initial response
