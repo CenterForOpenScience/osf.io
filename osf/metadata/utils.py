@@ -45,22 +45,15 @@ def datacite_format_affilations(user, data=None):
                 'affiliationIdentifierScheme': 'URL',
             })
 
-    data['affiliation'].append(
-        {
-            'affiliationIdentifier': f'https://ror.org/{settings.OSF_ROR_ID}/',
-            'affiliationIdentifierScheme': 'ROR',
-            'SchemeURI': 'https://ror.org/',
-            'name': 'Open Science Framework'
-        }
-    )
-    data['affiliation'].append(
-        {
-            'affiliationIdentifier': f'https://grid.ac/institutes/{settings.OSF_GRID_ID}/',
-            'affiliationIdentifierScheme': 'GRID',
-            'SchemeURI': 'https://grid.ac/institutes/',
-            'name': 'Open Science Framework'
-        }
-    )
+        if affiliated_institution.ror:
+            data['affiliation'].append(
+                {
+                    'name': affiliated_institution.name,
+                    'affiliationIdentifier': f'https://ror.org/{affiliated_institution.ror}/',
+                    'affiliationIdentifierScheme': 'ROR',
+                    'SchemeURI': 'https://ror.org/',
+                }
+            )
 
     if user.external_identity.get('ORCID'):
         verified = list(user.external_identity['ORCID'].values())[0] == 'VERIFIED'
