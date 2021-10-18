@@ -511,6 +511,7 @@ class CeleryConfig:
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.archive_registrations_on_IA',
+        'osf.management.commands.populate_initial_schema_responses',
         'api.providers.tasks'
     )
 
