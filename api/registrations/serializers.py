@@ -34,7 +34,8 @@ from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node, AbstractNode
 from osf.utils.registrations import strip_registered_meta_comments
-from osf.utils.workflows import ApprovalStates
+# TODO: restore this import after running scripts in https://github.com/CenterForOpenScience/osf.io/pull/9790
+# from osf.utils.workflows import ApprovalStates
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -397,11 +398,13 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        latest_approved_response = obj.schema_responses.filter(
-            reviews_state=ApprovalStates.APPROVED.db_name,
-        ).first()
-        if latest_approved_response is not None:
-            return self.anonymize_fields(obj, latest_approved_response.all_responses)
+        # TODO: restore this logic after running scripts in
+        # https://github.com/CenterForOpenScience/osf.io/pull/9790
+        #  latest_approved_response = obj.schema_responses.filter(
+        #      reviews_state=ApprovalStates.APPROVED.db_name,
+        #  ).first()
+        #  if latest_approved_response is not None:
+        #      return self.anonymize_fields(obj, latest_approved_response.all_responses)
 
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
