@@ -2,24 +2,18 @@
 import csv
 import io
 import pytest
+import string
 
 from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
-from osf_tests.factories import AuthUserFactory, ProjectFactory, SubjectFactory
+from osf_tests.factories import SubjectFactory
 from osf.models import RegistrationSchema, RegistrationProvider
 
 from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
                                      FileUploadNotSupportedError, DuplicateHeadersError,
-                                     Store, LicenseField, ContributorField, METADATA_FIELDS)
-
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-@pytest.fixture()
-def project(user):
-    return ProjectFactory(is_public=True, creator=user)
+                                     get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
+                                     MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
 
 def write_csv(header_row, *rows):
     csv_buffer = io.StringIO()
@@ -96,21 +90,7 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def metadata_headers(self):
-        return [
-            'Title',
-            'Description',
-            'Admin Contributors',
-            'Read-Write Contributors',
-            'Read-Only Contributors',
-            'Bibliographic Contributors',
-            'Category',
-            'Affiliated Institutions',
-            'License',
-            'Subjects',
-            'Tags',
-            'Project GUID',
-            'External ID',
-        ]
+        return METADATA_FIELDS.keys()
 
     @pytest.fixture()
     def header_row(self, question_headers, metadata_headers):
@@ -124,10 +104,6 @@ class TestBulkUploadParserValidationErrors:
     def valid_row(self, subjects_list):
         subjects_text = (';').join(subjects_list)
         return make_row({'Subjects': subjects_text})
-
-    # @pytest.fixture()
-    # def missing_required_metadata(self):
-    #     return [METADATA_FIELDS]
 
     def test_csv_parsed(self, header_row, open_ended_schema, subjects_list, registration_provider, valid_row):
         test_csv = write_csv(header_row, {'Title': open_ended_schema._id}, valid_row)
@@ -299,6 +275,7 @@ class TestBulkUploadParserValidationErrors:
             [' No license;2021;Joan Doe ', {'name': 'No license', 'required_fields': {'year': '2021', 'copyright_holders': ['Joan Doe']}}],
             [' No license ; 2021 ; Joan Doe ', {'name': 'No license', 'required_fields': {'year': '2021', 'copyright_holders': ['Joan Doe']}}],
             ['No license; 2021; John Doe, Joan Doe', {'name': 'No license', 'required_fields': {'year': '2021', 'copyright_holders': ['John Doe', 'Joan Doe']}}],
+            ['No license;2021;John Doe; Joan Doe', {'name': 'No license', 'required_fields': {'year': '2021', 'copyright_holders': ['John Doe; Joan Doe']}}],
         ]
         for license_value, expected_parsed in valid_licenses:
             license = LicenseField(license_value, validations, log_error, store)
@@ -313,10 +290,32 @@ class TestBulkUploadParserValidationErrors:
             ['No license;;Joan M. Doe', validations['error_type']['invalid']],
             ['No license;202;Joan M. Doe', validations['error_type']['invalid']],
             ['No license;2021;', validations['error_type']['invalid']],
-            # ['No license;2021;John Doe; Joan Doe', validations['error_type']['invalid']],
         ]
         for license_value, expected_error_type in invalid_licenses:
             license = LicenseField(license_value, validations, log_error, store)
             license._validate()
             assert errors[-1] == expected_error_type
             assert license._parsed_value is None
+
+    def test_category_field(self):
+        valid_categories = [
+            ['Analysis', 'analysis'], ['Communication', 'communication'], ['Data', 'data'],
+            ['Hypothesis', 'hypothesis'], ['Instrumentation', 'Instrumentation'],
+            ['Methods and Measures', 'methods and measures'], ['Procedure', 'procedure'],
+            ['Project', 'project'], ['Software', 'software'],
+            ['Other', 'other'], ['Uncategorized', ''], ['', ''],
+        ]
+        store = {}
+        validations = METADATA_FIELDS['Category']
+        errors = []
+        log_error = lambda **kwargs: errors.append(kwargs['type'])
+        for category_value, expected_category in valid_categories:
+            category = CategoryField(category_value, validations, log_error, store)
+            category._validate()
+            category._parsed_value == expected_category
+        assert not errors
+
+    def test_get_excel_column_name(self):
+        columns = [*[[i,string.ascii_uppercase[i]] for i in range(26)], [MAX_EXCEL_COLUMN_NUMBER - 1, 'XFD']]
+        for index, expected_column_name in columns:
+            assert get_excel_column_name(index) == expected_column_name
