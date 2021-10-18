@@ -5,7 +5,7 @@ from nose.tools import assert_raises
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, UnsupportedSchemaKeysError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
 from osf.models import schema_response  # import module for mocking purposes
 from osf.models.notifications import NotificationSubscription
@@ -22,10 +22,13 @@ INITIAL_SCHEMA_RESPONSES = {
     'q2': 'Some even longer answer',
     'q3': 'A',
     'q4': ['D', 'G'],
-    'q5': None,
-    'q6': None
+    'q5': '',
+    'q6': []
 }
 
+DEFAULT_SCHEMA_RESPONSE_VALUES = {
+    'q1': '', 'q2': '', 'q3': '', 'q4': [], 'q5': '', 'q6': []
+}
 
 def _ensure_subscriptions(provider):
     '''Make sure a provider's subscriptions exist.
@@ -148,9 +151,7 @@ class TestCreateSchemaResponse():
             self, registration, schema):
         assert not SchemaResponseBlock.objects.exists()
         response = schema_response.SchemaResponse.create_initial_response(
-            initiator=registration.creator,
-            parent=registration,
-            schema=schema
+            initiator=registration.creator, parent=registration,
         )
         # No previous SchemaResponseBlocks means all SchemaResponseBlocks in existence
         # were created by the create_initial_response call
@@ -160,6 +161,14 @@ class TestCreateSchemaResponse():
         # source revision and that response_blocks has all of the created blocks
         assert created_response_blocks == set(response.updated_response_blocks.all())
         assert created_response_blocks == set(response.response_blocks.all())
+
+    def test_create_initial_response_assigns_default_values(self, registration):
+        response = schema_response.SchemaResponse.create_initial_response(
+            initiator=registration.creator, parent=registration
+        )
+
+        for block in response.response_blocks.all():
+            assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
     def test_create_initial_response_does_not_notify(self, registration, admin_user):
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
@@ -350,8 +359,8 @@ class TestUpdateSchemaResponses():
             'q2': 'This is a new response',
             'q3': 'B',
             'q4': ['E'],
-            'q5': [initial_response.initiator.id],
-            'q6': 'SomeFile',
+            'q5': 'Roonil Wazlib, et al',
+            'q6': ['some', 'file', 'metadata'],
         }
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
@@ -374,8 +383,8 @@ class TestUpdateSchemaResponses():
                 'q2': 'This is a new response',
                 'q3': 'B',
                 'q4': ['E'],
-                'q5': [initial_response.initiator.id],
-                'q6': 'SomeFile'
+                'q5': 'Roonil Wazlib, et al',
+                'q6': ['some', 'file', 'metadata'],
             }
         )
         initial_response.refresh_from_db()
@@ -454,8 +463,10 @@ class TestUpdateSchemaResponses():
         assert revised_response.response_blocks.get(schema_key='q4').id == original_q4_block.id
 
     def test_update_with_unsupported_key_raises(self, revised_response):
-        with assert_raises(UnsupportedSchemaKeysError):
+        with assert_raises(SchemaResponseUpdateError) as manager:
             revised_response.update_responses({'q7': 'sneaky'})
+
+        assert manager.exception.unsupported_keys == {'q7'}
 
     @pytest.mark.parametrize(
         'updated_responses',
@@ -467,12 +478,28 @@ class TestUpdateSchemaResponses():
     )
     def test_update_with_unsupported_key_and_supported_keys_writes_and_raises(
             self, updated_responses, revised_response):
-        with assert_raises(UnsupportedSchemaKeysError):
+        with assert_raises(SchemaResponseUpdateError):
             revised_response.update_responses(updated_responses)
 
         revised_response.refresh_from_db()
         assert revised_response.all_responses['q1'] == updated_responses['q1']
         assert revised_response.all_responses['q2'] == updated_responses['q2']
+
+    def test_update_fails_with_invalid_response_types(self, revised_response):
+        with assert_raises(SchemaResponseUpdateError) as manager:
+            revised_response.update_responses(
+                {'q1': 1, 'q2': ['this is a list'], 'q3': 'B', 'q4': 'this is a string'}
+            )
+
+        assert set(manager.exception.invalid_responses.keys()) == {'q1', 'q2', 'q4'}
+
+    def test_update_fails_with_invalid_response_values(self, revised_response):
+        with assert_raises(SchemaResponseUpdateError) as manager:
+            revised_response.update_responses(
+                {'q3': 'Q', 'q4': ['D', 'A']}
+            )
+
+        assert set(manager.exception.invalid_responses.keys()) == {'q3', 'q4'}
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -490,6 +517,19 @@ class TestUpdateSchemaResponses():
         initial_response.approvals_state_machine.set_state(invalid_response_state)
         with assert_raises(SchemaResponseStateError):
             initial_response.update_responses({'q1': 'harrumph'})
+
+    def test_update_file_references(self, initial_response):
+        original_responses = initial_response.all_responses
+        new_responses = dict(
+            original_responses, q1='new value', q6=['some', 'file', 'metadata']
+        )
+
+        initial_response._update_file_references(new_responses)
+
+        updated_responses = initial_response.all_responses
+
+        assert updated_responses['q1'] == original_responses['q1']
+        assert updated_responses['q6'] == new_responses['q6']
 
 
 @pytest.mark.django_db
@@ -591,7 +631,27 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         with assert_raises(PermissionsError):
             initial_response.submit(required_approvers=[admin_user])
 
-    def test_submit_resposne_requires_required_approvers(self, initial_response, admin_user):
+    def test_submit_fails_with_invalid_response_value(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        invalid_block = initial_response.response_blocks.get(schema_key='q1')
+        invalid_block.response = 1
+        invalid_block.save()
+
+        with assert_raises(SchemaResponseStateError):
+            initial_response.submit(user=admin_user, required_approvers=[admin_user])
+
+    def test_submit_fails_with_missing_required_response(self, initial_response, admin_user):
+        initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.save()
+        invalid_block = initial_response.response_blocks.get(schema_key='q1')
+        invalid_block.response = ''
+        invalid_block.save()
+
+        with assert_raises(SchemaResponseStateError):
+            initial_response.submit(user=admin_user, required_approvers=[admin_user])
+
+    def test_submit_response_requires_required_approvers(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
         with assert_raises(ValueError):

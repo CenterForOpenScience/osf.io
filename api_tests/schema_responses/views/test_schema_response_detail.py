@@ -21,8 +21,8 @@ INITIAL_SCHEMA_RESPONSES = {
     'q2': 'Some even longer answer',
     'q3': 'A',
     'q4': ['D', 'G'],
-    'q5': None,
-    'q6': None
+    'q5': '',
+    'q6': []
 }
 
 IMMUTABLE_STATES = [state for state in ApprovalStates if state is not ApprovalStates.IN_PROGRESS]
