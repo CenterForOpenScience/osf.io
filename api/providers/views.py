@@ -64,8 +64,7 @@ from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
 
-from osf.registrations.utils import (BulkRegistrationUpload, FileUploadNotSupportedError,
-                                     InvalidHeadersError, FileUploadNotSupportedError)
+from osf.registrations.utils import BulkRegistrationUpload, FileUploadNotSupportedError, InvalidHeadersError
 
 
 class ProviderMixin:
