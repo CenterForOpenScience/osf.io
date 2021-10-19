@@ -19,6 +19,7 @@ USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthe
 UNAPPROVED_RESPONSE_STATES = [
     state for state in ApprovalStates if state is not ApprovalStates.APPROVED
 ]
+DEFAULT_SCHEMA_RESPONSES = {'q1': 'answer', 'q2': 'answer 2', 'q3': 'A', 'q4': ['D']}
 DEFAULT_REVIEWS_WORKFLOW = ModerationWorkflows.PRE_MODERATION.value
 DEFAULT_SCHEMA_RESPONSE_STATE = ApprovalStates.APPROVED
 DEFAULT_TRIGGER = Triggers.SUBMIT
@@ -56,6 +57,9 @@ def configure_test_preconditions(
     schema_response = registration.schema_responses.last()
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
+    # Set the required fields on the schema response
+    for block in schema_response.response_blocks.all():
+        block.set_response(DEFAULT_SCHEMA_RESPONSES.get(block.schema_key))
 
     auth = configure_user_auth(registration, role)
 

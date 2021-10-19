@@ -191,3 +191,28 @@ class RegistrationBulkCreationRowError(OSFError):
         # The long error message for logging and sentry
         self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
                             'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, error)
+
+
+class SchemaResponseUpdateError(SchemaResponseError):
+    """Raised when assigning an invalid value (or key) to a SchemaResponseBlock."""
+
+    def __init__(self, response, invalid_responses=None, unsupported_keys=None):
+        self.invalid_responses = invalid_responses
+        self.unsupported_keys = unsupported_keys
+
+        invalid_response_message = ''
+        unsupported_keys_message = ''
+        if invalid_responses:
+            invalid_response_message = (
+                f'\nThe following responses had invalid values: {invalid_responses}'
+            )
+        if unsupported_keys:
+            unsupported_keys_message = (
+                f'\nReceived the following resposnes had invalid keys: {unsupported_keys}'
+            )
+        error_message = (
+            f'Error update SchemaResponse with id [{response._id}]:'
+            f'{invalid_response_message}{unsupported_keys_message}'
+        )
+
+        super().__init__(error_message)
