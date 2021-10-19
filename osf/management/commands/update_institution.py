@@ -1,5 +1,3 @@
-import datetime as dt
-
 from django.core.management.base import BaseCommand
 from osf.models import Institution
 from scripts.populate_institutions import INSTITUTIONS
@@ -22,10 +20,10 @@ class Command(BaseCommand):
         super().add_arguments(parser)
         parser.add_argument(
             '--env',
-            dest="env",
+            dest='env',
             type=str,
             required=True,
-            help='The enviriorment, prod, stage, test, whatever.',
+            help='The environment, prod, stage, test, whatever.',
         )
 
     def handle(self, *args, **options):
