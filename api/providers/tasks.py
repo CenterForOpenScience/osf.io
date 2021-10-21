@@ -160,7 +160,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     logger.info(f'[{len(created_objects)}] rows successfully prepared.')
 
     logger.info('Updating job state ...')
-    upload.state = JobState.INITIALIZED.value
+    upload.state = JobState.INITIALIZED
     try:
         upload.save()
         logger.info('Job state updated')
@@ -179,13 +179,13 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
 def monitor_registration_bulk_upload_jobs(dry_run=True):
 
     logger.info('Checking registration bulk upload jobs ...')
-    bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED.value)
+    bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED)
     number_of_jobs = len(bulk_uploads)
     logger.info(f'[{number_of_jobs}] pending jobs found.')
 
     for upload in bulk_uploads:
         logger.info(f'Picked up job [upload={upload.id}, hash={upload.payload_hash}]')
-        upload.state = JobState.PICKED_UP.value
+        upload.state = JobState.PICKED_UP
         bulk_create_registrations.delay(upload.id, dry_run=dry_run)
         if not dry_run:
             upload.save()
@@ -265,19 +265,19 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     row.delete()
 
     if len(draft_error_list) == initial_row_count:
-        upload.state = JobState.DONE_ERROR.value
+        upload.state = JobState.DONE_ERROR
         message = f'All registration rows failed during bulk creation. ' \
                   f'Upload ID: [{upload_id}], Draft Errors: [{draft_error_list}]'
         sentry.log_message(message)
         logger.error(message)
     elif draft_error_list or approval_error_list:
-        upload.state = JobState.DONE_PARTIAL.value
+        upload.state = JobState.DONE_PARTIAL
         message = f'Some registration rows failed during bulk creation. Upload ID: [{upload_id}]; ' \
                   f'Draft Errors: [{draft_error_list}]; Approval Errors: [{approval_error_list}]'
         sentry.log_message(message)
         logger.warning(message)
     else:
-        upload.state = JobState.DONE_FULL.value
+        upload.state = JobState.DONE_FULL
         logger.info(f'All registration rows succeeded for bulk creation. Upload ID: [{upload_id}].')
     # Reverse the error lists so that users see failed rows in the same order as the original CSV
     draft_error_list.reverse()
@@ -285,7 +285,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
     if not dry_run:
         upload.save()
         logger.info('Sending emails to initiator/uploader ...')
-        if upload.state == JobState.DONE_FULL.value:
+        if upload.state == JobState.DONE_FULL:
             mails.send_mail(
                 to_addr=initiator.username,
                 mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
@@ -294,7 +294,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                 count=initial_row_count,
                 pending_submissions_url=get_provider_submission_url(provider),
             )
-        elif upload.state == JobState.DONE_PARTIAL.value:
+        elif upload.state == JobState.DONE_PARTIAL:
             mails.send_mail(
                 to_addr=initiator.username,
                 mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
@@ -308,7 +308,7 @@ def bulk_create_registrations(upload_id, dry_run=True):
                 pending_submissions_url=get_provider_submission_url(provider),
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
-        elif upload.state == JobState.DONE_ERROR.value:
+        elif upload.state == JobState.DONE_ERROR:
             mails.send_mail(
                 to_addr=initiator.username,
                 mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
