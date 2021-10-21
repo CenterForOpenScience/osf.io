@@ -27,7 +27,7 @@ def make_successful_response_with_tos_consent(user):
         user=user._id,
         attributes={
             'accessToken': fake.md5(),
-            'termsOfServiceChecked': True
+            'termsOfServiceChecked': 'true'
         }
     )
 
