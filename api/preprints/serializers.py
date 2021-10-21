@@ -368,6 +368,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'article_doi' in validated_data:
+            doi = preprint.get_doi_client().build_doi(preprint)
+            if validated_data['article_doi'] == doi:
+                raise exceptions.ValidationError(
+                    detail=f'The `article_doi` "{doi}" is already associated with this'
+                    f' preprint please enter a peer-reviewed publication\'s DOI',
+                )
+
             preprint.article_doi = validated_data['article_doi']
             save_preprint = True
 

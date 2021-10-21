@@ -246,6 +246,10 @@ class TestPreprintDelete:
 @pytest.mark.enable_enqueue_task
 class TestPreprintUpdate:
 
+    @pytest.fixture(autouse=True)
+    def mock_crossref(self, mock_crossref):
+        yield
+
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
@@ -526,21 +530,29 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date == date
 
-    def test_update_article_doi(self, app, user, preprint, url):
-        new_doi = '10.1234/ASDFASDF'
-        assert preprint.article_doi != new_doi
+    def test_update_article_doi(self, app, user, preprint, url, mock_crossref):
         update_payload = build_preprint_update_payload(
-            preprint._id, attributes={'doi': new_doi})
-
+            preprint._id,
+            attributes={'doi': '10.1234/test'}
+        )
         res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
 
+        preprint_doi = preprint.get_doi_client().build_doi(preprint)
+        update_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={'doi': preprint_doi}
+        )
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        error_data = res.json['errors']
+        assert ' is already associated with this preprint' in error_data[0]['detail']
+
         preprint.reload()
-        assert preprint.article_doi == new_doi
+        assert preprint.article_doi == '10.1234/test'
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == 'https://doi.org/{}'.format(
-            new_doi)
+        assert preprint_detail['links']['doi'] == f'https://doi.org/10.1234/test'
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
