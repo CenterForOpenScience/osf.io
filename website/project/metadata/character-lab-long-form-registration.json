@@ -1,7 +1,7 @@
 {
 	"atomicSchema": true,
 	"name": "Character Lab Long-Form Registration",
-	"version": 2,
+	"version": 3,
 	"description": null,
 	"blocks": [{
 		"block_type": "page-heading",
@@ -10,15 +10,15 @@
 		"block_type": "question-label",
 		"display_text": "Study description"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q1"
+		"registration_response_key": "Q1",
+		"block_type": "long-text-input"
 	}, {
-		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. To learn more, go to impactgenome.org",
+		"registration_response_key": "Q2",
 		"block_type": "question-label",
-		"display_text": "Expected outcomes"
+		"display_text": "Expected outcomes",
+		"example_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license."
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q2"
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Access to Trustworthy Personal/Professional Networks"
@@ -54,10 +54,10 @@
 		"display_text": "High School Completion"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Improved Academic Attitudes, Beliefs, and Motiviations"
+		"display_text": "Improved Academic Attitudes, Beliefs, and Motivations"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Improved Academic Performance, Attendance and Persistence in School"
+		"display_text": "Improved Academic Performance"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Improved Academic Skills"
@@ -92,14 +92,14 @@
 		"block_type": "question-label",
 		"display_text": "Primary outcomes"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q3"
+		"registration_response_key": "Q3",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Character strengths"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q4"
+		"registration_response_key": "Q4",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Creativity"
@@ -108,7 +108,7 @@
 		"display_text": "Curiosity"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Decision making"
+		"display_text": "Decision Making"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Emotional Intelligence"
@@ -132,7 +132,7 @@
 		"display_text": "Intellectual Humility"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Interpersonal relationships"
+		"display_text": "Interpersonal Relationships"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Judgment"
@@ -162,10 +162,10 @@
 		"display_text": "Self-Efficacy"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Social identity"
+		"display_text": "Social Identity"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Social intelligence"
+		"display_text": "Social Intelligence"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Other"
@@ -173,8 +173,8 @@
 		"block_type": "question-label",
 		"display_text": "Number of conditions"
 	}, {
-		"block_type": "single-select-input",
-		"registration_response_key": "Q5"
+		"registration_response_key": "Q5",
+		"block_type": "single-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "1"
@@ -191,8 +191,8 @@
 		"block_type": "question-label",
 		"display_text": "Total number of students"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q6"
+		"registration_response_key": "Q6",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "page-heading",
 		"display_text": "Sample"
@@ -200,47 +200,47 @@
 		"block_type": "question-label",
 		"display_text": "Study Grade Assignment"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q7"
+		"registration_response_key": "Q7",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "6th grade"
+		"display_text": "6th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "7th grade"
+		"display_text": "7th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "8th grade"
+		"display_text": "8th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "9th grade"
+		"display_text": "9th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "10th grade"
+		"display_text": "10th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "11th grade"
+		"display_text": "11th Grade"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "12th grade"
+		"display_text": "12th Grade"
 	}, {
 		"block_type": "question-label",
 		"display_text": "School Stratum Assignment"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q8"
+		"registration_response_key": "Q8",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Stratum A: Mostly hispanic, high # of students receiving free/reduced school lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the US."
+		"display_text": "Stratum A: Mostly Hispanic, high percentage of students receiving free/reduced-price lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the United States."
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the US."
+		"display_text": "Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the United States."
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the US."
+		"display_text": "Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the United States."
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Stratum D: Mostly Black, high # of students receiving free/reduced lunch, often urban schools. These schools represent 12% of all middle and high schools in the US."
+		"display_text": "Stratum D: Mostly Black, high percentage of students receiving free/reduced-price lunch, often urban schools. These schools represent 12% of all middle and high schools in the United States."
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Stratum E: Mostly White, high socioeconomic status, suburban schools. These schools represent 21% of all middle and high schools in the United States."
@@ -251,8 +251,8 @@
 		"block_type": "question-label",
 		"display_text": "Is this a pilot?"
 	}, {
-		"block_type": "single-select-input",
-		"registration_response_key": "Q9"
+		"registration_response_key": "Q9",
+		"block_type": "single-input-option"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
@@ -263,8 +263,7 @@
 		"block_type": "question-label",
 		"display_text": "Study design"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q10"
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Correlational, Cross-Sectional"
@@ -293,20 +292,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q11"
+		"registration_response_key": "Q11",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q12"
+		"registration_response_key": "Q12",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q13"
+		"registration_response_key": "Q13",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -315,7 +314,7 @@
 		"display_text": "Co-Investigator"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Post doc"
+		"display_text": "Post Doc"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist"
@@ -338,20 +337,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q14"
+		"registration_response_key": "Q14",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q15"
+		"registration_response_key": "Q15",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q16"
+		"registration_response_key": "Q16",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -360,7 +359,7 @@
 		"display_text": "Co-Investigator"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Post doc"
+		"display_text": "Post Doc"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist"
@@ -383,20 +382,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q17"
+		"registration_response_key": "Q17",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q18"
+		"registration_response_key": "Q18",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q19"
+		"registration_response_key": "Q19",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -405,7 +404,7 @@
 		"display_text": "Co-Investigator"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Post doc"
+		"display_text": "Post Doc"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist"
@@ -428,20 +427,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q20"
+		"registration_response_key": "Q20",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q21"
+		"registration_response_key": "Q21",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q22"
+		"registration_response_key": "Q22",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -450,7 +449,7 @@
 		"display_text": "Co-Investigator"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Post doc"
+		"display_text": "Post Doc"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist"
@@ -473,20 +472,20 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q23"
+		"registration_response_key": "Q23",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"block_type": "short-text-input",
-		"registration_response_key": "Q24"
+		"registration_response_key": "Q24",
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q25"
+		"registration_response_key": "Q25",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Principal Investigator"
@@ -495,7 +494,7 @@
 		"display_text": "Co-Investigator"
 	}, {
 		"block_type": "select-input-option",
-		"display_text": "Post doc"
+		"display_text": "Post Doc"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Research Scientist"
@@ -518,8 +517,8 @@
 		"block_type": "question-label",
 		"display_text": "Have you piloted this study?"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q26"
+		"registration_response_key": "Q26",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
@@ -530,8 +529,8 @@
 		"block_type": "question-label",
 		"display_text": "Did you pilot this study on the Character Lab Research Network?"
 	}, {
-		"block_type": "multi-select-input",
-		"registration_response_key": "Q27"
+		"registration_response_key": "Q27",
+		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
@@ -540,63 +539,63 @@
 		"display_text": "No"
 	}, {
 		"block_type": "question-label",
-		"display_text": "Piloting experience"
+		"display_text": "Piloting Experience"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q28"
-	}, {
-		"block_type": "question-label",
-		"display_text": "Pilot goals"
-	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q29"
+		"registration_response_key": "Q28",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
-		"display_text": "Pilot hypotheses"
+		"display_text": "Pilot Goals"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q30"
+		"registration_response_key": "Q29",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Pilot Hypotheses"
+	}, {
+		"registration_response_key": "Q30",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "How did you use feedback from a CLIPster/SRL while developing your pilot?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q31"
+		"registration_response_key": "Q31",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "How did your pilot data line up with your hypotheses?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q32"
+		"registration_response_key": "Q32",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Have your hypotheses about this study changed at all following the pilot? If so, how?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q33"
+		"registration_response_key": "Q33",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Did anything emerge in this pilot data that you weren't expecting?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q34"
+		"registration_response_key": "Q34",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "What concerns you the most about this pilot data?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q35"
+		"registration_response_key": "Q35",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "What are your three main takeaways from this pilot?"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q36"
+		"registration_response_key": "Q36",
+		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
-		"display_text": "Changes based on piloting"
+		"display_text": "Changes Based On Piloting"
 	}, {
-		"block_type": "long-text-input",
-		"registration_response_key": "Q37"
+		"registration_response_key": "Q37",
+		"block_type": "long-text-input"
 	}]
 }
