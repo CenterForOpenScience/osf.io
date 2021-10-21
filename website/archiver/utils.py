@@ -343,5 +343,7 @@ def migrate_file_metadata(dst, schema):
 
     dst.registered_meta[schema._id] = metadata
     dst.registration_responses = dst.flatten_registration_metadata()
+    if dst.root_id == dst.id:  # Also fix the initial SchemaResponse for root registrations
+        dst.schema_responses.get()._update_file_references(dst.registration_responses)
 
     dst.save()

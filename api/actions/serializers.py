@@ -113,7 +113,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = ser.CharField(max_length=65535, required=False)
+    comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
@@ -347,6 +347,7 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         previous_action = target.actions.last()
+        old_state = target.reviews_state
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
                 required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
@@ -370,10 +371,10 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
             )
 
         new_action = target.actions.last()
-        if new_action is previous_action or new_action.trigger != trigger:
+        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
             raise Conflict(
                 f'Trigger "{trigger}" is not supported for the target SchemaResponse '
-                f'with id [{target._id}] in state "{target.reviews_state}"',
+                f'with id [{target._id}] in state "{old_state}"',
             )
 
         return target.actions.last()

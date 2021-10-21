@@ -147,6 +147,27 @@ class FileNodeRelationshipField(RelationshipField):
         return super(FileNodeRelationshipField, self).to_representation(value)
 
 
+def disambiguate_files_related_view(node):
+    if isinstance(node, Preprint):
+        return 'preprints:preprint-files'
+    if node.type == 'osf.draftnode':
+        return 'draft_nodes:node-files'
+    if node.type == 'osf.node':
+        return 'nodes:node-files'
+    if node.type == 'osf.registration':
+        return 'registrations:registration-files'
+
+
+def disambiguate_files_related_view_kwargs(filenode):
+    if isinstance(filenode.target, Preprint):
+        return {'preprint_id': '<target._id>'}
+    else:
+        return {
+            'node_id': '<target._id>',
+            'path': '<path>',
+            'provider': '<provider>',
+        }
+
 class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -190,9 +211,9 @@ class BaseFileSerializer(JSONAPISerializer):
         help_text='The folder in which this file exists',
     )
     files = NodeFileHyperLinkField(
-        related_view=lambda node: 'draft_nodes:node-files' if getattr(node, 'type', False) == 'osf.draftnode' else 'nodes:node-files',
+        related_view=lambda node: disambiguate_files_related_view(node),
         view_lambda_argument='target',
-        related_view_kwargs={'node_id': '<target._id>', 'path': '<path>', 'provider': '<provider>'},
+        related_view_kwargs=lambda filenode: disambiguate_files_related_view_kwargs(filenode),
         kind='folder',
     )
     versions = NodeFileHyperLinkField(

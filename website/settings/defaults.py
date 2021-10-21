@@ -511,6 +511,7 @@ class CeleryConfig:
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.archive_registrations_on_IA',
+        'osf.management.commands.populate_initial_schema_responses',
         'api.providers.tasks'
     )
 
@@ -2076,3 +2077,5 @@ IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
 
 PRODUCT_OWNER_EMAIL_ADDRESS = {}
+
+CAS_LOG_LEVEL = 3  # ERROR

@@ -19,6 +19,7 @@ USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthe
 UNAPPROVED_RESPONSE_STATES = [
     state for state in ApprovalStates if state is not ApprovalStates.APPROVED
 ]
+DEFAULT_SCHEMA_RESPONSES = {'q1': 'answer', 'q2': 'answer 2', 'q3': 'A', 'q4': ['D']}
 DEFAULT_REVIEWS_WORKFLOW = ModerationWorkflows.PRE_MODERATION.value
 DEFAULT_SCHEMA_RESPONSE_STATE = ApprovalStates.APPROVED
 DEFAULT_TRIGGER = Triggers.SUBMIT
@@ -56,6 +57,9 @@ def configure_test_preconditions(
     schema_response = registration.schema_responses.last()
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
+    # Set the required fields on the schema response
+    for block in schema_response.response_blocks.all():
+        block.set_response(DEFAULT_SCHEMA_RESPONSES.get(block.schema_key))
 
     auth = configure_user_auth(registration, role)
 
@@ -593,6 +597,39 @@ class TestSchemaResponseActionListPOSTBehavior:
         # to a single trigger on the model
         expected_code = 403 if schema_response_state is ApprovalStates.UNAPPROVED else 409
         assert resp.status_code == expected_code
+
+    def test_POST__no_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        del(payload['data']['attributes']['comment'])
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
+
+    def test_POST__empty_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        payload['data']['attributes']['comment'] = ''
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
+
+    def test_POST__null_comment(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS
+        )
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        payload['data']['attributes']['comment'] = None
+
+        resp = app.post_json_api(make_api_url(schema_response), payload, auth=auth)
+        assert resp.json['data']['attributes']['comment'] == ''
+        assert schema_response.actions.first().comment == ''
 
 
 @pytest.mark.django_db

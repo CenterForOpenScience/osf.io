@@ -1,4 +1,12 @@
-from django.db.models import BooleanField, Exists, OuterRef, Subquery
+from django.db.models import (
+    BooleanField,
+    Case,
+    Exists,
+    OuterRef,
+    Subquery,
+    When,
+    Value,
+)
 from osf.models import Contributor, Registration, SchemaResponse
 from osf.utils.workflows import RegistrationModerationStates
 
@@ -10,6 +18,13 @@ PARENT_IS_PUBLIC = Subquery(
     ).exclude(
         moderation_state=RegistrationModerationStates.WITHDRAWN.db_name,
     ).values('is_public')[:1],
+    output_field=BooleanField(),
+)
+
+
+IS_ORIGINAL_RESPONSE = Case(
+    When(previous_response__isnull=True, then=Value(True)),
+    default=Value(False),
     output_field=BooleanField(),
 )
 

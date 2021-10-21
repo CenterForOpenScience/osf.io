@@ -68,6 +68,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
             (Q(parent_is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(user),
+            is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
 
     def get_parser_context(self, http_request):
@@ -107,6 +108,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
             _id=self.kwargs['schema_response_id'],
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(user),
+            is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
 
         try:
@@ -138,7 +140,7 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     serializer_class = SchemaResponseActionSerializer
 
     def get_queryset(self):
-        return SchemaResponseAction.objects.all()  # TODO: What to do here?
+        return self.get_object().actions.all().order_by('created')
 
     def get_object(self):
         return get_object_or_error(

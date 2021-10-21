@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -165,12 +165,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             registration_response_key__isnull=False
         )
         for source_block in question_blocks:
-            new_response_block = SchemaResponseBlock.objects.create(
+            new_response_block = SchemaResponseBlock.create(
                 source_schema_response=new_response,
                 source_schema_block=source_block,
-                schema_key=source_block.registration_response_key,
             )
-            new_response_block.save()
             new_response.response_blocks.add(new_response_block)
 
         return new_response
@@ -237,6 +235,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # no need for deepcopy, since we aren't mutating dictionary values
         updated_responses = dict(updated_responses)
 
+        invalid_responses = {}
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
@@ -244,12 +243,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 continue
 
             if not self._response_reverted(block, latest_response):
-                self._update_response(block, latest_response)
+                try:
+                    self._update_response(block, latest_response)
+                except SchemaResponseUpdateError as e:
+                    invalid_responses.update(e.invalid_responses)
 
-        if updated_responses:
-            raise ValueError(
-                'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
+        if invalid_responses or updated_responses:
+            raise SchemaResponseUpdateError(
+                response=self,
+                invalid_responses=invalid_responses,
+                unsupported_keys=updated_responses.keys()
             )
 
     def _response_reverted(self, current_block, latest_response):
@@ -271,20 +274,40 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Create/update a SchemaResponseBlock with a new answer.'''
         # Update the block in-place if it's already part of this revision
         if current_block.source_schema_response == self:
-            current_block.response = latest_response
-            current_block.save()
+            current_block.set_response(latest_response)
         # Otherwise, create a new block and swap out the entries in response_blocks
         else:
-            revised_block = SchemaResponseBlock.objects.create(
+            revised_block = SchemaResponseBlock.create(
                 source_schema_response=self,
                 source_schema_block=current_block.source_schema_block,
-                schema_key=current_block.schema_key,
-                response=latest_response
+                response_value=latest_response
             )
 
             revised_block.save()
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
+
+    def _update_file_references(self, updated_responses, file_block_ids=None, save=True):
+        '''Update refernces in file-input responses post-archival for initial SchemaResponses.'''
+        if self.previous_response:
+            raise PreviousSchemaResponseError(
+                'Updating of file references only supported for initial responses'
+            )
+
+        if file_block_ids is None:
+            file_block_ids = self.schema.schema_blocks.filter(
+                block_type='file-input'
+            ).values_list('id', flat=True)
+        if not file_block_ids:
+            return
+
+        file_response_blocks = self.response_blocks.filter(
+            source_schema_block_id__in=file_block_ids
+        )
+        for block in file_response_blocks:
+            block.response = updated_responses[block.schema_key]
+            if save:
+                block.save()
 
     def delete(self, *args, **kwargs):
         if self.state is not ApprovalStates.IN_PROGRESS:
@@ -328,6 +351,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             raise PermissionsError(
                 f'User {user} is not an admin contributor on parent resource {self.parent} '
                 f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
+            )
+
+        # Only check newly udpated keys, as old keys have previously passed validation
+        invalid_response_keys = [
+            block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
+        ]
+        if invalid_response_keys:
+            raise SchemaResponseStateError(
+                f'SchemaResponse with id [{self._id}] has invalid responses for the following keys '
+                f'and cannot be submitted: {invalid_response_keys}'
             )
 
     def _validate_approve_trigger(self, user):
