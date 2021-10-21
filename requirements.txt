@@ -77,7 +77,7 @@ pyjwe==1.0.0
 # Building wheel for cryptography 3.4.0 requires a Rust version incompatible with Docker base image.
 # Required by pyjwe and ndg-httpsclient
 cryptography==3.3.2
-jsonschema==2.6.0
+jsonschema==3.1.1
 django-guardian==1.4.9
 
 # Admin requirements
@@ -87,7 +87,7 @@ django-password-reset==1.0
 sendgrid-django==2.0.0
 
 # Analytics requirements
-keen==0.5.1
+keen==0.7.0
 maxminddb-geolite2==2018.308
 
 # OSF models
@@ -109,7 +109,8 @@ transitions==0.8.2
 enum34==1.1.6
 
 # identifiers
-datacite==1.0.1
+datacite==1.1.2
+
 
 # Metrics
 django-elasticsearch-metrics==5.0.0

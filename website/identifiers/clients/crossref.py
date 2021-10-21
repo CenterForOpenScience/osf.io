@@ -11,7 +11,6 @@ from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
-from lxml import etree
 
 logger = logging.getLogger(__name__)
 
@@ -196,8 +195,8 @@ class CrossRefClient(AbstractIdentifierClient):
                         institution.ror,
                         type='ror'
                     ),
-                )
-            for institution in contributor.affiliated_institutions.all()]
+                ) for institution in contributor.affiliated_institutions.all()
+            ]
 
             person.append(element.affiliations(*affiliations))
 

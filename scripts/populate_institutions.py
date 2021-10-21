@@ -108,6 +108,7 @@ INSTITUTIONS = {
             {
                 '_id': 'albion',
                 'name': 'Albion College',
+                'ror': 'https://ror.org/05nnk3913',
                 'description': 'This site is provided as a partnership between Albion College\'s Office of the President, the Carnegie Foundation for the Advancement of Teaching, and the U.S. National Advisory Committee for the Carnegie Elective Classification for Community Engagement. Projects must abide by <a href="https://web.albion.edu/student-life/information-technology/support/it-policies">Albion\'s Information Security Policies</a> | <a href="https://web.albion.edu/student-life/information-technology/about-it">Albion Information Technology</a>. Learn more about <a href="https://public-purpose.org/research/access-for-researchers/">the Public Purpose Institute and its commitment to data access</a>.',
                 'banner_name': 'albion-banner.png',
                 'logo_name': 'albion-shield.png',
@@ -122,6 +123,7 @@ INSTITUTIONS = {
             {
                 '_id': 'asu',
                 'name': 'Arizona State University',
+                'ror': 'https://ror.org/03efmqc40',
                 'description': '<a href="https://asu.edu">Arizona State University</a>',
                 'banner_name': 'asu-banner.png',
                 'logo_name': 'asu-shield.png',
@@ -136,6 +138,7 @@ INSTITUTIONS = {
             {
                 '_id': 'brown',
                 'name': 'Brown University',
+                'ror': 'https://ror.org/05gq02987',
                 'description': 'A Research Project Management and Publication Tool for the Brown University Research Community in partnership with <a href="https://library.brown.edu/info/data_management">Brown University Library Research Data Management Services</a> | <a href="https://www.brown.edu/research/home">Research at Brown</a> | <a href="https://it.brown.edu/computing-policies/policy-handling-brown-restricted-information">Brown Restricted Information Handling Policy</a> | <a href="https://www.brown.edu/about/administration/provost/policies/privacy">Research Privacy Policy</a>',
                 'banner_name': 'brown-banner.png',
                 'logo_name': 'brown-shield.png',
@@ -148,6 +151,7 @@ INSTITUTIONS = {
             {
                 '_id': 'bt',
                 'name': 'Boys Town',
+                'ror': 'https://ror.org/03ebg0v16',
                 'description': 'A research data service provided by the BTNRH Research Technology Core. Please do not use this service to store or transfer personally identifiable information or personal health information. For assistance please contact <a href="mailto:Christine.Hammans@boystown.org">Christine.Hammans@boystown.org</a>.',
                 'banner_name': 'bt-banner.png',
                 'logo_name': 'bt-shield.png',
@@ -160,6 +164,7 @@ INSTITUTIONS = {
             {
                 '_id': 'bu',
                 'name': 'Boston University',
+                'ror': 'https://ror.org/05qwgg493',
                 'description': 'A Research Project Management Tool for BU',
                 'banner_name': 'bu-banner.png',
                 'logo_name': 'bu-shield.png',
@@ -172,6 +177,7 @@ INSTITUTIONS = {
             {
                 '_id': 'busara',
                 'name': 'Busara Center for Behavioral Economics',
+                'ror': 'https://ror.org/00jy1b467',
                 'description': 'The <a href="http://www.busaracenter.org/">Busara Center</a> for Behavioral Economics',
                 'banner_name': 'busara-banner.png',
                 'logo_name': 'busara-shield.png',
@@ -184,6 +190,7 @@ INSTITUTIONS = {
             {
                 '_id': 'callutheran',
                 'name': 'California Lutheran University',
+                'ror': 'https://ror.org/05qpen692',
                 'description': '',
                 'banner_name': 'callutheran-banner.png',
                 'logo_name': 'callutheran-shield.png',
@@ -208,6 +215,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian',
+                'ror': 'https://ror.org/03c3r2d17',
                 'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
@@ -232,6 +240,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cmu',
                 'name': 'Carnegie Mellon University',
+                'ror': 'https://ror.org/05x2bcf33',
                 'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
                                'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
                                'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
@@ -248,6 +257,7 @@ INSTITUTIONS = {
             {
                 '_id': 'colorado',
                 'name': 'University of Colorado Boulder',
+                'ror': 'https://ror.org/02ttsq026',
                 'description': 'This service is supported by the Center for Research Data and Digital Scholarship, which is led by <a href="https://www.rc.colorado.edu/">Research Computing</a> and the <a href="http://www.colorado.edu/libraries/">University Libraries</a>.',
                 'banner_name': 'colorado-banner.png',
                 'logo_name': 'colorado-shield.png',
@@ -260,6 +270,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cord',
                 'name': 'Concordia College',
+                'ror': 'https://ror.org/03nvtfm43',
                 'description': '<a href="https://www.concordiacollege.edu/">Concordia College</a> | <a href="https://www.concordiacollege.edu/academics/library/">Carl B. Ylvisaker Library</a> | <a href="https://cord.libguides.com/?b=s">Research Guides</a>',
                 'banner_name': 'cord-banner.png',
                 'logo_name': 'cord-shield.png',
@@ -272,6 +283,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cornell',
                 'name': 'Cornell University',
+                'ror': 'https://ror.org/05bnh6r87',
                 'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPPA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
                 'banner_name': 'cornell-banner.png',
                 'logo_name': 'cornell-shield.png',
@@ -284,6 +296,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science',
+                'ror': 'https://ror.org/05d5mza29',
                 'description': 'COS is a non-profit technology company providing free and open services to increase inclusivity and transparency of research. Find out more at <a href="https://cos.io">cos.io</a>.',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
@@ -296,6 +309,7 @@ INSTITUTIONS = {
             {
                 '_id': 'csic',
                 'name': 'Spanish National Research Council',
+                'ror': 'https://ror.org/02gfc7t72',
                 'description': 'Related resources are in the institutional intranet web site only.',
                 'banner_name': 'csic-banner.png',
                 'logo_name': 'csic-shield.png',
@@ -308,6 +322,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cwru',
                 'name': 'Case Western Reserve University',
+                'ror': 'https://ror.org/051fd9666',
                 'description': 'This site is provided as a partnership of the <a href="http://library.case.edu/ksl/">Kelvin Smith Library</a>, <a href="https://case.edu/utech/">University Technology</a>, and the <a href="https://case.edu/research/">Office of Research and Technology Management</a> at <a href="https://case.edu/">Case Western Reserve University</a>. Projects must abide by the <a href="https://case.edu/utech/departments/information-security/policies">University Information Security Policies</a> and <a href="https://case.edu/compliance/about/privacy-management/privacy-related-policies-cwru">Data Privacy Policies</a>.',
                 'banner_name': 'cwru-banner.png',
                 'logo_name': 'cwru-shield.png',
@@ -320,6 +335,7 @@ INSTITUTIONS = {
             {
                 '_id': 'duke',
                 'name': 'Duke University',
+                'ror': 'https://ror.org/00py81415',
                 'description': 'A research data service provided by <a href="https://library.duke.edu/data/data-management">Duke Libraries</a>.',
                 'banner_name': 'duke-banner.png',
                 'logo_name': 'duke-shield.png',
@@ -332,6 +348,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ecu',
                 'name': 'East Carolina University',
+                'ror': 'https://ror.org/01vx35703',
                 'description': 'In partnership with Academic Library Services and Laupus Health Sciences Library. Contact <a href="mailto:scholarlycomm@ecu.edu">scholarlycomm@ecu.edu</a> for more information. Researchers are individually responsible for abiding by university policies. ',
                 'banner_name': 'ecu-banner.png',
                 'logo_name': 'ecu-shield.png',
@@ -344,6 +361,7 @@ INSTITUTIONS = {
             {
                 '_id': 'esip',
                 'name': 'Federation of Earth Science Information Partners (ESIP)',
+                'ror': 'https://ror.org/03q5xa910',
                 'description': '<a href="http://www.esipfed.org/">ESIP\'s</a> mission is to support the networking and data dissemination needs of our members and the global Earth science data community by linking the functional sectors of observation, research, application, education and use of Earth science.',
                 'banner_name': 'esip-banner.png',
                 'logo_name': 'esip-shield.png',
@@ -356,6 +374,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ferris',
                 'name': 'Ferris State University',
+                'ror': 'https://ror.org/00cg1ev32',
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
                 'banner_name': 'ferris-banner.png',
                 'logo_name': 'ferris-shield.png',
@@ -368,6 +387,7 @@ INSTITUTIONS = {
             {
                 '_id': 'fsu',
                 'name': 'Florida State University',
+                'ror': 'https://ror.org/05g3dte14',
                 'description': 'This service is supported by the <a href="https://www.lib.fsu.edu/">FSU Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). FSU\'s <a href="http://regulations.fsu.edu/sites/g/files/upcbnu486/files/policies/research/FSU%20Policy%207A-26.pdf">Research Data Management Policy</a> applies. For assistance please contact the FSU Libraries <a href="mailto:lib-datamgmt@fsu.edu">Research Data Management Program</a>.',
                 'banner_name': 'fsu-banner.png',
                 'logo_name': 'fsu-shield.png',
@@ -380,6 +400,7 @@ INSTITUTIONS = {
             {
                 '_id': 'gatech',
                 'name': 'Georgia Institute of Technology',
+                'ror': 'https://ror.org/01zkghx44',
                 'description': 'This site is provided by the Georgia Tech Library.',
                 'banner_name': 'gatech-banner.png',
                 'logo_name': 'gatech-shield.png',
@@ -392,6 +413,7 @@ INSTITUTIONS = {
             {
                 '_id': 'gmu',
                 'name': 'George Mason University',
+                'ror': 'https://ror.org/02jqj7156',
                 'description': 'This service is supported on campus by <a href="https://oria.gmu.edu/">Research Development, Integrity and Assurance</a> (RDIA), <a href="https://library.gmu.edu/"> The Office of Research Computing</a> (ORC), and <a href="https://orc.gmu.edu/">University Libraries</a>. Users should abide by all requirements of Mason\'s <a href="https://universitypolicy.gmu.edu/policies/data-stewardship/">Data Stewardship Policy</a> including not using this service to store or transfer highly sensitive data or any controlled unclassified information. For assistance please contact <a href="mailto:datahelp@gmu.edu">Wendy Mann</a>, Director of Mason\'s Digital Scholarship Center.',
                 'banner_name': 'gmu-banner.png',
                 'logo_name': 'gmu-shield.png',
@@ -404,6 +426,7 @@ INSTITUTIONS = {
             {
                 '_id': 'gwu',
                 'name': 'The George Washington University',
+                'ror': 'https://ror.org/00y4zzh67',
                 'description': 'This service is supported by the <a href="https://library.gwu.edu/">GW Libraries</a> for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. Always abide by the <a href="https://compliance.gwu.edu/research-policies">GW Research Policies</a>. Contact the <a href="https://libguides.gwu.edu/prf.php?account_id=151788">GW Data Services Librarian</a> for support.',
                 'banner_name': 'gwu-banner.png',
                 'logo_name': 'gwu-shield.png',
@@ -416,6 +439,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ibhri',
                 'name': 'Integrative Behavioral Health Research Institute',
+                'ror': 'https://ror.org/05973ve37',
                 'description': '<a href="https://www.ibhri.org/">The Integrative Behavioral Health Research Institute</a>',
                 'banner_name': 'ibhri-banner.png',
                 'logo_name': 'ibhri-shield.png',
@@ -428,6 +452,7 @@ INSTITUTIONS = {
             {
                 '_id': 'icarehb',
                 'name': 'ICArEHB',
+                'ror': 'https://ror.org/02brfgh04',
                 'description': '<a href="https://www.icarehb.com">Interdisciplinary Center for Archaeology and Evolution of Human Behaviour</a>',
                 'banner_name': 'icarehb-banner.png',
                 'logo_name': 'icarehb-shield.png',
@@ -440,6 +465,7 @@ INSTITUTIONS = {
             {
                 '_id': 'icer',
                 'name': 'Institute for Clinical and Economic Review',
+                'ror': 'https://ror.org/011ypgb65',
                 'description': '',
                 'banner_name': 'icer-banner.png',
                 'logo_name': 'icer-shield.png',
@@ -452,6 +478,7 @@ INSTITUTIONS = {
             {
                 '_id': 'igdore',
                 'name': 'Institute for Globally Distributed Open Research and Education (IGDORE)',
+                'ror': 'https://ror.org/01643wd06',
                 'description': 'Institute for Globally Distributed Open Research and Education '
                                '(IGDORE) is an independent research institute dedicated to improve '
                                'the quality of science, science education, and quality of life for '
@@ -466,7 +493,8 @@ INSTITUTIONS = {
             },
             {
                 '_id': 'iit',
-                'name': 'Illinois Institute of Technology ',
+                'name': 'Illinois Institute of Technology',
+                'ror': 'https://ror.org/037t3ry66',
                 'description': 'A research data service provided by Illinois Tech Libraries',
                 'banner_name': 'iit-banner.png',
                 'logo_name': 'iit-shield.png',
@@ -479,6 +507,7 @@ INSTITUTIONS = {
             {
                 '_id': 'itb',
                 'name': 'Institut Teknologi Bandung',
+                'ror': 'https://ror.org/00apj8t60',
                 'description': 'Institut Teknologi Bandung - OSF Repository',
                 'banner_name': 'itb-banner.png',
                 'logo_name': 'itb-shield.png',
@@ -491,6 +520,7 @@ INSTITUTIONS = {
             {
                 '_id': 'jhu',
                 'name': 'Johns Hopkins University',
+                'ror': 'https://ror.org/00za53h95',
                 'description': 'A research data service provided by the <a href="https://www.library.jhu.edu/">Sheridan Libraries</a>.',
                 'banner_name': 'jhu-banner.png',
                 'logo_name': 'jhu-shield.png',
@@ -503,6 +533,7 @@ INSTITUTIONS = {
             {
                 '_id': 'jmu',
                 'name': 'James Madison University',
+                'ror': 'https://ror.org/028pmsz77',
                 'description': 'This service is supported on campus by the Office of Research and Scholarship, Central IT, and Libraries and Educational Technology for the JMU campus community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Data Services Coordinator at <a href="mailto:shorisyl@jmu.edu">shorisyl@jmu.edu</a>.',
                 'banner_name': 'jmu-banner.png',
                 'logo_name': 'jmu-shield.png',
@@ -515,6 +546,7 @@ INSTITUTIONS = {
             {
                 '_id': 'jpal',
                 'name': 'J-PAL',
+                'ror': 'https://ror.org/01nztb982',
                 'description': '<a href="https://www.povertyactionlab.org">https://www.povertyactionlab.org</a>',
                 'banner_name': 'jpal-banner.png',
                 'logo_name': 'jpal-shield.png',
@@ -527,6 +559,7 @@ INSTITUTIONS = {
             {
                 '_id': 'kuleuven',
                 'name': 'KU Leuven Libraries',
+                'ror': 'https://ror.org/05f950310',
                 'description': '<a href="https://bib.kuleuven.be/english/research">KU Leuven University Libraries</a>',
                 'banner_name': 'kuleuven-banner.png',
                 'logo_name': 'kuleuven-shield.png',
@@ -539,6 +572,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ljaf',
                 'name': 'Laura and John Arnold Foundation',
+                'ror': 'https://ror.org/04hqxh742',
                 'description': 'Projects listed below are for grants awarded by the Foundation. Please see the <a href="http://www.arnoldfoundation.org/wp-content/uploads/Guidelines-for-Investments-in-Research.pdf">LJAF Guidelines for Investments in Research</a> for more information and requirements.',
                 'banner_name': 'ljaf-banner.png',
                 'logo_name': 'ljaf-shield.png',
@@ -551,6 +585,7 @@ INSTITUTIONS = {
             {
                 '_id': 'mit',
                 'name': 'Massachusetts Institute of Technology',
+                'ror': 'https://ror.org/042nb2s44',
                 'description': 'A research data service provided by the <a href="https://libraries.mit.edu/">MIT Libraries</a>. Learn more about <a href="https://libraries.mit.edu/data-management/">MIT resources for data management</a>. Please abide by the Institution\'s policy on <a href="https://policies-procedures.mit.edu/privacy-and-disclosure-personal-information/protection-personal-privacy">Privacy and Disclosure of Information</a>.',
                 'banner_name': 'mit-banner.png',
                 'logo_name': 'mit-shield.png',
@@ -563,6 +598,7 @@ INSTITUTIONS = {
             {
                 '_id': 'mq',
                 'name': 'Macquarie University',
+                'ror': 'https://ror.org/01sf06y89',
                 'description': 'In partnership with the Office of the Deputy Vice-Chancellor (Research) and the University Library. Learn more about <a href="https://staff.mq.edu.au/research/strategy-priorities-and-initiatives/data-science-and-eresearch">Data Science and eResearch</a> at Macquarie University.',
                 'banner_name': 'mq-banner.png',
                 'logo_name': 'mq-shield.png',
@@ -575,6 +611,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nd',
                 'name': 'University of Notre Dame',
+                'ror': 'https://ror.org/00mkhxb43',
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
                 'banner_name': 'nd-banner.png',
                 'logo_name': 'nd-shield.png',
@@ -587,6 +624,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nyu',
                 'name': 'New York University',
+                'ror': 'https://ror.org/0190ak572',
                 'description': 'A Research Project and File Management Tool for the NYU Community: <a href="https://www.nyu.edu/research.html">Research at NYU</a> | <a href="http://guides.nyu.edu/data_management">Research Data Management Planning</a> | <a href="https://library.nyu.edu/services/research/">NYU Library Research Services</a> | <a href="https://nyu.qualtrics.com/jfe6/form/SV_8dFc5TpA1FgLUMd">Get Help</a>',
                 'banner_name': 'nyu-banner.png',
                 'logo_name': 'nyu-shield.png',
@@ -599,6 +637,7 @@ INSTITUTIONS = {
             {
                 '_id': 'okstate',
                 'name': 'Oklahoma State University',
+                'ror': 'https://ror.org/01g9vbr38',
                 'description': '<a href="http://www.library.okstate.edu/research-support/research-data-services/">OSU Library Research Data Services</a>',
                 'banner_name': 'okstate-banner.png',
                 'logo_name': 'okstate-shield.png',
@@ -611,6 +650,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ou',
                 'name': 'The University of Oklahoma',
+                'ror': 'https://ror.org/02aqsxs83',
                 'description': '<a href="https://www.ou.edu">The University of Oklahoma</a> | <a href="https://libraries.ou.edu">University Libraries</a>',
                 'banner_name': 'ou-banner.png',
                 'logo_name': 'ou-shield.png',
@@ -623,6 +663,7 @@ INSTITUTIONS = {
             {
                 '_id': 'pu',
                 'name': 'Princeton University',
+                'ror': 'https://ror.org/00hx57361',
                 'description': 'A research project management and sharing tool provided to the Princeton University research community by the <a href="https://library.princeton.edu/">Princeton University Library</a> and the <a href="https://researchdata.princeton.edu/">Princeton Research Data Service</a>. Projects must abide by University guidelines for <a href="https://ria.princeton.edu/research-data-security">Research Data Security and Privacy</a> and <a href="https://oit.princeton.edu/policies/information-security">Information Security</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">OSF Terms of Use</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">OSF Privacy Policy</a>',
                 'banner_name': 'pu-banner.png',
                 'logo_name': 'pu-shield.png',
@@ -635,6 +676,7 @@ INSTITUTIONS = {
             {
                 '_id': 'sc',
                 'name': 'University of South Carolina Libraries',
+                'ror': 'https://ror.org/02b6qw903',
                 'description': 'Brought to you by <a href="http://library.sc.edu/">University Libraries</a> at the University of South Carolina.',
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
@@ -649,18 +691,20 @@ INSTITUTIONS = {
             {
                 '_id': 'temple',
                 'name': 'Temple University',
+                'ror': 'https://ror.org/00kx1jb78',
                 'description': 'Projects must abide by Temple University\'s <a href="https://www.temple.edu/privacy-statement">Privacy Statement</a>, <a href="https://its.temple.edu/technology-usage-policy">Technology Usage Policy</a>, <a href="https://its.temple.edu/classification-and-handling-protected-data">University Classification and Handling of Protected Data</a>, and <a href="https://its.temple.edu/guidelines-storing-and-using-personally-identifiable-information-non-production-environments">Guidelines for Storing and Using Personally Identifiable Information in Non-Production Environments</a>.',
                 'banner_name': 'temple-banner.png',
                 'logo_name': 'temple-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://fim.temple.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
-                'domains': [],
+                'domains': ['temple.edu'],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'thepolicylab',
                 'name': 'The Policy Lab at Brown University',
+                'ror': 'https://ror.org/05gq02987',
                 'description': 'The Policy Lab at Brown University conducts applied research to improve public policy in Rhode Island and beyond.<br />Learn more at <a href="https://thepolicylab.brown.edu/">thepolicylab.brown.edu</a> and tune into our podcast, <a href="https://thirtythousandleagues.com/">30,000 Leagues</a>.',
                 'banner_name': 'thepolicylab-banner.png',
                 'logo_name': 'thepolicylab-shield.png',
@@ -679,7 +723,7 @@ INSTITUTIONS = {
                 'login_url': None,
                 'logout_url': None,
                 'domains': [],
-                'email_domains': ['dc.gov'],
+                'email_domains': ['https://thelab.dc.gov/'],
                 'delegation_protocol': '',
             },
             {
@@ -697,6 +741,7 @@ INSTITUTIONS = {
             {
                 '_id': 'tufts',
                 'name': 'Tufts University',
+                'ror': 'https://ror.org/05wvpxv85',
                 'description': '<a href="http://researchguides.library.tufts.edu/RDM">Research Data Management &#64; Tufts</a>',
                 'banner_name': 'tufts-banner.png',
                 'logo_name': 'tufts-shield.png',
@@ -709,6 +754,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ua',
                 'name': 'University of Arizona',
+                'ror': 'https://ror.org/03m2x1q45',
                 'description': 'A service supported by the <a href="http://www.library.arizona.edu/">University of Arizona Libraries</a>. For more information, please refer to the <a href="http://data.library.arizona.edu/osf">UA Data Management Page</a>.',
                 'banner_name': 'ua-banner.png',
                 'logo_name': 'ua-shield.png',
@@ -721,6 +767,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ubc',
                 'name': 'University of British Columbia',
+                'ror': 'https://ror.org/03rmrcq20',
                 'description': 'Users are reminded to ensure their use of this service is in compliance with all <a href="https://universitycounsel.ubc.ca/policies/">UBC Policies and Standards</a>. Please refer specifically to <a href="https://universitycounsel.ubc.ca/files/2015/08/policy85.pdf">Policy 85</a>, <a href="https://universitycounsel.ubc.ca/files/2013/06/policy104.pdf">Policy 104</a>, and the <a href="https://cio.ubc.ca/node/1073">Information Security Standards</a>. Find out more about <a href="http://openscience.ubc.ca">OSF</a>. Get help with <a href="https://researchdata.library.ubc.ca/">Research Data Management</a>.',
                 'banner_name': 'ubc-banner.png',
                 'logo_name': 'ubc-shield.png',
@@ -733,6 +780,7 @@ INSTITUTIONS = {
             {
                 '_id': 'uc',
                 'name': 'University of Cincinnati',
+                'ror': 'https://ror.org/01e3m7079',
                 'description': 'In partnership with the <a href="https://research.uc.edu/home/officeofresearch/administrativeoffices.aspx">Office of Research</a>, <a href="https://www.libraries.uc.edu/">UC Libraries</a> and <a href="https://www.uc.edu/ucit.html">IT&#64;UC</a>. Projects must abide by <a href="http://www.uc.edu/infosec/policies.html">Security (9.1.27) and Data Protection (9.1.1) Policies.</a> Learn more by visiting <a href="https://libraries.uc.edu/digital-scholarship/data-services.html">Research Data & GIS services</a>.',
                 'banner_name': 'uc-banner.png',
                 'logo_name': 'uc-shield.png',
@@ -745,6 +793,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ucla',
                 'name': 'UCLA',
+                'ror': 'https://ror.org/046rm7j60',
                 'description': 'A research data service provided by the <a href="https://www.library.ucla.edu/">UCLA Library</a>. Please do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact <a href="mailto:data@library.ucla.edu">data@library.ucla.edu</a>.',
                 'banner_name': 'ucla-banner.png',
                 'logo_name': 'ucla-shield.png',
@@ -757,6 +806,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ucsd',
                 'name': 'University of California San Diego',
+                'ror': 'https://ror.org/0168r3w48',
                 'description': 'This service is supported on campus by the UC San Diego Library for our research community. Do not use this service to store or transfer personally identifiable information, personal health information, or any other controlled unclassified information. For assistance please contact the Library\'s Research Data Curation Program at <a href="mailto:research-data-curation@ucsd.edu">research-data-curation@ucsd.edu</a>.',
                 'banner_name': 'ucsd-banner.png',
                 'logo_name': 'ucsd-shield.png',
@@ -769,6 +819,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ucr',
                 'name': 'University of California Riverside',
+                'ror': 'https://ror.org/03nawhv43',
                 'description': 'Policy prohibits storing PII or HIPAA data on this site, please see C&amp;C\'s <a href="http://cnc.ucr.edu/security/researchers.html">security site</a> for more information.',
                 'banner_name': 'ucr-banner.png',
                 'logo_name': 'ucr-shield.png',
@@ -781,6 +832,7 @@ INSTITUTIONS = {
             {
                 '_id': 'uct',
                 'name': 'University of Cape Town',
+                'ror': 'https://ror.org/03p74gp79',
                 'description': '<a href="http://www.lib.uct.ac.za/">UCT Libraries</a>, <a href="http://www.eresearch.uct.ac.za/">UCT eResearch</a> &amp; <a href="http://www.icts.uct.ac.za/">ICTS</a> present the UCT OSF institutional service to UCT affiliated students, staff and researchers. The UCT OSF facility should be used in conjunction with the institution\'s <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm-policy">Research Data Management (RDM) Policy</a>, <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">Open Access Policy</a> and <a href="https://www.uct.ac.za/downloads/uct.ac.za/about/policies/UCTOpenAccessPolicy.pdf">IP Policy</a>. Visit the <a href="http://www.digitalservices.lib.uct.ac.za/">UCT Digital Library Services</a> for more information and/or assistance with <a href="http://www.digitalservices.lib.uct.ac.za/dls/rdm">RDM</a> and <a href="http://www.digitalservices.lib.uct.ac.za/dls/data-sharing-guidelines">data sharing</a>. We also encourage the use of UCT Libraries\'s Data Management Planning tool, <a href="http://dmp.lib.uct.ac.za/about_us">DMPonline</a>',
                 'banner_name': 'uct-banner.png',
                 'logo_name': 'uct-shield.png',
@@ -793,6 +845,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ugent',
                 'name': 'Universiteit Gent',
+                'ror': 'https://ror.org/00cv9y106',
                 'description': None,
                 'banner_name': 'ugent-banner.png',
                 'logo_name': 'ugent-shield.png',
@@ -805,6 +858,7 @@ INSTITUTIONS = {
             {
                 '_id': 'ugoe',
                 'name': 'University of Göttingen',
+                'ror': 'https://ror.org/01y9bpm73',
                 'description': 'In partnership with <a href="https://www.sub.uni-goettingen.de/">Göttingen State and University Library</a>, the <a href="http://www.eresearch.uni-goettingen.de/">Göttingen eResearch Alliance</a> and the <a href="https://www.gwdg.de/">Gesellschaft für wissenschaftliche Datenverarbeitung Göttingen</a>.',
                 'banner_name': 'ugoe-banner.png',
                 'logo_name': 'ugoe-shield.png',
@@ -817,6 +871,7 @@ INSTITUTIONS = {
             {
                 '_id': 'umd',
                 'name': 'University of Maryland',
+                'ror': 'https://ror.org/01r0c1p88',
                 'description': 'University of Maryland',
                 'banner_name': 'umd-banner.png',
                 'logo_name': 'umd-shield.png',
@@ -829,6 +884,7 @@ INSTITUTIONS = {
             {
                 '_id': 'unc',
                 'name': 'University of North Carolina at Chapel Hill',
+                'ror': 'https://ror.org/0130frc33',
                 'description': 'This service is supported by <a href="https://odum.unc.edu/">The Odum Institute for Research in Social Science</a> and <a href="https://library.unc.edu">University Libraries at the University of North Carolina at Chapel Hill</a>. Please do not store or transfer personally identifiable information, personal health information, or any other sensitive or proprietary data in the OSF. Projects should follow applicable <a href="https://unc.policystat.com/">UNC policies</a>. Contact the <a href="mailto:odumarchive@unc.edu">Odum Institute Data Archive</a> with any questions.',
                 'banner_name': 'unc-banner.png',
                 'logo_name': 'unc-shield.png',
@@ -841,6 +897,7 @@ INSTITUTIONS = {
             {
                 '_id': 'universityofkent',
                 'name': 'University of Kent',
+                'ror': 'https://ror.org/00xkeyj56',
                 'description': 'Collaboration Platform for University of Kent Research | <a href="https://www.kent.ac.uk/governance/policies-and-procedures/documents/Information-security-policy-v1-1.pdf">Information Security policy</a> | <a href="mailto:researchsupport@kent.ac.uk">Help and Support</a>',
                 'banner_name': 'universityofkent-banner.png',
                 'logo_name': 'universityofkent-shield.png',
@@ -853,6 +910,7 @@ INSTITUTIONS = {
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
+                'ror': 'https://ror.org/03taz7m60',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
                 'banner_name': 'usc-banner.png',
                 'logo_name': 'usc-shield.png',
@@ -877,6 +935,7 @@ INSTITUTIONS = {
             {
                 '_id': 'utdallas',
                 'name': 'The University of Texas at Dallas',
+                'ror': 'https://ror.org/049emcs32',
                 'description': 'In partnership with the Office of Research. Learn more about <a href="https://data.utdallas.edu/">UT Dallas resources for computational and data-driven research</a>. Projects must abide by university security and data protection policies.',
                 'banner_name': 'utdallas-banner.png',
                 'logo_name': 'utdallas-shield.png',
@@ -889,6 +948,7 @@ INSTITUTIONS = {
             {
                 '_id': 'uva',
                 'name': 'University of Virginia',
+                'ror': 'https://ror.org/0153tk833',
                 'description': 'In partnership with the <a href="http://www.virginia.edu/vpr/">Vice President for Research</a>, <a href="http://dsi.virginia.edu">Data Science Institute</a>, <a href="https://www.hsl.virginia.edu">Health Sciences Library</a>, and <a href="http://data.library.virginia.edu">University Library</a>. Learn more about <a href="http://cadre.virginia.edu">UVA resources for computational and data-driven research</a>. Projects must abide by the <a href="http://www.virginia.edu/informationpolicy/security.html">University Security and Data Protection Policies</a>.',
                 'banner_name': 'uva-banner.png',
                 'logo_name': 'uva-shield.png',
@@ -901,6 +961,7 @@ INSTITUTIONS = {
             {
                 '_id': 'uw',
                 'name': 'University of Washington',
+                'ror': 'https://ror.org/00cvxb145',
                 'description': 'This service is supported by the University of Washington Libraries. Do not use this service to store or transfer personally identifiable information or personal health information. Questions? Email the Libraries Research Data Services Unit at <a href="mailto:libdata@uw.edu">libdata@uw.edu</a>.',
                 'banner_name': 'uw-banner.png',
                 'logo_name': 'uw-shield.png',
@@ -913,6 +974,7 @@ INSTITUTIONS = {
             {
                 '_id': 'uwstout',
                 'name': 'University of Wisconsin - Stout',
+                'ror': 'https://ror.org/01gb8pc70',
                 'description': 'A Research Project and File Management Tool for the UW-Stout Community: <a href="https://wwwcs.uwstout.edu/rs/index.cfm">Office of Research and Sponsored Programs</a> | <a href="https://wwwcs.uwstout.edu/lib/">University Library</a>',
                 'banner_name': 'uwstout-banner.png',
                 'logo_name': 'uwstout-shield.png',
@@ -925,6 +987,7 @@ INSTITUTIONS = {
             {
                 '_id': 'vcu',
                 'name': 'Virginia Commonwealth University',
+                'ror': 'https://ror.org/02nkdxk79',
                 'description': 'This service is supported by the VCU Libraries and the VCU Office of Research and Innovation for our research community. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). VCU\'s policy entitled "<a href="http://www.policy.vcu.edu/sites/default/files/Research%20Data%20Ownership,%20Retention,%20Access%20and%20Securty.pdf">Research Data Ownership, Retention, Access and Security</a>" applies. For assistance please contact the <a href="https://www.library.vcu.edu/services/data/">VCU Libraries Research Data Management Program</a>.',
                 'banner_name': 'vcu-banner.png',
                 'logo_name': 'vcu-shield.png',
@@ -937,6 +1000,7 @@ INSTITUTIONS = {
             {
                 '_id': 'vt',
                 'name': 'Virginia Tech',
+                'ror': 'https://ror.org/02smfhw86',
                 'description': 'Made possible by the <a href="https://www.lib.vt.edu">University Libraries</a> in partnership with <a href="https://secure.hosting.vt.edu/www.arc.vt.edu/">Advanced Research Computing</a> and the <a href="https://research.vt.edu/">Office of the Vice President for Research</a>. Using the Virginia Tech login to OSF provides your name and VT email address to the Center for Open Science. Please see their <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">terms of service</a>.',
                 'banner_name': 'vt-banner.png',
                 'logo_name': 'vt-shield.png',
@@ -949,6 +1013,7 @@ INSTITUTIONS = {
             {
                 '_id': 'wustl',
                 'name': 'Washington University in St. Louis',
+                'ror': 'https://ror.org/01yc7t268',
                 'description': 'This service is supported by the <a href="https://library.wustl.edu">Washington University in St. Louis Libraries</a>. Please abide by the University policy on <a href="https://informationsecurity.wustl.edu/resources/information-security-solutions/data-classification/">information security</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), or any other controlled unclassified information (CUI). | For assistance please contact the <a href="http://gis.wustl.edu/dgs">WU Libraries Data & GIS Services</a>.',
                 'banner_name': 'wustl-banner.png',
                 'logo_name': 'wustl-shield.png',
@@ -963,6 +1028,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage]',
+                'ror': 'https://ror.org/testtest-cos',
                 'description': 'Center for Open Science [Stage]',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
@@ -987,6 +1053,7 @@ INSTITUTIONS = {
             {
                 '_id': 'google',
                 'name': 'Google [Stage]',
+                'ror': 'https://ror.org/testtest-google',
                 'description': 'Google [Stage]',
                 'banner_name': 'google-banner.png',
                 'logo_name': 'google-shield.png',
@@ -1012,6 +1079,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage2]',
+                'ror': 'https://ror.org/testtest-cos',
                 'description': 'Center for Open Science [Stage2]',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
@@ -1026,6 +1094,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cos',
                 'name': 'Center For Open Science [Stage3]',
+                'ror': 'https://ror.org/testtest-cos',
                 'description': 'Center for Open Science [Stage3]',
                 'banner_name': 'cos-banner.png',
                 'logo_name': 'cos-shield.png',
@@ -1040,6 +1109,7 @@ INSTITUTIONS = {
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
+                'ror': 'https://ror.org/testtest-a2jlab',
                 'description': 'Based within Harvard Law School, the <a href="https://a2jlab.org/">Access to Justice Lab</a> works with court administrators, legal service providers, and other stakeholders in the U.S. legal system to design and implement randomized field experiments evaluating interventions that impact access to justice.',
                 'banner_name': 'a2jlab-banner.png',
                 'logo_name': 'a2jlab-shield.png',
