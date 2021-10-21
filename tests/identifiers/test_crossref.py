@@ -94,7 +94,7 @@ class TestCrossRefClient:
     def test_crossref_build_metadata(self, crossref_client, preprint):
         test_email = 'test-email@osf.io'
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
-            crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+            crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         # header
@@ -139,7 +139,7 @@ class TestCrossRefClient:
             preprint.is_public = False
             preprint.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, status='unavailable')
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         # body
@@ -217,7 +217,7 @@ class TestCrossRefClient:
         contributor.family_name = ''
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
@@ -236,7 +236,7 @@ class TestCrossRefClient:
         }
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
@@ -250,14 +250,15 @@ class TestCrossRefClient:
         }
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
-        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'false'}
 
     def test_metadata_none_license_update(self, crossref_client, preprint):
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
@@ -271,7 +272,7 @@ class TestCrossRefClient:
 
         preprint.set_preprint_license(license_detail, Auth(preprint.creator), save=True)
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS) is None
