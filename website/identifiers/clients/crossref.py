@@ -15,11 +15,11 @@ from lxml import etree
 
 logger = logging.getLogger(__name__)
 
-CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
-CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/5.3.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schemas/crossref5.3.1.xsd'
 CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
 CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
-CROSSREF_SCHEMA_VERSION = '4.4.1'
+CROSSREF_SCHEMA_VERSION = '5.3.1'
 JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
@@ -188,18 +188,31 @@ class CrossRefClient(AbstractIdentifierClient):
             person.append(element.surname(name_parts['surname']))
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
+
+            affiliations = [
+                element.institution(
+                    element.institution_name(institution.name),
+                    element.institution_id(
+                        institution.ror,
+                        type='ror'
+                    ),
+                )
+            for institution in contributor.affiliated_institutions.all()]
+
+            person.append(element.affiliations(*affiliations))
+
             if contributor.external_identity.get('ORCID'):
                 orcid = list(contributor.external_identity['ORCID'].keys())[0]
                 verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
                 if orcid and verified:
                     person.append(
-                        element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true')
+                        element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
                     )
 
             social_orcid = contributor.social.get('orcid')
             if social_orcid:
                 person.append(
-                    element.ORCID(contributor.social_links.get('orcid'), authenticated='false')
+                    element.ORCID(f'https://orcid.org/{social_orcid}', authenticated='false')
                 )
             contributors.append(person)
 
@@ -226,8 +239,7 @@ class CrossRefClient(AbstractIdentifierClient):
             logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
-            requests.request(
-                'POST',
+            requests.post(
                 self._build_url(
                     operation='doMDUpload',
                     login_id=username,
@@ -251,8 +263,7 @@ class CrossRefClient(AbstractIdentifierClient):
     def bulk_create(self, metadata, filename):
         # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
         username, password = self.get_credentials()
-        requests.request(
-            'POST',
+        requests.post(
             self._build_url(
                 operation='doMDUpload',
                 login_id=username,
