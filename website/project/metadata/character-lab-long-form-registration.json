@@ -15,8 +15,8 @@
 	}, {
 		"registration_response_key": "Q2",
 		"block_type": "question-label",
-		"display_text": "Expected outcomes",
-		"example_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license."
+		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license. ",
+		"display_text": "Expected outcomes"
 	}, {
 		"block_type": "multi-select-input"
 	}, {
@@ -252,7 +252,7 @@
 		"display_text": "Is this a pilot?"
 	}, {
 		"registration_response_key": "Q9",
-		"block_type": "single-input-option"
+		"block_type": "single-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
