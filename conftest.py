@@ -205,21 +205,6 @@ def mock_datacite(registration):
 
 
 @pytest.fixture
-def mock_crossref():
-    """
-    This should be used to mock our our crossref client.
-    Relevant endpoints:
-    f'{CROSSREF_URL}'
-    """
-    with mock.patch.object(website_settings, 'CROSSREF_ENABLED', True):
-        with mock.patch.object(website_settings, 'CROSSREF_USERNAME', 'TestCrossrefUsername'):
-            with mock.patch.object(website_settings, 'CROSSREF_PASSWORD', 'TestCrossrefPassword'):
-                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                    rsps.add(responses.POST, website_settings.CROSSREF_URL, status=200)
-                    yield rsps
-
-
-@pytest.fixture
 def mock_oopspam():
     """
     This should be used to mock our anti-spam service oopspam.

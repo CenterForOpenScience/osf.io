@@ -332,7 +332,6 @@ DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 
 # crossref
-CROSSREF_ENABLED = True
 CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
 CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint

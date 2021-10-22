@@ -232,27 +232,26 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def create_identifier(self, preprint, category, include_relation=True):
         if category == 'doi':
-            if settings.CROSSREF_ENABLED:
-                metadata = self.build_metadata(preprint, include_relation)
-                doi = self.build_doi(preprint)
-                username, password = self.get_credentials()
-                logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
+            metadata = self.build_metadata(preprint, include_relation)
+            doi = self.build_doi(preprint)
+            username, password = self.get_credentials()
+            logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
 
-                # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
-                requests.post(
-                    self._build_url(
-                        operation='doMDUpload',
-                        login_id=username,
-                        login_passwd=password,
-                        fname=f'{preprint._id}.xml'
-                    ),
-                    files={'file': (f'{preprint._id}.xml', metadata)},
-                )
+            # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
+            requests.post(
+                self._build_url(
+                    operation='doMDUpload',
+                    login_id=username,
+                    login_passwd=password,
+                    fname=f'{preprint._id}.xml'
+                ),
+                files={'file': (f'{preprint._id}.xml', metadata)},
+            )
 
-                # Don't wait for response to confirm doi because it arrives via email.
-                return {'doi': doi}
-            else:
-                raise NotImplementedError()
+            # Don't wait for response to confirm doi because it arrives via email.
+            return {'doi': doi}
+        else:
+            raise NotImplementedError()
 
     def update_identifier(self, preprint, category):
         return self.create_identifier(preprint, category)

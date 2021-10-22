@@ -246,10 +246,6 @@ class TestPreprintDelete:
 @pytest.mark.enable_enqueue_task
 class TestPreprintUpdate:
 
-    @pytest.fixture(autouse=True)
-    def mock_crossref(self, mock_crossref):
-        yield
-
     @pytest.fixture()
     def preprint(self, user):
         return PreprintFactory(creator=user)
@@ -530,7 +526,7 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date == date
 
-    def test_update_article_doi(self, app, user, preprint, url, mock_crossref):
+    def test_update_article_doi(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(
             preprint._id,
             attributes={'doi': '10.1234/test'}
