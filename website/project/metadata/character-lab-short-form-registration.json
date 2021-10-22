@@ -1,7 +1,7 @@
 {
 	"atomicSchema": true,
 	"name": "Character Lab Short-Form Registration",
-	"version": 3,
+	"version": 4,
 	"description": null,
 	"blocks": [{
 		"block_type": "page-heading",
@@ -14,8 +14,8 @@
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
-		"display_text": "Expected outcomes",
-		"example_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license."
+		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license. ",
+		"display_text": "Expected outcomes"
 	}, {
 		"registration_response_key": "Q2",
 		"block_type": "multi-select-input"
@@ -508,5 +508,8 @@
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
 	}]
 }
