@@ -192,7 +192,7 @@
 		"display_text": "Total number of students"
 	}, {
 		"registration_response_key": "Q6",
-		"block_type": "Short-text-input"
+		"block_type": "short-text-input"
 	}, {
 		"block_type": "page-heading",
 		"display_text": "Sample"
@@ -252,7 +252,7 @@
 		"display_text": "Is this a pilot?"
 	}, {
 		"registration_response_key": "Q9",
-		"block_type": "single-input-option"
+		"block_type": "single-select-input"
 	}, {
 		"block_type": "select-input-option",
 		"display_text": "Yes"
