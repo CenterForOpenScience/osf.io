@@ -3,6 +3,7 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
@@ -368,7 +369,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'article_doi' in validated_data:
-            doi = preprint.get_doi_client().build_doi(preprint)
+            doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
             if validated_data['article_doi'] == doi:
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'

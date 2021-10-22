@@ -28,8 +28,9 @@ from osf_tests.factories import (
     SubjectFactory,
     PreprintProviderFactory,
 )
-from website.settings import DOI_FORMAT
+from website.settings import DOI_FORMAT, CROSSREF_URL
 from website.language import SWITCH_VALIDATOR_ERROR
+import responses
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -305,7 +306,17 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date is None
 
+    @responses.activate
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
     def test_update_preprint_permission_write_contrib(self, app, preprint, url):
+        responses.add(
+            responses.Response(
+                responses.POST,
+                CROSSREF_URL,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200,
+            ),
+        )
         write_contrib = AuthUserFactory()
         preprint.add_contributor(write_contrib, WRITE, save=True)
 
@@ -526,7 +537,18 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.original_publication_date == date
 
+    @responses.activate
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
     def test_update_article_doi(self, app, user, preprint, url):
+        responses.add(
+            responses.Response(
+                responses.POST,
+                CROSSREF_URL,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200,
+            ),
+        )
+
         update_payload = build_preprint_update_payload(
             preprint._id,
             attributes={'doi': '10.1234/test'}
@@ -534,7 +556,7 @@ class TestPreprintUpdate:
         res = app.patch_json_api(url, update_payload, auth=user.auth)
         assert res.status_code == 200
 
-        preprint_doi = preprint.get_doi_client().build_doi(preprint)
+        preprint_doi = DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
         update_payload = build_preprint_update_payload(
             preprint._id,
             attributes={'doi': preprint_doi}
@@ -757,9 +779,18 @@ class TestPreprintUpdate:
         assert unpublished.node.is_public is False
         assert unpublished.is_public
 
+    @responses.activate
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_preprint_task_called_on_api_update(
             self, mock_on_preprint_updated, app, user, preprint, url):
+        responses.add(
+            responses.Response(
+                responses.POST,
+                CROSSREF_URL,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200,
+            ),
+        )
         update_doi_payload = build_preprint_update_payload(
             preprint._id, attributes={'doi': '10.1234/ASDFASDF'})
 
