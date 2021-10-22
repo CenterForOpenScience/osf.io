@@ -32,8 +32,30 @@ class RegistrationBulkUploadRow(BaseModel):
     row_hash = models.CharField(default='', blank=False, null=False, unique=True, max_length=255)
 
     @classmethod
-    def create(cls, upload, csv_raw, csv_parsed):
-        registration_row = cls(upload=upload, draft_registration=None, is_completed=False,
-                               is_picked_up=False, csv_raw=csv_raw, csv_parsed=csv_parsed,
-                               row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest(),)
+    def create(cls, upload, csv_raw, csv_parsed, draft_registration=None, is_completed=False, is_picked_up=False):
+        registration_row = cls(
+            upload=upload,
+            draft_registration=draft_registration,
+            is_completed=is_completed,
+            is_picked_up=is_picked_up,
+            csv_raw=csv_raw,
+            csv_parsed=csv_parsed,
+            row_hash=hashlib.md5(ensure_bytes(csv_raw)).hexdigest(),
+        )
         return registration_row
+
+    # Overrides Django model's default `__hash__()` method to support pre-save hashing without PK
+    def __hash__(self):
+        if self._get_pk_val() is None:
+            # `self.row_hash` is a MD5 hex-digest string, must call the built-in `hash()` to get an integer
+            return hash(self.row_hash)
+        return hash(self._get_pk_val())
+
+    # Overrides Django model's default `__eq__()` method to support pre-save equality check without PK
+    def __eq__(self, other):
+        if not isinstance(other, RegistrationBulkUploadRow):
+            return False
+        my_pk = self._get_pk_val()
+        if my_pk is None:
+            return self.row_hash == other.row_hash
+        return my_pk == other._get_pk_val()
