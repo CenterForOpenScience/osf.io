@@ -1,6 +1,6 @@
 {
    "name":"Real World Evidence Recommended Minimum Study Registration Template",
-   "version":1,
+   "version":2,
    "config":{
       "hasFiles":true
    },
@@ -172,15 +172,6 @@
          "id":"page3",
          "title":"Key Elements of Evaluation Period",
          "questions":[
-            {
-               "qid":"q17",
-               "type":"string",
-               "format":"textarea",
-               "title":"Duration of treatment",
-               "help":"The text definition of how long you will follow a therapy for both the intervention and comparator, include any information about if or how - gaps in therapy will be calculated or accommodated, dose adjustments may influence the calculation if applicable, and define your date of censoring (end of therapy) criteria.",
-               "example":"Subjects’ duration of therapy will be counted from Day 1 (fill date) to the calculated end of first prescription (day 1 + days supplied). Any dose-adjusted prescriptions that occur prior to the calculated end of treatment based on first prescription will be added to the original treatment duration by adding day supplied from prescription 1 and 2 and subtracting overlapping days. The last day of that last prescription will be the end date of therapy.",
-               "required":true
-            },
             {
                "qid":"q18",
                "type":"string",

@@ -476,3 +476,56 @@ INSTITUTION_DEACTIVATION = Mail(
     'institution_deactivation',
     subject='Your OSF login has changed - here\'s what you need to know!'
 )
+
+REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
+    'registration_bulk_upload_product_owner',
+    subject='Registry Could Not Bulk Upload Registrations'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
+    'registration_bulk_upload_success_all',
+    subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
+    'registration_bulk_upload_success_partial',
+    subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
+    'registration_bulk_upload_failure_all',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
+    'registration_bulk_upload_failure_duplicates',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
+    'registration_bulk_upload_unexpected_failure',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+SCHEMA_RESPONSE_INITIATED = Mail(
+    'updates_initiated',
+    subject='Updates in in-progress for your ${resource_type} ${title}'
+)
+
+
+SCHEMA_RESPONSE_SUBMITTED = Mail(
+    'updates_pending_approval',
+    subject='Updates to your ${resource_type} ${title} are pending admin approval'
+)
+
+
+SCHEMA_RESPONSE_APPROVED = Mail(
+    'updates_approved',
+    subject='Updates to your ${resource_type} ${title} have been approved'
+)
+
+
+SCHEMA_RESPONSE_REJECTED = Mail(
+    'updates_rejected',
+    subject='Changes requested for the proposed updates to your ${resource_type} ${title}'
+)

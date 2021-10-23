@@ -418,6 +418,7 @@ class CeleryConfig:
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
         'osf.management.commands.sync_collection_provider_indices',
+        'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from'
     }
@@ -508,7 +509,10 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
-        'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.sync_datacite_doi_metadata',
+        'osf.management.commands.archive_registrations_on_IA',
+        'osf.management.commands.populate_initial_schema_responses',
+        'api.providers.tasks'
     )
 
     # Modules that need metrics and release requirements
@@ -667,6 +671,12 @@ class CeleryConfig:
                     'batch_size_withdrawn': 10,
                     'batch_size_stuck': 10
                 }
+            },
+            'monitor_registration_bulk_upload_jobs': {
+                'task': 'api.providers.tasks.monitor_registration_bulk_upload_jobs',
+                # 'schedule': crontab(hour='*/3'),  # Every 3 hours
+                'schedule': crontab(minute='*/5'),  # Every 5 minutes for staging server QA test
+                'kwargs': {'dry_run': False}
             },
         }
 
@@ -2065,3 +2075,7 @@ OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
 ID_VERSION = 'staging_v2'
 IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
+
+PRODUCT_OWNER_EMAIL_ADDRESS = {}
+
+CAS_LOG_LEVEL = 3  # ERROR

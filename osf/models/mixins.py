@@ -1992,13 +1992,13 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=True):
+    def confirm_spam(self, save=True, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save)
+        super().confirm_spam(save=save, train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False)
@@ -2014,13 +2014,13 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False):
+    def confirm_ham(self, save=False, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be ham.
         :param save:
         :return:
         """
-        super().confirm_ham()
+        super().confirm_ham(save=save, train_akismet=train_akismet)
 
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
@@ -2110,11 +2110,10 @@ class SpamOverrideMixin(SpamMixin):
         ):
             self.suspend_spam_user(user)
 
-    def suspend_spam_user(self, user, set_spam=False):
+    def suspend_spam_user(self, user, train_akismet=False):
         if user.spam_status == SpamStatus.HAM:
             return False
-        if set_spam:
-            self.confirm_spam(save=True)
+        self.confirm_spam(save=True, train_akismet=train_akismet)
         self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
@@ -2134,15 +2133,13 @@ class SpamOverrideMixin(SpamMixin):
         # Make public nodes private from this contributor
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                if set_spam:
-                    node.confirm_spam(save=True)
+                node.confirm_spam(save=True, train_akismet=train_akismet)
                 node.set_privacy('private', log=False, save=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                if set_spam:
-                    preprint.confirm_spam(save=True)
+                preprint.confirm_spam(save=True, train_akismet=train_akismet)
                 preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):

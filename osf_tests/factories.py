@@ -28,9 +28,13 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ApprovalStates,
+    SchemaResponseTriggers
+)
 from addons.osfstorage.models import OsfStorageFile, Region
-
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -390,7 +394,7 @@ class RegistrationFactory(BaseNodeFactory):
         user = None
         if project:
             user = project.creator
-        user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
+        user = kwargs.pop('user', None) or kwargs.get('creator') or user or AuthUserFactory()
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
@@ -404,14 +408,23 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
+        if draft_registration:
+            schema = draft_registration.registration_schema
+        else:
+            schema = schema or get_default_metaschema()
+
         # Default registration parameters
-        schema = schema or get_default_metaschema()
+        parent_registration = kwargs.get('parent')
+        if parent_registration:
+            schema = parent_registration.registration_schema
+            draft_registration = parent_registration.draft_registration.get()
+
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
                 initator=user,
                 registration_schema=schema,
-                provider=provider
+                provider=provider,
             )
         auth = Auth(user=user)
         register = lambda: project.register_node(
@@ -419,6 +432,7 @@ class RegistrationFactory(BaseNodeFactory):
             auth=auth,
             draft_registration=draft_registration,
             provider=provider,
+            parent=parent_registration
         )
 
         def add_approval_step(reg):
@@ -1114,3 +1128,48 @@ class BrandFactory(DjangoModelFactory):
 
     primary_color = factory.Faker('hex_color')
     secondary_color = factory.Faker('hex_color')
+
+
+class SchemaResponseFactory(DjangoModelFactory):
+    initiator = factory.SubFactory(AuthUserFactory)
+    revision_justification = "We're talkin' about practice!"
+    submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    registration = factory.SubFactory(RegistrationFactory)
+
+    class Meta:
+        model = models.SchemaResponse
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        from django.contrib.contenttypes.models import ContentType
+        SchemaResponse = models.SchemaResponse
+        justification = kwargs.get('revision_justification')
+        initiator = kwargs.get('initiator')
+        registration = kwargs.get('registration')
+        content_type = ContentType.objects.get_for_model(registration)
+        schema = registration.registered_schema.get()
+        if not registration.schema_responses.exists():
+            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
+        else:
+            previous_schema_response = SchemaResponse.objects.filter(
+                object_id=registration.id,
+                content_type_id=content_type
+            ).get()
+            previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            previous_schema_response.save()
+            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+
+
+class SchemaResponseActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.SchemaResponseAction
+
+    trigger = FuzzyChoice(choices=SchemaResponseTriggers.char_field_choices())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+    to_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+
+    target = factory.SubFactory(SchemaResponseFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False

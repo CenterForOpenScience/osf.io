@@ -5,7 +5,8 @@ import pytest
 from addons.base.tests import views
 from addons.onedrive.client import OneDriveClient
 from addons.onedrive.serializer import OneDriveSerializer
-from addons.onedrive.tests.utils import OneDriveAddonTestCase, raw_subfolder_response, raw_root_folder_response
+from addons.onedrive.tests.utils import (OneDriveAddonTestCase, raw_subfolder_response,
+                                         raw_root_folder_response, dummy_user_info)
 from tests.base import OsfTestCase
 
 pytestmark = pytest.mark.django_db
@@ -25,9 +26,17 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
     def setUp(self):
         super(TestConfigViews, self).setUp()
 
-        self.mock_folders = mock.patch.object(OneDriveClient, 'folders')
-        self.mock_folders.return_value = raw_root_folder_response
-        self.mock_folders.start()
+        self.mock_client_folders = mock.patch(
+            'addons.onedrive.client.OneDriveClient.folders',
+            return_value=raw_root_folder_response,
+        )
+        self.mock_client_folders.start()
+
+        self.mock_client_user = mock.patch(
+            'addons.onedrive.client.OneDriveClient.user_info',
+            return_value=dummy_user_info,
+        )
+        self.mock_client_user.start()
 
         self.mock_fetch = mock.patch.object(
             self.node_settings.__class__,
@@ -37,7 +46,8 @@ class TestConfigViews(OneDriveAddonTestCase, views.OAuthAddonConfigViewsTestCase
         self.mock_fetch.start()
 
     def tearDown(self):
-        self.mock_folders.stop()
+        self.mock_client_folders.stop()
+        self.mock_client_user.stop()
         self.mock_fetch.stop()
         super(TestConfigViews, self).tearDown()
 

@@ -1,9 +1,16 @@
+from framework.celery_tasks.handlers import enqueue_task
+import hashlib
+from api.providers.tasks import prepare_for_registration_bulk_creation
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
+from django.http import JsonResponse
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
+from rest_framework.views import APIView
+from rest_framework.parsers import FileUploadParser
+from rest_framework.response import Response
 
 from api.actions.serializers import RegistrationActionSerializer
 from api.base import permissions as base_permissions
@@ -17,8 +24,6 @@ from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
-from api.registrations.serializers import RegistrationSerializer
-from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -29,12 +34,16 @@ from api.providers.serializers import (
     RegistrationProviderSerializer,
     RegistrationModeratorSerializer,
 )
+from api.registrations import annotations as registration_annotations
+from api.registrations.serializers import RegistrationSerializer
+from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
+from api.base.settings import BULK_SETTINGS
 
 from osf.models import (
     AbstractNode,
@@ -49,10 +58,13 @@ from osf.models import (
     WhitelistedSHAREPreprintProvider,
     NodeRequest,
     Registration,
+    RegistrationBulkUploadJob,
 )
 from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
+
+from osf.registrations.utils import BulkRegistrationUpload, InvalidHeadersError
 
 
 class ProviderMixin:
@@ -723,6 +735,8 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
 
         return Registration.objects.filter(
             provider=provider,
+        ).annotate(
+            revision_state=registration_annotations.REVISION_STATE,
         )
 
     # overrides ListAPIView
@@ -789,3 +803,80 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class RegistrationBulkCreate(APIView, ProviderMixin):
+    provider_class = RegistrationProvider
+    parser_classes = [FileUploadParser]
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        CanUpdateModerator,
+    )
+
+    def get_hash(self, file_obj):
+        BLOCK_SIZE = 2**16
+        file_hash = hashlib.md5()
+        block = file_obj.read(BLOCK_SIZE)
+        while len(block) > 0:
+            file_hash.update(block)
+            block = file_obj.read(BLOCK_SIZE)
+        file_obj.seek(0)
+        return file_hash.hexdigest()
+
+    def put(self, request, *args, **kwargs):
+        provider_id = kwargs['provider_id']
+        user_id = self.request.user._id
+        file_size_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT'] * 10000
+        file_obj = request.data['file']
+
+        if file_obj.size > file_size_limit:
+            return JsonResponse(
+                {'errors': [{'type': 'sizeExceedsLimit'}]},
+                status=413,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        if file_obj.content_type != 'text/csv':
+            return JsonResponse(
+                {'errors': [{'type': 'invalidFileType'}]},
+                status=413,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        file_md5 = self.get_hash(file_obj)
+        if RegistrationBulkUploadJob.objects.filter(payload_hash=file_md5).exists():
+            return JsonResponse(
+                {'errors': [{'type': 'bulkUploadJobExists'}]},
+                status=409,
+                content_type='application/vnd.api+json; application/json',
+            )
+        try:
+            upload = BulkRegistrationUpload(file_obj, provider_id)
+            upload.validate()
+            errors = upload.errors
+        except InvalidHeadersError as e:
+            invalid_headers = [str(detail) for detail in e.detail['invalid_headers']]
+            missing_headers = [str(detail) for detail in e.detail['missing_headers']]
+            return JsonResponse(
+                {'errors': [{'type': 'invalidColumnId', 'invalidHeaders': invalid_headers, 'missingHeaders': missing_headers}]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+        except NotFound:
+            return JsonResponse(
+                {'errors': [{'type': 'invalidSchemaId'}]},
+                status=404,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        if errors:
+            return JsonResponse(
+                {'errors': errors},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+        parsed = upload.get_parsed()
+        enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed, dry_run=False))
+        return Response(status=204)

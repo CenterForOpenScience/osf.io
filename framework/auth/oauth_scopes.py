@@ -186,6 +186,9 @@ class CoreScopes(object):
     METRICS_BASIC = 'metrics_basic'
     METRICS_RESTRICTED = 'metrics_restricted'
 
+    READ_SCHEMA_RESPONSES = 'read_schema_responses'
+    WRITE_SCHEMA_RESPONSES = 'write_schema_responses'
+
 
 class ComposedScopes(object):
     """
@@ -238,12 +241,12 @@ class ComposedScopes(object):
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
                           CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ,
-                          CoreScopes.REGISTRATION_REQUESTS_READ)
+                          CoreScopes.REGISTRATION_REQUESTS_READ, CoreScopes.READ_SCHEMA_RESPONSES)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE,
-                     CoreScopes.REGISTRATION_REQUESTS_WRITE)
+                     CoreScopes.REGISTRATION_REQUESTS_WRITE, CoreScopes.WRITE_SCHEMA_RESPONSES)
 
     # Preprints collection
     # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps

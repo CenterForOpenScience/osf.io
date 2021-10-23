@@ -15,7 +15,7 @@ from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema, DraftRegistrationFactory
+from osf_tests.factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.providers.workflows import Workflows
 from osf.migrations import update_provider_auth_groups
@@ -29,7 +29,7 @@ from osf_tests.management_commands.test_migration_registration_responses import 
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
-    SanctionStates
+    ApprovalStates
 )
 
 pytestmark = pytest.mark.django_db
@@ -78,10 +78,6 @@ def test_factory(user, project):
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
-    assert (
-        registration2.registered_meta[get_default_metaschema()._id] ==
-        data
-    )
 
 
 class TestRegistration:
@@ -299,7 +295,7 @@ class TestRegisterNode:
         user2 = factories.UserFactory()
         project.add_contributor(user2, permissions=ADMIN)
         # Second contributor registers project
-        registration = factories.RegistrationFactory(parent=project, user=user2)
+        registration = factories.RegistrationFactory(project=project, user=user2)
         assert registration.registered_user == user2
 
     def test_registered_from(self, registration, project):
@@ -412,7 +408,7 @@ class TestRegisterNodeContributors:
 
 
 # copied from tests/test_registrations
-class TestNodeSanctionStates:
+class TestNodeApprovalStates:
 
     def test_sanction_none(self):
         node = factories.NodeFactory()
@@ -871,7 +867,7 @@ class TestForcedWithdrawal():
 
         moderated_registration.refresh_from_db()
         assert moderated_registration.is_retracted
-        assert moderated_registration.retraction.approval_stage is SanctionStates.APPROVED
+        assert moderated_registration.retraction.approval_stage is ApprovalStates.APPROVED
         assert moderated_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
     def test_force_retraction_writes_action(self, moderated_registration, moderator):

@@ -288,7 +288,7 @@ class TestDraftRegistrations:
         with pytest.raises(DraftRegistrationStateError):
             DraftRegistration.create_from_node(
                 user=user,
-                node=factories.RegistrationFactory(),
+                node=factories.RegistrationFactory(schema=factories.get_default_metaschema()),
                 schema=factories.get_default_metaschema()
             )
 

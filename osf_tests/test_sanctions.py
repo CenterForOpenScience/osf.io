@@ -57,9 +57,11 @@ class TestNodeEmbargoTerminations:
 
     def test_terminate_embargo_makes_registrations_public(self, registration, user):
         registration.terminate_embargo()
+        registration.refresh_from_db()
         for node in registration.node_and_primary_descendants():
             assert node.is_public is True
             assert node.is_embargoed is False
+            assert node.moderation_state == 'accepted'
 
     def test_terminate_embargo_adds_log_to_registered_from(self, node, registration, user):
         registration.terminate_embargo()

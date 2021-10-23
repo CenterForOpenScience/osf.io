@@ -20,16 +20,23 @@ from api.base.serializers import HideIfProviderCommentsAnonymous
 from api.base.serializers import HideIfProviderCommentsPrivate
 from api.requests.serializers import PreprintRequestSerializer
 from osf.exceptions import InvalidTriggerError
-from osf.models import Preprint, NodeRequest, PreprintRequest, Registration
+from osf.models import (
+    Preprint,
+    NodeRequest,
+    PreprintRequest,
+    Registration,
+    SchemaResponse,
+)
+
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
     ReviewTriggers,
     RegistrationModerationTriggers,
+    SchemaResponseTriggers,
 )
 from osf.utils import permissions
-
 
 class ReviewableCountsRelationshipField(RelationshipField):
 
@@ -106,7 +113,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = ser.CharField(max_length=65535, required=False)
+    comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
@@ -312,6 +319,62 @@ class RegistrationActionSerializer(BaseActionSerializer):
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
                 data={'message_short': short_message, 'message_long': long_message},
+            )
+
+        return target.actions.last()
+
+
+class SchemaResponseActionSerializer(BaseActionSerializer):
+    class Meta:
+        type_ = 'schema-response-actions'
+
+    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PERMISSIONS, required=False)
+    visible = ser.BooleanField(default=True, required=False)
+    trigger = ser.ChoiceField(choices=SchemaResponseTriggers.char_field_choices())
+
+    target = TargetRelationshipField(
+        target_class=SchemaResponse,
+        read_only=False,
+        required=True,
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': '<target._id>'},
+        filter_key='target__guids___id',
+    )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        trigger = validated_data.get('trigger')
+        target = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        previous_action = target.actions.last()
+        old_state = target.reviews_state
+        try:
+            if trigger == SchemaResponseTriggers.SUBMIT.db_name:
+                required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
+                target.submit(user=user, comment=comment, required_approvers=required_approvers)
+            elif trigger == SchemaResponseTriggers.APPROVE.db_name:
+                target.approve(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.ACCEPT.db_name:
+                target.accept(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            elif trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name:
+                target.reject(user=user, comment=comment)
+            else:
+                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+        except PermissionsError as exc:
+            raise PermissionDenied(exc)
+        except (MachineError, ValueError):
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{target.reviews_state}"',
+            )
+
+        new_action = target.actions.last()
+        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{old_state}"',
             )
 
         return target.actions.last()

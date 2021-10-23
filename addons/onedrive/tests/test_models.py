@@ -14,6 +14,8 @@ from addons.onedrive.tests.factories import (
     OneDriveNodeSettingsFactory,
     OneDriveUserSettingsFactory,
 )
+from addons.onedrive.tests.utils import raw_root_folder_response, dummy_user_info
+
 
 pytestmark = pytest.mark.django_db
 
@@ -22,7 +24,7 @@ class TestOneDriveProvider(unittest.TestCase):
         super(TestOneDriveProvider, self).setUp()
         self.provider = OneDriveProvider()
 
-    @mock.patch.object(OneDriveClient, 'user_info_for_token')
+    @mock.patch.object(OneDriveClient, 'user_info')
     def test_handle_callback(self, mock_client):
         fake_response = {'access_token': 'abc123'}
         fake_info = {'id': '12345', 'name': 'fakename', 'link': 'fakeUrl'}
@@ -38,6 +40,27 @@ class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
     short_name = 'onedrive'
     full_name = 'Microsoft OneDrive'
     ExternalAccountFactory = OneDriveAccountFactory
+
+    def setUp(self):
+        super(TestUserSettings, self).setUp()
+
+        self.mock_client_folders = mock.patch(
+            'addons.onedrive.client.OneDriveClient.folders',
+            return_value=raw_root_folder_response,
+        )
+        self.mock_client_folders.start()
+
+        self.mock_client_user = mock.patch(
+            'addons.onedrive.client.OneDriveClient.user_info',
+            return_value=dummy_user_info,
+        )
+        self.mock_client_user.start()
+
+    def tearDown(self):
+        self.mock_client_user.stop()
+        self.mock_client_folders.stop()
+
+        super(TestUserSettings, self).tearDown()
 
 
 class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
@@ -57,9 +80,24 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         )
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
+
+        self.mock_client_folders = mock.patch(
+            'addons.onedrive.client.OneDriveClient.folders',
+            return_value=raw_root_folder_response,
+        )
+        self.mock_client_folders.start()
+
+        self.mock_client_user = mock.patch(
+            'addons.onedrive.client.OneDriveClient.user_info',
+            return_value=dummy_user_info,
+        )
+        self.mock_client_user.start()
+
         super(TestNodeSettings, self).setUp()
 
     def tearDown(self):
+        self.mock_client_user.stop()
+        self.mock_client_folders.stop()
         self.mock_refresh.stop()
         super(TestNodeSettings, self).tearDown()
 
@@ -103,5 +141,19 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.folder_id}
+        expected = {'folder': self.node_settings.folder_id, 'drive_id': self.node_settings.drive_id}
         assert settings == expected
+
+    def test_set_user_auth_drive_id(self):
+        node_settings = self.NodeSettingsFactory()
+        user_settings = self.UserSettingsFactory()
+        external_account = self.ExternalAccountFactory()
+
+        user_settings.owner.external_accounts.add(external_account)
+        user_settings.save()
+
+        node_settings.external_account = external_account
+        node_settings.set_auth(external_account, user_settings.owner)
+        node_settings.save()
+
+        assert node_settings.drive_id == 'b!aGTf8UN135z3UN35zUN335z3iVNn3mB2ZiWctJ-Dr1N35Uz3q4K'
