@@ -64,7 +64,12 @@ from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
 from osf.utils.workflows import RequestTypes
 from osf.metrics import PreprintDownload, PreprintView
 
-from osf.registrations.utils import BulkRegistrationUpload, InvalidHeadersError
+from osf.registrations.utils import (
+    BulkRegistrationUpload,
+    InvalidHeadersError,
+    FileUploadNotSupportedError,
+    DuplicateHeadersError,
+)
 
 
 class ProviderMixin:
@@ -868,6 +873,19 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
             missing_headers = [str(detail) for detail in e.detail['missing_headers']]
             return JsonResponse(
                 {'errors': [{'type': 'invalidColumnId', 'invalidHeaders': invalid_headers, 'missingHeaders': missing_headers}]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+        except DuplicateHeadersError as e:
+            duplicate_headers = [str(detail) for detail in e.detail['duplicate_headers']]
+            return JsonResponse(
+                {'errors': [{'type': 'duplicateColumnId', 'duplicateHeaders': duplicate_headers}]},
+                status=400,
+                content_type='application/vnd.api+json; application/json',
+            )
+        except FileUploadNotSupportedError:
+            return JsonResponse(
+                {'errors': [{'type': 'fileUploadNotSupported'}]},
                 status=400,
                 content_type='application/vnd.api+json; application/json',
             )
