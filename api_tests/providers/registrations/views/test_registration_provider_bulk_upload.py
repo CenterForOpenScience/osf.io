@@ -65,7 +65,7 @@ class TestRegistrationBulkUpload():
         resp = app.put(url_not_allow_bulk_upload, auth=user.auth, expect_errors=True)
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'bulkUploadNotAllowed'
-    
+
     def test_exceeds_size_limit(self, app, user, url_allow_bulk_upload, file_content_exceeds_limit):
         resp = app.request(
             url_allow_bulk_upload,
@@ -77,6 +77,7 @@ class TestRegistrationBulkUpload():
         )
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'sizeExceedsLimit'
+        assert resp.status_code == 413
 
     def test_wrong_content_type(self, app, user, url_allow_bulk_upload, file_content_legit):
         resp = app.request(
@@ -89,6 +90,7 @@ class TestRegistrationBulkUpload():
         )
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'invalidFileType'
+        assert resp.status_code == 413
 
     def test_bulk_upload_job_exists(self, app, user, url_allow_bulk_upload, file_content_legit):
         file_hash = hashlib.md5()
@@ -104,6 +106,7 @@ class TestRegistrationBulkUpload():
         )
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'bulkUploadJobExists'
+        assert resp.status_code == 409
 
     @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
     @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
@@ -122,6 +125,7 @@ class TestRegistrationBulkUpload():
         assert resp.json['errors'][0]['type'] == 'invalidColumnId'
         assert resp.json['errors'][0]['invalidHeaders'] == ['a']
         assert resp.json['errors'][0]['missingHeaders'] == ['b']
+        assert resp.status_code == 400
 
     @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
     @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
@@ -139,6 +143,7 @@ class TestRegistrationBulkUpload():
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'duplicateColumnId'
         assert resp.json['errors'][0]['duplicateHeaders'] == ['a']
+        assert resp.status_code == 400
 
     @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
     @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
@@ -155,6 +160,7 @@ class TestRegistrationBulkUpload():
         )
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'fileUploadNotSupported'
+        assert resp.status_code == 400
 
     @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
     @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
@@ -171,3 +177,4 @@ class TestRegistrationBulkUpload():
         )
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'invalidSchemaId'
+        assert resp.status_code == 404
