@@ -3,7 +3,7 @@ import mock
 import hashlib
 from rest_framework.exceptions import NotFound
 
-from osf.registrations.utils import InvalidHeadersError
+from osf.registrations.utils import DuplicateHeadersError, FileUploadNotSupportedError, InvalidHeadersError
 from api.base.settings import BULK_SETTINGS
 from osf_tests.factories import (
     AuthUserFactory,
@@ -105,8 +105,8 @@ class TestRegistrationBulkUpload():
         assert len(resp.json['errors']) == 1
         assert resp.json['errors'][0]['type'] == 'bulkUploadJobExists'
 
-    @mock.patch('osf.registrations.utils.BulkRegistrationUpload.__init__')
-    @mock.patch('osf.registrations.utils.BulkRegistrationUpload.validate')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
     def test_invalid_headers(self, mock___init__, mock_validate, app, user, url_allow_bulk_upload, file_content_legit):
         mock___init__.return_value = None
         mock_validate.side_effect = InvalidHeadersError({'invalid_headers': ['a'], 'missing_headers': ['b']})
@@ -123,8 +123,41 @@ class TestRegistrationBulkUpload():
         assert resp.json['errors'][0]['invalidHeaders'] == ['a']
         assert resp.json['errors'][0]['missingHeaders'] == ['b']
 
-    @mock.patch('osf.registrations.utils.BulkRegistrationUpload.__init__')
-    @mock.patch('osf.registrations.utils.BulkRegistrationUpload.validate')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
+    def test_duplicate_headers(self, mock___init__, mock_validate, app, user, url_allow_bulk_upload, file_content_legit):
+        mock___init__.return_value = None
+        mock_validate.side_effect = DuplicateHeadersError({'duplicate_headers': ['a']})
+        resp = app.request(
+            url_allow_bulk_upload,
+            method='PUT',
+            expect_errors=True,
+            body=file_content_legit,
+            headers=_add_auth(user.auth, None),
+            content_type='text/csv',
+        )
+        assert len(resp.json['errors']) == 1
+        assert resp.json['errors'][0]['type'] == 'duplicateColumnId'
+        assert resp.json['errors'][0]['duplicateHeaders'] == ['a']
+
+    @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
+    def test_file_upload_not_supported(self, mock___init__, mock_validate, app, user, url_allow_bulk_upload, file_content_legit):
+        mock___init__.return_value = None
+        mock_validate.side_effect = FileUploadNotSupportedError()
+        resp = app.request(
+            url_allow_bulk_upload,
+            method='PUT',
+            expect_errors=True,
+            body=file_content_legit,
+            headers=_add_auth(user.auth, None),
+            content_type='text/csv',
+        )
+        assert len(resp.json['errors']) == 1
+        assert resp.json['errors'][0]['type'] == 'fileUploadNotSupported'
+
+    @mock.patch('api.providers.views.BulkRegistrationUpload.__init__')
+    @mock.patch('api.providers.views.BulkRegistrationUpload.validate')
     def test_schema_not_found(self, mock___init__, mock_validate, app, user, url_allow_bulk_upload, file_content_legit):
         mock___init__.return_value = None
         mock_validate.side_effect = NotFound
