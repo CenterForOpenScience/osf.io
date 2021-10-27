@@ -287,7 +287,8 @@ def make_response_from_ticket(ticket, service_url):
             # updates the user object if this is THE FINAL STEP of the login flow. DON'T update TOS consent status when
             # `external_credential == true` (i.e. w/ `action == 'authenticate'` or `action == 'external_first_login'`)
             # since neither is the final step of a login flow.
-            if cas_resp.attributes.get('termsOfServiceChecked', False):
+            tos_checked_via_cas = cas_resp.attributes.get('termsOfServiceChecked', 'false') == 'true'
+            if tos_checked_via_cas:
                 user.accepted_terms_of_service = timezone.now()
                 user.save()
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)

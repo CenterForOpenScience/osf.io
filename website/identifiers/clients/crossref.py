@@ -36,9 +36,7 @@ class CrossRefClient(AbstractIdentifierClient):
         return (settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
 
     def build_doi(self, preprint):
-        from osf.models import PreprintProvider
-
-        prefix = preprint.provider.doi_prefix or PreprintProvider.objects.get(_id='osf').doi_prefix
+        prefix = preprint.provider.doi_prefix
         return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)
 
     def build_metadata(self, preprint, include_relation=True):
