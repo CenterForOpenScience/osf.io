@@ -3,11 +3,14 @@ from future.moves.urllib.parse import urljoin
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
+from osf.external.internet_archive.tasks import archive_to_ia
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -15,6 +18,7 @@ from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
+from osf.models import Registration
 
 from website.mails import mails
 from website.reviews.signals import reviews_email_submit_moderators_notifications
@@ -511,3 +515,15 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
             email_context['is_approver'] = contributor in self.pending_approvers.all()
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+
+
+@receiver(post_save, sender=SchemaResponse)
+def sync_internet_archive(sender, instance, **kwargs):
+    """
+    This ensures all we update our schema responses.
+    """
+    if instance.reviews_state == ApprovalStates.APPROVED.db_name:
+        if isinstance(instance.parent, Registration):
+            archive_to_ia(instance.parent)
+        else:
+            raise NotImplementedError()

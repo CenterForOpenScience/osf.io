@@ -1,6 +1,7 @@
 import pytest
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory
 from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata
+from osf.utils.workflows import ApprovalStates
 
 
 @pytest.mark.django_db
@@ -13,6 +14,10 @@ class TestPigeon:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
+
+    @pytest.fixture()
+    def schema_response(self, registration):
+        return registration.schema_responses.last()
 
     @pytest.fixture()
     def embargo(self):
@@ -56,3 +61,11 @@ class TestPigeon:
         guid = embargo._get_registration()._id
 
         mock_celery.assert_called_with(_archive_to_ia, (guid,), {}, celery=True)
+
+    @pytest.mark.enable_enqueue_task
+    @pytest.mark.enable_implicit_clean
+    def test_pigeon_archive_schema_response(self, schema_response, mock_pigeon, mock_celery):
+        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.save()
+
+        mock_celery.assert_called_once_with(_archive_to_ia, (schema_response.parent._id,), {}, celery=True)
