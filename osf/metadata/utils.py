@@ -53,7 +53,7 @@ def datacite_format_name_identifiers(user):
 
 
 def datacite_format_affilations(user):
-    data = {'affiliation':  []}
+    data = {'affiliation': []}
     for affiliated_institution in user.affiliated_institutions.all():
         data['affiliation'].append({
             'name': affiliated_institution.name,

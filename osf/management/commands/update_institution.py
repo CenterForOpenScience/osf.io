@@ -5,11 +5,11 @@ from scripts.populate_institutions import INSTITUTIONS
 
 def update_institution_rors(env):
     for institution in INSTITUTIONS[env]:
-        Institution.objects.filter(
-            _id=institution['_id']
-        ).update(
-            ror=institution.get('ror')
-        )
+        ror = institution.get('ror')
+        if ror:
+            institution_obj = Institution.objects.get(_id=institution['_id'])
+            institution_obj.ror = ror
+            institution_obj.save()
 
 
 class Command(BaseCommand):
