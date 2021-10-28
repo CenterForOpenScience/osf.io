@@ -1317,7 +1317,6 @@ class UserProfileMixin(object):
         del request_payload['data']['attributes'][request_key][0]['endYear']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'endYear' is a dependency of 'endMonth'"
 
     def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
         # End date is greater then start date
@@ -1343,7 +1342,6 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'True is not one of [False]'
 
     def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
         # End dates, but no start dates
