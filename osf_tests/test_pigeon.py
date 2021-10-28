@@ -1,7 +1,6 @@
 import pytest
 from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory
 from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata
-from osf.utils.workflows import ApprovalStates
 
 
 @pytest.mark.django_db
@@ -65,7 +64,8 @@ class TestPigeon:
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
     def test_pigeon_archive_schema_response(self, schema_response, mock_pigeon, mock_celery):
-        schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        schema_response.pending_approvers.add(schema_response.parent.creator)
+        schema_response.approve(user=schema_response.parent.creator)
         schema_response.save()
 
         mock_celery.assert_called_once_with(_archive_to_ia, (schema_response.parent._id,), {}, celery=True)

@@ -3,8 +3,6 @@ from future.moves.urllib.parse import urljoin
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils import timezone
 
 from framework.exceptions import PermissionsError
@@ -336,7 +334,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # See _validate_accept_trigger docstring for more information
         if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
             raise PermissionsError(
-                f'Trigger {trigger} from state {self.state} for '
+                f'Trigger {trigger} from state [{self.reviews_state}] for '
                 f'SchemaResponse with id [{self._id}] must be called with a user.'
             )
 
@@ -456,6 +454,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Clear out any lingering pending_approvers in the case of an internal accept.'''
         self.pending_approvers.clear()
 
+        if isinstance(self.parent, Registration):
+            for registrations in Registration.objects.get_children(self.parent, active=True, include_root=True):
+                archive_to_ia(registrations)
+
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''
         self.pending_approvers.clear()
@@ -515,15 +517,3 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
             email_context['is_approver'] = contributor in self.pending_approvers.all()
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
-
-
-@receiver(post_save, sender=SchemaResponse)
-def sync_internet_archive(sender, instance, **kwargs):
-    """
-    This ensures all we update our schema responses.
-    """
-    if instance.reviews_state == ApprovalStates.APPROVED.db_name:
-        if isinstance(instance.parent, Registration):
-            archive_to_ia(instance.parent)
-        else:
-            raise NotImplementedError()
