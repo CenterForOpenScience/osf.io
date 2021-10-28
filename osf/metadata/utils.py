@@ -23,20 +23,37 @@ DATACITE_RESOURCE_TYPE_MAP = {
 }
 
 
-def datacite_format_affilations(user, data=None):
-    if not data:
-        data = {}
-
-    data.update({
+def datacite_format_name_identifiers(user):
+    data = {
         'nameIdentifiers': [
             {
                 'nameIdentifier': f'{settings.DOMAIN}{user._id}/',
                 'nameIdentifierScheme': 'URL',
             }
         ]
-    })
+    }
 
-    data['affiliation'] = []
+    if user.external_identity.get('ORCID'):
+        verified = list(user.external_identity['ORCID'].values())[0] == 'VERIFIED'
+        if verified:
+            data['nameIdentifiers'].append({
+                'nameIdentifier': list(user.external_identity['ORCID'].keys())[0],
+                'nameIdentifierScheme': 'ORCID',
+                'schemeURI': 'http://orcid.org/'
+            })
+
+    if user.social_links.get('orcid'):
+        data['nameIdentifiers'].append({
+            'nameIdentifier': user.social_links.get('orcid'),
+            'nameIdentifierScheme': 'ORCID',
+            'schemeURI': 'http://orcid.org/'
+        })
+
+    return data
+
+
+def datacite_format_affilations(user):
+    data = {'affiliation':  []}
     for affiliated_institution in user.affiliated_institutions.all():
         data['affiliation'].append({
             'name': affiliated_institution.name,
@@ -58,21 +75,6 @@ def datacite_format_affilations(user, data=None):
                 }
             )
 
-    if user.external_identity.get('ORCID'):
-        verified = list(user.external_identity['ORCID'].values())[0] == 'VERIFIED'
-        if verified:
-            data['nameIdentifiers'].append({
-                'nameIdentifier': list(user.external_identity['ORCID'].keys())[0],
-                'nameIdentifierScheme': 'ORCID',
-                'schemeURI': 'http://orcid.org/'
-            })
-
-    if user.social_links.get('orcid'):
-        data['nameIdentifiers'].append({
-            'nameIdentifier': user.social_links.get('orcid'),
-            'nameIdentifierScheme': 'ORCID',
-            'schemeURI': 'http://orcid.org/'
-        })
     return data
 
 
@@ -85,7 +87,9 @@ def datacite_format_creators(creators):
     """
     creators_json = []
     for creator in creators:
-        data = datacite_format_affilations(creator)
+        data = {}
+        data.update(datacite_format_affilations(creator))
+        data.update(datacite_format_name_identifiers(creator))
         data.update({
             'nameType': 'Personal',
             'creatorName': creator.fullname,
@@ -107,7 +111,9 @@ def datacite_format_contributors(contributors):
     """
     contributors_json = []
     for contributor in contributors:
-        data = datacite_format_affilations(contributor)
+        data = {}
+        data.update(datacite_format_affilations(contributor))
+        data.update(datacite_format_name_identifiers(contributor))
         data.update({
             'nameType': 'Personal',
             'contributorType': 'ProjectMember',
