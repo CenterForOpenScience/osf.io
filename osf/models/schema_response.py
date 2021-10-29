@@ -8,7 +8,6 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
-from osf.external.internet_archive.tasks import archive_to_ia
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -16,7 +15,6 @@ from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
-from osf.models import Registration
 
 from website.mails import mails
 from website.reviews.signals import reviews_email_submit_moderators_notifications
@@ -453,10 +451,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _on_complete(self, event_data):
         '''Clear out any lingering pending_approvers in the case of an internal accept.'''
         self.pending_approvers.clear()
-
-        if isinstance(self.parent, Registration):
-            for registrations in Registration.objects.get_children(self.parent, active=True, include_root=True):
-                archive_to_ia(registrations)
+        self.parent.on_schema_response_completed()
 
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''

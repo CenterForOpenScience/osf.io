@@ -1,5 +1,6 @@
+import mock
 import pytest
-from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory
+from osf_tests.factories import RegistrationFactory, AuthUserFactory, EmbargoFactory, NodeFactory
 from osf.external.internet_archive.tasks import _archive_to_ia, _update_ia_metadata
 
 
@@ -13,6 +14,11 @@ class TestPigeon:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
+
+    @pytest.fixture()
+    def registration_with_child(self, registration):
+        NodeFactory(parent=registration)
+        return registration
 
     @pytest.fixture()
     def schema_response(self, registration):
@@ -63,9 +69,12 @@ class TestPigeon:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_archive_schema_response(self, schema_response, mock_pigeon, mock_celery):
+    def test_pigeon_archive_schema_response(self, schema_response, mock_pigeon, mock_celery, registration_with_child):
         schema_response.pending_approvers.add(schema_response.parent.creator)
         schema_response.approve(user=schema_response.parent.creator)
         schema_response.save()
 
-        mock_celery.assert_called_once_with(_archive_to_ia, (schema_response.parent._id,), {}, celery=True)
+        mock_celery.assert_has_calls([
+            mock.call(_archive_to_ia, (schema_response.parent._id,), {}, celery=True),
+            mock.call(_archive_to_ia, (registration_with_child.nodes[0]._id,), {}, celery=True)
+        ], any_order=True)
