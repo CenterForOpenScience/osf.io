@@ -1452,7 +1452,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             for address in user_email_addresses
         ]
         user_has_trusted_email = NotableEmailDomain.objects.filter(
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED.value,
+            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
             domain__in=user_email_domains,
         ).exists()
 

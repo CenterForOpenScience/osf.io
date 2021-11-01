@@ -62,7 +62,7 @@ def validate_email(email):
     domain = email.split('@')[1].lower()
     if NotableEmailDomain.objects.filter(
         domain=domain,
-        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
     ).exists():
         raise ValidationError('Invalid Email')
 

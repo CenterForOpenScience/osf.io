@@ -3347,7 +3347,7 @@ class TestAuthViews(OsfTestCase):
     def test_register_blocked_email_domain(self):
         NotableEmailDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
         )
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'

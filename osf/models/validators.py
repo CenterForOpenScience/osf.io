@@ -104,7 +104,7 @@ def validate_email(value):
 
     is_email_domain_blocked = NotableEmailDomain.objects.filter(
         domain=domain,
-        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
     ).exists()
 
     if is_email_domain_blocked:

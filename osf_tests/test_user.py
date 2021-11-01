@@ -490,7 +490,7 @@ class TestOSFUser:
     def test_add_blocked_domain_unconfirmed_email(self, user):
         NotableEmailDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
         )
         with pytest.raises(BlockedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')

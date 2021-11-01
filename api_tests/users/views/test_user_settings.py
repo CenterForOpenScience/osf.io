@@ -268,7 +268,7 @@ class TestUserEmailsList:
     def test_create_blocked_email(self, app, url, payload, user_one):
         NotableEmailDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION.value,
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
         )
         new_email = 'freddie@mailinator.com'
         payload['data']['attributes']['email_address'] = new_email

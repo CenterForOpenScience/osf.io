@@ -181,41 +181,44 @@ class TestSpamState:
         assert spammable_thing.is_spam
 
     @pytest.mark.parametrize('assume_ham', (True, False))
-    def test_spam_status_properties(self, spammable_thing, assume_ham):
-        expected_prop_values = {
-            SpamStatus.UNKNOWN: {
+    @pytest.mark.parametrize('spam_status, expected_props', (
+            (SpamStatus.UNKNOWN, {
                 'is_spam': False,
                 'is_spammy': False,
                 'is_ham': False,
-                'is_hammy': assume_ham,
-            },
-            SpamStatus.FLAGGED: {
+                'is_hammy': None,  # set in the test body based on assume_ham
+            }),
+            (SpamStatus.FLAGGED, {
                 'is_spam': False,
                 'is_spammy': True,
                 'is_ham': False,
                 'is_hammy': False,
-            },
-            SpamStatus.SPAM: {
+            }),
+            (SpamStatus.SPAM, {
                 'is_spam': True,
                 'is_spammy': True,
                 'is_ham': False,
                 'is_hammy': False,
-            },
-            SpamStatus.HAM: {
+            }),
+            (SpamStatus.HAM, {
                 'is_spam': False,
                 'is_spammy': False,
                 'is_ham': True,
                 'is_hammy': True,
-            },
-        }
+            }),
+    ))
+    def test_spam_status_properties(self, spammable_thing, assume_ham, spam_status, expected_props):
+        if spam_status == SpamStatus.UNKNOWN:
+            expected_props['is_hammy'] = assume_ham
+
         with mock.patch.object(type(spammable_thing), 'is_assumed_ham', new_callable=mock.PropertyMock) as mock_assumed_ham:
             mock_assumed_ham.return_value = assume_ham
-            for spam_status, expected_props in expected_prop_values.items():
-                spammable_thing.spam_status = spam_status
-                assert spammable_thing.is_spam == expected_props['is_spam']
-                assert spammable_thing.is_spammy == expected_props['is_spammy']
-                assert spammable_thing.is_ham == expected_props['is_ham']
-                assert spammable_thing.is_hammy == expected_props['is_hammy']
+            spammable_thing.spam_status = spam_status
+
+            assert spammable_thing.is_spam == expected_props['is_spam']
+            assert spammable_thing.is_spammy == expected_props['is_spammy']
+            assert spammable_thing.is_ham == expected_props['is_ham']
+            assert spammable_thing.is_hammy == expected_props['is_hammy']
 
 
 @pytest.mark.django_db
@@ -238,7 +241,7 @@ class TestSpamCheckEmailDomain:
         user_email_domain = user_email_address.rpartition('@')[2].lower()
         NotableEmailDomain.objects.create(
             domain=user_email_domain,
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED.value,
+            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
         )
 
         # should not call do_check_spam this time
