@@ -69,6 +69,7 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.base import test_app as mock_app
+from tests.utils import run_celery_tasks
 from tests.test_cas_authentication import generate_external_user_with_resp, make_external_response
 from api_tests.utils import create_test_file
 
@@ -4931,6 +4932,7 @@ class TestResetPassword(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     # successfully reset password
+    @pytest.mark.enable_enqueue_task
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_can_reset_password_if_form_success(self, mock_service_validate):
         # load reset password page and submit email
@@ -4970,7 +4972,8 @@ class TestResetPassword(OsfTestCase):
         )
         ticket = fake.md5()
         service_url = 'http://accounts.osf.io/?ticket=' + ticket
-        cas.make_response_from_ticket(ticket, service_url)
+        with run_celery_tasks():
+            cas.make_response_from_ticket(ticket, service_url)
         self.user.reload()
         assert_equal(self.user.verification_key, None)
 
