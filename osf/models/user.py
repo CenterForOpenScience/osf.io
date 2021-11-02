@@ -1468,8 +1468,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for group in self.osf_groups:
             group.update_search()
 
-    def update_date_last_login(self):
-        self.date_last_login = timezone.now()
+    def update_date_last_login(self, login_time=None):
+        self.date_last_login = login_time or timezone.now()
 
     def get_summary(self, formatter='long'):
         return {
