@@ -24,7 +24,7 @@ from osf.exceptions import (
     UserStateError,
     UserNotAffiliatedError,
     InvalidTagError,
-    BlacklistedEmailError,
+    BlockedEmailError,
 )
 from osf.models.node_relation import NodeRelation
 from osf.models.nodelog import NodeLog
@@ -1445,8 +1445,8 @@ class ContributorMixin(models.Model):
         if email:
             try:
                 validate_email(email)
-            except BlacklistedEmailError:
-                raise ValidationError('Unregistered contributor email address domain is blacklisted.')
+            except BlockedEmailError:
+                raise ValidationError('Unregistered contributor email address domain is blocked.')
 
         # Create a new user record if you weren't passed an existing user
         contributor = existing_user if existing_user else OSFUser.create_unregistered(fullname=fullname, email=email)
@@ -2070,7 +2070,7 @@ class SpamOverrideMixin(SpamMixin):
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
-        if user.spam_status == SpamStatus.HAM:
+        if user.is_hammy:
             return False
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
             return False
@@ -2111,7 +2111,7 @@ class SpamOverrideMixin(SpamMixin):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user, train_akismet=False):
-        if user.spam_status == SpamStatus.HAM:
+        if user.is_ham:
             return False
         self.confirm_spam(save=True, train_akismet=train_akismet)
         self.set_privacy('private', log=False, save=True)

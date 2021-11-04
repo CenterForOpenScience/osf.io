@@ -75,7 +75,7 @@ from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode, BlacklistedEmailDomain
+from osf.models import NodeRelation, QuickFilesNode, NotableEmailDomain
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -3345,8 +3345,11 @@ class TestAuthViews(OsfTestCase):
         users = OSFUser.objects.filter(username=email)
         assert_equal(users.count(), 1)
 
-    def test_register_blacklisted_email_domain(self):
-        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
+    def test_register_blocked_email_domain(self):
+        NotableEmailDomain.objects.get_or_create(
+            domain='mailinator.com',
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        )
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
         res = self.app.post_json(

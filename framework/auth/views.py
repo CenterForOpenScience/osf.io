@@ -31,7 +31,7 @@ from website import settings, mails, language
 from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
-from osf.exceptions import ValidationValueError, BlacklistedEmailError
+from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
@@ -943,10 +943,10 @@ def register_user(**kwargs):
                 )
             )
         )
-    except BlacklistedEmailError:
+    except BlockedEmailError:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=language.BLACKLISTED_EMAIL)
+            data=dict(message_long=language.BLOCKED_EMAIL)
         )
     except ValidationError as e:
         raise HTTPError(
