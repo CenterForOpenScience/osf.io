@@ -332,7 +332,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # See _validate_accept_trigger docstring for more information
         if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
             raise PermissionsError(
-                f'Trigger {trigger} from state {self.state} for '
+                f'Trigger {trigger} from state [{self.reviews_state}] for '
                 f'SchemaResponse with id [{self._id}] must be called with a user.'
             )
 
@@ -451,6 +451,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _on_complete(self, event_data):
         '''Clear out any lingering pending_approvers in the case of an internal accept.'''
         self.pending_approvers.clear()
+        self.parent.on_schema_response_completed()
 
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''

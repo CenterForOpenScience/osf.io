@@ -868,6 +868,10 @@ class Registration(AbstractNode):
                 self.registration_responses
             )
 
+    def on_schema_response_completed(self):
+        for children in Registration.objects.get_children(self, active=True, include_root=True):
+            archive_to_ia(children)
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
