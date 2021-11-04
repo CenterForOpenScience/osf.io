@@ -8,7 +8,7 @@ from framework.auth import signals
 from framework.auth.core import Auth
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError
-from framework.auth.tasks import update_user_from_login
+from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import session, create_session
@@ -39,7 +39,7 @@ def authenticate(user, access_token, response, user_updates=None):
         'auth_user_access_token': access_token,
     })
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
-    enqueue_task(update_user_from_login.s(user._id, timezone.now(), user_updates))
+    enqueue_task(update_user_from_activity.s(user._id, timezone.now(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
     response = create_session(response, data=data)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
