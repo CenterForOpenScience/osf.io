@@ -4,7 +4,6 @@ from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
-from django.db.models import Q
 import bson.objectid
 import itsdangerous
 from flask import request
@@ -12,6 +11,7 @@ import furl
 from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
+from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
 from framework.sessions.utils import remove_session
 from website import settings
@@ -164,14 +164,13 @@ def before_request():
             return
         if not throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
             # Update date last login when making non-api requests
+            from framework.auth.tasks import update_user_from_activity
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
-                OSFUser = apps.get_model('osf.OSFUser')
-                (
-                    OSFUser.objects
-                    .filter(guids___id__isnull=False, guids___id=user_session.data['auth_user_id'])
-                    # Throttle updates
-                    .filter(Q(date_last_login__isnull=True) | Q(date_last_login__lt=timezone.now() - settings.DATE_LAST_LOGIN_THROTTLE_DELTA))
-                ).update(date_last_login=timezone.now())
+                enqueue_task(update_user_from_activity.s(
+                    user_session.data.get('auth_user_id'),
+                    timezone.now(),
+                    cas_login=False
+                ))
             set_session(user_session)
         else:
             remove_session(user_session)
