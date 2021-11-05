@@ -168,7 +168,7 @@ def before_request():
             if user_session.data.get('auth_user_id') and 'api' not in request.url:
                 enqueue_task(update_user_from_activity.s(
                     user_session.data.get('auth_user_id'),
-                    timezone.now(),
+                    timezone.now().timestamp(),
                     cas_login=False
                 ))
             set_session(user_session)
