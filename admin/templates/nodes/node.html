@@ -166,6 +166,18 @@
                 <td>{{ node.public }}</td>
             </tr>
             <tr>
+                <td>Provider</td>
+                <td><a href="{{ node.provider.id | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
+            </tr>
+            <tr>
+                <td>Moderation State</td>
+                <td>{{ node.state }}</td>
+            </tr>
+            <tr>
+                <td>Reviews State (Schema Response)</td>
+                <td><a href="{{ node.schema_response.id | reverse_schema_response }}">{{ node.schema_response.reviews_state }}</a></td>
+            </tr>
+            <tr>
                 <td>IA url</td>
                 <td>{{ node.ia_url }}</td>
             </tr>

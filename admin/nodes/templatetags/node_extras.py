@@ -1,14 +1,14 @@
 from django import template
 from django.urls import reverse
 
-from osf.models import Node, OSFUser
+from osf.models import Node, OSFUser, Registration
 
 register = template.Library()
 
 
 @register.filter
 def reverse_node(value):
-    if isinstance(value, Node):
+    if isinstance(value, (Node, Registration)):
         value = value._id
     return reverse('nodes:node', kwargs={'guid': value})
 
@@ -27,3 +27,19 @@ def reverse_user(user_id):
 @register.filter
 def reverse_osf_group(value):
     return reverse('osf_groups:osf_group', kwargs={'id': value})
+
+
+@register.filter
+def reverse_registration_provider(value):
+    return reverse('registration_providers:detail', kwargs={'registration_provider_id': value})
+
+
+@register.filter
+def reverse_schema_response(value):
+    return reverse('schema_responses:detail', kwargs={'schema_response_id': value})
+
+
+@register.filter
+def order_by(queryset, args):
+    args = [x.strip() for x in args.split(',')]
+    return queryset.order_by(*args)

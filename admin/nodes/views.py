@@ -259,6 +259,28 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         }
 
 
+class AdminNodeSchemaResponseView(PermissionRequiredMixin, ListView):
+    """ Allow admins to see logs"""
+
+    template_name = 'schema_response/schema_response_list.html'
+    ordering = 'date'
+    paginate_by = 10
+    paginate_orphans = 1
+
+    permission_required = 'osf.view_schema_response'
+    raise_exception = True
+
+    def get_object(self):
+        return Registration.objects.get(id=int(self.kwargs.get('node_id')))
+
+    def get_queryset(self):
+        node = self.get_object()
+        return node.schema_responses.all()
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        return {'schema_responses': self.get_queryset()}
+
+
 class RegistrationListView(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to view list of registrations
 

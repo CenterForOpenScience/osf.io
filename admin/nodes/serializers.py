@@ -5,6 +5,7 @@ from osf.models import Contributor
 from admin.users.serializers import serialize_simple_node
 from website.project.utils import sizeof_fmt
 from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE
+from django.urls import reverse
 
 
 def serialize_node(node):
@@ -14,10 +15,17 @@ def serialize_node(node):
         embargo = node.embargo.end_date
         embargo_formatted = embargo.strftime('%m/%d/%Y')
 
+    schema_responses = getattr(node, 'schema_responses', None)
+    if schema_responses:
+        schema_response = schema_responses.last()
+
     return {
         'id': node._id,
         'title': node.title,
         'public': node.is_public,
+        'provider': getattr(node, 'provider', None),
+        'state': getattr(node, 'moderation_state', None),
+        'schema_response': schema_response,
         'parent': node.parent_id,
         'root': node.root._id,
         'storage_usage': sizeof_fmt(node.storage_usage) if node.storage_usage is not None else None,

@@ -16,6 +16,8 @@ urlpatterns = [
         name='node'),
     url(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(),
         name='node-logs'),
+    url(r'^(?P<node_id>[a-z0-9]+)/schema_responses/$', views.AdminNodeSchemaResponseView.as_view(),
+        name='schema_responses'),
     url(r'^registration_list/$', views.RegistrationListView.as_view(),
         name='registrations'),
     url(r'^stuck_registration_list/$', views.StuckRegistrationListView.as_view(),

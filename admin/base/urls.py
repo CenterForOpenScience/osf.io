@@ -36,6 +36,7 @@ urlpatterns = [
             url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
             url(r'^management/', include('admin.management.urls', namespace='management')),
             url(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
+            url(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),
         ]),
     ),
 ]
