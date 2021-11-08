@@ -5,7 +5,6 @@ from osf.models import Contributor
 from admin.users.serializers import serialize_simple_node
 from website.project.utils import sizeof_fmt
 from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE
-from django.urls import reverse
 
 
 def serialize_node(node):
