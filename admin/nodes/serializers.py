@@ -1,6 +1,6 @@
 import json
 
-from osf.models import Contributor, NodeLog
+from osf.models import Contributor, NodeLog, Embargo
 
 from admin.users.serializers import serialize_simple_node
 from website.project.utils import sizeof_fmt
@@ -19,14 +19,34 @@ def serialize_node(node):
         schema_response = schema_responses.last()
 
     registered_from = node.registered_from
-    if registered_from:
-        registration_approval_date = registered_from.logs.filter(action=NodeLog.PROJECT_REGISTERED)
-        if registration_approval_date:
-            registration_approval_date = registered_from.logs.filter(action=NodeLog.PROJECT_REGISTERED)[0].created
-        created_from_draft = bool(registered_from.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG))
-    else:
+    try:
+        registration_approval_date = registered_from.logs.get(action=NodeLog.PROJECT_REGISTERED).created
+    except NodeLog.DoesNotExist:
         registration_approval_date = None
+
+    try:
+        embargo_approval_date = registered_from.logs.get(action=NodeLog.EMBARGO_APPROVED).created
+    except NodeLog.DoesNotExist:
+        embargo_approval_date = None
+
+    try:
+        embargo = Embargo.objects.get(registrations=node)
+    except Embargo.DoesNotExist:
+        embargo = None
+
+    try:
+        embargo_complete = node.logs.get(action=NodeLog.EMBARGO_COMPLETED)
+    except NodeLog.DoesNotExist:
+        embargo_complete = False
+    try:
+        created_from_draft = bool(node.logs.get(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG))
+    except NodeLog.DoesNotExist:
         created_from_draft = False
+
+    try:
+        embargo_terminated = node.logs.get(action=NodeLog.EMBARGO_TERMINATED)
+    except NodeLog.DoesNotExist:
+        embargo_terminated = False
 
     return {
         'id': node._id,
@@ -35,9 +55,12 @@ def serialize_node(node):
         'provider': getattr(node, 'provider', None),
         'state': getattr(node, 'moderation_state', None),
         'schema_response': schema_response,
+        'embargo_complete': embargo_complete,
+        'embargo_terminated': embargo_terminated,
         'created_from_draft': created_from_draft,
         'registration_approval': getattr(node, 'registration_approval'),
         'registration_approval_date': registration_approval_date,
+        'embargo_approval_date': embargo_approval_date,
         'actions': node.actions,
         'parent': node.parent_id,
         'root': node.root._id,
@@ -49,6 +72,7 @@ def serialize_node(node):
         'is_registration': node.is_registration,
         'is_stuck_registration': getattr(node, 'is_stuck_registration', False),
         'date_created': node.created,
+        'draft_registration': node.draft_registration.last(),
         'withdrawn': node.is_retracted,
         'embargo': embargo,
         'embargo_formatted': embargo_formatted,
@@ -63,7 +87,7 @@ def serialize_node(node):
         'spam_data': json.dumps(node.spam_data, indent=4),
         'is_public': node.is_public,
         'registrations': [serialize_node(registration) for registration in node.registrations.all()],
-        'registered_from': node.registered_from._id if node.registered_from else None,
+        'registered_from': getattr(node, 'registered_from', None),
         'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups)]
     }
 

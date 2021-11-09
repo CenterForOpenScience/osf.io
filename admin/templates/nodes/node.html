@@ -388,7 +388,7 @@
                                     <div class="row">
                                         <div class="col-md-10">
                                             <span id="table-view">
-                                                {{ node.embargo }}
+                                                {{ node.embargo.end_date }}
                                             </span>
                                             <span class="form-view" style="display:none;">
                                                 <form id="embargo-update-form" class="row">
@@ -412,7 +412,7 @@
                             {% if node.registered_from is not None %}
                             <tr>
                                 <td>Registered From</td>
-                                <td><a href="{% url 'nodes:node' guid=node.registered_from %}">{{ node.registered_from }}</a></td>
+                                <td><a href="{% url 'nodes:node' guid=node.registered_from.id %}">{{ node.registered_from.id }}</a></td>
                             </tr>
                             {% endif %}
                         </tbody>
@@ -442,15 +442,36 @@
                 <tr>
                     <td>Timeline</td>
                     <td>
-                        {% if created_from_draft %}
+                        {% if node.created_from_draft %}
                             <label>Created (Created from draft)</label>
+                            <br> <pre> {{ node.draft_registration.created }}:  <b>Draft created</b></pre>
                         {% else %}
                             <label>Created (Created from project)</label>
+                            <br> <pre> {{ node.registered_from.created }} <b>Project created</b></pre>
                         {% endif %}
-                        <br> <pre> {{ node.created }}:  <b> Did not exist -> initial </b></pre>
 
-                        <label>Submitted (for approval by contributor, lasts 48 hours) </label>
-                        <br> <pre> {{ node.registration_approval.created }}:  <b> initial -> pending </b></pre>
+                        {% if node.embargo %}
+                            <label>Unapproved Embargo (can be approved by contributors or 48 hour span, should be private)</label>
+                            <br> <pre> {{ node.embargo.created }}:  <b> initial -> pending </b></pre>
+                            {% if node.embargo_approval_date  == 'approved' %}
+                                <label>Approved Embargo (private until end date   {{ node.embargo.embargo_end_date }})</label>
+                                <br> <pre> {{ node.embargo_approval_date }}:  <b> pending -> accepted </b></pre>
+                            {% endif %}
+                            {% if node.embargo.state == 'completed' and node.embargo_complete %}
+                                <label>Complete Embargo (public)</label>
+                                <br> <pre> {{ node.embargo.modified }}:  <b> accepted -> accepted (public) </b></pre>
+                            {% endif %}
+                            {% if node.embargo.state == 'completed' and not node.embargo_terminated %}
+                                <label>Embargo Terminated (public, embargo manually lifted)</label>
+                                <br> <pre> {{ node.embargo.modified  }}:  <b> accepted -> accepted (public) </b></pre>
+                            {% endif %}
+                        {% endif %}
+
+
+                        {% if node.registration_approval %}
+                            <label>Submitted (for approval by contributor, lasts 48 hours) </label>
+                            <br> <pre> {{ node.registration_approval.created }}:  <b> initial -> pending </b></pre>
+                        {% endif %}
 
                         {% if node.registration_approval_date %}
                             <label>Approved (by contributors or 48 hour span, should be public now)</label>
@@ -460,6 +481,7 @@
                                 <br> <pre> {{ node.registration_approval_date }}:  <b> pending -> accepted </b></pre>
                             {% endif %}
                         {% endif %}
+
 
                         <label>Moderator Actions</label>
                         {% if node.actions.all %}
