@@ -737,6 +737,8 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
             provider=provider,
         ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
+            original_response_id=registration_annotations.ORIGINAL_RESPONSE_ID,
+            latest_response_id=registration_annotations.LATEST_RESPONSE_ID,
         )
 
     # overrides ListAPIView

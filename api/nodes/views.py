@@ -708,6 +708,8 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     def get_queryset(self):
         nodes = self.get_node().registrations_all.annotate(
             revision_state=registration_annotations.REVISION_STATE,
+            original_response_id=registration_annotations.ORIGINAL_RESPONSE_ID,
+            latest_response_id=registration_annotations.LATEST_RESPONSE_ID,
         )
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]

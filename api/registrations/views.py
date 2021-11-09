@@ -154,6 +154,8 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
             user=self.request.user,
             model_cls=Registration,
             revision_state=annotations.REVISION_STATE,
+            original_response_id=annotations.ORIGINAL_RESPONSE_ID,
+            latest_response_id=annotations.LATEST_RESPONSE_ID,
         )
 
     def is_blacklisted(self):

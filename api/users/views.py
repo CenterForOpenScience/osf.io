@@ -481,6 +481,8 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
             user=current_user,
             model_cls=Registration,
             revision_state=registration_annotations.REVISION_STATE,
+            original_response_id=registration_annotations.ORIGINAL_RESPONSE_ID,
+            latest_response_id=registration_annotations.LATEST_RESPONSE_ID,
         )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)
