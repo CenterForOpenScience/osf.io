@@ -167,7 +167,11 @@
             </tr>
             <tr>
                 <td>Provider</td>
-                <td><a href="{{ node.provider.id | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
+                {% if node.provider %}
+                    <td><a href="{{ node.provider.id | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
+                {% else %}
+                    <td>None</td>
+                {% endif %}
             </tr>
             <tr>
                 <td>Moderation State</td>
@@ -175,7 +179,11 @@
             </tr>
             <tr>
                 <td>Reviews State (Schema Response)</td>
-                <td><a href="{{ node.schema_response.id | reverse_schema_response }}">{{ node.schema_response.reviews_state }}</a></td>
+                {% if node.schema_response %}
+                    <td><a href="{{ node.schema_response.id | reverse_schema_response }}">{{ node.schema_response.reviews_state }}</a></td>
+                {% else %}
+                    <td>None</td>
+                {% endif %}
             </tr>
             <tr>
                 <td>IA url</td>
@@ -430,10 +438,44 @@
                     {% endif %}
                 </td>
             </tr>
+            {% if node.is_registration %}
+                <tr>
+                    <td>Timeline</td>
+                    <td>
+                        {% if created_from_draft %}
+                            <label>Created (Created from draft)</label>
+                        {% else %}
+                            <label>Created (Created from project)</label>
+                        {% endif %}
+                        <br> <pre> {{ node.created }}:  <b> Did not exist -> initial </b></pre>
+
+                        <label>Submitted (for approval by contributor, lasts 48 hours) </label>
+                        <br> <pre> {{ node.registration_approval.created }}:  <b> initial -> pending </b></pre>
+
+                        {% if node.registration_approval_date %}
+                            <label>Approved (by contributors or 48 hour span, should be public now)</label>
+                            {% if node.provider.reviews_workflow %}
+                                <br> <pre> {{ node.registration_approval_date }}:  <b> pending -> pending moderation </b></pre>
+                            {% else %}
+                                <br> <pre> {{ node.registration_approval_date }}:  <b> pending -> accepted </b></pre>
+                            {% endif %}
+                        {% endif %}
+
+                        <label>Moderator Actions</label>
+                        {% if node.actions.all %}
+                            {% for action in node.actions|order_by:"created" %}
+                                <br> <pre> {{ action.created }}:  <b>{{ action.from_state }} -> {{ action.to_state }} </b></pre>
+                            {% endfor %}
+                        {% else %}
+                            <br> <pre> </pre>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endif %}
+
             <tr>
                 <td>SPAM Pro Tip</td>
-                    <td>{{ node.spam_pro_tip }}</td>
-                <td>
+                <td>{{ node.spam_pro_tip }}</td>
             </tr>
             <tr>
                 <td>SPAM Status</td>

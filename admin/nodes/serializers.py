@@ -1,6 +1,6 @@
 import json
 
-from osf.models import Contributor
+from osf.models import Contributor, NodeLog
 
 from admin.users.serializers import serialize_simple_node
 from website.project.utils import sizeof_fmt
@@ -18,6 +18,16 @@ def serialize_node(node):
     if schema_responses:
         schema_response = schema_responses.last()
 
+    registered_from = node.registered_from
+    if registered_from:
+        registration_approval_date = registered_from.logs.filter(action=NodeLog.PROJECT_REGISTERED)
+        if registration_approval_date:
+            registration_approval_date = registered_from.logs.filter(action=NodeLog.PROJECT_REGISTERED)[0].created
+        created_from_draft = bool(registered_from.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG))
+    else:
+        registration_approval_date = None
+        created_from_draft = False
+
     return {
         'id': node._id,
         'title': node.title,
@@ -25,8 +35,13 @@ def serialize_node(node):
         'provider': getattr(node, 'provider', None),
         'state': getattr(node, 'moderation_state', None),
         'schema_response': schema_response,
+        'created_from_draft': created_from_draft,
+        'registration_approval': getattr(node, 'registration_approval'),
+        'registration_approval_date': registration_approval_date,
+        'actions': node.actions,
         'parent': node.parent_id,
         'root': node.root._id,
+        'created': node.created,
         'storage_usage': sizeof_fmt(node.storage_usage) if node.storage_usage is not None else None,
         'storage_limit_status': node.storage_limit_status.value,
         'public_storage_cap': round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1),
