@@ -26,6 +26,8 @@ class NodesFilterMixin(ListFilterMixin):
         if filters:
             for key, field_names in filters.items():
                 for field_name, operation in field_names.items():
+                    if field_name == 'tags':
+                        queryset = queryset.distinct('id')
                     # filter[parent]=null
                     if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
                         queryset = queryset.get_roots()

@@ -718,19 +718,28 @@ class TestNodeFiltering:
         assert len(res.json.get('data')) == 0
 
     def test_filtering_tags_returns_distinct(
-            self, app, user_one, public_project_one):
+            self, app, user_one, public_project_one,
+            public_project_two):
         # regression test for returning multiple of the same file
         public_project_one.add_tag('cat', Auth(user_one))
         public_project_one.add_tag('cAt', Auth(user_one))
         public_project_one.add_tag('caT', Auth(user_one))
         public_project_one.add_tag('CAT', Auth(user_one))
+        public_project_two.add_tag('cat', Auth(user_one))
+        public_project_two.add_tag('cAt', Auth(user_one))
+        public_project_two.add_tag('caT', Auth(user_one))
+        public_project_two.add_tag('CAT', Auth(user_one))
+
         res = app.get(
             '/{}nodes/?filter[tags]=cat'.format(
                 API_BASE
             ),
             auth=user_one.auth
         )
-        assert len(res.json.get('data')) == 1
+        data = res.json.get('data')
+        assert len(data) == 2
+        pids = [d['id'] for d in data]
+        assert set(pids) == {public_project_one._id, public_project_two._id}
 
     def test_filtering_contributors(
             self, app, user_one, user_one_private_project,
