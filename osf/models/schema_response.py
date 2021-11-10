@@ -71,7 +71,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-created']
         indexes = [
-            models.Index(fields=['reviews_state'])
+            models.Index(fields=['reviews_state']),
+            models.Index(fields=['object_id', 'content_type'])
         ]
 
     # Attribute for controlling flow from 'reject' triggers on the state machine.
