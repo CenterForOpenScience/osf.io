@@ -39,11 +39,9 @@
                                     </div>
                                 </div>
                             {% else %}
-                                <form method="post"
-                                      action="{% url 'nodes:restore' guid=node.guid %}">
+                                <form style="display: inline;" method="post" action="{% url 'nodes:restore' guid=node.guid %}">
                                     {% csrf_token %}
-                                    <input class="btn btn-success" type="submit"
-                                           value="Restore Node" />
+                                    <input class="btn btn-success" type="submit" value="Restore Node" />
                                 </form>
                             {% endif %}
                         {% else %}
