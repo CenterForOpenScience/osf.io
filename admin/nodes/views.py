@@ -11,7 +11,6 @@ from django.views.defaults import page_not_found
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
-from django.db.models import Q
 
 from website import search
 from osf.models import NodeLog
@@ -32,7 +31,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
+from admin.nodes.serializers import serialize_simple_user_and_node_permissions
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 from website.project.views.register import osf_admin_change_status_identifier
@@ -252,8 +251,9 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
+
         return {
-            'logs': list(map(serialize_log, query_set)),
+            'logs': [(log, log.params.items()) for log in query_set],
             'page': page,
         }
 
@@ -302,7 +302,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': list(map(serialize_node, query_set)),
+            'nodes': query_set,
             'page': page,
         }
 
@@ -382,7 +382,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'nodes': list(map(serialize_node, query_set)),
+            'nodes': query_set,
             'page': page,
         }
 

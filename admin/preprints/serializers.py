@@ -1,5 +1,4 @@
 import json
-from admin.nodes.serializers import serialize_node
 from osf.models import PreprintContributor
 
 def serialize_preprint(preprint):
@@ -10,7 +9,7 @@ def serialize_preprint(preprint):
         'date_created': preprint.created,
         'modified': preprint.modified,
         'provider': preprint.provider,
-        'node': serialize_node(preprint.node) if preprint.node else None,
+        'node': preprint.node,
         'contributors': [serialize_simple_user_and_preprint_permissions(preprint, user) for user in preprint.contributors],
         'is_published': preprint.is_published,
         'date_published': preprint.date_published,

@@ -12,9 +12,11 @@ def reverse_node(value):
         value = value._id
     return reverse('nodes:node', kwargs={'guid': value})
 
+
 @register.filter
 def reverse_preprint(value):
     return reverse('preprints:preprint', kwargs={'guid': value})
+
 
 @register.filter
 def reverse_user(user_id):
@@ -23,6 +25,7 @@ def reverse_user(user_id):
     else:
         user = OSFUser.load(user_id)
     return reverse('users:user', kwargs={'guid': user._id})
+
 
 @register.filter
 def reverse_osf_group(value):
@@ -48,4 +51,3 @@ def order_by(queryset, args):
 @register.simple_tag
 def get_permissions(user_id, node_id):
     return Contributor.objects.get(user_id=user_id, node_id=node_id).permission
-
