@@ -18,21 +18,6 @@ def serialize_node(node):
     if schema_responses:
         schema_response = schema_responses.last()
 
-    registered_from = node.registered_from
-    try:
-        registration_approval_date = registered_from.logs.get(action=NodeLog.PROJECT_REGISTERED).created
-    except NodeLog.DoesNotExist:
-        registration_approval_date = None
-
-    try:
-        embargo_approval_date = registered_from.logs.get(action=NodeLog.EMBARGO_APPROVED).created
-    except NodeLog.DoesNotExist:
-        embargo_approval_date = None
-
-    try:
-        embargo = Embargo.objects.get(registrations=node)
-    except Embargo.DoesNotExist:
-        embargo = None
 
     try:
         embargo_complete = node.logs.get(action=NodeLog.EMBARGO_COMPLETED)
@@ -59,8 +44,6 @@ def serialize_node(node):
         'embargo_terminated': embargo_terminated,
         'created_from_draft': created_from_draft,
         'registration_approval': getattr(node, 'registration_approval'),
-        'registration_approval_date': registration_approval_date,
-        'embargo_approval_date': embargo_approval_date,
         'actions': node.actions,
         'parent': node.parent_id,
         'root': node.root._id,
@@ -71,22 +54,10 @@ def serialize_node(node):
         'private_storage_cap': round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1),
         'is_registration': node.is_registration,
         'is_stuck_registration': getattr(node, 'is_stuck_registration', False),
-        'date_created': node.created,
         'draft_registration': node.draft_registration.last(),
         'withdrawn': node.is_retracted,
-        'embargo': embargo,
         'embargo_formatted': embargo_formatted,
         'contributors': [serialize_simple_user_and_node_permissions(node, user) for user in node.contributors],
-        'children': list(map(serialize_simple_node, node.nodes)),
-        'deleted': node.is_deleted,
-        'pending_registration': node.is_pending_registration,
-        'registered_date': node.registered_date,
-        'creator': node.creator._id,
-        'spam_status': node.spam_status,
-        'spam_pro_tip': node.spam_pro_tip,
-        'spam_data': json.dumps(node.spam_data, indent=4),
-        'is_public': node.is_public,
-        'registrations': [serialize_node(registration) for registration in node.registrations.all()],
         'registered_from': getattr(node, 'registered_from', None),
         'osf_groups': [serialize_groups_for_node(node, group) for group in list(node.osf_groups)]
     }

@@ -219,12 +219,15 @@ class NodeView(PermissionRequiredMixin, GuidView):
         kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
         kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
         kwargs.update({'STORAGE_LIMITS': StorageLimits})
+
+        node = self.get_object()
+        node.guid = node._id  # django templates don't like underscores???
+        kwargs.update({'node': node})
         return kwargs
 
-    def get_object(self, queryset=None):
+    def get_object(self):
         guid = self.kwargs.get('guid')
-        node = Node.load(guid) or Registration.load(guid)
-        return serialize_node(node)
+        return Node.load(guid) or Registration.load(guid)
 
 
 class AdminNodeLogView(PermissionRequiredMixin, ListView):
@@ -238,15 +241,11 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
     permission_required = 'osf.view_node'
     raise_exception = True
 
-    def get_object(self, queryset=None):
+    def get_object(self):
         return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
     def get_queryset(self):
-        node = self.get_object()
-        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
-        return NodeLog.objects.filter(query).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
-        )
+        return self.get_object().logs.order_by('created')
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()
@@ -448,11 +447,10 @@ class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
             message='Confirmed SPAM: {}'.format(node._id),
             action_flag=CONFIRM_SPAM
         )
-        if isinstance(node, Node):
-            return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(reverse_node(self.kwargs.get('guid')))
 
     def get_context_data(self, **kwargs):
-        context = super(NodeConfirmSpamView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context['link'] = 'nodes:confirm-spam'
         context['resource_type'] = self.object_type.lower()
         return context

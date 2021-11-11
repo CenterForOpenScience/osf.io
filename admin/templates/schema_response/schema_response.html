@@ -70,14 +70,7 @@
                         <td>Parent</td>
                         <td><a href="{{ object.parent | reverse_node }}">{{ object.parent.title }}</a></td>
                     </tr>
-                    <tr>
-                        <td>Actions</td>
-                        <td>
-                            {% for action in object.actions|order_by:"created" %}
-                            <br> <pre>{{ action.created }}:  <b>{{ action.from_state }} -> {{ action.to_state }} </b></pre>
-                            {% endfor %}
-                        </td>
-                    </tr>
+                    {% include "nodes/actions.html" with actions=object.actions.all|order_by:"created" %}
                 </tbody>
             </table>
         </div>

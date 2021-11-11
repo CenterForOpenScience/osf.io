@@ -1,0 +1,34 @@
+{% load user_extras %}
+{% load node_extras %}
+
+<tr>
+    <td>Node storage usage</td>
+    <td>
+        <b>Current usage:</b> {{ node.storage_usage }}<br>
+        <b>Public cap:</b> {{ node.public_storage_cap }} GB<br>
+        <b>Private cap:</b> {{ node.private_storage_cap}} GB<br>
+        <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}<br><br>
+        <a href="{% url 'nodes:adjust-storage-usage' guid=node.id %}"
+           data-toggle="modal" data-target="#modifyStorageCaps"
+           class="btn btn-warning">
+            Modify Storage Caps
+        </a>
+        <div class="modal" id="modifyStorageCaps">
+            <div class="modal-dialog">
+                <div class="modal-content"></div>
+                {# Data from above link #}
+            </div>
+        </div>
+        <a href="{% url 'nodes:recalculate-node-storage' guid=node.id %}"
+           data-toggle="modal" data-target="#confirmRecalculateStorage"
+           class="btn btn-warning">
+            Recalculate node storage usage
+        </a>
+        <div class="modal" id="confirmRecalculateStorage">
+            <div class="modal-dialog">
+                <div class="modal-content"></div>
+                {# Data from above link #}
+            </div>
+        </div>
+    </td>
+</tr>

@@ -1,0 +1,24 @@
+{% load user_extras %}
+{% load node_extras %}
+
+{% if schema_responses %}
+    <tr>
+        <td>Reviews State (Schema Response)</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <td>state</td>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for schema_response in schema_responses %}
+                    <tr>
+                        <td><a href="{{ schema_response.id | reverse_schema_response }}">{{ schema_response.reviews_state }}</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </td>
+    </tr>
+{% endif %}

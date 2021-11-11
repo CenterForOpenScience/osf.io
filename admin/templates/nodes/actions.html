@@ -1,0 +1,37 @@
+{% load user_extras %}
+{% load node_extras %}
+
+{% if actions %}
+    <tr>
+        <td>Actions</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Trigger</th>
+                        <th>From State</th>
+                        <th>To State</th>
+                        <th>Created</th>
+                        <th>Creator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for action in actions %}
+                        <tr>
+                            <td>{{ action.trigger }}</td>
+                            <td>{{ action.from_state }}</td>
+                            <td>{{ action.to_state }}</td>
+                            <td>{{ action.created }}</td>
+                            <td><a href="{{ action.creator.id | reverse_user }}">{{ action.creator }}</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>Actions </td>
+        <td>No Moderation Actions for this Node</td>
+    </tr>
+{% endif %}

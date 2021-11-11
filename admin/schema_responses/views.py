@@ -10,8 +10,8 @@ class SchemaResponseDetailView(PermissionRequiredMixin, DetailView):
     permission_required = 'osf.view_schema_response'
     raise_exception = True
 
-    def get_object(self, schema_response_id):
-        return SchemaResponse.objects.get(id=schema_response_id)
+    def get_object(self):
+        return SchemaResponse.objects.get(id=self.kwargs['schema_response_id'])
 
 
 class SchemaResponseListView(PermissionRequiredMixin, ListView):

@@ -1,7 +1,7 @@
 from django import template
 from django.urls import reverse
 
-from osf.models import Node, OSFUser, Registration
+from osf.models import Node, OSFUser, Registration, Contributor
 
 register = template.Library()
 
@@ -43,3 +43,9 @@ def reverse_schema_response(value):
 def order_by(queryset, args):
     args = [x.strip() for x in args.split(',')]
     return queryset.order_by(*args)
+
+
+@register.simple_tag
+def get_permissions(user_id, node_id):
+    return Contributor.objects.get(user_id=user_id, node_id=node_id).permission
+

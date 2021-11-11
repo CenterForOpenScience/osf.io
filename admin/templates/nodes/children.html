@@ -1,0 +1,68 @@
+{% load user_extras %}
+{% load node_extras %}
+
+{% if children %}
+    <tr>
+        <td>Child nodes</td>
+        <td>
+            <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <td>Node id</td>
+                    <td>Title</td>
+                    <td>Public</td>
+                    <td># of Contributors</td>
+                    <td>Actions</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for child in children %}
+                <tr>
+                    <td>
+                        <a href="{{ child.id | reverse_node }}">
+                            {{ child.id }}
+                        </a>
+                    </td>
+                    <td>{{ child.title }}</td>
+                    <td>{{ child.public }}</td>
+                    <td>{{ child.number_contributors }}</td>
+                    {%  if perms.osf.delete_node %}
+                    <td>
+                        {% if not child.is_registration %}
+                            {% if child.deleted %}
+                                <form method="post"
+                                      action="{% url 'nodes:restore' guid=child.id %}">
+                                    {% csrf_token %}
+                                    <input class="btn btn-success"
+                                           type="submit"
+                                           value="Restore Node" />
+                                </form>
+                            {% else %}
+                            <a href="{% url 'nodes:remove' guid=child.id %}"
+                               data-toggle="modal"
+                               data-target="#deleteModal{{ child.id }}"
+                               class="btn btn-danger">
+                                Delete Node
+                            </a>
+                            <div class="modal" id="deleteModal{{ child.id }}">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                {% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+            </table>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>Child Nodes</td>
+        <td>No Child Nodes</td>
+    </tr>
+{% endif %}
