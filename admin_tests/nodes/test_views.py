@@ -64,22 +64,6 @@ class TestNodeView(AdminTestCase):
         response = NodeKnownHamList.as_view()(request)
         nt.assert_equal(response.status_code, 200)
 
-    def test_no_guid(self):
-        request = RequestFactory().get('/fake_path')
-        view = NodeView()
-        view = setup_view(view, request)
-        with nt.assert_raises(AttributeError):
-            view.get_object()
-
-    def test_load_data(self):
-        node = ProjectFactory()
-        guid = node._id
-        request = RequestFactory().get('/fake_path')
-        view = NodeView()
-        view = setup_view(view, request, guid=guid)
-        res = view.get_object()
-        nt.assert_is_instance(res, dict)
-
     def test_name_data(self):
         node = ProjectFactory()
         guid = node._id
@@ -386,7 +370,7 @@ class TestAdminNodeLogView(AdminTestCase):
 
         logs = view.get_queryset()
 
-        log_entry = logs.first()
+        log_entry = logs.last()
         nt.assert_true(log_entry.action == 'edit_title')
         nt.assert_true(log_entry.params['title_new'] == u'New Title')
 
@@ -398,32 +382,10 @@ class TestAdminNodeLogView(AdminTestCase):
         view = setup_log_view(view, self.request, guid=self.node._id)
 
         logs = view.get_context_data()['logs']
-        log_entry = logs[0][0]
-        log_params = logs[0][1]
-        nt.assert_true(log_entry.action == NodeLog.EDITED_TITLE)
-        nt.assert_true((u'title_new', u'New Title') in log_params)
-        nt.assert_true((u'node', self.node._id) in log_params)
-
-    def test_get_logs_for_children(self):
-        """ The "create component" action is actually logged as a create_project action
-        for its child with a log parameter 'node' having its guid as a value. We have to ensure
-        that all the components a parent has created appear in its admin app logs, so we can't just
-         do node.logs.all(), that will leave out component creation.
-        """
-
-        component = ProjectFactory(creator=self.user, parent=self.node)
-        component.save()
-
-        view = AdminNodeLogView()
-        view = setup_log_view(view, self.request, guid=self.node._id)
-
-        logs = view.get_context_data()['logs']
-        log_entry = logs[0][0]
-        log_params = logs[0][1]
-
-        nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
-        nt.assert_true(log_entry.node._id == component._id)
-        nt.assert_true(('node', component._id) in log_params)
+        log = logs.last()
+        nt.assert_true(log.action == NodeLog.EDITED_TITLE)
+        nt.assert_true('New Title' == log.params.get('title_new'))
+        nt.assert_true(self.node._id == log.params.get('node'))
 
 
 class TestRestartStuckRegistrationsView(AdminTestCase):

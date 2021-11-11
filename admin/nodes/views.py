@@ -253,7 +253,7 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
             query_set, page_size)
 
         return {
-            'logs': [(log, log.params.items()) for log in query_set],
+            'logs': query_set,
             'page': page,
         }
 
@@ -299,8 +299,12 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+
+        # Django template does not like attributes with underscores for some reason
+        from django.db.models import F
+        query_set = query_set.annotate(guid=F('guids___id'))
+
         return {
             'nodes': query_set,
             'page': page,

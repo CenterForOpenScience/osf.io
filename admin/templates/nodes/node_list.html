@@ -7,31 +7,26 @@
     <thead>
         <tr>
             {% if form_action %}
-            <th>
-                <input type="checkbox" onclick="toggle(this)">
-                <script language="javascript">
-                    function toggle(source) {
-                        var checkboxes = document.getElementsByClassName('selection');
-                        for (var i in checkboxes) {
-                            checkboxes[i].checked = source.checked;
+                <th>
+                    <input type="checkbox" onclick="toggle(this)">
+                    <script language="javascript">
+                        function toggle(source) {
+                            var checkboxes = document.getElementsByClassName('selection');
+                            for (var i in checkboxes) {
+                                checkboxes[i].checked = source.checked;
+                            }
                         }
-                    }
-                </script>
-            </th>
+                    </script>
+                </th>
             {% endif %}
             <th>GUID</th>
-            {% if show_title %}
-            <th>
-                Title
-            </th>
-            {% endif %}
+            <th>title</th>
             <th>Parent</th>
             <th>Root</th>
             <th>Date created</th>
             <th>Public</th>
-            <th>Withdrawn</th>
-            <th>Embargo</th>
             <th>Contributors</th>
+            <th>Sanction</th>
         </tr>
     </thead>
     <tbody>
@@ -43,50 +38,45 @@
             </td>
             {% endif %}
             <td>
-                <a href="{{ node.id | reverse_node }}"
+                <a href="{{ node.guid | reverse_node }}"
                    class="btn btn-primary">
-                    {{ node.id }}
+                    {{ node.guid }}
                 </a>
             </td>
-            {% if show_title %}
             <td>
                 {{node.title}}
             </td>
-            {% endif %}
             <td>
                 {% if not node.parent %}
-                {{ node.parent }}
+                    None
                 {% else %}
-                <a href="{{ node.parent | reverse_node }}">
-                    {{ node.parent }}
-                </a>
+                    <a href="{{ node.parent.id | reverse_node }}">
+                        {{ node.parent }}
+                    </a>
                 {% endif %}
             </td>
             <td>
                 {% if not node.root %}
-                {{ node.root }}
+                    None
                 {% else %}
-                <a href="{{ node.root | reverse_node }}">
-                    {{ node.root }}
-                </a>
+                    <a href="{{ node.root | reverse_node }}">
+                        {{ node.root.title }}
+                    </a>
                 {% endif %}
             </td>
             <td>
-                {{ node.date_created|date }}
+                {{ node.created| date }}
             </td>
             <td>
-                {{ node.public }}
-            </td>
-            <td>
-                {{ node.retraction }}
-            </td>
-            <td>
-                {{ node.embargo }}
+                {{ node.is_public }}
             </td>
             <td>
                 {% for user in node.contributors %}
                     <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
+            </td>
+            <td>
+                {{ node.sanction }}
             </td>
         </tr>
         {% endfor %}
