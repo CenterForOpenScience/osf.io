@@ -3,11 +3,13 @@ import furl
 import responses
 import mock
 from nose.tools import *  # noqa: F403
+import pytest
 import unittest
 
 from framework.auth import cas
 
 from tests.base import OsfTestCase, fake
+from tests.utils import run_celery_tasks
 from osf_tests.factories import UserFactory
 
 
@@ -248,6 +250,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert_equal(mock_service_validate.call_count, 1)
         assert_equal(mock_get_user_from_cas_resp.call_count, 1)
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('framework.auth.cas.get_user_from_cas_resp')
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_success_with_tos_consent(self, mock_service_validate, mock_get_user_from_cas_resp):
@@ -256,7 +259,8 @@ class TestCASTicketAuthentication(OsfTestCase):
         mock_get_user_from_cas_resp.return_value = (self.user, None, 'authenticate')
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
-        resp = cas.make_response_from_ticket(ticket, service_url)
+        with run_celery_tasks():
+            resp = cas.make_response_from_ticket(ticket, service_url)
         self.user.reload()
         assert self.user.accepted_terms_of_service is not None
         assert_equal(resp.status_code, 302)
@@ -275,6 +279,7 @@ class TestCASTicketAuthentication(OsfTestCase):
         assert_equal(mock_service_validate.call_count, 1)
         assert_equal(mock_get_user_from_cas_resp.call_count, 0)
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('framework.auth.cas.CasClient.service_validate')
     def test_make_response_from_ticket_invalidates_verification_key(self, mock_service_validate):
         self.user.verification_key = fake.md5()
@@ -282,7 +287,8 @@ class TestCASTicketAuthentication(OsfTestCase):
         mock_service_validate.return_value = make_successful_response(self.user)
         ticket = fake.md5()
         service_url = 'http://localhost:5000/'
-        resp = cas.make_response_from_ticket(ticket, service_url)
+        with run_celery_tasks():
+            resp = cas.make_response_from_ticket(ticket, service_url)
         self.user.reload()
         assert_true(self.user.verification_key is None)
 

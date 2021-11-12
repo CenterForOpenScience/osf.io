@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import uuid
 
+from django.utils import timezone
+
 from framework import bcrypt
 from framework.auth import signals
 from framework.auth.core import Auth
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
+from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import session, create_session
 from framework.sessions.utils import remove_session
 
@@ -26,7 +30,7 @@ __all__ = [
 check_password = bcrypt.check_password_hash
 
 
-def authenticate(user, access_token, response):
+def authenticate(user, access_token, response, user_updates=None):
     data = session.data if session._get_current_object() else {}
     data.update({
         'auth_user_username': user.username,
@@ -35,11 +39,8 @@ def authenticate(user, access_token, response):
         'auth_user_access_token': access_token,
     })
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
-    user.update_date_last_login()
-    user.clean_email_verifications()
-    user.update_affiliated_institutions_by_email_domain()
-    user.save()
-    print_cas_log(f'Finalizing authentication - user updated: user=[{user._id}]', LogLevel.INFO)
+    enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
+    print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
     response = create_session(response, data=data)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response

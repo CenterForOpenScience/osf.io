@@ -39,6 +39,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.notable_email_domain import NotableEmailDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -1059,7 +1060,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create(cls, username, password, fullname, accepted_terms_of_service=None):
-        validate_email(username)  # Raises BlacklistedEmailError if spam address
+        validate_email(username)  # Raises BlockedEmailError if spam address
 
         user = cls(
             username=username,
@@ -1442,6 +1443,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
             preprint.confirm_ham(save=save, train_akismet=False)
 
+    @property
+    def is_assumed_ham(self):
+        user_email_addresses = self.emails.values_list('address', flat=True)
+        user_email_domains = [
+            # get everything after the @
+            address.rpartition('@')[2].lower()
+            for address in user_email_addresses
+        ]
+        user_has_trusted_email = NotableEmailDomain.objects.filter(
+            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+            domain__in=user_email_domains,
+        ).exists()
+
+        return user_has_trusted_email
+
     def update_search(self):
         from website.search.search import update_user
         update_user(self)
@@ -1468,8 +1484,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for group in self.osf_groups:
             group.update_search()
 
-    def update_date_last_login(self):
-        self.date_last_login = timezone.now()
+    def update_date_last_login(self, login_time=None):
+        self.date_last_login = login_time or timezone.now()
 
     def get_summary(self, formatter='long'):
         return {
