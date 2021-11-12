@@ -146,7 +146,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
 
-        return sanitize(self.html(node), tags=[], strip=True)
+        return sanitize(self.content, tags=[], strip=True)
 
     @property
     def rendered_before_update(self):
