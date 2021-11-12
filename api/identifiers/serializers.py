@@ -7,6 +7,7 @@ from api.base.serializers import JSONAPISerializer, RelationshipField, IDField, 
 from osf.models import NodeLog
 from framework.exceptions import HTTPError
 
+from website import settings
 from website.identifiers.utils import get_or_create_identifiers
 
 
@@ -20,6 +21,7 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['category'])
 
     value = ser.CharField(read_only=True)
+    uri = ser.SerializerMethodField()
 
     referent = RelationshipField(
         related_view='registrations:registration-detail',
@@ -37,6 +39,11 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
         if obj.category == 'legacy_doi':
             return 'doi'
         return obj.category
+
+    def get_uri(self, obj):
+        if self.get_category(obj) == 'doi':
+            return f'{settings.DOI_URL_PREFIX}{obj.value}'
+        return None
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

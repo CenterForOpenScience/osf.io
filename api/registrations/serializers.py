@@ -10,6 +10,7 @@ from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIExcepti
 from api.base.serializers import is_anonymized
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
+from website import settings
 from website.project.model import NodeUpdateError
 
 from api.files.serializers import OsfStorageFileSerializer
@@ -377,7 +378,17 @@ class RegistrationSerializer(NodeSerializer):
         # Overrides TaxonomizableSerializerMixin
         return 'registrations:registration-relationships-subjects'
 
-    links = LinksField({'html': 'get_absolute_html_url'})
+    links = LinksField(
+        {
+            'html': 'get_absolute_html_url',
+            'registration_doi': 'get_registration_doi_url',
+        },
+    )
+
+    def get_registration_doi_url(self, obj):
+        doi = obj.get_identifier('doi')
+        if doi:
+            return f'{settings.DOI_URL_PREFIX}{doi.value}'
 
     def get_has_project(self, obj):
         return obj.has_project
