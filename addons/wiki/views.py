@@ -224,7 +224,8 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     if wiki_version:
         version = wiki_version.identifier
         is_current = wiki_version.is_current
-        content = wiki_version.html(node)
+        # Content fetched and rendered by frontend, but used in business logic
+        content = wiki_version.content
         rendered_before_update = wiki_version.rendered_before_update
     else:
         version = 'NA'
