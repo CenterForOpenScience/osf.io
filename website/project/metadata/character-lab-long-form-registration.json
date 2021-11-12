@@ -263,6 +263,7 @@
 		"block_type": "question-label",
 		"display_text": "Study design"
 	}, {
+		"registration_response_key": "Q10",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
