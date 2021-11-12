@@ -18,7 +18,7 @@ LATEST_RESPONSE_ID = Subquery(
 
 ORIGINAL_RESPONSE_ID = Subquery(
     SchemaResponse.objects.filter(
-        nodes__id=OuterRef('id'), reviews_state=ApprovalStates.APPROVED.db_name,
+        nodes__id=OuterRef('id'),
     ).order_by('created').values('_id')[:1],
     output_field=CharField(),
 )
