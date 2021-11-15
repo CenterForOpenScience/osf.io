@@ -1,0 +1,83 @@
+{% load user_extras %}
+{% load node_extras %}
+
+{% if draft_registrations %}
+    <tr>
+        <td>Draft Registration</td>
+        <td>
+            {% for draft_registration in draft_registrations %}
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <td>Field</td>
+                            <td>Value</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Title</td>
+                            <td>{{ draft_registration.title }}</td>
+                        </tr>
+                        <tr>
+                            <td>Initiated by</td>
+                            <td><a href="{{ draft_registration.initiator.id | reverse_user }}">{{ draft_registration.initiator }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Created</td>
+                            <td>{{ draft_registration.created }}</td>
+                        </tr>
+                        <tr>
+                            <td>Modified</td>
+                            <td>{{ draft_registration.modified }}</td>
+                        </tr>
+                        <tr>
+                            <td>Description</td>
+                            <td>{{ draft_registration.description }}</td>
+                        </tr>
+                        <tr>
+                            <td>Category</td>
+                            <td>{{ draft_registration.category }}</td>
+                        </tr>
+                        <tr>
+                            <td>Registration Responses</td>
+                            <td><pre style="width: 400px !important;" >{{ registration_approval.registration_responses }}</pre></td>
+                        </tr>
+                        <tr>
+                            <td>License</td>
+                            <td><a href="{{ draft_registration.license.url }}">{{ draft_registration.license.name }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Datetime Initiated</td>
+                            <td>{{ draft_registration.datetime_initiated }}</td>
+                        </tr>
+                        <tr>
+                            <td>Datetime Updated</td>
+                            <td>{{ draft_registration.datetime_update }}</td>
+                        </tr>
+                        <tr>
+                            <td>Deleted</td>
+                            <td>{{ draft_registration.deleted }}</td>
+                        </tr>
+                        <tr>
+                            <td>Branched From</td>
+                            <td><a href="{{ draft_registration.branched_from_id | reverse_node }}">{{ draft_registration.branched_from.title }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Provider</td>
+                            <td><a href="{{ draft_registration.provider_id | reverse_registration_provider }}">{{ draft_registration.provider.name }}</a></td>
+                        </tr>
+                        <tr>
+                            <td>Registered Node</td>
+                            <td><a href="{{ draft_registration.registered_node_id | reverse_node }}">{{ draft_registration.registered_node.title }}</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            {% endfor %}
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>Draft Registrations </td>
+        <td>No Draft Registrations for this Node</td>
+    </tr>
+{% endif %}

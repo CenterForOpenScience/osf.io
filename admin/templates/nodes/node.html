@@ -184,14 +184,15 @@
                         <td>IA url</td>
                         <td>{{ node.ia_url }}</td>
                     </tr>
-                    {% include "nodes/contributors.html" with registrations=node.contributors.all %}
+                    {% include "nodes/contributors.html" with registrations=node.contributors %}
                     {% include "nodes/spam_status.html" with node=node %}
+                    {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registration.all %}
                     {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
                     {% include "nodes/retraction.html" with retraction=node.retraction %}
                     {% include "nodes/registrations.html" with registrations=node.registrations.all %}
                     {% include "nodes/children.html" with children=node.children.all %}
                     {% include "nodes/embargo.html" with embargo=node.embargo %}
-                    {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}</td>
+                    {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}
                     {% include "nodes/actions.html" with actions=node.actions.all|order_by:"created" %}
                     {% include "nodes/storage_usage.html" with node=node %}
                 </tbody>

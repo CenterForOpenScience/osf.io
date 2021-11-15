@@ -3,7 +3,7 @@
 
 {% if registrations %}
     <tr>
-        <td>Registration</td>
+        <td>Registrations</td>
         <td>
             <table class="table table-bordered table-hover">
                 <thead>
@@ -16,9 +16,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for registration in node.registrations %}
+                {% for registration in registrations %}
                     <tr>
-                        <td><a href="{{ registration.id | reverse_node }}">{{ registration.id }}</a></td>
+                        <td><a href="{{ registration | reverse_node }}">{{ registration.title }}</a></td>
                         <td>{{ registration.created | date }}</td>
                         <td>{{ registration.pending_registration }}</td>
                         <td>{{ registration.withdrawn }}</td>
@@ -28,5 +28,10 @@
                 </tbody>
             </table>
         </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>Registrations</td>
+        <td>No Registrations</td>
     </tr>
 {% endif %}
