@@ -372,7 +372,7 @@ class RegistrationSerializer(NodeSerializer):
 
     latest_response = HideIfWithdrawal(RelationshipField(
         related_view='schema_responses:schema-responses-detail',
-        related_view_kwargs={'schema_response_id': 'get_latest_response'},
+        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
     ))
 
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
