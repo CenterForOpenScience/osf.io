@@ -447,9 +447,12 @@ class RegistrationSerializer(NodeSerializer):
         return obj.root.schema_responses.last()._id
 
     def get_latest_response_id(self, obj):
-        return obj.root.schema_responses.filter(
+        latest_approved = obj.root.schema_responses.filter(
             reviews_state=ApprovalStates.APPROVED.db_name,
-        ).first()._id
+        ).first()
+        if latest_approved:
+            return latest_approved._id
+        return None
 
     def anonymize_registered_meta(self, obj):
         """
