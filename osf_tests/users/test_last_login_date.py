@@ -13,6 +13,7 @@ from osf_tests.factories import (
     SessionFactory
 )
 from tests.base import OsfTestCase
+from tests.utils import run_celery_tasks
 
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
@@ -38,7 +39,8 @@ class TestUserLastLoginDate(OsfTestCase):
         assert self.user.date_last_login is None
 
         self.app.set_cookie(settings.COOKIE_NAME, self.cookie)
-        self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
+        with run_celery_tasks():
+            self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
 
         self.user.refresh_from_db()
         assert self.user.date_last_login == now
@@ -53,7 +55,8 @@ class TestUserLastLoginDate(OsfTestCase):
         # Time is mocked one second below the last login date threshold, so it should not change.
         mock_time.return_value = now + (settings.DATE_LAST_LOGIN_THROTTLE_DELTA - timedelta(seconds=1))
         self.app.set_cookie(settings.COOKIE_NAME, self.cookie)
-        self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
+        with run_celery_tasks():
+            self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
 
         self.user.refresh_from_db()
         # date_last_login is unchanged
@@ -70,7 +73,8 @@ class TestUserLastLoginDate(OsfTestCase):
         new_time = now + (settings.DATE_LAST_LOGIN_THROTTLE_DELTA + timedelta(seconds=1))
         mock_time.return_value = new_time
         self.app.set_cookie(settings.COOKIE_NAME, self.cookie)
-        self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
+        with run_celery_tasks():
+            self.app.get(f'{settings.DOMAIN}{self.user._id}')  # user page will fail because not emberized
 
         self.user.refresh_from_db()
         # date_last_login is changed!

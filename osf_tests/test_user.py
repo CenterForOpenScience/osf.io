@@ -34,7 +34,7 @@ from osf.models import (
     Tag,
     Contributor,
     Session,
-    BlacklistedEmailDomain,
+    NotableEmailDomain,
     QuickFilesNode,
     PreprintContributor,
     DraftRegistrationContributor,
@@ -45,7 +45,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
+from osf.exceptions import ValidationError, BlockedEmailError, UserStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -487,9 +487,12 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
-    def test_add_blacklisted_domain_unconfirmed_email(self, user):
-        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
-        with pytest.raises(BlacklistedEmailError) as e:
+    def test_add_blocked_domain_unconfirmed_email(self, user):
+        NotableEmailDomain.objects.get_or_create(
+            domain='mailinator.com',
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        )
+        with pytest.raises(BlockedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert str(e.value) == 'Invalid Email'
 
