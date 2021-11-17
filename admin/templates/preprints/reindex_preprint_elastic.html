@@ -1,0 +1,11 @@
+<a href="{% url 'preprints:reindex-elastic-preprint' guid=preprint.guid %}"
+   data-toggle="modal" data-target="#confirmReindexElasticNode"
+   class="btn btn-default">
+    Elastic Reindex
+</a>
+<div class="modal" id="confirmReindexElasticNode">
+    <div class="modal-dialog">
+        <div class="modal-content"></div>
+        {# Data from above link #}
+    </div>
+</div>

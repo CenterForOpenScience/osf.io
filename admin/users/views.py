@@ -4,7 +4,7 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
-from django.db.models import Q
+from django.db.models import Q, F
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView
 from django.contrib import messages
@@ -28,7 +28,6 @@ from framework.auth.core import generate_verification_key
 from website.mailchimp_utils import subscribe_on_confirm
 from website import search
 
-from admin.base.views import GuidView
 from osf.models.admin_log_entry import (
     update_admin_log,
     USER_2_FACTOR,
@@ -41,7 +40,6 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.users.serializers import serialize_user, serialize_simple_preprint, serialize_simple_node
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -240,7 +238,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         return {
-            'users': list(map(serialize_user, query_set)),
+            'users': query_set,
             'page': page,
             'SPAM_STATUS': SpamStatus,
         }
@@ -436,38 +434,47 @@ class UserSearchList(PermissionRequiredMixin, ListView):
         return super(UserSearchList, self).get_context_data(**kwargs)
 
 
-class UserView(PermissionRequiredMixin, GuidView):
+class UserView(PermissionRequiredMixin, TemplateView):
     template_name = 'users/user.html'
-    context_object_name = 'user'
     paginate_by = 10
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
+    def get_object(self):
+        return OSFUser.objects.get(guids___id=self.kwargs.get('guid'))
+
     def get_context_data(self, **kwargs):
-        kwargs = super(UserView, self).get_context_data(**kwargs)
-        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
-        user = OSFUser.load(self.kwargs.get('guid'))  # Pull User for Node/Preprints
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
 
-        preprint_queryset = user.preprints.filter(deleted=None).order_by('title')
-        node_queryset = user.contributor_or_group_member_to.order_by('title')
-        kwargs = self.get_paginated_queryset(preprint_queryset, 'preprint', serialize_simple_preprint, **kwargs)
-        kwargs = self.get_paginated_queryset(node_queryset, 'node', serialize_simple_node, **kwargs)
+        # Django template does not like attributes with underscores for some reason
+        preprint_queryset = user.preprints.filter(
+            deleted=None
+        ).annotate(
+            guid=F('guids___id')
+        ).order_by(
+            'title'
+        )
 
-        return kwargs
+        node_queryset = user.contributor_or_group_member_to.annotate(
+            guid=F('guids___id')
+        ).order_by(
+            'title'
+        )
+        context.update(self.get_paginated_queryset(preprint_queryset, 'preprint'))
+        context.update(self.get_paginated_queryset(node_queryset, 'node'))
 
-    def get_paginated_queryset(self, queryset, resource_type, serializer, **kwargs):
-        page_num = self.request.GET.get('{}_page'.format(resource_type), 1)
+        return context
+
+    def get_paginated_queryset(self, queryset, resource_type):
+        page_num = self.request.GET.get(f'{resource_type}_page', 1)
         paginator = Paginator(queryset, self.paginate_by)
-        page_queryset = paginator.page(page_num)
-
-        kwargs.setdefault('{}s'.format(resource_type), list(map(serializer, page_queryset)))
-        kwargs.setdefault('{}_page'.format(resource_type), paginator.page(page_num))
-        kwargs.setdefault('current_{}'.format(resource_type), '&{}_page='.format(resource_type) + str(page_queryset.number))
-
-        return kwargs
-
-    def get_object(self, queryset=None):
-        return serialize_user(OSFUser.load(self.kwargs.get('guid')))
+        queryset = paginator.page(page_num)
+        return {
+            f'{resource_type}s': queryset,
+            f'{resource_type}_page':  paginator.page(page_num),
+            f'current_{resource_type}': f'&{resource_type}_page=' + str(queryset.number)
+        }
 
 
 class UserWorkshopFormView(PermissionRequiredMixin, FormView):

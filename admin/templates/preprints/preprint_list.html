@@ -40,9 +40,9 @@
             </td>
             {% endif %}
             <td>
-                <a href="{%  url 'preprints:preprint' preprint.id %}"
+                <a href="{%  url 'preprints:preprint' preprint.guid %}"
                    class="btn btn-primary">
-                    {{ preprint.id }}
+                    {{ preprint.guid }}
                 </a>
             </td>
             <td> {{ preprint.title }} </td>
@@ -50,9 +50,9 @@
             <td> {{ preprint.provider.name }} </td>
             <td> {{ preprint.date_published }} </td>
             <td> {{ preprint.modified }} </td>
-            <td> {{ preprint.date_created}} </td>
-            <td> {{ preprint.creator }} </td>
-            <td> {{ preprint.spam_status }} </td>
+            <td> {{ preprint.created}} </td>
+            <td> <a href="{{ preprint.creator.id | reverse_user }}">{{ preprint.creator }}</a> </td>
+            <td> {% get_spam_status preprint %} </td>
         </tr>
         {% endfor %}
     </tbody>

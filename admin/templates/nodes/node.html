@@ -16,7 +16,7 @@
     <div class="container-fluid">
         <ul class="messages">
             {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
             {% endfor %}
         </ul>
         <div class="row">
@@ -135,9 +135,6 @@
             </div>
         </div>
         <div class="row">
-            <h1>{{ node.title }} <a href="{{ node.guid | reverse_node }}">({{ node.guid }})</a></h1>
-            <label>{{ node.type }}</label>
-
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -146,6 +143,18 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>Guid</td>
+                        <td>{{ node.guid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Title</td>
+                        <td>{{ node.title }}</td>
+                    </tr>
+                    <tr>
+                        <td>Deleted</td>
+                        <td>{{ node.deleted }}</td>
+                    </tr>
                     <tr>
                         <td>Sanction</td>
                         <td>{{ node.sanction }}</td>
@@ -184,8 +193,8 @@
                         <td>IA url</td>
                         <td>{{ node.ia_url }}</td>
                     </tr>
-                    {% include "nodes/contributors.html" with registrations=node.contributors %}
-                    {% include "nodes/spam_status.html" with node=node %}
+                    {% include "nodes/contributors.html" with node=node %}
+                    {% include "nodes/spam_status.html" with resource=node %}
                     {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registration.all %}
                     {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
                     {% include "nodes/retraction.html" with retraction=node.retraction %}

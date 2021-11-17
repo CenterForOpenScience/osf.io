@@ -1,0 +1,27 @@
+{% load node_extras %}
+
+<a href="{% url 'preprints:reindex-share-preprint' guid=preprint.guid %}"
+   data-toggle="modal" data-target="#confirmReindexSharePreprint"
+   class="btn btn-default">
+    SHARE Reindex
+</a>
+<div class="modal" id="confirmReindexSharePreprint">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form class="well" method="post" action="{% url 'preprints:reindex-share-preprint' guid=preprint.guid %}">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to reindex this <a href="{{ preprint.guid | reverse_preprint }}">({{ preprint.title }})</a> preprint in SHARE?</h3>
+                </div>
+                {% csrf_token %}
+                <div class="modal-footer">
+                    <input class="btn btn-danger" type="submit" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

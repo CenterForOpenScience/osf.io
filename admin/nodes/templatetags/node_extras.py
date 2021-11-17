@@ -1,14 +1,24 @@
 from django import template
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 
-from osf.models import Node, OSFUser, Registration, Contributor
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    Registration,
+    Contributor,
+    Preprint,
+    PreprintContributor
+)
+
+from osf.models.spam import SpamStatus
 
 register = template.Library()
 
 
 @register.filter
 def reverse_node(value):
-    if isinstance(value, (Node, Registration)):
+    if isinstance(value, (AbstractNode, Registration)):
         value = value._id
     return reverse('nodes:node', kwargs={'guid': value})
 
@@ -49,5 +59,24 @@ def order_by(queryset, args):
 
 
 @register.simple_tag
-def get_permissions(user_id, node_id):
-    return Contributor.objects.get(user_id=user_id, node_id=node_id).permission
+def get_permissions(user_id, resource_id):
+    if isinstance(resource_id, AbstractNode):
+        return Contributor.objects.get(user_id=user_id, node_id=resource_id).permission
+    elif isinstance(resource_id, Preprint):
+        return PreprintContributor.objects.get(user_id=user_id, node_id=resource_id).permission
+
+
+@register.simple_tag
+def get_spam_status(resource):
+    if getattr(resource, 'is_assumed_ham', None):
+        return mark_safe('<span class="label label-default">(assumed Ham)</span>')
+
+    print(resource)
+    if resource.spam_status == SpamStatus.UNKNOWN:
+        return mark_safe('<span class="label label-default">Unknown</span>')
+    elif resource.spam_status == SpamStatus.FLAGGED:
+        return mark_safe('<span class="label label-warning">Flagged</span>')
+    elif resource.spam_status == SpamStatus.SPAM:
+        return mark_safe('<span class="label label-danger">Spam</span>')
+    elif resource.spam_status == SpamStatus.HAM:
+        return mark_safe('<span class="label label-success">Ham</span>')

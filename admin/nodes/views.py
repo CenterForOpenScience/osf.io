@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import pytz
 from datetime import datetime
 
+from django.db.models import F
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.generic import ListView, DeleteView, View, TemplateView
@@ -31,7 +32,6 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_simple_user_and_node_permissions
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 from website.project.views.register import osf_admin_change_status_identifier
@@ -59,12 +59,39 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
     Interface with OSF database. No admin models.
     """
     template_name = 'nodes/remove_contributor.html'
-    context_object_name = 'node'
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
 
+    def delete(self, request, *args, **kwargs):
+        node = self.get_object()
+        user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
+        if node.remove_contributor(user, None, log=False):
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=node.pk,
+                object_repr='Contributor',
+                message=f'User {user.pk} removed from {node.__class__.__name__.lower()} {node.pk}.',
+                action_flag=CONTRIBUTOR_REMOVED
+            )
+            # Log invisibly on the OSF.
+            self.add_contributor_removed_log(node, user)
+        return redirect(self.get_success_url())
+
+    def get_object(self):
+        guid = self.kwargs.get("guid")
+        try:
+            return AbstractNode.objects.get(guids___id=guid)
+        except AbstractNode.DoesNotExist:
+            return page_not_found(
+                self.request,
+                AttributeError(f'{self} with id {guid} not found.')
+            )
+
+    def get_success_url(self):
+        return reverse_node(self.kwargs.get('guid'))
+
     def add_contributor_removed_log(self, node, user):
-        osf_log = NodeLog(
+        NodeLog(
             action=NodeLog.CONTRIB_REMOVED,
             user=None,
             params={
@@ -74,132 +101,58 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
             },
             date=timezone.now(),
             should_hide=True,
-        )
-        return osf_log.save()
+        ).save()
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            node, user = self.get_object()
-            if node.remove_contributor(user, None, log=False):
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=node.pk,
-                    object_repr='Contributor',
-                    message='User {} removed from {} {}.'.format(
-                        user.pk, node.__class__.__name__.lower(), node.pk
-                    ),
-                    action_flag=CONTRIBUTOR_REMOVED
-                )
-                # Log invisibly on the OSF.
-                self.add_contributor_removed_log(node, user)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
-        if isinstance(node, Node):
-            return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        node, user = kwargs.get('object')
-        context.setdefault('guid', node._id)
-        context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
-        context['link'] = 'nodes:remove_user'
-        context['resource_type'] = 'project'
-        return super(NodeRemoveContributorView, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return (Node.load(self.kwargs.get('guid')),
-                OSFUser.load(self.kwargs.get('user_id')))
-
-
-class NodeDeleteBase(DeleteView):
-    template_name = None
-    context_object_name = 'node'
-    object = None
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object')._id)
-        return super(NodeDeleteBase, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-
-
-class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
-    """ Allow authorized admin user to remove/hide nodes
-
-    Interface with OSF database. No admin models.
-    """
+class NodeDeleteView(PermissionRequiredMixin, TemplateView):
+    """ Allow authorized admin user to remove/hide nodes """
     template_name = 'nodes/remove_node.html'
     object = None
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
 
-    def get_context_data(self, **kwargs):
-        context = super(NodeDeleteView, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:remove'
-        context['resource_type'] = 'node'
-        return context
-
     def delete(self, request, *args, **kwargs):
-        try:
-            node = self.get_object()
-            flag = None
-            osf_flag = None
-            message = None
-            if node.is_deleted:
-                node.is_deleted = False
-                node.deleted_date = None
-                node.deleted = None
-                flag = NODE_RESTORED
-                message = 'Node {} restored.'.format(node.pk)
-                osf_flag = NodeLog.NODE_CREATED
-            elif not node.is_registration:
-                node.is_deleted = True
-                node.deleted = timezone.now()
-                node.deleted_date = node.deleted
-                flag = NODE_REMOVED
-                message = 'Node {} removed.'.format(node.pk)
-                osf_flag = NodeLog.NODE_REMOVED
-            node.save()
-            if flag is not None:
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=node.pk,
-                    object_repr='Node',
-                    message=message,
-                    action_flag=flag
-                )
-            if osf_flag is not None:
-                # Log invisibly on the OSF.
-                osf_log = NodeLog(
-                    action=osf_flag,
-                    user=None,
-                    params={
-                        'project': node.parent_id,
-                    },
-                    date=timezone.now(),
-                    should_hide=True,
-                )
-                osf_log.save()
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('guid')
-                    )
-                )
+        node = self.get_object()
+        flag = None
+        osf_flag = None
+        message = None
+        if node.is_deleted:
+            node.is_deleted = False
+            node.deleted_date = None
+            node.deleted = None
+            flag = NODE_RESTORED
+            message = 'Node {} restored.'.format(node.pk)
+            osf_flag = NodeLog.NODE_CREATED
+        elif not node.is_registration:
+            node.is_deleted = True
+            node.deleted = timezone.now()
+            node.deleted_date = node.deleted
+            flag = NODE_REMOVED
+            message = 'Node {} removed.'.format(node.pk)
+            osf_flag = NodeLog.NODE_REMOVED
+
+        node.save()
+
+        if flag is not None:
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=node.pk,
+                object_repr='Node',
+                message=message,
+                action_flag=flag
             )
+        if osf_flag is not None:
+            # Log invisibly on the OSF.
+            osf_log = NodeLog(
+                action=osf_flag,
+                user=None,
+                params={
+                    'project': node.parent_id,
+                },
+                date=timezone.now(),
+                should_hide=True,
+            )
+            osf_log.save()
+
         return redirect(reverse_node(self.kwargs.get('guid')))
 
 
@@ -302,7 +255,6 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
 
         # Django template does not like attributes with underscores for some reason
-        from django.db.models import F
         query_set = query_set.annotate(guid=F('guids___id'))
 
         return {

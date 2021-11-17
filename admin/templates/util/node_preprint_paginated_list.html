@@ -1,6 +1,5 @@
 {% load node_extras %}
 {% block content %}
-
     <div class="pagination pagination-lg">
         <span>
             {% if items_paginator.has_previous %}
@@ -68,38 +67,36 @@
                 <td>
                     {% if resource_type == "node" %}
                         <a href="{{ item.id | reverse_node }}">
-                            {{ item.id }}
+                            {{ item.guid }}
                         </a>
                     {% else %}
                         <a href="{{ item.id | reverse_preprint }}">
-                            {{ item.id }}
+                            {{ item.guid }}
                         </a>
                     {% endif %}
                 </td>
                 <td>{{ item.title | truncatechars:20 }}</td>
-                <td>{{ item.public }}</td>
-                {% if resource_type == "node" %}
-                    <td>{{ item.is_registration }}</td>
-                {% endif %}
-                <td>{{ item.number_contributors }}</td>
-                <td>{% include "nodes/spam_status.html" with resource=item %}</td>
+                <td>{{ item.is_public }}</td>
+                <td>{{ item.is_registration }}</td>
+                <td>{{ item.contributors.count }}</td>
+                <td> {% get_spam_status item %} </td>
                 {%  if perms.osf.delete_node %}
-                <td>
-                    {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
-                        {% if not item.deleted %}
-                        <a href="{% url resource_type|add:"s:remove" guid=item.id %}"
-                           data-toggle="modal" data-target="#deleteModal{{ item.id }}"
-                           class="btn btn-danger">
-                            Delete {{ resource_type|capfirst }}
-                        </a>
-                        <div class="modal" id="deleteModal{{ item.id }}">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
+                    <td>
+                        {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
+                            {% if not item.deleted %}
+                        {% url resource_type|add:"s:remove" guid=item.guid %}
+                                <a href="{% url resource_type|add:"s:remove" guid=item.guid %}"
+                                   data-toggle="modal" data-target="#deleteModal{{ item.guid }}" class="btn btn-danger">
+                                    Delete {{ resource_type|capfirst }}
+                                </a>
+                                <div class="modal" id="deleteModal{{ item.guid }}">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
                     </td>
                 {% endif %}
             </tr>

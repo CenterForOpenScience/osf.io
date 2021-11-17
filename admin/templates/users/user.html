@@ -167,9 +167,9 @@
                     <td>{{ user.name }}</td>
                 </tr>
                 <tr>
-                    <td>OSF account</td>
+                    <td>Guid</td>
                     <td>
-                        <a href="{{ user.osf_link }}">{{ user.id }}</a>
+                        {{ user.guid }}
                     </td>
                 </tr>
                 <tr>
@@ -177,21 +177,8 @@
                     <td>{{ user.username }}</td>
                 </tr>
                 <tr>
-                    <td>Emails</td>
-                    <td>
-                        {% for email in user.emails %}
-                            <li>
-                                {% if email == user.username %}
-                                    <strong>Primary: </strong>
-                                    {{ email }}
-                                    <a href=""
-                                       class="btn btn-default disabled">Email</a>
-                                {% else %}
-                                    {{ email }}
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </td>
+                    <td>Disabled</td>
+                    <td>{{ user.disabled }}</td>
                 </tr>
                 <tr>
                     <td>Registered</td>
@@ -206,8 +193,20 @@
                     <td>{{ user.last_login }}</td>
                 </tr>
                 <tr>
-                    <td>Disabled</td>
-                    <td>{{ user.disabled }}</td>
+                    <td>Emails</td>
+                    <td>
+                        {% for email in user.emails.all %}
+                            <li>
+                                {% if email == user.username %}
+                                    <strong>Primary: </strong>
+                                    {{ email.address }}
+                                    <a href="" class="btn btn-default disabled">Email</a>
+                                {% else %}
+                                    {{ email.address }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </td>
                 </tr>
                 <tr>
                     <td>Two factor</td>
@@ -263,30 +262,30 @@
                     </tr>
                 {% endif %}
                 <tr>
+                    <td>SPAM Status</td>
+                    <td>{% include "nodes/spam_status.html" with resource=user %}</td>
+                </tr>
+                <tr>
                     <td>User is spammy</td>
                     <td>
                         {{ user.is_spammy }}
                     </td>
                 </tr>
                 <tr>
-                    <td>SPAM Status</td>
-                    <td>{% include "nodes/spam_status.html" with resource=user %}</td>
-                </tr>
-                <tr>
                     <td>Profile content checked for spam</td>
-                    <td>{{ user.potential_spam_profile_content }}</td>
-                </tr>
-                <tr>
-                    <td>Nodes</td>
-                    <td>
-                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
-                    </td>
+                    <td>{{ potential_spam_profile_content }}</td>
                 </tr>
                 <tr>
                     <td>Preprints</td>
                     <td>
                         {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
                         * In Preprints, public means Verified Publishable.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Nodes</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
                     </td>
                 </tr>
             </tbody>

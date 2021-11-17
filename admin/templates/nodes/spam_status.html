@@ -1,26 +1,16 @@
+{% load node_extras %}
 
 <tr>
     <td>SPAM Pro Tip</td>
-    <td>{{ node.spam_pro_tip }}</td>
+    <td>{{ resource.spam_pro_tip }}</td>
 </tr>
 <tr>
     <td>SPAM Status</td>
-    <td>{% if node.spam_status == SPAM_STATUS.UNKNOWN %}
-            <span class="label label-default">
-                Unknown
-                {% if node.is_assumed_ham %}
-                    (assumed Ham)
-                {% endif %}
-            </span>
-        {% elif node.spam_status == SPAM_STATUS.FLAGGED %}
-            <span class="label label-warning">Flagged</span>
-        {% elif node.spam_status == SPAM_STATUS.SPAM %}
-            <span class="label label-danger">Spam</span>
-        {% elif node.spam_status == SPAM_STATUS.HAM %}
-            <span class="label label-success">Ham</span>
-        {% endif %}</td>
+    <td>
+        {% get_spam_status resource %}
+    </td>
 </tr>
 <tr>
     <td>SPAM Data</td>
-    <td><pre style="white-space:pre-wrap;">{{ node.spam_data }}</pre></td>
+    <td><pre style="white-space:pre-wrap;">{{ resource.spam_data }}</pre></td>
 </tr>
