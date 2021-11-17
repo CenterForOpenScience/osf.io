@@ -1,9 +1,11 @@
 import hashlib
 from django.db import models
 
+from osf.exceptions import RegistrationBulkCreationContributorError
 from osf.models.base import BaseModel
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import ensure_bytes
+from osf.utils.permissions import READ, WRITE, ADMIN
 
 
 class RegistrationBulkUploadRow(BaseModel):
@@ -59,3 +61,28 @@ class RegistrationBulkUploadRow(BaseModel):
         if my_pk is None:
             return self.row_hash == other.row_hash
         return my_pk == other._get_pk_val()
+
+
+class RegistrationBulkUploadContributors:
+    """A helper class of which an instance contains parsed data about contributors per registration row.
+    """
+
+    def __init__(self, admin_set, read_only_set, read_write_set, author_set, contributor_list):
+        self.contributor_list = contributor_list
+        self.admin_set = admin_set
+        self.read_write_set = read_write_set
+        self.read_only_set = read_only_set
+        self.author_set = author_set
+
+    def is_bibliographic(self, email):
+        return email in self.author_set
+
+    def get_permission(self, email):
+        if email in self.admin_set:
+            return ADMIN
+        elif email in self.read_write_set:
+            return WRITE
+        elif email in self.read_only_set:
+            return READ
+        else:
+            raise RegistrationBulkCreationContributorError(error=f'{email} does not have a permission')
