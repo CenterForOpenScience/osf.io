@@ -175,6 +175,13 @@ class PreviousSchemaResponseError(SchemaResponseError):
     pass
 
 
+class RegistrationBulkCreationContributorError(OSFError):
+    """Raised if contributor preparation has failed"""
+
+    def __init__(self, error=None):
+        self.error = error if error else 'Contributor preparation error'
+
+
 class RegistrationBulkCreationRowError(OSFError):
     """Raised if a draft registration failed creation during bulk upload"""
 

@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
+from django.utils import timezone
 
 from framework import sentry
 from framework.auth import Auth
@@ -9,6 +10,7 @@ from framework.celery_tasks import app as celery_app
 
 from osf.exceptions import (
     NodeStateError,
+    RegistrationBulkCreationContributorError,
     RegistrationBulkCreationRowError,
     UserNotAffiliatedError,
     UserStateError,
@@ -28,7 +30,8 @@ from osf.models import (
 )
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
+from osf.utils.permissions import ADMIN
 
 from website import mails, settings
 
@@ -263,66 +266,14 @@ def bulk_create_registrations(upload_id, dry_run=True):
                     row.draft_registration.delete()
                 else:
                     row.delete()
-
-    if len(draft_error_list) == initial_row_count:
-        upload.state = JobState.DONE_ERROR
-        message = f'All registration rows failed during bulk creation. ' \
-                  f'Upload ID: [{upload_id}], Draft Errors: [{draft_error_list}]'
-        sentry.log_message(message)
-        logger.error(message)
-    elif draft_error_list or approval_error_list:
-        upload.state = JobState.DONE_PARTIAL
-        message = f'Some registration rows failed during bulk creation. Upload ID: [{upload_id}]; ' \
-                  f'Draft Errors: [{draft_error_list}]; Approval Errors: [{approval_error_list}]'
-        sentry.log_message(message)
-        logger.warning(message)
-    else:
-        upload.state = JobState.DONE_FULL
-        logger.info(f'All registration rows succeeded for bulk creation. Upload ID: [{upload_id}].')
-    # Reverse the error lists so that users see failed rows in the same order as the original CSV
-    draft_error_list.reverse()
-    approval_error_list.reverse()
-    if not dry_run:
-        upload.save()
-        logger.info('Sending emails to initiator/uploader ...')
-        if upload.state == JobState.DONE_FULL:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
-                fullname=initiator.fullname,
-                auto_approval=auto_approval,
-                count=initial_row_count,
-                pending_submissions_url=get_provider_submission_url(provider),
-            )
-        elif upload.state == JobState.DONE_PARTIAL:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
-                fullname=initiator.fullname,
-                auto_approval=auto_approval,
-                total=initial_row_count,
-                successes=successful_row_count,
-                draft_errors=draft_error_list,
-                approval_errors=approval_error_list,
-                failures=len(draft_error_list),
-                pending_submissions_url=get_provider_submission_url(provider),
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            )
-        elif upload.state == JobState.DONE_ERROR:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
-                fullname=initiator.fullname,
-                count=initial_row_count,
-                draft_errors=draft_error_list,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            )
-        else:
-            message = f'Failed to send registration bulk upload outcome email due to invalid ' \
-                      f'upload state: [upload={upload.id}, state={upload.state.name}]'
-            logger.error(message)
-            sentry.log_message(message)
-        logger.info(f'Email sent to bulk upload initiator [{initiator._id}]')
+    bulk_upload_finish_job(
+        upload,
+        initial_row_count,
+        successful_row_count,
+        draft_error_list,
+        approval_error_list,
+        dry_run=dry_run,
+    )
 
 
 def handle_registration_row(row, initiator, provider, schema, auto_approval=False, dry_run=True):
@@ -336,44 +287,123 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     auth = Auth(user=initiator)
 
     # Check node
-    node = None
     node_id = metadata.get('Project GUID')
+    node = check_node(node_id, initiator, row, row_title, row_external_id)
+    # Prepare tags
+    tags = metadata.get('Tags', [])
+    # Prepare subjects
+    subject_texts = metadata.get('Subjects', []) or []
+    subject_ids = prepare_subjects(subject_texts, provider, row, row_title, row_external_id)
+    # Prepare institutions
+    institution_names = metadata.get('Affiliated Institutions', []) or []
+    affiliated_institutions = prepare_institutions(institution_names, initiator, row, row_title, row_external_id)
+    # Prepare contributors
+    admin_list = metadata.get('Admin Contributors', []) or []
+    read_only_list = metadata.get('Read-Only Contributors', []) or []
+    read_write_list = metadata.get('Read-Write Contributors', []) or []
+    author_list = metadata.get('Bibliographic Contributors', []) or []
+    parsed_contributors = prepare_contributors(
+        admin_list,
+        read_only_list,
+        read_write_list,
+        author_list,
+        row,
+        row_title,
+        row_external_id,
+    )
+    # Prepare node licences
+    parsed_license = metadata.get('License', {}) or {}
+    node_license = prepare_license(parsed_license, row, row_title, row_external_id)
+    # Prepare editable fields
+    data = {
+        'title': row_title,
+        'category': metadata.get('Category', ''),
+        'description': metadata.get('Description', ''),
+        'node_license': node_license,
+    }
+    # Return if dry-run is enabled
+    if dry_run:
+        logger.info('Dry run: no draft registration will be created.')
+        return
+
+    # Creating the draft registration
+    draft = bulk_upload_create_draft_registration(auth, initiator, schema, node, data, provider, row, row_title, row_external_id)
+    # Set tags, subjects and registration responses
+    try:
+        draft.update_tags(tags, auth=auth)
+        draft.set_subjects_from_relationships(subject_ids, auth)
+        draft.update_registration_responses(responses)
+    except Exception as e:
+        error = f'Fail to update registration: {repr(e)}'
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+    # Set contributors
+    set_draft_contributors(draft, auth, parsed_contributors, row, row_title, row_external_id)
+    # Set affiliated institutions
+    set_affiliated_institutions(initiator, draft, affiliated_institutions, row, row_title, row_external_id)
+    # Save draft and update row state
+    draft.save()
+    row.is_completed = True
+    row.save()
+    logger.info(f'Draft registration created: [{row.draft_registration._id}]')
+    # Register the draft
+    bulk_upload_register_draft(
+        initiator,
+        provider,
+        row,
+        row_title,
+        row_external_id,
+        auth=auth,
+        auto_approval=auto_approval,
+    )
+    return
+
+
+def check_node(node_id, initiator, row, title, external_id):
+    """Check if a node exists for the given `node_id`. If so, return the node object; otherwise return `None`.
+    """
+    node = None
     if node_id:
         try:
             node = AbstractNode.objects.get(guids___id=node_id, is_deleted=False, type='osf.node')
             initiator_contributor = node.contributor_set.get(user=initiator)
         except AbstractNode.DoesNotExist:
             error = f'Node does not exist: [node_id={node_id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         except AbstractNode.MultipleObjectsReturned:
             error = f'Multiple nodes returned: [node_id={node_id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         except Contributor.DoesNotExist:
             error = f'Initiator [{initiator._id}] must be a contributor on the project [{node._id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         if initiator_contributor.permission != ADMIN:
             error = f'Initiator [{initiator._id}] must have admin permission on the project [{node._id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+    return node
 
-    # Prepare subjects
-    subject_texts = metadata.get('Subjects', []) or []
+
+def prepare_subjects(subject_texts, provider, row, title, external_id):
+    """Prepare the subjects that are used for registration creation. Return a list of subject ID.
+    """
     if not subject_texts:
         error = 'Missing subjects'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
     subject_ids = []
     for text in subject_texts:
         try:
             subject = provider.all_subjects.get(text=text)
         except Subject.DoesNotExist:
             error = f'Subject not found: [text={text}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         except Subject.MultipleObjectsReturned:
             error = f'Duplicate subjects found: [text={text}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         subject_ids.append(subject._id)
+    return subject_ids
 
-    # Prepare node licences
-    parsed_license = metadata.get('License', {}) or {}
+
+def prepare_license(parsed_license, row, title, external_id):
+    """Prepare the license that are used for registration creation. Return a `NodeLicense` object.
+    """
     license_name = parsed_license.get('name')
     require_fields = parsed_license.get('required_fields', {}) or {}
     year = require_fields.get('year')
@@ -382,7 +412,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         node_license = NodeLicense.objects.get(name=license_name)
     except NodeLicense.DoesNotExist:
         error = f'License not found: [license_name={license_name}]'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
     node_license = {
         'id': node_license.license_id,
     }
@@ -391,62 +421,95 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             'year': year,
             'copyright_holders': copyright_holders,
         })
+    return node_license
 
-    # Prepare editable fields
-    data = {
-        'title': row_title,
-        'category': metadata.get('Category', ''),
-        'description': metadata.get('Description', ''),
-        'node_license': node_license,
-    }
 
-    # Prepare institutions
+def prepare_institutions(institution_names, initiator, row, title, external_id):
+    """Prepare affiliated institutions that are used for registration creation. Return a list of `Institution` objects.
+    """
     affiliated_institutions = []
-    institution_names = metadata.get('Affiliated Institutions', []) or []
     for name in institution_names:
         try:
             institution = Institution.objects.get(name=name, is_deleted=False)
         except Institution.DoesNotExist:
             error = f'Institution not found: [name={name}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         if not initiator.is_affiliated_with_institution(institution):
             error = f'Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         affiliated_institutions.append(institution)
+    return affiliated_institutions
 
-    # Prepare tags
-    tags = metadata.get('Tags', [])
 
-    # Prepare contributors
-    admin_list = metadata.get('Admin Contributors', []) or []
+def set_affiliated_institutions(initiator, draft, affiliated_institutions, row, title, external_id):
+    """Set institution affiliations for a given draft.
+    """
+    for institution in affiliated_institutions:
+        try:
+            draft.add_affiliated_institution(institution, initiator)
+        except UserNotAffiliatedError:
+            error = f'Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]'
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+
+
+def prepare_contributors(admin_list, read_only_list, read_write_list, author_list, row, title, external_id):
+    """Prepare contributors for registration creation. Return a `RegistrationBulkUploadContributors` object.
+    """
     if not admin_list:
         error = 'Missing admin contributors'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
     admin_set = {contributor.get('email') for contributor in admin_list}
-
-    read_only_list = metadata.get('Read-Only Contributors', []) or []
-    read_only_set = {contributor.get('email') for contributor in read_only_list}
-
-    read_write_list = metadata.get('Read-Write Contributors', []) or []
     read_write_set = {contributor.get('email') for contributor in read_write_list}
-
-    author_list = metadata.get('Bibliographic Contributors', []) or []
+    read_only_set = {contributor.get('email') for contributor in read_only_list}
     if not author_list:
         error = 'Missing bibliographic contributors'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
 
     author_set = {contributor.get('email') for contributor in author_list}  # Bibliographic contributors
     contributor_list = admin_list + read_only_list + read_write_list
     contributor_set = set.union(admin_set, read_only_set, read_write_set)  # All contributors
     if not author_set.issubset(contributor_set):
         error = 'Bibliographic contributors must be one of admin, read-only or read-write'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+    return RegistrationBulkUploadContributors(admin_set, read_only_set, read_write_set, author_set, contributor_list)
 
-    if dry_run:
-        logger.info('Dry run: no draft registration will be created.')
-        return
 
-    # Creating the draft registration
+def set_draft_contributors(draft, auth, parsed_contributors, row, title, external_id):
+    """Set contributors, their permissions and citation info for a given draft.
+    """
+    for contributor in parsed_contributors.contributor_list:
+        email = contributor.get('email')
+        full_name = contributor.get('full_name')
+        if not email or not full_name:
+            error = 'Invalid contributor format: missing email and/or full name'
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+        bibliographic = parsed_contributors.is_bibliographic(email)
+        try:
+            permission = parsed_contributors.get_permission(email)
+        except RegistrationBulkCreationContributorError as e:
+            error = f'This contributor cannot be added: [email="{email}", error="{repr(e)}"]'
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+        try:
+            draft.add_contributor_registered_or_not(
+                auth, full_name=full_name, email=email,
+                permissions=permission, bibliographic=bibliographic,
+            )
+        except ValidationValueError as e:
+            # `add_contributor_registered_or_not` throws several ValidationError / ValidationValueError that
+            # needs to be treated differently.
+            if e.message.endswith(' is already a contributor.'):
+                logger.warning(f'Contributor already exists: [{email}]')
+            else:
+                error = f'This contributor cannot be added: [email="{email}", error="{e.message}"]'
+                raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+        except UserStateError as e:
+            error = f'This contributor cannot be added: [email="{email}", error="{repr(e)}"]'
+            raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+
+
+def bulk_upload_create_draft_registration(auth, initiator, schema, node, data, provider, row, title, external_id):
+    """Create a draft registration from one registration row.
+    """
     draft = None
     try:
         draft = DraftRegistration.create_from_node(
@@ -465,10 +528,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             draft.save()
         assert len(draft.contributor_set.all()) == 1, 'Draft should only have one contributor upon creation.'
         # Remove the initiator from the citation list
-        # TODO: only remove the initiator form the citation list for certain providers
         initiator_contributor = draft.contributor_set.get(user=initiator)
         initiator_contributor.visible = False
         initiator_contributor.save()
+        # Relate the draft to the row
         row.draft_registration = draft
         row.save()
     except Exception as e:
@@ -476,84 +539,40 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
         # provide the draft id to the exception object for the caller to delete it after the exception is caught.
         draft_id = draft.id if draft else None
         raise RegistrationBulkCreationRowError(
-            row.upload.id, row.id, row_title, row_external_id,
-            draft_id=draft_id, error=repr(e),
+            row.upload.id,
+            row.id,
+            title,
+            external_id,
+            draft_id=draft_id,
+            error=repr(e),
         )
+    return draft
 
-    # Set subjects
-    # TODO: if available, capture specific exceptions during setting subject
-    draft.set_subjects_from_relationships(subject_ids, auth)
 
-    # Set affiliated institutions
-    for institution in affiliated_institutions:
-        try:
-            draft.add_affiliated_institution(institution, initiator)
-        except UserNotAffiliatedError:
-            error = f'Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-
-    # Validate and set registration responses
-    try:
-        draft.update_registration_responses(responses)
-    except Exception as e:
-        error = f'Fail to update registration responses: {repr(e)}'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-
-    # Set tags
-    # TODO: if available, capture specific exceptions during setting tags
-    draft.update_tags(tags, auth=auth)
-
-    # Set contributors
-    for contributor in contributor_list:
-        email = contributor.get('email')
-        full_name = contributor.get('full_name')
-        if not email or not full_name:
-            error = 'Invalid contributor format: missing email and/or full name'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        bibliographic = email in author_set
-        permission = ADMIN if email in admin_set else (WRITE if email in read_write_set else READ)
-        try:
-            draft.add_contributor_registered_or_not(
-                auth, full_name=full_name, email=email,
-                permissions=permission, bibliographic=bibliographic,
-            )
-        except ValidationValueError as e:
-            # `add_contributor_registered_or_not` throws several ValidationError / ValidationValueError that
-            # needs to be treated differently.
-            if e.message.endswith(' is already a contributor.'):
-                logger.warning(f'Contributor already exists: [{email}]')
-            else:
-                error = f'This contributor cannot be added: [email="{email}", error="{e.message}"]'
-                raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-        except UserStateError as e:
-            error = f'This contributor cannot be added: [email="{email}", error="{repr(e)}"]'
-            raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
-    draft.save()
-    row.is_completed = True
-    row.save()
-    logger.info(f'Draft registration created: [{row.draft_registration._id}]')
-
-    # Register the draft
-    # TODO: figure out why `draft.validate_metadata()` fails
+def bulk_upload_register_draft(initiator, provider, row, title, external_id, auth=None, auto_approval=False):
+    """Register the draft and require approval. If `auto_approval` is `True`, then it is "contributor-admin-approved".
+    """
+    # Get/set auth
+    if not auth:
+        auth = Auth(user=initiator)
+    # Register draft
     try:
         registration = row.draft_registration.register(auth, save=True)
     except NodeStateError as e:
         error = f'Fail to register draft: {repr(e)}'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
     except Exception as e:
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=repr(e))
     logger.info(f'Registration [{registration._id}] created from draft [{row.draft_registration._id}]')
-
     # Requires approval
     try:
         registration.require_approval(initiator)
     except NodeStateError as e:
         error = f'Fail to require approval: {repr(e)}'
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=error)
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
     except Exception as e:
-        raise RegistrationBulkCreationRowError(row.upload.id, row.id, row_title, row_external_id, error=repr(e))
+        raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=repr(e))
     logger.info(f'Approval required for registration [{registration._id}]')
-
     # Once draft registration and registrations have been created, bulk creation of this row is considered completed.
     # Any error that happens during `registration.sanction.accept()` doesn't affect the state of upload job and the
     # registration row.
@@ -563,10 +582,96 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
             registration.sanction.accept()
         except Exception as e:
             raise RegistrationBulkCreationRowError(
-                row.upload.id, row.id, row_title, row_external_id,
+                row.upload.id, row.id, title, external_id,
                 error=repr(e), approval_failure=True,
             )
         logger.info(f'Registration approved but pending moderation: [{registration._id}]')
+    return registration
+
+
+def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, approval_errors, dry_run=True):
+    """Finish the bulk upload job: handle errors (if any), send outcome emails, and update job state.
+    """
+    provider = upload.provider
+    auto_approval = upload.provider.bulk_upload_auto_approval
+    initiator = upload.initiator
+
+    # All registration rows have failed draft creation
+    if len(draft_errors) == row_count:
+        upload.state = JobState.DONE_ERROR
+        message = f'All registration rows failed during bulk creation. ' \
+                  f'Upload ID: [{upload.id}], Draft Errors: [{draft_errors}]'
+        sentry.log_message(message)
+        logger.error(message)
+    # Some registration rows have failed draft creation
+    elif draft_errors:
+        upload.state = JobState.DONE_PARTIAL
+        if not approval_errors:
+            message = f'Some registration rows failed during bulk creation. ' \
+                      f'Upload ID: [{upload.id}]; Draft Errors: [{draft_errors}].'
+        else:
+            message = f'Some registration rows failed during bulk creation and some failed to be approved. ' \
+                      f'Upload ID: [{upload.id}]; Draft Errors: [{draft_errors}]; Approval Errors: [{approval_errors}]'
+        sentry.log_message(message)
+        logger.warning(message)
+    # All registration rows have finish the draft creation
+    else:
+        upload.state = JobState.DONE_FULL
+        if not approval_errors:
+            logger.info(f'All registration rows succeeded for bulk creation. Upload ID: [{upload.id}].')
+        else:
+            message = f'All registration rows succeeded for bulk creation but some have failed to be approved.' \
+                      f' Upload ID: [{upload.id}]; Approval Errors: [{approval_errors}]'
+            sentry.log_message(message)
+            logger.warning(message)
+            pass
+    # Reverse the error lists so that users see failed rows in the same order as the original CSV
+    draft_errors.reverse()
+    approval_errors.reverse()
+    if not dry_run:
+        upload.save()
+        logger.info('Sending emails to initiator/uploader ...')
+        if upload.state == JobState.DONE_FULL:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
+                fullname=initiator.fullname,
+                auto_approval=auto_approval,
+                count=row_count,
+                pending_submissions_url=get_provider_submission_url(provider),
+            )
+        elif upload.state == JobState.DONE_PARTIAL:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
+                fullname=initiator.fullname,
+                auto_approval=auto_approval,
+                total=row_count,
+                successes=success_count,
+                draft_errors=draft_errors,
+                approval_errors=approval_errors,
+                failures=len(draft_errors),
+                pending_submissions_url=get_provider_submission_url(provider),
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            )
+        elif upload.state == JobState.DONE_ERROR:
+            mails.send_mail(
+                to_addr=initiator.username,
+                mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
+                fullname=initiator.fullname,
+                count=row_count,
+                draft_errors=draft_errors,
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            )
+        else:
+            message = f'Failed to send registration bulk upload outcome email due to invalid ' \
+                      f'upload state: [upload={upload.id}, state={upload.state.name}]'
+            logger.error(message)
+            sentry.log_message(message)
+            return
+        upload.email_sent = timezone.now()
+        upload.save()
+        logger.info(f'Email sent to bulk upload initiator [{initiator._id}]')
 
 
 def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):
