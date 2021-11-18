@@ -391,6 +391,19 @@ class TestSchemaResponseActionListPOSTPermissions:
 @pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTBehavior:
 
+    def test_POST_submit__denies_unchanged_submission(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
+        )
+        schema_response.updated_response_blocks.all().delete()
+        assert schema_response.updated_response_keys == set()
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without updated registration responses.'
+
     def test_POST_submit__writes_action_and_advances_state(self, app):
         auth, schema_response, _, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'

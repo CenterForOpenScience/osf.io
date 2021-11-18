@@ -495,6 +495,13 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.revision_justification == 'why not?'
 
+        payload['data']['attributes']['revision_justification'] = None
+        resp = app.patch_json_api(make_api_url(schema_response), payload, auth=admin_user.auth, expect_errors=True)
+
+        schema_response.refresh_from_db()
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['detail'] == 'This field may not be null.'
+
     @pytest.mark.parametrize('response_state', IMMUTABLE_STATES)
     def test_PATCH_fails_in_unsupported_state(
             self, app, schema_response, payload, admin_user, response_state):
