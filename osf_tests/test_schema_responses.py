@@ -360,7 +360,7 @@ class TestUpdateSchemaResponses():
             'q3': 'B',
             'q4': ['E'],
             'q5': 'Roonil Wazlib, et al',
-            'q6': ['some', 'file', 'metadata'],
+            'q6': [{'file_id': '123456'}],
         }
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
@@ -384,7 +384,7 @@ class TestUpdateSchemaResponses():
                 'q3': 'B',
                 'q4': ['E'],
                 'q5': 'Roonil Wazlib, et al',
-                'q6': ['some', 'file', 'metadata'],
+                'q6': [{'file_id': '123456'}],
             }
         )
         initial_response.refresh_from_db()
@@ -521,7 +521,7 @@ class TestUpdateSchemaResponses():
     def test_update_file_references(self, initial_response):
         original_responses = initial_response.all_responses
         new_responses = dict(
-            original_responses, q1='new value', q6=['some', 'file', 'metadata']
+            original_responses, q1='new value', q6=[{'file_id': '123456'}]
         )
 
         initial_response._update_file_references(new_responses)
