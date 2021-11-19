@@ -77,6 +77,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             bucket_location = 'Default'
 
         self.folder_name = '{} ({})'.format(folder_id, bucket_location)
+        self.encrypt_uploads = service.get('serverSideEncryption', True)
         self.save()
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)

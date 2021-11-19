@@ -155,6 +155,15 @@ def get_bucket_location_or_error(host, access_key, secret_key, bucket_name):
 
     try:
         # Will raise an exception if bucket_name doesn't exist
-        return connection.get_bucket(bucket_name, validate=False).get_location()
+        bucket = connection.get_bucket(bucket_name, validate=False)
     except exception.S3ResponseError:
         raise InvalidFolderError()
+
+    try:
+        # Will set defaultLocation if bucket_location doesn't exist
+        bucket_location = bucket.get_location()
+    except exception.S3ResponseError:
+        service = find_service_by_host(host)
+        bucket_location = service['defaultLocation']
+
+    return bucket_location
