@@ -16,6 +16,8 @@ from osf_tests.utils import get_default_test_schema
 from website.mails import mails
 from website.notifications import emails
 
+from transitions import MachineError
+
 # See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
     'q1': 'Some answer',
@@ -608,6 +610,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_notification(
             self, revised_response, admin_user, notification_recipients):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
         revised_response.save()
         send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
@@ -824,7 +827,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(ValueError):
+        with assert_raises(MachineError):
             initial_response.accept(user=admin_user)
 
     def test_internal_accept_advances_state(self, initial_response, admin_user, alternate_user):
