@@ -93,6 +93,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
+    this.limit = 14;
     this._flat = [];
     this._orphans = [];
     this._cache = {};
@@ -131,7 +132,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return this.loaded >= this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -155,7 +156,13 @@ NodeFetcher.prototype = {
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
           m.redraw(true);
-          if(this.nextLink && this._continue) return this.resume();
+          if(this.nextLink && this._continue && this._flat.length < this.limit) {
+            this._continue = true;
+            return this.resume();
+          } else {
+            this._continue = false;
+          }
+
       }).bind(this));
   },
   add: function(item) {
@@ -1051,6 +1058,16 @@ var MyProjects = {
             var filterIndex = self.getFilterIndex();
             self.updateBreadcrumbs(self.collections()[filterIndex]);
             self.updateFilter(self.collections()[filterIndex]);
+
+            var current = self.currentView().fetcher;
+
+            document.addEventListener('wheel', function(e) {
+                  if(current._flat && current._flat.length >= current.limit) {
+                      current.limit = current.limit + 10;
+                      current.resume();
+                  }
+            });
+
         };
 
         self.init();
@@ -1170,7 +1187,7 @@ var MyProjects = {
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
                     m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('.load-message', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, 'Fetching more projects')
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
