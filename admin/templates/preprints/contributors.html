@@ -22,7 +22,7 @@
                         </a>
                     </td>
                     <td>{{ user.fullname }}</td>
-                    <td>{% get_permissions user.id preprint.id %}</td>
+                    <td>{% get_permissions user preprint %}</td>
                     {%  if perms.osf.change_preprint %}
                         <td>
                             <a data-toggle="modal" data-target="#{{ user.id }}Modal" class="btn btn-danger">Remove</a>
@@ -32,7 +32,7 @@
                                         <form class="well" method="post" action="{% url 'preprints:remove_user'  guid=preprint.guid user_id=user.id  %}">
                                             <div class="modal-header">
                                                 <button type="button" class="close" data-dismiss="modal">x</button>
-                                                <h3>Removing contributor: {{ user.name }}</h3>
+                                                <h3>Removing contributor: {{ user.username }}</h3>
                                             </div>
                                             <div class="modal-body">
                                                 User will be removed. Currently only an admin on this preprint type will be able to add them back.

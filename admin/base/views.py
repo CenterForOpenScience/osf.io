@@ -42,14 +42,9 @@ class GuidFormView(FormView):
 class GuidView(DetailView):
     def get(self, request, *args, **kwargs):
         try:
-            return super(GuidView, self).get(request, *args, **kwargs)
-        except (AttributeError, ObjectDoesNotExist):
+            return super().get(request, *args, **kwargs)
+        except ObjectDoesNotExist:
             return page_not_found(
                 request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('guid') or kwargs.get('id')
-                    )
-                )
+                AttributeError(f'resource with id "{kwargs.get("guid") or kwargs.get("id")}" not found.')
             )

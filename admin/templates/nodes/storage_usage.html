@@ -5,9 +5,10 @@
     <td>Node storage usage</td>
     <td>
         <b>Current usage:</b> {{ node.storage_usage }}<br>
-        <b>Public cap:</b> {{ node.public_storage_cap }} GB<br>
-        <b>Private cap:</b> {{ node.private_storage_cap}} GB<br>
-        <b>Storage usage status:</b> {% include "nodes/storage_status.html" with resource=node %}<br><br>
+        <b>Public cap:</b> {{ node.public_cap|floatformat:0 }} GB<br>
+        <b>Private cap:</b> {{ node.private_cap|floatformat:0 }} GB<br>
+        <b>Storage usage status:</b>
+        {% include "nodes/storage_status.html" with resource=node %}<br><br>
         <a href="{% url 'nodes:adjust-storage-usage' guid=node.id %}"
            data-toggle="modal" data-target="#modifyStorageCaps"
            class="btn btn-warning">
@@ -15,19 +16,46 @@
         </a>
         <div class="modal" id="modifyStorageCaps">
             <div class="modal-dialog">
-                <div class="modal-content"></div>
-                {# Data from above link #}
+                <div class="modal-content">
+                    <form class="well" method="post" action="{% url 'nodes:adjust-storage-usage' guid=node.guid %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">x</button>
+                        <h3>Adjusting the storage caps for {{ node.guid }}</h3>
+                    </div>
+                    <b>Public cap:</b> <input name='public-cap-input' type="text" value="{{ node.public_cap|floatformat:0 }}" /> GB<br>
+                    <b>Private cap: </b><input name='private-cap-input' type="text" value="{{ node.private_cap|floatformat:0 }}" /> GB
+                    <div class="modal-footer">
+                        <input class="btn btn-danger" type="submit" value="Save" />
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+                </div>
             </div>
         </div>
-        <a href="{% url 'nodes:recalculate-node-storage' guid=node.id %}"
-           data-toggle="modal" data-target="#confirmRecalculateStorage"
+        <a data-toggle="modal" data-target="#confirmRecalculateStorage"
            class="btn btn-warning">
             Recalculate node storage usage
         </a>
         <div class="modal" id="confirmRecalculateStorage">
             <div class="modal-dialog">
-                <div class="modal-content"></div>
-                {# Data from above link #}
+                <div class="modal-content">
+                    <form class="well" method="post" action="{% url 'nodes:recalculate-node-storage' guid=node.guid %}">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">x</button>
+                            <h3>Are you sure you want to recalculate storage for {{ node.guid }}?</h3>
+                        </div>
+                        {% csrf_token %}
+                        <div class="modal-footer">
+                            <input class="btn btn-danger" type="submit" value="Confirm" />
+                            <button type="button" class="btn btn-default" data-dismiss="modal">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </td>

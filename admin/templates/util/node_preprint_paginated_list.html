@@ -66,11 +66,11 @@
             <tr>
                 <td>
                     {% if resource_type == "node" %}
-                        <a href="{{ item.id | reverse_node }}">
+                        <a href="{{ item.guid | reverse_node }}">
                             {{ item.guid }}
                         </a>
                     {% else %}
-                        <a href="{{ item.id | reverse_preprint }}">
+                        <a href="{{ item.guid | reverse_preprint }}">
                             {{ item.guid }}
                         </a>
                     {% endif %}
@@ -84,17 +84,59 @@
                     <td>
                         {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
                             {% if not item.deleted %}
-                        {% url resource_type|add:"s:remove" guid=item.guid %}
-                                <a href="{% url resource_type|add:"s:remove" guid=item.guid %}"
-                                   data-toggle="modal" data-target="#deleteModal{{ item.guid }}" class="btn btn-danger">
-                                    Delete {{ resource_type|capfirst }}
-                                </a>
-                                <div class="modal" id="deleteModal{{ item.guid }}">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
+                                {% if resource_type == "node" %}
+                                    <a data-toggle="modal" data-target="#deleteModalNode{{ item.guid }}" class="btn btn-danger">
+                                        Delete Node
+                                    </a>
+                                    <div class="modal" id="deleteModalNode{{ item.guid }}">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content"></div>
+                                            <form class="well" method="post" action="{% url 'nodes:remove' guid=item.guid %}">
+                                                <div class="modal-header">
+                                                    <button type="button" class="close" data-dismiss="modal">x</button>
+                                                    <h3>Are you sure you want to delete this node? {{ item.guid }}</h3>
+                                                </div>
+                                                <div class="modal-body">
+                                                    This action will be reversible after the fact.
+                                                    {% csrf_token %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <input class="btn btn-danger" type="submit" value="Confirm" />
+                                                    <button type="button" class="btn btn-default"
+                                                            data-dismiss="modal">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
-                                </div>
+                                {% else %}
+                                    <a data-toggle="modal" data-target="#deleteModalPreprint{{ item.guid }}" class="btn btn-danger">
+                                        Delete Preprint
+                                    </a>
+                                    <div class="modal" id="deleteModalPreprint{{ item.guid }}">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content"></div>
+                                            <form class="well" method="post" action="{% url 'preprints:remove' guid=item.guid %}">
+                                                <div class="modal-header">
+                                                    <button type="button" class="close" data-dismiss="modal">x</button>
+                                                    <h3>Are you sure you want to delete this preprint? {{ item.guid }}</h3>
+                                                </div>
+                                                <div class="modal-body">
+                                                    This action will be reversible after the fact.
+                                                    {% csrf_token %}
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <input class="btn btn-danger" type="submit" value="Confirm" />
+                                                    <button type="button" class="btn btn-default"
+                                                            data-dismiss="modal">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endif %}
                         {% endif %}
                     </td>

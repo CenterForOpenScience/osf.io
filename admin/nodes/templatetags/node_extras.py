@@ -59,11 +59,11 @@ def order_by(queryset, args):
 
 
 @register.simple_tag
-def get_permissions(user_id, resource_id):
-    if isinstance(resource_id, AbstractNode):
-        return Contributor.objects.get(user_id=user_id, node_id=resource_id).permission
-    elif isinstance(resource_id, Preprint):
-        return PreprintContributor.objects.get(user_id=user_id, node_id=resource_id).permission
+def get_permissions(user, resource):
+    if isinstance(resource, AbstractNode):
+        return Contributor.objects.get(user=user, node=resource).permission
+    elif isinstance(resource, Preprint):
+        return PreprintContributor.objects.get(user=user, preprint=resource).permission
 
 
 @register.simple_tag
@@ -71,7 +71,6 @@ def get_spam_status(resource):
     if getattr(resource, 'is_assumed_ham', None):
         return mark_safe('<span class="label label-default">(assumed Ham)</span>')
 
-    print(resource)
     if resource.spam_status == SpamStatus.UNKNOWN:
         return mark_safe('<span class="label label-default">Unknown</span>')
     elif resource.spam_status == SpamStatus.FLAGGED:

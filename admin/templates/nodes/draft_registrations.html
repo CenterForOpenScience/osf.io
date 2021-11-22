@@ -1,5 +1,10 @@
 {% load user_extras %}
 {% load node_extras %}
+    {{ draft_registrations }}
+    {{ draft_registrations }}
+    {{ draft_registrations }}
+
+
 
 {% if draft_registrations %}
     <tr>
@@ -37,10 +42,6 @@
                         <tr>
                             <td>Category</td>
                             <td>{{ draft_registration.category }}</td>
-                        </tr>
-                        <tr>
-                            <td>Registration Responses</td>
-                            <td><pre style="width: 400px !important;" >{{ registration_approval.registration_responses }}</pre></td>
                         </tr>
                         <tr>
                             <td>License</td>

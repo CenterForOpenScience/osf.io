@@ -1,7 +1,7 @@
 {% load node_extras %}
 {% include "util/pagination.html" with items=page status=status %}
 {% if form_action %}
-<form action={{form_action}} method="POST">
+    <form action={{form_action}} method="POST">
 {% endif %}
 <table class="table table-striped table-hover table-responsive">
     <thead>

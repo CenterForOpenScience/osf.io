@@ -283,7 +283,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.public_node = ProjectFactory(creator=self.user, is_public=True)
         self.private_node = ProjectFactory(creator=self.user, is_public=False)
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.SpamUserDeleteView
+        self.view = views.SpamUserView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
     def test_get_object(self):

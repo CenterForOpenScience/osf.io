@@ -1,12 +1,11 @@
 from __future__ import unicode_literals
 
 from django.db.models import F
-from django.views.generic import FormView, DeleteView, ListView
+from django.views.generic import DeleteView, ListView, View
 from django.utils import timezone
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
-from django.views.defaults import page_not_found
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 
@@ -29,32 +28,23 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL
 )
 
-from website.project.views.register import osf_admin_change_status_identifier
 from website import search, settings
 
-from admin.base.views import GuidFormView
+from admin.base.views import GuidFormView, GuidView
 from admin.nodes.templatetags.node_extras import reverse_preprint
 from admin.nodes.views import NodeRemoveContributorView
-from admin.preprints.serializers import serialize_withdrawal_request
 from admin.preprints.forms import ChangeProviderForm
 
 from api.share.utils import update_share
+from rest_framework.exceptions import PermissionDenied
 
 
 class PreprintMixin(PermissionRequiredMixin):
-    raise_exception = True
 
     def get_object(self):
-        guid = self.kwargs.get("guid")
-        try:
-            preprint = Preprint.objects.get(guids___id=guid)
-            preprint.guid = preprint._id
-            return preprint
-        except Preprint.DoesNotExist:
-            return page_not_found(
-                self.request,
-                AttributeError(f'{self} with id {guid} not found.')
-            )
+        preprint = Preprint.objects.get(guids___id=self.kwargs['guid'])
+        preprint.guid = preprint._id
+        return preprint
 
     def get_success_url(self):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs['guid']})
@@ -72,7 +62,7 @@ class PreprintFormView(GuidFormView):
         return reverse_preprint(self.guid)
 
 
-class PreprintView(PreprintMixin, FormView):
+class PreprintView(PreprintMixin, GuidView):
     """ Allow authorized admin user to view preprints """
     template_name = 'preprints/preprint.html'
     permission_required = ('osf.view_preprint', 'osf.change_preprint',)
@@ -92,13 +82,15 @@ class PreprintView(PreprintMixin, FormView):
             preprint.provider = new_provider
             preprint.save()
 
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
+        preprint = self.get_object()
         return super().get_context_data(**{
-            'preprint': self.get_object(),
+            'preprint': preprint,
             'SPAM_STATUS': SpamStatus,
             'message':  kwargs.get('message'),
+            'form':   ChangeProviderForm(instance=preprint),
         })
 
 
@@ -127,10 +119,10 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
         }
 
 
-class PreprintReindexShare(PreprintMixin, DeleteView):
+class PreprintReindexShare(PreprintMixin, View):
     permission_required = 'osf.view_preprint'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         if settings.SHARE_ENABLED:
             update_share(preprint)
@@ -141,13 +133,13 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
             message=f'Preprint Reindexed (SHARE): {preprint._id}',
             action_flag=REINDEX_SHARE
         )
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
-class PreprintReindexElastic(PreprintMixin, DeleteView):
+class PreprintReindexElastic(PreprintMixin, View):
     permission_required = 'osf.view_preprint'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         search.search.update_preprint(preprint, bulk=False, async_update=False)
         update_admin_log(
@@ -157,7 +149,7 @@ class PreprintReindexElastic(PreprintMixin, DeleteView):
             message=f'Preprint Reindexed (Elastic): {preprint._id}',
             action_flag=REINDEX_ELASTIC
         )
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
 class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
@@ -218,17 +210,6 @@ class PreprintDeleteView(PreprintMixin, DeleteView):
         return redirect(self.get_success_url())
 
 
-class PreprintRequestDeleteBase(DeleteView):
-    permission_required = 'osf.change_preprintrequest'
-
-    def get_object(self, queryset=None):
-        return PreprintRequest.objects.filter(
-            request_type='withdrawal',
-            target__guids___id=self.kwargs.get('guid'),
-            target__provider__reviews_workflow=None
-        ).first()
-
-
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     paginate_by = 10
     paginate_orphans = 1
@@ -245,15 +226,14 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
             machine_state='initial'
         ).order_by(
             self.ordering
-        )
+        ).annotate(target_guid=F('target__guids___id'))
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
         return {
-            'requests': list(map(serialize_withdrawal_request, query_set)),
+            'requests': query_set,
             'page': page,
         }
 
@@ -266,7 +246,8 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
             if id_ not in ['csrfmiddlewaretoken', 'approveRequest', 'rejectRequest']
         ]
         for id_ in request_ids:
-            withdrawal_request = PreprintRequest.load(id_)
+            print(id_)
+            withdrawal_request = PreprintRequest.objects.get(id=id_)
             if is_approve_action:
                 withdrawal_request.run_accept(self.request.user, withdrawal_request.comment)
             else:
@@ -281,10 +262,21 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         return redirect('preprints:withdrawal-requests')
 
 
-class PreprintApproveWithdrawalRequest(PermissionRequiredMixin, PreprintRequestDeleteBase):
-    template_name = 'preprints/approve_withdrawal.html'
+class WithdrawalRequestMixin(PermissionRequiredMixin):
     permission_required = 'osf.change_preprintrequest'
-    raise_exception = True
+
+    def get_object(self):
+        return PreprintRequest.objects.filter(
+            request_type='withdrawal',
+            target__guids___id=self.kwargs['guid'],
+            target__provider__reviews_workflow=None
+        ).first()
+
+    def get_success_url(self):
+        return reverse_lazy('preprints:withdrawal-requests')
+
+
+class PreprintApproveWithdrawalRequest(WithdrawalRequestMixin, View):
 
     def post(self, request, *args, **kwargs):
         withdrawal_request = self.get_object()
@@ -293,16 +285,13 @@ class PreprintApproveWithdrawalRequest(PermissionRequiredMixin, PreprintRequestD
             user_id=self.request.user.id,
             object_id=withdrawal_request._id,
             object_repr='PreprintRequest',
-            message='Approved withdrawal request: {}'.format(withdrawal_request._id),
+            message=f'Approved withdrawal request: {withdrawal_request._id}',
             action_flag=APPROVE_WITHDRAWAL,
         )
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
-class PreprintRejectWithdrawalRequest(PermissionRequiredMixin, PreprintRequestDeleteBase):
-    template_name = 'preprints/reject_withdrawal.html'
-    permission_required = 'osf.change_preprintrequest'
-    raise_exception = True
+class PreprintRejectWithdrawalRequest(WithdrawalRequestMixin, View):
 
     def post(self, request, *args, **kwargs):
         withdrawal_request = self.get_object()
@@ -311,10 +300,10 @@ class PreprintRejectWithdrawalRequest(PermissionRequiredMixin, PreprintRequestDe
             user_id=self.request.user.id,
             object_id=withdrawal_request._id,
             object_repr='PreprintRequest',
-            message='Rejected withdrawal request: {}'.format(withdrawal_request._id),
+            message=f'Rejected withdrawal request: {withdrawal_request._id}',
             action_flag=REJECT_WITHDRAWAL,
         )
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
 class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
@@ -337,7 +326,9 @@ class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
 
         for pid in preprint_ids:
             preprint = Preprint.load(pid)
-            osf_admin_change_status_identifier(preprint)
+
+            if preprint.get_identifier_value('doi'):
+                preprint.request_identifier_update(category='doi')
 
             if action == 'SPAM':
                 preprint.confirm_spam(save=True)
@@ -364,10 +355,10 @@ class PreprintKnownHamList(PreprintSpamList):
     template_name = 'preprints/known_spam_list.html'
 
 
-class PreprintConfirmSpamView(PreprintMixin, DeleteView):
+class PreprintConfirmSpamView(PreprintMixin, View):
     permission_required = 'osf.mark_spam'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.confirm_spam(save=True)
 
@@ -385,10 +376,10 @@ class PreprintConfirmSpamView(PreprintMixin, DeleteView):
         return redirect(reverse_preprint(self.kwargs.get('guid')))
 
 
-class PreprintConfirmHamView(PreprintMixin, DeleteView):
+class PreprintConfirmHamView(PreprintMixin, View):
     permission_required = 'osf.mark_spam'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.confirm_ham(save=True)
 

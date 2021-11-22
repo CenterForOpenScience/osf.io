@@ -1,9 +1,9 @@
 from osf.models import SchemaResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.views.generic import DetailView, ListView
+from django.views.generic import ListView, TemplateView
 
 
-class SchemaResponseDetailView(PermissionRequiredMixin, DetailView):
+class SchemaResponseDetailView(PermissionRequiredMixin, TemplateView):
     """
     """
     template_name = 'schema_response/schema_response.html'
@@ -11,7 +11,16 @@ class SchemaResponseDetailView(PermissionRequiredMixin, DetailView):
     raise_exception = True
 
     def get_object(self):
-        return SchemaResponse.objects.get(id=self.kwargs['schema_response_id'])
+        schema_response = SchemaResponse.objects.get(
+            id=self.kwargs['schema_response_id']
+        )
+
+        # django admin templates don't like attributes with underscores for some reason
+        schema_response.parent_guid = schema_response.parent._id
+        return schema_response
+
+    def get_context_data(self, *args, **kwargs):
+        return {'schema_response': self.get_object()}
 
 
 class SchemaResponseListView(PermissionRequiredMixin, ListView):

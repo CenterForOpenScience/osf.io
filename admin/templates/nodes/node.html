@@ -16,7 +16,7 @@
     <div class="container-fluid">
         <ul class="messages">
             {% for message in messages %}
-            <li>{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
             {% endfor %}
         </ul>
         <div class="row">
@@ -24,113 +24,12 @@
                 <div class="btn-group" role="group">
                     <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
                     <a href="{% url 'nodes:node-logs' node.guid %}" class="btn btn-primary">View Logs</a>
-                    {%  if perms.osf.delete_node %}
-                        {% if not node.is_registration %}
-                            {% if not node.deleted %}
-                                <a href="{% url 'nodes:remove' guid=node.guid %}"
-                                   data-toggle="modal" data-target="#deleteModal"
-                                        class="btn btn-danger">
-                                    Delete Node
-                                </a>
-                                <div class="modal" id="deleteModal">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content"></div>
-                                        {# Data from above link #}
-                                    </div>
-                                </div>
-                            {% else %}
-                                <form style="display: inline;" method="post" action="{% url 'nodes:restore' guid=node.guid %}">
-                                    {% csrf_token %}
-                                    <input class="btn btn-success" type="submit" value="Restore Node" />
-                                </form>
-                            {% endif %}
-                        {% else %}
-                            {% if node.is_stuck_registration %}
-                                <a href="{% url 'nodes:restart-stuck-registrations' guid=node.guid %}"
-                                   data-toggle="modal" data-target="#confirmRestartRegistration"
-                                   class="btn btn-warning">
-                                    Restart Registration
-                                </a>
-                                <a href="{% url 'nodes:remove-stuck-registrations' guid=node.guid %}"
-                                   data-toggle="modal" data-target="#confirmRemoveRegistration"
-                                   class="btn btn-danger">
-                                    Remove Registration
-                                </a>
-                            {% endif %}
-
-                        {% endif %}
-                    {% endif %}
-                    {% if node.is_public %}
-                        <a href="{% url 'nodes:make-node-private' guid=node.guid %}"
-                           data-toggle="modal" data-target="#confirmMakeHam"
-                           class="btn btn-warning">
-                            Make Private
-                        </a>
-                        <div class="modal" id="confirmMakeHam">
-                            <div class="modal-dialog">
-                                <div class="modal-content"></div>
-                                {# Data from above link #}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if perms.osf.mark_spam %}
-                        <a href="{% url 'nodes:confirm-spam' guid=node.guid %}"
-                           data-toggle="modal" data-target="#confirmSpamModal"
-                           class="btn btn-warning">
-                            Confirm Spam
-                        </a>
-                        <div class="modal" id="confirmSpamModal">
-                            <div class="modal-dialog">
-                                <div class="modal-content"></div>
-                                {# Data from above link #}
-                            </div>
-                        </div>
-                        <a href="{% url 'nodes:confirm-ham' guid=node.guid %}"
-                           data-toggle="modal" data-target="#confirmHamModal"
-                           class="btn btn-default">
-                            Confirm <strong>Not</strong> Spam
-                        </a>
-                        <div class="modal" id="confirmHamModal">
-                            <div class="modal-dialog">
-                                <div class="modal-content"></div>
-                                {# Data from above link #}
-                            </div>
-                        </div>
-                    {% endif %}
-                    <a href="{% url 'nodes:reindex-share-node' guid=node.guid %}"
-                       data-toggle="modal" data-target="#confirmReindexShareNode"
-                       class="btn btn-default">
-                        SHARE Reindex
-                    </a>
-                    <div class="modal" id="confirmReindexShareNode">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
-                    <div class="modal" id="confirmRestartRegistration">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
-                    <div class="modal" id="confirmRemoveRegistration">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
-                    <a href="{% url 'nodes:reindex-elastic-node' guid=node.guid %}"
-                       data-toggle="modal" data-target="#confirmReindexElasticNode"
-                       class="btn btn-default">
-                        Elastic Reindex
-                    </a>
-                    <div class="modal" id="confirmReindexElasticNode">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
+                    {% include "nodes/remove_node.html" with node=node %}
+                    {% include "nodes/restart_stuck_registration.html" with node=node %}
+                    {% include "nodes/make_private.html" with node=node %}
+                    {% include "nodes/mark_spam.html" with node=node %}
+                    {% include "nodes/reindex_node_share.html" with node=node %}
+                    {% include "nodes/reindex_node_elastic.html" with node=node %}
                 </div>
             </div>
         </div>
@@ -195,7 +94,7 @@
                     </tr>
                     {% include "nodes/contributors.html" with node=node %}
                     {% include "nodes/spam_status.html" with resource=node %}
-                    {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registration.all %}
+                    {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registrations.all %}
                     {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
                     {% include "nodes/retraction.html" with retraction=node.retraction %}
                     {% include "nodes/registrations.html" with registrations=node.registrations.all %}

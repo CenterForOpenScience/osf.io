@@ -6,7 +6,13 @@ from furl import furl
 from datetime import datetime, timedelta
 from django.db.models import Q, F
 from django.views.defaults import page_not_found
-from django.views.generic import FormView, DeleteView, ListView, TemplateView
+from django.views.generic import (
+    View,
+    FormView,
+    DeleteView,
+    ListView,
+    TemplateView
+)
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
@@ -43,6 +49,17 @@ from osf.models.admin_log_entry import (
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
+
+
+class UserMixin(PermissionRequiredMixin):
+
+    def get_object(self):
+        user = OSFUser.objects.get(guids___id=self.kwargs['guid'])
+        user.guid = user._id
+        return user
+
+    def get_success_url(self):
+        return reverse('users:user', kwargs={'guid': self.kwargs['guid']})
 
 
 class UserDeleteView(PermissionRequiredMixin, DeleteView):
@@ -152,7 +169,7 @@ class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
                 ))
 
 
-class SpamUserDeleteView(UserDeleteView):
+class SpamUserView(UserMixin, View):
     """
     Allow authorized admin user to delete a spam user and mark all their nodes as private
 
@@ -160,29 +177,20 @@ class SpamUserDeleteView(UserDeleteView):
 
     template_name = 'users/remove_spam_user.html'
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            user = self.get_object()
-        except AttributeError:
-            raise Http404(
-                '{} with id "{}" not found.'.format(
-                    self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
-        if user:
-            for node in user.contributor_or_group_member_to:
-                if not node.is_registration and not node.is_spam:
-                    node.confirm_spam(save=True)
-                    update_admin_log(
-                        user_id=request.user.id,
-                        object_id=node._id,
-                        object_repr='Node',
-                        message='Confirmed SPAM: {} when user {} marked as spam'.format(node._id, user._id),
-                        action_flag=CONFIRM_SPAM
-                    )
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
 
-        kwargs.update({'is_spam': True})
-        return super(SpamUserDeleteView, self).delete(request, *args, **kwargs)
+        for node in user.contributor_or_group_member_to:
+            if not node.is_registration and not node.is_spam:
+                node.confirm_spam(save=True)
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=node._id,
+                    object_repr='Node',
+                    message=f'Confirmed SPAM: {node._id} when user {user._id} marked as spam',
+                    action_flag=CONFIRM_SPAM
+                )
+        return redirect(self.get_success_url())
 
 
 class HamUserRestoreView(UserDeleteView):
@@ -286,9 +294,11 @@ class UserKnownSpamList(UserSpamList):
     SPAM_STATUS = SpamStatus.SPAM
     template_name = 'users/known_spam_list.html'
 
+
 class UserKnownHamList(UserSpamList):
     SPAM_STATUS = SpamStatus.HAM
     template_name = 'users/known_spam_list.html'
+
 
 class User2FactorDeleteView(UserDeleteView):
     """ Allow authorised admin user to remove 2 factor authentication.
@@ -378,6 +388,7 @@ class UserFormView(PermissionRequiredMixin, FormView):
     def success_url(self):
         return self.redirect_url
 
+
 class UserMergeAccounts(PermissionRequiredMixin, FormView):
     template_name = 'users/merge_accounts_modal.html'
     permission_required = 'osf.view_osfuser'
@@ -405,6 +416,7 @@ class UserMergeAccounts(PermissionRequiredMixin, FormView):
             '{} not found.'.format(
                 form.cleaned_data.get('user_guid_to_be_merged', 'guid')
             ))
+
 
 class UserSearchList(PermissionRequiredMixin, ListView):
     template_name = 'users/list.html'
@@ -434,7 +446,7 @@ class UserSearchList(PermissionRequiredMixin, ListView):
         return super(UserSearchList, self).get_context_data(**kwargs)
 
 
-class UserView(PermissionRequiredMixin, TemplateView):
+class UserView(UserMixin, TemplateView):
     template_name = 'users/user.html'
     paginate_by = 10
     permission_required = 'osf.view_osfuser'
@@ -446,9 +458,10 @@ class UserView(PermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.get_object()
+        user.guid = user._id
 
         # Django template does not like attributes with underscores for some reason
-        preprint_queryset = user.preprints.filter(
+        preprints = user.preprints.filter(
             deleted=None
         ).annotate(
             guid=F('guids___id')
@@ -456,13 +469,14 @@ class UserView(PermissionRequiredMixin, TemplateView):
             'title'
         )
 
-        node_queryset = user.contributor_or_group_member_to.annotate(
+        nodes = user.contributor_or_group_member_to.annotate(
             guid=F('guids___id')
         ).order_by(
             'title'
         )
-        context.update(self.get_paginated_queryset(preprint_queryset, 'preprint'))
-        context.update(self.get_paginated_queryset(node_queryset, 'node'))
+        context.update(self.get_paginated_queryset(preprints, 'preprint'))
+        context.update(self.get_paginated_queryset(nodes, 'node'))
+        context.update({'user': user})
 
         return context
 
@@ -598,14 +612,17 @@ class GetUserLink(PermissionRequiredMixin, TemplateView):
         return None
 
     def get_context_data(self, **kwargs):
-        user = OSFUser.load(self.kwargs.get('guid'))
-
-        kwargs['user_link'] = self.get_link(user)
-        kwargs['username'] = user.username
-        kwargs['title'] = self.get_link_type()
-        kwargs['node_claim_links'] = self.get_claim_links(user)
-
-        return super(GetUserLink, self).get_context_data(**kwargs)
+        user = self.get_object()
+        
+        return super().get_context_data(
+            **kwargs,
+            **{
+                'user':  user,
+                'user_link': self.get_link(user),
+                'title':  self.get_link_type(),
+                'node_claim_links': self.get_claim_links(user),
+            }
+        )
 
 
 class GetUserConfirmationLink(GetUserLink):
@@ -623,7 +640,7 @@ class GetPasswordResetLink(GetUserLink):
         user.save()
 
         reset_abs_url = furl(DOMAIN)
-        reset_abs_url.path.add(('resetpassword/{}/{}'.format(user._id, user.verification_key_v2['token'])))
+        reset_abs_url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
         return reset_abs_url
 
     def get_link_type(self):
@@ -663,12 +680,8 @@ class ResetPasswordView(PermissionRequiredMixin, FormView):
     def dispatch(self, request, *args, **kwargs):
         self.user = OSFUser.load(self.kwargs.get('guid'))
         if self.user is None:
-            raise Http404(
-                '{} with id "{}" not found.'.format(
-                    self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
-        return super(ResetPasswordView, self).dispatch(request, *args, **kwargs)
+            raise Http404(f'user with id "{self.kwargs.get("guid")}" not found.')
+        return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self):
         self.initial = {
