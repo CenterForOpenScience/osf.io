@@ -240,7 +240,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
-            if latest_response is None or latest_response == block.response:
+            if latest_response is None or not _is_updated_response(block, latest_response):
                 continue
 
             if not self._response_reverted(block, latest_response):
@@ -264,7 +264,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         previous_response_block = self.previous_response.response_blocks.get(
             schema_key=current_block.schema_key
         )
-        if latest_response != previous_response_block.response:
+        if _is_updated_response(previous_response_block, latest_response):
             return False
 
         current_block.delete()
@@ -513,3 +513,19 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
             email_context['is_approver'] = contributor in self.pending_approvers.all()
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+
+
+def _is_updated_response(response_block, new_response):
+    '''block-type aware comparison for SchemaResponseBlock response values.
+
+    This is important for helping us catch cases where files have simply been re-ordered
+    or where older registrations use a different 'html' link from the Files API.
+    '''
+    current_response = response_block.response
+    if response_block.source_schema_block.block_type != 'file-input':
+        return current_response != new_response
+
+    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    current_file_ids = {entry['file_id'] for entry in current_response}
+    new_file_ids = {entry['file_id'] for entry in new_response}
+    return current_file_ids != new_file_ids
