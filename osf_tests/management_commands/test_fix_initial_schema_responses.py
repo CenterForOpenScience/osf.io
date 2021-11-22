@@ -12,7 +12,7 @@ FILE_INPUT_KEY = 'q6'  # File input key from DEFAULT_TEST_SCHEMA
 @pytest.fixture
 def registration():
     registration = RegistrationFactory(schema=get_default_test_schema())
-    registration.registration_responses[FILE_INPUT_KEY] = ['some', 'updated', 'file', 'metadata']
+    registration.registration_responses[FILE_INPUT_KEY] = [{'file_id': '123456'}]
     registration.save()
     return registration
 
@@ -70,7 +70,7 @@ class TestFixEarlySchemaResponses:
         updated_response = SchemaResponse.create_from_previous_response(
             previous_response=schema_response, initiator=schema_response.initiator
         )
-        updated_response.update_responses({FILE_INPUT_KEY: ['intentionall', 'updated', 'value']})
+        updated_response.update_responses({FILE_INPUT_KEY: [{'file_id': '654321'}]})
 
         fixed_count, _ = fix_initial_schema_responses()
         assert fixed_count == 1  # initial response

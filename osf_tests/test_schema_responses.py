@@ -531,6 +531,15 @@ class TestUpdateSchemaResponses():
         assert updated_responses['q1'] == original_responses['q1']
         assert updated_responses['q6'] == new_responses['q6']
 
+    def test_update_file_is_noop_if_no_change_in_ids(self, revised_response):
+        revised_response.update_responses({'q6': [{'file_id': '123456'}, {'file_id': '654321'}]})
+        revised_response.update_responses(
+            {'q1': 'Real update', 'q6': [{'file_id': '654321'}, {'file_id': '123456'}]}
+        )
+
+        assert revised_response.all_responses['q1'] == 'Real update'
+        assert revised_response.all_responses['q6'] == [{'file_id': '123456'}, {'file_id': '654321'}]
+
 
 @pytest.mark.django_db
 class TestDeleteSchemaResponse():
