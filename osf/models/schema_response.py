@@ -436,7 +436,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
         if not self.updated_response_keys:
             raise ValueError(
-                f'Cannot submit SchemaResponses without updated registration responses.'
+                'Cannot submit SchemaResponses without updated registration responses.'
+            )
+        if not self.revision_justification:
+            raise ValueError(
+                'Cannot submit SchemaResponses without a revision justification.'
             )
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
