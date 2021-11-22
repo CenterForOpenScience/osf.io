@@ -365,6 +365,16 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    original_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_original_response_id'},
+    ))
+
+    latest_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
+    ))
+
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
 
     @property
@@ -432,6 +442,17 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_original_response_id(self, obj):
+        return obj.root.schema_responses.last()._id
+
+    def get_latest_response_id(self, obj):
+        latest_approved = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved:
+            return latest_approved._id
+        return None
 
     def anonymize_registered_meta(self, obj):
         """

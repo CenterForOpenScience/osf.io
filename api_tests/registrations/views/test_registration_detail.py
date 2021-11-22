@@ -1546,3 +1546,36 @@ class TestRegistrationResponses:
         responses = resp.json['data']['attributes']['registration_responses']
         assert responses == approved_schema_response.all_responses
         assert nested_registration.registration_responses != approved_schema_response.all_responses
+
+    def test_original_response_relationship(
+            self, app, registration, approved_schema_response, revised_schema_response, admin):
+        resp = app.get(self.get_registration_detail_url(registration), auth=admin.auth)
+
+        original_response_id = resp.json['data']['relationships']['original_response']['data']['id']
+        assert original_response_id == approved_schema_response._id
+
+    @pytest.mark.parametrize('revised_response_state', ApprovalStates)
+    def test_latest_response_relationship(
+            self, app, registration, approved_schema_response, revised_schema_response, revised_response_state, admin):
+        revised_schema_response.state = revised_response_state
+        revised_schema_response.save()
+        if revised_response_state is ApprovalStates.APPROVED:
+            expected_id = revised_schema_response._id
+        else:
+            expected_id = approved_schema_response._id
+
+        resp = app.get(self.get_registration_detail_url(registration), auth=admin.auth)
+        latest_response_id = resp.json['data']['relationships']['latest_response']['data']['id']
+        assert latest_response_id == expected_id
+
+    def test_original_and_latest_response_relationship_on_nested_registration(
+            self, app, nested_registration, approved_schema_response, revised_schema_response):
+        revised_schema_response.state = ApprovalStates.APPROVED
+        revised_schema_response.save()
+
+        resp = app.get(self.get_registration_detail_url(nested_registration))
+
+        original_response_id = resp.json['data']['relationships']['original_response']['data']['id']
+        latest_response_id = resp.json['data']['relationships']['latest_response']['data']['id']
+        assert original_response_id == approved_schema_response._id
+        assert latest_response_id == revised_schema_response._id
