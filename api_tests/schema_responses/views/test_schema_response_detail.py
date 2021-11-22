@@ -495,7 +495,7 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.revision_justification == 'why not?'
 
-    def test_PATCH_empty_revision_justification_fails(self, app, schema_response, payload, admin_user):
+    def test_PATCH_empty_revision_justification_passes(self, app, schema_response, payload, admin_user):
         payload['data']['attributes']['revision_justification'] = ''
         resp = app.patch_json_api(make_api_url(schema_response), payload, auth=admin_user.auth, expect_errors=True)
 
