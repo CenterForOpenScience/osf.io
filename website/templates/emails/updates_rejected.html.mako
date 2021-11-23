@@ -9,14 +9,14 @@
     % if is_initiator:
       You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
     % else:
-      ${initiator}  did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
+      ${initiator} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
     % endif
     <p>
     % if can_write:
-      The ${resource_type} was returned back to a draft so additinoal updates can be made.
+      The ${resource_type} was returned back to a draft so additional updates can be made.
     % else:
       The ${resource_type} was returned back to a draft so Admin and Write contributors
-      can make additinoal updates.
+      can make additional updates.
     % endif
     <p>
     Sincerely,<br>

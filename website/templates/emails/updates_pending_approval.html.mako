@@ -8,20 +8,20 @@
     <p>
     % if is_initiator:
       You submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
-      for admin approval.
+      for Admin approval.
     % else:
       ${initiator} submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
-      for admin approval.
+      for Admin approval.
     % endif
     <p>
     <a href="${update_url}">Click here</a> to review the submitted updates.
     % if is_approver:
       <a href="${update_url}">Click here</a> to review and either approve or reject the
       submitted updates. Decisions must be made within
-      ${settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600} hours.
+      ${int(settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600)} hours.
     % else:
       <a href="${update_url}">Click here</a> to review the submited updates.
-      Admins have up to ${settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600} hours
+      Admins have up to ${int(settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600)} hours
       to make their decision.
     % endif
     <p>

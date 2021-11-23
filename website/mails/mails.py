@@ -513,7 +513,7 @@ REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
 
 SCHEMA_RESPONSE_INITIATED = Mail(
     'updates_initiated',
-    subject='Updates in in-progress for your ${resource_type} ${title}'
+    subject='Updates for ${resource_type} ${title} are in progress'
 )
 
 

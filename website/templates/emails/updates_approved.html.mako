@@ -8,14 +8,14 @@
     <p>
     % if needs_moderation:
       The updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
-      were accepted.
-      <p>
-      These updates will be visibly be default along with the reason for the changes.
+      were accepted and sent to ${provider} for moderation.
     % else:
       The updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
-      were accepted and sent to ${provider} for moderation.
+      were accepted.
+      <p>
+      These updates will be visible by default along with the reason for the changes.
     % endif
-	<p>
+    <p>
     Sincerely,<br>
     The OSF Team
     <p>

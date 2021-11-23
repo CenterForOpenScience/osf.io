@@ -13,12 +13,12 @@
     % endif
     <p>
     % if can_write:
-      <a href="${update_url}">Click here</a> to review and contribute to the updates in-progress.
+      <a href="${update_url}">Click here</a> to review and contribute to the updates in progress.
     % else:
-      <a href="${update_url}">Click here</a> to review the updates in-progress.
+      <a href="${update_url}">Click here</a> to review the updates in progress.
     % endif
     <p>
-    Sincerely yours,<br>
+    Sincerely,<br>
     The OSF Team
     <p>
     <p>
