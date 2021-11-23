@@ -626,7 +626,6 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
             self, revised_response, admin_user, notification_recipients):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
 
-
         send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
