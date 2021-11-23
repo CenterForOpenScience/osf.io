@@ -157,6 +157,8 @@ class TestNodeRegistrationSerializer:
             'provider',
             'storage',
             'groups',
+            'original_response',
+            'latest_response',
         ]
 
         # Attributes
