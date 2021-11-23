@@ -99,16 +99,22 @@ def initial_response(registration):
     for block in response.response_blocks.all():
         block.response = INITIAL_SCHEMA_RESPONSES[block.schema_key]
         block.save()
+
+    response.update_responses({'q1': 'must change one response or can\'t submit'})
+    response.revision_justification = 'has for valid revision_justification for submission'
+
     return response
 
 
 @pytest.fixture
 def revised_response(initial_response):
-    return schema_response.SchemaResponse.create_from_previous_response(
+    revised_response = schema_response.SchemaResponse.create_from_previous_response(
         previous_response=initial_response,
         initiator=initial_response.initiator
     )
-
+    revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
+    revised_response.revision_justification = 'has for valid revision_justification for submission'
+    return revised_response
 
 def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
     '''Confirms that a mocked send_mail function contains the appropriate calls.'''
@@ -619,8 +625,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_notification(
             self, revised_response, admin_user, notification_recipients):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
-        revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
-        revised_response.save()
+
+
         send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering

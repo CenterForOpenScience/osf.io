@@ -68,6 +68,13 @@ def configure_test_preconditions(
         schema_response.pending_approvers.add(
             *[user for user, _ in registration.get_admin_contributors_recursive()]
         )
+
+    if schema_response_state is ApprovalStates.IN_PROGRESS:
+        # need valid changes for submission validations
+        schema_response.update_responses({'q1': 'update for submission'})
+        schema_response.revision_justification = 'has for valid revision_justification for submission'
+        schema_response.save()
+
     return auth, schema_response, registration, provider
 
 
@@ -236,9 +243,6 @@ class TestSchemaResponseActionListGETBehavior:
         )
 
         user = get_user_for_auth(auth)
-        schema_response.update_responses({'q1': 'update for submission'})
-        schema_response.revision_justification = 'has for valid submission'
-        schema_response.save()
         schema_response.submit(user=user, required_approvers=[user])
         schema_response.approve(user=user)
 
@@ -426,9 +430,6 @@ class TestSchemaResponseActionListPOSTBehavior:
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
         )
         assert not schema_response.actions.exists()
-        schema_response.update_responses({'q1': 'update for valid submission'})
-        schema_response.revision_justification = 'update for valid submission'
-        schema_response.save()
 
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
         app.post_json_api(make_api_url(schema_response), payload, auth=auth)
@@ -445,10 +446,6 @@ class TestSchemaResponseActionListPOSTBehavior:
         auth, schema_response, registration, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
         )
-        schema_response.update_responses({'q1': 'update for valid submission'})
-        schema_response.revision_justification = 'update for valid submission'
-        schema_response.save()
-
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
         app.post_json_api(make_api_url(schema_response), payload, auth=auth)
 
