@@ -27,7 +27,7 @@
     <p>
     Accepted updates will be displayed on the ${resource_type} along with why they were needed.
     <p>
-    Unaccepted updates will be returned to draft form for more edits.
+    Updates that need additional edits will be returned to draft form.
     <p>
     Sincerely,<br>
     The OSF Team
