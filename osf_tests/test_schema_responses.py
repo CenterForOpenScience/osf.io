@@ -100,9 +100,6 @@ def initial_response(registration):
         block.response = INITIAL_SCHEMA_RESPONSES[block.schema_key]
         block.save()
 
-    response.update_responses({'q1': 'must change one response or can\'t submit'})
-    response.revision_justification = 'has for valid revision_justification for submission'
-
     return response
 
 
@@ -112,8 +109,6 @@ def revised_response(initial_response):
         previous_response=initial_response,
         initiator=initial_response.initiator
     )
-    revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
-    revised_response.revision_justification = 'has for valid revision_justification for submission'
     return revised_response
 
 def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
@@ -601,6 +596,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_adds_pending_approvers(
             self, initial_response, admin_user, alternate_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
 
         initial_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
@@ -611,6 +608,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_submit_response_writes_schema_response_action(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
         assert not initial_response.actions.exists()
 
@@ -625,6 +624,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_notification(
             self, revised_response, admin_user, notification_recipients):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        revised_response.revision_justification = 'has for valid revision_justification for submission'
+        revised_response.save()
 
         send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
@@ -637,6 +639,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
@@ -709,7 +713,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         initial_response.approve(user=alternate_user)
 
-        # Confifm that action for final "approve" has to_state of APPROVED
+        # Confirm that action for final "approve" has to_state of APPROVED
         new_action = initial_response.actions.last()
         assert new_action.creator == alternate_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
