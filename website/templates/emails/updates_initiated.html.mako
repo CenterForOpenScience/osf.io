@@ -6,15 +6,26 @@
     <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    Your ${resource_type} <a href="${parent_url}">"${title}"</a> is in the process of being updated.
+    % if is_initiator:
+      You initiated updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
+    % else:
+      ${initiator} initiated updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
+    % endif
     <p>
     % if can_write:
-        You can review and contribute to the updates by clicking <a href="${update_url}">here</a>.
+      <a href="${update_url}">Click here</a> to review and contribute to the updates in-progress.
     % else:
-        You can review the updates by clicking <a href="${update_url}">here</a>.
+      <a href="${update_url}">Click here</a> to review the updates in-progress.
     % endif
     <p>
     Sincerely yours,<br>
-    The OSF Robots<br>
+    The OSF Team
+    <p>
+    <p>
+    Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
+    or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
+    the Center for Open Science.
+    <p>
+    Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
 </tr>
 </%def>

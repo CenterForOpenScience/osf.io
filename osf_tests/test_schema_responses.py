@@ -893,14 +893,14 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_no_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
+    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             revised_response.approve(user=admin_user)
-        assert not mock_send.called
+        assert mock_send.called
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
