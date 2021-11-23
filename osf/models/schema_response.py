@@ -1,4 +1,5 @@
 from future.moves.urllib.parse import urljoin
+from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -240,7 +241,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
-            if latest_response is None or latest_response == block.response:
+            if latest_response is None or not _is_updated_response(block, latest_response):
                 continue
 
             if not self._response_reverted(block, latest_response):
@@ -264,7 +265,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         previous_response_block = self.previous_response.response_blocks.get(
             schema_key=current_block.schema_key
         )
-        if latest_response != previous_response_block.response:
+        if _is_updated_response(previous_response_block, latest_response):
             return False
 
         current_block.delete()
@@ -399,8 +400,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             # not self.pending_approvers.exists() -> called from within "approve"
             if user is None or not self.pending_approvers.exists():
                 return
-            raise ValueError(
-                'Invalid usage of "accept" trigger from UNAPPROVED state '
+            raise MachineError(
+                f'Invalid usage of "accept" trigger from UNAPPROVED state '
                 f'against SchemaResponse with id [{self._id}]'
             )
 
@@ -433,6 +434,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def _on_submit(self, event_data):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
+        if not self.updated_response_keys or not self.revision_justification:
+            raise ValueError(
+                'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+            )
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
@@ -518,3 +523,19 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             email_context['is_approver'] = contributor in self.pending_approvers.all(),
             email_context['is_initiator'] = contributor == event_initiator
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+
+
+def _is_updated_response(response_block, new_response):
+    '''block-type aware comparison for SchemaResponseBlock response values.
+
+    This is important for helping us catch cases where files have simply been re-ordered
+    or where older registrations use a different 'html' link from the Files API.
+    '''
+    current_response = response_block.response
+    if response_block.source_schema_block.block_type != 'file-input':
+        return current_response != new_response
+
+    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    current_file_ids = {entry['file_id'] for entry in current_response}
+    new_file_ids = {entry['file_id'] for entry in new_response}
+    return current_file_ids != new_file_ids

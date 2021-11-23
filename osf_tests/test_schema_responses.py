@@ -16,6 +16,8 @@ from osf_tests.utils import get_default_test_schema
 from website.mails import mails
 from website.notifications import emails
 
+from transitions import MachineError
+
 # See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
     'q1': 'Some answer',
@@ -97,16 +99,17 @@ def initial_response(registration):
     for block in response.response_blocks.all():
         block.response = INITIAL_SCHEMA_RESPONSES[block.schema_key]
         block.save()
+
     return response
 
 
 @pytest.fixture
 def revised_response(initial_response):
-    return schema_response.SchemaResponse.create_from_previous_response(
+    revised_response = schema_response.SchemaResponse.create_from_previous_response(
         previous_response=initial_response,
         initiator=initial_response.initiator
     )
-
+    return revised_response
 
 def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
     '''Confirms that a mocked send_mail function contains the appropriate calls.'''
@@ -360,7 +363,7 @@ class TestUpdateSchemaResponses():
             'q3': 'B',
             'q4': ['E'],
             'q5': 'Roonil Wazlib, et al',
-            'q6': ['some', 'file', 'metadata'],
+            'q6': [{'file_id': '123456'}],
         }
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.save()
@@ -384,7 +387,7 @@ class TestUpdateSchemaResponses():
                 'q3': 'B',
                 'q4': ['E'],
                 'q5': 'Roonil Wazlib, et al',
-                'q6': ['some', 'file', 'metadata'],
+                'q6': [{'file_id': '123456'}],
             }
         )
         initial_response.refresh_from_db()
@@ -521,7 +524,7 @@ class TestUpdateSchemaResponses():
     def test_update_file_references(self, initial_response):
         original_responses = initial_response.all_responses
         new_responses = dict(
-            original_responses, q1='new value', q6=['some', 'file', 'metadata']
+            original_responses, q1='new value', q6=[{'file_id': '123456'}]
         )
 
         initial_response._update_file_references(new_responses)
@@ -530,6 +533,15 @@ class TestUpdateSchemaResponses():
 
         assert updated_responses['q1'] == original_responses['q1']
         assert updated_responses['q6'] == new_responses['q6']
+
+    def test_update_file_is_noop_if_no_change_in_ids(self, revised_response):
+        revised_response.update_responses({'q6': [{'file_id': '123456'}, {'file_id': '654321'}]})
+        revised_response.update_responses(
+            {'q1': 'Real update', 'q6': [{'file_id': '654321'}, {'file_id': '123456'}]}
+        )
+
+        assert revised_response.all_responses['q1'] == 'Real update'
+        assert revised_response.all_responses['q6'] == [{'file_id': '123456'}, {'file_id': '654321'}]
 
 
 @pytest.mark.django_db
@@ -584,6 +596,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_adds_pending_approvers(
             self, initial_response, admin_user, alternate_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
 
         initial_response.submit(user=admin_user, required_approvers=[admin_user, alternate_user])
@@ -594,6 +608,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_submit_response_writes_schema_response_action(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
         assert not initial_response.actions.exists()
 
@@ -608,7 +624,10 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
     def test_submit_response_notification(
             self, revised_response, admin_user, notification_recipients):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        revised_response.revision_justification = 'has for valid revision_justification for submission'
         revised_response.save()
+
         send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
@@ -620,6 +639,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
+        initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
+        initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
@@ -692,7 +713,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         initial_response.approve(user=alternate_user)
 
-        # Confifm that action for final "approve" has to_state of APPROVED
+        # Confirm that action for final "approve" has to_state of APPROVED
         new_action = initial_response.actions.last()
         assert new_action.creator == alternate_user
         assert new_action.from_state == ApprovalStates.UNAPPROVED.db_name
@@ -824,7 +845,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with assert_raises(ValueError):
+        with assert_raises(MachineError):
             initial_response.accept(user=admin_user)
 
     def test_internal_accept_advances_state(self, initial_response, admin_user, alternate_user):
