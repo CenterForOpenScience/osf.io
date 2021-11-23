@@ -236,6 +236,9 @@ class TestSchemaResponseActionListGETBehavior:
         )
 
         user = get_user_for_auth(auth)
+        schema_response.update_responses({'q1': 'update for submission'})
+        schema_response.revision_justification = 'has for valid submission'
+        schema_response.save()
         schema_response.submit(user=user, required_approvers=[user])
         schema_response.approve(user=user)
 
@@ -402,7 +405,7 @@ class TestSchemaResponseActionListPOSTBehavior:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
         assert resp.status_code == 400
-        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without updated registration responses.'
+        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
 
     def test_POST_submit__denies_submission_without_justification(self, app):
         auth, schema_response, _, _ = configure_test_preconditions(
@@ -416,13 +419,16 @@ class TestSchemaResponseActionListPOSTBehavior:
             make_api_url(schema_response), payload, auth=auth, expect_errors=True
         )
         assert resp.status_code == 400
-        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without a revision justification.'
+        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
 
     def test_POST_submit__writes_action_and_advances_state(self, app):
         auth, schema_response, _, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
         )
         assert not schema_response.actions.exists()
+        schema_response.update_responses({'q1': 'update for valid submission'})
+        schema_response.revision_justification = 'update for valid submission'
+        schema_response.save()
 
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
         app.post_json_api(make_api_url(schema_response), payload, auth=auth)
@@ -439,6 +445,9 @@ class TestSchemaResponseActionListPOSTBehavior:
         auth, schema_response, registration, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
         )
+        schema_response.update_responses({'q1': 'update for valid submission'})
+        schema_response.revision_justification = 'update for valid submission'
+        schema_response.save()
 
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
         app.post_json_api(make_api_url(schema_response), payload, auth=auth)
