@@ -1,4 +1,5 @@
 from future.moves.urllib.parse import urljoin
+from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -399,8 +400,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             # not self.pending_approvers.exists() -> called from within "approve"
             if user is None or not self.pending_approvers.exists():
                 return
-            raise ValueError(
-                'Invalid usage of "accept" trigger from UNAPPROVED state '
+            raise MachineError(
+                f'Invalid usage of "accept" trigger from UNAPPROVED state '
                 f'against SchemaResponse with id [{self._id}]'
             )
 
@@ -433,6 +434,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def _on_submit(self, event_data):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
+        if not self.updated_response_keys or not self.revision_justification:
+            raise ValueError(
+                'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+            )
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
