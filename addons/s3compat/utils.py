@@ -163,7 +163,6 @@ def get_bucket_location_or_error(host, access_key, secret_key, bucket_name):
         # Will set defaultLocation if bucket_location doesn't exist
         bucket_location = bucket.get_location()
     except exception.S3ResponseError:
-        service = find_service_by_host(host)
-        bucket_location = service['defaultLocation']
+        bucket_location = ''
 
     return bucket_location
