@@ -203,7 +203,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        new_response._notify_users(event='create')
+        new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
     def update_responses(self, updated_responses):
@@ -483,9 +483,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
-        self._notify_users(event=event_data.event.name)
+        self._notify_users(
+            event=event_data.event.name,
+            event_initiator=event_data.kwargs.get('user')
+        )
 
-    def _notify_users(self, event):
+    def _notify_users(self, event, event_initiator):
         '''Notify users of relevant state transitions.'''
         #  Notifications on the original response will be handled by the registration workflow
         if not self.previous_response:
@@ -499,7 +502,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(), context=email_context
             )
-            return
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)
         if not template:
@@ -510,13 +512,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'is_moderated': self.is_moderated
+            'initiator': event_initiator.fullname,
+            'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'provider': self.parent.provider.name if self.parent.provider else '',
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             email_context['user'] = contributor
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all()
+            email_context['is_approver'] = contributor in self.pending_approvers.all(),
+            email_context['is_initiator'] = contributor == event_initiator
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
 
 
