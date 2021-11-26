@@ -163,6 +163,9 @@ def update_storage_usage_with_size(payload):
     if target_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
         return update_storage_usage(target_node)
 
+    if target_node.storage_limit_status is settings.StorageLimits.NOT_CALCULATED:
+        return update_storage_usage(target_node)
+
     current_usage = target_node.storage_usage
     target_file = BaseFileNode.load(target_file_id)
 
