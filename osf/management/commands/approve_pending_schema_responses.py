@@ -26,7 +26,6 @@ def approve_pending_schema_responses(dry_run=False):
     # Get all non-initial SchemaResponses that have been pending Admin Approval
     # for longer than the environment's auto-approval threshold
     auto_approval_threshold = timezone.now() - REGISTRATION_UPDATE_APPROVAL_TIME
-    print(auto_approval_threshold)
     pending_schema_responses = SchemaResponse.objects.filter(
         reviews_state=ApprovalStates.UNAPPROVED.db_name,
         submitted_timestamp__lte=auto_approval_threshold,
