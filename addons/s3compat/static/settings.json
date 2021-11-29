@@ -7,14 +7,30 @@
                           {"name": "Wasabi",
                            "host": "s3.wasabisys.com",
                            "bucketLocations": {
-                             "us-east": {"name": "us-east", "host": "s3.wasabisys.com"},
-                             "us-west-1": {"name": "us-west-1", "host": "s3.us-west-1.wasabisys.com"},
-                             "eu-central": {"name": "eu-central", "host": "s3.eu-central-1.wasabisys.com"},
-                             "": {"name": "Virginia"}}},
+                             "us-east-1": {"name": "Northern Virginia 1", "host": "s3.wasabisys.com"},
+                             "us-east-2": {"name": "Northern Virginia 2", "host": "s3.us-east-2.wasabisys.com"},
+                             "us-west-1": {"name": "Oregon", "host": "s3.us-west-1.wasabisys.com"},
+                             "us-central-1": {"name": "Plano, Texas", "host": "s3.us-central-1.wasabisys.com"},
+                             "ap-northeast-1": {"name": "Tokyo", "host": "s3.ap-northeast-1.wasabisys.com"},
+                             "ap-northeast-2": {"name": "Osaka", "host": "s3.ap-northeast-2.wasabisys.com"},
+                             "eu-central-1": {"name": "Amsterdam", "host": "s3.eu-central-1.wasabisys.com"},
+                             "": {"name": "Northern Virginia 1"}}},
                           {"name": "Kanazawa University Cloud(HyperStore)",
                            "host": "s3-kakuma.rdm.kanazawa-u.ac.jp"},
                           {"name": "Rakuten Cloud",
-                           "host": "s3.jp3.objectstorage.rakuten-cloud.net"}
+                           "host": "s3.jp3.objectstorage.rakuten-cloud.net"},
+                          {"name": "mdx S3DS",
+                           "host": "s3ds.mdx.jp",
+                           "bucketLocations": {
+                             "us-east-1": {"name": "us-east-1", "host": "s3ds.mdx.jp"},
+                             "": {"name": "us-east-1"}},
+                           "serverSideEncryption": false},
+                          {"name": "RIKEN HSS S3 Service",
+                           "host": "hssgws3.riken.jp:443",
+                           "bucketLocations": {
+                             "sailingship": {"name": "sailingship", "host": "hssgws3.riken.jp:443"},
+                             "": {"name": "sailingship"}},
+                           "serverSideEncryption": false}
                            ],
     "encryptUploads": true
 }
