@@ -6,24 +6,38 @@
     <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    Your ${resource_type} <a href="${parent_url}">"${title}"</a> has updates that are
-    pending approval.
-    <p>
-    You can review the updated responses by clicking <a href="${update_url}">here</a>.
-    % if is_approver:
-        From that page, You will be able to either approve the updates or request further changes.
+    % if is_initiator:
+      You submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
+      for Admin approval.
+    % else:
+      ${initiator} submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
+      for Admin approval.
     % endif
     <p>
-    %if is_moderated:
-    If the proposed updates are approved by all "admin" users on the ${resource_type},
-    they will be submitted for moderator review.
-    %endif
-    Once the updates have received all required approvals, the updated responses and the
-    reason for the changes will be visible by default for all users viewing your ${resource_type}.
-    All previously approved updates will remain accessible for comparrison through the
-    "Updates" dropdown on the main ${resource_type} page.
+    <a href="${update_url}">Click here</a> to review the submitted updates.
+    % if is_approver:
+      <a href="${update_url}">Click here</a> to review and either approve or reject the
+      submitted updates. Decisions must be made within
+      ${int(settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600)} hours.
+    % else:
+      <a href="${update_url}">Click here</a> to review the submited updates.
+      Admins have up to ${int(settings.REGISTRATION_APPROVAL_TIME.total_seconds() / 3600)} hours
+      to make their decision.
+    % endif
     <p>
-    Sincerely yours,<br>
-    The OSF Robots<br>
+    Accepted updates will be displayed on the ${resource_type} along with why they were needed.
+    <p>
+    Updates that need additional edits will be returned to draft form.
+    <p>
+    Sincerely,<br>
+    The OSF Team
+    <p>
+    <p>
+    Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
+    or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
+    the Center for Open Science.
+    <p>
+    Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
+  </td>
 </tr>
 </%def>
