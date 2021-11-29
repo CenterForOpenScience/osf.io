@@ -1,4 +1,5 @@
 from future.moves.urllib.parse import urljoin
+from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -202,7 +203,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        new_response._notify_users(event='create')
+        new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
     def update_responses(self, updated_responses):
@@ -240,7 +241,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
-            if latest_response is None or latest_response == block.response:
+            if latest_response is None or not _is_updated_response(block, latest_response):
                 continue
 
             if not self._response_reverted(block, latest_response):
@@ -264,7 +265,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         previous_response_block = self.previous_response.response_blocks.get(
             schema_key=current_block.schema_key
         )
-        if latest_response != previous_response_block.response:
+        if _is_updated_response(previous_response_block, latest_response):
             return False
 
         current_block.delete()
@@ -399,8 +400,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             # not self.pending_approvers.exists() -> called from within "approve"
             if user is None or not self.pending_approvers.exists():
                 return
-            raise ValueError(
-                'Invalid usage of "accept" trigger from UNAPPROVED state '
+            raise MachineError(
+                f'Invalid usage of "accept" trigger from UNAPPROVED state '
                 f'against SchemaResponse with id [{self._id}]'
             )
 
@@ -433,6 +434,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def _on_submit(self, event_data):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
+        if not self.updated_response_keys or not self.revision_justification:
+            raise ValueError(
+                'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+            )
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
@@ -478,9 +483,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
-        self._notify_users(event=event_data.event.name)
+        self._notify_users(
+            event=event_data.event.name,
+            event_initiator=event_data.kwargs.get('user')
+        )
 
-    def _notify_users(self, event):
+    def _notify_users(self, event, event_initiator):
         '''Notify users of relevant state transitions.'''
         #  Notifications on the original response will be handled by the registration workflow
         if not self.previous_response:
@@ -494,7 +502,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(), context=email_context
             )
-            return
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)
         if not template:
@@ -505,11 +512,30 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'is_moderated': self.is_moderated
+            'initiator': event_initiator.fullname,
+            'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'provider': self.parent.provider.name if self.parent.provider else '',
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             email_context['user'] = contributor
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all()
+            email_context['is_approver'] = contributor in self.pending_approvers.all(),
+            email_context['is_initiator'] = contributor == event_initiator
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+
+
+def _is_updated_response(response_block, new_response):
+    '''block-type aware comparison for SchemaResponseBlock response values.
+
+    This is important for helping us catch cases where files have simply been re-ordered
+    or where older registrations use a different 'html' link from the Files API.
+    '''
+    current_response = response_block.response
+    if response_block.source_schema_block.block_type != 'file-input':
+        return current_response != new_response
+
+    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    current_file_ids = {entry['file_id'] for entry in current_response}
+    new_file_ids = {entry['file_id'] for entry in new_response}
+    return current_file_ids != new_file_ids

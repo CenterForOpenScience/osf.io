@@ -3,19 +3,31 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    Further changes have been requested for the proposed updates to your ${resource_type}
-    <a href="${parent_url}">"${title}"</a>.
-    <p>
-    % if can_write:
-        You can view and contribute to the updates in-progress by clicking
-        <a href="${update_url}">here</a>.
+    % if is_initiator:
+      You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
     % else:
-        You can view the updates in-progress by clicking <a href="${update_url}">here</a>.
+      ${initiator} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
     % endif
     <p>
-    Sincerely yours,<br>
-    The OSF Robots<br>
+    % if can_write:
+      The ${resource_type} was returned back to a draft so additional updates can be made.
+    % else:
+      The ${resource_type} was returned back to a draft so Admin and Write contributors
+      can make additional updates.
+    % endif
+    <p>
+    Sincerely,<br>
+    The OSF Team
+    <p>
+    <p>
+    Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
+    or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
+    the Center for Open Science.
+    <p>
+    Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
+  </td>
 </tr>
 </%def>
