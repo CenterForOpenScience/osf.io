@@ -4,15 +4,16 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 from framework.celery_tasks import app as celery_app
+from transitions import MachineError
 
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
-from website.settings import REGISTRATION_APPROVAL_TIME
+from website.settings import REGISTRATION_UPDATE_APPROVAL_TIME
 
 logger = logging.getLogger(__name__)
 
-THRESHOLD_HOURS = int(REGISTRATION_APPROVAL_TIME.total_seconds() / 3600)
+THRESHOLD_HOURS = int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)
 
 @celery_app.task(name='management.commands.approve_pending_schema_responses')
 @transaction.atomic
@@ -24,7 +25,7 @@ def approve_pending_schema_responses(dry_run=False):
     )
     # Get all non-initial SchemaResponses that have been pending Admin Approval
     # for longer than the environment's auto-approval threshold
-    auto_approval_threshold = timezone.now() - REGISTRATION_APPROVAL_TIME
+    auto_approval_threshold = timezone.now() - REGISTRATION_UPDATE_APPROVAL_TIME
     print(auto_approval_threshold)
     pending_schema_responses = SchemaResponse.objects.filter(
         reviews_state=ApprovalStates.UNAPPROVED.db_name,
@@ -39,8 +40,18 @@ def approve_pending_schema_responses(dry_run=False):
             f'Auto-approving SchemaResponse with id [{schema_response._id}] '
             f'for Registration with guid [{schema_response.parent._id}]'
         )
-        schema_response.accept(comment=f'Auto-approved following {THRESHOLD_HOURS} hour threshhold')
-        count += 1
+        try:
+            schema_response.accept(
+                comment=f'Auto-approved following {THRESHOLD_HOURS} hour threshhold'
+            )
+        except MachineError:
+            logger.exception(
+                f'{"[DRY RUN] " if dry_run else ""}'
+                f'Error auto-approving SchemaResponse with id [{schema_response._id}] '
+                f'for Registration with guit [{schema_response.parent._id}]'
+            )
+        else:
+            count += 1
 
     if dry_run:
         raise RuntimeError('Dry run, transaction rolled back')

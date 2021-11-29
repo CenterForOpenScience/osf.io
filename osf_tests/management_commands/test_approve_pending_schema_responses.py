@@ -7,11 +7,11 @@ from osf.management.commands.approve_pending_schema_responses import approve_pen
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import RegistrationFactory
-from website.settings import REGISTRATION_APPROVAL_TIME
+from website.settings import REGISTRATION_UPDATE_APPROVAL_TIME
 
 
 EXCLUDED_STATES = [state for state in ApprovalStates if state is not ApprovalStates.UNAPPROVED]
-AUTO_APPROVE_TIMESTAMP = timezone.now() - REGISTRATION_APPROVAL_TIME
+AUTO_APPROVE_TIMESTAMP = timezone.now() - REGISTRATION_UPDATE_APPROVAL_TIME
 
 
 @pytest.mark.django_db
