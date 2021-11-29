@@ -161,6 +161,8 @@ NodeFetcher.prototype = {
             return this.resume();
           } else {
             this._continue = false;
+            m.redraw(true);
+
           }
 
       }).bind(this));
@@ -1062,10 +1064,12 @@ var MyProjects = {
             var current = self.currentView().fetcher;
 
             document.addEventListener('wheel', function(e) {
-                  if(current._flat && current._flat.length >= current.limit) {
-                      current.limit = current.limit + 10;
+                  var scroll = $('#tb-tbody')[0];
+                  if(current._flat && current._flat.length >= current.limit && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
+                      current.limit = current.limit + 5;
                       current.resume();
                   }
+                  m.redraw();
             });
 
         };
@@ -1186,8 +1190,10 @@ var MyProjects = {
             m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, 'Fetching more projects')
+                    m('', { style : 'width: ' + ctrl.loadValue() +'%;', class: 'line-full ' + (ctrl.currentView().fetcher._continue ? 'bg-color-green': 'bg-color-blue')}, m('span.progress')),
+                    m('.spinner-loading-wrapper', {},
+                        m('#load-message.ball-scale.ball-scale-blue.scroll-ball', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, m(''), m(''), m(''))
+                    )
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
@@ -1945,6 +1951,7 @@ var Filters = {
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
+                    m('.text-muted.m-sm', {}, 'Only contributors on loaded resources are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable, '),
                     m('.pull-right',
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
@@ -1954,6 +1961,7 @@ var Filters = {
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
+                    m('.text-muted.m-sm', {}, 'Only tags on loaded resources are filterable'),
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
