@@ -686,7 +686,6 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
-            ,
         }
 
         # Tasks that need metrics and release requirements
