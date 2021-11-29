@@ -7,15 +7,15 @@
     Hello ${user.fullname},
     <p>
     % if is_initiator:
-      You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
+      You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % else:
-      ${initiator} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}".
+      ${initiator} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % endif
     <p>
     % if can_write:
-      The ${resource_type} was returned back to a draft so additional updates can be made.
+      The updates for the ${resource_type} were returned back to a draft so additional updates can be made.
     % else:
-      The ${resource_type} was returned back to a draft so Admin and Write contributors
+      The updates for the ${resource_type} were returned back to a draft so Admin and Write contributors
       can make additional updates.
     % endif
     <p>

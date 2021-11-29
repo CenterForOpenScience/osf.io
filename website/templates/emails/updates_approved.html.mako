@@ -6,7 +6,7 @@
     <%!from website import settings%>
     Hello ${user.fullname},
     <p>
-    % if needs_moderation:
+    % if pending_moderation:
       The updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
       were accepted and sent to ${provider} for moderation.
     % else:
