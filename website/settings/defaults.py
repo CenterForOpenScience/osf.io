@@ -65,6 +65,7 @@ RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
+REGISTRATION_UPDATE_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
@@ -443,7 +444,8 @@ class CeleryConfig:
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'website.archiver.tasks',
-        'scripts.add_missing_identifiers_to_preprints'
+        'scripts.add_missing_identifiers_to_preprints',
+        'osf.management.commands.approve_pending_schema_response',
     }
 
     try:
@@ -512,6 +514,7 @@ class CeleryConfig:
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.populate_initial_schema_responses',
+        'osf.management.commands.approve_pending_schema_responses',
         'api.providers.tasks'
     )
 
@@ -677,6 +680,11 @@ class CeleryConfig:
                 # 'schedule': crontab(hour='*/3'),  # Every 3 hours
                 'schedule': crontab(minute='*/5'),  # Every 5 minutes for staging server QA test
                 'kwargs': {'dry_run': False}
+            },
+            'approve_registration_updates': {
+                'task': 'osf.management.commands.approve_pending_schema_responses',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False},
             },
         }
 
