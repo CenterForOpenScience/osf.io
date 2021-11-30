@@ -14,7 +14,6 @@
       for Admin approval.
     % endif
     <p>
-    <a href="${update_url}">Click here</a> to review the submitted updates.
     % if is_approver:
       <a href="${update_url}">Click here</a> to review and either approve or reject the
       submitted updates. Decisions must be made within

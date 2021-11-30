@@ -919,7 +919,9 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
+        send_mail = mails.send_mail
         with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+            mock_send.side_effect = send_mail
             revised_response.approve(user=admin_user)
         assert mock_send.called
 
