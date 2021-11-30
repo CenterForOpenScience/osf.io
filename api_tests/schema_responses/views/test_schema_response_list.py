@@ -4,10 +4,10 @@ from django.utils import timezone
 from api.providers.workflows import Workflows as ModerationWorkflows
 from osf_tests.factories import (
     AuthUserFactory,
+    ProjectFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
-from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
 
@@ -28,7 +28,7 @@ def admin_user():
 @pytest.fixture()
 def provider():
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
+    provider.update_group_permissions()
     provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
     provider.allow_updates = True
     provider.save()
@@ -65,7 +65,7 @@ class TestSchemaResponseListGETPermissions:
         assert resp.status_code == 200
 
 @pytest.mark.django_db
-class TestSchemaResponseLsitGETBehavior:
+class TestSchemaResponseListGETBehavior:
     '''Tests the visibility of SchemaResponses through the List endpoint under various conditions.
 
     APPROVED SchemaResponses on public registrations should appear for all users.
@@ -354,13 +354,30 @@ class TestSchemaResponseListPOSTBehavior:
             self, app, url, no_relationship_payload, admin_user):
         resp = app.post_json_api(url, no_relationship_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
-        print(resp.json['errors'][0]['detail'])
 
     def test_POST_fails_if_incorrect_relationship_type_in_payload(
             self, app, url, registration, invalid_payload, admin_user):
         resp = app.post_json_api(url, invalid_payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 400
-        assert "'not yours' does not match 'registrations'\n\nFailed validating 'pattern'" in resp.json['errors'][0]['detail']
+
+    def test_POST_fails_for_nested_registration(self, app, url, registration, payload, admin_user):
+        nested_registration = RegistrationFactory(
+            project=ProjectFactory(parent=registration.registered_from, creator=admin_user),
+            parent=registration,
+            creator=admin_user
+        )
+        payload['data']['relationships']['registration']['data']['id'] = nested_registration._id
+        resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
+        assert resp.status_code == 409
+
+    def test_POST_fails_if_provider_does_not_allow_updates(
+            self, app, url, registration, payload, admin_user):
+        provider = registration.provider
+        provider.allow_updates = False
+        provider.save()
+
+        resp = app.post_json_api(url, payload, auth=admin_user.auth, expect_errors=True)
+        assert resp.status_code == 409
 
 
 @pytest.mark.django_db

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework import status as http_status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from transitions import MachineError
 
 from framework.exceptions import HTTPError, PermissionsError
@@ -37,7 +37,6 @@ from osf.utils.workflows import (
     SchemaResponseTriggers,
 )
 from osf.utils import permissions
-from django.core.exceptions import ValidationError
 
 class ReviewableCountsRelationshipField(RelationshipField):
 
@@ -114,7 +113,7 @@ class BaseActionSerializer(JSONAPISerializer):
 
     trigger = ser.ChoiceField(choices=DefaultTriggers.choices())
 
-    comment = ser.CharField(max_length=65535, required=False)
+    comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     from_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
     to_state = ser.ChoiceField(choices=DefaultStates.choices(), read_only=True)
@@ -347,6 +346,8 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         trigger = validated_data.get('trigger')
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
+        previous_action = target.actions.last()
+        old_state = target.reviews_state
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
                 required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
@@ -363,20 +364,19 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except PermissionsError as exc:
             raise PermissionDenied(exc)
+        except MachineError:
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{target.reviews_state}"',
+            )
         except ValueError as exc:
             raise ValidationError(exc)
-        except MachineError as exc:
-            raise Conflict(exc)
 
-        determined_trigger = target.actions.last().trigger
-        if determined_trigger != trigger:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Operation not allowed at this time',
-                    'message_long': f'This trigger `{trigger}` is invalid for the {target} in state '
-                                    f'`{target.reviews_state}`.',
-                },
+        new_action = target.actions.last()
+        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
+            raise Conflict(
+                f'Trigger "{trigger}" is not supported for the target SchemaResponse '
+                f'with id [{target._id}] in state "{old_state}"',
             )
 
         return target.actions.last()

@@ -4,7 +4,6 @@ from django.utils import timezone
 
 from api.providers.workflows import Workflows as ModerationWorkflows
 
-from osf.migrations import update_provider_auth_groups
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 
@@ -22,8 +21,8 @@ INITIAL_SCHEMA_RESPONSES = {
     'q2': 'Some even longer answer',
     'q3': 'A',
     'q4': ['D', 'G'],
-    'q5': None,
-    'q6': None
+    'q5': '',
+    'q6': []
 }
 
 IMMUTABLE_STATES = [state for state in ApprovalStates if state is not ApprovalStates.IN_PROGRESS]
@@ -68,7 +67,7 @@ def configure_permissions_test_preconditions(
         role='admin'):
     '''Create and configure a RegistrationProvider, Registration, SchemaResponse and User.'''
     provider = RegistrationProviderFactory()
-    update_provider_auth_groups()
+    provider.update_group_permissions()
     provider.reviews_workflow = reviews_workflow
     provider.save()
 
@@ -88,18 +87,18 @@ def configure_permissions_test_preconditions(
     schema_response.approvals_state_machine.set_state(schema_response_state)
     schema_response.save()
 
-    auth = _configure_permissions_test_auth(registration, provider, role)
+    auth = _configure_permissions_test_auth(registration, role)
     return auth, schema_response, registration, provider
 
 
-def _configure_permissions_test_auth(registration, provider, role):
+def _configure_permissions_test_auth(registration, role):
     '''Create a user and assign appropriate permissions for the given role.'''
     if role == 'unauthenticated':
         return None
 
     user = AuthUserFactory()
     if role == 'moderator':
-        provider.get_group('moderator').user_set.add(user)
+        registration.provider.get_group('moderator').user_set.add(user)
     elif role == 'non-contributor':
         pass
     else:
@@ -282,6 +281,16 @@ class TestSchemaResponseDetailGETBehavior:
         alternate_user = AuthUserFactory()
         resp = app.get(make_api_url(schema_response), auth=alternate_user.auth)
         assert resp.json['data']['attributes']['is_pending_current_user_approval'] is False
+
+    def test_schema_response_is_original_response(self, app, schema_response, admin_user):
+        resp = app.get(make_api_url(schema_response), auth=admin_user.auth)
+        assert resp.json['data']['attributes']['is_original_response'] is True
+
+        revision = SchemaResponse.create_from_previous_response(
+            previous_response=schema_response, initiator=admin_user
+        )
+        resp = app.get(make_api_url(revision), auth=admin_user.auth)
+        assert resp.json['data']['attributes']['is_original_response'] is False
 
 
 @pytest.mark.django_db
@@ -486,6 +495,13 @@ class TestSchemaResponseDetailPATCHBehavior:
         schema_response.refresh_from_db()
         assert schema_response.revision_justification == 'why not?'
 
+    def test_PATCH_empty_revision_justification_passes(self, app, schema_response, payload, admin_user):
+        payload['data']['attributes']['revision_justification'] = ''
+        resp = app.patch_json_api(make_api_url(schema_response), payload, auth=admin_user.auth, expect_errors=True)
+
+        schema_response.refresh_from_db()
+        assert resp.status_code == 200
+
     @pytest.mark.parametrize('response_state', IMMUTABLE_STATES)
     def test_PATCH_fails_in_unsupported_state(
             self, app, schema_response, payload, admin_user, response_state):
@@ -646,7 +662,7 @@ class TestSchemaResponseDetailDELETEBehavior:
         assert resp.status_code == 409
 
 @pytest.mark.django_db
-class TestSchemaResponseListUnsupportedMethods:
+class TestSchemaResponseDetailUnsupportedMethods:
     '''Confirm that the SchemaResponseDetail endpoint does not support POST or PUT'''
 
     @pytest.mark.parametrize('role', USER_ROLES)

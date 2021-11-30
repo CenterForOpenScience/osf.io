@@ -9,7 +9,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models import (
     Registration,
     SchemaResponse,
@@ -33,17 +33,25 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', required=False)
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
-    revision_justification = ser.CharField(required=False)
+    revision_justification = ser.CharField(required=False, allow_blank=True)
     revision_responses = ser.JSONField(source='all_responses', required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.CharField(required=False)
     # Populated via annotation on relevant API views
     is_pending_current_user_approval = ser.BooleanField(required=False)
+    is_original_response = ser.BooleanField(required=False)
 
     links = LinksField(
         {
             'self': 'get_absolute_url',
         },
+    )
+
+    actions = RelationshipField(
+        related_view='schema_responses:schema-response-action-list',
+        related_view_kwargs={'schema_response_id': '<_id>'},
+        read_only=True,
+        required=False,
     )
 
     registration = RelationshipField(
@@ -133,7 +141,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         if revision_responses:
             try:
                 schema_response.update_responses(revision_responses)
-            except ValueError as exc:
+            except SchemaResponseUpdateError as exc:
                 raise ValidationError(detail=str(exc))
             except SchemaResponseStateError as exc:
                 # should have been handled above, but catch again just in case

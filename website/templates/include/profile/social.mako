@@ -163,7 +163,7 @@
                     <td><span><i class='fa fa-globe fa-2x'/></span></td>
                     <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
                     <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
-                    <td data-bind="foreach: profileWebsites"><a data-bind="attr: {href: $data}, text: $data"></a><br></td>
+                    <td data-bind="foreach: profileWebsites"><a rel="nofollow" data-bind="attr: {href: $data}, text: $data"></a><br></td>
                 </tr>
             </tbody>
 

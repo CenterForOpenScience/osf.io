@@ -14,12 +14,13 @@ from api.base.parsers import (
 )
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
-from api.nodes.permissions import (
+from api.schema_responses import annotations
+from api.schema_responses.permissions import (
     SchemaResponseDetailPermission,
     SchemaResponseListPermission,
-    SchemaResponseActionPermission,
+    SchemaResponseActionDetailPermission,
+    SchemaResponseActionListPermission,
 )
-from api.schema_responses import annotations
 from api.schema_responses.schemas import create_schema_response_payload
 from api.schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
@@ -28,7 +29,7 @@ from api.schema_responses.serializers import (
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.exceptions import SchemaResponseStateError
-from osf.models import SchemaResponse, SchemaResponseAction, Registration
+from osf.models import SchemaResponse, SchemaResponseAction
 from osf.utils.workflows import ApprovalStates
 
 
@@ -67,6 +68,7 @@ class SchemaResponseList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAP
             (Q(parent_is_public=True) & Q(reviews_state=ApprovalStates.APPROVED.db_name)),
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(user),
+            is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
 
     def get_parser_context(self, http_request):
@@ -92,13 +94,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     view_category = 'schema_responses'
     view_name = 'schema-responses-detail'
 
-    def get_serializer_class(self):
-        parent = self.get_object().parent
-
-        if isinstance(parent, Registration):
-            return RegistrationSchemaResponseSerializer
-        else:
-            raise NotImplementedError()
+    serializer_class = RegistrationSchemaResponseSerializer
 
     def get_object(self):
         user = self.request.user
@@ -106,6 +102,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
             _id=self.kwargs['schema_response_id'],
         ).annotate(
             is_pending_current_user_approval=annotations.is_pending_current_user_approval(user),
+            is_original_response=annotations.IS_ORIGINAL_RESPONSE,
         )
 
         try:
@@ -122,7 +119,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
 
 class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCreateAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -137,12 +134,20 @@ class SchemaResponseActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCr
     serializer_class = SchemaResponseActionSerializer
 
     def get_queryset(self):
-        return SchemaResponseAction.objects.all()  # TODO: What to do here?
+        return self.get_object().actions.all().order_by('created')
+
+    def get_object(self):
+        return get_object_or_error(
+            model_or_qs=SchemaResponse,
+            query_or_pk=self.kwargs['schema_response_id'],
+            request=self.request,
+            check_deleted=False,
+        )
 
 
 class SchemaResponseActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     permission_classes = (
-        SchemaResponseActionPermission,
+        SchemaResponseActionDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

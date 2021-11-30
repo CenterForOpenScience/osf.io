@@ -34,8 +34,7 @@ from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node, AbstractNode
 from osf.utils.registrations import strip_registered_meta_comments
-# TODO: restore this import after running scripts in https://github.com/CenterForOpenScience/osf.io/pull/9790
-# from osf.utils.workflows import ApprovalStates
+from osf.utils.workflows import ApprovalStates
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -366,6 +365,16 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'node_id': '<_id>'},
     ))
 
+    original_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_original_response_id'},
+    ))
+
+    latest_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
+    ))
+
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
 
     @property
@@ -398,13 +407,11 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
-        # TODO: restore this logic after running scripts in
-        # https://github.com/CenterForOpenScience/osf.io/pull/9790
-        #  latest_approved_response = obj.schema_responses.filter(
-        #      reviews_state=ApprovalStates.APPROVED.db_name,
-        #  ).first()
-        #  if latest_approved_response is not None:
-        #      return self.anonymize_fields(obj, latest_approved_response.all_responses)
+        latest_approved_response = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved_response is not None:
+            return self.anonymize_fields(obj, latest_approved_response.all_responses)
 
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
@@ -435,6 +442,17 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_original_response_id(self, obj):
+        return obj.root.schema_responses.last()._id
+
+    def get_latest_response_id(self, obj):
+        latest_approved = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved:
+            return latest_approved._id
+        return None
 
     def anonymize_registered_meta(self, obj):
         """

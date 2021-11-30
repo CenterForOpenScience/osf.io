@@ -50,7 +50,6 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
-    RegistrationSchemaResponseListPermission,
 )
 from api.registrations.permissions import ContributorOrModerator, ContributorOrModeratorOrPublic
 from api.registrations.serializers import (
@@ -84,6 +83,10 @@ from api.providers.views import ProviderMixin
 from api.registrations import annotations
 
 from api.schema_responses import annotations as schema_response_annotations
+from api.schema_responses.permissions import (
+    MODERATOR_VISIBLE_STATES,
+    RegistrationSchemaResponseListPermission,
+)
 from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 
@@ -897,10 +900,12 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
         user = self.request.user
         registration = self.get_node()
 
-        all_responses = registration.schema_responses.annotate(
+        # Get the SchemaResponses from the root
+        all_responses = registration.root.schema_responses.annotate(
             is_pending_current_user_approval=(
                 schema_response_annotations.is_pending_current_user_approval(user)
             ),
+            is_original_response=schema_response_annotations.IS_ORIGINAL_RESPONSE,
         )
 
         is_contributor = registration.has_permission(user, 'read') if user else False
@@ -913,11 +918,9 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
             user.has_perm('view_submissions', registration.provider)
         )
         if is_moderator:
-            moderator_visible_states = [
-                ApprovalStates.PENDING_MODERATION.db_name, ApprovalStates.APPROVED.db_name,
-            ]
-            return all_responses.filter(reviews_state__in=moderator_visible_states)
-
+            return all_responses.filter(
+                reviews_state__in=[state.db_name for state in MODERATOR_VISIBLE_STATES],
+            )
         return all_responses.filter(reviews_state=ApprovalStates.APPROVED.db_name)
 
     def get_queryset(self):

@@ -1,4 +1,5 @@
 from future.moves.urllib.parse import urljoin
+from transitions import MachineError
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -7,7 +8,7 @@ from django.utils import timezone
 
 from framework.exceptions import PermissionsError
 
-from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError
+from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.metaschema import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
@@ -90,7 +91,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        if self.state is ApprovalStates.APPROVED:
+            relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        else:
+            relative_url_path = f'/registries/revisions/{self._id}'
         return urljoin(DOMAIN, relative_url_path)
 
     @property
@@ -166,12 +170,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             registration_response_key__isnull=False
         )
         for source_block in question_blocks:
-            new_response_block = SchemaResponseBlock.objects.create(
+            new_response_block = SchemaResponseBlock.create(
                 source_schema_response=new_response,
                 source_schema_block=source_block,
-                schema_key=source_block.registration_response_key,
             )
-            new_response_block.save()
             new_response.response_blocks.add(new_response_block)
 
         return new_response
@@ -204,7 +206,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        new_response._notify_users(event='create')
+        new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
     def update_responses(self, updated_responses):
@@ -238,19 +240,24 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # no need for deepcopy, since we aren't mutating dictionary values
         updated_responses = dict(updated_responses)
 
+        invalid_responses = {}
         for block in self.response_blocks.all():
             # Remove values from updated_responses to help detect unsupported keys
             latest_response = updated_responses.pop(block.schema_key, None)
-            if latest_response is None or latest_response == block.response:
+            if latest_response is None or not _is_updated_response(block, latest_response):
                 continue
 
             if not self._response_reverted(block, latest_response):
-                self._update_response(block, latest_response)
+                try:
+                    self._update_response(block, latest_response)
+                except SchemaResponseUpdateError as e:
+                    invalid_responses.update(e.invalid_responses)
 
-        if updated_responses:
-            raise ValueError(
-                'Encountered unexpected keys while trying to update responses for '
-                f'SchemaResponse with id [{self._id}]: {", ".join(updated_responses.keys())}'
+        if invalid_responses or updated_responses:
+            raise SchemaResponseUpdateError(
+                response=self,
+                invalid_responses=invalid_responses,
+                unsupported_keys=updated_responses.keys()
             )
 
     def _response_reverted(self, current_block, latest_response):
@@ -261,7 +268,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         previous_response_block = self.previous_response.response_blocks.get(
             schema_key=current_block.schema_key
         )
-        if latest_response != previous_response_block.response:
+        if _is_updated_response(previous_response_block, latest_response):
             return False
 
         current_block.delete()
@@ -272,20 +279,40 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         '''Create/update a SchemaResponseBlock with a new answer.'''
         # Update the block in-place if it's already part of this revision
         if current_block.source_schema_response == self:
-            current_block.response = latest_response
-            current_block.save()
+            current_block.set_response(latest_response)
         # Otherwise, create a new block and swap out the entries in response_blocks
         else:
-            revised_block = SchemaResponseBlock.objects.create(
+            revised_block = SchemaResponseBlock.create(
                 source_schema_response=self,
                 source_schema_block=current_block.source_schema_block,
-                schema_key=current_block.schema_key,
-                response=latest_response
+                response_value=latest_response
             )
 
             revised_block.save()
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
+
+    def _update_file_references(self, updated_responses, file_block_ids=None, save=True):
+        '''Update refernces in file-input responses post-archival for initial SchemaResponses.'''
+        if self.previous_response:
+            raise PreviousSchemaResponseError(
+                'Updating of file references only supported for initial responses'
+            )
+
+        if file_block_ids is None:
+            file_block_ids = self.schema.schema_blocks.filter(
+                block_type='file-input'
+            ).values_list('id', flat=True)
+        if not file_block_ids:
+            return
+
+        file_response_blocks = self.response_blocks.filter(
+            source_schema_block_id__in=file_block_ids
+        )
+        for block in file_response_blocks:
+            block.response = updated_responses[block.schema_key]
+            if save:
+                block.save()
 
     def delete(self, *args, **kwargs):
         if self.state is not ApprovalStates.IN_PROGRESS:
@@ -309,8 +336,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         # The only valid case for not providing a user is the internal accept shortcut
         # See _validate_accept_trigger docstring for more information
         if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
-            raise ValueError(
-                f'Trigger {trigger} from state {self.state} for '
+            raise PermissionsError(
+                f'Trigger {trigger} from state [{self.reviews_state}] for '
                 f'SchemaResponse with id [{self._id}] must be called with a user.'
             )
 
@@ -329,6 +356,16 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             raise PermissionsError(
                 f'User {user} is not an admin contributor on parent resource {self.parent} '
                 f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
+            )
+
+        # Only check newly udpated keys, as old keys have previously passed validation
+        invalid_response_keys = [
+            block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
+        ]
+        if invalid_response_keys:
+            raise SchemaResponseStateError(
+                f'SchemaResponse with id [{self._id}] has invalid responses for the following keys '
+                f'and cannot be submitted: {invalid_response_keys}'
             )
 
     def _validate_approve_trigger(self, user):
@@ -366,8 +403,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             # not self.pending_approvers.exists() -> called from within "approve"
             if user is None or not self.pending_approvers.exists():
                 return
-            raise ValueError(
-                'Invalid usage of "accept" trigger from UNAPPROVED state '
+            raise MachineError(
+                f'Invalid usage of "accept" trigger from UNAPPROVED state '
                 f'against SchemaResponse with id [{self._id}]'
             )
 
@@ -400,6 +437,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     def _on_submit(self, event_data):
         '''Add the provided approvers to pending_approvers and set the submitted_timestamp.'''
+        if not self.updated_response_keys or not self.revision_justification:
+            raise ValueError(
+                'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+            )
         approvers = event_data.kwargs.get('required_approvers', None)
         if not approvers:
             raise ValueError(
@@ -419,6 +460,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     def _on_complete(self, event_data):
         '''Clear out any lingering pending_approvers in the case of an internal accept.'''
         self.pending_approvers.clear()
+        self.parent.on_schema_response_completed()
 
     def _on_reject(self, event_data):
         '''Clear out pending_approvers to start fresh on resubmit.'''
@@ -434,6 +476,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         from_state = ApprovalStates[event_data.transition.source]
         to_state = self.state
         trigger = SchemaResponseTriggers.from_transition(from_state, to_state)
+        if trigger is None:
+            return
+
         self.actions.create(
             from_state=from_state.db_name,
             to_state=to_state.db_name,
@@ -441,9 +486,12 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.initiator),
             comment=event_data.kwargs.get('comment', '')
         )
-        self._notify_users(event=event_data.event.name)
+        self._notify_users(
+            event=event_data.event.name,
+            event_initiator=event_data.kwargs.get('user')
+        )
 
-    def _notify_users(self, event):
+    def _notify_users(self, event, event_initiator):
         '''Notify users of relevant state transitions.'''
         #  Notifications on the original response will be handled by the registration workflow
         if not self.previous_response:
@@ -457,22 +505,40 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(), context=email_context
             )
-            return
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)
         if not template:
             return
 
         email_context = {
-            'resource_type': self.parent.__class__.__name__,
+            'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'is_moderated': self.is_moderated
+            'initiator': event_initiator.fullname if event_initiator else None,
+            'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'provider': self.parent.provider.name if self.parent.provider else '',
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             email_context['user'] = contributor
             email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all()
+            email_context['is_approver'] = contributor in self.pending_approvers.all(),
+            email_context['is_initiator'] = contributor == event_initiator
             mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+
+
+def _is_updated_response(response_block, new_response):
+    '''block-type aware comparison for SchemaResponseBlock response values.
+
+    This is important for helping us catch cases where files have simply been re-ordered
+    or where older registrations use a different 'html' link from the Files API.
+    '''
+    current_response = response_block.response
+    if response_block.source_schema_block.block_type != 'file-input':
+        return current_response != new_response
+
+    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    current_file_ids = {entry['file_id'] for entry in current_response}
+    new_file_ids = {entry['file_id'] for entry in new_response}
+    return current_file_ids != new_file_ids
