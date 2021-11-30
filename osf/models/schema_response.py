@@ -511,7 +511,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             return
 
         email_context = {
-            'resource_type': self.parent.__class__.__name__,
+            'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,

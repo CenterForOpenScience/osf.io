@@ -21,7 +21,7 @@
                             <p>
                             Below are the recent registration submission and withdrawal requests that require your attention.
                             <p>
-                            <a href="${reviews_submissions_url"}>View all submissions</a>
+                            <a href="${reviews_submissions_url}">View all submissions</a>
                             <br>
                             <a href="${reviews_withdrawal_url}"> View all withdrawal requests</a>
                         </h3>
