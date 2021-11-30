@@ -13,10 +13,10 @@
     % endif
     <p>
     % if can_write:
-      The updates for the ${resource_type} were returned back to a draft so additional updates can be made.
+      The updates for the ${resource_type} were returned back to a draft so additional edits can be made.
     % else:
       The updates for the ${resource_type} were returned back to a draft so Admin and Write contributors
-      can make additional updates.
+      can make additional edits.
     % endif
     <p>
     Sincerely,<br>

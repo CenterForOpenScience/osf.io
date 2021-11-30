@@ -516,7 +516,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
             'initiator': event_initiator.fullname,
-            'pending_moderation': (self.state is ApprovalStates.PENDING_MODERATION),
+            'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
             'provider': self.parent.provider.name if self.parent.provider else '',
         }
 
