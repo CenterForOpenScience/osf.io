@@ -644,7 +644,7 @@ class TestUserSearchView(AdminTestCase):
         self.user_2.save()
 
         self.request = RequestFactory().get('/fake_path')
-        self.view = views.UserFormView()
+        self.view = views.UserSearchView()
         self.view = setup_form_view(self.view, self.request, form=UserSearchForm())
 
     def test_search_user_by_guid(self):

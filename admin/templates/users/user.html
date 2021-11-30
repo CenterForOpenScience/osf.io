@@ -8,11 +8,11 @@
 <div class="container-fluid">
     <div class="row">
         {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
     <div class="row">
@@ -20,27 +20,24 @@
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
                 {%  if perms.osf.view_spam %}
-                <a href="{% url 'spam:user_spam' user.id %}" class="btn btn-default">Related spam</a>
+                    <a href="{% url 'spam:user_spam' guid=user.guid %}" class="btn btn-default">Related spam</a>
                 {% endif %}
+                {% include "users/reset_password.html" with user=user %}
+
                 {%  if perms.osf.change_osfuser %}
-                    {% if  user.is_registered %}
-                <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-default">Send reset password email</a>
-                {% endif %}
-                <a href="{% url 'users:get_reset_password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
-                {% if user.confirmed %}
-                    <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
-                {% else %}
-                    {% if user.unclaimed %}
-                        <a href="{% url 'users:get_claim_urls' guid=user.guid  %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
-                    {%  else %}
-                        <a href="{% url 'users:get_confirmation' guid=user.guid  %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
+                    <a href="{% url 'users:get_reset_password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
+                    {% if user.confirmed %}
+                        <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
+                    {% else %}
+                        {% if user.unclaimed %}
+                            <a href="{% url 'users:get_claim_urls' guid=user.guid  %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
+                        {%  else %}
+                            <a href="{% url 'users:get_confirmation' guid=user.guid  %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
+                        {% endif %}
                     {% endif %}
                 {% endif %}
-                {% endif %}
-                {%  if perms.osf.view_desk %}
-                <a href="{% url 'desk:customer'  user_id=user.id  %}" data-toggle="modal" data-target="#deskModal" class="btn btn-default">Desk profile</a>
-                <a href="{% url 'desk:user_cases'  user_id=user.id  %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
-                {% endif %}
+                {% include "desk/customer.html" with user=user %}
+                {% include "desk/cases.html" with customer=user %}
                 <a href="{% url 'users:merge-accounts' guid=user.guid   %}" data-toggle="modal" data-target="#mergeAccountModal" class="btn btn-default">Merge Account</a>
             </div>
         </div>
@@ -79,50 +76,12 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <div class="modal" id="deskModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="caseModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
             <div class="modal" id="mergeAccountModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
 
-            {%  if perms.osf.change_osfuser %}
-                <span class="col-md-2">
-                </span>
-            {% endif %}
-            <div class="modal" id="resetModal" style="display: none">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <form class="well" method="post" action="{% url 'users:reset_password' guid=user.guid %}">
-                            <div class="modal-header">
-                                <button type="button" class="close" data-dismiss="modal">x</button>
-                                <h3>Choose email to send reset link</h3>
-                            </div>
-                            <div class="modal-body">
-                                <h4>User: {{ user.guid }}</h4>
-                                {% csrf_token %}
-                                {{ form }}
-                            </div>
-                            <div class="modal-footer">
-                                <input class="btn btn-primary" type="submit" value="Send" />
-                                <button type="button" class="btn btn-default"
-                                        data-dismiss="modal">
-                                    Cancel
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
             <div class="modal" id="getResetModal" style="display: none">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>

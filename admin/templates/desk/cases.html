@@ -1,35 +1,44 @@
-<div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal">x</button>
-</div>
-<div class="modal-body">
-    <h3>OSF user "{{ user_id }}" up to 50 most recent desk.com cases:</h3>
-    <table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Subject</th>
-            <th>Links to Desk</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for case in cases %}
-        <tr>
-            <td>{{ case.type }}</td>
-            <td>{{ case.status }}</td>
-            <td>{{ case.subject | truncatechars:40 }}</td>
-            <td>
-                <a href="{{ desk_case }}{{ case.id }}" target="_blank">Link</a>
-            </td>
-        </tr>
-    {% empty %}
-        <tr>
-            <td>No cases</td>
-        </tr>
-    {% endfor %}
-    </tbody>
-    </table>
-</div>
-<div class="modal-footer">
-    <button type="button" class="btn" data-dismiss="modal" >Close</button>
-</div>
+{%  if perms.osf.view_desk %}
+    <a href="{% url 'desk:user_cases'  user.id  %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
+    <div class="modal" id="caseModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                </div>
+                <div class="modal-body">
+                    <h3>OSF user "{{ user_id }}" up to 50 most recent desk.com cases:</h3>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Subject</th>
+                                <th>Links to Desk</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for case in cases %}
+                            <tr>
+                                <td>{{ case.type }}</td>
+                                <td>{{ case.status }}</td>
+                                <td>{{ case.subject | truncatechars:40 }}</td>
+                                <td>
+                                    <a href="{{ desk_case }}{{ case.id }}" target="_blank">Link</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td>No cases</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" data-dismiss="modal" >Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}

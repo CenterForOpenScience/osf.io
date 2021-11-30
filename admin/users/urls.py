@@ -5,7 +5,7 @@ from . import views
 app_name = 'admin'
 
 urlpatterns = [
-    url(r'^$', views.UserFormView.as_view(), name='search'),
+    url(r'^$', views.UserSearchView.as_view(), name='search'),
     url(r'^flagged_spam$', views.UserFlaggedSpamList.as_view(), name='flagged-spam'),
     url(r'^known_spam$', views.UserKnownSpamList.as_view(), name='known-spam'),
     url(r'^known_ham$', views.UserKnownHamList.as_view(), name='known-ham'),

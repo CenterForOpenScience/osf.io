@@ -70,7 +70,7 @@ class UserSpamList(SpamList):
     template_name = 'spam/user.html'
 
     def get_queryset(self):
-        user = OSFUser.load(self.kwargs.get('user_id', None))
+        user = OSFUser.objects.get(guids___id=(self.kwargs.get('guid', None)))
 
         return Comment.objects.filter(
             spam_status=int(self.request.GET.get('status', '1')),
@@ -78,8 +78,9 @@ class UserSpamList(SpamList):
         ).exclude(reports={}).exclude(reports=None).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('user_id', self.kwargs.get('user_id', None))
-        return super(UserSpamList, self).get_context_data(**kwargs)
+        user = OSFUser.objects.get(guids___id=(self.kwargs.get('guid', None)))
+        user.guid = user._id
+        return super().get_context_data(**{'user': user}, **kwargs)
 
 
 class SpamDetail(PermissionRequiredMixin, FormView):

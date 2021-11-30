@@ -6,6 +6,7 @@ from django.conf import settings
 import requests
 import json
 from requests_oauthlib import OAuth1Session
+from osf.models import AdminProfile
 
 
 class DeskError(Exception):
@@ -28,11 +29,16 @@ class DeskClient(object):
     SITE_NAME = 'openscience'
 
     def __init__(self, user):
+        try:
+            admin_profile = user.admin_profile
+        except AdminProfile.DoesNotExist:
+            raise PermissionError(f'{user} needs an admin profile with valid desk token')
+
         self.oauth = OAuth1Session(
             settings.DESK_KEY,
             client_secret=settings.DESK_KEY_SECRET,
-            resource_owner_key=user.admin_profile.desk_token,
-            resource_owner_secret=user.admin_profile.desk_token_secret
+            resource_owner_key=admin_profile.desk_token,
+            resource_owner_secret=admin_profile.desk_token_secret
         )
 
     def build_url(self, service):

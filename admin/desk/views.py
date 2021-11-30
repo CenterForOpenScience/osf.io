@@ -1,16 +1,14 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView
-from django.contrib.auth.mixins import PermissionRequiredMixin
-
-from osf.models.user import OSFUser
-
+from django.views.generic import ListView, TemplateView
+from django.contrib import messages
+from django.shortcuts import redirect
 from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
+from admin.users.views import UserMixin
 
 
-class DeskCaseList(PermissionRequiredMixin, ListView):
+class DeskCaseList(UserMixin, ListView):
     template_name = 'desk/cases.html'
     ordering = 'updated_at'
-    context_object_name = 'cases'
     paginate_by = 100
     paginate_orphans = 5
     permission_required = 'osf.view_desk'
@@ -18,72 +16,79 @@ class DeskCaseList(PermissionRequiredMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            return super(DeskCaseList, self).dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)
         except DeskError as e:
-            return render(request, 'desk/desk_error.html',
-                          context={
-                              'error': e.message,
-                              'status': e.status_code,
-                              'content': e.content,
-                          },
-                          status=e.status_code
-                          )
+            return render(
+                request,
+                'desk/desk_error.html',
+                context={
+                    'error': e.message,
+                    'status': e.status_code,
+                    'content': e.content,
+                },
+                status=e.status_code
+            )
 
     def get_queryset(self):
-        customer_id = self.kwargs.get('user_id', None)
-        customer = OSFUser.load(customer_id)
+        customer = self.get_object()
         email = customer.emails.values_list('address', flat=True).first()
-        desk = DeskClient(self.request.user)
-        params = {
-            'email': email,
-        }
-        queryset = desk.cases(params)
-        return queryset
+        return DeskClient(self.request.user).cases({'email': email})
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('user_id', self.kwargs.get('user_id'))
-        kwargs.setdefault('desk_case', 'https://{}.desk.com/web/agent/case/'.format(DeskClient.SITE_NAME))
-        kwargs.setdefault('desk_customer', 'https://{}.desk.com/web/agent/customer/'.format(DeskClient.SITE_NAME))
-        return super(DeskCaseList, self).get_context_data(**kwargs)
+        return super().get_context_data(
+            user_id=self.kwargs['guid'],
+            desk_case=f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/case/',
+            desk_customer=f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/',
+            **kwargs
+        )
 
 
-class DeskCustomer(PermissionRequiredMixin, DetailView):
+class DeskCustomer(UserMixin, TemplateView):
     template_name = 'desk/customer.html'
-    context_object_name = 'customer'
     permission_required = 'osf.view_desk'
     raise_exception = True
 
-    def dispatch(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         try:
-            return super(DeskCustomer, self).dispatch(request, *args, **kwargs)
+            return super().get(request, *args, **kwargs)
         except DeskCustomerNotFound as e:
-            return render(request, 'desk/user_not_found.html',
-                          context={
-                              'message': e.message,
-                              'desk_inbox': 'https://{}.desk.com/web/agent/filters/inbox'.format(DeskClient.SITE_NAME)
-                          },
-                          status=404
-                          )
+            return render(
+                request,
+                'desk/user_not_found.html',
+                context={
+                    'message': e.message,
+                    'desk_inbox': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/filters/inbox'
+                },
+                status=404
+            )
         except DeskError as e:
-            return render(request, 'desk/desk_error.html',
-                          context={
-                              'error': e.message,
-                              'status': e.status_code,
-                              'content': e.content,
-                          },
-                          status=e.status_code
-                          )
+            return render(
+                request, 'desk/desk_error.html',
+                context={
+                    'error': e.message,
+                    'status': e.status_code,
+                    'content': e.content,
+                },
+                status=e.status_code
+            )
+        except PermissionError as e:
+            return render(
+                request, 'desk/desk_error.html',
+                context={
+                    'error': 'Permission Error',
+                    'content': e,
+                },
+                status=500
+            )
 
     def get_object(self, queryset=None):
-        customer_id = self.kwargs.get('user_id', None)
-        customer = OSFUser.load(customer_id)
+        customer = super().get_object()
         email = customer.emails.values_list('address', flat=True).first()
-        desk = DeskClient(self.request.user)
-        params = {'email': email}
-        customer = desk.find_customer(params)
-        return customer
+        return DeskClient(self.request.user).find_customer({'email': email})
 
     def get_context_data(self, **kwargs):
-        kwargs.setdefault('user_id', self.kwargs.get('user_id'))
-        kwargs.setdefault('desk_link', 'https://{}.desk.com/web/agent/customer/'.format(DeskClient.SITE_NAME))
-        return super(DeskCustomer, self).get_context_data(**kwargs)
+        return super().get_context_data(
+            customer_info=self.get_object(),
+            desk_customer=f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/',
+            **kwargs
+        )

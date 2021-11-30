@@ -373,7 +373,7 @@ class PreprintConfirmSpamView(PreprintMixin, View):
             action_flag=CONFIRM_SPAM
         )
 
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
 class PreprintConfirmHamView(PreprintMixin, View):
@@ -394,4 +394,4 @@ class PreprintConfirmHamView(PreprintMixin, View):
             action_flag=CONFIRM_HAM
         )
 
-        return redirect(reverse_preprint(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())

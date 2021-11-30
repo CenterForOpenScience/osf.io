@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from framework import status
 
-from django.db.models import F
+from django.db.models import F, Case, When, IntegerField
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.generic import ListView, DeleteView, View, TemplateView
@@ -44,8 +44,28 @@ class NodeMixin(PermissionRequiredMixin):
             guids___id=self.kwargs['guid']
         ).annotate(
             guid=F('guids___id'),
-            public_cap=F('custom_storage_usage_limit_public') or STORAGE_LIMIT_PUBLIC,
-            private_cap=F('custom_storage_usage_limit_private') or STORAGE_LIMIT_PRIVATE
+            public_cap=Case(
+                When(
+                    custom_storage_usage_limit_public=None,
+                    then=STORAGE_LIMIT_PUBLIC,
+                ),
+                When(
+                    custom_storage_usage_limit_public__gt=0,
+                    then=F('custom_storage_usage_limit_public'),
+                ),
+                output_field=IntegerField()
+            ),
+            private_cap=Case(
+                When(
+                    custom_storage_usage_limit_private=None,
+                    then=STORAGE_LIMIT_PRIVATE,
+                ),
+                When(
+                    custom_storage_usage_limit_private__gt=0,
+                    then=F('custom_storage_usage_limit_private'),
+                ),
+                output_field=IntegerField()
+            )
         ).get()
         return node
 
@@ -59,7 +79,6 @@ class NodeFormView(PermissionRequiredMixin, GuidFormView):
     Basic form. No admin models.
     """
     template_name = 'nodes/search.html'
-    object_type = 'node'
     permission_required = 'osf.view_node'
     raise_exception = True
 

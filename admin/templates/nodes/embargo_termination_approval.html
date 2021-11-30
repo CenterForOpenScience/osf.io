@@ -1,0 +1,64 @@
+{% load user_extras %}
+{% load node_extras %}
+
+{% if embargo_termination_approval %}
+    <tr>
+        <td>Embargo Termination Approval</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <td>Field</td>
+                        <td>Value</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ embargo_termination_approval }}</td>
+                    </tr>
+                    <tr>
+                        <td>State</td>
+                        <td>{{ embargo_termination_approval.state }}</td>
+                    </tr>
+                    <tr>
+                        <td>Created</td>
+                        <td>{{ embargo_termination_approval.created | date:"F j, Y P" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Initiation Date</td>
+                        <td>{{ embargo_termination_approval.initiation_date | date:"F j, Y P" }}</td>
+                    </tr>
+                    <tr>
+                        <td>End Date</td>
+                        <td>
+                            {{ embargo_termination_approval.end_date | date:"F j, Y P" }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Modified</td>
+                        <td>{{ embargo_termination_approval.modified | date:"F j, Y P"  }}</td>
+                    </tr>
+                    <tr>
+                        <td>Initiated by</td>
+                        <td><a href="{{ embargo_termination_approval.initiated_by.id | reverse_user }}">{{ embargo_termination_approval.initiated_by }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Approval State</td>
+                        <td><pre style="width: 20%;">{{ embargo_termination_approval.approval_state }}</pre></td>
+                    </tr>
+                    <tr>
+                        <td>Stashed Urls</td>
+                        <td><pre style="width: 20%;">{{ embargo_termination_approval.stashed_urls }}</pre></td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+
+{% else %}
+    <tr>
+        <td>Embargo</td>
+        <td>No Embargo for this Node</td>
+    </tr>
+{% endif %}
