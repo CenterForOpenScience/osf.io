@@ -20,7 +20,6 @@ from framework.forms.utils import sanitize
 from markdown.extensions import codehilite, fenced_code, wikilinks
 from osf.models import NodeLog, OSFUser, Comment
 from osf.models.base import BaseModel, GuidMixin, ObjectIDMixin
-from osf.models.spam import SpamStatus
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.exceptions import NodeStateError
@@ -192,7 +191,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
             return False
-        if user.spam_status == SpamStatus.HAM:
+        if user.is_hammy:
             return False
 
         content = self._get_spam_content(node)
