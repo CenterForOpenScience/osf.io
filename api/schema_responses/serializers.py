@@ -33,7 +33,7 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', required=False)
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
-    revision_justification = ser.CharField(required=False)
+    revision_justification = ser.CharField(required=False, allow_blank=True)
     revision_responses = ser.JSONField(source='all_responses', required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.CharField(required=False)
