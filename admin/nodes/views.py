@@ -1,26 +1,31 @@
-from __future__ import unicode_literals
-
 import pytz
 from datetime import datetime
 from framework import status
 
-from django.db.models import F, Case, When, IntegerField
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import ListView, View, TemplateView
-from django.shortcuts import redirect
+from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
+from django.views.generic import ListView, View, TemplateView
+from django.shortcuts import redirect
 
-from website import search
-from osf.models import NodeLog
-from osf.models.user import OSFUser
-from osf.models.node import Node, AbstractNode
-from osf.models.registrations import Registration
-from osf.models import SpamStatus
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidFormView, GuidView
+from admin.nodes.templatetags.node_extras import reverse_node
+
+from api.share.utils import update_share
+from api.caching.tasks import update_storage_usage_cache
+
+from osf.models import (
+    OSFUser,
+    NodeLog,
+    Node,
+    AbstractNode,
+    Registration,
+    SpamStatus
+)
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
@@ -31,10 +36,8 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
-from admin.nodes.templatetags.node_extras import reverse_node
-from api.share.utils import update_share
-from api.caching.tasks import update_storage_usage_cache
-from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, StorageLimits
+
+from website import settings, search
 
 
 class NodeMixin(PermissionRequiredMixin):
@@ -47,7 +50,7 @@ class NodeMixin(PermissionRequiredMixin):
             public_cap=Case(
                 When(
                     custom_storage_usage_limit_public=None,
-                    then=STORAGE_LIMIT_PUBLIC,
+                    then=settings.STORAGE_LIMIT_PUBLIC,
                 ),
                 When(
                     custom_storage_usage_limit_public__gt=0,
@@ -58,7 +61,7 @@ class NodeMixin(PermissionRequiredMixin):
             private_cap=Case(
                 When(
                     custom_storage_usage_limit_private=None,
-                    then=STORAGE_LIMIT_PRIVATE,
+                    then=settings.STORAGE_LIMIT_PRIVATE,
                 ),
                 When(
                     custom_storage_usage_limit_private__gt=0,
@@ -85,7 +88,7 @@ class NodeSearchView(PermissionRequiredMixin, GuidFormView):
 
 
 class NodeRemoveContributorView(NodeMixin, View):
-    """ Allows authorized users to remove a contributor from a node.
+    """ Allows authorized users to remove contributors from nodes.
     """
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
@@ -120,7 +123,7 @@ class NodeRemoveContributorView(NodeMixin, View):
 
 
 class NodeDeleteView(NodeMixin, TemplateView):
-    """ Allows an authorized user to mark a node as deleted.
+    """ Allows authorized users to mark nodes as deleted.
     """
     template_name = 'nodes/remove_node.html'
     permission_required = ('osf.view_node', 'osf.delete_node')
@@ -184,7 +187,7 @@ class NodeView(NodeMixin, GuidView):
         return super().get_context_data(**{
             'SPAM_STATUS': SpamStatus,  # Pass spam status in to check against
             'message': kwargs.get('message'),
-            'STORAGE_LIMITS': StorageLimits,
+            'STORAGE_LIMITS': settings.StorageLimits,
             'node': self.get_object(),
         })
 
@@ -289,7 +292,7 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        validation_only = (request.POST.get('validation_only', False) == 'True')
+        validation_only = request.POST.get('validation_only', False) == 'True'
         end_date = request.POST.get('date')
         user = request.user
         registration = self.get_object()
@@ -313,7 +316,7 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
 
 
 class NodeSpamList(PermissionRequiredMixin, ListView):
-    """ Allows authorized users to view a list of users that have a particular spam status.
+    """ Allows authorized users to view a list of nodes that have a particular spam status.
     """
     SPAM_STATE = SpamStatus.UNKNOWN
 
@@ -450,6 +453,8 @@ class NodeConfirmHamView(NodeMixin, View):
 
 
 class NodeReindexShare(NodeMixin, View):
+    """ Allows an authorized user to reindex a node in SHARE.
+    """
     permission_required = 'osf.mark_spam'
     raise_exception = True
 
@@ -467,6 +472,8 @@ class NodeReindexShare(NodeMixin, View):
 
 
 class NodeReindexElastic(NodeMixin, View):
+    """ Allows an authorized user to reindex a node in ElasticSearch.
+    """
     permission_required = 'osf.mark_spam'
 
     def post(self, request, *args, **kwargs):
@@ -484,6 +491,8 @@ class NodeReindexElastic(NodeMixin, View):
 
 
 class NodeModifyStorageUsage(NodeMixin, View):
+    """ Allows an authorized user to view a node's storage usage info and set their public/private storage cap.
+    """
     permission_required = 'osf.change_node'
 
     def post(self, request, *args, **kwargs):
@@ -502,6 +511,8 @@ class NodeModifyStorageUsage(NodeMixin, View):
 
 
 class NodeRecalculateStorage(NodeMixin, View):
+    """ Allows an authorized user to manually set a node's storage cache by recalculating the value.
+    """
     permission_required = 'osf.change_node'
 
     def post(self, request, *args, **kwargs):
@@ -511,6 +522,8 @@ class NodeRecalculateStorage(NodeMixin, View):
 
 
 class NodeMakePrivate(NodeMixin, View):
+    """ Allows an authorized user to manually make a public node private.
+    """
     permission_required = 'osf.change_node'
     template_name = 'nodes/make_private.html'
 
@@ -535,6 +548,9 @@ class NodeMakePrivate(NodeMixin, View):
 
 
 class RestartStuckRegistrationsView(NodeMixin, TemplateView):
+    """ Allows an authorized user to restart a registrations archive process.
+    """
+
     template_name = 'nodes/restart_registrations_modal.html'
     permission_required = ('osf.view_node', 'osf.change_node')
 
@@ -557,6 +573,8 @@ class RestartStuckRegistrationsView(NodeMixin, TemplateView):
 
 
 class RemoveStuckRegistrationsView(NodeMixin, TemplateView):
+    """ Allows an authorized user to remove a registrations if it's stuck in the archiving process.
+    """
     template_name = 'nodes/remove_registrations_modal.html'
     permission_required = ('osf.view_node', 'osf.change_node')
 

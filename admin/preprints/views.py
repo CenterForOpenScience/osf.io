@@ -1,21 +1,27 @@
-from __future__ import unicode_literals
-
 from django.db.models import F
+from django.core.exceptions import PermissionDenied
+from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.shortcuts import redirect
 from django.views.generic import DeleteView, ListView, View
 from django.utils import timezone
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.shortcuts import redirect
-from django.core.exceptions import PermissionDenied
-from django.contrib import messages
+
+from admin.base.views import GuidFormView, GuidView
+from admin.nodes.templatetags.node_extras import reverse_preprint
+from admin.nodes.views import NodeRemoveContributorView
+from admin.preprints.forms import ChangeProviderForm
+
+from api.share.utils import update_share
 
 from osf.models import (
     SpamStatus,
+    Preprint,
+    PreprintLog,
     PreprintRequest,
     PreprintProvider
 )
 
-from osf.models.preprint import Preprint, PreprintLog
 from osf.models.admin_log_entry import (
     update_admin_log,
     REINDEX_ELASTIC,
@@ -30,13 +36,6 @@ from osf.models.admin_log_entry import (
 
 from website import search, settings
 
-from admin.base.views import GuidFormView, GuidView
-from admin.nodes.templatetags.node_extras import reverse_preprint
-from admin.nodes.views import NodeRemoveContributorView
-from admin.preprints.forms import ChangeProviderForm
-
-from api.share.utils import update_share
-
 
 class PreprintMixin(PermissionRequiredMixin):
 
@@ -50,9 +49,9 @@ class PreprintMixin(PermissionRequiredMixin):
 
 
 class PreprintFormView(GuidFormView):
-    """ Allow authorized admin user to input specific preprint guid. """
+    """ Allows authorized users to search for a specific preprint by guid.
+    """
     template_name = 'preprints/search.html'
-    object_type = 'preprint'
     permission_required = 'osf.view_preprint'
     raise_exception = True
 
@@ -62,7 +61,8 @@ class PreprintFormView(GuidFormView):
 
 
 class PreprintView(PreprintMixin, GuidView):
-    """ Allow authorized admin user to view preprints """
+    """ Allows authorized users to view preprint info.
+    """
     template_name = 'preprints/preprint.html'
     permission_required = ('osf.view_preprint', 'osf.change_preprint',)
     form_class = ChangeProviderForm
@@ -94,6 +94,8 @@ class PreprintView(PreprintMixin, GuidView):
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):
+    """ Allows authorized users to view a list of preprint that have a particular spam status.
+    """
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
@@ -119,6 +121,8 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
 
 
 class PreprintReindexShare(PreprintMixin, View):
+    """ Allows an authorized user to reindex a preprint in SHARE.
+    """
     permission_required = 'osf.view_preprint'
 
     def post(self, request, *args, **kwargs):
@@ -136,6 +140,8 @@ class PreprintReindexShare(PreprintMixin, View):
 
 
 class PreprintReindexElastic(PreprintMixin, View):
+    """ Allows an authorized user to reindex a node in ElasticSearch.
+    """
     permission_required = 'osf.view_preprint'
 
     def post(self, request, *args, **kwargs):
@@ -152,7 +158,7 @@ class PreprintReindexElastic(PreprintMixin, View):
 
 
 class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
-    """ Allow authorized admin user to remove preprint contributor. """
+    """ Allows authorized users to remove contributors from preprints. """
     permission_required = ('osf.view_preprint', 'osf.change_preprint')
 
     def add_contributor_removed_log(self, preprint, user):
@@ -167,12 +173,13 @@ class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
         ).save()
 
 
-class PreprintDeleteView(PreprintMixin, DeleteView):
-    """ Reversible delete that allows authorized admin user to remove/hide preprints. """
+class PreprintDeleteView(PreprintMixin, View):
+    """ Allows authorized users to mark preprints as deleted.
+    """
     template_name = 'preprints/remove_preprint.html'
     permission_required = ('osf.view_preprint', 'osf.delete_preprint')
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         if preprint.deleted:
             preprint.deleted = None
@@ -210,6 +217,9 @@ class PreprintDeleteView(PreprintMixin, DeleteView):
 
 
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
+    """ Allows authorized users to view list of withdraw requests for preprints.
+    """
+
     paginate_by = 10
     paginate_orphans = 1
     template_name = 'preprints/withdrawal_requests.html'
