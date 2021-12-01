@@ -36,7 +36,6 @@ from admin.nodes.views import NodeRemoveContributorView
 from admin.preprints.forms import ChangeProviderForm
 
 from api.share.utils import update_share
-from rest_framework.exceptions import PermissionDenied
 
 
 class PreprintMixin(PermissionRequiredMixin):
@@ -89,9 +88,9 @@ class PreprintView(PreprintMixin, GuidView):
         return super().get_context_data(**{
             'preprint': preprint,
             'SPAM_STATUS': SpamStatus,
-            'message':  kwargs.get('message'),
-            'form':   ChangeProviderForm(instance=preprint),
-        })
+            'message': kwargs.get('message'),
+            'form': ChangeProviderForm(instance=preprint),
+        }, **kwargs)
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):

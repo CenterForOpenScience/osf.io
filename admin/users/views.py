@@ -4,7 +4,7 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
-from django.db.models import Q, F
+from django.db.models import F
 from django.views.defaults import page_not_found
 from django.views.generic import (
     View,
@@ -498,7 +498,7 @@ class UserView(UserMixin, TemplateView):
         queryset = paginator.page(page_num)
         return {
             f'{resource_type}s': queryset,
-            f'{resource_type}_page':  paginator.page(page_num),
+            f'{resource_type}_page': paginator.page(page_num),
             f'current_{resource_type}': f'&{resource_type}_page=' + str(queryset.number)
         }
 
@@ -625,16 +625,12 @@ class GetUserLink(UserMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         user = self.get_object()
-
-        return super().get_context_data(
-            **kwargs,
-            **{
+        return super().get_context_data(**{
                 'user':  user,
                 'user_link': self.get_link(user),
                 'title':  self.get_link_type(),
                 'node_claim_links': self.get_claim_links(user),
-            }
-        )
+        }, **kwargs)
 
 
 class GetUserConfirmationLink(GetUserLink):

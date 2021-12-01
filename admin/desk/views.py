@@ -1,7 +1,5 @@
 from django.shortcuts import render
 from django.views.generic import ListView, TemplateView
-from django.contrib import messages
-from django.shortcuts import redirect
 from admin.desk.utils import DeskClient, DeskError, DeskCustomerNotFound
 from admin.users.views import UserMixin
 
