@@ -4,7 +4,7 @@ from admin.nodes import views
 app_name = 'admin'
 
 urlpatterns = [
-    url(r'^$', views.NodeFormView.as_view(),
+    url(r'^$', views.NodeSearchView.as_view(),
         name='search'),
     url(r'^flagged_spam$', views.NodeFlaggedSpamList.as_view(),
         name='flagged-spam'),

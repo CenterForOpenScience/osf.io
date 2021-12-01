@@ -40,7 +40,7 @@ from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, Storag
 class NodeMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        node = AbstractNode.objects.filter(
+        return AbstractNode.objects.filter(
             guids___id=self.kwargs['guid']
         ).annotate(
             guid=F('guids___id'),
@@ -67,16 +67,13 @@ class NodeMixin(PermissionRequiredMixin):
                 output_field=IntegerField()
             )
         ).get()
-        return node
 
     def get_success_url(self):
         return reverse_node(self.kwargs['guid'])
 
 
-class NodeFormView(PermissionRequiredMixin, GuidFormView):
-    """ Allow authorized admin user to input specific node guid.
-
-    Basic form. No admin models.
+class NodeSearchView(PermissionRequiredMixin, GuidFormView):
+    """ Allows authorized users to search for a node by it's guid.
     """
     template_name = 'nodes/search.html'
     permission_required = 'osf.view_node'
@@ -87,16 +84,13 @@ class NodeFormView(PermissionRequiredMixin, GuidFormView):
         return reverse_node(self.guid)
 
 
-class NodeRemoveContributorView(NodeMixin, DeleteView):
-    """ Allow authorized admin user to remove project contributor
-
-    Interface with OSF database. No admin models.
+class NodeRemoveContributorView(NodeMixin, View):
+    """ Allows authorized users to remove a contributor from a node.
     """
-    template_name = 'nodes/remove_contributor.html'
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         node = self.get_object()
         user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
         if node.remove_contributor(user, None, log=False):
@@ -126,10 +120,11 @@ class NodeRemoveContributorView(NodeMixin, DeleteView):
 
 
 class NodeDeleteView(NodeMixin, TemplateView):
-    """ Allow authorized admin user to remove/hide nodes """
+    """ Allows an authorized user to mark a node as deleted.
+    """
+    template_name = 'nodes/remove_node.html'
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
-    template_name = 'nodes/remove_node.html'
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
@@ -179,36 +174,30 @@ class NodeDeleteView(NodeMixin, TemplateView):
 
 
 class NodeView(NodeMixin, GuidView):
-    """ Allow authorized admin user to view nodes. """
+    """ Allows authorized users to view node info.
+    """
     template_name = 'nodes/node.html'
     permission_required = 'osf.view_node'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
-        node = self.get_object()
-        node.guid = node._id  # django templates don't like underscores???
-
         return super().get_context_data(**{
             'SPAM_STATUS': SpamStatus,  # Pass spam status in to check against
             'message': kwargs.get('message'),
             'STORAGE_LIMITS': StorageLimits,
-            'node': node,
+            'node': self.get_object(),
         })
 
 
-class AdminNodeLogView(PermissionRequiredMixin, ListView):
-    """ Allow admins to see logs"""
-
+class AdminNodeLogView(NodeMixin, ListView):
+    """ Allows authorized users to view node logs.
+    """
     template_name = 'nodes/node_logs.html'
-    context_object_name = 'node'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date'
     permission_required = 'osf.view_node'
     raise_exception = True
-
-    def get_object(self):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
 
     def get_queryset(self):
         return self.get_object().logs.order_by('created')
@@ -226,48 +215,40 @@ class AdminNodeLogView(PermissionRequiredMixin, ListView):
 
 
 class AdminNodeSchemaResponseView(NodeMixin, ListView):
-    """ Allow admins to see logs"""
-
+    """ Allows authorized users to view schema response info.
+    """
     template_name = 'schema_response/schema_response_list.html'
-    ordering = 'date'
     paginate_by = 10
     paginate_orphans = 1
-
+    ordering = 'date'
     permission_required = 'osf.view_schema_response'
     raise_exception = True
 
     def get_queryset(self):
-        node = self.get_object()
-        return node.schema_responses.all()
+        return self.get_object().schema_responses.all()
 
-    def get_context_data(self, *, object_list=None, **kwargs):
+    def get_context_data(self, **kwargs):
         return {'schema_responses': self.get_queryset()}
 
 
 class RegistrationListView(PermissionRequiredMixin, ListView):
-    """ Allow authorized admin user to view list of registrations
-
-    View of OSF database. No admin models.
+    """ Allow authorized users to view the list of registrations of a node.
     """
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'created'
-    context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
 
     def get_queryset(self):
-        return Registration.objects.all().order_by(self.ordering)
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.objects.all().annotate(guid=F('guids___id')).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
-        query_set = kwargs.pop('object_list', self.object_list)
+        query_set = self.get_queryset()
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
-
-        # Django template does not like attributes with underscores for some reason
-        query_set = query_set.annotate(guid=F('guids___id'))
-
         return {
             'nodes': query_set,
             'page': page,
@@ -275,11 +256,12 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
 
 
 class StuckRegistrationListView(RegistrationListView):
-    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations the have been archiving files by more then 24 hours.
     """
 
     def get_queryset(self):
-        return Registration.find_failed_registrations().order_by(self.ordering)
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_failed_registrations().annotate(guid=F('guids___id'))
 
 
 class RegistrationBacklogListView(RegistrationListView):
@@ -287,19 +269,21 @@ class RegistrationBacklogListView(RegistrationListView):
     """
 
     def get_queryset(self):
-        return Registration.find_ia_backlog()
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_ia_backlog().annotate(guid=F('guids___id'))
 
 
 class DoiBacklogListView(RegistrationListView):
-    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations that have not yet been assigned a doi.
     """
 
     def get_queryset(self):
-        return Registration.find_doi_backlog()
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_doi_backlog().annotate(guid=F('guids___id'))
 
 
 class RegistrationUpdateEmbargoView(NodeMixin, View):
-    """ Allow authorized admin user to update the embargo of a registration
+    """ Allows authorized users to update the embargo of a registration.
     """
     permission_required = ('osf.change_node')
     raise_exception = True
@@ -325,16 +309,17 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
         except PermissionDenied as e:
             return HttpResponse(e, status=403)
 
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
 class NodeSpamList(PermissionRequiredMixin, ListView):
+    """ Allows authorized users to view a list of users that have a particular spam status.
+    """
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
     ordering = 'created'
-    context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True
 
@@ -346,64 +331,81 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
         ).annotate(guid=F('guids___id'))
 
     def get_context_data(self, **kwargs):
-        query_set = kwargs.pop('object_list', self.object_list)
+        query_set = self.get_queryset()
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
-        return {
-            'nodes': query_set,
-            'page': page,
-        }
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        return {'nodes': query_set, 'page': page}
 
 
-class NodeFlaggedSpamList(NodeSpamList, DeleteView):
+class NodeFlaggedSpamList(NodeSpamList, View):
+    """ Allows authorized users to mark user flagged as spam to be marked as either spam or ham.
+    """
     SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'nodes/flagged_spam_list.html'
 
-    def delete(self, request, *args, **kwargs):
-        if (('spam_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam')) or
-                ('ham_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam'))):
-            raise PermissionDenied('You do not have permission to update a node flagged as spam.')
-        node_ids = [
-            nid for nid in list(request.POST.keys())
-            if nid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
-        ]
-        for nid in node_ids:
-            node = Node.load(nid)
-            osf_admin_change_status_identifier(node)
-            if ('spam_confirm' in list(request.POST.keys())):
-                node.confirm_spam(save=True)
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_perm('osf.mark_spam'):
+            raise PermissionDenied("You don't have permission to update this user's spam status.")
+
+        data = dict(request.POST)
+        action = data.pop('action')[0]
+        data.pop('csrfmiddlewaretoken', None)
+
+        if action == 'spam':
+            for node_id in list(data):
+                node = AbstractNode.objects.get(id=node_id)
+                node.confirm_spam()
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=nid,
+                    object_id=node_id,
                     object_repr='Node',
-                    message='Confirmed SPAM: {}'.format(nid),
+                    message=f'Confirmed SPAM: {node_id}',
                     action_flag=CONFIRM_SPAM
                 )
-            elif ('ham_confirm' in list(request.POST.keys())):
+
+                if node.get_identifier_value('doi'):
+                    node.request_identifier_update(category='doi')
+
+                node.save()
+
+        if action == 'ham':
+            for node_id in list(data):
+                node = AbstractNode.objects.get(id=node_id)
                 node.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=nid,
-                    object_repr='Node',
-                    message='Confirmed HAM: {}'.format(nid),
+                    object_id=node_id,
+                    object_repr='User',
+                    message=f'Confirmed HAM: {node_id}',
                     action_flag=CONFIRM_HAM
                 )
+
+                if node.get_identifier_value('doi'):
+                    node.request_identifier_update(category='doi')
+
+                node.save()
+
         return redirect('nodes:flagged-spam')
 
 
 class NodeKnownSpamList(NodeSpamList):
+    """ Allows authorized users to view a list of users that have a spam status of being spam.
+    """
+
     SPAM_STATE = SpamStatus.SPAM
     template_name = 'nodes/known_spam_list.html'
 
 
 class NodeKnownHamList(NodeSpamList):
+    """ Allows authorized users to view a list of users that have a spam status of being ham (non-spam).
+    """
     SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
 
 
-class NodeConfirmSpamView(NodeMixin, TemplateView):
-    template_name = 'nodes/confirm_spam.html'
+class NodeConfirmSpamView(NodeMixin, View):
+    """ Allows authorized users to mark a particular node as spam.
+    """
     permission_required = 'osf.mark_spam'
     raise_exception = True
 
@@ -424,9 +426,11 @@ class NodeConfirmSpamView(NodeMixin, TemplateView):
         return redirect(self.get_success_url())
 
 
-class NodeConfirmHamView(NodeMixin, TemplateView):
-    template_name = 'nodes/confirm_ham.html'
+class NodeConfirmHamView(NodeMixin, View):
+    """ Allows authorized users to mark a particular node as ham.
+    """
     permission_required = 'osf.mark_spam'
+    raise_exception = True
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
@@ -506,7 +510,7 @@ class NodeRecalculateStorage(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
-class NodeMakePrivate(NodeMixin, TemplateView):
+class NodeMakePrivate(NodeMixin, View):
     permission_required = 'osf.change_node'
     template_name = 'nodes/make_private.html'
 
@@ -522,8 +526,9 @@ class NodeMakePrivate(NodeMixin, TemplateView):
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
-        # Update existing identifiers
-        node.request_identifier_update('doi')
+        if node.get_identifier_value('doi'):
+            node.request_identifier_update(category='doi')
+
         node.save()
 
         return redirect(self.get_success_url())

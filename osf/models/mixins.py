@@ -1315,16 +1315,12 @@ class ContributorMixin(models.Model):
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-
-        query_dict = {
-            'user__in': users,
-            'user__is_active': True,
-            'user__groups': self.get_group(ADMIN).id
-        }
-
-        query_dict[self.guardian_object_type] = self
-
-        return self.contributor_class.objects.select_related('user').filter(**query_dict)
+        return self.contributor_class.objects.select_related('user').filter(
+            user__in=users,
+            user__is_active=True,
+            user__groups=self.get_group(ADMIN).id,
+            **{self.guardian_object_type: self}
+        )
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):

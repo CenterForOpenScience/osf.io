@@ -22,7 +22,7 @@
                         </a>
                     </td>
                     <td>{{ user.fullname }}</td>
-                    <td>{% get_permissions user.id node.id %}</td>
+                    <td>{% get_permissions user node %}</td>
                     {%  if perms.osf.change_node %}
                         <td>
                             <a data-toggle="modal" data-target="#{{ user.id }}Modal" class="btn btn-danger">Remove</a>
