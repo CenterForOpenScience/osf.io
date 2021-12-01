@@ -70,6 +70,10 @@
                         <td>Published</td>
                         <td>{{ preprint.is_published }}</td>
                     </tr>
+                    <tr>
+                        <td>Machine State</td>
+                        <td>{{ preprint.machine_state }}</td>
+                    </tr>
                     {%  if preprint.is_published %}
                         <tr>
                             <td>Date Published</td>
@@ -84,7 +88,7 @@
                         <tr>
                             <td>Node</td>
                             <td>
-                                <a href="{{ preprint.node.id | reverse_node }}">{{ preprint.node.title }}</a>
+                                <a href="{{ preprint.node | reverse_node }}">{{ preprint.node.title }}</a>
                             </td>
                         </tr>
                     {% else %}

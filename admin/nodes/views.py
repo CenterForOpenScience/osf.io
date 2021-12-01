@@ -7,7 +7,7 @@ from framework import status
 from django.db.models import F, Case, When, IntegerField
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import ListView, DeleteView, View, TemplateView
+from django.views.generic import ListView, View, TemplateView
 from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin

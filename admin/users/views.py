@@ -626,10 +626,10 @@ class GetUserLink(UserMixin, TemplateView):
     def get_context_data(self, **kwargs):
         user = self.get_object()
         return super().get_context_data(**{
-                'user':  user,
-                'user_link': self.get_link(user),
-                'title':  self.get_link_type(),
-                'node_claim_links': self.get_claim_links(user),
+            'user': user,
+            'user_link': self.get_link(user),
+            'title':  self.get_link_type(),
+            'node_claim_links': self.get_claim_links(user),
         }, **kwargs)
 
 

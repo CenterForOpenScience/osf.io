@@ -200,40 +200,7 @@
                         {% endif %}
                     </td>
                 </tr>
-                <tr>
-                    <td>System tags</td>
-                    <td>
-                        {% for system_tag in user.system_tags %}
-                            {{ system_tag }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                    <a href="{% url 'users:add_system_tag' user.id %}"
-                        class="btn btn-default"
-                        data-toggle="modal"
-                        data-target="#systemTagModal">
-                         add system tag
-                     </a>
-                     <div class="modal" id="systemTagModal">
-                         <div class="modal-dialog">
-                             <div class="modal-content"></div>
-                         </div>
-                     </div>
-                    </td>
-                </tr>
-                {% if user.osf_groups %}
-                    <tr>
-                        <td>
-                            OSF Groups
-                        </td>
-                        <td>
-                            <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
-                                {% for group in user.osf_groups %}
-                                    <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
-                                {% endfor %}
-                            </select>
-                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
-                        </td>
-                    </tr>
-                {% endif %}
+                {% include "users/add_system_tags.html" with user=user %}
                 <tr>
                     <td>SPAM Status</td>
                     <td>{% include "nodes/spam_status.html" with resource=user %}</td>
