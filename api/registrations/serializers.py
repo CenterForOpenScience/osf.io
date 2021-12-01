@@ -444,7 +444,10 @@ class RegistrationSerializer(NodeSerializer):
         return obj.files_count or 0
 
     def get_original_response_id(self, obj):
-        return obj.root.schema_responses.last()._id
+        original_response = obj.root.schema_responses.last()
+        if original_response:
+            return original_response._id
+        return None
 
     def get_latest_response_id(self, obj):
         latest_approved = obj.root.schema_responses.filter(
