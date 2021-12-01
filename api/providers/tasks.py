@@ -521,10 +521,16 @@ def bulk_upload_create_draft_registration(auth, initiator, schema, node, data, p
         )
         # Remove all contributors except the initiator if created from an existing node
         if node:
+            # Temporarily make initiator contributor visible so that removal of the others can succeed.
+            initiator_contributor = draft.contributor_set.get(user=initiator)
+            if not initiator_contributor.visible:
+                initiator_contributor.visible = True
+                initiator_contributor.save()
             contributor_set = draft.contributor_set.all()
             for contributor in contributor_set:
                 if initiator != contributor.user:
-                    draft.remove_contributor(contributor, auth)
+                    is_removed = draft.remove_contributor(contributor, auth)
+                    assert is_removed, 'Removal of an non-initiator contributor from the draft has failed'
             draft.save()
         assert len(draft.contributor_set.all()) == 1, 'Draft should only have one contributor upon creation.'
         # Remove the initiator from the citation list
