@@ -91,7 +91,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_url(self):
-        relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        if self.state is ApprovalStates.APPROVED:
+            relative_url_path = f'/{self.parent._id}?revisionId={self._id}'
+        else:
+            relative_url_path = f'/registries/revisions/{self._id}'
         return urljoin(DOMAIN, relative_url_path)
 
     @property
@@ -508,11 +511,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             return
 
         email_context = {
-            'resource_type': self.parent.__class__.__name__,
+            'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'initiator': event_initiator.fullname,
+            'initiator': event_initiator.fullname if event_initiator else None,
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
             'provider': self.parent.provider.name if self.parent.provider else '',
         }

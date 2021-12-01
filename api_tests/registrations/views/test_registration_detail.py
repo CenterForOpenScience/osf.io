@@ -1547,6 +1547,15 @@ class TestRegistrationResponses:
         assert responses == approved_schema_response.all_responses
         assert nested_registration.registration_responses != approved_schema_response.all_responses
 
+    @pytest.mark.parametrize('revision_state', ApprovalStates)
+    def test_nested_registration_surfaces_root_revision_state(
+            self, app, nested_registration, approved_schema_response, revision_state):
+        approved_schema_response.state = revision_state
+        approved_schema_response.save()
+
+        resp = app.get(self.get_registration_detail_url(nested_registration))
+        assert resp.json['data']['attributes']['revision_state'] == revision_state.db_name
+
     def test_original_response_relationship(
             self, app, registration, approved_schema_response, revised_schema_response, admin):
         resp = app.get(self.get_registration_detail_url(registration), auth=admin.auth)
