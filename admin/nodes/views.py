@@ -549,7 +549,6 @@ class RestartStuckRegistrationsView(NodeMixin, TemplateView):
             except Exception as exc:
                 messages.error(request, f'This registration cannot be unstuck due to {exc.__class__.__name__} '
                                         f'if the problem persists get a developer to fix it.')
-
         else:
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')

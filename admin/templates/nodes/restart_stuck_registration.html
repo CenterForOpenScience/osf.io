@@ -31,7 +31,7 @@
     <div class="modal" id="confirmRemoveRegistration">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="well" method="post" action="{% url 'nodes:remove-stuck-registrations' guid=guid %}">
+                <form class="well" method="post" action="{% url 'nodes:remove-stuck-registrations' guid=node.guid%}">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal">x</button>
                         <h3>Are you sure you want to remove this registration? {{ guid }}</h3>
