@@ -299,11 +299,8 @@ div[data-growl="container"] {
 }
 
 .scroll-ball {
-    position: fixed;
-    left: 50%;
-    top: 75%;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.66);
+    position: relative;
+    padding-top: 40%;
     text-align: center;
     z-index: 9999;
 }

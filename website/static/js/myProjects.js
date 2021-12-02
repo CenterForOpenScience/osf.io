@@ -1951,7 +1951,7 @@ var Filters = {
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
-                    m('.text-muted.m-sm', {}, 'Only contributors on loaded resources are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable, '),
+                    m('.text-muted.m-t-sm.m-r-sm.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable, '),
                     m('.pull-right',
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
@@ -1961,7 +1961,7 @@ var Filters = {
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
-                    m('.text-muted.m-sm', {}, 'Only tags on loaded resources are filterable'),
+                    m('.text-muted.m-t-sm.m-r-sm', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable'),
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
