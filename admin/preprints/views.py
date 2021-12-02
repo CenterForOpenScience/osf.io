@@ -41,6 +41,7 @@ class PreprintMixin(PermissionRequiredMixin):
 
     def get_object(self):
         preprint = Preprint.objects.get(guids___id=self.kwargs['guid'])
+        # Django template does not like attributes with underscores for some reason
         preprint.guid = preprint._id
         return preprint
 
@@ -217,9 +218,9 @@ class PreprintDeleteView(PreprintMixin, View):
 
 
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
-    """ Allows authorized users to view list of withdraw requests for preprints.
+    """ Allows authorized users to view list of withdraw requests for preprints and approve or reject the submitted
+    preprint withdraw requests.
     """
-
     paginate_by = 10
     paginate_orphans = 1
     template_name = 'preprints/withdrawal_requests.html'
@@ -231,8 +232,6 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
             target__provider__reviews_workflow=None
-        ).exclude(
-            machine_state='initial'
         ).order_by(
             self.ordering
         ).annotate(target_guid=F('target__guids___id'))
@@ -249,25 +248,34 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.change_preprintrequest'):
             raise PermissionDenied('You do not have permission to approve or reject withdrawal requests.')
-        is_approve_action = 'approveRequest' in request.POST.keys()
-        request_ids = [
-            id_ for id_ in request.POST.keys()
-            if id_ not in ['csrfmiddlewaretoken', 'approveRequest', 'rejectRequest']
-        ]
-        for id_ in request_ids:
-            print(id_)
-            withdrawal_request = PreprintRequest.objects.get(id=id_)
-            if is_approve_action:
-                withdrawal_request.run_accept(self.request.user, withdrawal_request.comment)
-            else:
+        data = dict(request.POST)
+        action = data.pop('action')[0]
+        data.pop('csrfmiddlewaretoken', None)
+        request_ids = list(data.keys())
+        withdrawal_requests = PreprintRequest.objects.filter(id__in=request_ids)
+
+        if action == 'reject':
+            for withdrawal_request in withdrawal_requests:
                 withdrawal_request.run_reject(self.request.user, withdrawal_request.comment)
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=id_,
-                object_repr='PreprintRequest',
-                message='{} withdrawal request: {} of preprint {}'.format('Approved' if is_approve_action else 'Rejected', id_, withdrawal_request.target._id),
-                action_flag=APPROVE_WITHDRAWAL if is_approve_action else REJECT_WITHDRAWAL
-            )
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=withdrawal_request.id,
+                    object_repr='PreprintRequest',
+                    message=f'Approved withdrawal request: {withdrawal_request.id} of preprint {withdrawal_request.target._id}',
+                    action_flag=APPROVE_WITHDRAWAL
+                )
+
+        if action == 'approve':
+            for withdrawal_request in withdrawal_requests:
+                withdrawal_request.run_accept(self.request.user, withdrawal_request.comment)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=withdrawal_request.id,
+                    object_repr='PreprintRequest',
+                    message=f'Rejected withdrawal request: {withdrawal_request.id} of preprint {withdrawal_request.target._id}',
+                    action_flag=REJECT_WITHDRAWAL
+                )
+
         return redirect('preprints:withdrawal-requests')
 
 
@@ -315,42 +323,48 @@ class PreprintRejectWithdrawalRequest(WithdrawalRequestMixin, View):
         return redirect(self.get_success_url())
 
 
-class PreprintFlaggedSpamList(PreprintSpamList, DeleteView):
+class PreprintFlaggedSpamList(PreprintSpamList, View):
     SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'preprints/flagged_spam_list.html'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
-            raise PermissionDenied('You do not have permission to update a preprint flagged as spam.')
-        preprint_ids = []
-        for key in list(request.POST.keys()):
-            if key == 'spam_confirm':
-                action = 'SPAM'
-                action_flag = CONFIRM_HAM
-            elif key == 'ham_confirm':
-                action = 'HAM'
-                action_flag = CONFIRM_SPAM
-            elif key != 'csrfmiddlewaretoken':
-                preprint_ids.append(key)
+            raise PermissionDenied("You don't have permission to update this user's spam status.")
 
-        for pid in preprint_ids:
-            preprint = Preprint.load(pid)
+        data = dict(request.POST)
+        action = data.pop('action')[0]
+        data.pop('csrfmiddlewaretoken', None)
 
-            if preprint.get_identifier_value('doi'):
-                preprint.request_identifier_update(category='doi')
-
-            if action == 'SPAM':
+        if action == 'spam':
+            for preprint_id in list(data):
+                preprint = Preprint.objects.get(id=preprint_id)
                 preprint.confirm_spam(save=True)
-            elif action == 'HAM':
-                preprint.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=preprint_id,
+                    object_repr='Node',
+                    message=f'Confirmed SPAM: {preprint_id}',
+                    action_flag=CONFIRM_SPAM
+                )
 
-            update_admin_log(
-                user_id=self.request.user.id,
-                object_id=pid,
-                object_repr='Preprint',
-                message=f'Confirmed {action}: {pid}',
-                action_flag=action_flag
-            )
+                if preprint.get_identifier_value('doi'):
+                    preprint.request_identifier_update(category='doi')
+
+        if action == 'ham':
+            for preprint_id in list(data):
+                preprint = Preprint.objects.get(id=preprint_id)
+                preprint.confirm_ham(save=True)
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=preprint_id,
+                    object_repr='User',
+                    message=f'Confirmed HAM: {preprint_id}',
+                    action_flag=CONFIRM_HAM
+                )
+
+                if preprint.get_identifier_value('doi'):
+                    preprint.request_identifier_update(category='doi')
+
         return redirect('preprints:flagged-spam')
 
 

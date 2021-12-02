@@ -353,40 +353,37 @@ class NodeFlaggedSpamList(NodeSpamList, View):
         data = dict(request.POST)
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
+        nodes = AbstractNode.objects.filter(
+            id__in=list(data.keys())
+        ).exclude(
+            type='osf.quickfilesnode'
+        )
 
         if action == 'spam':
-            for node_id in list(data):
-                node = AbstractNode.objects.get(id=node_id)
-                node.confirm_spam()
+            for node in nodes:
+                node.confirm_spam(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=node_id,
+                    object_id=node.id,
                     object_repr='Node',
-                    message=f'Confirmed SPAM: {node_id}',
+                    message=f'Confirmed SPAM: {node._id}',
                     action_flag=CONFIRM_SPAM
                 )
 
-                if node.get_identifier_value('doi'):
-                    node.request_identifier_update(category='doi')
-
-                node.save()
-
         if action == 'ham':
-            for node_id in list(data):
-                node = AbstractNode.objects.get(id=node_id)
+            for node in nodes:
                 node.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=node_id,
+                    object_id=node.id,
                     object_repr='User',
-                    message=f'Confirmed HAM: {node_id}',
+                    message=f'Confirmed HAM: {node._id}',
                     action_flag=CONFIRM_HAM
                 )
 
-                if node.get_identifier_value('doi'):
-                    node.request_identifier_update(category='doi')
-
-                node.save()
+        for node in nodes:
+            if node.get_identifier_value('doi'):
+                node.request_identifier_update(category='doi')
 
         return redirect('nodes:flagged-spam')
 
@@ -500,10 +497,13 @@ class NodeModifyStorageUsage(NodeMixin, View):
         new_private_cap = request.POST.get('private-cap-input')
         new_public_cap = request.POST.get('public-cap-input')
 
-        if float(new_private_cap) != (node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE):
+        node_private_cap = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
+        node_public_cap = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
+
+        if float(new_private_cap) != node_private_cap:
             node.custom_storage_usage_limit_private = new_private_cap
 
-        if float(new_public_cap) != (node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC):
+        if float(new_public_cap) != node_public_cap:
             node.custom_storage_usage_limit_public = new_public_cap
 
         node.save()

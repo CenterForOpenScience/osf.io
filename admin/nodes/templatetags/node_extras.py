@@ -48,6 +48,11 @@ def reverse_registration_provider(value):
 
 
 @register.filter
+def reverse_preprint_provider(value):
+    return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': value})
+
+
+@register.filter
 def reverse_schema_response(value):
     return reverse('schema_responses:detail', kwargs={'schema_response_id': value})
 

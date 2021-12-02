@@ -60,6 +60,8 @@
                             <span class="label label-danger">Rejected</span>
                         {% elif request.machine_state == 'pending' %}
                             <span class="label label-default">Pending</span>
+                        {% else %}
+                            <span class="label label-default">{{request.machine_state}}</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -67,11 +69,11 @@
         </tbody>
     </table>
     {% if perms.osf.change_preprintrequest %}
-        <button class="btn btn-warning" type="button" data-toggle="modal" data-target="#approveWithdrawalModal">
-            Approve Request
+        <button class="btn btn-danger" type="button" data-toggle="modal" data-target="#approveWithdrawalModal">
+            Approve Withdraw Request
         </button>&nbsp;&nbsp;
-        <button class="btn btn-default" type="button" data-toggle="modal" data-target="#rejectWithdrawalModal">
-            Reject Request
+        <button class="btn btn-success" type="button" data-toggle="modal" data-target="#rejectWithdrawalModal">
+            Reject Withdraw Request
         </button>
         <div id="approveWithdrawalModal" class="modal fade well" tabindex="-1" role="dialog">
             <div class="modal-dialog" role="document">
@@ -81,7 +83,7 @@
                         <h3>Are you sure you want to approve the selected withdrawal request(s)?</h3>
                     </div>
                     <div class="modal-footer">
-                        <input class="btn btn-danger" type="submit" name='approveRequest' value="Confirm" />
+                    <button class="btn btn-success" name="action" value="approve" type="submit">Approve Withdraw Request</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">
                             Cancel
                         </button>
@@ -97,7 +99,7 @@
                         <h3>Are you sure you want to reject the selected withdrawal request(s)?</h3>
                     </div>
                     <div class="modal-footer">
-                        <input class="btn btn-danger" type="submit" name='rejectRequest' value="Confirm" />
+                    <button class="btn btn-danger" name="action" value="reject" type="submit">Reject Withdraw Request</button>
                         <button type="button" class="btn btn-default" data-dismiss="modal">
                             Cancel
                         </button>

@@ -99,26 +99,7 @@
                             </td>
                         </tr>
                     {% endif %}
-                    <tr>
-                        <td>Provider</td>
-                        <td>
-                            {{ preprint.provider.name }}
-                            {% if perms.osf.change_preprint %}
-                                <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
-                                    Change preprint provider
-                                </a>
-                                <div class="collapse" id="collapseChangeProvider">
-                                    <div class="well">
-                                        <form action="{% url 'preprints:preprint' guid=preprint.guid %}" method="post">
-                                            {% csrf_token %}
-                                            {{ form.as_p }}
-                                            <input class="btn-btn-primary" type="submit" value="Submit" />
-                                        </form>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </td>
-                    </tr>
+                    {% include "preprints/provider.html" with preprint=preprint %}
                     <tr>
                         <td>Subjects</td>
                         <td>

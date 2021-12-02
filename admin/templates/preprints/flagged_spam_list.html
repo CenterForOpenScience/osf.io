@@ -4,6 +4,5 @@
 <title>Flagged Spam Preprints</title>
 {% endblock title %}
 {% block content %}
-  {% url 'preprints:flagged-spam' as form_action %}
-  {% include 'preprints/preprint_list.html' with form_action=form_action%}
+  {% include 'preprints/preprint_list.html' %}
 {% endblock content %}

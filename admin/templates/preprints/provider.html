@@ -1,0 +1,21 @@
+{% load node_extras %}
+<tr>
+    <td>Preprint Provider</td>
+    <td>
+        <a href="{{ preprint.provider.id | reverse_preprint_provider }}" >{{ preprint.provider.name }}</a>
+        {% if perms.osf.change_preprint %}
+            <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
+                Change preprint provider
+            </a>
+            <div class="collapse" id="collapseChangeProvider">
+                <div class="well">
+                    <form action="{% url 'preprints:preprint' guid=preprint.guid %}" method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <input class="btn-btn-primary" type="submit" value="Submit" />
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    </td>
+</tr>
