@@ -8,17 +8,25 @@
             <table class="table table-bordered table-hover">
                 <thead>
                     <tr>
-                        <td>state</td>
+                        <td>State</td>
+                        <td>Created</td>
+                        <td>Submitted Timestamp</td>
                     </tr>
                 </thead>
                 <tbody>
-                {% for schema_response in schema_responses %}
-                    <tr>
-                        <td><a href="{{ schema_response.id | reverse_schema_response }}">{{ schema_response.reviews_state }}</a></td>
-                    </tr>
-                {% endfor %}
+                    {% for schema_response in schema_responses %}
+                        <tr>
+                            <td><a href="{{ schema_response | reverse_schema_response }}">{{ schema_response.reviews_state }}</a></td>
+                            <td>{{ schema_response.created }}</td>
+                            <td>{{ schema_response.submitted_timestamp }}</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>No Schema Responses for this node</td>
     </tr>
 {% endif %}

@@ -65,7 +65,7 @@
                     <small>
                         (<a href="{{ comment.author_path }}">
                             User's <b>osf</b> profile
-                        </a>) (<a href="{{ comment.author_id | reverse_user }}">
+                        </a>) (<a href="{{ comment.author | reverse_user }}">
                             User's profile
                         </a>)
                     </small>
@@ -126,7 +126,7 @@
                         <div class="col-md-6">
                             <strong>Reporter:</strong>
                             {{ report.reporter.fullname }}
-                            (<a href="{{ report.reporter.pk | reverse_user }}">
+                            (<a href="{{ report.reporter | reverse_user }}">
                             User's profile
                             </a>)
                         </div>

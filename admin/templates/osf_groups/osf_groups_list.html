@@ -30,7 +30,7 @@
                 {{ group.modified }}
             </td>
             <td>
-                <a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a>
+                <a href="{{ group.creator | reverse_user }}">{{ group.creator.name }}</a>
             </td>
         </tr>
         {% endfor %}

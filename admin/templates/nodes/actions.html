@@ -22,7 +22,7 @@
                             <td>{{ action.from_state }}</td>
                             <td>{{ action.to_state }}</td>
                             <td>{{ action.created }}</td>
-                            <td><a href="{{ action.creator.id | reverse_user }}">{{ action.creator }}</a></td>
+                            <td><a href="{{ action.creator | reverse_user }}">{{ action.creator }}</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -43,9 +43,11 @@ from osf.models.admin_log_entry import (
     USER_GDPR_DELETED,
     CONFIRM_SPAM,
     CONFIRM_HAM,
+    UNFLAG_SPAM,
     REINDEX_ELASTIC,
 )
 
+from admin.desk.utils import DeskClient
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
@@ -63,169 +65,192 @@ class UserMixin(PermissionRequiredMixin):
         return reverse('users:user', kwargs={'guid': self.kwargs['guid']})
 
 
-class UserDeleteView(PermissionRequiredMixin, DeleteView):
-    """ Allow authorised admin user to remove/restore user
-
-    Interface with OSF database. No admin models.
-    """
-    template_name = 'users/remove_user.html'
-    context_object_name = 'user'
-    object = None
-    permission_required = 'osf.change_osfuser'
+class UserView(UserMixin, TemplateView):
+    template_name = 'users/user.html'
+    paginate_by = 10
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            user = self.get_object()
-            if user.date_disabled is None or kwargs.get('is_spam'):
-                user.disable_account()
-                user.is_registered = False
-                if 'spam_flagged' in user.system_tags:
-                    user.tags.through.objects.filter(tag__name='spam_flagged').delete()
-                if 'ham_confirmed' in user.system_tags:
-                    user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
-
-                if kwargs.get('is_spam'):
-                    user.confirm_spam()
-                flag = USER_REMOVED
-                message = 'User account {} disabled'.format(user.pk)
-            else:
-                user.requested_deactivation = False
-                user.date_disabled = None
-                subscribe_on_confirm(user)
-                user.is_registered = True
-                user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
-                user.confirm_ham()
-                flag = USER_RESTORED
-                message = 'User account {} reenabled'.format(user.pk)
-            user.save()
-        except AttributeError:
-            raise Http404(
-                '{} with id "{}" not found.'.format(
-                    self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=user.pk,
-            object_repr='User',
-            message=message,
-            action_flag=flag
-        )
-        return redirect(reverse_user(self.kwargs.get('guid')))
+    def get_paginated_queryset(self, queryset, resource_type):
+        page_num = self.request.GET.get(f'{resource_type}_page', 1)
+        paginator = Paginator(queryset, self.paginate_by)
+        queryset = paginator.page(page_num)
+        return {
+            f'{resource_type}s': queryset,
+            f'{resource_type}_page': paginator.page(page_num),
+            f'current_{resource_type}': f'&{resource_type}_page=' + str(queryset.number)
+        }
 
     def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object')._id)
-        return super(UserDeleteView, self).get_context_data(**context)
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
 
-    def get_object(self, queryset=None):
-        return OSFUser.load(self.kwargs.get('guid'))
+        # Django template does not like attributes with underscores for some reason
+        preprints = user.preprints.filter(
+            deleted=None
+        ).annotate(
+            guid=F('guids___id')
+        ).order_by(
+            'title'
+        )
+
+        nodes = user.contributor_or_group_member_to.annotate(
+            guid=F('guids___id')
+        ).order_by(
+            'title'
+        )
+        context.update(self.get_paginated_queryset(preprints, 'preprint'))
+        context.update(self.get_paginated_queryset(nodes, 'node'))
+
+        context.update({'user': user})
+        context.update({'potential_spam_profile_content': user._get_spam_content({
+            'schools': user.schools,
+            'jobs': user.jobs
+        })})
+        context.update({'form': EmailResetForm(initial={
+            'emails': [(r, r) for r in self.get_object().emails.values_list('address', flat=True)],
+        })})
+        context.update({'desk_info': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/'})
+        try:
+            context.update({'customer_info': DeskClient(self.request.user).find_customer({'email': email})})
+        except PermissionError:
+            context.update({'customer_info': {}})
+
+        email = user.emails.values_list('address', flat=True).first()
+        try:
+            context.update({'cases': DeskClient(self.request.user).cases({'email': email})})
+        except PermissionError:
+            context.update({'cases': []})
 
 
-class UserGDPRDeleteView(PermissionRequiredMixin, DeleteView):
-    """ Allow authorised admin user to totally erase user data.
+        return context
 
-    Interface with OSF database. No admin models.
+
+class UserDisableView(UserMixin, View):
+    """ Allow authorised admin user to remove/restore user
     """
-    template_name = 'users/GDPR_delete_user.html'
-    context_object_name = 'user'
-    object = None
     permission_required = 'osf.change_osfuser'
     raise_exception = True
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            user = self.get_object()
-            user.gdpr_delete()
-            user.save()
-            message = 'User {} was successfully GDPR deleted'.format(user._id)
-            messages.success(request, message)
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        if user.date_disabled is None or kwargs.get('is_spam'):
+            user.disable_account()
+            user.is_registered = False
+            if 'spam_flagged' in user.system_tags:
+                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
+            if 'ham_confirmed' in user.system_tags:
+                user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
+            if kwargs.get('is_spam'):
+                user.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,
                 object_repr='User',
-                message=message,
+                message=f'User account {user.pk} disabled',
+                action_flag=USER_REMOVED
+            )
+        else:
+            user.requested_deactivation = False
+            user.date_disabled = None
+            subscribe_on_confirm(user)
+            user.is_registered = True
+            user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
+            user.confirm_ham(save=True)
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=user.pk,
+                object_repr='User',
+                message=f'User account {user.pk} reenabled',
+                action_flag=USER_RESTORED
+            )
+
+        return redirect(self.get_success_url())
+
+
+class UserGDPRDeleteView(UserMixin, View):
+    """ Allow authorised admin user to totally erase user data.
+
+    Interface with OSF database. No admin models.
+    """
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = self.get_object()
+            user.gdpr_delete()
+            user.save()
+            messages.success(request, f'User {user._id} was successfully GDPR deleted')
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=user.pk,
+                object_repr='User',
+                message=f'User {user._id} was successfully GDPR deleted',
                 action_flag=USER_GDPR_DELETED
             )
         except UserStateError as e:
             messages.warning(request, str(e))
 
-        return redirect(reverse_user(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object')._id)
-        return super(UserGDPRDeleteView, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        user = OSFUser.load(self.kwargs.get('guid'))
-        if user:
-            return user
-        else:
-            raise Http404(
-                '{} with id "{}" not found.'.format(
-                    self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
+        return redirect(self.get_success_url())
 
 
-class SpamUserView(UserMixin, View):
+class UserConfirmSpamView(UserMixin, View):
     """
     Allow authorized admin user to delete a spam user and mark all their nodes as private
 
     """
-
-    template_name = 'users/remove_spam_user.html'
+    permission_required = 'osf.mark_spam'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-
-        for node in user.contributor_or_group_member_to:
-            if not node.is_registration and not node.is_spam:
-                node.confirm_spam(save=True)
-                update_admin_log(
-                    user_id=request.user.id,
-                    object_id=node._id,
-                    object_repr='Node',
-                    message=f'Confirmed SPAM: {node._id} when user {user._id} marked as spam',
-                    action_flag=CONFIRM_SPAM
-                )
+        user.confirm_spam(save=True)
+        update_admin_log(
+            user_id=request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'Confirmed SPAM: {user._id} when user {user._id} marked as spam',
+            action_flag=CONFIRM_SPAM
+        )
         return redirect(self.get_success_url())
 
 
-class HamUserRestoreView(UserDeleteView):
+class UserConfirmHamView(UserMixin, View):
     """
     Allow authorized admin user to undelete a ham user
     """
+    permission_required = 'osf.mark_spam'
 
-    template_name = 'users/restore_ham_user.html'
-
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         user = self.get_object()
-        if not user:
-            raise Http404(
-                '{} with id "{}" not found.'.format(
-                    self.context_object_name.title(),
-                    self.kwargs.get('guid')
-                ))
-        user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
         user.confirm_ham(save=True)
-        for node in user.contributor_or_group_member_to:
-            if node.is_spam:
-                node.confirm_ham(save=True)
-                update_admin_log(
-                    user_id=request.user.id,
-                    object_id=node._id,
-                    object_repr='Node',
-                    message='Confirmed HAM: {} when user {} marked as ham'.format(node._id, user._id),
-                    action_flag=CONFIRM_SPAM
-                )
-        if not user.is_active:
-            # Allow superclass to restore and mark ham
-            kwargs.update({'is_spam': False})
-            return super(HamUserRestoreView, self).delete(request, *args, **kwargs)
-        return redirect(reverse_user(self.kwargs.get('guid')))
+        update_admin_log(
+            user_id=request.user.id,
+            object_id=user._id,
+            object_repr='User',
+            message=f'Confirmed Ham: {user._id} when user {user._id} marked as spam',
+            action_flag=CONFIRM_SPAM
+        )
+        return redirect(self.get_success_url())
+
+
+class UserConfirmUnflagView(UserMixin, View):
+    """Allows authorized users to unflag a user and return them to an Spam Status of Unknown/
+    """
+    permission_required = 'osf.mark_spam'
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.spam_status = None
+        user.save()
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=user.id,
+            object_repr='User',
+            message=f'Confirmed unflagged: {user._id}',
+            action_flag=UNFLAG_SPAM
+        )
+        return redirect(self.get_success_url())
 
 
 class UserSpamList(PermissionRequiredMixin, ListView):
@@ -268,32 +293,41 @@ class UserFlaggedSpamList(UserSpamList, DeleteView):
 
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
+        users = OSFUser.objects.filter(id__in=list(data.keys()))
 
         if action == 'spam':
-            for user_id in list(data):
-                user = OSFUser.objects.get(id=user_id)
-                user.confirm_spam()
+            for user in users:
+                user.confirm_spam(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=user_id,
+                    object_id=user.id,
                     object_repr='User',
-                    message=f'Confirmed SPAM: {user_id}',
+                    message=f'Confirmed SPAM: {user._id}',
                     action_flag=CONFIRM_SPAM
                 )
-                user.save()
 
         if action == 'ham':
-            for user_id in list(data):
-                user = OSFUser.objects.get(id=user_id)
+            for user in users:
                 user.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=user_id,
+                    object_id=user.id,
                     object_repr='User',
-                    message=f'Confirmed HAM: {user_id}',
+                    message=f'Confirmed HAM: {user._id}',
                     action_flag=CONFIRM_HAM
                 )
+
+        if action == 'unflag':
+            for user in users:
+                user.spam_status = None
                 user.save()
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=user.id,
+                    object_repr='User',
+                    message=f'Confirmed unflagged: {user._id}',
+                    action_flag=UNFLAG_SPAM
+                )
 
         return redirect('users:flagged-spam')
 
@@ -308,7 +342,7 @@ class UserKnownHamList(UserSpamList):
     template_name = 'users/known_spam_list.html'
 
 
-class User2FactorDeleteView(UserDeleteView):
+class User2FactorDeleteView(UserDisableView):
     """ Allow authorised admin user to remove 2 factor authentication.
 
     Interface with OSF database. No admin models.
@@ -331,22 +365,13 @@ class User2FactorDeleteView(UserDeleteView):
         return redirect(self.get_success_url())
 
 
-class UserAddSystemTag(PermissionRequiredMixin, FormView):
+class UserAddSystemTag(UserMixin, FormView):
 
     template_name = 'users/add_system_tag.html'
     object_type = 'osfuser'
     permission_required = 'osf.change_osfuser'
     raise_exception = True
     form_class = AddSystemTagForm
-
-    def get_success_url(self, *args, **kwargs):
-        return reverse('users:user', kwargs={'guid': self.kwargs.get('guid')})
-
-    def get_object(self, queryset=None):
-        return OSFUser.load(self.kwargs.get('guid'))
-
-    def get_context_data(self, **kwargs):
-        return {'guid': self.get_object()._id}
 
     def form_valid(self, form):
         user = self.get_object()
@@ -373,9 +398,8 @@ class UserSearchView(PermissionRequiredMixin, FormView):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
         email = form.cleaned_data['email']
-        print(locals())
         if name:
-            return redirect(reverse('users:search_list', kwargs={'name': name}))
+            return redirect(reverse('users:search-list', kwargs={'name': name}))
 
         if email:
             user = get_user(email)
@@ -399,18 +423,10 @@ class UserSearchView(PermissionRequiredMixin, FormView):
         return super().form_valid(form)
 
 
-class UserMergeAccounts(PermissionRequiredMixin, FormView):
-    template_name = 'users/merge_accounts_modal.html'
+class UserMergeAccounts(UserMixin, FormView):
     permission_required = 'osf.view_osfuser'
-    object_type = 'osfuser'
     raise_exception = True
     form_class = MergeUserForm
-
-    def get_context_data(self, **kwargs):
-        return {'guid': self.get_object()._id}
-
-    def get_object(self, queryset=None):
-        return OSFUser.load(self.kwargs.get('guid'))
 
     def form_valid(self, form):
         user = self.get_object()
@@ -453,54 +469,6 @@ class UserSearchList(PermissionRequiredMixin, ListView):
                 'users': query_set
             }
         )
-
-
-class UserView(UserMixin, TemplateView):
-    template_name = 'users/user.html'
-    paginate_by = 10
-    permission_required = 'osf.view_osfuser'
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user = self.get_object()
-
-        # Django template does not like attributes with underscores for some reason
-        preprints = user.preprints.filter(
-            deleted=None
-        ).annotate(
-            guid=F('guids___id')
-        ).order_by(
-            'title'
-        )
-
-        nodes = user.contributor_or_group_member_to.annotate(
-            guid=F('guids___id')
-        ).order_by(
-            'title'
-        )
-        context.update(self.get_paginated_queryset(preprints, 'preprint'))
-        context.update(self.get_paginated_queryset(nodes, 'node'))
-
-        context.update({'user': user})
-        context.update({'potential_spam_profile_content': user._get_spam_content({
-            'schools': user.schools,
-            'jobs': user.jobs
-        })})
-        context.update({'form': EmailResetForm(initial={
-            'emails': [(r, r) for r in self.get_object().emails.values_list('address', flat=True)],
-        })})
-        return context
-
-    def get_paginated_queryset(self, queryset, resource_type):
-        page_num = self.request.GET.get(f'{resource_type}_page', 1)
-        paginator = Paginator(queryset, self.paginate_by)
-        queryset = paginator.page(page_num)
-        return {
-            f'{resource_type}s': queryset,
-            f'{resource_type}_page': paginator.page(page_num),
-            f'current_{resource_type}': f'&{resource_type}_page=' + str(queryset.number)
-        }
 
 
 class UserWorkshopFormView(PermissionRequiredMixin, FormView):
@@ -603,9 +571,6 @@ class UserWorkshopFormView(PermissionRequiredMixin, FormView):
             result.append(row)
 
         return result
-
-    def form_invalid(self, form):
-        super(UserWorkshopFormView, self).form_invalid(form)
 
 
 class GetUserLink(UserMixin, TemplateView):
@@ -716,7 +681,7 @@ class ResetPasswordView(UserMixin, View):
         return redirect(self.get_success_url())
 
 
-class UserReindexElastic(UserDeleteView):
+class UserReindexElastic(UserMixin, View):
     template_name = 'users/reindex_user_elastic.html'
 
     def delete(self, request, *args, **kwargs):
@@ -726,7 +691,7 @@ class UserReindexElastic(UserDeleteView):
             user_id=self.request.user.id,
             object_id=user._id,
             object_repr='User',
-            message='User Reindexed (Elastic): {}'.format(user._id),
+            message=f'User Reindexed (Elastic): {user._id}',
             action_flag=REINDEX_ELASTIC
         )
-        return redirect(reverse_user(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())

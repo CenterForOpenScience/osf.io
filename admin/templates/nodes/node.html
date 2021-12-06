@@ -1,22 +1,15 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block top_includes %}
-    <script src="/static/js/nodes/registrations.js"></script>
-{% endblock %}
 {% load user_extras %}
 {% load node_extras %}
 {% block title %}
-    {% if node.is_registration %}
-        <title>Registration</title>
-    {% else %}
-        <title>Node</title>
-    {% endif %}
+    <title>{{ node.type|cut:'osf.'|title }}: {{node.guid}} </title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <ul class="messages">
             {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
             {% endfor %}
         </ul>
         <div class="row">
@@ -68,7 +61,7 @@
                     </tr>
                     <tr>
                         <td>Creator</td>
-                        <td><a href="{{ node.creator.id | reverse_user }}">{{ node.creator }}</a></td>
+                        <td><a href="{{ node.creator | reverse_user }}">{{ node.creator }}</a></td>
                     </tr>
                     <tr>
                         <td>Provider</td>
@@ -108,6 +101,5 @@
             </table>
         </div>
     </div>
-
 {% endblock content %}
 

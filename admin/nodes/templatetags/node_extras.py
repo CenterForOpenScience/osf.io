@@ -29,11 +29,7 @@ def reverse_preprint(value):
 
 
 @register.filter
-def reverse_user(user_id):
-    if isinstance(user_id, int):
-        user = OSFUser.objects.get(id=user_id)
-    else:
-        user = OSFUser.load(user_id)
+def reverse_user(user):
     return reverse('users:user', kwargs={'guid': user._id})
 
 
@@ -54,7 +50,7 @@ def reverse_preprint_provider(value):
 
 @register.filter
 def reverse_schema_response(value):
-    return reverse('schema_responses:detail', kwargs={'schema_response_id': value})
+    return reverse('schema_responses:detail', kwargs={'schema_response_id': value.id})
 
 
 @register.filter

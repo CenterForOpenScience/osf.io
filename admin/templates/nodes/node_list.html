@@ -8,7 +8,7 @@
     <thead>
         <tr>
             <th>
-                <input form="spam-form" type="checkbox" onclick="toggle(this)">
+                <input type="checkbox" onclick="toggle(this)">
                 <script language="javascript">
                     function toggle(source) {
                         var checkboxes = document.getElementsByClassName('selection');
@@ -71,7 +71,7 @@
             </td>
             <td>
                 {% for user in node.contributors %}
-                    <a href="{{ user.id | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
+                    <a href="{{ user | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
                 {% endfor %}
             </td>
             <td>
@@ -84,5 +84,6 @@
 {% if perms.osf.mark_spam %}
     {% include 'nodes/spam_modal.html' %}
     {% include 'nodes/ham_modal.html' %}
+    {% include 'nodes/unflag_modal.html' %}
     </form>
 {% endif %}

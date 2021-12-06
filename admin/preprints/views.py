@@ -232,6 +232,8 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
             target__provider__reviews_workflow=None
+        ).exclude(
+            machine_state='initial',
         ).order_by(
             self.ordering
         ).annotate(target_guid=F('target__guids___id'))
@@ -248,6 +250,7 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.change_preprintrequest'):
             raise PermissionDenied('You do not have permission to approve or reject withdrawal requests.')
+
         data = dict(request.POST)
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
@@ -294,6 +297,8 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
 
 
 class PreprintApproveWithdrawalRequest(WithdrawalRequestMixin, View):
+    """ Allows authorized users to approve withdraw requests for preprints, withdrawing/retracting them.
+    """
 
     def post(self, request, *args, **kwargs):
         withdrawal_request = self.get_object()
@@ -309,6 +314,8 @@ class PreprintApproveWithdrawalRequest(WithdrawalRequestMixin, View):
 
 
 class PreprintRejectWithdrawalRequest(WithdrawalRequestMixin, View):
+    """ Allows authorized users to reject withdraw requests for preprints, sending them into the `pending` state.
+    """
 
     def post(self, request, *args, **kwargs):
         withdrawal_request = self.get_object()
@@ -324,6 +331,8 @@ class PreprintRejectWithdrawalRequest(WithdrawalRequestMixin, View):
 
 
 class PreprintFlaggedSpamList(PreprintSpamList, View):
+    """ Allows authorized users to view a list of preprints flagged as spam.
+    """
     SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'preprints/flagged_spam_list.html'
 
@@ -334,16 +343,16 @@ class PreprintFlaggedSpamList(PreprintSpamList, View):
         data = dict(request.POST)
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
+        preprints = Preprint.objects.filter(id__in=list(data))
 
         if action == 'spam':
-            for preprint_id in list(data):
-                preprint = Preprint.objects.get(id=preprint_id)
+            for preprint in preprints:
                 preprint.confirm_spam(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=preprint_id,
+                    object_id=preprint.id,
                     object_repr='Node',
-                    message=f'Confirmed SPAM: {preprint_id}',
+                    message=f'Confirmed SPAM: {preprint.id}',
                     action_flag=CONFIRM_SPAM
                 )
 
@@ -351,14 +360,28 @@ class PreprintFlaggedSpamList(PreprintSpamList, View):
                     preprint.request_identifier_update(category='doi')
 
         if action == 'ham':
-            for preprint_id in list(data):
-                preprint = Preprint.objects.get(id=preprint_id)
+            for preprint in preprints:
                 preprint.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=preprint_id,
+                    object_id=preprint.id,
                     object_repr='User',
-                    message=f'Confirmed HAM: {preprint_id}',
+                    message=f'Confirmed HAM: {preprint.id}',
+                    action_flag=CONFIRM_HAM
+                )
+
+                if preprint.get_identifier_value('doi'):
+                    preprint.request_identifier_update(category='doi')
+
+        if action == 'unflag':
+            for preprint in preprints:
+                preprint.spam_status = None
+                preprint.save()
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=preprint.id,
+                    object_repr='User',
+                    message=f'Confirmed HAM: {preprint.id}',
                     action_flag=CONFIRM_HAM
                 )
 
@@ -369,16 +392,23 @@ class PreprintFlaggedSpamList(PreprintSpamList, View):
 
 
 class PreprintKnownSpamList(PreprintSpamList):
+    """ Allows authorized users to view a list of preprints marked as spam.
+    """
+
     SPAM_STATE = SpamStatus.SPAM
     template_name = 'preprints/known_spam_list.html'
 
 
 class PreprintKnownHamList(PreprintSpamList):
+    """ Allows authorized users to view a list of preprints marked as ham.
+    """
     SPAM_STATE = SpamStatus.HAM
     template_name = 'preprints/known_spam_list.html'
 
 
 class PreprintConfirmSpamView(PreprintMixin, View):
+    """ Allows authorized users to mark preprints as spam.
+    """
     permission_required = 'osf.mark_spam'
 
     def post(self, request, *args, **kwargs):
@@ -400,6 +430,8 @@ class PreprintConfirmSpamView(PreprintMixin, View):
 
 
 class PreprintConfirmHamView(PreprintMixin, View):
+    """ Allows authorized users to mark preprints as ham.
+    """
     permission_required = 'osf.mark_spam'
 
     def post(self, request, *args, **kwargs):

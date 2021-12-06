@@ -1,16 +1,4 @@
-
 $(document).ready(function() {
-
-    $("#show-modify-form").click(function () {
-        $("#table-view").toggle();
-        $(".form-view").toggle();
-        $("#date-validation").text("");
-
-        var text = $("#show-modify-form").text();
-        var new_text = (text.trim() == "Edit") ? "Hide form" : "Edit";
-        $("#show-modify-form").text(new_text);
-    });
-
     $("#embargo-update-form").submit(function (event) {
         event.preventDefault();
         $('#update-embargo-modal').modal('show');

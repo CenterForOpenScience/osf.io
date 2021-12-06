@@ -18,6 +18,7 @@ from admin.nodes.templatetags.node_extras import reverse_node
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 
+from osf.exceptions import NodeStateError
 from osf.models import (
     OSFUser,
     NodeLog,
@@ -33,6 +34,7 @@ from osf.models.admin_log_entry import (
     CONTRIBUTOR_REMOVED,
     CONFIRM_SPAM,
     CONFIRM_HAM,
+    UNFLAG_SPAM,
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
@@ -96,6 +98,10 @@ class NodeRemoveContributorView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
+        if not node._get_admin_contributors_query(node._contributors.all()).exclude(user=user).exists():
+            messages.error(self.request, 'Must be at least one admin on this node.')
+            return redirect(self.get_success_url())
+
         if node.remove_contributor(user, None, log=False):
             update_admin_log(
                 user_id=self.request.user.id,
@@ -185,11 +191,10 @@ class NodeView(NodeMixin, GuidView):
 
     def get_context_data(self, **kwargs):
         return super().get_context_data(**{
-            'SPAM_STATUS': SpamStatus,  # Pass spam status in to check against
-            'message': kwargs.get('message'),
+            'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
-            'node': self.get_object(),
-        })
+            'node': kwargs.pop('object'),
+        }, **kwargs)
 
 
 class AdminNodeLogView(NodeMixin, ListView):
@@ -341,10 +346,10 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
 
 
 class NodeFlaggedSpamList(NodeSpamList, View):
-    """ Allows authorized users to mark user flagged as spam to be marked as either spam or ham.
+    """ Allows authorized users to mark users flagged as spam as either spam or ham, or they can simply remove the flag.
     """
-    SPAM_STATE = SpamStatus.FLAGGED
     template_name = 'nodes/flagged_spam_list.html'
+    SPAM_STATE = SpamStatus.FLAGGED
 
     def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
@@ -353,22 +358,21 @@ class NodeFlaggedSpamList(NodeSpamList, View):
         data = dict(request.POST)
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
-        nodes = AbstractNode.objects.filter(
-            id__in=list(data.keys())
-        ).exclude(
-            type='osf.quickfilesnode'
-        )
+        nodes = AbstractNode.objects.filter(id__in=list(data.keys()))
 
         if action == 'spam':
             for node in nodes:
-                node.confirm_spam(save=True)
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=node.id,
-                    object_repr='Node',
-                    message=f'Confirmed SPAM: {node._id}',
-                    action_flag=CONFIRM_SPAM
-                )
+                try:
+                    node.confirm_spam(save=True)
+                    update_admin_log(
+                        user_id=self.request.user.id,
+                        object_id=node.id,
+                        object_repr='Node',
+                        message=f'Confirmed SPAM: {node._id}',
+                        action_flag=CONFIRM_SPAM
+                    )
+                except NodeStateError as e:
+                    messages.error(self.request, e)
 
         if action == 'ham':
             for node in nodes:
@@ -381,6 +385,18 @@ class NodeFlaggedSpamList(NodeSpamList, View):
                     action_flag=CONFIRM_HAM
                 )
 
+        if action == 'unflag':
+            for node in nodes:
+                node.spam_status = None
+                node.save()
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=node._id,
+                    object_repr='Node',
+                    message=f'Confirmed Unflagged: {node._id}',
+                    action_flag=UNFLAG_SPAM
+                )
+
         for node in nodes:
             if node.get_identifier_value('doi'):
                 node.request_identifier_update(category='doi')
@@ -391,16 +407,16 @@ class NodeFlaggedSpamList(NodeSpamList, View):
 class NodeKnownSpamList(NodeSpamList):
     """ Allows authorized users to view a list of users that have a spam status of being spam.
     """
+    template_name = 'nodes/known_spam_list.html'
 
     SPAM_STATE = SpamStatus.SPAM
-    template_name = 'nodes/known_spam_list.html'
 
 
 class NodeKnownHamList(NodeSpamList):
     """ Allows authorized users to view a list of users that have a spam status of being ham (non-spam).
     """
-    SPAM_STATE = SpamStatus.HAM
     template_name = 'nodes/known_spam_list.html'
+    SPAM_STATE = SpamStatus.HAM
 
 
 class NodeConfirmSpamView(NodeMixin, View):
@@ -449,6 +465,26 @@ class NodeConfirmHamView(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
+class NodeConfirmUnflagView(NodeMixin, View):
+    """ Allows authorized users to mark a particular node as ham.
+    """
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.spam_status = None
+        node.save()
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Confirmed Unflagged: {node._id}',
+            action_flag=UNFLAG_SPAM
+        )
+        return redirect(self.get_success_url())
+
+
 class NodeReindexShare(NodeMixin, View):
     """ Allows an authorized user to reindex a node in SHARE.
     """
@@ -457,7 +493,9 @@ class NodeReindexShare(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        update_share(node)
+        if settings.SHARE_ENABLED:
+            update_share(node)
+
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -550,7 +588,6 @@ class NodeMakePrivate(NodeMixin, View):
 class RestartStuckRegistrationsView(NodeMixin, TemplateView):
     """ Allows an authorized user to restart a registrations archive process.
     """
-
     template_name = 'nodes/restart_registrations_modal.html'
     permission_required = ('osf.view_node', 'osf.change_node')
 

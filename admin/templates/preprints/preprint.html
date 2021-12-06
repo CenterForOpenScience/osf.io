@@ -20,7 +20,7 @@
                         <i class="fa fa-search"></i>
                     </a>
                     {% include "preprints/remove_preprint.html" with preprint=preprint %}
-                    {% include "preprints/confirm_spam.html" with preprint=preprint %}
+                    {% include "preprints/mark_spam.html" with preprint=preprint %}
                     {% include "preprints/reindex_preprint_share.html" with preprint=preprint %}
                 </div>
             </div>
@@ -53,7 +53,7 @@
                     <tr>
                         <td>Creator</td>
                         <td>
-                             <a href="{{ preprint.creator.id | reverse_user }}">
+                             <a href="{{ preprint.creator | reverse_user }}">
                                 {{ preprint.creator }}
                             </a>
                         </td>

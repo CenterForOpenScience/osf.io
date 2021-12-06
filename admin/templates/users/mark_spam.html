@@ -1,0 +1,20 @@
+{% if perms.osf.mark_spam %}
+    {% if not user.spam_status is None %}
+        <form action="{% url 'users:confirm-unflag' guid=user.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "users/unflag_modal.html" with user=user %}
+        </form>
+    {% endif %}
+    {% if user.spam_status != 4  %}
+        <form action="{% url 'users:confirm-ham' guid=user.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "users/ham_modal.html" with user=user %}
+        </form>
+    {% endif %}
+    {% if user.spam_status != 2 %}
+        <form action="{% url 'users:confirm-spam' guid=user.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "users/spam_modal.html" with user=user %}
+        </form>
+    {% endif %}
+{% endif %}

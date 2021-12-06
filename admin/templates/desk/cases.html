@@ -1,5 +1,5 @@
 {%  if perms.osf.view_desk %}
-    <a href="{% url 'desk:user_cases'  user.id  %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
+    <a data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
     <div class="modal" id="caseModal">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -7,7 +7,7 @@
                     <button type="button" class="close" data-dismiss="modal">x</button>
                 </div>
                 <div class="modal-body">
-                    <h3>OSF user "{{ user_id }}" up to 50 most recent desk.com cases:</h3>
+                    <h3>OSF user "{{ user }}" ({{ user.guid }}) up to 50 most recent desk.com cases:</h3>
                     <table class="table table-striped">
                         <thead>
                             <tr>

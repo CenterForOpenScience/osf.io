@@ -45,15 +45,15 @@
                     </tr>
                     <tr>
                         <td>Initiated by</td>
-                        <td><a href="{{ embargo.initiated_by.id | reverse_user }}">{{ embargo.initiated_by }}</a></td>
+                        <td><a href="{{ embargo.initiated_by | reverse_user }}">{{ embargo.initiated_by }}</a></td>
                     </tr>
                     <tr>
                         <td>Approval State</td>
-                        <td><pre style="width: 20%;">{{ embargo.approval_state }}</pre></td>
+                        <td><p>{{ embargo.approval_state }}</p></td>
                     </tr>
                     <tr>
                         <td>Stashed Urls</td>
-                        <td><pre style="width: 20%;">{{ embargo.stashed_urls }}</pre></td>
+                        <td><p>{{ embargo.stashed_urls }}</p></td>
                     </tr>
                     <tr>
                         <td>For Existing Registration</td>
@@ -63,7 +63,7 @@
             </table>
         </td>
     </tr>
-    <div class="modal" id="update-embargo-modal">
+    <div class="modal" id="update-embargo-modal" style="display:none;">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form class="well">
@@ -92,9 +92,10 @@
 {% endif %}
 
 {% block bottom_js %}
-<script>
-    window.templateVars = {
-        'updateEmbargoUrl': '{% url 'nodes:update_embargo' guid=node.guid %}',
-    }
-</script>
+    <script src="/static/js/nodes/update_embargo.js"></script>
+    <script>
+        window.templateVars = {
+            'updateEmbargoUrl': '{% url 'nodes:update-embargo' guid=node.guid %}',
+        }
+    </script>
 {% endblock %}

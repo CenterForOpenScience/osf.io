@@ -191,7 +191,7 @@ class TestDisableUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.UserDeleteView
+        self.view = views.UserDisableView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
     def test_get_object(self):
@@ -222,7 +222,7 @@ class TestDisableUser(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user(self):
-        view = setup_view(views.UserDeleteView(), self.request, guid='meh')
+        view = setup_view(views.UserDisableView(), self.request, guid='meh')
         with nt.assert_raises(Http404):
             view.delete(self.request)
 

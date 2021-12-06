@@ -1,48 +1,20 @@
 {% if perms.osf.mark_spam %}
-    <a data-toggle="modal" data-target="#confirmSpamModal"
-       class="btn btn-warning">
-        Confirm Spam
-    </a>
-    <div class="modal" id="confirmSpamModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form class="well" method="post" action="{% url 'nodes:confirm-spam' guid=node.guid %}">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">x</button>
-                        <h3>Are you sure this Node is spam? {{ node.guid }}</h3>
-                    </div>
-                    {% csrf_token %}
-                    <div class="modal-footer">
-                        <input class="btn btn-danger" type="submit" value="Confirm" />
-                        <button type="button" class="btn btn-default" data-dismiss="modal">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <a data-toggle="modal" data-target="#confirmHamModal"
-       class="btn btn-default">
-        Confirm <strong>Not</strong> Spam
-    </a>
-    <div class="modal" id="confirmHamModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form class="well" method="post" action="{% url 'nodes:confirm-ham' guid=node.guid %}">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">x</button>
-                        <h3>Are you sure this node is <strong>not</strong> spam? {{ node.guid }}</h3>
-                    </div>
-                    {% csrf_token %}
-                    <div class="modal-footer">
-                        <input class="btn btn-danger" type="submit" value="Confirm" />
-                        <button type="button" class="btn btn-default" data-dismiss="modal">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% if node.spam_status and node.spam_status == 1 %}
+        <form action="{% url 'nodes:confirm-unflag' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/unflag_modal.html" with node=node %}
+        </form>
+    {% endif %}
+    {% if node.spam_status != 2 %}
+        <form action="{% url 'nodes:confirm-spam' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/spam_modal.html" with node=node %}
+        </form>
+    {% endif %}
+    {% if node.spam_status != 4  %}
+        <form action="{% url 'nodes:confirm-ham' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/ham_modal.html" with node=node %}
+        </form>
+    {% endif %}
 {% endif %}

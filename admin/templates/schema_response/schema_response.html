@@ -16,7 +16,7 @@
             <div class="col-md-12">
                 <div class="btn-group" role="group">
                     <a href="{% url 'schema_responses:list' %}" class="btn btn-primary"> All Schema Responses</a>
-                    <a href="{% url 'nodes:schema_responses' guid=schema_response.parent_guid %}" class="btn btn-primary"> All Revisions for Parent </a>
+                    <a href="{% url 'nodes:schema-responses' guid=schema_response.parent_guid %}" class="btn btn-primary"> All Revisions for Parent </a>
                 </div>
             </div>
         </div>
@@ -51,18 +51,18 @@
                     <tr>
                         <td>Previous Response</td>
                         {% if schema_response.previous_response %}
-                            <td><a href="{{ schema_response.previous_response.id | reverse_schema_response }}">{{ schema_response.previous_response.reviews_state }}</a></td>
+                            <td><a href="{{ schema_response.previous_response | reverse_schema_response }}">{{ schema_response.previous_response.reviews_state }}</a></td>
                         {% endif %}
                     </tr>
                     <tr>
                         <td>Initiator</td>
-                        <td><a href="{{ schema_response.initiator.id | reverse_user }}">{{ schema_response.initiator }}</a></td>
+                        <td><a href="{{ schema_response.initiator | reverse_user }}">{{ schema_response.initiator }}</a></td>
                     </tr>
                     <tr>
                         <td>Pending approvers</td>
                         <td>
                             {% for approver in schema_response.pending_approvers.all %}
-                                <br><a href="{{ approver.id | reverse_user }}">{{ approver }}</a>
+                                <br><a href="{{ approver | reverse_user }}">{{ approver }}</a>
                             {% endfor %}
                         </td>
                     </tr>

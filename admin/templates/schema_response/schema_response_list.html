@@ -17,7 +17,7 @@
             {% for schema_response in schema_responses %}
             <tr>
                 <td>
-                    <a href="{{ schema_response.id | reverse_schema_response }}">{{ schema_response.reviews_state }}</a>
+                    <a href="{{ schema_response | reverse_schema_response }}">{{ schema_response.reviews_state }}</a>
                 </td>
                 <td>
                     <a href="{{ schema_response.parent | reverse_node }}">{{ schema_response.parent.title }}</a>

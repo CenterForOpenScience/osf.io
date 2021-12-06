@@ -26,7 +26,7 @@
                     <b>Public cap:</b> <input name='public-cap-input' type="text" value="{{ node.public_cap|floatformat:0 }}" /> GB<br>
                     <b>Private cap: </b><input name='private-cap-input' type="text" value="{{ node.private_cap|floatformat:0 }}" /> GB
                     <div class="modal-footer">
-                        <input class="btn btn-danger" type="submit" value="Save" />
+                        <input class="btn btn-success" type="submit" value="Save" />
                         <button type="button" class="btn btn-default" data-dismiss="modal">
                             Cancel
                         </button>
@@ -45,11 +45,11 @@
                     <form class="well" method="post" action="{% url 'nodes:recalculate-node-storage' guid=node.guid %}">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal">x</button>
-                            <h3>Are you sure you want to recalculate storage for {{ node.guid }}?</h3>
+                            <h3>Are you sure you want to recalculate storage for {{ node.title }} ({{ node.guid }})?</h3>
                         </div>
                         {% csrf_token %}
                         <div class="modal-footer">
-                            <input class="btn btn-danger" type="submit" value="Confirm" />
+                            <input class="btn btn-success" type="submit" value="Confirm" />
                             <button type="button" class="btn btn-default" data-dismiss="modal">
                                 Cancel
                             </button>

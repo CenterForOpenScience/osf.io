@@ -5,7 +5,6 @@
     <form action="{% url 'preprints:flagged-spam' %}" method="post">
         {% csrf_token %}
 {% endif %}
-
 <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
@@ -53,14 +52,15 @@
             <td> {{ preprint.date_published }} </td>
             <td> {{ preprint.modified }} </td>
             <td> {{ preprint.created}} </td>
-            <td> <a href="{{ preprint.creator.id | reverse_user }}">{{ preprint.creator }}</a> </td>
+            <td> <a href="{{ preprint.creator | reverse_user }}">{{ preprint.creator }}</a> </td>
             <td> {% get_spam_status preprint %} </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 {% if perms.osf.mark_spam %}
-    {% include 'nodes/spam_modal.html' %}
-    {% include 'nodes/ham_modal.html' %}
+    {% include 'preprints/spam_modal.html' %}
+    {% include 'preprints/ham_modal.html' %}
+    {% include 'preprints/unflag_modal.html' %}
     </form>
 {% endif %}
