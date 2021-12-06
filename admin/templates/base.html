@@ -243,13 +243,13 @@
               </div>
           {% endif %}
           {% if perms.osf.view_conference %}
-            <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>OSF Meetings</span></a></li>
+            <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>Meetings</span></a></li>
           {% endif %}
           {% if perms.osf.view_metrics %}
-            <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>OSF Metrics</span></a></li>
+            <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>Metrics</span></a></li>
           {% endif %}
           {% if perms.osf.view_subject%}
-            <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>OSF Subjects</span></a></li>
+            <li><a href="{% url 'subjects:list' %}"><i class='fa fa-link'></i> <span>Subjects</span></a></li>
           {% endif %}
           {% if perms.osf.view_management%}
             <li><a href="{% url 'management:commands' %}"><i class='fa fa-link'></i> <span>Management Commands</span></a></li>

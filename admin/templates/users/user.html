@@ -19,11 +19,7 @@
         <div class="col-md-12">
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
-                {%  if perms.osf.view_spam %}
-                    <a href="{% url 'spam:user-spam' guid=user.guid %}" class="btn btn-default">Related spam</a>
-                {% endif %}
                 {% include "users/reset_password.html" with user=user %}
-
                 {%  if perms.osf.change_osfuser %}
                     <a href="{% url 'users:get-reset-password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
                     {% if user.confirmed %}
@@ -39,9 +35,7 @@
                 {% include "desk/customer.html" with user=user %}
                 {% include "desk/cases.html" with user=user %}
                 {% include "users/merge_accounts.html" with user=user %}
-                {% if not user.deleted %}
-                    <a href="{% url 'users:GDPR-delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">GDPR Delete Account</a>
-                {% endif %}
+                {% include "users/GDPR_delete_user.html" with user=user %}
                 {% include "users/disable_user.html" with user=user %}
                 {% include "users/mark_spam.html" with user=user %}
                 {% include "users/reindex_user_elastic.html" with user=user %}
@@ -65,21 +59,11 @@
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <div class="modal" id="deleteModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12">
-            <h3>User details</h3>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
+            <h2>User: <b>{{ user.username }}</b> <a href="{{ user.absolute_url }}"> ({{user.guid}})</a> </h2>
             <table class="table table-striped">
             <thead>
                 <tr>
