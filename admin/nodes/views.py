@@ -322,7 +322,7 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
             else:
                 change_embargo_date(registration, user, end_date)
         except ValidationError as e:
-            return HttpResponse(e, status=409)
+            messages.error(request, e.message)
         except PermissionDenied as e:
             return HttpResponse(e, status=403)
 
