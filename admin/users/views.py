@@ -9,7 +9,6 @@ from django.views.defaults import page_not_found
 from django.views.generic import (
     View,
     FormView,
-    DeleteView,
     ListView,
     TemplateView
 )
@@ -18,7 +17,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.http import Http404, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
 
@@ -49,7 +48,6 @@ from osf.models.admin_log_entry import (
 
 from admin.desk.utils import DeskClient
 from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
-from admin.users.templatetags.user_extras import reverse_user
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -67,6 +65,8 @@ class UserMixin(PermissionRequiredMixin):
 
 
 class UserView(UserMixin, TemplateView):
+    """ Allows authorized users to view user info.
+    """
     template_name = 'users/user.html'
     paginate_by = 10
     permission_required = 'osf.view_osfuser'
@@ -94,13 +94,13 @@ class UserView(UserMixin, TemplateView):
         ).order_by(
             'title'
         )
+        context.update(self.get_paginated_queryset(preprints, 'preprint'))
 
         nodes = user.contributor_or_group_member_to.annotate(
             guid=F('guids___id')
         ).order_by(
             'title'
         )
-        context.update(self.get_paginated_queryset(preprints, 'preprint'))
         context.update(self.get_paginated_queryset(nodes, 'node'))
 
         context.update({
@@ -108,15 +108,17 @@ class UserView(UserMixin, TemplateView):
             'user': user,
             'form': EmailResetForm(
                 initial={
-                    'emails': [(r, r) for r in self.get_object().emails.values_list('address', flat=True)],
-                }),
+                    'emails': [(r, r) for r in user.emails.values_list('address', flat=True)],
+                }
+            )
         })
+
+        email = user.emails.values_list('address', flat=True).first()
+
         try:
             context.update({'customer_info': DeskClient(self.request.user).find_customer({'email': email})})
         except PermissionError:
             context.update({'customer_info': {}})
-
-        email = user.emails.values_list('address', flat=True).first()
 
         try:
             context.update({'cases': DeskClient(self.request.user).cases({'email': email})})
@@ -127,22 +129,21 @@ class UserView(UserMixin, TemplateView):
 
 
 class UserDisableView(UserMixin, View):
-    """ Allow authorised admin user to remove/restore user
+    """ Allows authorized users to deactivate or reactivate user accounts.
     """
     permission_required = 'osf.change_osfuser'
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.date_disabled is None or kwargs.get('is_spam'):
+        if user.date_disabled:
             user.disable_account()
             user.is_registered = False
             if 'spam_flagged' in user.system_tags:
                 user.tags.through.objects.filter(tag__name='spam_flagged').delete()
             if 'ham_confirmed' in user.system_tags:
                 user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
-            if kwargs.get('is_spam'):
-                user.confirm_spam(save=True)
+            user.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,
@@ -170,12 +171,9 @@ class UserDisableView(UserMixin, View):
 
 
 class UserGDPRDeleteView(UserMixin, View):
-    """ Allow authorised admin user to totally erase user data.
-
-    Interface with OSF database. No admin models.
+    """ Allows authorized users to totally erase user data in compliance with GDPR guidelines.
     """
     permission_required = 'osf.change_osfuser'
-    raise_exception = True
 
     def post(self, request, *args, **kwargs):
         try:
@@ -197,9 +195,7 @@ class UserGDPRDeleteView(UserMixin, View):
 
 
 class UserConfirmSpamView(UserMixin, View):
-    """
-    Allow authorized admin user to delete a spam user and mark all their nodes as private
-
+    """ Allows authorized users to confirm a user as spam and mark all their nodes as private.
     """
     permission_required = 'osf.change_osfuser'
 
@@ -217,8 +213,7 @@ class UserConfirmSpamView(UserMixin, View):
 
 
 class UserConfirmHamView(UserMixin, View):
-    """
-    Allow authorized admin user to undelete a ham user
+    """ Allows authorized users to confirm a user as ham and undelete them.
     """
     permission_required = 'osf.change_osfuser'
 
@@ -236,7 +231,7 @@ class UserConfirmHamView(UserMixin, View):
 
 
 class UserConfirmUnflagView(UserMixin, View):
-    """Allows authorized users to unflag a user and return them to an Spam Status of Unknown/
+    """ Allows authorized users to unflag a user and return them to an Spam Status of Unknown.
     """
     permission_required = 'osf.change_osfuser'
 
@@ -282,11 +277,11 @@ class UserSpamList(PermissionRequiredMixin, ListView):
         }
 
 
-class UserFlaggedSpamList(UserSpamList, DeleteView):
+class UserFlaggedSpamList(UserSpamList, View):
     SPAM_STATUS = SpamStatus.FLAGGED
     template_name = 'users/flagged_spam_list.html'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         if not request.user.has_perm('osf.mark_spam'):
             raise PermissionDenied("You don't have permission to update this user's spam status.")
 
@@ -388,10 +383,6 @@ class UserSearchView(PermissionRequiredMixin, FormView):
     form_class = UserSearchForm
     success_url = reverse_lazy('users:search')
 
-    def __init__(self, *args, **kwargs):
-        self.redirect_url = None
-        super().__init__(*args, **kwargs)
-
     def form_valid(self, form):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
@@ -433,13 +424,7 @@ class UserMergeAccounts(UserMixin, FormView):
         user_to_be_merged = OSFUser.objects.get(guids___id=guid_to_be_merged, guids___id__isnull=False)
         user.merge_user(user_to_be_merged)
 
-        return redirect(reverse_user(user._id))
-
-    def form_invalid(self, form):
-        raise Http404(
-            '{} not found.'.format(
-                form.cleaned_data.get('user_guid_to_be_merged', 'guid')
-            ))
+        return super().form_valid(form)
 
 
 class UserSearchList(PermissionRequiredMixin, ListView):
@@ -591,7 +576,7 @@ class GetUserLink(UserMixin, TemplateView):
         return super().get_context_data(**{
             'user': user,
             'user_link': self.get_link(user),
-            'title':  self.get_link_type(),
+            'title': self.get_link_type(),
             'node_claim_links': self.get_claim_links(user),
         }, **kwargs)
 

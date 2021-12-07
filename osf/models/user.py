@@ -1430,8 +1430,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, save=True):
-        self.is_disabled = True
+        self.disable_account()
+        if 'spam_flagged' in self.system_tags:
+            self.tags.through.objects.filter(tag__name='spam_flagged').delete()
+        if 'ham_confirmed' in self.system_tags:
+            self.tags.through.objects.filter(tag__name='ham_confirmed').delete()
+        self.is_registered = False
         super().confirm_spam(save=save)
+
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
@@ -1439,13 +1445,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def confirm_ham(self, save=False):
         self.is_disabled = False
+        from website.mailchimp_utils import subscribe_on_confirm
+        subscribe_on_confirm(self)
         super().confirm_ham(save=save)
+
         for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
             node.confirm_ham(save=save, train_akismet=False)
         for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
             preprint.confirm_ham(save=save, train_akismet=False)
-
-
 
     @property
     def is_assumed_ham(self):

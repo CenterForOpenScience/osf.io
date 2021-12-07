@@ -6,7 +6,7 @@ import pytz
 import datetime
 import responses
 
-from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
+from osf.models import AdminLogEntry, NodeLog
 from admin.nodes.views import (
     NodeDeleteView,
     NodeRemoveContributorView,

@@ -30,19 +30,23 @@ from admin.preprints import views
 
 pytestmark = pytest.mark.django_db
 
+
 @pytest.fixture()
 def preprint():
     return PreprintFactory()
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
+
 
 @pytest.fixture()
 def req(user):
     req = RequestFactory().get('/fake_path')
     req.user = user
     return req
+
 
 def patch_messages(request):
     from django.contrib.messages.storage.fallback import FallbackStorage
@@ -99,7 +103,7 @@ class TestPreprintView:
     def test_no_user_permissions_raises_error(self, user, preprint, plain_view):
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
-        resp = plain_view.as_view()(request,guid=preprint._id)
+        resp = plain_view.as_view()(request, guid=preprint._id)
         assert resp._headers['location'][1] == f'/accounts/login/?next=/preprints/{preprint._id}/'
 
     def test_get_flagged_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
@@ -229,7 +233,7 @@ class TestPreprintView:
         """ Testing that subjects are changed when providers are changed between two custom taxonomies.
         """
 
-        subject_two = SubjectFactory(provider=provider_two,bepress_subject=subject_one.bepress_subject)
+        subject_two = SubjectFactory(provider=provider_two, bepress_subject=subject_one.bepress_subject)
 
         preprint = PreprintFactory(
             subjects=[[subject_one._id]],

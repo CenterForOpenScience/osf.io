@@ -38,6 +38,4 @@ class SchemaResponseListView(PermissionRequiredMixin, ListView):
         return SchemaResponse.objects.all()
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        print( object_list, **kwargs)
-        print( object_list, **kwargs)
         return {'schema_responses': self.get_queryset()}

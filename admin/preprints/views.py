@@ -3,7 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
-from django.views.generic import DeleteView, ListView, View
+from django.views.generic import ListView, View
 from django.utils import timezone
 from django.urls import reverse_lazy
 
@@ -158,7 +158,8 @@ class PreprintReindexElastic(PreprintMixin, View):
 
 
 class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
-    """ Allows authorized users to remove contributors from preprints. """
+    """ Allows authorized users to remove contributors from preprints.
+    """
     permission_required = ('osf.view_preprint', 'osf.change_preprint')
 
     def add_contributor_removed_log(self, preprint, user):
@@ -247,9 +248,6 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
         }
 
     def post(self, request, *args, **kwargs):
-        if not request.user.has_perm('osf.change_preprintrequest'):
-            raise PermissionDenied('You do not have permission to approve or reject withdrawal requests.')
-
         data = dict(request.POST)
         action = data.pop('action')[0]
         data.pop('csrfmiddlewaretoken', None)
