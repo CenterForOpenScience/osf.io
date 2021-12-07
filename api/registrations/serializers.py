@@ -54,6 +54,8 @@ class RegistrationSerializer(NodeSerializer):
         'date_withdrawn',
         'embargo_end_date',
         'embargoed',
+        'latest_response',
+        'original_response',
         'pending_embargo_approval',
         'pending_embargo_termination_approval',
         'pending_registration_approval',

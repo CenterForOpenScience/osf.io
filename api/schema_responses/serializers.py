@@ -27,6 +27,19 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
     writeable_method_fields = frozenset([
         'revision_responses',
     ])
+    non_anonymized_fields = frozenset([
+        'id',
+        'date_created',
+        'date_modified',
+        'date_submitted',
+        'is_original_response',
+        'links',
+        'registration',
+        'registration_schema',
+        'revision_justification',
+        'revision_responses',
+        'updated_response_keys',
+    ])
 
     id = ser.CharField(source='_id', required=True, allow_null=True)
     type = TypeField()
