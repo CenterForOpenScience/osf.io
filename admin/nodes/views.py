@@ -8,12 +8,17 @@ from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
-from django.views.generic import ListView, View, TemplateView
-from django.shortcuts import redirect
+from django.views.generic import (
+    View,
+    FormView,
+    ListView,
+    TemplateView,
+)
+from django.shortcuts import redirect, reverse
 
 from admin.base.utils import change_embargo_date, validate_embargo_date
-from admin.base.views import GuidFormView, GuidView
-from admin.nodes.templatetags.node_extras import reverse_node
+from admin.base.views import GuidView
+from admin.base.forms import GuidForm
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -74,19 +79,23 @@ class NodeMixin(PermissionRequiredMixin):
         ).get()
 
     def get_success_url(self):
-        return reverse_node(self.kwargs['guid'])
+        return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
 
 
-class NodeSearchView(PermissionRequiredMixin, GuidFormView):
+class NodeSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a node by it's guid.
     """
     template_name = 'nodes/search.html'
     permission_required = 'osf.view_node'
     raise_exception = True
+    form_class = GuidForm
 
-    @property
-    def success_url(self):
-        return reverse_node(self.guid)
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        if guid:
+            return redirect(reverse('nodes:node', kwargs={'guid': guid}))
+
+        return super().form_valid(form)
 
 
 class NodeRemoveContributorView(NodeMixin, View):
@@ -97,7 +106,7 @@ class NodeRemoveContributorView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        user = OSFUser.objects.get(guids___id=self.kwargs.get('user_guid'))
+        user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
         if not node._get_admin_contributors_query(node._contributors.all()).exclude(user=user).exists():
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
@@ -157,7 +166,7 @@ class NodeDeleteView(NodeMixin, TemplateView):
                 date=timezone.now(),
                 should_hide=True,
             ).save()
-        elif not node.is_registration:
+        else:
             node.is_deleted = True
             node.deleted = timezone.now()
             node.deleted_date = node.deleted

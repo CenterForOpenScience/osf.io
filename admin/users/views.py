@@ -46,8 +46,7 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.desk.utils import DeskClient
-from admin.users.forms import EmailResetForm, WorkshopForm, UserSearchForm, MergeUserForm, AddSystemTagForm
+from admin.users.forms import EmailResetForm, UserSearchForm, MergeUserForm, AddSystemTagForm
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -106,6 +105,7 @@ class UserView(UserMixin, TemplateView):
         context.update({
             'desk_info': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/',
             'user': user,
+            'twofactor': user.get_addon('twofactor'),
             'form': EmailResetForm(
                 initial={
                     'emails': [(r, r) for r in user.emails.values_list('address', flat=True)],
@@ -113,19 +113,43 @@ class UserView(UserMixin, TemplateView):
             )
         })
 
-        email = user.emails.values_list('address', flat=True).first()
 
-        try:
-            context.update({'customer_info': DeskClient(self.request.user).find_customer({'email': email})})
-        except PermissionError:
-            context.update({'customer_info': {}})
+class UserSearchView(PermissionRequiredMixin, FormView):
+    """ Allows authorized users to search for a user by their guid, email or full name.
+    """
+    template_name = 'users/search.html'
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+    form_class = UserSearchForm
+    success_url = reverse_lazy('users:search')
 
-        try:
-            context.update({'cases': DeskClient(self.request.user).cases({'email': email})})
-        except PermissionError:
-            context.update({'cases': []})
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['email']
+        if name:
+            return redirect(reverse('users:search-list', kwargs={'name': name}))
 
-        return context
+        if email:
+            user = get_user(email)
+            if not user:
+                return page_not_found(
+                    self.request,
+                    AttributeError(f'resource with id "{email}" not found.')
+                )
+            return redirect(reverse('users:user', kwargs={'guid': user._id}))
+
+        if guid:
+            user = OSFUser.load(guid)
+            if not user:
+                return page_not_found(
+                    self.request,
+                    AttributeError(f'resource with id "{guid}" not found.')
+                )
+
+            return redirect(reverse('users:user', kwargs={'guid': guid}))
+
+        return super().form_valid(form)
 
 
 class UserDisableView(UserMixin, View):
@@ -375,43 +399,6 @@ class UserAddSystemTag(UserMixin, FormView):
         return super().form_valid(form)
 
 
-class UserSearchView(PermissionRequiredMixin, FormView):
-    template_name = 'users/search.html'
-    object_type = 'osfuser'
-    permission_required = 'osf.view_osfuser'
-    raise_exception = True
-    form_class = UserSearchForm
-    success_url = reverse_lazy('users:search')
-
-    def form_valid(self, form):
-        guid = form.cleaned_data['guid']
-        name = form.cleaned_data['name']
-        email = form.cleaned_data['email']
-        if name:
-            return redirect(reverse('users:search-list', kwargs={'name': name}))
-
-        if email:
-            user = get_user(email)
-            if not user:
-                return page_not_found(
-                    self.request,
-                    AttributeError(f'resource with id "{email}" not found.')
-                )
-            return redirect(reverse('users:user', kwargs={'guid': user._id}))
-
-        if guid:
-            user = OSFUser.load(guid)
-            if not user:
-                return page_not_found(
-                    self.request,
-                    AttributeError(f'resource with id "{guid}" not found.')
-                )
-
-            return redirect(reverse('users:user', kwargs={'guid': guid}))
-
-        return super().form_valid(form)
-
-
 class UserMergeAccounts(UserMixin, FormView):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
@@ -453,107 +440,6 @@ class UserSearchList(PermissionRequiredMixin, ListView):
             }
         )
 
-
-class UserWorkshopFormView(PermissionRequiredMixin, FormView):
-    form_class = WorkshopForm
-    object_type = 'user'
-    template_name = 'users/workshop.html'
-    permission_required = 'osf.view_osfuser'
-    raise_exception = True
-
-    def form_valid(self, form):
-        csv_file = form.cleaned_data['document']
-        final = self.parse(csv_file)
-        file_name = csv_file.name
-        results_file_name = '{}_user_stats.csv'.format(file_name.replace(' ', '_').strip('.csv'))
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(results_file_name)
-        writer = csv.writer(response)
-        for row in final:
-            writer.writerow(row)
-        return response
-
-    @staticmethod
-    def find_user_by_email(email):
-        user_list = OSFUser.objects.filter(emails__address=email)
-        return user_list[0] if user_list.exists() else None
-
-    @staticmethod
-    def find_user_by_full_name(full_name):
-        user_list = OSFUser.objects.filter(fullname=full_name)
-        return user_list[0] if user_list.count() == 1 else None
-
-    @staticmethod
-    def find_user_by_family_name(family_name):
-        user_list = OSFUser.objects.filter(family_name=family_name)
-        return user_list[0] if user_list.count() == 1 else None
-
-    @staticmethod
-    def get_num_logs_since_workshop(user, workshop_date):
-        query_date = workshop_date + timedelta(days=1)
-        return NodeLog.objects.filter(user=user, date__gt=query_date).count()
-
-    @staticmethod
-    def get_num_nodes_since_workshop(user, workshop_date):
-        query_date = workshop_date + timedelta(days=1)
-        return Node.objects.filter(creator=user, created__gt=query_date).count()
-
-    @staticmethod
-    def get_user_latest_log(user, workshop_date):
-        query_date = workshop_date + timedelta(days=1)
-        return NodeLog.objects.filter(user=user, date__gt=query_date).latest('date')
-
-    def parse(self, csv_file):
-        """ Parse and add to csv file.
-
-        :param csv_file: Comma separated
-        :return: A list
-        """
-        result = []
-        csv_reader = csv.reader(csv_file)
-
-        for index, row in enumerate(csv_reader):
-            if index == 0:
-                row.extend([
-                    'OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Date'
-                ])
-                result.append(row)
-                continue
-
-            email = row[5]
-            user_by_email = self.find_user_by_email(email)
-
-            if not user_by_email:
-                full_name = row[4]
-                try:
-                    family_name = impute_names(full_name)['family']
-                except UnicodeDecodeError:
-                    row.extend(['Unable to parse name'])
-                    result.append(row)
-                    continue
-
-                user_by_name = self.find_user_by_full_name(full_name) or self.find_user_by_family_name(family_name)
-                if not user_by_name:
-                    row.extend(['', 0, 0, ''])
-                    result.append(row)
-                    continue
-                else:
-                    user = user_by_name
-
-            else:
-                user = user_by_email
-
-            workshop_date = pytz.utc.localize(datetime.strptime(row[1], '%m/%d/%y'))
-            nodes = self.get_num_nodes_since_workshop(user, workshop_date)
-            user_logs = self.get_num_logs_since_workshop(user, workshop_date)
-            last_log_date = self.get_user_latest_log(user, workshop_date).date.strftime('%m/%d/%y') if user_logs else ''
-
-            row.extend([
-                user._id, user_logs, nodes, last_log_date
-            ])
-            result.append(row)
-
-        return result
 
 
 class GetUserLink(UserMixin, TemplateView):
@@ -612,13 +498,8 @@ class GetUserClaimLinks(GetUserLink):
 
         for guid, value in user.unclaimed_records.items():
             obj = Guid.load(guid)
-            url = '{base_url}user/{uid}/{project_id}/claim/?token={token}'.format(
-                base_url=DOMAIN,
-                uid=user._id,
-                project_id=guid,
-                token=value['token']
-            )
-            links.append('Claim URL for {} {}: {}'.format(obj.content_type.model, obj._id, url))
+            url = f'{DOMAIN}user/{user._id}/{guid}/claim/?token={value["token"]}'
+            links.append(f'Claim URL for {obj.content_type.model} {obj._id}: {url}')
 
         return links or ['User currently has no active unclaimed records for any nodes.']
 
@@ -635,20 +516,15 @@ class ResetPasswordView(UserMixin, View):
     def post(self, request, *args, **kwargs):
         email = self.request.POST['emails']
         user = get_user(email)
-        if user is None or user._id != self.kwargs.get('guid'):
-            return HttpResponse(
-                f'user with id "{self.kwargs.get("guid")}" and email "{email}" not found.',
-                status=409
-            )
+        url = furl(DOMAIN)
 
-        reset_abs_url = furl(DOMAIN)
         user.verification_key_v2 = generate_verification_key(verification_type='password')
         user.save()
-        reset_abs_url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
+        url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
         send_mail(
             subject='Reset OSF Password',
-            message=f'Follow this link to reset your password: {reset_abs_url.url}',
+            message=f'Follow this link to reset your password: {url.url}',
             from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )

@@ -1,0 +1,20 @@
+<tr>
+    <td>Two factor</td>
+    <td>
+        {% if twofactor %}
+            <a href="{% url 'users:remove2factor' user.id %}"
+               class="btn btn-default"
+               data-toggle="modal"
+               data-target="#twoFactorModal">
+                Deactivate
+            </a>
+            <div class="modal" id="twoFactorModal">
+                <div class="modal-dialog">
+                    <div class="modal-content"></div>
+                </div>
+            </div>
+        {% else %}
+            None
+        {% endif %}
+    </td>
+</tr>

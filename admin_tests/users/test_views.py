@@ -1,5 +1,4 @@
 import mock
-import csv
 import furl
 import pytz
 import pytest
@@ -7,7 +6,6 @@ from datetime import datetime, timedelta
 
 from nose import tools as nt
 from django.test import RequestFactory
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
@@ -27,7 +25,7 @@ from osf_tests.factories import (
 from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 
 from admin.users import views
-from admin.users.forms import WorkshopForm, UserSearchForm, MergeUserForm
+from admin.users.forms import UserSearchForm, MergeUserForm
 from osf.models.admin_log_entry import AdminLogEntry
 
 pytestmark = pytest.mark.django_db
@@ -392,171 +390,6 @@ class TestRemove2Factor(AdminTestCase):
         self.assertEqual(response.status_code, 302)
 
 
-class TestUserWorkshopFormView(AdminTestCase):
-
-    def setUp(self):
-        self.user = AuthUserFactory()
-        self.auth = Auth(self.user)
-        self.view = views.UserWorkshopFormView()
-        self.node = ProjectFactory(creator=self.user)
-
-        self.mock_data = mock.patch.object(
-            csv,
-            'reader',
-            # parse data into the proper format handling None values as csv reader would
-            side_effect=(lambda values: [[item or '' for item in value] for value in values])
-        )
-        self.mock_data.start()
-
-    def tearDown(self):
-        self.mock_data.stop()
-
-    def _setup_workshop(self, date):
-        self.workshop_date = date
-        self.data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, self.user.username, None],
-        ]
-
-        self.user_exists_by_name_data = [
-            ['number', 'date', 'location', 'topic', 'name', 'email', 'other'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, self.user.fullname, 'unknown@example.com', None],
-        ]
-
-        self.user_not_found_data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, self.workshop_date.strftime('%m/%d/%y'), None, None, None, 'fake@example.com', None],
-        ]
-
-    def _add_log(self, date):
-        self.node.add_log('log_added', params={'project': self.node._id}, auth=self.auth, log_date=date, save=True)
-
-    def test_correct_number_of_columns_added(self):
-        self._setup_workshop(self.node.created)
-        added_columns = ['OSF ID', 'Logs Since Workshop', 'Nodes Created Since Workshop', 'Last Log Data']
-        result_csv = self.view.parse(self.data)
-        nt.assert_equal(len(self.data[0]) + len(added_columns), len(result_csv[0]))
-
-    def test_user_activity_day_of_workshop_and_before(self):
-        self._setup_workshop(self.node.created)
-        # add logs 0 to 48 hours back
-        for time_mod in range(9):
-            self._add_log(self.node.created - timedelta(hours=(time_mod * 6)))
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
-
-    def test_user_activity_after_workshop(self):
-        self._setup_workshop(self.node.created - timedelta(hours=25))
-        self._add_log(self.node.created)
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        # 1 node created, 1 node log
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
-
-        # Test workshop 30 days ago
-        self._setup_workshop(self.node.created - timedelta(days=30))
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
-
-        # Test workshop a year ago
-        self._setup_workshop(self.node.created - timedelta(days=365))
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_logs_since_workshop, 2)
-        nt.assert_equal(user_nodes_created_since_workshop, 1)
-
-    # Regression test for OSF-8089
-    def test_utc_new_day(self):
-        node_date = self.node.created
-        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1)
-        self._setup_workshop(date)
-        self._add_log(self.workshop_date + timedelta(hours=25))
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
-
-    # Regression test for OSF-8089
-    def test_utc_new_day_plus_hour(self):
-        node_date = self.node.created
-        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1, hours=1)
-        self._setup_workshop(date)
-        self._add_log(self.workshop_date + timedelta(hours=25))
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
-
-    # Regression test for OSF-8089
-    def test_utc_new_day_minus_hour(self):
-        node_date = self.node.created
-        date = datetime(node_date.year, node_date.month, node_date.day, 0, tzinfo=pytz.utc) + timedelta(days=1) - timedelta(hours=1)
-        self._setup_workshop(date)
-        self._add_log(self.workshop_date + timedelta(hours=25))
-
-        result_csv = self.view.parse(self.data)
-        user_logs_since_workshop = result_csv[1][-3]
-        nt.assert_equal(user_logs_since_workshop, 1)
-
-    def test_user_osf_account_not_found(self):
-        self._setup_workshop(self.node.created)
-        result_csv = self.view.parse(self.user_not_found_data)
-        user_id = result_csv[1][-4]
-        last_log_date = result_csv[1][-1]
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_id, '')
-        nt.assert_equal(last_log_date, '')
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
-
-    def test_user_found_by_name(self):
-        self._setup_workshop(self.node.created)
-        result_csv = self.view.parse(self.user_exists_by_name_data)
-        user_id = result_csv[1][-4]
-        last_log_date = result_csv[1][-1]
-        user_logs_since_workshop = result_csv[1][-3]
-        user_nodes_created_since_workshop = result_csv[1][-2]
-
-        nt.assert_equal(user_id, self.user._id)
-        nt.assert_equal(last_log_date, '')
-        nt.assert_equal(user_logs_since_workshop, 0)
-        nt.assert_equal(user_nodes_created_since_workshop, 0)
-
-    def test_form_valid(self):
-        request = RequestFactory().post('/fake_path')
-        data = [
-            ['none', 'date', 'none', 'none', 'none', 'email', 'none'],
-            [None, '9/1/16', None, None, None, self.user.username, None],
-        ]
-        data = csv.reader(data)
-        data = bytes(str(data), 'utf-8')
-
-        uploaded = SimpleUploadedFile('test_name', data, content_type='text/csv')
-
-        form = WorkshopForm(data={'document': uploaded})
-        form.is_valid()
-        form.cleaned_data['document'] = uploaded
-        setup_form_view(self.view, request, form)
-
-
 class TestUserSearchView(AdminTestCase):
 
     def setUp(self):
@@ -731,6 +564,7 @@ class TestUserReindex(AdminTestCase):
 
         nt.assert_true(mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+
 
 class TestUserMerge(AdminTestCase):
     def setUp(self):

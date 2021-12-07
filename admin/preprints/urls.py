@@ -4,7 +4,7 @@ from admin.preprints import views
 app_name = 'admin'
 
 urlpatterns = [
-    url(r'^$', views.PreprintFormView.as_view(), name='search'),
+    url(r'^$', views.PreprintSearchView.as_view(), name='search'),
     url(r'^flagged_spam$', views.PreprintFlaggedSpamList.as_view(), name='flagged-spam'),
     url(r'^known_spam$', views.PreprintKnownSpamList.as_view(), name='known-spam'),
     url(r'^known_ham$', views.PreprintKnownHamList.as_view(), name='known-ham'),

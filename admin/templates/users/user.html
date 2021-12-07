@@ -32,8 +32,6 @@
                         {% endif %}
                     {% endif %}
                 {% endif %}
-                {% include "desk/customer.html" with user=user %}
-                {% include "desk/cases.html" with user=user %}
                 {% include "users/merge_accounts.html" with user=user %}
                 {% include "users/GDPR_delete_user.html" with user=user %}
                 {% include "users/disable_user.html" with user=user %}
@@ -118,25 +116,8 @@
                         {% endfor %}
                     </td>
                 </tr>
-                <tr>
-                    <td>Two factor</td>
-                    <td>
-                        {{ user.two_factor }}
-                        {% if user.two_factor %}
-                            <a href="{% url 'users:remove2factor' user.id %}"
-                               class="btn btn-default"
-                               data-toggle="modal"
-                               data-target="#twoFactorModal">
-                                Deactivate
-                            </a>
-                            <div class="modal" id="twoFactorModal">
-                                <div class="modal-dialog">
-                                    <div class="modal-content"></div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </td>
-                </tr>
+                {% include "users/two_factor.html" with user=user %}
+
                 <tr>
                     <td>User is spammy</td>
                     <td>

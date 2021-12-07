@@ -16,7 +16,7 @@
             <div class="col-md-12">
                 <div class="btn-group" role="group">
                     <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
-                    <a href="{% url 'nodes:node-logs' node.guid %}" class="btn btn-primary">View Logs</a>
+                    <a href="{% url 'nodes:node-logs' guid=node.guid %}" class="btn btn-primary">View Logs</a>
                     {% include "nodes/remove_node.html" with node=node %}
                     {% include "nodes/restart_stuck_registration.html" with node=node %}
                     {% include "nodes/make_private.html" with node=node %}

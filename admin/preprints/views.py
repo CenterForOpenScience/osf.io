@@ -3,12 +3,16 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
-from django.views.generic import ListView, View
+from django.views.generic import (
+    View,
+    ListView,
+    FormView,
+)
 from django.utils import timezone
 from django.urls import reverse_lazy
 
-from admin.base.views import GuidFormView, GuidView
-from admin.nodes.templatetags.node_extras import reverse_preprint
+from admin.base.views import GuidView
+from admin.base.forms import GuidForm
 from admin.nodes.views import NodeRemoveContributorView
 from admin.preprints.forms import ChangeProviderForm
 
@@ -49,16 +53,20 @@ class PreprintMixin(PermissionRequiredMixin):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs['guid']})
 
 
-class PreprintFormView(GuidFormView):
+class PreprintSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a specific preprint by guid.
     """
     template_name = 'preprints/search.html'
     permission_required = 'osf.view_preprint'
     raise_exception = True
+    form_class = GuidForm
 
-    @property
-    def success_url(self):
-        return reverse_preprint(self.guid)
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        if guid:
+            return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
+
+        return super().form_valid(form)
 
 
 class PreprintView(PreprintMixin, GuidView):

@@ -9,7 +9,6 @@ urlpatterns = [
     url(r'^flagged_spam$', views.UserFlaggedSpamList.as_view(), name='flagged-spam'),
     url(r'^known_spam$', views.UserKnownSpamList.as_view(), name='known-spam'),
     url(r'^known_ham$', views.UserKnownHamList.as_view(), name='known-ham'),
-    url(r'^workshop$', views.UserWorkshopFormView.as_view(), name='workshop'),
     url(r'^search/(?P<name>.*)/$', views.UserSearchList.as_view(), name='search-list'),
     url(r'^(?P<guid>[a-z0-9]+)/$', views.UserView.as_view(), name='user'),
     url(r'^(?P<guid>[a-z0-9]+)/reset-password/$', views.ResetPasswordView.as_view(), name='reset-password'),
