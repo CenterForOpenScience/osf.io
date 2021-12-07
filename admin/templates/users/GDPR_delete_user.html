@@ -3,10 +3,10 @@
     <div class="modal" id="deleteModal">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form class="well" method="post" action="{% url 'users:GDPR-delete' guid=guid %}">
+                <form class="well" method="post" action="{% url 'users:GDPR-delete' guid=user.guid %}">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal">x</button>
-                        <h3>Are you sure you want to <b>GDPR</b> delete this user? {{ guid }}</h3>
+                        <h3>Are you sure you want to <b>GDPR</b> delete this user? {{ user.guid }}</h3>
                     </div>
                     <div class="modal-body">
                         <h2><b>This is not reversible!</b></h2>

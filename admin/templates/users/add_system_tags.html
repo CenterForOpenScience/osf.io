@@ -10,7 +10,7 @@
          <div class="modal" id="systemTagModal">
              <div class="modal-dialog">
                  <div class="modal-content">
-                     <form class="well" method="post" action="{% url 'users:add-system-tag' guid=guid %}">
+                     <form class="well" method="post" action="{% url 'users:add-system-tag' guid=user.guid %}">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal">x</button>
                             <h3>Add a system tag to this user</h3>

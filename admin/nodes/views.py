@@ -82,6 +82,21 @@ class NodeMixin(PermissionRequiredMixin):
         return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
 
 
+class NodeView(NodeMixin, GuidView):
+    """ Allows authorized users to view node info.
+    """
+    template_name = 'nodes/node.html'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**{
+            'SPAM_STATUS': SpamStatus,
+            'STORAGE_LIMITS': settings.StorageLimits,
+            'node': kwargs.pop('object', self.get_object()),
+        }, **kwargs)
+
+
 class NodeSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a node by it's guid.
     """
@@ -189,21 +204,6 @@ class NodeDeleteView(NodeMixin, TemplateView):
         node.save()
 
         return redirect(self.get_success_url())
-
-
-class NodeView(NodeMixin, GuidView):
-    """ Allows authorized users to view node info.
-    """
-    template_name = 'nodes/node.html'
-    permission_required = 'osf.view_node'
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(**{
-            'SPAM_STATUS': SpamStatus,
-            'STORAGE_LIMITS': settings.StorageLimits,
-            'node': kwargs.pop('object', self.get_object()),
-        }, **kwargs)
 
 
 class AdminNodeLogView(NodeMixin, ListView):

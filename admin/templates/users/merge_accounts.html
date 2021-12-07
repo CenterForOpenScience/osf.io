@@ -2,12 +2,12 @@
 <div class="modal" id="mergeAccountModal">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form class="well" method="post" action="{% url 'users:merge-accounts' guid %}">
+            <form class="well" method="post" action="{% url 'users:merge-accounts' guid=user.guid %}">
                 <div class="modal-header">
                     <h3>Merge Accounts</h3>
                 </div>
                 <div class="modal-body">
-                    <span>Merge this user: <b>{{ user }}</b> <b>({{ guid }})</b>  with:</span>
+                    <span>Merge this user: <b>{{ user }}</b> <b>({{ user.guid }})</b>  with:</span>
                     {% csrf_token %}
                     <input placeholder="Enter guid" name="user_guid_to_be_merged">
                 </div>

@@ -53,24 +53,8 @@ class PreprintMixin(PermissionRequiredMixin):
         return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs['guid']})
 
 
-class PreprintSearchView(PermissionRequiredMixin, FormView):
-    """ Allows authorized users to search for a specific preprint by guid.
-    """
-    template_name = 'preprints/search.html'
-    permission_required = 'osf.view_preprint'
-    raise_exception = True
-    form_class = GuidForm
-
-    def form_valid(self, form):
-        guid = form.cleaned_data['guid']
-        if guid:
-            return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
-
-        return super().form_valid(form)
-
-
 class PreprintView(PreprintMixin, GuidView):
-    """ Allows authorized users to view preprint info.
+    """ Allows authorized users to view preprint info and change a preprint's provider.
     """
     template_name = 'preprints/preprint.html'
     permission_required = ('osf.view_preprint', 'osf.change_preprint',)
@@ -96,9 +80,24 @@ class PreprintView(PreprintMixin, GuidView):
         return super().get_context_data(**{
             'preprint': preprint,
             'SPAM_STATUS': SpamStatus,
-            'message': kwargs.get('message'),
             'form': ChangeProviderForm(instance=preprint),
         }, **kwargs)
+
+
+class PreprintSearchView(PermissionRequiredMixin, FormView):
+    """ Allows authorized users to search for a specific preprint by guid.
+    """
+    template_name = 'preprints/search.html'
+    permission_required = 'osf.view_preprint'
+    raise_exception = True
+    form_class = GuidForm
+
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        if guid:
+            return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
+
+        return super().form_valid(form)
 
 
 class PreprintSpamList(PermissionRequiredMixin, ListView):

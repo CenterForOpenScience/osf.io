@@ -105,7 +105,6 @@ INSTALLED_APPS = (
     'admin.metrics',
     'admin.nodes',
     'admin.users',
-    'admin.desk',
     'admin.meetings',
     'admin.institutions',
     'admin.preprint_providers',

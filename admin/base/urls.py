@@ -3,7 +3,7 @@ from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
 
-base_pattern = '^{}'.format(ADMIN_BASE)
+base_pattern = f'^{ADMIN_BASE}'
 
 urlpatterns = [
     ### ADMIN ###

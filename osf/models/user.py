@@ -1431,11 +1431,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def confirm_spam(self, save=True):
         self.disable_account()
-        if 'spam_flagged' in self.system_tags:
-            self.tags.through.objects.filter(tag__name='spam_flagged').delete()
-        if 'ham_confirmed' in self.system_tags:
-            self.tags.through.objects.filter(tag__name='ham_confirmed').delete()
-        self.is_registered = False
         super().confirm_spam(save=save)
 
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
@@ -1445,6 +1440,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def confirm_ham(self, save=False):
         self.is_disabled = False
+        self.requested_deactivation = False
         from website.mailchimp_utils import subscribe_on_confirm
         subscribe_on_confirm(self)
         super().confirm_ham(save=save)

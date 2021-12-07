@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
@@ -17,17 +16,14 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
-from osf.models.node import Node, NodeLog
 from osf.models.spam import SpamStatus
 from framework.auth import get_user
-from framework.auth.utils import impute_names
 from framework.auth.core import generate_verification_key
 
 from website.mailchimp_utils import subscribe_on_confirm
@@ -46,7 +42,13 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 
-from admin.users.forms import EmailResetForm, UserSearchForm, MergeUserForm, AddSystemTagForm
+from admin.users.forms import (
+    EmailResetForm,
+    UserSearchForm,
+    MergeUserForm,
+    AddSystemTagForm
+)
+from admin.base.views import GuidView
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
@@ -63,7 +65,7 @@ class UserMixin(PermissionRequiredMixin):
         return reverse('users:user', kwargs={'guid': self.kwargs['guid']})
 
 
-class UserView(UserMixin, TemplateView):
+class UserView(UserMixin, GuidView):
     """ Allows authorized users to view user info.
     """
     template_name = 'users/user.html'
@@ -103,7 +105,6 @@ class UserView(UserMixin, TemplateView):
         context.update(self.get_paginated_queryset(nodes, 'node'))
 
         context.update({
-            'desk_info': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/',
             'user': user,
             'twofactor': user.get_addon('twofactor'),
             'form': EmailResetForm(
@@ -112,6 +113,7 @@ class UserView(UserMixin, TemplateView):
                 }
             )
         })
+        return context
 
 
 class UserSearchView(PermissionRequiredMixin, FormView):
@@ -160,14 +162,8 @@ class UserDisableView(UserMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        if user.date_disabled:
+        if user.date_disabled is None:
             user.disable_account()
-            user.is_registered = False
-            if 'spam_flagged' in user.system_tags:
-                user.tags.through.objects.filter(tag__name='spam_flagged').delete()
-            if 'ham_confirmed' in user.system_tags:
-                user.tags.through.objects.filter(tag__name='ham_confirmed').delete()
-            user.confirm_spam(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,
@@ -176,12 +172,10 @@ class UserDisableView(UserMixin, View):
                 action_flag=USER_REMOVED
             )
         else:
+            user.is_disabled = False
             user.requested_deactivation = False
-            user.date_disabled = None
+            from website.mailchimp_utils import subscribe_on_confirm
             subscribe_on_confirm(user)
-            user.is_registered = True
-            user.tags.through.objects.filter(tag__name__in=['spam_flagged', 'spam_confirmed'], tag__system=True).delete()
-            user.confirm_ham(save=True)
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,
@@ -363,9 +357,7 @@ class UserKnownHamList(UserSpamList):
 
 
 class User2FactorDeleteView(UserDisableView):
-    """ Allow authorised admin user to remove 2 factor authentication.
-
-    Interface with OSF database. No admin models.
+    """ Allows authorized users to remove a user's 2 factor authentication.
     """
     template_name = 'users/remove_2_factor.html'
 
@@ -383,9 +375,9 @@ class User2FactorDeleteView(UserDisableView):
 
 
 class UserAddSystemTag(UserMixin, FormView):
-
+    """ Allows authorized users to add system tags to a user.
+    """
     template_name = 'users/add_system_tag.html'
-    object_type = 'osfuser'
     permission_required = 'osf.change_osfuser'
     raise_exception = True
     form_class = AddSystemTagForm
@@ -400,6 +392,8 @@ class UserAddSystemTag(UserMixin, FormView):
 
 
 class UserMergeAccounts(UserMixin, FormView):
+    """ Allows authorized users to merge a user's accounts using their guid.
+    """
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     form_class = MergeUserForm
@@ -439,7 +433,6 @@ class UserSearchList(PermissionRequiredMixin, ListView):
                 'users': query_set
             }
         )
-
 
 
 class GetUserLink(UserMixin, TemplateView):
@@ -484,9 +477,9 @@ class GetPasswordResetLink(GetUserLink):
         user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
         user.save()
 
-        reset_abs_url = furl(DOMAIN)
-        reset_abs_url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-        return reset_abs_url
+        url = furl(DOMAIN)
+        url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
+        return url
 
     def get_link_type(self):
         return 'Password Reset'
@@ -511,6 +504,8 @@ class GetUserClaimLinks(GetUserLink):
 
 
 class ResetPasswordView(UserMixin, View):
+    """ Allows authorized users reset a user's password.
+    """
     permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
@@ -540,9 +535,10 @@ class ResetPasswordView(UserMixin, View):
 
 
 class UserReindexElastic(UserMixin, View):
-    template_name = 'users/reindex_user_elastic.html'
+    """ Allows authorized users to reindex a user in elasticsearch.
+    """
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         user = self.get_object()
         search.search.update_user(user, async_update=False)
         update_admin_log(
