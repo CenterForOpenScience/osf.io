@@ -70,7 +70,6 @@ class PreprintView(PreprintMixin, GuidView):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-
         old_provider = preprint.provider
         new_provider = PreprintProvider.objects.get(id=request.POST['provider'])
         if old_provider != new_provider:

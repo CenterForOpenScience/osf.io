@@ -29,7 +29,7 @@ urlpatterns = [
         name='restart-stuck-registrations'),
     url(r'^(?P<guid>[a-z0-9]+)/remove_stuck_registrations/$', views.RemoveStuckRegistrationsView.as_view(),
         name='remove-stuck-registrations'),
-    url(r'^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_id>[a-z0-9]+)/$', views.NodeRemoveContributorView.as_view(),
+    url(r'^(?P<guid>[a-z0-9]+)/remove_user/(?P<user_guid>[a-z0-9]+)/$', views.NodeRemoveContributorView.as_view(),
         name='remove-user'),
     url(r'^(?P<guid>[a-z0-9]+)/modify_storage_usage/$', views.NodeModifyStorageUsage.as_view(),
         name='adjust-storage-usage'),

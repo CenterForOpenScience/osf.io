@@ -32,7 +32,7 @@
                                 <div class="modal" id="{{ user.id }}Modal">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
-                                            <form class="well" method="post" action="{% url 'nodes:remove-user'  guid=node.guid user_id=user.id  %}">
+                                            <form class="well" method="post" action="{% url 'nodes:remove-user'  guid=node.guid user_guid=user._id  %}">
                                                 <div class="modal-header">
                                                     <button type="button" class="close" data-dismiss="modal">x</button>
                                                     <h3>Removing contributor: {{ user.username }}</h3>

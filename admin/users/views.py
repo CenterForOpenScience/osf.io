@@ -55,6 +55,7 @@ from django.urls import reverse_lazy
 
 
 class UserMixin(PermissionRequiredMixin):
+    raise_exception = True
 
     def get_object(self):
         user = OSFUser.objects.get(guids___id=self.kwargs['guid'])
@@ -102,26 +103,25 @@ class UserView(UserMixin, TemplateView):
         context.update(self.get_paginated_queryset(preprints, 'preprint'))
         context.update(self.get_paginated_queryset(nodes, 'node'))
 
-        context.update({'user': user})
-        context.update({'potential_spam_profile_content': user._get_spam_content({
-            'schools': user.schools,
-            'jobs': user.jobs
-        })})
-        context.update({'form': EmailResetForm(initial={
-            'emails': [(r, r) for r in self.get_object().emails.values_list('address', flat=True)],
-        })})
-        context.update({'desk_info': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/'})
+        context.update({
+            'desk_info': f'https://{DeskClient.SITE_NAME}.desk.com/web/agent/customer/',
+            'user': user,
+            'form': EmailResetForm(
+                initial={
+                    'emails': [(r, r) for r in self.get_object().emails.values_list('address', flat=True)],
+                }),
+        })
         try:
             context.update({'customer_info': DeskClient(self.request.user).find_customer({'email': email})})
         except PermissionError:
             context.update({'customer_info': {}})
 
         email = user.emails.values_list('address', flat=True).first()
+
         try:
             context.update({'cases': DeskClient(self.request.user).cases({'email': email})})
         except PermissionError:
             context.update({'cases': []})
-
 
         return context
 
@@ -164,6 +164,7 @@ class UserDisableView(UserMixin, View):
                 message=f'User account {user.pk} reenabled',
                 action_flag=USER_RESTORED
             )
+        user.save()
 
         return redirect(self.get_success_url())
 
@@ -200,7 +201,7 @@ class UserConfirmSpamView(UserMixin, View):
     Allow authorized admin user to delete a spam user and mark all their nodes as private
 
     """
-    permission_required = 'osf.mark_spam'
+    permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
@@ -219,7 +220,7 @@ class UserConfirmHamView(UserMixin, View):
     """
     Allow authorized admin user to undelete a ham user
     """
-    permission_required = 'osf.mark_spam'
+    permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
@@ -237,7 +238,7 @@ class UserConfirmHamView(UserMixin, View):
 class UserConfirmUnflagView(UserMixin, View):
     """Allows authorized users to unflag a user and return them to an Spam Status of Unknown/
     """
-    permission_required = 'osf.mark_spam'
+    permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
@@ -349,17 +350,14 @@ class User2FactorDeleteView(UserDisableView):
     """
     template_name = 'users/remove_2_factor.html'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         user = self.get_object()
-        try:
-            user.delete_addon('twofactor')
-        except AttributeError:
-            raise Http404(f'user with id "{self.kwargs.get("guid")}" not found.')
+        user.delete_addon('twofactor')
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user.pk,
             object_repr='User',
-            message='Removed 2 factor auth for user {}'.format(user.pk),
+            message=f'Removed 2 factor auth for user {user.pk}',
             action_flag=USER_2_FACTOR
         )
         return redirect(self.get_success_url())
@@ -659,10 +657,9 @@ class ResetPasswordView(UserMixin, View):
             )
 
         reset_abs_url = furl(DOMAIN)
-        reset_abs_url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-
         user.verification_key_v2 = generate_verification_key(verification_type='password')
         user.save()
+        reset_abs_url.path.add(f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
         send_mail(
             subject='Reset OSF Password',

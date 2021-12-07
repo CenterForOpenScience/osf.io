@@ -1430,6 +1430,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, save=True):
+        self.is_disabled = True
         super().confirm_spam(save=save)
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
             node.confirm_spam(train_akismet=False)
@@ -1437,11 +1438,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
+        self.is_disabled = False
         super().confirm_ham(save=save)
         for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
             node.confirm_ham(save=save, train_akismet=False)
         for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
             preprint.confirm_ham(save=save, train_akismet=False)
+
+
 
     @property
     def is_assumed_ham(self):

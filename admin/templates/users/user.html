@@ -44,17 +44,17 @@
     </div>
     <div class="row">
         <div class="col-md-12">
-            <div class="modal" id="getResetModal" style="display: none">
+            <div class="modal" id="getResetModal" >
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <div class="modal" id="getConfirmationModal" style="display: none">
+            <div class="modal" id="getConfirmationModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <div class="modal" id="getUserClaimModal" style="display: none">
+            <div class="modal" id="getUserClaimModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
@@ -145,10 +145,6 @@
                 </tr>
                 {% include "users/add_system_tags.html" with user=user %}
                 {% include "nodes/spam_status.html" with resource=user %}
-                <tr>
-                    <td>Profile content checked for spam</td>
-                    <td>{{ potential_spam_profile_content }}</td>
-                </tr>
                 <tr>
                     <td>Preprints</td>
                     <td>

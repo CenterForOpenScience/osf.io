@@ -34,33 +34,15 @@ from osf.models.admin_log_entry import AdminLogEntry
 pytestmark = pytest.mark.django_db
 
 
+def patch_messages(request):
+    # django.contrib.messages has a bug which effects unittests
+    # more info here -> https://code.djangoproject.com/ticket/17971
+    setattr(request, 'session', 'session')
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
+
+
 class TestUserView(AdminTestCase):
-    def test_no_guid(self):
-        request = RequestFactory().get('/fake_path')
-        view = views.UserView()
-        view = setup_view(view, request)
-        with nt.assert_raises(AttributeError):
-            view.get_object()
-
-    def test_load_data(self):
-        user = UserFactory()
-        guid = user._id
-        request = RequestFactory().get('/fake_path')
-        view = views.UserView()
-        view = setup_view(view, request, guid=guid)
-        res = view.get_object()
-        nt.assert_is_instance(res, dict)
-
-    def test_name_data(self):
-        user = UserFactory()
-        guid = user._id
-        request = RequestFactory().get('/fake_path')
-        view = views.UserView()
-        view = setup_view(view, request, guid=guid)
-        temp_object = view.get_object()
-        view.object = temp_object
-        res = view.get_context_data()
-        nt.assert_equal(res[views.UserView.context_object_name], temp_object)
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -91,29 +73,19 @@ class TestResetPasswordView(AdminTestCase):
         super(TestResetPasswordView, self).setUp()
         self.user = UserFactory()
         self.request = RequestFactory().get('/fake_path')
+        self.request.POST = {'emails': self.user.emails.all()}
         self.request.user = self.user
+
         self.plain_view = views.ResetPasswordView
         self.view = setup_view(self.plain_view(), self.request, guid=self.user._id)
-
-    def test_get_initial(self):
-        self.view.user = self.user
-        self.view.get_initial()
-        res = self.view.initial
-        nt.assert_is_instance(res, dict)
-        nt.assert_equal(res['guid'], self.user._id)
-        nt.assert_equal(res['emails'], [(r, r) for r in self.user.emails.values_list('address', flat=True)])
-
-    def test_reset_password_context(self):
-        self.view.user = self.user
-        res = self.view.get_context_data()
-        nt.assert_is_instance(res, dict)
-        nt.assert_in((self.user.emails.first().address, self.user.emails.first().address), self.view.initial['emails'])
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
 
         guid = user._id
-        request = RequestFactory().get(reverse('users:reset_password', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:reset-password', kwargs={'guid': guid}))
+        request.POST = {'emails': user.emails.all()}
+
         request.user = user
 
         with self.assertRaises(PermissionDenied):
@@ -127,46 +99,34 @@ class TestResetPasswordView(AdminTestCase):
         user.user_permissions.add(change_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('users:reset_password', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:reset-password', kwargs={'guid': guid}))
+        request.POST = {'emails': ', '.join(user.emails.all().values_list('address', flat=True))}
         request.user = user
 
         response = views.ResetPasswordView.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
-class TestDeleteUser(AdminTestCase):
+class TestGDPRDeleteUser(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
         self.view = views.UserGDPRDeleteView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    def test_get_object(self):
-        obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
-
     def test_gdpr_delete_user(self):
-        # django.contrib.messages has a bug which effects unittests
-        # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(self.request, 'session', 'session')
-        messages = FallbackStorage(self.request)
-        setattr(self.request, '_messages', messages)
+        patch_messages(self.request)
 
         count = AdminLogEntry.objects.count()
-        self.view().delete(self.request)
+        self.view().post(self.request)
         self.user.reload()
         nt.assert_true(self.user.deleted)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
-    def test_no_user(self):
-        view = setup_view(views.UserGDPRDeleteView(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
-            view.delete(self.request)
-
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
         guid = user._id
-        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request = RequestFactory().get(reverse('users:GDPR-delete', kwargs={'guid': guid}))
         request.user = user
 
         with self.assertRaises(PermissionDenied):
@@ -174,17 +134,16 @@ class TestDeleteUser(AdminTestCase):
 
     def test_correct_view_permissions(self):
         user = UserFactory()
-        guid = user._id
-
         change_permission = Permission.objects.get(codename='change_osfuser')
         user.user_permissions.add(change_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('users:GDPR_delete', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:GDPR-delete', kwargs={'guid': user._id}))
+        patch_messages(request)
         request.user = user
 
-        response = self.view.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        response = self.view.as_view()(request, guid=user._id)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestDisableUser(AdminTestCase):
@@ -194,28 +153,19 @@ class TestDisableUser(AdminTestCase):
         self.view = views.UserDisableView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    def test_get_object(self):
-        obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
-
-    def test_get_context(self):
-        res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
-
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         count = AdminLogEntry.objects.count()
-        self.view().delete(self.request)
+        self.view().post(self.request)
         self.user.reload()
         nt.assert_true(self.user.is_disabled)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        self.view().delete(self.request)
+        self.view().post(self.request)
         count = AdminLogEntry.objects.count()
-        self.view().delete(self.request)
+        self.view().post(self.request)
         self.user.reload()
         nt.assert_false(self.user.is_disabled)
         nt.assert_false(self.user.requested_deactivation)
@@ -223,8 +173,8 @@ class TestDisableUser(AdminTestCase):
 
     def test_no_user(self):
         view = setup_view(views.UserDisableView(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
-            view.delete(self.request)
+        with nt.assert_raises(OSFUser.DoesNotExist):
+            view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
@@ -243,34 +193,25 @@ class TestDisableUser(AdminTestCase):
         user.user_permissions.add(change_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('users:disable', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:disable', kwargs={'guid': guid}))
         request.user = user
 
         response = self.view.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestHamUserRestore(AdminTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.HamUserRestoreView
+        self.view = views.UserConfirmHamView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
 
-    def test_get_object(self):
-        obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
-
-    def test_get_context(self):
-        res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
-
     def test_enable_user(self):
-        self.user.disable_account()
+        self.user.is_disabled = True
         self.user.save()
         nt.assert_true(self.user.is_disabled)
-        self.view().delete(self.request)
+        self.view().post(self.request)
         self.user.reload()
 
         nt.assert_false(self.user.is_disabled)
@@ -283,38 +224,28 @@ class TestDisableSpamUser(AdminTestCase):
         self.public_node = ProjectFactory(creator=self.user, is_public=True)
         self.private_node = ProjectFactory(creator=self.user, is_public=False)
         self.request = RequestFactory().post('/fake_path')
-        self.view = views.SpamUserView
+        self.view = views.UserConfirmSpamView
         self.view = setup_log_view(self.view, self.request, guid=self.user._id)
-
-    def test_get_object(self):
-        obj = self.view().get_object()
-        nt.assert_is_instance(obj, OSFUser)
-
-    def test_get_context(self):
-        res = self.view().get_context_data(object=self.user)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.user._id)
 
     def test_disable_spam_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        count = AdminLogEntry.objects.count()
-        self.view().delete(self.request)
+        self.view().post(self.request)
         self.user.reload()
         self.public_node.reload()
         nt.assert_true(self.user.is_disabled)
         nt.assert_true(self.user.spam_status == SpamStatus.SPAM)
         nt.assert_false(self.public_node.is_public)
-        nt.assert_equal(AdminLogEntry.objects.count(), count + 3)
+        nt.assert_true(AdminLogEntry.objects.exists())
 
     def test_no_user(self):
         view = setup_view(self.view(), self.request, guid='meh')
-        with nt.assert_raises(Http404):
-            view.delete(self.request)
+        with nt.assert_raises(OSFUser.DoesNotExist):
+            view.post(self.request)
 
     def test_no_user_permissions_raises_error(self):
         user = UserFactory()
         guid = user._id
-        request = RequestFactory().get(reverse('users:spam_disable', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:confirm-spam', kwargs={'guid': guid}))
         request.user = user
 
         with self.assertRaises(PermissionDenied):
@@ -328,11 +259,11 @@ class TestDisableSpamUser(AdminTestCase):
         user.user_permissions.add(change_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('users:spam_disable', kwargs={'guid': guid}))
+        request = RequestFactory().post(reverse('users:confirm-spam', kwargs={'guid': guid}))
         request.user = user
 
         response = self.view.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 class SpamUserListMixin(object):
@@ -376,6 +307,7 @@ class SpamUserListMixin(object):
 
         response = self.plain_view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
+
 
 class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
@@ -428,25 +360,20 @@ class TestRemove2Factor(AdminTestCase):
 
         self.url = reverse('users:remove2factor', kwargs={'guid': self.user._id})
 
-    @mock.patch('osf.models.user.OSFUser.delete_addon')
-    def test_remove_two_factor_get(self, mock_delete_addon):
-        self.setup_view.delete(self.request)
-        mock_delete_addon.assert_called_with('twofactor')
-
     def test_integration_delete_two_factor(self):
         user_addon = self.user.get_or_add_addon('twofactor')
         nt.assert_not_equal(user_addon, None)
         user_settings = self.user.get_addon('twofactor')
         nt.assert_not_equal(user_settings, None)
         count = AdminLogEntry.objects.count()
-        self.setup_view.delete(self.request)
+        self.setup_view.post(self.request)
         post_addon = self.user.get_addon('twofactor')
         nt.assert_equal(post_addon, None)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_no_user_permissions_raises_error(self):
         guid = self.user._id
-        request = RequestFactory().get(self.url)
+        request = RequestFactory().post(self.url)
         request.user = self.user
 
         with self.assertRaises(PermissionDenied):
@@ -459,11 +386,11 @@ class TestRemove2Factor(AdminTestCase):
         self.user.user_permissions.add(change_permission)
         self.user.save()
 
-        request = RequestFactory().get(self.url)
+        request = RequestFactory().post(self.url)
         request.user = self.user
 
         response = self.view.as_view()(request, guid=guid)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 class TestUserWorkshopFormView(AdminTestCase):
@@ -655,7 +582,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_name(self):
         form_data = {
@@ -665,7 +592,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/search/Hardy/')
+        nt.assert_equal(response._headers['location'][1], '/users/search/Hardy/')
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
@@ -675,7 +602,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
+        nt.assert_equal(response._headers['location'][1], '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
 
     def test_search_user_by_username(self):
         form_data = {
@@ -685,7 +612,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_alternate_email(self):
         form_data = {
@@ -695,7 +622,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/users/{}/'.format(self.user_2.guids.first()._id))
+        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_2.guids.first()._id))
 
     def test_search_user_list(self):
         view = views.UserSearchList()

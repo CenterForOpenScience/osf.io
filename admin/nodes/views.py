@@ -97,7 +97,7 @@ class NodeRemoveContributorView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
+        user = OSFUser.objects.get(guids___id=self.kwargs.get('user_guid'))
         if not node._get_admin_contributors_query(node._contributors.all()).exclude(user=user).exists():
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
@@ -193,7 +193,7 @@ class NodeView(NodeMixin, GuidView):
         return super().get_context_data(**{
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
-            'node': kwargs.pop('object'),
+            'node': kwargs.pop('object', self.get_object()),
         }, **kwargs)
 
 

@@ -171,6 +171,7 @@ def mock_akismet():
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
             with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+                rsps.add(responses.POST, f'https://test.crossref.org/servlet/deposit', status=200)
                 yield rsps
 
 
