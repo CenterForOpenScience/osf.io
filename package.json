@@ -90,8 +90,7 @@
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
   },
-  {
-    "resolutions": {
+  "resolutions": {
     "fsevents": "^2.0.0"
   }
 }
