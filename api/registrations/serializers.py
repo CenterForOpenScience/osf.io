@@ -66,6 +66,7 @@ class RegistrationSerializer(NodeSerializer):
         'registration_responses',
         'registration_schema',
         'registration_supplement',
+        'schema_responses',
         'withdrawal_justification',
         'withdrawn',
     ]
