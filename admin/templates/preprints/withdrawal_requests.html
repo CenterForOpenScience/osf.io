@@ -4,7 +4,6 @@
 <title>Preprint Withdrawal Requests</title>
 {% endblock title %}
 {% block content %}
-{% load user_extras %}
 {% load node_extras %}
 {% include "util/pagination.html" with items=page status=status %}
 <form action="{% url 'preprints:withdrawal-requests' %}" method="POST">
@@ -41,7 +40,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ request.target_guid | reverse_preprint }}" class="btn btn-primary">
+                        <a href="{{ request.target | reverse_preprint }}" class="btn btn-primary">
                             {{ request.target_guid }}
                         </a>
                     </td>

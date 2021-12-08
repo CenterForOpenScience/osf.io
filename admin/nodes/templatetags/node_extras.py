@@ -17,14 +17,12 @@ register = template.Library()
 
 @register.filter
 def reverse_node(value):
-    if isinstance(value, (AbstractNode, Registration)):
-        value = value._id
-    return reverse('nodes:node', kwargs={'guid': value})
+    return reverse('nodes:node', kwargs={'guid': value._id})
 
 
 @register.filter
 def reverse_preprint(value):
-    return reverse('preprints:preprint', kwargs={'guid': value})
+    return reverse('preprints:preprint', kwargs={'guid': value._id})
 
 
 @register.filter
@@ -34,17 +32,17 @@ def reverse_user(user):
 
 @register.filter
 def reverse_osf_group(value):
-    return reverse('osf_groups:osf_group', kwargs={'id': value})
+    return reverse('osf_groups:osf_group', kwargs={'id': value.id})
 
 
 @register.filter
 def reverse_registration_provider(value):
-    return reverse('registration_providers:detail', kwargs={'registration_provider_id': value})
+    return reverse('registration_providers:detail', kwargs={'registration_provider_id': value.provider.id})
 
 
 @register.filter
 def reverse_preprint_provider(value):
-    return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': value})
+    return reverse('preprint_providers:detail', kwargs={'preprint_provider_id': value.id})
 
 
 @register.filter

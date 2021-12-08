@@ -161,7 +161,7 @@
               </div>
           {% endif %}
           {% if perms.osf.view_spam %}
-            <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>Flagged Comments</span></a></li>
+            <li><a href="{% url 'comments:comments' %}"><i class='fa fa-link'></i> <span>Flagged Comments</span></a></li>
           {% endif %}
           {% if perms.osf.view_institution %}
               <li><a role="button" data-toggle="collapse" href="#collapseInstitutions">

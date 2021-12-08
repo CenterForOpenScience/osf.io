@@ -82,7 +82,7 @@
                             <td>
                                 <select class="form-control" id="node-select">
                                     {% for node in group.nodes %}
-                                        <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
+                                        <option value="{{ node | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
                                     {% endfor %}
                                 </select>
                             </td>

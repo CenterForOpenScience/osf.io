@@ -101,7 +101,7 @@ INSTALLED_APPS = (
     # Internal apps
     'admin.common_auth',
     'admin.base',
-    'admin.spam',
+    'admin.comments',
     'admin.metrics',
     'admin.nodes',
     'admin.users',

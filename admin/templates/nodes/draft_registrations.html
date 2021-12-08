@@ -1,10 +1,4 @@
-{% load user_extras %}
 {% load node_extras %}
-    {{ draft_registrations }}
-    {{ draft_registrations }}
-    {{ draft_registrations }}
-
-
 
 {% if draft_registrations %}
     <tr>
@@ -61,15 +55,15 @@
                         </tr>
                         <tr>
                             <td>Branched From</td>
-                            <td><a href="{{ draft_registration.branched_from_id | reverse_node }}">{{ draft_registration.branched_from.title }}</a></td>
+                            <td><a href="{{ draft_registration.branched_from | reverse_node }}">{{ draft_registration.branched_from.title }}</a></td>
                         </tr>
                         <tr>
                             <td>Provider</td>
-                            <td><a href="{{ draft_registration.provider_id | reverse_registration_provider }}">{{ draft_registration.provider.name }}</a></td>
+                            <td><a href="{{ draft_registration | reverse_registration_provider }}">{{ draft_registration.provider.name }}</a></td>
                         </tr>
                         <tr>
                             <td>Registered Node</td>
-                            <td><a href="{{ draft_registration.registered_node_id | reverse_node }}">{{ draft_registration.registered_node.title }}</a></td>
+                            <td><a href="{{ draft_registration.registered_node | reverse_node }}">{{ draft_registration.registered_node.title }}</a></td>
                         </tr>
                     </tbody>
                 </table>

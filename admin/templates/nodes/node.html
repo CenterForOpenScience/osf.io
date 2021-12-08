@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load user_extras %}
 {% load node_extras %}
 {% block title %}
     <title>{{ node.type|cut:'osf.'|title }}: {{node.guid}} </title>
@@ -67,7 +66,7 @@
                     <tr>
                         <td>Provider</td>
                         {% if node.provider %}
-                            <td><a href="{{ node.provider.id | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
+                            <td><a href="{{ node | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
                         {% else %}
                             <td>None</td>
                         {% endif %}

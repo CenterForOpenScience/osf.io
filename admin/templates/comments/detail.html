@@ -1,28 +1,21 @@
 {% extends "base.html" %}
 {% load static %}
-{% load user_extras %}
-{% load spam_extras %}
+{% load node_extras %}
+{% load comment_extras %}
 {% block title %}
     <title>Comment</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
         <div class="row">
-            <a href="{% reverse_spam_list page=page_number status=status %}"
+            <a href="{% reverse_comment_list page=page_number status=status %}"
                class="btn btn-primary">
                 Back to general list
             </a>
-            <a href="{% reverse_spam_user comment.author_id page=page_number status=status %}"
+            <a href="{% reverse_comment_user comment.user page=page_number status=status %}"
                class="btn btn-primary">
                 Back to user's list
             </a>
-            {%  if perms.osf.mark_spam %}
-            <a href="{% url 'spam:email' comment.id %}"
-               data-toggle="modal" data-target="#email"
-               class="btn btn-default">
-                Email
-            </a>
-            {% endif %}
             <div class="modal" id="email">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
@@ -30,44 +23,30 @@
                 </div>
             </div>
         </div>
-
         <br>
-
         {%  if perms.osf.mark_spam %}
-        <div class="row">
-        <div class="panel col-md-6">
-        <form action="{% reverse_spam_detail comment.id page=page_number status=status %}"
-              method="post" class="form-inline">
-            {% csrf_token %}
-            {% if form.errors %}
-                <div class="alert alert-danger">{{ form.errors }}</div>
-            {% endif %}
-            <label for="{{ form.confirm.id_for_label }}">Confirm:</label>
-            <div class="btn-group" data-toggle="buttons">
-                {% for choice in form.confirm  %}
-                    {{ choice.id }}
-                <label class="btn btn-primary">
-                    <input type="radio" id="{{ choice.id_for_label }}" autocomplete="off">{{ choice.choice_label }}{{ choice.tag }}
-                </label>
-                {% endfor %}
+            <div class="row">
+                <div class="panel col-md-6">
+                    <form action="{% url 'comments:mark-spam' comment_id=comment.id %}" method="post" class="form-inline">
+                        {% csrf_token %}
+                        <button class="btn btn-danger" type="submit" name="action" value="spam">Spam</button>
+                        <button class="btn btn-success" type="submit" name="action" value="ham">Ham</button>
+                        <button class="btn btn-default" type="submit" name="action" value="unflag">Unflag</button>
+                    </form>
+                </div>
             </div>
-            <input class="btn btn-danger" type="submit" value="Submit">
-        </form>
-        </div>
-        </div>
         {% endif %}
-
-        {# General info about the comment #}
         <div class="row">
             <div class="col-md-6">
                 <h4>
                     <strong>Author:</strong> {{ comment.author.fullname }}
                     <small>
-                        (<a href="{{ comment.author_path }}">
+                        <a href="{{ comment.author_path }}">
                             User's <b>osf</b> profile
-                        </a>) (<a href="{{ comment.author | reverse_user }}">
+                        </a>
+                        <a href="{{ comment.user | reverse_user }}">
                             User's profile
-                        </a>)
+                        </a>
                     </small>
                 </h4>
             </div>
@@ -75,8 +54,6 @@
                 <h4><strong>Comment ID:</strong> {{ comment.id }}</h4>
             </div>
         </div>
-
-        {# Spam Status #}
         <div class="row">
             <div class="col-md-6">
                 <h4>
@@ -93,15 +70,13 @@
                 </h4>
             </div>
         </div>
-
-        {# Comment date and content #}
         <div class="row">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h4>
                         <strong>Comment content</strong>
                         created on:
-                        {{ comment.date_created }}
+                        {{ comment.created|date }}
                     </h4>
                 </div>
                 <div class="panel-body">
@@ -109,7 +84,6 @@
                 </div>
             </div>
         </div>
-
         <h4><strong>Reports</strong></h4>
         {% for report in comment.reports %}
             <div class="row">
@@ -123,19 +97,7 @@
                         </h4>
                     </div>
                     <div class="panel-body">
-                        <div class="col-md-6">
-                            <strong>Reporter:</strong>
-                            {{ report.reporter.fullname }}
-                            (<a href="{{ report.reporter | reverse_user }}">
-                            User's profile
-                            </a>)
-                        </div>
-                        <div class="col-md-6">
-                            <strong>
-                                Reason:
-                            </strong>
-                            {{ report.reason|default:"--Nothing--" }}
-                        </div>
+                        {{ report }}
                     </div>
                 </div>
             </div>

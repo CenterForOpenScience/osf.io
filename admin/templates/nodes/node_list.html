@@ -37,7 +37,7 @@
             </td>
             {% endif %}
             <td>
-                <a href="{{ node.guid | reverse_node }}"
+                <a href="{{ node | reverse_node }}"
                    class="btn btn-primary">
                     {{ node.guid }}
                 </a>
@@ -49,7 +49,7 @@
                 {% if not node.parent %}
                     None
                 {% else %}
-                    <a href="{{ node.parent.id | reverse_node }}">
+                    <a href="{{ node.parent | reverse_node }}">
                         {{ node.parent }}
                     </a>
                 {% endif %}

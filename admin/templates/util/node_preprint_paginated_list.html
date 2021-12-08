@@ -66,11 +66,11 @@
             <tr>
                 <td>
                     {% if resource_type == "node" %}
-                        <a href="{{ item.guid | reverse_node }}">
+                        <a href="{{ item | reverse_node }}">
                             {{ item.guid }}
                         </a>
                     {% else %}
-                        <a href="{{ item.guid | reverse_preprint }}">
+                        <a href="{{ item | reverse_preprint }}">
                             {{ item.guid }}
                         </a>
                     {% endif %}
