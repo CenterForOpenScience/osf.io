@@ -105,7 +105,6 @@ class CommentSpamView(PermissionRequiredMixin, View):
     def post(self, request, comment_id, **kwargs):
         comment = Comment.objects.get(id=comment_id)
 
-        print(request.POST)
         action = request.POST['action']
         if action == 'spam':
             comment.confirm_spam(save=True)

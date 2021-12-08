@@ -26,7 +26,6 @@ from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
-from website.mailchimp_utils import subscribe_on_confirm
 from website import search
 
 from osf.models.admin_log_entry import (

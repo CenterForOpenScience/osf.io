@@ -4,7 +4,6 @@ from django.utils.safestring import mark_safe
 
 from osf.models import (
     AbstractNode,
-    Registration,
     Contributor,
     Preprint,
     PreprintContributor
