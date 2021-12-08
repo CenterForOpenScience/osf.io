@@ -162,7 +162,7 @@ class UserDisableView(UserMixin, View):
     def post(self, request, *args, **kwargs):
         user = self.get_object()
         if user.date_disabled is None:
-            user.disable_account()
+            user.deactivate_account()
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,
@@ -171,10 +171,7 @@ class UserDisableView(UserMixin, View):
                 action_flag=USER_REMOVED
             )
         else:
-            user.is_disabled = False
-            user.requested_deactivation = False
-            from website.mailchimp_utils import subscribe_on_confirm
-            subscribe_on_confirm(user)
+            user.reactivate_account()
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=user.pk,

@@ -2115,7 +2115,7 @@ class SpamOverrideMixin(SpamMixin):
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
-            user.disable_account()
+            user.deactivate_account()
             user.is_registered = False
             mails.send_mail(
                 to_addr=user.username,

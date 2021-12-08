@@ -979,7 +979,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
-    def disable_account(self):
+    def deactivate_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
         from mailchimp emails, remove any existing sessions.
@@ -1014,6 +1014,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+
+    def reactivate_account(self):
+        """
+        Enable user account
+        """
+        self.is_disabled = False
+        self.requested_deactivation = False
+        from website.mailchimp_utils import subscribe_on_confirm
+        subscribe_on_confirm(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
@@ -1430,7 +1439,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, save=True):
-        self.disable_account()
+        self.deactivate_account()
         super().confirm_spam(save=save)
 
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
@@ -1439,10 +1448,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
-        self.is_disabled = False
-        self.requested_deactivation = False
-        from website.mailchimp_utils import subscribe_on_confirm
-        subscribe_on_confirm(self)
+        self.reactivate_account()
         super().confirm_ham(save=save)
 
         for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
@@ -1865,7 +1871,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.disable_account()
+        self.deactivate_account()
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():
