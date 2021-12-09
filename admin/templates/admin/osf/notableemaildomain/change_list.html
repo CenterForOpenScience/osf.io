@@ -1,0 +1,13 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    {% if has_add_permission %}
+        <li>
+            <a href="{% url 'admin:osf_notableemaildomain_bulkadd' %}" class="addlink">
+                {% trans "Bulk-add notable email domains" %}
+            </a>
+        </li>
+    {% endif %}
+{% endblock %}

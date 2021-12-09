@@ -1,9 +1,13 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.conf.urls import url
+from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
-from osf.models import OSFUser, Node, BlacklistedEmailDomain, NodeLicense
+from osf.models import OSFUser, Node, NotableEmailDomain, NodeLicense
 
 
 def list_displayable_fields(cls):
@@ -39,11 +43,62 @@ class LicenseAdmin(admin.ModelAdmin):
     fields = list_displayable_fields(NodeLicense)
 
 
-class BlacklistedEmailDomainAdmin(admin.ModelAdmin):
-    fields = list_displayable_fields(BlacklistedEmailDomain)
-    ordering = ('domain', )
+class NotableEmailDomainAdmin(admin.ModelAdmin):
+    fields = list_displayable_fields(NotableEmailDomain)
+    ordering = ('-id',)
+    list_display = ('domain', 'note')
+    list_filter = ('note',)
+    search_fields = ('domain',)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return [
+            url(
+                r'^bulkadd/$',
+                self.admin_site.admin_view(self.bulk_add_view),
+                name='osf_notableemaildomain_bulkadd',
+            ),
+            *urls,
+        ]
+
+    def bulk_add_view(self, request):
+        if request.method == 'GET':
+
+            context = {
+                **self.admin_site.each_context(request),
+                'note_choices': list(NotableEmailDomain.Note),
+            }
+            return TemplateResponse(request, 'admin/osf/notableemaildomain/bulkadd.html', context)
+
+        if request.method == 'POST':
+            domains = filter(
+                None,  # remove empty lines
+                request.POST['notable_email_domains'].split('\n'),
+            )
+            num_added = self._bulk_add(domains, request.POST['note'])
+            self.message_user(
+                request,
+                f'Success! {num_added} notable email domains added!',
+                messages.SUCCESS,
+            )
+            return HttpResponseRedirect(reverse('admin:osf_notableemaildomain_changelist'))
+
+    def _bulk_add(self, domain_names, note):
+        num_added = 0
+        for domain_name in domain_names:
+            domain_name = domain_name.strip().lower()
+            if domain_name:
+                num_added += 1
+                NotableEmailDomain.objects.update_or_create(
+                    domain=domain_name,
+                    defaults={
+                        'note': note,
+                    },
+                )
+        return num_added
+
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
-admin.site.register(BlacklistedEmailDomain, BlacklistedEmailDomainAdmin)
+admin.site.register(NotableEmailDomain, NotableEmailDomainAdmin)
 admin.site.register(NodeLicense, LicenseAdmin)

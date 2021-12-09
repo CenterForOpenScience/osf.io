@@ -153,6 +153,8 @@ jobs:
           sudo apt update
           sudo apt-get install libxml2-dev libxslt-dev python-dev
       - uses: ./.github/actions/start-build
+      - name: NVM & yarn install
+         invoke assets --dev
       - name: Run test
         run: invoke test_travis_api1_and_js -n 1
 

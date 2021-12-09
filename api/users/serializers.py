@@ -17,7 +17,7 @@ from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
-from osf.exceptions import ValidationValueError, ValidationError, BlacklistedEmailError
+from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
 from osf.models import OSFUser, QuickFilesNode, Preprint
 from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
@@ -628,8 +628,8 @@ class UserEmailsSerializer(JSONAPISerializer):
                 user.save()
         except ValidationError as e:
             raise exceptions.ValidationError(e.args[0])
-        except BlacklistedEmailError:
-            raise exceptions.ValidationError('This email address domain is blacklisted.')
+        except BlockedEmailError:
+            raise exceptions.ValidationError('This email address domain is blocked.')
 
         return UserEmail(email_id=token, address=address, confirmed=False, verified=False, primary=False, is_merge=is_merge)
 

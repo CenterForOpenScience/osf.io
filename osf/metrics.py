@@ -14,24 +14,48 @@ from api.base.settings import MAX_SIZE_OF_ES_QUERY, DEFAULT_ES_NULL_VALUE
 class MetricMixin(object):
 
     @classmethod
-    def _get_relevant_indices(cls, after):
+    def _get_all_indices(cls):
+        all_aliases = cls._index.get_alias()
+        indices = set()
+        for index, aliases in all_aliases.items():
+            indices.add(index)
+            if aliases['aliases']:
+                for alias in aliases.keys():
+                    indices.add(alias)
+        return indices
+
+    @classmethod
+    def _get_relevant_indices(cls, after, before):
         # NOTE: This will only work for yearly indices. This logic
         # will need to be updated if we change to monthly or daily indices
-        year_range = range(after.year, timezone.now().year + 1)
-        return [
+        if before and after:
+            year_range = range(after.year, before.year + 1)
+        elif after:
+            year_range = range(after.year, timezone.now().year + 1)
+        else:
+            # No metric data from before 2013
+            year_range = range(2013, before.year + 1)
+        all_indices = cls._get_all_indices()
+        relevant_indices = [
             # get_index_name takes a datetime, so get Jan 1 for each relevant year
             cls.get_index_name(dt.datetime(year, 1, 1, tzinfo=pytz.utc))
             for year in year_range
         ]
+        return [index for index in relevant_indices if index in all_indices]
 
     @classmethod
-    def _get_id_to_count(cls, size, metric_field, count_field, after=None):
+    def _get_id_to_count(cls, size, metric_field, count_field, after=None, before=None):
         """Performs the elasticsearch aggregation for get_top_by_count. Return a
         dict mapping ids to summed counts. If there's no data in the ES index, return None.
         """
-        search = cls.search(after=after)
+        search = cls.search(after=after, before=before)
+        timestamp = {}
         if after:
-            search = search.filter('range', timestamp={'gte': after})
+            timestamp['gte'] = after
+        if before:
+            timestamp['lt'] = before
+        if timestamp:
+            search = search.filter('range', timestamp=timestamp)
         search.aggs.\
             bucket('by_id', 'terms', field=metric_field, size=size, order={'sum_count': 'desc'}).\
             metric('sum_count', 'sum', field=count_field)
@@ -57,9 +81,9 @@ class MetricMixin(object):
     # Overrides Document.search to only search relevant
     # indices, determined from `after`
     @classmethod
-    def search(cls, using=None, index=None, after=None, *args, **kwargs):
-        if not index and after:
-            indices = cls._get_relevant_indices(after)
+    def search(cls, using=None, index=None, after=None, before=None, *args, **kwargs):
+        if not index and (before or after):
+            indices = cls._get_relevant_indices(after, before)
             index = ','.join(indices)
         return super(MetricMixin, cls).search(using=using, index=index, *args, **kwargs)
 
@@ -67,7 +91,8 @@ class MetricMixin(object):
     def get_top_by_count(cls, qs, model_field, metric_field,
                          size, order_by=None,
                          count_field='count',
-                         annotation='metric_count', after=None):
+                         annotation='metric_count',
+                         after=None, before=None):
         """Return a queryset annotated with the metric counts for each item.
 
         Example: ::
@@ -96,6 +121,7 @@ class MetricMixin(object):
         :param str order_by: Field to order queryset by. If `None`, orders by
             the metric, descending.
         :param datetime after: Minimum datetime to narrow the search (inclusive).
+        :param datetime before: Maximum datetime to narrow the search (exclusive).
         :param str count_field: Name of the field where count values are stored.
         :param str annotation: Name of the annotation.
         """
@@ -104,6 +130,7 @@ class MetricMixin(object):
             metric_field=metric_field,
             count_field=count_field,
             after=after,
+            before=before
         )
         if id_to_count is None:
             return qs.annotate(**{annotation: models.Value(0, models.IntegerField())})
@@ -155,10 +182,15 @@ class BasePreprintMetric(MetricMixin, metrics.Metric):
         )
 
     @classmethod
-    def get_count_for_preprint(cls, preprint, after=None):
-        search = cls.search(after=after).filter('match', preprint_id=preprint._id)
+    def get_count_for_preprint(cls, preprint, after=None, before=None, index=None):
+        search = cls.search(after=after, before=before, index=index).filter('match', preprint_id=preprint._id)
+        timestamp = {}
         if after:
-            search = search.filter('range', timestamp={'gte': after})
+            timestamp['gte'] = after
+        if before:
+            timestamp['lt'] = before
+        if timestamp:
+            search = search.filter('range', timestamp=timestamp)
         search.aggs.metric('sum_count', 'sum', field='count')
         # Optimization: set size to 0 so that hits aren't returned (we only care about the aggregation)
         search = search.extra(size=0)

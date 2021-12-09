@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from osf.models import Email, BlacklistedEmailDomain
+from osf.models import Email, NotableEmailDomain
 from framework.auth.views import auth_email_logout
 
 @pytest.fixture()
@@ -265,13 +265,16 @@ class TestUserEmailsList:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Enter a valid email address.'
 
-    def test_create_blacklisted_email(self, app, url, payload, user_one):
-        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
+    def test_create_blocked_email(self, app, url, payload, user_one):
+        NotableEmailDomain.objects.get_or_create(
+            domain='mailinator.com',
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        )
         new_email = 'freddie@mailinator.com'
         payload['data']['attributes']['email_address'] = new_email
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'This email address domain is blacklisted.'
+        assert res.json['errors'][0]['detail'] == 'This email address domain is blocked.'
 
     def test_unconfirmed_email_with_expired_token_not_in_results(self, app, url, payload, user_one):
         unconfirmed = 'notyet@unconfirmed.test'

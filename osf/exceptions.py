@@ -142,9 +142,9 @@ class PreprintProviderError(PreprintError):
     pass
 
 
-class BlacklistedEmailError(OSFError):
+class BlockedEmailError(OSFError):
     """Raised if a user tries to register an email that is included
-    in the blacklisted domains list
+    in the blocked domains list
     """
     pass
 

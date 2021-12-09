@@ -30,7 +30,7 @@ from osf.utils.sanitize import strip_html
 from website import settings, mails, language
 from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
-from osf.exceptions import ValidationValueError, BlacklistedEmailError
+from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
@@ -943,10 +943,10 @@ def register_user(**kwargs):
                 )
             )
         )
-    except BlacklistedEmailError:
+    except BlockedEmailError:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=dict(message_long=language.BLACKLISTED_EMAIL)
+            data=dict(message_long=language.BLOCKED_EMAIL)
         )
     except ValidationError as e:
         raise HTTPError(

@@ -718,19 +718,28 @@ class TestNodeFiltering:
         assert len(res.json.get('data')) == 0
 
     def test_filtering_tags_returns_distinct(
-            self, app, user_one, public_project_one):
+            self, app, user_one, public_project_one,
+            public_project_two):
         # regression test for returning multiple of the same file
         public_project_one.add_tag('cat', Auth(user_one))
         public_project_one.add_tag('cAt', Auth(user_one))
         public_project_one.add_tag('caT', Auth(user_one))
         public_project_one.add_tag('CAT', Auth(user_one))
+        public_project_two.add_tag('cat', Auth(user_one))
+        public_project_two.add_tag('cAt', Auth(user_one))
+        public_project_two.add_tag('caT', Auth(user_one))
+        public_project_two.add_tag('CAT', Auth(user_one))
+
         res = app.get(
             '/{}nodes/?filter[tags]=cat'.format(
                 API_BASE
             ),
             auth=user_one.auth
         )
-        assert len(res.json.get('data')) == 1
+        data = res.json.get('data')
+        assert len(data) == 2
+        pids = [d['id'] for d in data]
+        assert set(pids) == {public_project_one._id, public_project_two._id}
 
     def test_filtering_contributors(
             self, app, user_one, user_one_private_project,
@@ -1721,7 +1730,7 @@ class TestNodeCreate:
         actual_perms = set([contributor.permission for contributor in new_component.contributor_set.all()])
         assert actual_perms == expected_perms
 
-    def test_create_component_inherit_contributors_with_blacklisted_email(
+    def test_create_component_inherit_contributors_with_blocked_email(
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
@@ -1745,7 +1754,7 @@ class TestNodeCreate:
         res = app.post_json_api(url, component_data, auth=user_one.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blocked.'
 
     def test_create_project_with_region_relationship(
             self, app, user_one, region, institution_one, private_project, url):
