@@ -16,7 +16,7 @@
     "locales": "https://github.com/CenterForOpenScience/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "2.1.0",
     "clipboard": "^1.6.1",
-    "At.js": "CenterForOpenScience/At.js#cos",
+    "At.js": "CenterForOpenScience/At.js#36a84fb0f72ff9bf3365d498575866742ba1552e",
     "academicons": "1.8.0"
   },
   "resolutions": {
