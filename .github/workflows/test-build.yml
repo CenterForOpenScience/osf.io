@@ -155,7 +155,7 @@ jobs:
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: |
-         invoke assets --dev
+         invoke assets
       - name: Run test
         run: invoke test_travis_api1_and_js -n 1
 
