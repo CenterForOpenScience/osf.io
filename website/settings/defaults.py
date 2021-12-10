@@ -42,7 +42,7 @@ EXPIRATION_TIME_DICT = {
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
 
-CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
+CITATION_STYLES_PATH = os.path.join(APP_PATH, 'website', 'styles')
 
 # Minimum seconds between forgot password email attempts
 SEND_EMAIL_THROTTLE = 30

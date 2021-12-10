@@ -26,6 +26,3 @@ runs:
       invoke requirements --dev --addons
       pip uninstall uritemplate.py --yes
       pip install uritemplate.py==0.3.0
-      sudo npm install -g bower
-      npm install @centerforopenscience/list-of-licenses@^1.1.0
-      bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"

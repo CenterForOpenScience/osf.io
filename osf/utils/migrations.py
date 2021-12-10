@@ -1,7 +1,6 @@
 from past.builtins import basestring
 import os
 import itertools
-import builtins
 import json
 import logging
 import warnings
@@ -99,6 +98,7 @@ def disable_auto_now_add_fields(models=None):
             if hasattr(field, 'auto_now_add') and not field.auto_now_add:
                 field.auto_now_add = True
 
+
 def ensure_licenses(*args, **kwargs):
     """Upsert the licenses in our database based on a JSON file.
 
@@ -113,16 +113,12 @@ def ensure_licenses(*args, **kwargs):
     except Exception:
         # Working outside a migration
         from osf.models import NodeLicense
-    with builtins.open(
-            os.path.join(
-                settings.APP_PATH,
-                'node_modules', '@centerforopenscience', 'list-of-licenses', 'dist', 'list-of-licenses.json'
-            )
-    ) as fp:
+    with open(os.path.join(settings.APP_PATH, 'website/licenses/list-of-licenses.json')) as fp:
         licenses = json.loads(fp.read())
         for id, info in licenses.items():
             name = info['name']
-            text = info['text']
+#            text = open(info['text']).read()
+            text = 'test'
             properties = info.get('properties', [])
             url = info.get('url', '')
 
