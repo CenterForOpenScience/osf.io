@@ -67,7 +67,7 @@
     "uuid": "^2.0.1",
     "webpack": "3.8.1",
     "zxcvbn": "^4.2.0",
-    "chokidar": "^3.5.2",
-    "fsevents": "^2.3.2"
+    "fsevents": "^2.3.2",
+    "chokidar": "^3.5.2"
   }
 }
