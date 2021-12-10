@@ -89,8 +89,5 @@
     "test-travis": "karma start --single-run --browsers ChromeHeadlessNoSandbox",
     "webpack-dev": "webpack --config webpack.dev.config.js",
     "webpack-prod": "webpack --config webpack.prod.config.js"
-  },
-  "resolutions": {
-    "fsevents": "^2.0.0"
   }
 }
