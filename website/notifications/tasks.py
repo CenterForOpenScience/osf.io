@@ -68,7 +68,7 @@ def _send_reviews_moderator_emails(send_type):
         additional_context = dict()
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
-            submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions',
+            submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/pending',
             withdrawals_url = f'{submissions_url}?state=pending_withdraw'
             notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
             if provider.brand:

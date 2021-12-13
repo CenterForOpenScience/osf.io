@@ -275,6 +275,7 @@ def make_response_from_ticket(ticket, service_url):
     cas_resp = client.service_validate(ticket, service_furl.url)
     if cas_resp.authenticated:
         user, external_credential, action = get_user_from_cas_resp(cas_resp)
+        user_updates = {}  # serialize updates to user to be applied async
         # user found and authenticated
         if user and action == 'authenticate':
             print_cas_log(
@@ -289,13 +290,11 @@ def make_response_from_ticket(ticket, service_url):
             # since neither is the final step of a login flow.
             tos_checked_via_cas = cas_resp.attributes.get('termsOfServiceChecked', 'false') == 'true'
             if tos_checked_via_cas:
-                user.accepted_terms_of_service = timezone.now()
-                user.save()
+                user_updates['accepted_terms_of_service'] = timezone.now()
                 print_cas_log(f'CAS TOS consent checked: {user.guids.first()._id}, {user.username}', LogLevel.INFO)
             # if we successfully authenticate and a verification key is present, invalidate it
             if user.verification_key:
-                user.verification_key = None
-                user.save()
+                user_updates['verification_key'] = None
 
             # if user is authenticated by external IDP, ask CAS to authenticate user for a second time
             # this extra step will guarantee that 2FA are enforced
@@ -319,7 +318,8 @@ def make_response_from_ticket(ticket, service_url):
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
-                redirect(service_furl.url)
+                redirect(service_furl.url),
+                user_updates
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
