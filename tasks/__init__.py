@@ -826,7 +826,7 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    command = 'yarn install --frozen-lockfile'
+    command = 'yarn install --verbose --frozen-lockfile'
     if not dev:
         command += ' --production'
     print('honk')
