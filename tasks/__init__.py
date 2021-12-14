@@ -833,6 +833,8 @@ def assets(ctx, dev=False, watch=False, colors=False):
     ctx.run('yarn -v', echo=True)
     print('honk')
     ctx.run(command, echo=True)
+    print('grr')
+    ctx.run('cat /home/runner/work/osf.io/osf.io/yarn-error.log', echo=True)
     print('quack')
     bower_install(ctx)
     print('meow')
