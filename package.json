@@ -11,7 +11,8 @@
     "@centerforopenscience/markdown-it-imsize": "2.0.1",
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "@centerforopenscience/markdown-it-video": "1.0.0",
-    "@centerforopenscience/osf-style": "1.8.0"
+    "@centerforopenscience/osf-style": "1.8.0",
+    "treebeard": "git://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
   },
   "devDependencies": {
     "chai": "^2.1.1",
