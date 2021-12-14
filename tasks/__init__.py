@@ -829,11 +829,15 @@ def assets(ctx, dev=False, watch=False, colors=False):
     command = 'yarn install --frozen-lockfile'
     if not dev:
         command += ' --production'
+    print('honk')
     ctx.run(command, echo=True)
+    print('quack')
     bower_install(ctx)
+    print('meow')
     build_js_config_files(ctx)
     # Always set clean=False to prevent possible mistakes
     # on prod
+    print('woof')
     webpack(ctx, clean=False, watch=watch, dev=dev, colors=colors)
 
 
