@@ -471,6 +471,7 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
 @task
 def travis_setup(ctx):
+    print('Wackness being invoked')
     ctx.run('npm install -g bower', echo=True)
 
     with open('package.json', 'r') as fobj:
@@ -826,9 +827,10 @@ def build_js_config_files(ctx):
 @task()
 def assets(ctx, dev=False, watch=False, colors=False):
     """Install and build static assets."""
-    command = 'yarn install --verbose --frozen-lockfile'
+    command = 'yarn install --frozen-lockfile'
     if not dev:
         command += ' --production'
+    ctx.run('yarn -v', echo=True)
     print('honk')
     ctx.run(command, echo=True)
     print('quack')
