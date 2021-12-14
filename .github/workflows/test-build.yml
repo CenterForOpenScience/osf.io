@@ -27,91 +27,91 @@ jobs:
         mkdir -p ~/.cache/testmon
         rm -rf node_modules  ## TODO remove this later
 
-  addons:
-    runs-on: ubuntu-20.04
-    needs: build-cache
-    services:
-      postgres:
-        image: postgres
+  # addons:
+  #   runs-on: ubuntu-20.04
+  #   needs: build-cache
+  #   services:
+  #     postgres:
+  #       image: postgres
 
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-    steps:
-    - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
-    - uses: ./.github/actions/start-build
-    - name: Run tests
-      run: invoke test_travis_addons -n 1
+  #       env:
+  #         POSTGRES_PASSWORD: postgres
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         # Maps tcp port 5432 on service container to the host
+  #         - 5432:5432
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - id: cache-objects
+  #     uses: actions/cache@v2
+  #     with:
+  #       path: ~/.cache
+  #       key: reqs_${{ hashFiles('**/requirements.txt') }}
+  #       restore-keys: reqs_
+  #   - uses: ./.github/actions/build-es
+  #     with:
+  #       ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  #   - uses: ./.github/actions/build-es6
+  #     with:
+  #       ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  #   - name: Set up Python 3.6
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.6
+  #   - name: Install lxml
+  #     run: |
+  #       sudo apt update
+  #       sudo apt-get install libxml2-dev libxslt-dev python-dev
+  #   - uses: ./.github/actions/start-build
+  #   - name: Run tests
+  #     run: invoke test_travis_addons -n 1
 
-  website:
-    runs-on: ubuntu-20.04
-    needs: build-cache
-    services:
-      postgres:
-        image: postgres
+  # website:
+  #   runs-on: ubuntu-20.04
+  #   needs: build-cache
+  #   services:
+  #     postgres:
+  #       image: postgres
 
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-    steps:
-    - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
-    - uses: ./.github/actions/start-build
-    - name: Run tests
-      run: invoke test_travis_website -n 1
+  #       env:
+  #         POSTGRES_PASSWORD: postgres
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         # Maps tcp port 5432 on service container to the host
+  #         - 5432:5432
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - id: cache-objects
+  #     uses: actions/cache@v2
+  #     with:
+  #       path: ~/.cache
+  #       key: reqs_${{ hashFiles('**/requirements.txt') }}
+  #       restore-keys: reqs_
+  #   - uses: ./.github/actions/build-es
+  #     with:
+  #       ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  #   - uses: ./.github/actions/build-es6
+  #     with:
+  #       ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  #   - name: Set up Python 3.6
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.6
+  #   - name: Install lxml
+  #     run: |
+  #       sudo apt update
+  #       sudo apt-get install libxml2-dev libxslt-dev python-dev
+  #   - uses: ./.github/actions/start-build
+  #   - name: Run tests
+  #     run: invoke test_travis_website -n 1
 
   api1_and_js:
     runs-on: ubuntu-20.04
@@ -159,89 +159,89 @@ jobs:
       - name: Run test
         run: invoke test_travis_api1_and_js -n 1
 
-  api2:
-    runs-on: ubuntu-20.04
-    needs: build-cache
-    services:
-      postgres:
-        image: postgres
+  # api2:
+  #   runs-on: ubuntu-20.04
+  #   needs: build-cache
+  #   services:
+  #     postgres:
+  #       image: postgres
 
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-    steps:
-    - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
-    - uses: ./.github/actions/start-build
-    - name: Run tests
-      run: invoke test_travis_api2 -n 1
+  #       env:
+  #         POSTGRES_PASSWORD: postgres
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         # Maps tcp port 5432 on service container to the host
+  #         - 5432:5432
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - id: cache-objects
+  #     uses: actions/cache@v2
+  #     with:
+  #       path: ~/.cache
+  #       key: reqs_${{ hashFiles('**/requirements.txt') }}
+  #       restore-keys: reqs_
+  #   - uses: ./.github/actions/build-es
+  #     with:
+  #       ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  #   - uses: ./.github/actions/build-es6
+  #     with:
+  #       ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  #   - name: Set up Python 3.6
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.6
+  #   - name: Install lxml
+  #     run: |
+  #       sudo apt update
+  #       sudo apt-get install libxml2-dev libxslt-dev python-dev
+  #   - uses: ./.github/actions/start-build
+  #   - name: Run tests
+  #     run: invoke test_travis_api2 -n 1
 
-  api3_and_osf:
-    runs-on: ubuntu-20.04
-    needs: build-cache
-    services:
-      postgres:
-        image: postgres
+  # api3_and_osf:
+  #   runs-on: ubuntu-20.04
+  #   needs: build-cache
+  #   services:
+  #     postgres:
+  #       image: postgres
 
-        env:
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-    steps:
-    - uses: actions/checkout@v2
-    - id: cache-objects
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache
-        key: reqs_${{ hashFiles('**/requirements.txt') }}
-        restore-keys: reqs_
-    - uses: ./.github/actions/build-es
-      with:
-        ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-    - uses: ./.github/actions/build-es6
-      with:
-        ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.6
-    - name: Install lxml
-      run: |
-        sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
-    - uses: ./.github/actions/start-build
-    - name: Run tests
-      run: invoke test_travis_api3_and_osf -n 1
+  #       env:
+  #         POSTGRES_PASSWORD: postgres
+  #       options: >-
+  #         --health-cmd pg_isready
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 5
+  #       ports:
+  #         # Maps tcp port 5432 on service container to the host
+  #         - 5432:5432
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - id: cache-objects
+  #     uses: actions/cache@v2
+  #     with:
+  #       path: ~/.cache
+  #       key: reqs_${{ hashFiles('**/requirements.txt') }}
+  #       restore-keys: reqs_
+  #   - uses: ./.github/actions/build-es
+  #     with:
+  #       ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+  #   - uses: ./.github/actions/build-es6
+  #     with:
+  #       ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+  #   - name: Set up Python 3.6
+  #     uses: actions/setup-python@v2
+  #     with:
+  #       python-version: 3.6
+  #   - name: Install lxml
+  #     run: |
+  #       sudo apt update
+  #       sudo apt-get install libxml2-dev libxslt-dev python-dev
+  #   - uses: ./.github/actions/start-build
+  #   - name: Run tests
+  #     run: invoke test_travis_api3_and_osf -n 1
 
