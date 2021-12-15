@@ -832,10 +832,10 @@ def assets(ctx, dev=False, watch=False, colors=False):
         command += ' --production'
     ctx.run('yarn -v', echo=True)
     print('honk')
+    ctx.run('perl -i -pwe "s{require}{meow}gs" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
+    print('zoig')
     ctx.run('cat /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('berf')
-    ctx.run('perl -v', echo=True)
-    print('zoig')
     ctx.run(command, echo=True)
     # ctx.run(command + ' || cat /home/runner/work/osf.io/osf.io/yarn-error.log', echo=True)
     print('quack')
