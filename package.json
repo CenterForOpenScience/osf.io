@@ -6,7 +6,7 @@
   "author": "Center for Open Science",
   "license": "Apache-2.0",
   "dependencies": {
-    "treebeard": "git://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
+    "treebeard": "git+ssh://git@github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
   },
   "devDependencies": {
     "chai": "^2.1.1",
