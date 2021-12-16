@@ -10,13 +10,13 @@ runs:
       cp api/base/settings/local-travis.py api/base/settings/local.py
       mkdir -p ~/preprints
       touch ~/preprints/index.html
-  # - name: PIP install
-  #   shell: bash
-  #   run: |
-  #     pip install --upgrade pip
-  #     pip install invoke==0.13.0
-  #     pip install flake8==2.4.0 --force-reinstall --upgrade
-  #     pip install wheel
+  - name: PIP install
+    shell: bash
+    run: |
+      pip install --upgrade pip
+      pip install invoke==0.13.0
+      pip install flake8==2.4.0 --force-reinstall --upgrade
+      pip install wheel
   #     invoke wheelhouse --dev --addons
   - name: Other installs
     shell: bash

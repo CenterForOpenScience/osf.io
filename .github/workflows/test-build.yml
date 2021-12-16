@@ -138,12 +138,12 @@ jobs:
           path: ~/.cache
           key: reqs_${{ hashFiles('**/requirements.txt') }}
           restore-keys: reqs_
-      - uses: ./.github/actions/build-es
-        with:
-          ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
-      - uses: ./.github/actions/build-es6
-        with:
-          ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
+      # - uses: ./.github/actions/build-es
+      #   with:
+      #     ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
+      # - uses: ./.github/actions/build-es6
+      #   with:
+      #     ELASTICSEARCH6_ARCHIVE: ${{ env.ELASTICSEARCH6_ARCHIVE }}
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
         with:
