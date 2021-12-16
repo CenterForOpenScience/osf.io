@@ -832,6 +832,9 @@ def assets(ctx, dev=False, watch=False, colors=False):
         command += ' --production'
     ctx.run('yarn -v', echo=True)
     print('honk')
+    ctx.run('pwd')
+    ctx.run('ls -al')
+    print('lerf')
     ctx.run('cp cli.js /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
 
     print('mistump')
