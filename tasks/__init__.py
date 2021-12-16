@@ -834,7 +834,10 @@ def assets(ctx, dev=False, watch=False, colors=False):
     print('honk')
     ctx.run('perl -i -pwe "s{invariant\(hash, \'Commit hash required\'\);}{console.log(\'blah blah blah\: \' \+ this\.reference\); invariant\(hash, \'Commit hash required\'\);}" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('zoig')
-    ctx.run('cat /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
+
+    ctx.run('perl -i -pwe "s{_ref5\.apply\(this, arguments\);}{console.log(\'blah blah blah\: \', this, arguments\); _ref5\.apply\(this, arguments\);}" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
+    _ref5.apply(this, arguments)
+    ctx.run('grep -C3 "blah blah blah" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('berf')
     ctx.run(command, echo=True)
     # ctx.run(command + ' || cat /home/runner/work/osf.io/osf.io/yarn-error.log', echo=True)
