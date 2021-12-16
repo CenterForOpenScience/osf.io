@@ -1174,6 +1174,12 @@ class SchemaResponseActionFactory(DjangoModelFactory):
 
     is_deleted = False
 
+
 class RegistrationBulkUploadJobFactory(DjangoModelFactory):
     class Meta:
         model = models.RegistrationBulkUploadJob
+
+
+class RegistrationBulkUploadRowFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadRow

@@ -631,9 +631,9 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             sentry.log_message(message)
             logger.warning(message)
             pass
-    # Reverse the error lists so that users see failed rows in the same order as the original CSV
-    draft_errors.reverse()
-    approval_errors.reverse()
+    # Use `.sort()` to stabilize the order
+    draft_errors.sort()
+    approval_errors.sort()
     if not dry_run:
         upload.save()
         logger.info('Sending emails to initiator/uploader ...')
