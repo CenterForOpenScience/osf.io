@@ -836,7 +836,9 @@ def assets(ctx, dev=False, watch=False, colors=False):
     print('zoig')
 
     ctx.run('perl -i -pwe "s{_ref5\.apply\(this, arguments\);}{console.log(\'blah blah blah\: \', this, arguments\); _ref5\.apply\(this, arguments\);}" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
-    _ref5.apply(this, arguments)
+
+    print('mlersp')
+
     ctx.run('grep -C3 "blah blah blah" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('berf')
     ctx.run(command, echo=True)
