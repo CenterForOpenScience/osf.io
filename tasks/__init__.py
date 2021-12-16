@@ -840,7 +840,7 @@ def assets(ctx, dev=False, watch=False, colors=False):
     print('mistump')
     ctx.run('perl -i -pwe "s{invariant\(hash, \'Commit hash required\'\);}{console\.trace\(\)\; console.log(\'blah blah blah\: \' \+ this\.reference\); invariant\(hash, \'Commit hash required\'\);}" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('zoig')
-    ctx.run('perl -i -pwe "s[fetchFromExternal\(\) \{][fetchFromExternal\(\) \{\n      console.log\(\'blah blah blah\: \', this, arguments\);]" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
+    ctx.run('perl -i -pwe "s[fetchFromExternal\(\) \{][fetchFromExternal\(\) \{\n      console.log\(\'blah blah blah\: this::\' + this + \' args::\' + arguments\);]" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
     print('mlersp')
 
     ctx.run('grep -C3 "blah blah blah" /usr/local/lib/node_modules/yarn/lib/cli.js', echo=True)
