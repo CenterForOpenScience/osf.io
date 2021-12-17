@@ -14,7 +14,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q1"
+         "registration_response_key":"Q1"
       },
       {
          "block_type":"question-label",
@@ -23,7 +23,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q2"
+         "registration_response_key":"Q2"
       },
       {
          "block_type":"select-input-option",
@@ -123,7 +123,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q3"
+         "registration_response_key":"Q3"
       },
       {
          "block_type":"question-label",
@@ -131,7 +131,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q4"
+         "registration_response_key":"Q4"
       },
       {
          "block_type":"select-input-option",
@@ -231,7 +231,7 @@
       },
       {
          "block_type":"single-select-input",
-         "registration_response_keys":"Q5"
+         "registration_response_key":"Q5"
       },
       {
          "block_type":"select-input-option",
@@ -255,7 +255,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q6"
+         "registration_response_key":"Q6"
       },
       {
          "block_type":"page-heading",
@@ -267,7 +267,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q7"
+         "registration_response_key":"Q7"
       },
       {
          "block_type":"select-input-option",
@@ -303,7 +303,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q8"
+         "registration_response_key":"Q8"
       },
       {
          "block_type":"select-input-option",
@@ -335,7 +335,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q9"
+         "registration_response_key":"Q9"
       },
       {
          "block_type":"select-input-option",
@@ -371,7 +371,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q10"
+         "registration_response_key":"Q10"
       },
       {
          "block_type":"question-label",
@@ -379,7 +379,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q11"
+         "registration_response_key":"Q11"
       },
       {
          "block_type":"question-label",
@@ -387,7 +387,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q12"
+         "registration_response_key":"Q12"
       },
       {
          "block_type":"question-label",
@@ -395,7 +395,7 @@
       },
       {
          "block_type":"long-text-input",
-         "registration_response_keys":"Q13"
+         "registration_response_key":"Q13"
       },
       {
          "block_type":"page-heading",
@@ -411,7 +411,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q14"
+         "registration_response_key":"Q14"
       },
       {
          "block_type":"question-label",
@@ -419,7 +419,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q15"
+         "registration_response_key":"Q15"
       },
       {
          "block_type":"question-label",
@@ -427,7 +427,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q16"
+         "registration_response_key":"Q16"
       },
       {
          "block_type":"select-input-option",
@@ -471,7 +471,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q17"
+         "registration_response_key":"Q17"
       },
       {
          "block_type":"question-label",
@@ -479,7 +479,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q18"
+         "registration_response_key":"Q18"
       },
       {
          "block_type":"question-label",
@@ -487,7 +487,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q19"
+         "registration_response_key":"Q19"
       },
       {
          "block_type":"select-input-option",
@@ -531,7 +531,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q20"
+         "registration_response_key":"Q20"
       },
       {
          "block_type":"question-label",
@@ -539,7 +539,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q21"
+         "registration_response_key":"Q21"
       },
       {
          "block_type":"question-label",
@@ -547,7 +547,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q22"
+         "registration_response_key":"Q22"
       },
       {
          "block_type":"select-input-option",
@@ -591,7 +591,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q23"
+         "registration_response_key":"Q23"
       },
       {
          "block_type":"question-label",
@@ -599,7 +599,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q24"
+         "registration_response_key":"Q24"
       },
       {
          "block_type":"question-label",
@@ -607,7 +607,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q25"
+         "registration_response_key":"Q25"
       },
       {
          "block_type":"select-input-option",
@@ -651,7 +651,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q26"
+         "registration_response_key":"Q26"
       },
       {
          "block_type":"question-label",
@@ -659,7 +659,7 @@
       },
       {
          "block_type":"short-text-input",
-         "registration_response_keys":"Q27"
+         "registration_response_key":"Q27"
       },
       {
          "block_type":"question-label",
@@ -667,7 +667,7 @@
       },
       {
          "block_type":"multi-select-input",
-         "registration_response_keys":"Q28"
+         "registration_response_key":"Q28"
       },
       {
          "block_type":"select-input-option",
