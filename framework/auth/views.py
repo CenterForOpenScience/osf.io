@@ -705,7 +705,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     if log_out:
         return auth_email_logout(token, user)
 
-    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == getattr(user.merged_by, '_id', False)):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
