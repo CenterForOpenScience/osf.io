@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
+from abc import ABC, abstractmethod
 import csv
 import io
 import functools
 import string
-from math import floor
 
 from django.db.models import Q
 from rest_framework.exceptions import NotFound, ValidationError
@@ -36,18 +36,64 @@ CATEGORY_REVERSE_LOOKUP = {display_name: name for name, display_name in settings
 
 MAX_EXCEL_COLUMN_NUMBER = 16384
 
+FIELD_REGEX = {
+    'license': {
+        'no_required_fields': re.compile(r'(?P<name>[\w\W][^;]+)'),
+        'with_required_fields': re.compile(r'(?P<name>[\w\W]+);\s*?(?P<year>[1-3][0-9]{3})\s*?;(?P<copyright_holders>[\w\W]+)'),
+    },
+    'contributors': re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.+?)>'),
+}
+
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
 def get_excel_column_name(column_index):
+    '''Convert a column index to an excel spreadsheet column name by mimicking Base-26 conversion.'''
     column_name = ''
-    # Fix zero indexing
-    current_column = column_index + 1
-
-    while current_column > 0:
-        modulo = (current_column - 1) % 26
-        column_name = '{}{}'.format(string.ascii_uppercase[modulo], column_name)
-        current_column = floor((current_column - modulo) / 26)
-
+    index = column_index
+    while index >= 0:
+        next_leading_char = string.ascii_uppercase[index % 26]
+        column_name = f'{next_leading_char}{column_name}'
+        index = (index // 26) - 1
     return column_name
+
+def get_schema_questions_validations(registration_schema):
+    schema_blocks = list(registration_schema.schema_blocks.filter(
+        Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
+            'registration_response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
+
+    validations = {}
+    response_key_for_group_key = {}
+    for schema_block in schema_blocks:
+        if schema_block['block_type'] == 'single-select-input':
+            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
+            validations.update({
+                schema_block['registration_response_key']: {
+                    'type': 'choose',
+                    'options': [],
+                    'format': 'singleselect',
+                    'required': schema_block.get('required'),
+                }
+            })
+        elif schema_block['block_type'] == 'multi-select-input':
+            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
+            validations.update({
+                schema_block['registration_response_key']: {
+                    'type': 'choose',
+                    'options': [],
+                    'format': 'multiselect',
+                    'required': schema_block.get('required'),
+                }
+            })
+        elif schema_block['block_type'] in ('short-text-input', 'long-text-input'):
+            validations.update({
+                schema_block['registration_response_key']: {
+                    'type': 'string',
+                    'required': schema_block.get('required'),
+                }
+            })
+        elif schema_block['block_type'] == 'select-input-option':
+            qid = response_key_for_group_key[schema_block['schema_block_group_key']]
+            validations[qid]['options'].append(schema_block['display_text'])
+    return validations
 
 class Store():
     def __init__(self, registration_provider):
@@ -56,6 +102,12 @@ class Store():
         self.institutions = Institution.objects.get_all_institutions()
 
 class InvalidHeadersError(ValidationError):
+    pass
+
+class DuplicateHeadersError(ValidationError):
+    pass
+
+class FileUploadNotSupportedError(ValidationError):
     pass
 
 class BulkRegistrationUpload():
@@ -68,7 +120,10 @@ class BulkRegistrationUpload():
         return all([row.is_validated for row in self.rows])
 
     def __init__(self, bulk_upload_csv, provider_id):
-        self.raw_csv = bulk_upload_csv.read().decode('utf-8')
+        if isinstance(bulk_upload_csv, io.StringIO):
+            self.raw_csv = bulk_upload_csv.read()
+        else:
+            self.raw_csv = bulk_upload_csv.read().decode('utf-8')
         csv_io = io.StringIO(self.raw_csv)
         self.reader = csv.DictReader(csv_io)
         self.headers = self.reader.fieldnames
@@ -78,13 +133,18 @@ class BulkRegistrationUpload():
 
         self.registration_provider = RegistrationProvider.load(self.provider_id)
         if self.registration_provider is None:
-            raise NotFound(detail='Registration provider with id "{}" was not found').format(self.provider_id)
+            raise NotFound(detail=f'Registration provider with id "{self.provider_id}" was not found')
 
         try:
             self.registration_schema = self.registration_provider.schemas.get(_id=self.schema_id)
         except RegistrationSchema.DoesNotExist:
-            raise NotFound(detail='Schema with id "{}" was not found'.format(self.schema_id))
-        self.schema_questions = BulkRegistrationUpload.get_schema_questions_validations(self.registration_schema)
+            raise NotFound(detail=f'Schema with id "{self.schema_id}" was not found')
+
+        if self.registration_schema.has_files and self.registration_schema.schema_blocks.filter(
+                block_type='file-input', required=True).exists():
+            raise FileUploadNotSupportedError('File uploads are not supported')
+
+        self.schema_questions = get_schema_questions_validations(self.registration_schema)
         self.validations = {**self.schema_questions, **METADATA_FIELDS}
         self.errors = []
         self.validate_csv_header_list()
@@ -96,47 +156,6 @@ class BulkRegistrationUpload():
                      for index, row in enumerate(self.reader)]
         csv_io.close()
 
-    @classmethod
-    def get_schema_questions_validations(cls, registration_schema):
-        schema_blocks = list(registration_schema.schema_blocks.filter(
-            Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
-                'registration_response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
-
-        validations = {}
-        response_key_for_group_key = {}
-        for schema_block in schema_blocks:
-            if schema_block['block_type'] == 'single-select-input':
-                response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
-                validations.update({
-                    schema_block['registration_response_key']: {
-                        'type': 'choose',
-                        'options': [],
-                        'format': 'singleselect',
-                        'required': schema_block.get('required'),
-                    }
-                })
-            elif schema_block['block_type'] == 'multi-select-input':
-                response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
-                validations.update({
-                    schema_block['registration_response_key']: {
-                        'type': 'choose',
-                        'options': [],
-                        'format': 'multiselect',
-                        'required': schema_block.get('required'),
-                    }
-                })
-            elif schema_block['block_type'] in ('short-text-input', 'long-text-input'):
-                validations.update({
-                    schema_block['registration_response_key']: {
-                        'type': 'string',
-                        'required': schema_block.get('required'),
-                    }
-                })
-            elif schema_block['block_type'] == 'select-input-option':
-                qid = response_key_for_group_key[schema_block['schema_block_group_key']]
-                validations[qid]['options'].append(schema_block['display_text'])
-        return validations
-
     def log_error(self, **kwargs):
         self.errors.append({
             'header': kwargs['header'],
@@ -146,7 +165,20 @@ class BulkRegistrationUpload():
             'type': kwargs.get('type', '')
         })
 
+    def find_duplicate_headers(self):
+        seen = set()
+        dupes = []
+        for header in self.headers:
+            if header in seen:
+                dupes.append(header)
+            else:
+                seen.add(header)
+        return dupes
+
     def validate_csv_header_list(self):
+        duplicate_headers = self.find_duplicate_headers()
+        if duplicate_headers:
+            raise DuplicateHeadersError({'duplicate_headers': duplicate_headers})
         expected_headers = self.validations.keys()
         actual_headers = self.headers
         invalid_headers = list(set(actual_headers) - set(expected_headers))
@@ -257,21 +289,31 @@ class Cell():
         return field_instance
 
 
-class UploadField():
+class UploadField(ABC):
+    @property
+    @abstractmethod
+    def default_value(self):
+        pass
+
     def __init__(self):
         self.is_validated = None
         self._parsed_value = None
 
+    @abstractmethod
     def _validate(self):
-        raise NotImplementedError('UploadField subclasses must define a _validate method')
+        pass
 
     def parse(self):
         if self.is_validated is None:
             self._validate()
             self.is_validated = True
-        return self._parsed_value if self._parsed_value is not None else ''
+        return self._parsed_value if self._parsed_value is not None else self.default_value
 
 class RegistrationResponseField(UploadField):
+    @property
+    def default_value(self):
+        return '' if self.type == 'string' else []
+
     def __init__(self, value, validations, log_error, _):
         super(RegistrationResponseField, self).__init__()
         self.required = validations.get('required', False)
@@ -281,35 +323,35 @@ class RegistrationResponseField(UploadField):
         self.value = value.strip()
         self.log_error = functools.partial(log_error, type='invalidResponse')
 
-    def get_field_type(self):
-        return self.format if self.type == 'choose' else self.type
-
     def _validate(self):
         parsed_value = None
-        if self.required and not bool(self.value):
-            self.log_error()
-        else:
-            if not self.value:
-                return
-            if self.type == 'string':
-                parsed_value = self.value
-            elif self.type == 'choose' and self.format in ['singleselect', 'multiselect']:
-                if self.format == 'singleselect':
-                    if self.value not in self.options:
+        if not self.value:
+            if self.required:
+                self.log_error()
+            return
+        if self.type == 'string':
+            parsed_value = self.value
+        elif self.type == 'choose' and self.format in ['singleselect', 'multiselect']:
+            if self.format == 'singleselect':
+                if self.value not in self.options:
+                    self.log_error()
+                else:
+                    parsed_value = self.value
+            else:
+                parsed_value = []
+                choices = [val.strip() for val in self.value.split(';')]
+                for choice in choices:
+                    if choice not in self.options:
                         self.log_error()
                     else:
-                        parsed_value = self.value
-                else:
-                    parsed_value = []
-                    choices = [val.strip() for val in self.value.split(';')]
-                    for choice in choices:
-                        if choice not in self.options:
-                            self.log_error()
-                        else:
-                            parsed_value.append(choice)
-            self._parsed_value = parsed_value
+                        parsed_value.append(choice)
+        self._parsed_value = parsed_value
 
 class MetadataField(UploadField):
+    @property
+    def default_value(self):
+        return '' if self.format == 'string' else []
+
     def __init__(self, value, validations, log_error, store):
         super(MetadataField, self).__init__()
         self.format = validations.get('format', 'string')
@@ -319,84 +361,92 @@ class MetadataField(UploadField):
         self.error_type = validations.get('error_type')
         self.store = store
 
-    def get_field_type(self):
-        return self.format
-
     def _validate(self):
         parsed_value = None
-        if self.required and not bool(self.value):
-            self.log_error(type=self.error_type['missing'])
-        else:
-            if self.format == 'string':
-                parsed_value = self.value
-            elif self.format == 'list':
-                parsed_value = [val.strip() for val in self.value.split(';')]
-            self._parsed_value = parsed_value
+        if not self.value:
+            if self.required:
+                self.log_error(type=self.error_type['missing'])
+            return
+        if self.format == 'string':
+            parsed_value = self.value
+        elif self.format == 'list':
+            parsed_value = [val.strip() for val in self.value.split(';')]
+        self._parsed_value = parsed_value
 
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
-    contributor_regex = re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.+?)>')
+    contributor_regex = FIELD_REGEX['contributors']
     def _validate(self):
-        parsed_value = None
-        if self.required and not bool(self.value):
+        if not self.value:
+            if self.required:
+                self.log_error(type=self.error_type['missing'])
+            return
+        if not self.value and self.required:
             self.log_error(type=self.error_type['missing'])
-        else:
-            if not self.value:
-                return
-            parsed_value = []
-            parsed_contributor_list = [val.strip() for val in self.value.split(';')]
-            for contrib in parsed_contributor_list:
-                match = self.contributor_regex.match(contrib.strip())
-                if match is not None:
-                    try:
-                        full_name = match.group('full_name')
-                        email = match.group('email')
-                    except AttributeError:
-                        self.log_error(type=self.error_type['invalid'])
-                    else:
-                        parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
-                else:
-                    self.log_error(type=self.error_type['invalid'])
-            self._parsed_value = parsed_value
+            return
+        elif not self.value:
+            return
 
-class LicenseField(MetadataField):
-    # format: license_name;year;copyright_holder_one,copyright_holder_two,...
-    with_required_fields_regex = re.compile(r'(?P<name>[\w\W]+);\s*?(?P<year>[1-3][0-9]{3});(?P<copyright_holders>[\w\W]+)')
-    no_required_fields_regex = re.compile(r'(?P<name>[\w\W][^;]+)')
-
-    def _validate(self):
-        parsed_value = None
-        if self.required and not bool(self.value):
-            self.log_error(type=self.error_type['missing'])
-        else:
-            if not self.value:
-                return
-
-            assert hasattr(self.store, 'licenses') is not None, 'store.licenses was not initialized!'
-
-            license_name_match = self.no_required_fields_regex.match(self.value)
-            if license_name_match is not None:
-                node_license_name = license_name_match.group('name')
+        parsed_value = []
+        parsed_contributor_list = [val.strip() for val in self.value.split(';')]
+        for contrib in parsed_contributor_list:
+            match = self.contributor_regex.match(contrib.strip())
+            if match is not None:
                 try:
-                    node_license = self.store.licenses.get(name__iexact=node_license_name)
-                except NodeLicense.DoesNotExist:
+                    full_name = match.group('full_name')
+                    email = match.group('email')
+                except AttributeError:
                     self.log_error(type=self.error_type['invalid'])
                 else:
-                    has_required_fields = bool(node_license.properties)
-                    if has_required_fields:
-                        match = self.with_required_fields_regex.match(self.value)
-                        if match is not None:
-                            year = match.group('year').strip()
-                            copyright_holders = match.group('copyright_holders').strip()
-                            copyright_holders = [val.strip() for val in copyright_holders.split(',')]
-                            parsed_value = {'name': node_license.name,
-                                            'required_fields': {'year': year,
-                                                               'copyright_holders': copyright_holders}}
-                    else:
-                        parsed_value = {'name': node_license.name}
-                    self._parsed_value = parsed_value
+                    parsed_value.append({'full_name': full_name.strip(), 'email': email.strip()})
             else:
                 self.log_error(type=self.error_type['invalid'])
+        self._parsed_value = parsed_value or None
+
+class LicenseField(MetadataField):
+    # format: license_name;year;copyright_holder1,copyright_holder2,...
+    with_required_fields_regex = FIELD_REGEX['license']['with_required_fields']
+    # format: license_name;year;copyright_holder1,copyright_holder2,...
+    # format: license_name
+    no_required_fields_regex = FIELD_REGEX['license']['no_required_fields']
+
+    @property
+    def default_value(self):
+        return {}
+
+    def _validate(self):
+        parsed_value = None
+        if not self.value:
+            if self.required:
+                self.log_error(type=self.error_type['missing'])
+            return
+
+        if not hasattr(self.store, 'licenses'):
+            raise RuntimeError('store.licenses was not initialized!')
+
+        license_name_match = self.no_required_fields_regex.match(self.value)
+        if license_name_match is not None:
+            node_license_name = license_name_match.group('name').strip()
+            try:
+                node_license = self.store.licenses.get(name__iexact=node_license_name)
+            except NodeLicense.DoesNotExist:
+                self.log_error(type=self.error_type['invalid'])
+            else:
+                has_required_fields = bool(node_license.properties)
+                if has_required_fields:
+                    match = self.with_required_fields_regex.match(self.value)
+                    if match is not None:
+                        year = match.group('year').strip()
+                        copyright_holders = match.group('copyright_holders').strip()
+                        copyright_holders = [val.strip() for val in copyright_holders.split(',')]
+                        parsed_value = {'name': node_license.name,
+                                        'required_fields': {'year': year,
+                                                           'copyright_holders': copyright_holders}}
+                else:
+                    parsed_value = {'name': node_license.name}
+                self._parsed_value = parsed_value
+        else:
+            self.log_error(type=self.error_type['invalid'])
 
 class CategoryField(MetadataField):
     def _validate(self):
@@ -407,14 +457,19 @@ class CategoryField(MetadataField):
 
 class SubjectsField(MetadataField):
     def _validate(self):
-        assert hasattr(self.store, 'subjects'), 'store.subjects was not initialized!'
+        if not self.value:
+            self.log_error(type=self.error_type['missing'])
+            return
+
+        if not hasattr(self.store, 'subjects'):
+            raise RuntimeError('store.licenses was not initialized!')
 
         subjects = [val.strip() for val in self.value.split(';')]
         valid_subjects = list(self.store.subjects.filter(text__in=subjects).values_list('text', flat=True))
         invalid_subjects = list(set(subjects) - set(valid_subjects))
         if len(invalid_subjects):
             self.log_error(type=self.error_type['invalid'])
-        else:
+        elif len(valid_subjects):
             self._parsed_value = valid_subjects
 
 class InstitutionsField(MetadataField):
@@ -422,7 +477,8 @@ class InstitutionsField(MetadataField):
         if not self.value:
             return
 
-        assert hasattr(self.store, 'institutions'), 'store.institutions was not initialized!'
+        if not hasattr(self.store, 'institutions'):
+            raise RuntimeError('store.institutions was not initialized!')
 
         institutions = [val.strip() for val in self.value.split(';')]
         valid_institutions = list(self.store.institutions.filter(name__in=institutions).values_list('name', flat=True))
