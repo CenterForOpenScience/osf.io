@@ -1,6 +1,6 @@
 {
    "atomicSchema":true,
-   "name":"Character Lab Winter Registration",
+   "name":"Character Lab Registration",
    "version":1,
    "description":null,
    "blocks":[
@@ -13,7 +13,8 @@
          "display_text":"Study description"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q1"
       },
       {
          "block_type":"question-label",
@@ -21,7 +22,8 @@
          "display_text":"Expected outcomes"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q2"
       },
       {
          "block_type":"select-input-option",
@@ -120,14 +122,16 @@
          "display_text":"Primary outcomes"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q3"
       },
       {
          "block_type":"question-label",
          "display_text":"Character strengths"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q4"
       },
       {
          "block_type":"select-input-option",
@@ -226,7 +230,8 @@
          "display_text":"Number of conditions"
       },
       {
-         "block_type":"single-select-input"
+         "block_type":"single-select-input",
+         "registration_response_keys":"Q5"
       },
       {
          "block_type":"select-input-option",
@@ -249,7 +254,8 @@
          "display_text":"Total number of students"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q6"
       },
       {
          "block_type":"page-heading",
@@ -260,7 +266,8 @@
          "display_text":"Study Grade Assignment"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q7"
       },
       {
          "block_type":"select-input-option",
@@ -295,7 +302,8 @@
          "display_text":"School Stratum Assignment"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q8"
       },
       {
          "block_type":"select-input-option",
@@ -326,7 +334,8 @@
          "display_text":"Study design"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q9"
       },
       {
          "block_type":"select-input-option",
@@ -361,28 +370,32 @@
          "display_text":"Student Input Experience"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q10"
       },
       {
          "block_type":"question-label",
          "display_text":"Did anything emerge in this pilot data that you weren't expecting?"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q11"
       },
       {
          "block_type":"question-label",
          "display_text":"What are your three main takeaways from this pilot?"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q12"
       },
       {
          "block_type":"question-label",
          "display_text":"Changes Based On Student Input"
       },
       {
-         "block_type":"long-text-input"
+         "block_type":"long-text-input",
+         "registration_response_keys":"Q13"
       },
       {
          "block_type":"page-heading",
@@ -397,21 +410,24 @@
          "display_text":"Team member name"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q14"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member institution"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q15"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member role"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q16"
       },
       {
          "block_type":"select-input-option",
@@ -454,21 +470,24 @@
          "display_text":"Team member name"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q17"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member institution"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q18"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member role"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q19"
       },
       {
          "block_type":"select-input-option",
@@ -511,21 +530,24 @@
          "display_text":"Team member name"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q20"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member institution"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q21"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member role"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q22"
       },
       {
          "block_type":"select-input-option",
@@ -568,21 +590,24 @@
          "display_text":"Team member name"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q23"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member institution"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q24"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member role"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q25"
       },
       {
          "block_type":"select-input-option",
@@ -625,21 +650,24 @@
          "display_text":"Team member name"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q26"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member institution"
       },
       {
-         "block_type":"short-text-input"
+         "block_type":"short-text-input",
+         "registration_response_keys":"Q27"
       },
       {
          "block_type":"question-label",
          "display_text":"Team member role"
       },
       {
-         "block_type":"multi-select-input"
+         "block_type":"multi-select-input",
+         "registration_response_keys":"Q28"
       },
       {
          "block_type":"select-input-option",
