@@ -38,6 +38,7 @@ OSF_META_SCHEMA_FILES = [
     'other-studies-using-youth-data.json',
     'character-lab-short-form-registration.json',
     'character-lab-long-form-registration.json',
+    'character-lab-winter.json',
 ]
 
 METASCHEMA_ORDERING = (
