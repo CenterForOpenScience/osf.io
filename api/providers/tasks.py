@@ -31,6 +31,7 @@ from osf.models import (
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
+from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 
 from website import mails, settings
@@ -42,7 +43,6 @@ logging.basicConfig(level=logging.INFO)
 @celery_app.task()
 def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_id, parsing_output, dry_run=False):
 
-    logger.info('Preparing OSF DB for registration bulk creation ...')
     # Check initiator
     initiator = OSFUser.load(initiator_id)
     if not initiator:
@@ -136,7 +136,6 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     # Cancel the preparation task if duplicates are found in the CSV and/or in DB
     if draft_error_list:
         upload.delete()
-        logger.info('Sending emails to initiator/uploader ...')
         mails.send_mail(
             to_addr=initiator.username,
             mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES,
@@ -148,8 +147,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         return
 
     if dry_run:
-        logger.info('Dry run: bulk creation did not run and emails are not sent')
-        logger.info('Dry run: complete')
+        logger.info('Dry run: complete. Bulk creation did not run and emails are not sent.')
         return
 
     try:
@@ -162,18 +160,16 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info(f'[{len(created_objects)}] rows successfully prepared.')
 
-    logger.info('Updating job state ...')
     upload.state = JobState.INITIALIZED
     try:
         upload.save()
-        logger.info('Job state updated')
     except ValidationError:
         upload.delete()
         sentry.log_exception()
         message = 'Bulk upload preparation failure: job state update failed'
         return handle_internal_error(initiator=initiator, provider=provider, message=message, dry_run=dry_run)
     logger.info(
-        f'Bulk upload preparation finished: [upload={upload.id}, '
+        f'Bulk upload preparation finished: [upload={upload.id}, state={upload.state.name}, '
         f'provider={upload.provider._id}, schema={upload.schema._id}, initiator={upload.initiator._id}]',
     )
 
@@ -181,20 +177,19 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
 @celery_app.task(name='api.providers.tasks.monitor_registration_bulk_upload_jobs')
 def monitor_registration_bulk_upload_jobs(dry_run=True):
 
-    logger.info('Checking registration bulk upload jobs ...')
     bulk_uploads = RegistrationBulkUploadJob.objects.filter(state=JobState.INITIALIZED)
     number_of_jobs = len(bulk_uploads)
-    logger.info(f'[{number_of_jobs}] pending jobs found.')
+    logger.info(f'[{number_of_jobs}] pending registration bulk upload jobs found.')
 
     for upload in bulk_uploads:
-        logger.info(f'Picked up job [upload={upload.id}, hash={upload.payload_hash}]')
+        logger.info(f'Picking up job [upload={upload.id}, hash={upload.payload_hash}]')
         upload.state = JobState.PICKED_UP
         bulk_create_registrations.delay(upload.id, dry_run=dry_run)
         if not dry_run:
             upload.save()
     if dry_run:
-        logger.info('Dry run: bulk creation started in dry-run mode and job state was not updated')
-    logger.info(f'[{number_of_jobs}] jobs have been picked up and kicked off. This monitor task ends.')
+        logger.info('Dry run: complete. Bulk creation started in dry-run mode and the job state was not updated')
+    logger.info(f'Done. [{number_of_jobs}] jobs have been picked up and kicked off.')
 
 
 @celery_app.task()
@@ -323,7 +318,7 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     }
     # Return if dry-run is enabled
     if dry_run:
-        logger.info('Dry run: no draft registration will be created.')
+        logger.info('Dry run: complete. No draft registration will be created.')
         return
 
     # Creating the draft registration
@@ -344,7 +339,10 @@ def handle_registration_row(row, initiator, provider, schema, auto_approval=Fals
     draft.save()
     row.is_completed = True
     row.save()
-    logger.info(f'Draft registration created: [{row.draft_registration._id}]')
+    logger.info(
+        f'Draft registration created: [guid={row.draft_registration._id}] '
+        f'for registration row [hash={row.row_hash}] in upload job [pk={row.upload.id}]',
+    )
     # Register the draft
     bulk_upload_register_draft(
         initiator,
@@ -365,13 +363,14 @@ def check_node(node_id, initiator, row, title, external_id):
     if node_id:
         try:
             node = AbstractNode.objects.get(guids___id=node_id, is_deleted=False, type='osf.node')
-            initiator_contributor = node.contributor_set.get(user=initiator)
         except AbstractNode.DoesNotExist:
             error = f'Node does not exist: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         except AbstractNode.MultipleObjectsReturned:
             error = f'Multiple nodes returned: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+        try:
+            initiator_contributor = node.contributor_set.get(user=initiator)
         except Contributor.DoesNotExist:
             error = f'Initiator [{initiator._id}] must be a contributor on the project [{node._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
@@ -583,7 +582,6 @@ def bulk_upload_register_draft(initiator, provider, row, title, external_id, aut
     # Any error that happens during `registration.sanction.accept()` doesn't affect the state of upload job and the
     # registration row.
     if auto_approval:
-        logger.info(f'Provider [{provider._id}] has enabled auto approval.')
         try:
             registration.sanction.accept()
         except Exception as e:
@@ -591,7 +589,10 @@ def bulk_upload_register_draft(initiator, provider, row, title, external_id, aut
                 row.upload.id, row.id, title, external_id,
                 error=repr(e), approval_failure=True,
             )
-        logger.info(f'Registration approved but pending moderation: [{registration._id}]')
+        logger.info(
+            f'Provider [{provider._id}] has enabled auto-approval; '
+            f'thus registration [{registration._id}] has been approved but pending moderation',
+        )
     return registration
 
 
@@ -630,13 +631,11 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
                       f' Upload ID: [{upload.id}]; Approval Errors: [{approval_errors}]'
             sentry.log_message(message)
             logger.warning(message)
-            pass
     # Use `.sort()` to stabilize the order
     draft_errors.sort()
     approval_errors.sort()
     if not dry_run:
         upload.save()
-        logger.info('Sending emails to initiator/uploader ...')
         if upload.state == JobState.DONE_FULL:
             mails.send_mail(
                 to_addr=initiator.username,
@@ -644,7 +643,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
                 fullname=initiator.fullname,
                 auto_approval=auto_approval,
                 count=row_count,
-                pending_submissions_url=get_provider_submission_url(provider),
+                pending_submissions_url=get_registration_provider_submissions_url(provider),
             )
         elif upload.state == JobState.DONE_PARTIAL:
             mails.send_mail(
@@ -657,7 +656,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
                 draft_errors=draft_errors,
                 approval_errors=approval_errors,
                 failures=len(draft_errors),
-                pending_submissions_url=get_provider_submission_url(provider),
+                pending_submissions_url=get_registration_provider_submissions_url(provider),
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
         elif upload.state == JobState.DONE_ERROR:
@@ -722,9 +721,3 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
         user=user,
         provider_name=provider_name,
     )
-
-
-def get_provider_submission_url(provider):
-    """Return the submission URL for a given registration provider
-    """
-    return f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions/'
