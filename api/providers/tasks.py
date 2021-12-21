@@ -31,6 +31,7 @@ from osf.models import (
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
+from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 
 from website import mails, settings
@@ -644,7 +645,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
                 fullname=initiator.fullname,
                 auto_approval=auto_approval,
                 count=row_count,
-                pending_submissions_url=get_provider_submission_url(provider),
+                pending_submissions_url=get_registration_provider_submissions_url(provider),
             )
         elif upload.state == JobState.DONE_PARTIAL:
             mails.send_mail(
@@ -657,7 +658,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
                 draft_errors=draft_errors,
                 approval_errors=approval_errors,
                 failures=len(draft_errors),
-                pending_submissions_url=get_provider_submission_url(provider),
+                pending_submissions_url=get_registration_provider_submissions_url(provider),
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
         elif upload.state == JobState.DONE_ERROR:
@@ -722,9 +723,3 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
         user=user,
         provider_name=provider_name,
     )
-
-
-def get_provider_submission_url(provider):
-    """Return the submission URL for a given registration provider
-    """
-    return f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions/'
