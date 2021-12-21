@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect
 from django.views.generic import UpdateView, TemplateView, FormView
+from django.core.paginator import Paginator
 
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_announcement.forms import PreviewForm, SendForm, SettingsForm
@@ -13,12 +14,13 @@ from osf.models.user import OSFUser
 from django.core.mail import EmailMessage
 from website.settings import SUPPORT_EMAIL
 from admin.base.settings import FCM_SETTINGS
-from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM  # noqa
+from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM, EMAIL_USERS_CHANK_SIZE  # noqa
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
 from urllib.parse import urlparse
 import tweepy
+import time
 
 class RdmAnnouncementPermissionMixin(RdmPermissionMixin):
     @property
@@ -229,28 +231,29 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
     def send_email(self, data):
         ret = {'is_success': True, 'error': ''}
         now_user = self.request.user
-        to_list = []
         if self.is_super_admin:
-            all_users = OSFUser.objects.all()
-            for user in all_users:
-                if user.is_active and user.is_registered:
-                    to_list.append(user.username)
+            users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
         elif self.is_admin:
             now_institutions_id = list(now_user.affiliated_institutions.all().values_list('pk', flat=True))
-            qs = OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('username', flat=True)
-            to_list = list(qs)
+            users_query = OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id, is_active=True, is_registered=True).distinct()
         else:
             ret['is_success'] = False
             return ret
         try:
-            email = EmailMessage(
-                subject=data['title'],
-                body=data['body'],
-                from_email=ANNOUNCEMENT_EMAIL_FROM,
-                to=[SUPPORT_EMAIL or now_user.username],
-                bcc=to_list
-            )
-            email.send(fail_silently=False)
+            paginator = Paginator(users_query, EMAIL_USERS_CHANK_SIZE)
+
+            for page in range(1, paginator.num_pages + 1):
+                to_list = paginator.page(page).values_list('username', flat=True)
+                email = EmailMessage(
+                    subject=data['title'],
+                    body=data['body'],
+                    from_email=ANNOUNCEMENT_EMAIL_FROM,
+                    to=[SUPPORT_EMAIL or now_user.username],
+                    bcc=to_list
+                )
+                email.send(fail_silently=False)
+                if page < paginator.num_pages + 1;
+                    time.sleep(0.1) # wait for send rate 
         except Exception as e:
             ret['is_success'] = False
             ret['error'] = 'Email error: ' + str(e)

@@ -69,6 +69,7 @@ EMAIL_HOST_USER = osf_settings.MAIL_USERNAME
 EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_USERS_CHANK_SIZE = 40
 
 # Application definition
 
