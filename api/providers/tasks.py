@@ -366,13 +366,14 @@ def check_node(node_id, initiator, row, title, external_id):
     if node_id:
         try:
             node = AbstractNode.objects.get(guids___id=node_id, is_deleted=False, type='osf.node')
-            initiator_contributor = node.contributor_set.get(user=initiator)
         except AbstractNode.DoesNotExist:
             error = f'Node does not exist: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
         except AbstractNode.MultipleObjectsReturned:
             error = f'Multiple nodes returned: [node_id={node_id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
+        try:
+            initiator_contributor = node.contributor_set.get(user=initiator)
         except Contributor.DoesNotExist:
             error = f'Initiator [{initiator._id}] must be a contributor on the project [{node._id}]'
             raise RegistrationBulkCreationRowError(row.upload.id, row.id, title, external_id, error=error)
