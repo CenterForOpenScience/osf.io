@@ -3235,8 +3235,12 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
+#: website/templates/project/project_header.mako:65
+msgid "Computation"
+msgstr ""
+
 #: website/templates/project/project_header.mako:61
-msgid "Analytics"
+msgid "Statistics"
 msgstr ""
 
 #: website/templates/project/project_header.mako:67
@@ -3808,4 +3812,3 @@ msgstr ""
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr ""
-
