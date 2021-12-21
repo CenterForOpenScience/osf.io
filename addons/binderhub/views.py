@@ -3,9 +3,10 @@ import json
 from rest_framework import status as http_status
 from flask import request
 import logging
-from future.moves.urllib.parse import urljoin
+from future.moves.urllib.parse import urljoin, urlencode
 
 from . import SHORT_NAME
+from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from website.project.decorators import (
     must_have_addon,
@@ -15,8 +16,9 @@ from website.project.decorators import (
 from website.ember_osf_web.views import use_ember_app
 from website import settings as website_settings
 from website.util import api_url_for
+from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
-from .models import BinderHubToken
+from .models import BinderHubToken, get_default_binderhubs, fill_binderhub_secrets
 from . import settings
 
 logger = logging.getLogger(__name__)
@@ -39,13 +41,61 @@ def get_launcher():
         'endpoints': [get_launcher_endpoint(e) for e in settings.JUPYTERHUB_LAUNCHERS],
     }
 
+@must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
+def binderhub_get_user_config(auth, **kwargs):
+    addon = auth.user.get_addon(SHORT_NAME)
+    return {
+        'binderhubs': addon.get_binderhubs(allow_secrets=True) if addon else [],
+    }
+
+@must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
+def binderhub_set_user_config(auth, **kwargs):
+    addon = auth.user.get_addon(SHORT_NAME)
+    if not addon:
+        auth.user.add_addon(SHORT_NAME)
+        addon = auth.user.get_addon(SHORT_NAME)
+    try:
+        binderhubs = request.json['binderhubs']
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    addon.set_binderhubs(binderhubs)
+    return {}
+
+@must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
+def binderhub_add_user_config(auth, **kwargs):
+    addon = auth.user.get_addon(SHORT_NAME)
+    if not addon:
+        auth.user.add_addon(SHORT_NAME)
+        addon = auth.user.get_addon(SHORT_NAME)
+    try:
+        binderhub = request.json['binderhub']
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    binderhubs = [x for x in addon.get_binderhubs(allow_secrets=True) if x['binderhub_url'] != binderhub['binderhub_url']]
+    addon.set_binderhubs(binderhubs + [binderhub])
+    return {}
+
 @must_be_valid_project
 @must_have_permission('admin')
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_get_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
-    return {'binder_url': addon.get_binder_url()}
+    auth = kwargs['auth']
+    user_addon = auth.user.get_addon(SHORT_NAME)
+    user_binderhubs = []
+    if user_addon:
+        user_binderhubs = user_addon.get_binderhubs(allow_secrets=False)
+    system_binderhubs = get_default_binderhubs(allow_secrets=False)
+    return {
+        'binder_url': addon.get_binder_url(),
+        'available_binderhubs': addon.get_available_binderhubs(allow_secrets=False),
+        'user_binderhubs': user_binderhubs,
+        'system_binderhubs': system_binderhubs,
+    }
 
 @must_be_valid_project
 @must_have_permission('admin')
@@ -57,8 +107,22 @@ def binderhub_set_config(**kwargs):
         binder_url = request.json['binder_url']
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    try:
+        available_binderhubs = request.json['available_binderhubs']
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     logger.info('binder_url: {}'.format(binder_url))
+    # fill secrets
+    old_binderhubs = addon.get_available_binderhubs(allow_secrets=True)
+    auth = kwargs['auth']
+    user_addon = auth.user.get_addon(SHORT_NAME)
+    user_binderhubs = []
+    if user_addon:
+        user_binderhubs = user_addon.get_binderhubs(allow_secrets=True)
+    system_binderhubs = get_default_binderhubs(allow_secrets=True)
+    available_binderhubs = fill_binderhub_secrets(available_binderhubs, [old_binderhubs, user_binderhubs, system_binderhubs])
     addon.set_binder_url(binder_url)
+    addon.set_available_binderhubs(available_binderhubs)
     return {}
 
 @must_be_valid_project
@@ -81,30 +145,59 @@ def binderhub_get_config_ember(**kwargs):
                                            pid=node._id,
                                            serviceid='jupyterhub',
                                            _absolute=True)
-    tokens = BinderHubToken.objects.filter(user=auth.user, node=node)
-    token = tokens[0] if len(tokens) > 0 else None
-    binderhub_token = json.loads(token.binderhub_token) if token is not None and token.binderhub_token else None
-    jupyterhub_token = json.loads(token.jupyterhub_token) if token is not None and token.jupyterhub_token else None
-    jupyterhub_url = token.jupyterhub_url if token is not None else None
-    if jupyterhub_url is not None:
-        clients = settings.JUPYTERHUB_OAUTH_CLIENTS
-        api_url = clients[jupyterhub_url]['api_url'] if jupyterhub_url in clients else None
-        jupyterhub = {
+    user_addon = auth.user.get_addon(SHORT_NAME)
+    node_binderhubs = addon.get_available_binderhubs(allow_secrets=False)
+    user_binderhubs = []
+    if user_addon:
+        user_binderhubs = user_addon.get_binderhubs(allow_secrets=False)
+    default_binderhub_url = addon.get_binder_url()
+    all_binderhubs = node_binderhubs + user_binderhubs
+    binderhub_urls = []
+    binderhubs = []
+    for binderhub in all_binderhubs:
+        binderhub_url = binderhub['binderhub_url']
+        if binderhub_url in binderhub_urls:
+            continue
+        tokens = BinderHubToken.objects.filter(user=auth.user, node=node, binderhub_url=binderhub_url)
+        token = tokens[0] if len(tokens) > 0 else None
+        binderhub_token = json.loads(token.binderhub_token) if token is not None and token.binderhub_token else None
+        jupyterhub_url = token.jupyterhub_url if token is not None else None
+        binderhubs.append({
+            'default': default_binderhub_url == binderhub_url,
+            'url': binderhub_url,
+            'authorize_url': binderhub_authorize_url + '?' + urlencode({
+                'binderhub_url': binderhub_url,
+            }),
+            'token': binderhub_token,
+            'jupyterhub_url': jupyterhub_url,
+        })
+        binderhub_urls.append(binderhub_url)
+    jupyterhubs = []
+    jupyterhub_urls = []
+    for binderhub in all_binderhubs:
+        binderhub_url = binderhub['binderhub_url']
+        tokens = BinderHubToken.objects.filter(user=auth.user, node=node, binderhub_url=binderhub_url)
+        token = tokens[0] if len(tokens) > 0 else None
+        jupyterhub_token = json.loads(token.jupyterhub_token) if token is not None and token.jupyterhub_token else None
+        jupyterhub_url = token.jupyterhub_url if token is not None else None
+        if jupyterhub_url is None or jupyterhub_url in jupyterhub_urls:
+            continue
+        api_url = binderhub['jupyterhub_api_url']
+        jupyterhubs.append({
             'url': jupyterhub_url,
-            'authorize_url': jupyterhub_authorize_url,
+            'authorize_url': jupyterhub_authorize_url + '?' + urlencode({
+                'binderhub_url': binderhub_url,
+            }),
             'token': jupyterhub_token,
             'api_url': api_url,
-        }
-    else:
-        jupyterhub = None
+        })
+        jupyterhub_urls.append(jupyterhub_url)
     return {'data': {'id': node._id, 'type': 'binderhub-config',
                      'attributes': {
-                         'binderhub': {
-                             'url': addon.get_binder_url(),
-                             'authorize_url': binderhub_authorize_url,
-                             'token': binderhub_token,
-                         },
-                         'jupyterhub': jupyterhub,
+                         'binderhubs': binderhubs,
+                         'jupyterhubs': jupyterhubs,
                          'deployment': get_deployment(),
                          'launcher': get_launcher(),
+                         'node_binderhubs': node_binderhubs,
+                         'user_binderhubs': user_binderhubs,
                      }}}

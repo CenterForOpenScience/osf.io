@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2021 ORGANIZATION
+# Copyright (C) 2022 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-03-12 18:15+0900\n"
+"POT-Creation-Date: 2022-02-01 08:32+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -31,6 +31,8 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_node_settings.mako:39
+#: addons/binderhub/templates/hosts_modal.mako:64
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:75
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:55
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:99
@@ -76,6 +78,8 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: addons/binderhub/templates/binderhub_node_settings.mako:42
+#: addons/binderhub/templates/hosts_modal.mako:67
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:78
 #: addons/dataverse/templates/dataverse_node_settings.mako:118
 #: addons/forward/templates/forward_node_settings.mako:36
@@ -259,6 +263,7 @@ msgid "Private project"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/binderhub/templates/binderhub_user_settings.mako:41
 #: addons/s3/templates/s3_user_settings.mako:36
 #: addons/s3compat/templates/s3compat_user_settings.mako:36
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
@@ -266,6 +271,86 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:35
 #: website/templates/profile/user_settings_default.mako:32
 msgid "disconnect Project"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:14
+msgid "Select a BinderHub client"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:24
+#: addons/binderhub/templates/binderhub_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_user_settings.mako:31
+#: addons/binderhub/templates/hosts_modal.mako:17
+msgid "BinderHub URL"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:28
+msgid "Select a BinderHub"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:69
+#: addons/binderhub/templates/binderhub_user_settings.mako:22
+msgid "Loading..."
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:87
+msgid "disconnect binderhub"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:91
+msgid "set to default"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:95
+msgid "default"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:105
+msgid "Add Host"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:108
+msgid "Add Host from Account or GRDM"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_user_settings.mako:14
+msgid "Add BinderHub"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:6
+msgid "Configure a BinderHub client"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:21
+msgid "BinderHub OAuth Client ID"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:25
+msgid "BinderHub OAuth Client Secret"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:29
+msgid "JupyterHub URL"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:33
+msgid "JupyterHub OAuth Client ID"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:37
+msgid "JupyterHub OAuth Client Secret"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:41
+msgid "JupyterHub Admin Token"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:51
+msgid "BinderHub URL is invalid. BinderHub URL should be start with http(s)://"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:56
+msgid "JupyterHub URL is invalid. JupyterHub URL should be start with http(s)://"
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
@@ -3776,4 +3861,3 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
-

@@ -19,18 +19,19 @@ class AddonAppConfig(BaseAddonAppConfig):
 
     full_name = FULL_NAME
 
-    owners = ['node']
+    owners = ['user', 'node']
 
     views = [
         'page'
     ]
 
-    configs = ['node']
+    configs = ['accounts', 'node']
 
     categories = ['other']
     has_page_icon = False
 
-    node_settings_template = os.path.join(TEMPLATE_PATH, 'node_settings.mako')
+    node_settings_template = os.path.join(TEMPLATE_PATH, 'binderhub_node_settings.mako')
+    user_settings_template = os.path.join(TEMPLATE_PATH, 'binderhub_user_settings.mako')
 
     @property
     def routes(self):
@@ -39,6 +40,10 @@ class AddonAppConfig(BaseAddonAppConfig):
             routes.page_routes,
             routes.api_routes
         ]
+
+    @property
+    def user_settings(self):
+        return self.get_model('UserSettings')
 
     @property
     def node_settings(self):
