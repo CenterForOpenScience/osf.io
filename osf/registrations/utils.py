@@ -485,6 +485,10 @@ class SubjectsField(MetadataField):
             self.log_error(type=self.error_type['invalid'])
         elif len(valid_subjects):
             self._parsed_value = valid_subjects
+        else:
+            # It is impossible to reach a state where both `invalid_subjects` and `valid_subjects` are empty.
+            # This is because `subjects` is at least a list of ['', ''].
+            raise RuntimeError('both invalid_subjects and valid_subjects are empty')
 
 
 class InstitutionsField(MetadataField):
