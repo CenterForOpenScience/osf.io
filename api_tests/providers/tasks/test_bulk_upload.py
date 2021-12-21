@@ -2,12 +2,13 @@ import mock
 import pytest
 import uuid
 
-from api.providers.tasks import bulk_create_registrations, get_provider_submission_url
+from api.providers.tasks import bulk_create_registrations
 
 from osf.exceptions import RegistrationBulkCreationContributorError, RegistrationBulkCreationRowError
 from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
+from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN, READ, WRITE
 
 from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
@@ -345,7 +346,7 @@ class TestBulkUploadTasks:
             fullname=initiator.fullname,
             auto_approval=False,
             count=2,
-            pending_submissions_url=get_provider_submission_url(provider),
+            pending_submissions_url=get_registration_provider_submissions_url(provider),
         )
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
@@ -381,7 +382,7 @@ class TestBulkUploadTasks:
             total=2,
             successes=1,
             failures=1,
-            pending_submissions_url=get_provider_submission_url(provider),
+            pending_submissions_url=get_registration_provider_submissions_url(provider),
             osf_support_email=settings.OSF_SUPPORT_EMAIL,
         )
 

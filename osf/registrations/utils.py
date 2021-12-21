@@ -44,6 +44,7 @@ FIELD_REGEX = {
     'contributors': re.compile(r'(?P<full_name>[\w\W]+)<(?P<email>.+?)>'),
 }
 
+
 @functools.lru_cache(maxsize=MAX_EXCEL_COLUMN_NUMBER)
 def get_excel_column_name(column_index):
     '''Convert a column index to an excel spreadsheet column name by mimicking Base-26 conversion.'''
@@ -54,6 +55,7 @@ def get_excel_column_name(column_index):
         column_name = f'{next_leading_char}{column_name}'
         index = (index // 26) - 1
     return column_name
+
 
 def get_schema_questions_validations(registration_schema):
     schema_blocks = list(registration_schema.schema_blocks.filter(
@@ -101,14 +103,18 @@ class Store():
         self.subjects = registration_provider.all_subjects.all()
         self.institutions = Institution.objects.get_all_institutions()
 
+
 class InvalidHeadersError(ValidationError):
     pass
+
 
 class DuplicateHeadersError(ValidationError):
     pass
 
+
 class FileUploadNotSupportedError(ValidationError):
     pass
+
 
 class BulkRegistrationUpload():
     @property
@@ -196,6 +202,7 @@ class BulkRegistrationUpload():
         for row in self.rows:
             row.validate()
 
+
 class Row():
     @property
     def is_validated(self):
@@ -238,6 +245,7 @@ class Row():
     def validate(self):
         for cell in self.cells:
             cell.validate()
+
 
 class Cell():
     @property
@@ -309,6 +317,7 @@ class UploadField(ABC):
             self.is_validated = True
         return self._parsed_value if self._parsed_value is not None else self.default_value
 
+
 class RegistrationResponseField(UploadField):
     @property
     def default_value(self):
@@ -347,6 +356,7 @@ class RegistrationResponseField(UploadField):
                         parsed_value.append(choice)
         self._parsed_value = parsed_value
 
+
 class MetadataField(UploadField):
     @property
     def default_value(self):
@@ -372,6 +382,7 @@ class MetadataField(UploadField):
         elif self.format == 'list':
             parsed_value = [val.strip() for val in self.value.split(';')]
         self._parsed_value = parsed_value
+
 
 class ContributorField(MetadataField):
     # format: contributor_name<contributor_email>;contributor_name<contributor_email>
@@ -402,6 +413,7 @@ class ContributorField(MetadataField):
             else:
                 self.log_error(type=self.error_type['invalid'])
         self._parsed_value = parsed_value or None
+
 
 class LicenseField(MetadataField):
     # format: license_name;year;copyright_holder1,copyright_holder2,...
@@ -448,12 +460,14 @@ class LicenseField(MetadataField):
         else:
             self.log_error(type=self.error_type['invalid'])
 
+
 class CategoryField(MetadataField):
     def _validate(self):
         try:
             self._parsed_value = CATEGORY_REVERSE_LOOKUP[self.value if self.value else 'Uncategorized']
         except KeyError:
             self.log_error(type=self.error_type['invalid'])
+
 
 class SubjectsField(MetadataField):
     def _validate(self):
@@ -471,6 +485,11 @@ class SubjectsField(MetadataField):
             self.log_error(type=self.error_type['invalid'])
         elif len(valid_subjects):
             self._parsed_value = valid_subjects
+        else:
+            # It is impossible to reach a state where both `invalid_subjects` and `valid_subjects` are empty.
+            # This is because `subjects` is at least a list of ['', ''].
+            raise RuntimeError('both invalid_subjects and valid_subjects are empty')
+
 
 class InstitutionsField(MetadataField):
     def _validate(self):
@@ -488,6 +507,7 @@ class InstitutionsField(MetadataField):
         else:
             self._parsed_value = valid_institutions
 
+
 class ProjectIDField(MetadataField):
     def _validate(self):
         if not self.value:
@@ -498,3 +518,10 @@ class ProjectIDField(MetadataField):
             self.log_error(type=self.error_type['invalid'])
         else:
             self._parsed_value = self.value
+
+
+def get_registration_provider_submissions_url(provider):
+    """Return the submissions URL for a given registration provider.
+    """
+    assert isinstance(provider, RegistrationProvider), 'Provider must be a Registration provider'
+    return f'{settings.DOMAIN}registries/{provider._id}/moderation/pending'
