@@ -3333,9 +3333,13 @@ msgstr "コンポーネント"
 msgid "Navigation"
 msgstr "ナビゲーション"
 
+#: website/templates/project/project_header.mako:65
+msgid "Computation"
+msgstr "解析"
+
 #: website/templates/project/project_header.mako:61
-msgid "Analytics"
-msgstr "分析"
+msgid "Statistics"
+msgstr "統計"
 
 #: website/templates/project/project_header.mako:67
 msgid "Registrations"
@@ -3920,4 +3924,3 @@ msgstr "メンバー管理"
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
-

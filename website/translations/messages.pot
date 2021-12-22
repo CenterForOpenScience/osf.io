@@ -3232,8 +3232,12 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
+#: website/templates/project/project_header.mako:65
+msgid "Computation"
+msgstr ""
+
 #: website/templates/project/project_header.mako:61
-msgid "Analytics"
+msgid "Statistics"
 msgstr ""
 
 #: website/templates/project/project_header.mako:67
@@ -3775,4 +3779,3 @@ msgstr ""
 #: website/templates/util/render_node.mako:66
 msgid "Manage Contributors"
 msgstr ""
-
