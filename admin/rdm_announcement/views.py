@@ -14,7 +14,7 @@ from osf.models.user import OSFUser
 from django.core.mail import EmailMessage
 from website.settings import SUPPORT_EMAIL
 from admin.base.settings import FCM_SETTINGS
-from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM, EMAIL_USERS_CHANK_SIZE  # noqa
+from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM, EMAIL_USERS_CHUNK_SIZE  # noqa
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
@@ -240,7 +240,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             ret['is_success'] = False
             return ret
         try:
-            paginator = Paginator(users_query, EMAIL_USERS_CHANK_SIZE)
+            paginator = Paginator(users_query, EMAIL_USERS_CHUNK_SIZE)
 
             for page in range(1, paginator.num_pages + 1):
                 to_list = paginator.page(page).values_list('username', flat=True)
