@@ -253,7 +253,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
                 )
                 email.send(fail_silently=False)
                 if page < paginator.num_pages + 1:
-                    time.sleep(0.1)  # wait for send rate 
+                    time.sleep(0.1)  # wait for send rate
         except Exception as e:
             ret['is_success'] = False
             ret['error'] = 'Email error: ' + str(e)
