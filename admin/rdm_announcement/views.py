@@ -21,6 +21,7 @@ import facebook
 from urllib.parse import urlparse
 import tweepy
 import time
+import math
 
 class RdmAnnouncementPermissionMixin(RdmPermissionMixin):
     @property
@@ -240,10 +241,9 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             ret['is_success'] = False
             return ret
         try:
-            paginator = Paginator(users_query, EMAIL_USERS_CHUNK_SIZE)
-
-            for page in range(1, paginator.num_pages + 1):
-                to_list = paginator.page(page).values_list('username', flat=True)
+            max_page = math.ceil(users_query.count() / EMAIL_USERS_CHUNK_SIZE)
+            for page in range(0, max_page):
+                to_list = list(users_query[(page * EMAIL_USERS_CHUNK_SIZE):((page + 1) * EMAIL_USERS_CHUNK_SIZE)].values_list('username', flat=True))
                 email = EmailMessage(
                     subject=data['title'],
                     body=data['body'],
@@ -252,8 +252,8 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
                     bcc=to_list
                 )
                 email.send(fail_silently=False)
-                if page < paginator.num_pages + 1:
-                    time.sleep(0.1)  # wait for send rate
+                if page < max_page - 1:
+                    time.sleep(0.2)  # wait for send rate
         except Exception as e:
             ret['is_success'] = False
             ret['error'] = 'Email error: ' + str(e)
