@@ -4,7 +4,6 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.urlresolvers import reverse_lazy
 from django.shortcuts import render, redirect
 from django.views.generic import UpdateView, TemplateView, FormView
-from django.core.paginator import Paginator
 
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_announcement.forms import PreviewForm, SendForm, SettingsForm
