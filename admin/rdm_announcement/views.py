@@ -240,7 +240,7 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
             ret['is_success'] = False
             return ret
         try:
-            max_page = int(math.ceil(users_query.count() / EMAIL_USERS_CHUNK_SIZE))
+            max_page = int(math.ceil(float(users_query.count()) / EMAIL_USERS_CHUNK_SIZE))
             for page in range(0, max_page):
                 to_list = list(users_query[(page * EMAIL_USERS_CHUNK_SIZE):((page + 1) * EMAIL_USERS_CHUNK_SIZE)].values_list('username', flat=True))
                 email = EmailMessage(
