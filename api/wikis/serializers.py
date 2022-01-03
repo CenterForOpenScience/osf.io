@@ -147,6 +147,12 @@ class NodeWikiSerializer(WikiSerializer):
 
         return wiki_page
 
+    def is_valid(self, *args, **kwargs):
+        '''
+        Override sanitize html because that's old pre-Django behavior for that endpoint.
+        '''
+        return super().is_valid(clean_html=False)
+
 
 class RegistrationWikiSerializer(WikiSerializer):
 
