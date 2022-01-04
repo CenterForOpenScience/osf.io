@@ -1857,6 +1857,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'uom',
+                'name': 'University of Manchester [Test]',
+                'description': 'OSF is currently only supported for FBMH Core Facility users, for further information contact <a href="mailto:danielle.owen@manchester.ac.uk">danielle.owen@manchester.ac.uk</a>. <a href="https://www.manchester.ac.uk/discover/privacy-information/">University of Manchester Privacy Policy</a>',
+                'banner_name': 'uom-banner.png',
+                'logo_name': 'uom-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://beta.shib.manchester.ac.uk/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'usc',
                 'name': 'University of Southern California [Test]',
                 'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
