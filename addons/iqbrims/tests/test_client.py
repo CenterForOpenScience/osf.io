@@ -238,7 +238,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 6);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -303,6 +303,26 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 3,
                     }
+                  }
+                })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 
@@ -340,7 +360,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 7);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -407,6 +427,46 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     }
                   }
                 })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                assert_equal(requests[6], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 5 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 5 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
 
     def test_add_files_with_multibytes_dir(self):
         client = SpreadsheetClient('0001')
@@ -436,7 +496,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 6);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -501,6 +561,26 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 3,
                     }
+                  }
+                })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 
@@ -712,7 +792,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 5 + 12);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
@@ -777,6 +857,258 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 6,
                     }
+                  }
+                })
+                # Data_2022_Sample
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 1 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 1 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # Fig1
+                assert_equal(requests[6], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 4 + 3 + 1,
+                      'endColumnIndex': 2,
+                      'sheetId': 1,
+                      'startColumnIndex': 1,
+                      'startRowIndex': 4 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # B
+                assert_equal(requests[7], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 6 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 6 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[8], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 7 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 7 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[9], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 9 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 9 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # Fig2
+                assert_equal(requests[10], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 12 + 3 + 1,
+                      'endColumnIndex': 2,
+                      'sheetId': 1,
+                      'startColumnIndex': 1,
+                      'startRowIndex': 12 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # A
+                assert_equal(requests[11], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 14 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 14 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[12], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 15 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 15 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[13], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 18 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 18 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # C
+                assert_equal(requests[14], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 21 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 21 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[15], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 22 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 22 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[16], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 25 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 25 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 

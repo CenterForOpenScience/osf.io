@@ -557,7 +557,7 @@ class SpreadsheetClient(BaseClient):
                                 ['Software Used(Extension)'] +
                                 ['{}(Extension)'.format(col) for col in fcolumns],
                                 row=1 + COMMENT_MARGIN)
-        values = self._to_file_list(top, [])
+        values, styles = self._to_file_list(top, [])
         exts = sorted(set([os.path.splitext(v[-1])[-1]
                            for v, t in values if t == 'file']))
         exts = [e for e in exts if len(e) > 0]
@@ -599,6 +599,22 @@ class SpreadsheetClient(BaseClient):
                 'fields': 'hiddenByUser',
             }
         } for i, col in enumerate(c) if col.startswith('L') and col not in entry_cols]
+
+        update_style_reqs = [{
+            'repeatCell': {
+                'range': {
+                    'sheetId': files_sheet_idx,
+                    'startRowIndex': row + 1 + COMMENT_MARGIN,
+                    'endRowIndex': row + 1 + COMMENT_MARGIN + 1,
+                    'startColumnIndex': col,
+                    'endColumnIndex': col + 1,
+                },
+                'cell': {
+                    'userEnteredFormat': style,
+                },
+                'fields': self._to_fields('userEnteredFormat', list(style.keys()))
+            }
+        } for row, col, style in styles]
 
         res = self._make_request(
             'POST',
@@ -659,12 +675,19 @@ class SpreadsheetClient(BaseClient):
                                        'startIndex': 1,
                                        'endIndex': max_depth + FILE_ENTRY_MARGIN}
                     }
-                }] + hide_col_reqs
+                }] + hide_col_reqs + update_style_reqs
             }),
             expects=(200, ),
             throws=HTTPError(401)
         )
         logger.info('DataValidation Updated: {}'.format(res.json()))
+
+    def _to_fields(self, parent, keys):
+        if len(keys) == 0:
+            return parent
+        if len(keys) == 1:
+            return parent + '.' + keys[0]
+        return '{}({})'.format(parent, ','.join(keys))
 
     def _row_name(self, index):
         if index < len(string.ascii_uppercase):
@@ -697,8 +720,9 @@ class SpreadsheetClient(BaseClient):
             r.append(e)
         return r
 
-    def _to_file_list(self, target, blank):
+    def _to_file_list(self, target, blank, offset=0):
         ret = []
+        styles = []
         col = target['depth'] + 1
         for i, f in enumerate(sorted(target['files'])):
             is_last = i == len(target['files']) - 1
@@ -727,10 +751,19 @@ class SpreadsheetClient(BaseClient):
                     if not blank[j]:
                         r[j] = '│'
             r[col] = d['name']
+            _offset = offset + len(ret)
             ret.append((r, 'directory'))
+            styles.append((_offset, col, {
+                'textFormat': {
+                    'italic': True,
+                    'bold': True,
+                },
+            }))
             next_blank = list(blank) + ([is_last] if col > 0 else [])
-            ret += self._to_file_list(d, next_blank)
-        return ret
+            _r, _styles = self._to_file_list(d, next_blank, offset=_offset + 1)
+            ret += _r
+            styles += _styles
+        return ret, styles
 
 
 class IQBRIMSWorkflowUserSettings(object):
