@@ -852,7 +852,12 @@ class IQBRIMSWorkflowUserSettings(object):
     def MESSAGES(self):
         current = self.load()
         if 'MESSAGES' in current['settings']:
-            return json.loads(current['settings']['MESSAGES'])
+            r = json.loads(current['settings']['MESSAGES'])
+            for key in sorted(current['settings'].keys()):
+                if not key.startswith('MESSAGES.'):
+                    continue
+                r.update(json.loads(current['settings'][key]))
+            return r
         return settings.MESSAGES
 
     @property

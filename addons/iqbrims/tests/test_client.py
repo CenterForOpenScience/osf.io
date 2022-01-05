@@ -715,6 +715,40 @@ class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
         client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
         assert_equal(client.LABO_LIST, [{'text': u"No text: {'id': 'xxx', 'tet': 'XXX'}", 'id': 'error'}])
 
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_load_messages(self, mock_get_row_values, mock_ensure_columns,
+                            mock_sheets, mock_create_spreadsheet, mock_files):
+        mock_files.return_value = []
+        mock_create_spreadsheet.return_value = {'id': 'test_spreadsheet'}
+        gp = {'rowCount': 1}
+        mock_sheets.return_value = [
+          {'properties': {'title': settings.USER_SETTINGS_SHEET_SHEET_NAME,
+                          'gridProperties': gp}}
+        ]
+        mock_ensure_columns.side_effect = lambda sid, cols: cols
+        keys = ['MESSAGES', 'MESSAGES.0']
+        values = ['{"msg1": {"data": "MESSAGE1"}}', '{"msg2": {"data": "MESSAGE2"}}']
+        mock_get_row_values.side_effect = lambda sid, col, rcount: keys if col == 0 else values
+        if 'loadedTime' in _user_settings_cache:
+            del _user_settings_cache['loadedTime']
+
+        client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
+        assert_equal(client.MESSAGES, {
+            'msg1': {'data': 'MESSAGE1'},
+            'msg2': {'data': 'MESSAGE2'},
+        })
+        assert_equal(client.FLOWABLE_HOST, settings.FLOWABLE_HOST)
+        assert_equal(client.FLOWABLE_USER, settings.FLOWABLE_USER)
+        assert_equal(client.FLOWABLE_PASSWORD, settings.FLOWABLE_PASSWORD)
+        assert_equal(client.FLOWABLE_RESEARCH_APP_ID, settings.FLOWABLE_RESEARCH_APP_ID)
+        assert_equal(client.FLOWABLE_SCAN_APP_ID, settings.FLOWABLE_SCAN_APP_ID)
+
+        assert_equal(len(mock_sheets.mock_calls), 1)
+
 
 class TestIQBRIMSFlowableClient(OsfTestCase):
 
