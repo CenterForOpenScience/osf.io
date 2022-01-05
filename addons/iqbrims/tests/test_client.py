@@ -134,8 +134,8 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A4:H4',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '']],
+                  'values': [['file1.txt', '', '', '', '.txt', '', ''],
+                             ['file2.txt', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
@@ -228,13 +228,13 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
                 assert_equal(len(json.loads(kwargs['data'])['values']), 4)
                 assert_equal(json.loads(kwargs['data'])['values'][0],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                             ['file1.txt', '', '', '', '', '.txt', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][1],
-                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                             ['file2.txt', '', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][2],
-                             [u'\u2514\u2212\u2212', 'test', '', '', '', '', '', ''])
+                             ['test', '', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][3],
-                             [u'', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
@@ -326,17 +326,17 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
                 assert_equal(len(json.loads(kwargs['data'])['values']), 6)
                 assert_equal(json.loads(kwargs['data'])['values'][0],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                             ['file1.txt', '', '', '', '', '.txt', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][1],
-                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                             ['file2.txt', '', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][2],
-                             [u'\u251c\u2212\u2212', 'test1', '', '', '', '', '', ''])
+                             ['test1', '', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][3],
-                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][4],
-                             [u'\u2514\u2212\u2212', 'test2', '', '', '', '', '', ''])
+                             ['test2', '', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][5],
-                             [u'', u'\u2514\u2212\u2212', 'file4.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file4.txt', '', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
@@ -428,10 +428,10 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A4:I4',
-                  'values': [[u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '.txt', '', ''],
-                             [u'\u251c\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', u'テスト', '', '', '', '', '', ''],
-                             [u'', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '']],
+                  'values': [[u'ファイル1.txt', '', '', '', '', '.txt', '', ''],
+                             [u'ファイル2.txt', '', '', '', '', '', '', ''],
+                             [u'テスト', '', '', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
@@ -523,8 +523,8 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
                   'range': 'sheet01!A4:J4',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'values': [['file1.txt', '', '', '', '.txt', '', '', '', ''],
+                             ['file2.txt', '', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
@@ -623,6 +623,161 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       },
                       'fields': 'hiddenByUser',
                     }
+                })
+
+    def test_add_files_with_complex_dirs(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['Data_2022_Sample/manuscript.tex',
+                                  'Data_2022_Sample/suppl.tex',
+                                  'Data_2022_Sample/Fig1/Sample.key',
+                                  'Data_2022_Sample/Fig1/B/processed/SampleB.png',
+                                  'Data_2022_Sample/Fig1/B/raw/Sample01.csv',
+                                  'Data_2022_Sample/Fig1/B/raw/Sample02.csv',
+                                  'Data_2022_Sample/Fig2/Sample.key',
+                                  'Data_2022_Sample/Fig2/A/processed/SampleA.png',
+                                  'Data_2022_Sample/Fig2/A/processed/SampleA.txt',
+                                  'Data_2022_Sample/Fig2/A/raw/Sample03.csv',
+                                  'Data_2022_Sample/Fig2/A/raw/Sample04.csv',
+                                  'Data_2022_Sample/Fig2/C/processed/SampleC.png',
+                                  'Data_2022_Sample/Fig2/C/processed/SampleC.txt',
+                                  'Data_2022_Sample/Fig2/C/raw/Sample05.csv'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:L4')
+                assert_equal(len(json.loads(kwargs['data'])['values']), 26)
+                assert_equal(json.loads(kwargs['data'])['values'][0],
+                             ['Data_2022_Sample', '', '', '', '', '', '', '', '.csv', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][1],
+                             ['├−−', 'manuscript.tex', '', '', '', '', '', '', '.key', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][2],
+                             ['├−−', 'suppl.tex', '', '', '', '', '', '', '.png', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][3],
+                             ['├−−', 'Fig1', '', '', '', '', '', '', '.tex', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][4],
+                             ['│', '├−−', 'Sample.key', '', '', '', '', '', '.txt', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][5],
+                             ['│', '└−−', 'B', '', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][6],
+                             ['│', '', '├−−', 'processed', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][7],
+                             ['│', '', '│', '└−−', 'SampleB.png', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][8],
+                             ['│', '', '└−−', 'raw', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][9],
+                             ['│', '', '', '├−−', 'Sample01.csv', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][10],
+                             ['│', '', '', '└−−', 'Sample02.csv', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][11],
+                             ['└−−', 'Fig2', '', '', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][12],
+                             ['', '├−−', 'Sample.key', '', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][13],
+                             ['', '├−−', 'A', '', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][14],
+                             ['', '│', '├−−', 'processed', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][15],
+                             ['', '│', '│', '├−−', 'SampleA.png', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][16],
+                             ['', '│', '│', '└−−', 'SampleA.txt', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][17],
+                             ['', '│', '└−−', 'raw', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][18],
+                             ['', '│', '', '├−−', 'Sample03.csv', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][19],
+                             ['', '│', '', '└−−', 'Sample04.csv', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][20],
+                             ['', '└−−', 'C', '', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][21],
+                             ['', '', '├−−', 'processed', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][22],
+                             ['', '', '│', '├−−', 'SampleC.png', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][23],
+                             ['', '', '│', '└−−', 'SampleC.txt', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][24],
+                             ['', '', '└−−', 'raw', '', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][25],
+                             ['', '', '', '└−−', 'Sample05.csv', '', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 5);
+                assert_equal(requests[0], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1,
+                          'endColumnIndex': 11,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[1], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 11,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[2], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 27 + 3,
+                          'endColumnIndex': 6,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[3], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 27 + 3,
+                          'endColumnIndex': 9,
+                          'sheetId': 1,
+                          'startColumnIndex': 8,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 6,
+                    }
+                  }
                 })
 
 class TestIQBRIMSWorkflowUserSettings(OsfTestCase):

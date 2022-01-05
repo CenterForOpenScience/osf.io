@@ -13,6 +13,8 @@ from addons.iqbrims import settings
 logger = logging.getLogger(__name__)
 _user_settings_cache = {}
 
+FILE_ENTRY_MARGIN = 3
+
 
 class IQBRIMSAuthClient(BaseClient):
 
@@ -513,8 +515,8 @@ class SpreadsheetClient(BaseClient):
 
     def add_files(self, files_sheet_id, files_sheet_idx,
                   mgmt_sheet_id, mgmt_sheet_idx, files):
-        top = {'depth': 0, 'name': None, 'files': [], 'dirs': []}
-        max_depth = 0
+        top = {'depth': -1, 'name': None, 'files': [], 'dirs': []}
+        max_depth = -1
         for f in files:
             if f.endswith('/'):
                 continue
@@ -545,7 +547,7 @@ class SpreadsheetClient(BaseClient):
                         0)
         num_of_fcolumns = 2
         fcolumns = ['Remarks']
-        entry_cols = ['L{}'.format(i) for i in range(0, max_depth + 2)]
+        entry_cols = ['L{}'.format(i) for i in range(0, max_depth + FILE_ENTRY_MARGIN)]
         COMMENT_MARGIN = 3
         c = self.ensure_columns(files_sheet_id,
                                 entry_cols +
@@ -580,7 +582,7 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('Inserted: {}'.format(res.json()))
-        ext_col_index = max_depth + 2 + num_of_fcolumns
+        ext_col_index = max_depth + FILE_ENTRY_MARGIN + num_of_fcolumns
         col_count = ext_col_index + 1 + num_of_fcolumns
 
         hide_col_reqs = [{
@@ -633,7 +635,7 @@ class SpreadsheetClient(BaseClient):
                         'protectedRange': {
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': max_depth + 2,
+                                      'endColumnIndex': max_depth + FILE_ENTRY_MARGIN,
                                       'startRowIndex': 1 + COMMENT_MARGIN,
                                       'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
@@ -655,7 +657,7 @@ class SpreadsheetClient(BaseClient):
                         'dimensions': {'sheetId': files_sheet_idx,
                                        'dimension': 'COLUMNS',
                                        'startIndex': 1,
-                                       'endIndex': max_depth + 2}
+                                       'endIndex': max_depth + FILE_ENTRY_MARGIN}
                     }
                 }] + hide_col_reqs
             }),
@@ -726,8 +728,7 @@ class SpreadsheetClient(BaseClient):
                         r[j] = '│'
             r[col] = d['name']
             ret.append((r, 'directory'))
-            next_blank = list(blank)
-            next_blank.append(is_last)
+            next_blank = list(blank) + ([is_last] if col > 0 else [])
             ret += self._to_file_list(d, next_blank)
         return ret
 
