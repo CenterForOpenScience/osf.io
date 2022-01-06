@@ -551,12 +551,12 @@ class SpreadsheetClient(BaseClient):
         COMMENT_MARGIN = 3
         c = self.ensure_columns(files_sheet_id,
                                 entry_cols +
-                                ['Ext'] +
-                                ['Persons Involved(File)'] +
-                                ['{}(File)'.format(col) for col in fcolumns] +
+                                ['Extention (File)'] +
+                                ['Persons Involved (File)'] +
+                                ['{} (File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
-                                ['Software Used(Extension)'] +
-                                ['{}(Extension)'.format(col) for col in fcolumns],
+                                ['Software Used (Extension)'] +
+                                ['{} (Extension)'.format(col) for col in fcolumns],
                                 row=1 + COMMENT_MARGIN)
         values, styles = self._to_file_list(top, [])
         exts = sorted(set([self._get_ext(v) for v, t in values if t == 'file']))
@@ -652,7 +652,7 @@ class SpreadsheetClient(BaseClient):
                         'protectedRange': {
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': c.index('Ext') + 1,
+                                      'endColumnIndex': c.index('Extention (File)') + 1,
                                       'startRowIndex': 1 + COMMENT_MARGIN,
                                       'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
@@ -721,7 +721,7 @@ class SpreadsheetClient(BaseClient):
                 e = values[index] if index < len(values) else ''
             elif c == 'Extension':
                 e = ext
-            elif c == 'Ext':
+            elif c == 'Extention (File)':
                 e = '-' if typestr != 'file' else self._get_ext(values)
             r.append(e)
         return r
