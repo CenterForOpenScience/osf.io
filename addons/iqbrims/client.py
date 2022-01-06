@@ -581,7 +581,7 @@ class SpreadsheetClient(BaseClient):
             expects=(200, ),
             throws=HTTPError(401)
         )
-        FILE_EXTRA_COLUMNS = 1 # Ext
+        FILE_EXTRA_COLUMNS = 1  # Ext
         logger.info('Inserted: {}'.format(res.json()))
         ext_col_index = max_depth + FILE_EXTRA_COLUMNS + FILE_ENTRY_MARGIN + num_of_fcolumns
         col_count = ext_col_index + 1 + num_of_fcolumns
