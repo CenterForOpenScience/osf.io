@@ -406,13 +406,13 @@ class TestRemoveContributor(AdminTestCase):
 
     @mock.patch('admin.preprints.views.Preprint.remove_contributor')
     def test_remove_contributor(self, mock_remove_contributor):
-        user_id = self.user_2._id
+        user_id = self.user_2.id
         preprint_id = self.preprint._id
         view = setup_log_view(
             self.view(),
             self.request,
             guid=preprint_id,
-            user_guid=user_id
+            user_id=user_id
         )
         view.post(self.request)
         mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
@@ -423,7 +423,7 @@ class TestRemoveContributor(AdminTestCase):
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_guid=self.user_2._id
+            user_id=self.user_2.id
         )
         count = AdminLogEntry.objects.count()
         view.post(self.request)
@@ -436,7 +436,7 @@ class TestRemoveContributor(AdminTestCase):
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_guid=self.user._id
+            user_id=self.user.id
         )
         count = AdminLogEntry.objects.count()
         patch_messages(self.request)
@@ -451,7 +451,7 @@ class TestRemoveContributor(AdminTestCase):
             self.view(),
             self.request,
             guid=self.preprint._id,
-            user_guid=self.user_2._id
+            user_id=self.user_2.id
         )
         view.post(self.request)
         assert self.preprint.logs.latest().action != PreprintLog.CONTRIB_REMOVED

@@ -560,7 +560,7 @@ class TestUserReindex(AdminTestCase):
         count = AdminLogEntry.objects.count()
         view = views.UserReindexElastic()
         view = setup_log_view(view, self.request, guid=self.user._id)
-        view.delete(self.request)
+        view.post(self.request)
 
         nt.assert_true(mock_reindex_elastic.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
