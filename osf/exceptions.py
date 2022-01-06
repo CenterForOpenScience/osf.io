@@ -175,6 +175,13 @@ class PreviousSchemaResponseError(SchemaResponseError):
     pass
 
 
+class RegistrationBulkCreationContributorError(OSFError):
+    """Raised if contributor preparation has failed"""
+
+    def __init__(self, error=None):
+        self.error = error if error else 'Contributor preparation error'
+
+
 class RegistrationBulkCreationRowError(OSFError):
     """Raised if a draft registration failed creation during bulk upload"""
 
@@ -187,10 +194,10 @@ class RegistrationBulkCreationRowError(OSFError):
         # The error information for logging, sentry and email
         self.error = error if error else 'Draft registration creation error'
         # The short error message to be added to the error list that will be returned to the initiator via email
-        self.short_message = 'Title: {}, External ID: {}, Error: {}'.format(title, external_id, error)
+        self.short_message = 'Title: {}, External ID: {}, Error: {}'.format(title, external_id, self.error)
         # The long error message for logging and sentry
         self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
-                            'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, error)
+                            'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, self.error)
 
 
 class SchemaResponseUpdateError(SchemaResponseError):

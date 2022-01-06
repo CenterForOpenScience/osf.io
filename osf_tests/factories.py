@@ -1182,3 +1182,13 @@ class SchemaResponseActionFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     is_deleted = False
+
+
+class RegistrationBulkUploadJobFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadJob
+
+
+class RegistrationBulkUploadRowFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadRow
