@@ -551,6 +551,7 @@ class SpreadsheetClient(BaseClient):
         COMMENT_MARGIN = 3
         c = self.ensure_columns(files_sheet_id,
                                 entry_cols +
+                                ['Ext'] +
                                 ['Persons Involved(File)'] +
                                 ['{}(File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
@@ -558,8 +559,7 @@ class SpreadsheetClient(BaseClient):
                                 ['{}(Extension)'.format(col) for col in fcolumns],
                                 row=1 + COMMENT_MARGIN)
         values, styles = self._to_file_list(top, [])
-        exts = sorted(set([os.path.splitext(v[-1])[-1]
-                           for v, t in values if t == 'file']))
+        exts = sorted(set([self._get_ext(v) for v, t in values if t == 'file']))
         exts = [e for e in exts if len(e) > 0]
         exts += ['' for i in range(0, len(values) - len(exts))]
         values = [self._to_file_row(c, t, v, ex)
@@ -581,8 +581,9 @@ class SpreadsheetClient(BaseClient):
             expects=(200, ),
             throws=HTTPError(401)
         )
+        FILE_EXTRA_COLUMNS = 1 # Ext
         logger.info('Inserted: {}'.format(res.json()))
-        ext_col_index = max_depth + FILE_ENTRY_MARGIN + num_of_fcolumns
+        ext_col_index = max_depth + FILE_EXTRA_COLUMNS + FILE_ENTRY_MARGIN + num_of_fcolumns
         col_count = ext_col_index + 1 + num_of_fcolumns
 
         hide_col_reqs = [{
@@ -651,7 +652,7 @@ class SpreadsheetClient(BaseClient):
                         'protectedRange': {
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': max_depth + FILE_ENTRY_MARGIN,
+                                      'endColumnIndex': c.index('Ext') + 1,
                                       'startRowIndex': 1 + COMMENT_MARGIN,
                                       'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
@@ -681,6 +682,9 @@ class SpreadsheetClient(BaseClient):
             throws=HTTPError(401)
         )
         logger.info('DataValidation Updated: {}'.format(res.json()))
+
+    def _get_ext(self, values):
+        return os.path.splitext(values[-1])[-1].lower()
 
     def _to_fields(self, parent, keys):
         if len(keys) == 0:
@@ -717,6 +721,8 @@ class SpreadsheetClient(BaseClient):
                 e = values[index] if index < len(values) else ''
             elif c == 'Extension':
                 e = ext
+            elif c == 'Ext':
+                e = '-' if typestr != 'file' else self._get_ext(values)
             r.append(e)
         return r
 
