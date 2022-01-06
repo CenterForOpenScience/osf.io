@@ -34,7 +34,7 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    registration_response_key = ser.CharField(read_only=True)
+    response_key = ser.CharField(read_only=True)
     schema_block_group_key = ser.CharField(read_only=True)
     block_type = ser.CharField(read_only=True)
     display_text = ser.CharField(read_only=True)
@@ -75,7 +75,7 @@ class RegistrationSchemaSerializer(SchemaSerializer):
             return get_kebab_snake_case_field(request.version, 'registration-schemas')
 
 
-class FileMetadataSchemaSerializer(SchemaSerializer):
+class FileSchemaSerializer(SchemaSerializer):
 
     class Meta:
         @staticmethod

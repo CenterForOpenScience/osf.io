@@ -11,7 +11,7 @@ from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileSchema
 from api.schemas.serializers import (
     RegistrationSchemaSerializer,
     RegistrationSchemaBlockSerializer,
-    FileMetadataSchemaSerializer,
+    FileSchemaSerializer,
 )
 
 
@@ -62,7 +62,7 @@ class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(RegistrationSchema, schema_id, self.request)
 
 
-class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
+class FileSchemaList(JSONAPIBaseView, generics.ListAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -72,7 +72,7 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
     required_read_scopes = [CoreScopes.SCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = FileMetadataSchemaSerializer
+    serializer_class = FileSchemaSerializer
     view_category = 'schemas'
     view_name = 'file-metadata-schemas'
 
@@ -83,7 +83,7 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
         return FileSchema.objects.filter(active=True)
 
 
-class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+class FileSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -93,7 +93,7 @@ class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     required_read_scopes = [CoreScopes.SCHEMA_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    serializer_class = FileMetadataSchemaSerializer
+    serializer_class = FileSchemaSerializer
     view_category = 'schemas'
     view_name = 'file-metadata-schema-detail'
 

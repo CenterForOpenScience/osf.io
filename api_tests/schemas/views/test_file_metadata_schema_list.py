@@ -1,14 +1,14 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models.metaschema import FileSchema
+from osf.models.schema import FileSchema
 from osf_tests.factories import (
     AuthUserFactory,
 )
 
 
 @pytest.mark.django_db
-class TestFileMetadataSchemaList:
+class TestFileSchemaList:
 
     def test_schema_list_crud(self, app):
 

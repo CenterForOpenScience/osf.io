@@ -1,9 +1,10 @@
 from django.db import models
 
-from osf.models.base import BaseModel, ObjectIDMixin
 from api.base.utils import absolute_reverse
-from osf.models import SchemaResponseBlock
+
 from osf.models.schema_response import AbstractSchemaResponse
+from osf.models.schema_block import FileSchemaBlock
+from osf.models.schema_response_block import FileSchemaResponseBlock
 
 
 class FileSchemaResponse(AbstractSchemaResponse):
@@ -37,10 +38,14 @@ class FileSchemaResponse(AbstractSchemaResponse):
             for response_block in self.response_blocks.all()
         }
 
-    @responses.setter
-    def responses(self, value):
-        '''Surfaces responses from response_blocks in a dictionary format'''
-        self.schema.validate_metadata(value)
-        blocks = SchemaResponseBlock.objects.get(source_schema_response=self)
-        for block, data in zip(blocks, list(value)):
-            block.set_response(data)
+    def set_responses(self, responses):
+        question_blocks = FileSchemaBlock.objects.filter(
+            schema=self.schema,
+            response_key__isnull=False
+        )
+        for source_block in question_blocks:
+            block = FileSchemaResponseBlock.objects.get_or_create(
+                source_schema_response=self,
+                schema_key=source_block.schema_key,
+            )
+            block.set_response(responses['schema_key'])

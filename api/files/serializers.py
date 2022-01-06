@@ -4,7 +4,6 @@ from collections import OrderedDict
 from django.core.urlresolvers import resolve, reverse
 import furl
 import pytz
-import jsonschema
 
 from framework.auth.core import Auth
 from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
@@ -33,9 +32,9 @@ from api.base.serializers import (
     ShowIfVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.exceptions import Conflict, InvalidModelValueError
-from api.base.schemas.utils import from_json
+from api.base.exceptions import Conflict
 from api.base.versioning import get_kebab_snake_case_field
+
 
 class CheckoutField(ser.HyperlinkedRelatedField):
 
@@ -168,6 +167,7 @@ def disambiguate_files_related_view_kwargs(filenode):
             'provider': '<provider>',
         }
 
+
 class BaseFileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -227,9 +227,10 @@ class BaseFileSerializer(JSONAPISerializer):
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': 'get_file_guid'},
     ))
-    metadata_records = FileRelationshipField(
-        related_view='files:metadata-records',
+    file_schema_responses = RelationshipField(
+        related_view='files:file_schema_responses:file-schema-response-list',
         related_view_kwargs={'file_id': '<_id>'},
+        help_text='User defined metadata for the file.',
     )
 
     links = LinksField({
@@ -488,67 +489,6 @@ class FileVersionSerializer(JSONAPISerializer):
         download_url = self.get_download_link(obj)
 
         return get_file_render_link(mfr_url, download_url, version=obj.identifier)
-
-class FileMetadataRecordSerializer(JSONAPISerializer):
-
-    id = IDField(source='_id', required=True)
-    type = TypeField()
-
-    metadata = ser.DictField()
-
-    file = RelationshipField(
-        related_view='files:file-detail',
-        related_view_kwargs={'file_id': '<file._id>'},
-    )
-
-    schema = RelationshipField(
-        related_view='schemas:file-metadata-schema-detail',
-        related_view_kwargs={'schema_id': '<schema._id>'},
-    )
-
-    links = LinksField({
-        'download': 'get_download_link',
-        'self': 'get_absolute_url',
-    })
-
-    def validate_metadata(self, value):
-        schema = from_json(self.instance.serializer.osf_schema)
-        try:
-            jsonschema.validate(value, schema)
-        except jsonschema.ValidationError as e:
-            if e.relative_schema_path[0] == 'additionalProperties':
-                error_message = e.message
-            else:
-                error_message = 'Your response of {} for the field {} was invalid.'.format(
-                    e.instance,
-                    e.absolute_path[0],
-                )
-            raise InvalidModelValueError(detail=error_message, meta={'metadata_schema': schema})
-        return value
-
-    def update(self, record, validated_data):
-        if validated_data:
-            user = self.context['request'].user
-            proposed_metadata = validated_data.pop('metadata')
-            record.update(proposed_metadata, user)
-        return record
-
-    def get_download_link(self, obj):
-        return absolute_reverse(
-            'files:metadata-record-download', kwargs={
-                'file_id': obj.file._id,
-                'record_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
-
-    def get_absolute_url(self, obj):
-        return obj.absolute_api_v2_url
-
-    class Meta:
-        @staticmethod
-        def get_type(request):
-            return get_kebab_snake_case_field(request.version, 'metadata-records')
 
 
 def get_file_download_link(obj, version=None, view_only=None):

@@ -58,20 +58,9 @@ class AbstractSchemaResponse(ObjectIDMixin, BaseModel):
 
 
 class SchemaResponse(AbstractSchemaResponse):
-    '''Collects responses for a schema associated with a parent object.
-
-    SchemaResponse manages the creation, surfacing, updating, and approval of
-    "responses" to the questions on a Registration schema (for example).
-
-    Individual answers are stored in SchemaResponseBlocks and aggregated here
-    via the response_blocks M2M relationship.
-
-    SchemaResponseBlocks can be shared across multiple SchemaResponse, but
-    each SchemaResponseBlock links to the SchemaResponse where it originated.
-    These are referenced on the SchemaResponse using the updated_response_blocks manager.
-    This allows SchemaResponses to also serve as a revision history when
-    users submit updates to the schema form on a given parent object.
-    '''
+    '''This SchemaResponse object is meant to cover registrations and possibly other node type objects, it works in
+    conjuction with a state machine.
+   '''
     schema = models.ForeignKey('osf.RegistrationSchema')
     previous_response = models.ForeignKey(
         'osf.SchemaResponse',

@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models.metaschema import RegistrationSchema
+from osf.models.schema import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
 

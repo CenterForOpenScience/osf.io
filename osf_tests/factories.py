@@ -1160,6 +1160,39 @@ class SchemaResponseFactory(DjangoModelFactory):
             return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
 
 
+class FileSchemaFactory(DjangoModelFactory):
+    schema_version = factory.Sequence(lambda n: n)
+
+    class Meta:
+        model = models.FileSchema
+
+
+class FileSchemaResponseFactory(DjangoModelFactory):
+    initiator = factory.SubFactory(AuthUserFactory)
+    schema = factory.SubFactory(FileSchemaFactory)
+
+    class Meta:
+        model = models.FileSchemaResponse
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        registration = RegistrationFactory()
+        filename = factory.Sequence(lambda n: f'File #{n}')
+        file = OsfStorageFile.create(
+            target_object_id=registration.id,
+            target_content_type=ContentType.objects.get_for_model(registration),
+            path=f'/{filename}',
+            name=filename,
+            materialized_path=f'/{filename}'
+        )
+        file.save()
+        kwargs['parent'] = file
+        kwargs['object_id'] = file.id
+        kwargs['content_type'] = ContentType.objects.get_for_model(file)
+
+        return super()._create(target_class, *args, **kwargs)
+
+
 class SchemaResponseActionFactory(DjangoModelFactory):
     class Meta:
         model = models.SchemaResponseAction

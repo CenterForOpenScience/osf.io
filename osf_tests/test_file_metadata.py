@@ -132,7 +132,7 @@ class TestFileMetadataRecord:
 
     @pytest.fixture()
     def record(self, osf_file):
-        return osf_file.records.first()
+        return osf_file.schema_responses.first()
 
     def test_update_record(self, node, record, initial_metadata):
         record.metadata = initial_metadata

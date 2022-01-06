@@ -19,7 +19,7 @@ from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
-from osf.models.metaschema import RegistrationSchema
+from osf.models.schema import RegistrationSchema
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField

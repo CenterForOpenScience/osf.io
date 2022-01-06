@@ -131,4 +131,3 @@ class FileSchemaResponseBlock(AbstractSchemaResponseBlock):
     )
     # The FileSchemaBlock that defines the question being answered
     source_schema_block = models.ForeignKey('osf.FileSchemaBlock', null=False)
-

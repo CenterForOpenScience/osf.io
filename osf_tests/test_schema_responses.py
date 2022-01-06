@@ -214,7 +214,7 @@ class TestCreateSchemaResponse():
 
         # Confirm that exactly one block was created for each response_key on the schema
         schema_input_blocks = RegistrationSchemaBlock.objects.filter(
-            schema=schema, registration_response_key__isnull=False)
+            schema=schema, response_key__isnull=False)
         assert schema_input_blocks.count() == created_response_blocks.count()
         for key in schema_input_blocks.values_list('response_key', flat=True):
             assert created_response_blocks.filter(schema_key=key).exists()
@@ -248,7 +248,7 @@ class TestCreateSchemaResponse():
 
         # Confirm that a response block was created for each input block
         schema_input_blocks = RegistrationSchemaBlock.objects.filter(
-            schema=schema, registration_response_key__isnull=False)
+            schema=schema, response_key__isnull=False)
         assert (
             alternate_registration_response.updated_response_blocks.count()
             == schema_input_blocks.count()

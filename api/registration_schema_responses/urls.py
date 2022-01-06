@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from api.schema_responses import views
+from api.registration_schema_responses import views
 
 app_name = 'osf'
 

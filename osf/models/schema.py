@@ -14,8 +14,6 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 from osf.features import EGAP_ADMINS
 
 
-
-
 def allow_egap_admins(queryset, request):
     """
     Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
@@ -24,6 +22,7 @@ def allow_egap_admins(queryset, request):
     if hasattr(request, 'user') and not waffle.flag_is_active(request, EGAP_ADMINS):
         return queryset.exclude(name='EGAP Registration')
     return queryset
+
 
 class AbstractSchemaManager(models.Manager):
 
@@ -168,6 +167,41 @@ class RegistrationSchema(AbstractSchema):
 
 
 class FileSchema(AbstractSchema):
+
+    def validate_metadata(self, metadata):
+        """
+        Validates responses field.
+        """
+        try:
+            jsonschema.validate(metadata, self.schema)
+        except jsonschema.ValidationError as e:
+            for page in self.schema['pages']:
+                for question in page['questions']:
+                    if e.relative_schema_path[0] == 'required':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is required'.format(question['title'])
+                        )
+                    elif e.relative_schema_path[0] == 'additionalProperties':
+                        raise ValidationError(
+                            'For your registration the \'{}\' field is extraneous and not permitted in your response.'.format(question['qid'])
+                        )
+                    elif e.relative_path[0] == question['qid']:
+                        if 'options' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid, your response must be one of the provided options.'.format(
+                                    question['title'],
+                                ),
+                            )
+                        if 'title' in question:
+                            raise ValidationError(
+                                'For your registration your response to the \'{}\' field is invalid.'.format(question['title']),
+                            )
+                        raise ValidationError(
+                            'For your registration your response to the field with qid: \'{}\' is invalid.'.format(question['qid']),
+                        )
+            raise ValidationError(e)
+        except jsonschema.SchemaError as e:
+            raise ValidationValueError(e)
 
     @property
     def absolute_api_v2_url(self):

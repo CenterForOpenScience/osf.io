@@ -75,22 +75,22 @@ def flatten_registration_metadata(schema, registered_meta):
     with the final key to flatten the dictionary.
     :schema, RegistrationSchema instance
     :registered_meta, dict containing the legacy "nested" registered_meta/registration_metadata
-    :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+    :returns dictionary, registration_responses, flattened dictionary with response_keys
     top-level
     """
     registration_responses = {}
-    registration_response_keys = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
+    response_keys = schema.schema_blocks.filter(
+        response_key__isnull=False
     ).values(
         'response_key',
         'block_type'
     )
 
-    for registration_response_key_dict in registration_response_keys:
-        key = registration_response_key_dict['response_key']
+    for response_key_dict in response_keys:
+        key = response_key_dict['response_key']
         registration_responses[key] = get_nested_answer(
             registered_meta,
-            registration_response_key_dict['block_type'],
+            response_key_dict['block_type'],
             key.split('.')
         )
     return registration_responses
@@ -227,15 +227,15 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
     """
     Expanding `registration_responses` into Draft.registration_metadata or
     Registration.registered_meta. registration_responses are more flat;
-    "registration_response_keys" are top level.  Registration_metadata/registered_meta
+    "response_keys" are top level.  Registration_metadata/registered_meta
     will have a more deeply nested format.
     :returns registration_metadata, dictionary
     """
     registration_responses = copy.deepcopy(registration_responses)
 
-    # Pull out all registration_response_keys and their block types
-    registration_response_keys = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
+    # Pull out all response_keys and their block types
+    response_keys = schema.schema_blocks.filter(
+        response_key__isnull=False
     ).values(
         'response_key',
         'block_type'
@@ -243,12 +243,12 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
 
     metadata = {}
 
-    for registration_response_key_dict in registration_response_keys:
-        response_key = str(registration_response_key_dict['response_key'])
+    for response_key_dict in response_keys:
+        response_key = str(response_key_dict['response_key'])
         # Turns "confirmatory-analyses-further.further.question2c" into
         # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
         nested_keys = response_key.replace('.', '.value.').split('.')
-        block_type = registration_response_key_dict['block_type']
+        block_type = response_key_dict['block_type']
 
         # Continues to add to metadata with every response_key
         metadata = build_registration_metadata_dict(

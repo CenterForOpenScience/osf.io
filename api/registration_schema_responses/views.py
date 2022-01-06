@@ -14,15 +14,15 @@ from api.base.parsers import (
 )
 from api.base.utils import get_object_or_error
 from api.base.views import JSONAPIBaseView
-from api.schema_responses import annotations
-from api.schema_responses.permissions import (
+from api.registration_schema_responses import annotations
+from api.registration_schema_responses.permissions import (
     SchemaResponseDetailPermission,
     SchemaResponseListPermission,
     SchemaResponseActionDetailPermission,
     SchemaResponseActionListPermission,
 )
-from api.schema_responses.schemas import create_schema_response_payload
-from api.schema_responses.serializers import (
+from api.registration_schema_responses.schemas import create_schema_response_payload
+from api.registration_schema_responses.serializers import (
     RegistrationSchemaResponseSerializer,
 )
 

@@ -3,9 +3,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
-from django.dispatch import receiver
 from django.db import models, connection
-from django.db.models.signals import post_save
 from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
@@ -17,7 +15,6 @@ from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
-from osf.models.metaschema import FileSchema
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -602,11 +599,3 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             auth=auth,
             params=params
         )
-
-
-@receiver(post_save, sender=OsfStorageFile)
-def create_metadata_records(sender, instance, created, **kwargs):
-    if created:
-        from osf.models.metadata import FileMetadataRecord
-        for schema in FileSchema.objects.all():
-            FileMetadataRecord.objects.create(file=instance, schema=schema)

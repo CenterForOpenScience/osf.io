@@ -82,12 +82,12 @@ from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 from api.registrations import annotations
 
-from api.schema_responses import annotations as schema_response_annotations
-from api.schema_responses.permissions import (
+from api.registration_schema_responses import annotations as schema_response_annotations
+from api.registration_schema_responses.permissions import (
     MODERATOR_VISIBLE_STATES,
     RegistrationSchemaResponseListPermission,
 )
-from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
+from api.registration_schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 
 class RegistrationMixin(NodeMixin):

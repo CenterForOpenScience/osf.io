@@ -2193,7 +2193,7 @@ class RegistrationResponseMixin(models.Model):
         then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
         with the final key to flatten the dictionary.
         :self, DraftRegistration or Registration
-        :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
+        :returns dictionary, registration_responses, flattened dictionary with response_keys
         top-level
         """
         schema = self.registration_schema
@@ -2204,7 +2204,7 @@ class RegistrationResponseMixin(models.Model):
         """
         Expanding `registration_responses` into Draft.registration_metadata or
         Registration.registered_meta. registration_responses are more flat;
-        "registration_response_keys" are top level.  Registration_metadata/registered_meta
+        "response_keys" are top level.  Registration_metadata/registered_meta
         will have a more deeply nested format.
         :returns registration_metadata, dictionary
         """

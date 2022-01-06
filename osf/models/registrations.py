@@ -587,14 +587,14 @@ class Registration(AbstractNode):
             )
         return True
 
-    def get_contributor_registration_response_keys(self):
+    def get_contributor_response_keys(self):
         """
         Returns the keys of the supplemental responses whose answers
         contain author information
         :returns QuerySet
         """
         return self.registration_schema.schema_blocks.filter(
-            block_type='contributors-input', registration_response_key__isnull=False,
+            block_type='contributors-input', response_key__isnull=False,
         ).values_list('response_key', flat=True)
 
     def _initiate_retraction(self, user, justification=None, moderator_initiated=False):

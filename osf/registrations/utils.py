@@ -59,7 +59,7 @@ def get_excel_column_name(column_index):
 
 def get_schema_questions_validations(registration_schema):
     schema_blocks = list(registration_schema.schema_blocks.filter(
-        Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
+        Q(response_key__isnull=False) | Q(block_type='select-input-option')).values(
             'response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
 
     validations = {}

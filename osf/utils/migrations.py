@@ -193,7 +193,7 @@ def remove_schemas(*args):
 
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
-        registration_response_key=None, schema_block_group_key='', example_text=''):
+        response_key=None, schema_block_group_key='', example_text=''):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -218,7 +218,7 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
                 '&gt;': '>'
             }
         ),
-        registration_response_key=registration_response_key,
+        response_key=response_key,
         schema_block_group_key=schema_block_group_key,
         example_text=unescape_entities(
             example_text,
@@ -248,7 +248,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
             schema_block_group_key=schema_block_group_key,
         )
 
-def get_registration_response_key(question):
+def get_response_key(question):
     """
     For mapping schemas to schema blocks:
     Answer ids will map to the user's response
@@ -314,7 +314,7 @@ def get_subquestion_qid(question, subquestion):
     Return a qid in the format "parent-id.current-id", to reflect its nested nature and ensure uniqueness
     """
 
-    return '{}.{}'.format(get_registration_response_key(question) or '', subquestion.get('id', ''))
+    return '{}.{}'.format(get_response_key(question) or '', subquestion.get('id', ''))
 
 
 def create_schema_blocks_for_question(state, rs, question, sub=False):
@@ -384,7 +384,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                 block_type,
                 required=question.get('required', False),
                 schema_block_group_key=schema_block_group_key,
-                registration_response_key=get_registration_response_key(question)
+                response_key=get_response_key(question)
             )
 
         # If there are multiple choice answers, create blocks for these as well.

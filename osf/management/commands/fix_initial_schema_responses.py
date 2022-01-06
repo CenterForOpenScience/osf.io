@@ -3,7 +3,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from api.schema_responses import annotations
+from api.registration_schema_responses import annotations
 from osf.models import RegistrationSchema, SchemaResponse
 
 

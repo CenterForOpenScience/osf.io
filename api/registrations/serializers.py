@@ -485,9 +485,9 @@ class RegistrationSerializer(NodeSerializer):
         on both registered_meta and registration_responses
         """
         if is_anonymized(self.context['request']):
-            anonymous_registration_response_keys = obj.get_contributor_registration_response_keys()
+            anonymous_response_keys = obj.get_contributor_response_keys()
 
-            for key in anonymous_registration_response_keys:
+            for key in anonymous_response_keys:
                 if key in data:
                     del data[key]
 

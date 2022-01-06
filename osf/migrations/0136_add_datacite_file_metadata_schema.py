@@ -40,5 +40,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_datacite_schema, remove_datacite_schema)
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop)
     ]

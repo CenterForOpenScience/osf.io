@@ -1,10 +1,6 @@
-import io
-
-from django.http import FileResponse
-
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -25,10 +21,8 @@ from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
-from api.files.permissions import FileMetadataRecordPermission
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
-from api.files.serializers import FileMetadataRecordSerializer
 from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
 
@@ -172,87 +166,3 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['file'] = self.file
         return context
-
-
-class FileMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
-    )
-
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    serializer_class = FileMetadataRecordSerializer
-    view_category = 'files'
-    view_name = 'metadata-records'
-
-    ordering = ('-created',)
-
-    def get_queryset(self):
-        return self.get_file().records.all()
-
-
-class FileMetadataRecordDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
-
-    record_lookup_url_kwarg = 'record_id'
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        FileMetadataRecordPermission(ContributorOrPublic),
-        FileMetadataRecordPermission(ReadOnlyIfRegistration),
-    )
-
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
-
-    serializer_class = FileMetadataRecordSerializer
-    view_category = 'files'
-    view_name = 'metadata-record-detail'
-
-    def get_object(self):
-        return utils.get_object_or_error(
-            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]),
-            request=self.request,
-        )
-
-
-class FileMetadataRecordDownload(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
-
-    record_lookup_url_kwarg = 'record_id'
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        PermissionWithGetter(ContributorOrPublic, 'target'),
-    )
-
-    required_read_scopes = [CoreScopes.NODE_FILE_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    view_category = 'files'
-    view_name = 'metadata-record-download'
-
-    def get_serializer_class(self):
-        return None
-
-    def get_object(self):
-        return utils.get_object_or_error(
-            self.get_file().records.filter(_id=self.kwargs[self.record_lookup_url_kwarg]).select_related('schema', 'file'),
-            request=self.request,
-        )
-
-    def get(self, request, **kwargs):
-        file_type = self.request.query_params.get('export', 'json')
-        record = self.get_object()
-        try:
-            content = io.BytesIO(record.serialize(format=file_type).encode())
-            response = FileResponse(content)
-        except ValueError as e:
-            detail = str(e).replace('.', '')
-            raise ValidationError(detail='{} for metadata file export.'.format(detail))
-        file_name = 'file_metadata_{}_{}.{}'.format(record.schema._id, record.file.name, file_type)
-        response['Content-Disposition'] = 'attachment; filename="{}"'.format(file_name)
-        response['Content-Type'] = 'application/{}'.format(file_type)
-        return response

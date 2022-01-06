@@ -10,14 +10,14 @@
 		"block_type": "question-label",
 		"display_text": "Study description"
 	}, {
-		"registration_response_key": "Q1",
+		"response_key": "Q1",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license. ",
 		"display_text": "Expected outcomes"
 	}, {
-		"registration_response_key": "Q2",
+		"response_key": "Q2",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -92,13 +92,13 @@
 		"block_type": "question-label",
 		"display_text": "Primary outcomes"
 	}, {
-		"registration_response_key": "Q3",
+		"response_key": "Q3",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Character strengths"
 	}, {
-		"registration_response_key": "Q4",
+		"response_key": "Q4",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -173,7 +173,7 @@
 		"block_type": "question-label",
 		"display_text": "Number of conditions"
 	}, {
-		"registration_response_key": "Q5",
+		"response_key": "Q5",
 		"block_type": "single-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -191,7 +191,7 @@
 		"block_type": "question-label",
 		"display_text": "Total number of students"
 	}, {
-		"registration_response_key": "Q6",
+		"response_key": "Q6",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "page-heading",
@@ -200,7 +200,7 @@
 		"block_type": "question-label",
 		"display_text": "Study Grade Assignment"
 	}, {
-		"registration_response_key": "Q7",
+		"response_key": "Q7",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -227,7 +227,7 @@
 		"block_type": "question-label",
 		"display_text": "School Stratum Assignment"
 	}, {
-		"registration_response_key": "Q8",
+		"response_key": "Q8",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -251,7 +251,7 @@
 		"block_type": "question-label",
 		"display_text": "Is this a pilot?"
 	}, {
-		"registration_response_key": "Q9",
+		"response_key": "Q9",
 		"block_type": "single-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -263,7 +263,7 @@
 		"block_type": "question-label",
 		"display_text": "Study design"
 	}, {
-		"registration_response_key": "Q10",
+		"response_key": "Q10",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -293,19 +293,19 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"registration_response_key": "Q11",
+		"response_key": "Q11",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"registration_response_key": "Q12",
+		"response_key": "Q12",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"registration_response_key": "Q13",
+		"response_key": "Q13",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -338,19 +338,19 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"registration_response_key": "Q14",
+		"response_key": "Q14",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"registration_response_key": "Q15",
+		"response_key": "Q15",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"registration_response_key": "Q16",
+		"response_key": "Q16",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -383,19 +383,19 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"registration_response_key": "Q17",
+		"response_key": "Q17",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"registration_response_key": "Q18",
+		"response_key": "Q18",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"registration_response_key": "Q19",
+		"response_key": "Q19",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -428,19 +428,19 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"registration_response_key": "Q20",
+		"response_key": "Q20",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"registration_response_key": "Q21",
+		"response_key": "Q21",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"registration_response_key": "Q22",
+		"response_key": "Q22",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -473,19 +473,19 @@
 		"block_type": "question-label",
 		"display_text": "Team member name"
 	}, {
-		"registration_response_key": "Q23",
+		"response_key": "Q23",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member institution"
 	}, {
-		"registration_response_key": "Q24",
+		"response_key": "Q24",
 		"block_type": "short-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Team member role"
 	}, {
-		"registration_response_key": "Q25",
+		"response_key": "Q25",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -518,7 +518,7 @@
 		"block_type": "question-label",
 		"display_text": "Have you piloted this study?"
 	}, {
-		"registration_response_key": "Q26",
+		"response_key": "Q26",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -530,7 +530,7 @@
 		"block_type": "question-label",
 		"display_text": "Did you pilot this study on the Character Lab Research Network?"
 	}, {
-		"registration_response_key": "Q27",
+		"response_key": "Q27",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -542,61 +542,61 @@
 		"block_type": "question-label",
 		"display_text": "Piloting Experience"
 	}, {
-		"registration_response_key": "Q28",
+		"response_key": "Q28",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Pilot Goals"
 	}, {
-		"registration_response_key": "Q29",
+		"response_key": "Q29",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Pilot Hypotheses"
 	}, {
-		"registration_response_key": "Q30",
+		"response_key": "Q30",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "How did you use feedback from a CLIPster/SRL while developing your pilot?"
 	}, {
-		"registration_response_key": "Q31",
+		"response_key": "Q31",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "How did your pilot data line up with your hypotheses?"
 	}, {
-		"registration_response_key": "Q32",
+		"response_key": "Q32",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Have your hypotheses about this study changed at all following the pilot? If so, how?"
 	}, {
-		"registration_response_key": "Q33",
+		"response_key": "Q33",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Did anything emerge in this pilot data that you weren't expecting?"
 	}, {
-		"registration_response_key": "Q34",
+		"response_key": "Q34",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "What concerns you the most about this pilot data?"
 	}, {
-		"registration_response_key": "Q35",
+		"response_key": "Q35",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "What are your three main takeaways from this pilot?"
 	}, {
-		"registration_response_key": "Q36",
+		"response_key": "Q36",
 		"block_type": "long-text-input"
 	}, {
 		"block_type": "question-label",
 		"display_text": "Changes Based On Piloting"
 	}, {
-		"registration_response_key": "Q37",
+		"response_key": "Q37",
 		"block_type": "long-text-input"
 	}]
 }
