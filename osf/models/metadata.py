@@ -7,7 +7,7 @@ from framework.exceptions import PermissionsError
 from addons.osfstorage.models import OsfStorageFile
 from api.base.schemas.utils import from_json
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.metaschema import FileMetadataSchema
+from osf.models.metaschema import FileSchema
 from osf.utils import permissions as osf_permissions
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.metadata.serializers import serializer_registry
@@ -19,7 +19,7 @@ class FileMetadataRecord(ObjectIDMixin, BaseModel):
     metadata = DateTimeAwareJSONField(default=dict, blank=True)
 
     file = models.ForeignKey(OsfStorageFile, related_name='records', on_delete=models.SET_NULL, null=True)
-    schema = models.ForeignKey(FileMetadataSchema, related_name='records', on_delete=models.SET_NULL, null=True)
+    schema = models.ForeignKey(FileSchema, related_name='records', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         unique_together = ('file', 'schema')

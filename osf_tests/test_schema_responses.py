@@ -212,11 +212,11 @@ class TestCreateSchemaResponse():
         # were created by the create_initial_response call
         created_response_blocks = SchemaResponseBlock.objects.all()
 
-        # Confirm that exactly one block was created for each registration_response_key on the schema
+        # Confirm that exactly one block was created for each response_key on the schema
         schema_input_blocks = RegistrationSchemaBlock.objects.filter(
             schema=schema, registration_response_key__isnull=False)
         assert schema_input_blocks.count() == created_response_blocks.count()
-        for key in schema_input_blocks.values_list('registration_response_key', flat=True):
+        for key in schema_input_blocks.values_list('response_key', flat=True):
             assert created_response_blocks.filter(schema_key=key).exists()
 
     def test_cannot_create_initial_response_twice(self, registration):
@@ -343,7 +343,7 @@ class TestUpdateSchemaResponses():
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
                 schema=schema, registration_response_key__isnull=False
-            ).values_list('registration_response_key', flat=True)
+            ).values_list('response_key', flat=True)
         )
 
         assert initial_response.updated_response_keys == all_keys

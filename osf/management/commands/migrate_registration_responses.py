@@ -37,7 +37,7 @@ def migrate_registrations(dry_run, rows='all', AbstractNodeModel=None):
     """
     Loops through registrations whose registration_responses have not been migrated,
     and pulls this information from the "registered_meta" and flattens it, with
-    keys being the "registration_response_key"s and values being the most deeply
+    keys being the "response_key"s and values being the most deeply
     nested user response in registered_meta
     """
     if AbstractNodeModel is None:

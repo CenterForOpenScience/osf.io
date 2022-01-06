@@ -16,22 +16,24 @@ SUPPORTED_TYPE_FOR_BLOCK_TYPE = {
     'file-input': list,
 }
 
-class SchemaResponseBlock(ObjectIDMixin, BaseModel):
 
-    # The SchemaResponse instance where this response originated
-    source_schema_response = models.ForeignKey(
-        'osf.SchemaResponse',
-        null=False,
-        related_name='updated_response_blocks'
-    )
-    # The RegistrationSchemaBlock that defines the question being answered
-    source_schema_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
+def _sanitize_response(response_value, block_type):
+    if block_type == 'file-input':
+        return response_value  # don't mess with this magic
+    elif block_type == 'multi-select-input':
+        return [sanitize.strip_html(entry) for entry in response_value]
+    else:
+        return sanitize.strip_html(response_value)
 
-    # Should match source_schema_block.registration_response_key
+
+class AbstractSchemaResponseBlock(ObjectIDMixin, BaseModel):
+
+    # Should match source_schema_block.response_key
     schema_key = models.CharField(max_length=255)
     response = DateTimeAwareJSONField(blank=True, null=True)
 
     class Meta:
+        abstract = True
         unique_together = ('source_schema_response', 'source_schema_block')
 
     @classmethod
@@ -39,7 +41,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         new_response_block = cls(
             source_schema_response=source_schema_response,
             source_schema_block=source_schema_block,
-            schema_key=source_schema_block.registration_response_key
+            schema_key=source_schema_block.response_key
         )
         new_response_block.set_response(response_value)
         return new_response_block
@@ -107,10 +109,26 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         return list(allowed_values)
 
 
-def _sanitize_response(response_value, block_type):
-    if block_type == 'file-input':
-        return response_value  # don't mess with this magic
-    elif block_type == 'multi-select-input':
-        return [sanitize.strip_html(entry) for entry in response_value]
-    else:
-        return sanitize.strip_html(response_value)
+class SchemaResponseBlock(AbstractSchemaResponseBlock):
+
+    # The SchemaResponse instance where this response originated
+    source_schema_response = models.ForeignKey(
+        'osf.SchemaResponse',
+        null=False,
+        related_name='updated_response_blocks'
+    )
+    # The RegistrationSchemaBlock that defines the question being answered
+    source_schema_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
+
+
+class FileSchemaResponseBlock(AbstractSchemaResponseBlock):
+
+    # The SchemaResponse instance where this response originated
+    source_schema_response = models.ForeignKey(
+        'osf.FileSchemaResponse',
+        null=False,
+        related_name='updated_response_blocks'
+    )
+    # The FileSchemaBlock that defines the question being answered
+    source_schema_block = models.ForeignKey('osf.FileSchemaBlock', null=False)
+

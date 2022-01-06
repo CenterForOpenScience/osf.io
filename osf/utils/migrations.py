@@ -419,13 +419,13 @@ def create_schema_blocks_for_atomic_schema(schema):
         else:
             block['schema_block_group_key'] = ''
 
-        # Input blocks define a 'registration_response_key', while it is NULL for all other blocks
+        # Input blocks define a 'response_key', while it is NULL for all other blocks
         # Either honor a provided key or auto-generate one based on the block's index
         if block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
-            if not block.get('registration_response_key'):
-                block['registration_response_key'] = f'{schema.id}-{index}'
-        else:  # Ignore any improperly-supplied registration_response_key
-            block['registration_response_key'] = None
+            if not block.get('response_key'):
+                block['response_key'] = f'{schema.id}-{index}'
+        else:  # Ignore any improperly-supplied response_key
+            block['response_key'] = None
 
         RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,

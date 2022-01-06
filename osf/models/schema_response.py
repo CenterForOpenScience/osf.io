@@ -10,7 +10,7 @@ from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.metaschema import RegistrationSchemaBlock
+from osf.models.schema_block import RegistrationSchemaBlock
 from osf.models.schema_response_block import SchemaResponseBlock
 from osf.utils import notifications
 from osf.utils.fields import NonNaiveDateTimeField
@@ -29,7 +29,35 @@ EMAIL_TEMPLATES_PER_EVENT = {
     'reject': mails.SCHEMA_RESPONSE_REJECTED,
 }
 
-class SchemaResponse(ObjectIDMixin, BaseModel):
+
+class AbstractSchemaResponse(ObjectIDMixin, BaseModel):
+    '''Collects responses for a schema associated with a parent object.
+
+    SchemaResponse manages the creation, surfacing, updating, and approval of
+    "responses" to the questions on a Registration schema (for example).
+
+    Individual answers are stored in SchemaResponseBlocks and aggregated here
+    via the response_blocks M2M relationship.
+
+    SchemaResponseBlocks can be shared across multiple SchemaResponse, but
+    each SchemaResponseBlock links to the SchemaResponse where it originated.
+    These are referenced on the SchemaResponse using the updated_response_blocks manager.
+    This allows SchemaResponses to also serve as a revision history when
+    users submit updates to the schema form on a given parent object.
+    '''
+    response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
+    initiator = models.ForeignKey('osf.OsfUser', null=False)
+
+    # Allow schema responses for non-Registrations
+    object_id = models.PositiveIntegerField()
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    parent = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        abstract = True
+
+
+class SchemaResponse(AbstractSchemaResponse):
     '''Collects responses for a schema associated with a parent object.
 
     SchemaResponse manages the creation, surfacing, updating, and approval of
@@ -45,8 +73,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     users submit updates to the schema form on a given parent object.
     '''
     schema = models.ForeignKey('osf.RegistrationSchema')
-    response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
-    initiator = models.ForeignKey('osf.OsfUser', null=False)
     previous_response = models.ForeignKey(
         'osf.SchemaResponse',
         related_name='updated_response',
@@ -63,11 +89,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         default=ApprovalStates.IN_PROGRESS.db_name,
         max_length=255
     )
-
-    # Allow schema responses for non-Registrations
-    object_id = models.PositiveIntegerField()
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    parent = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         ordering = ['-created']
@@ -167,7 +188,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         question_blocks = RegistrationSchemaBlock.objects.filter(
             schema=schema,
-            registration_response_key__isnull=False
+            response_key__isnull=False
         )
         for source_block in question_blocks:
             new_response_block = SchemaResponseBlock.create(

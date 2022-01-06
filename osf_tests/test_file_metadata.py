@@ -6,7 +6,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from website.settings import DOI_FORMAT, DATACITE_PREFIX
 from website.project.licenses import set_license
-from osf.models import FileMetadataSchema, NodeLicense, NodeLog
+from osf.models import FileSchema, NodeLicense, NodeLog
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
 from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
@@ -32,9 +32,9 @@ def inject_placeholder_doi(json_data):
 class TestFileMetadataRecordSerializer:
 
     def test_record_created_post_save(self, node, osf_file):
-        # check there's a record for every FileMetadataSchema
-        assert FileMetadataSchema.objects.count() > 0
-        assert osf_file.records.count() == FileMetadataSchema.objects.count()
+        # check there's a record for every FileSchema
+        assert FileSchema.objects.count() > 0
+        assert osf_file.records.count() == FileSchema.objects.count()
 
         for record in osf_file.records.all().select_related('file'):
             assert record.file == osf_file

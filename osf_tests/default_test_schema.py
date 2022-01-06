@@ -16,7 +16,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This is meant for storing ~a single line of text',
         }, {
             'block_type': 'short-text-input',
-            'registration_response_key': 'q1',
+            'response_key': 'q1',
             'required': True,
         }, {
             'block_type': 'question-label',
@@ -24,7 +24,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This is meant for storing a paragraph',
         }, {
             'block_type': 'long-text-input',
-            'registration_response_key': 'q2',
+            'response_key': 'q2',
             'required': True,
         }, {
             'block_type': 'page-heading',
@@ -35,7 +35,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This allows the user to select one entry from a list of options',
         }, {
             'block_type': 'single-select-input',
-            'registration_response_key': 'q3',
+            'response_key': 'q3',
             'required': True,
         }, {
             'block_type': 'select-input-option',
@@ -55,7 +55,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This allows the user to select several entires from a list of options',
         }, {
             'block_type': 'multi-select-input',
-            'registration_response_key': 'q4',
+            'response_key': 'q4',
             'required': True
         }, {
             'block_type': 'select-input-option',
@@ -78,7 +78,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This allows the user to specify one or more OSF Users',
         }, {
             'block_type': 'contributors-input',
-            'registration_response_key': 'q5',
+            'response_key': 'q5',
             'required': False
         }, {
             'block_type': 'question-label',
@@ -86,7 +86,7 @@ DEFAULT_TEST_SCHEMA = {
             'help_text': 'This allows the user to attach a file to answer the question.'
         }, {
             'block_type': 'file-input',
-            'registration_response_key': 'q6',
+            'response_key': 'q6',
             'required': False,
         }
     ]

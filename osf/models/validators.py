@@ -316,11 +316,11 @@ class RegistrationResponsesValidator:
         # schema blocks corresponding to registration_responses
         questions = [
             block for block in self.schema_blocks
-            if block.registration_response_key is not None
+            if block.response_key is not None
         ]
 
         properties = {
-            question.registration_response_key: self._build_question_schema(question)
+            question.response_key: self._build_question_schema(question)
             for question in questions
         }
 
@@ -332,7 +332,7 @@ class RegistrationResponsesValidator:
 
         if self.required_fields:
             json_schema['required'] = [
-                question.registration_response_key
+                question.response_key
                 for question in questions
                 if question.required
             ]
@@ -345,7 +345,7 @@ class RegistrationResponsesValidator:
         an array with the possible multiple choice answers for a given question.
         Schema blocks are linked by schema_block_group_keys, so fetches multiple choice options
         with the same schema_block_group_key as the given question
-        :question SchemaBlock with an registration_response_key
+        :question SchemaBlock with an response_key
         """
         options = [
             block.display_text
@@ -374,7 +374,7 @@ class RegistrationResponsesValidator:
                 if block.block_type == 'question-label'
                 and block.schema_block_group_key == question.schema_block_group_key
             ),
-            question.registration_response_key,  # default
+            question.response_key,  # default
         )
 
         if question.block_type == 'single-select-input':

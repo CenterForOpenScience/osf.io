@@ -2185,10 +2185,10 @@ class RegistrationResponseMixin(models.Model):
 
     def flatten_registration_metadata(self):
         """
-        Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+        Extracts questions/nested registration_responses - makes use of schema block `response_key`
         and block_type to assemble flattened registration_responses.
 
-        For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+        For example, if the response_key = "description-methods.planned-sample.question7b",
         this will recurse through the registered_meta, looking for each key, starting with "description-methods",
         then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
         with the final key to flatten the dictionary.

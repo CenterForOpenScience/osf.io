@@ -66,10 +66,10 @@ FILE_DOWNLOAD_URL_TEMPLATE = urljoin(settings.DOMAIN, '/download/{file_id}')
 
 def flatten_registration_metadata(schema, registered_meta):
     """
-    Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
+    Extracts questions/nested registration_responses - makes use of schema block `response_key`
     and block_type to assemble flattened registration_responses.
 
-    For example, if the registration_response_key = "description-methods.planned-sample.question7b",
+    For example, if the response_key = "description-methods.planned-sample.question7b",
     this will recurse through the registered_meta, looking for each key, starting with "description-methods",
     then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
     with the final key to flatten the dictionary.
@@ -82,12 +82,12 @@ def flatten_registration_metadata(schema, registered_meta):
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
     ).values(
-        'registration_response_key',
+        'response_key',
         'block_type'
     )
 
     for registration_response_key_dict in registration_response_keys:
-        key = registration_response_key_dict['registration_response_key']
+        key = registration_response_key_dict['response_key']
         registration_responses[key] = get_nested_answer(
             registered_meta,
             registration_response_key_dict['block_type'],
@@ -237,20 +237,20 @@ def expand_registration_responses(schema, registration_responses, file_storage_r
     registration_response_keys = schema.schema_blocks.filter(
         registration_response_key__isnull=False
     ).values(
-        'registration_response_key',
+        'response_key',
         'block_type'
     )
 
     metadata = {}
 
     for registration_response_key_dict in registration_response_keys:
-        response_key = str(registration_response_key_dict['registration_response_key'])
+        response_key = str(registration_response_key_dict['response_key'])
         # Turns "confirmatory-analyses-further.further.question2c" into
         # ['confirmatory-analyses-further', 'value', 'further', 'value', 'question2c']
         nested_keys = response_key.replace('.', '.value.').split('.')
         block_type = registration_response_key_dict['block_type']
 
-        # Continues to add to metadata with every registration_response_key
+        # Continues to add to metadata with every response_key
         metadata = build_registration_metadata_dict(
             nested_keys,
             metadata=metadata,

@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import FileMetadataSchema
+from osf.models import FileSchema
 from osf_tests.factories import (
     AuthUserFactory,
 )
@@ -16,7 +16,7 @@ class TestFileMetadataSchemaDetail:
 
     @pytest.fixture()
     def schema(self):
-        return FileMetadataSchema.objects.filter(name='datacite', active=True).first()
+        return FileSchema.objects.filter(name='datacite', active=True).first()
 
     @pytest.fixture()
     def url(self, schema):

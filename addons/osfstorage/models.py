@@ -17,7 +17,7 @@ from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
 from osf.models.files import File, FileVersion, Folder, TrashedFileNode, BaseFileNode, BaseFileNodeManager
-from osf.models.metaschema import FileMetadataSchema
+from osf.models.metaschema import FileSchema
 from osf.utils import permissions
 from website.files import exceptions
 from website.files import utils as files_utils
@@ -608,5 +608,5 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 def create_metadata_records(sender, instance, created, **kwargs):
     if created:
         from osf.models.metadata import FileMetadataRecord
-        for schema in FileMetadataSchema.objects.all():
+        for schema in FileSchema.objects.all():
             FileMetadataRecord.objects.create(file=instance, schema=schema)

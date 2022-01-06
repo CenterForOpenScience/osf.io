@@ -595,7 +595,7 @@ class Registration(AbstractNode):
         """
         return self.registration_schema.schema_blocks.filter(
             block_type='contributors-input', registration_response_key__isnull=False,
-        ).values_list('registration_response_key', flat=True)
+        ).values_list('response_key', flat=True)
 
     def _initiate_retraction(self, user, justification=None, moderator_initiated=False):
         """Initiates the retraction process for a registration

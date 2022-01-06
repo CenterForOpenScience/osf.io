@@ -14,21 +14,6 @@ from website.project.metadata.utils import create_jsonschema_from_metaschema
 from osf.features import EGAP_ADMINS
 
 
-SCHEMABLOCK_TYPES = [
-    ('page-heading', 'page-heading'),
-    ('section-heading', 'section-heading'),
-    ('subsection-heading', 'subsection-heading'),
-    ('paragraph', 'paragraph'),
-    ('question-label', 'question-label'),
-    ('short-text-input', 'short-text-input'),
-    ('long-text-input', 'long-text-input'),
-    ('file-input', 'file-input'),
-    ('contributors-input', 'contributors-input'),
-    ('single-select-input', 'single-select-input'),
-    ('multi-select-input', 'multi-select-input'),
-    ('select-input-option', 'select-input-option'),
-    ('select-other-option', 'select-other-option'),
-]
 
 
 def allow_egap_admins(queryset, request):
@@ -75,6 +60,7 @@ class AbstractSchemaManager(models.Manager):
             return allow_egap_admins(queryset, request)
 
         return queryset
+
 
 class AbstractSchema(ObjectIDMixin, BaseModel):
     name = models.CharField(max_length=255)
@@ -181,50 +167,8 @@ class RegistrationSchema(AbstractSchema):
         return validator.validate(registration_responses)
 
 
-class FileMetadataSchema(AbstractSchema):
+class FileSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/schemas/files/{}/'.format(self._id)
-        return api_v2_url(path)
-
-
-class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
-    class Meta:
-        order_with_respect_to = 'schema'
-        unique_together = ('schema', 'registration_response_key')
-
-    INPUT_BLOCK_TYPES = frozenset([
-        'short-text-input',
-        'long-text-input',
-        'file-input',
-        'contributors-input',
-        'single-select-input',
-        'multi-select-input',
-        'select-other-option',
-    ])
-
-    schema = models.ForeignKey('RegistrationSchema', related_name='schema_blocks', on_delete=models.CASCADE)
-    help_text = models.TextField()
-    example_text = models.TextField(null=True)
-    # Corresponds to a key in DraftRegistration.registration_responses dictionary
-    registration_response_key = models.CharField(max_length=255, db_index=True, null=True, blank=True)
-    # A question can be split into multiple schema blocks, but are linked with a schema_block_group_key
-    schema_block_group_key = models.CharField(max_length=24, db_index=True, null=True)
-    block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
-    display_text = models.TextField()
-    required = models.BooleanField(default=False)
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
-        return api_v2_url(path)
-
-    def save(self, *args, **kwargs):
-        """
-        Allows us to use a unique_together constraint, so each "registration_response_key"
-        only appears once for every registration schema.  To do this, we need to save
-        empty "registration_response_key"s as null, instead of an empty string.
-        """
-        self.registration_response_key = self.registration_response_key or None
-        return super().save(*args, **kwargs)
+        return api_v2_url(f'/schemas/files/{self._id}/')

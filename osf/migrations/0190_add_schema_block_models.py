@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('help_text', models.TextField()),
                 ('example_text', models.TextField(null=True)),
-                ('registration_response_key', models.CharField(blank=True, db_index=True, max_length=255, null=True)),
+                ('response_key', models.CharField(blank=True, db_index=True, max_length=255, null=True)),
                 ('schema_block_group_key', models.CharField(db_index=True, max_length=24, null=True)),
                 ('block_type', models.CharField(choices=[('page-heading', 'page-heading'), ('section-heading', 'section-heading'), ('subsection-heading', 'subsection-heading'), ('paragraph', 'paragraph'), ('question-label', 'question-label'), ('short-text-input', 'short-text-input'), ('long-text-input', 'long-text-input'), ('file-input', 'file-input'), ('contributors-input', 'contributors-input'), ('single-select-input', 'single-select-input'), ('multi-select-input', 'multi-select-input'), ('select-input-option', 'select-input-option'), ('select-other-option', 'select-other-option')], db_index=True, max_length=31)),
                 ('display_text', models.TextField()),
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='registrationschemablock',
-            unique_together=set([('schema', 'registration_response_key')]),
+            unique_together=set([('schema', 'response_key')]),
         ),
         migrations.AlterOrderWithRespectTo(
             name='registrationschemablock',

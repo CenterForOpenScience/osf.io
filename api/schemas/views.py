@@ -7,7 +7,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
-from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileMetadataSchema
+from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileSchema
 from api.schemas.serializers import (
     RegistrationSchemaSerializer,
     RegistrationSchemaBlockSerializer,
@@ -80,7 +80,7 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
 
     # overrides ListCreateAPIView
     def get_queryset(self):
-        return FileMetadataSchema.objects.filter(active=True)
+        return FileSchema.objects.filter(active=True)
 
 
 class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -100,7 +100,7 @@ class FileMetadataSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # overrides RetrieveAPIView
     def get_object(self):
         schema_id = self.kwargs['schema_id']
-        return get_object_or_error(FileMetadataSchema, schema_id, self.request)
+        return get_object_or_error(FileSchema, schema_id, self.request)
 
 
 class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):

@@ -60,15 +60,15 @@ def get_excel_column_name(column_index):
 def get_schema_questions_validations(registration_schema):
     schema_blocks = list(registration_schema.schema_blocks.filter(
         Q(registration_response_key__isnull=False) | Q(block_type='select-input-option')).values(
-            'registration_response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
+            'response_key', 'block_type', 'required', 'schema_block_group_key', 'display_text'))
 
     validations = {}
     response_key_for_group_key = {}
     for schema_block in schema_blocks:
         if schema_block['block_type'] == 'single-select-input':
-            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
+            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['response_key']
             validations.update({
-                schema_block['registration_response_key']: {
+                schema_block['response_key']: {
                     'type': 'choose',
                     'options': [],
                     'format': 'singleselect',
@@ -76,9 +76,9 @@ def get_schema_questions_validations(registration_schema):
                 }
             })
         elif schema_block['block_type'] == 'multi-select-input':
-            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['registration_response_key']
+            response_key_for_group_key[schema_block['schema_block_group_key']] = schema_block['response_key']
             validations.update({
-                schema_block['registration_response_key']: {
+                schema_block['response_key']: {
                     'type': 'choose',
                     'options': [],
                     'format': 'multiselect',
@@ -87,7 +87,7 @@ def get_schema_questions_validations(registration_schema):
             })
         elif schema_block['block_type'] in ('short-text-input', 'long-text-input'):
             validations.update({
-                schema_block['registration_response_key']: {
+                schema_block['response_key']: {
                     'type': 'string',
                     'required': schema_block.get('required'),
                 }
