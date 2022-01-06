@@ -92,6 +92,7 @@ def project_iqbrims(**kwargs):
     return use_ember_app()
 
 @must_have_addon(SHORT_NAME, 'node')
+@must_have_permission('write')
 @must_be_addon_authorizer(SHORT_NAME)
 def iqbrims_folder_list(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
@@ -103,6 +104,7 @@ def iqbrims_folder_list(node_addon, **kwargs):
     return node_addon.get_folders(folder_path=path, folder_id=folder_id)
 
 @must_be_valid_project
+@must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
 def iqbrims_get_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
