@@ -12,7 +12,7 @@ from website.signals import ALL_SIGNALS
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from osf.models import Sanction, RegistrationProvider, RegistrationSchema
+from osf.models import Sanction, RegistrationProvider, RegistrationSchema, RegistrationSchemaBlock
 from osf.utils.migrations import create_schema_blocks_for_atomic_schema
 
 from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA_NAME, DEFAULT_TEST_SCHEMA
@@ -210,6 +210,6 @@ def get_default_test_schema():
             schema_version=1,
             schema=DEFAULT_TEST_SCHEMA
         )
-        create_schema_blocks_for_atomic_schema(test_schema)
+        create_schema_blocks_for_atomic_schema(test_schema, block_class=RegistrationSchemaBlock)
 
     return test_schema

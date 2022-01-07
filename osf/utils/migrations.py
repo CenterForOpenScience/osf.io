@@ -18,7 +18,6 @@ from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
 from website.project.metadata.schemas import get_osf_meta_schemas
 
-
 logger = logging.getLogger(__file__)
 
 
@@ -390,15 +389,14 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
         # If there are multiple choice answers, create blocks for these as well.
         split_options_into_blocks(state, rs, question, schema_block_group_key)
 
-def create_schema_blocks_for_atomic_schema(schema):
+
+def create_schema_blocks_for_atomic_schema(schema, block_class):
     """
     Atomic schemas are a short cut around making an typical metaschemas by being totally explict about the schemablocks
     being created.
     """
-
-    from osf.models import RegistrationSchemaBlock
     current_group_key = None
-    grouped_block_types = RegistrationSchemaBlock.INPUT_BLOCK_TYPES.union(
+    grouped_block_types = block_class.INPUT_BLOCK_TYPES.union(
         {'select-input-option', 'select-input-other'}
     )
 
@@ -421,13 +419,13 @@ def create_schema_blocks_for_atomic_schema(schema):
 
         # Input blocks define a 'response_key', while it is NULL for all other blocks
         # Either honor a provided key or auto-generate one based on the block's index
-        if block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
+        if block_type in block_class.INPUT_BLOCK_TYPES:
             if not block.get('response_key'):
                 block['response_key'] = f'{schema.id}-{index}'
         else:  # Ignore any improperly-supplied response_key
             block['response_key'] = None
 
-        RegistrationSchemaBlock.objects.create(
+        block_class.objects.create(
             schema_id=schema.id,
             **block
         )
@@ -458,13 +456,15 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = state.get_model('osf', 'metaschema')
 
+    from osf.models import RegistrationSchemaBlock
+
     # Delete all existing schema blocks (avoid creating duplicates)
     unmap_schemablocks(*args)
 
     for rs in schema_model.objects.all():
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
         if rs.schema.get('atomicSchema'):
-            create_schema_blocks_for_atomic_schema(rs)
+            create_schema_blocks_for_atomic_schema(rs, block_class=RegistrationSchemaBlock)
             continue
 
         for page in rs.schema['pages']:

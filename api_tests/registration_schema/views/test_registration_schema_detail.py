@@ -22,30 +22,6 @@ def schema():
     ).first()
 
 
-class TestDeprecatedMetaSchemaDetail:
-    def test_deprecated_metaschemas_routes(self, app, user, schema):
-        # test base /metaschemas/ GET with min version
-        url = '/{}metaschemas/?version=2.7'.format(API_BASE)
-        res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-
-        # test GET with higher version
-        url = '/{}metaschemas/?version=2.8'.format(API_BASE)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'This route has been deprecated. It was last available in version 2.7'
-
-        # test /metaschemas/registrations/
-        url = '/{}metaschemas/registrations/{}/?version=2.8'.format(API_BASE, schema._id)
-        res = app.get(url, auth=user.auth)
-        assert res.status_code == 200
-
-        # test /metaschemas/registrations/ deprecated version
-        url = '/{}metaschemas/registrations/{}/?version=2.9'.format(API_BASE, schema._id)
-        res = app.get(url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == 'This route has been deprecated. It was last available in version 2.8'
-
 @pytest.mark.django_db
 class TestRegistrationSchemaDetail:
 

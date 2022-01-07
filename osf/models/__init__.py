@@ -1,5 +1,5 @@
 from osf.models.schema import RegistrationSchema, FileSchema  # noqa
-from osf.models.schema_block import RegistrationSchemaBlock  # noqa
+from osf.models.schema_block import RegistrationSchemaBlock, FileSchemaBlock  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor, DraftRegistrationContributor  # noqa
@@ -52,7 +52,7 @@ from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.notable_email_domain import NotableEmailDomain  # noqa
 from osf.models.brand import Brand  # noqa
 from osf.models.schema_response import SchemaResponse  # noqa
-from osf.models.schema_response_block import SchemaResponseBlock  # noqa
+from osf.models.schema_response_block import SchemaResponseBlock, FileSchemaResponseBlock  # noqa
 from osf.models.file_schema_response import FileSchemaResponse  # noqa
 from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  # noqa
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  # noqa

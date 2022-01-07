@@ -23,7 +23,7 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
     responses = ser.SerializerMethodField()
 
     schema_blocks = RelationshipField(
-        related_view='schemas:registration-schema-blocks',
+        related_view='schemas:registration-schema-block-list',
         related_view_kwargs={'schema_id': '<_id>'},
     )
     parent = RelationshipField(

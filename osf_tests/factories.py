@@ -1161,6 +1161,7 @@ class SchemaResponseFactory(DjangoModelFactory):
 
 
 class FileSchemaFactory(DjangoModelFactory):
+    name = factory.Sequence(lambda n: f'FileSchema #{n}')
     schema_version = factory.Sequence(lambda n: n)
 
     class Meta:

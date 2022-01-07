@@ -12,6 +12,9 @@ from osf.exceptions import ValidationValueError, ValidationError
 
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from osf.features import EGAP_ADMINS
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+from osf.utils.migrations import create_schema_blocks_for_atomic_schema
 
 
 def allow_egap_admins(queryset, request):
@@ -206,3 +209,14 @@ class FileSchema(AbstractSchema):
     @property
     def absolute_api_v2_url(self):
         return api_v2_url(f'/schemas/files/{self._id}/')
+
+
+@receiver(post_save, sender=FileSchema)
+def create_file_schema_blocks(sender, instance, created, **kwargs):
+    """Create schema blocks from file schema."""
+    from osf.models.schema_block import FileSchemaBlock
+    if created:
+        try:
+            create_schema_blocks_for_atomic_schema(instance, block_class=FileSchemaBlock)
+        except KeyError as e:
+            raise ValidationError(f'Schema was missing elements and threw: {e}')

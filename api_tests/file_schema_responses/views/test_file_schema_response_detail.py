@@ -1,12 +1,17 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NodeLog
+from osf.models import (
+    NodeLog,
+)
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    FileSchemaResponseFactory
+    FileSchemaResponseFactory,
+    FileSchemaFactory,
+
 )
+from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA
 
 
 @pytest.mark.django_db
@@ -19,6 +24,10 @@ class TestFileSchemaResponseDetail:
     @pytest.fixture
     def url(self, schema_response):
         return f'/{API_BASE}files/{schema_response.parent._id}/schema_responses/{schema_response._id}/'
+
+    @pytest.fixture
+    def file_schema(self, user):
+        return FileSchemaFactory(schema=DEFAULT_TEST_SCHEMA)
 
     @pytest.fixture
     def schema_response(self, user):
@@ -105,11 +114,9 @@ class TestFileSchemaResponseUpdate:
         return payload
 
     def test_admin_can_update(self, app, user, node, url, schema_response, make_payload, metadata_record_json):
-        print(make_payload(schema_response))
         res = app.patch_json_api(url, make_payload(schema_response), auth=user.auth)
         schema_response.reload()
         assert res.status_code == 200
-        print(res.json)
         assert res.json['data']['attributes']['responses'] == metadata_record_json
         assert schema_response.response == metadata_record_json
         assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED

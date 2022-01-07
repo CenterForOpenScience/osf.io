@@ -30,7 +30,7 @@ class SchemaSerializer(JSONAPISerializer):
         type_ = 'schemas'
 
 
-class RegistrationSchemaBlockSerializer(JSONAPISerializer):
+class AbstractSchemaBlockSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
@@ -47,11 +47,6 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
         'self': 'get_absolute_url',
     })
 
-    schema = RelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<schema._id>'},
-    )
-
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
@@ -59,11 +54,27 @@ class RegistrationSchemaBlockSerializer(JSONAPISerializer):
         type_ = 'schema-blocks'
 
 
+class RegistrationSchemaBlockSerializer(AbstractSchemaBlockSerializer):
+
+    schema = RelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+    )
+
+
+class FileSchemaBlockSerializer(AbstractSchemaBlockSerializer):
+
+    schema = RelationshipField(
+        related_view='schemas:file-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+    )
+
+
 class RegistrationSchemaSerializer(SchemaSerializer):
     description = ser.CharField(read_only=True, allow_blank=True)
 
     schema_blocks = RelationshipField(
-        related_view='schemas:registration-schema-blocks',
+        related_view='schemas:registration-schema-block-list',
         related_view_kwargs={'schema_id': '<_id>'},
     )
 
@@ -77,19 +88,12 @@ class RegistrationSchemaSerializer(SchemaSerializer):
 
 class FileSchemaSerializer(SchemaSerializer):
 
+    schema_blocks = RelationshipField(
+        related_view='schemas:file-schema-block',
+        related_view_kwargs={'schema_id': '<_id>'},
+    )
+
     class Meta:
         @staticmethod
         def get_type(request):
-            return get_kebab_snake_case_field(request.version, 'file-metadata-schemas')
-
-
-class DeprecatedMetaSchemaSerializer(SchemaSerializer):
-
-    class Meta:
-        type_ = 'metaschemas'
-
-
-class DeprecatedRegistrationMetaSchemaSerializer(SchemaSerializer):
-
-    class Meta:
-        type_ = 'registration_metaschemas'
+            return get_kebab_snake_case_field(request.version, 'file-schemas')

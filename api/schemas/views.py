@@ -7,11 +7,18 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.filters import ListFilterMixin
 
-from osf.models import RegistrationSchemaBlock, RegistrationSchema, FileSchema
+from osf.models import (
+    RegistrationSchemaBlock,
+    RegistrationSchema,
+    FileSchema,
+    FileSchemaBlock,
+)
+
 from api.schemas.serializers import (
     RegistrationSchemaSerializer,
     RegistrationSchemaBlockSerializer,
     FileSchemaSerializer,
+    FileSchemaBlockSerializer,
 )
 
 
@@ -74,7 +81,7 @@ class FileSchemaList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = FileSchemaSerializer
     view_category = 'schemas'
-    view_name = 'file-metadata-schemas'
+    view_name = 'file-schema-list'
 
     ordering = ('-id',)
 
@@ -95,7 +102,7 @@ class FileSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = FileSchemaSerializer
     view_category = 'schemas'
-    view_name = 'file-metadata-schema-detail'
+    view_name = 'file-schema-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -103,7 +110,7 @@ class FileSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return get_object_or_error(FileSchema, schema_id, self.request)
 
 
-class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
+class RegistrationSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -117,7 +124,7 @@ class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
-    view_name = 'registration-schema-blocks'
+    view_name = 'registration-schema-block-list'
     ordering = ('_order',)
 
     def get_queryset(self):
@@ -138,7 +145,48 @@ class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
-    view_name = 'registration-schema-form-block-detail'
+    view_name = 'registration-schema-block-detail'
 
     def get_object(self):
         return get_object_or_error(RegistrationSchemaBlock, self.kwargs.get('schema_block_id'), self.request)
+
+
+class FileSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    pagination_class = MaxSizePagination
+
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = FileSchemaBlockSerializer
+    view_category = 'schemas'
+    view_name = 'file-schema-block'
+    ordering = ('_order',)
+
+    def get_queryset(self):
+        schema_id = self.kwargs.get('schema_id')
+        schema = get_object_or_error(FileSchema, schema_id, self.request)
+        return schema.schema_blocks.all()
+
+
+class FileSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.SCHEMA_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = FileSchemaBlockSerializer
+    view_category = 'schemas'
+    view_name = 'file-schema-block-detail'
+
+    def get_object(self):
+        return get_object_or_error(FileSchemaBlock, self.kwargs['schema_block_id'], self.request)
