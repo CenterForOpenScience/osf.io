@@ -35,6 +35,7 @@ from osf.utils.workflows import (
     SchemaResponseTriggers
 )
 from addons.osfstorage.models import OsfStorageFile, Region
+from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -1170,23 +1171,24 @@ class FileSchemaFactory(DjangoModelFactory):
 
 class FileSchemaResponseFactory(DjangoModelFactory):
     initiator = factory.SubFactory(AuthUserFactory)
-    schema = factory.SubFactory(FileSchemaFactory)
 
     class Meta:
         model = models.FileSchemaResponse
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        registration = RegistrationFactory()
+        parent = kwargs.get('parent', RegistrationFactory())
         filename = factory.Sequence(lambda n: f'File #{n}')
+        schema = kwargs.get('schema', FileSchemaFactory(schema=DEFAULT_TEST_SCHEMA))
         file = OsfStorageFile.create(
-            target_object_id=registration.id,
-            target_content_type=ContentType.objects.get_for_model(registration),
+            target_object_id=parent.id,
+            target_content_type=ContentType.objects.get_for_model(parent),
             path=f'/{filename}',
             name=filename,
             materialized_path=f'/{filename}'
         )
         file.save()
+        kwargs['schema'] = schema
         kwargs['parent'] = file
         kwargs['object_id'] = file.id
         kwargs['content_type'] = ContentType.objects.get_for_model(file)

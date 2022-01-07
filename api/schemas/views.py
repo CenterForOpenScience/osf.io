@@ -165,7 +165,7 @@ class FileSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
 
     serializer_class = FileSchemaBlockSerializer
     view_category = 'schemas'
-    view_name = 'file-schema-block'
+    view_name = 'file-schema-block-list'
     ordering = ('_order',)
 
     def get_queryset(self):

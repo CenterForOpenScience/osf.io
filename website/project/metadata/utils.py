@@ -127,7 +127,7 @@ def extract_question_values(question, required_fields, is_reviewer, is_required)
             elif question.get('format') == 'multiselect':
                 response['value'] = {'type': 'array', 'items': enum_options}
     elif question.get('type') == 'osf-upload':
-        response['extra'] = OSF_UPLOAD_EXTRA_SCHEMA
+        response['extra'] = OSF_FILE_JSONSCHEMA
 
     if is_reviewer:
         del response['extra']
@@ -164,7 +164,7 @@ def get_options_jsonschema(options, required):
 
     return value
 
-OSF_UPLOAD_EXTRA_SCHEMA = {
+OSF_FILE_JSONSCHEMA = {
     'type': 'array',
     'items': {
         'type': 'object',

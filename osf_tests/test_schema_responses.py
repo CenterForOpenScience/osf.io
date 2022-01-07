@@ -342,8 +342,12 @@ class TestUpdateSchemaResponses():
         # initial_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
-                schema=schema, registration_response_key__isnull=False
-            ).values_list('response_key', flat=True)
+                schema=schema,
+                response_key__isnull=False,
+            ).values_list(
+                'response_key',
+                flat=True,
+            )
         )
 
         assert initial_response.updated_response_keys == all_keys

@@ -8,8 +8,12 @@ from api.base.serializers import (
     RelationshipField,
     TypeField,
 )
-from api.base.utils import absolute_reverse
 from api.base.versioning import get_kebab_snake_case_field
+from osf.models import (
+    FileSchemaBlock,
+    FileSchemaResponseBlock,
+)
+from rest_framework.exceptions import ValidationError
 
 
 class FileSchemaResponseSerializer(JSONAPISerializer):
@@ -23,7 +27,7 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
     responses = ser.SerializerMethodField()
 
     schema_blocks = RelationshipField(
-        related_view='schemas:registration-schema-block-list',
+        related_view='schemas:file-schema-block-list',
         related_view_kwargs={'schema_id': '<_id>'},
     )
     parent = RelationshipField(
@@ -32,7 +36,7 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
     )
 
     schema = RelationshipField(
-        related_view='schemas:file-metadata-schema-detail',
+        related_view='schemas:file-schema-detail',
         related_view_kwargs={'schema_id': '<schema._id>'},
     )
 
@@ -49,11 +53,28 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
         target = file.target
         user = self.context['request'].user
         responses = validated_data.pop('responses')
-        schema_response.set_responses(responses)
+
+        question_blocks = FileSchemaBlock.objects.filter(
+            schema=schema_response.schema,
+            response_key__in=list(responses.keys()),
+        )
+
+        for source_block in question_blocks:
+            block, created = FileSchemaResponseBlock.objects.get_or_create(
+                source_schema_response=schema_response,
+                source_schema_block=source_block,
+                schema_key=source_block.response_key,
+            )
+            schema_response.response_blocks.add(block)
+            block.set_response(responses.pop(source_block.response_key))
+
+        if responses:
+            raise ValidationError(f'Your response contained invalid keys: {",".join(list(responses.keys()))}')
+
         schema_response.save()
 
         target.add_log(
-            action=target.log_class.FILE_METADATA_UPDATED,
+            action=target.log_class.FILE_SCHEMA_RESPONSE_UPDATED,
             params={
                 'path': file.materialized_path,
             },
@@ -63,13 +84,7 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
         return schema_response
 
     def get_download_link(self, obj):
-        return absolute_reverse(
-            'files:file_schema_responses:file-schema-response-download', kwargs={
-                'file_id': obj.parent._id,
-                'file_schema_response_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
+        return 'link to SHARE'
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

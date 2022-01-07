@@ -38,7 +38,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
     CHANGED_LICENSE = 'license_changed'
 
     FILE_UPDATED = 'file_updated'
-    FILE_METADATA_UPDATED = 'file_metadata_updated'
+    FILE_SCHEMA_RESPONSE_UPDATED = 'file_schema_response_updated'
 
     SUBJECTS_UPDATED = 'subjects_updated'
 
@@ -73,7 +73,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         CHANGED_LICENSE,
         EDITED_DESCRIPTION,
         FILE_UPDATED,
-        FILE_METADATA_UPDATED,
+        FILE_SCHEMA_RESPONSE_UPDATED,
         MADE_CONTRIBUTOR_VISIBLE,
         SUPPLEMENTAL_NODE_ADDED,
         MADE_CONTRIBUTOR_INVISIBLE,
