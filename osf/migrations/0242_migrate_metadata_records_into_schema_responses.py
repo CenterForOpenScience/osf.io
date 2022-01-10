@@ -18,15 +18,14 @@ class Migration(migrations.Migration):
             return super().apply(project_state, schema_editor, collect_sql)
         except ValueError as e:
             assert str(e) in (
-              "Related model 'osf.FileMetadataSchema' cannot be resolved",
-              'Found wrong number (0) of constraints for osf_filemetadatarecord(file_id, schema_id)',
+                "Related model 'osf.FileMetadataSchema' cannot be resolved",
+                'Found wrong number (0) of constraints for osf_filemetadatarecord(file_id, schema_id)',
             )
         except utils.ProgrammingError as e:
             assert e.args[0] == 'relation "osf_filemetadataschema" does not exist'
 
         print('Local environment, skipping...')
         return project_state
-
 
     operations = [
         migrations.DeleteModel(name='FileMetadataSchema'),

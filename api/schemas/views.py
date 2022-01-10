@@ -138,7 +138,6 @@ class RegistrationSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
         ).schema_blocks.all()
 
 
-
 class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     permission_classes = (
@@ -180,7 +179,7 @@ class FileSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         return get_object_or_error(
-            FileSchemaBlock,
+            FileSchema,
             self.kwargs['schema_id'],
             self.request,
         ).schema_blocks.all()

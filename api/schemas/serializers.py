@@ -89,7 +89,7 @@ class RegistrationSchemaSerializer(SchemaSerializer):
 class FileSchemaSerializer(SchemaSerializer):
 
     schema_blocks = RelationshipField(
-        related_view='schemas:file-schema-block',
+        related_view='schemas:file-schema-block-list',
         related_view_kwargs={'schema_id': '<_id>'},
     )
 
