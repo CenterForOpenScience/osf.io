@@ -825,7 +825,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False, force=False):
         """Set the permissions for this preprint - mainly for spam purposes.
 
         :param permissions: A string, either 'public' or 'private'
@@ -836,7 +836,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         """
         if auth and not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change privacy settings.')
-        if permissions == 'public' and not self.is_public:
+        if permissions == 'public' and not self.is_public and not force:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
                 # TODO: Should say will review within a certain agreed upon time period.
                 raise PreprintStateError('This preprint has been marked as spam. Please contact the help desk if you think this is in error.')

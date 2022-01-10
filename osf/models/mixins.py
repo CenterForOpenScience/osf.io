@@ -1997,7 +1997,7 @@ class SpamOverrideMixin(SpamMixin):
         super().confirm_spam(save=save, train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
-        self.set_privacy('private', auth=None, log=False, save=False)
+        self.set_privacy('private', auth=None, log=False, save=False, force=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
