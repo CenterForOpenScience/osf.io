@@ -106,8 +106,11 @@ class FileSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        schema_id = self.kwargs['schema_id']
-        return get_object_or_error(FileSchema, schema_id, self.request)
+        return get_object_or_error(
+            FileSchema,
+            self.kwargs['schema_id'],
+            self.request,
+        )
 
 
 class RegistrationSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
@@ -128,9 +131,12 @@ class RegistrationSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
     ordering = ('_order',)
 
     def get_queryset(self):
-        schema_id = self.kwargs.get('schema_id')
-        schema = get_object_or_error(RegistrationSchema, schema_id, self.request)
-        return schema.schema_blocks.all()
+        return get_object_or_error(
+            RegistrationSchema,
+            self.kwargs['schema_id'],
+            self.request,
+        ).schema_blocks.all()
+
 
 
 class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -148,7 +154,11 @@ class RegistrationSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'registration-schema-block-detail'
 
     def get_object(self):
-        return get_object_or_error(RegistrationSchemaBlock, self.kwargs.get('schema_block_id'), self.request)
+        return get_object_or_error(
+            RegistrationSchemaBlock,
+            self.kwargs['schema_block_id'],
+            self.request,
+        )
 
 
 class FileSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
@@ -169,9 +179,11 @@ class FileSchemaBlockList(JSONAPIBaseView, generics.ListAPIView):
     ordering = ('_order',)
 
     def get_queryset(self):
-        schema_id = self.kwargs.get('schema_id')
-        schema = get_object_or_error(FileSchema, schema_id, self.request)
-        return schema.schema_blocks.all()
+        return get_object_or_error(
+            FileSchemaBlock,
+            self.kwargs['schema_id'],
+            self.request,
+        ).schema_blocks.all()
 
 
 class FileSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -189,4 +201,8 @@ class FileSchemaBlockDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_name = 'file-schema-block-detail'
 
     def get_object(self):
-        return get_object_or_error(FileSchemaBlock, self.kwargs['schema_block_id'], self.request)
+        return get_object_or_error(
+            FileSchemaBlock,
+            self.kwargs['schema_block_id'],
+            self.request,
+        )

@@ -53,6 +53,7 @@ class FileSchemaResponseSerializer(JSONAPISerializer):
         target = file.target
         user = self.context['request'].user
         responses = validated_data.pop('responses')
+        schema_response.schema.validate_metadata(responses)
 
         question_blocks = FileSchemaBlock.objects.filter(
             schema=schema_response.schema,

@@ -84,12 +84,13 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
     def __unicode__(self):
         return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
 
-    def to_jsonschema(self):
+    @property
+    def jsonschema(self):
         data = {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "title": self.name,
-            "additionalProperties": False,
-            "definitions": {},
+            '$schema': 'http://json-schema.org/draft-04/schema#',
+            'title': self.name,
+            'additionalProperties': False,
+            'definitions': {},
         }
         input_blocks = self.schema_blocks.filter(
             block_type__in=[
@@ -100,14 +101,19 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
         )
         for block in input_blocks:
             if block.block_type in ('short-text-input', 'long-text-input'):
-                data['definitions'][block.response_key] = {
-                    "type": "string",
-                }
+                data['definitions'][block.response_key] = {'type': 'string'}
             elif block.block_type == 'file-input':
                 data['definitions'][block.response_key] = OSF_FILE_JSONSCHEMA
 
-        for block in self.schema_blocks.filter(block_type__in='single-select-input'):
-            pass
+        for block in self.schema_blocks.filter(block_type='single-select-input'):
+            options = self.schema_blocks.filter(schema_block_group_key=block.schema_block_group_key)
+            data['definitions'][block.response_key] = {
+                'type': 'array',
+                'items': {
+                    'type': 'string',
+                    'enum': [block.display_text for block in options]
+                }
+            }
 
 
 class RegistrationSchema(AbstractSchema):
