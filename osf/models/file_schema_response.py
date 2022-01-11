@@ -11,7 +11,7 @@ class FileSchemaResponse(AbstractSchemaResponse):
     response_blocks = models.ManyToManyField('osf.FileSchemaResponseBlock')
     initiator = models.ForeignKey('osf.OsfUser', null=False)
     parent = models.ForeignKey(
-        'osf.OsfStorageFile',
+        'osf.BaseFileNode',
         related_name='schema_responses',
         on_delete=models.SET_NULL,
         null=True
