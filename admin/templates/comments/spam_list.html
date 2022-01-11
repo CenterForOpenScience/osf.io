@@ -40,7 +40,7 @@
                     <input id="all" type="checkbox" disabled>
                 </th>
                 <th>Author</th>
-                <th>Reporter</th>
+                <th>Report JSON</th>
                 <th>Date</th>
                 <th>Content</th>
             </tr>
@@ -56,7 +56,7 @@
                     <a href="{{ user | reverse_user }}">{{ comment.user }}</a>
                 </td>
                 <td>
-                    {{ comment.reports }}
+                    <pre style="white-space:pre-wrap;">{{ comment.reports }}</pre>
                 </td>
                 <td>
                     {{ comment.created|date }}
