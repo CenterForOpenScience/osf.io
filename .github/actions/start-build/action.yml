@@ -32,4 +32,3 @@ runs:
       # styles.git is a ruby project that contains a lot of useful data files. This
       # just clones the repo into bower_components, where we can access them.
       ./node_modules/.bin/bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"
-      ./node_modules/.bin/bower install "https://github.com/CenterForOpenScience/mdx_del_ins.git"
