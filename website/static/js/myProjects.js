@@ -93,6 +93,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
+    this.limit = 14;
     this._flat = [];
     this._orphans = [];
     this._cache = {};
@@ -131,7 +132,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return this.loaded >= this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
@@ -155,7 +156,15 @@ NodeFetcher.prototype = {
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
           m.redraw(true);
-          if(this.nextLink && this._continue) return this.resume();
+          if(this.nextLink && this._continue && this._flat.length < this.limit) {
+            this._continue = true;
+            return this.resume();
+          } else {
+            this._continue = false;
+            m.redraw(true);
+
+          }
+
       }).bind(this));
   },
   add: function(item) {
@@ -1051,6 +1060,18 @@ var MyProjects = {
             var filterIndex = self.getFilterIndex();
             self.updateBreadcrumbs(self.collections()[filterIndex]);
             self.updateFilter(self.collections()[filterIndex]);
+
+            var current = self.currentView().fetcher;
+
+            document.addEventListener('wheel', function(e) {
+                  var scroll = $('#tb-tbody')[0];
+                  if(current._flat && current._flat.length >= current.limit && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
+                      current.limit = current.limit + 5;
+                      current.resume();
+                  }
+                  m.redraw();
+            });
+
         };
 
         self.init();
@@ -1169,8 +1190,10 @@ var MyProjects = {
             m('.db-main', { style : poStyle },[
                 ctrl.loadValue() < 100 ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('', { style : 'width: ' + ctrl.loadValue() +'%;', class: 'line-full ' + (ctrl.currentView().fetcher._continue ? 'bg-color-green': 'bg-color-blue')}, m('span.progress')),
+                    m('.spinner-loading-wrapper', {},
+                        m('#load-message.ball-scale.ball-scale-blue.scroll-ball', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, m(''), m(''), m(''))
+                    )
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
@@ -1928,6 +1951,7 @@ var Filters = {
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
+                    m('.text-muted.m-t-sm.m-r-sm.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable, '),
                     m('.pull-right',
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
@@ -1937,6 +1961,7 @@ var Filters = {
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
+                    m('.text-muted.m-t-sm.m-r-sm', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable'),
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
