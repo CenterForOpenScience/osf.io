@@ -47,7 +47,7 @@ tqdm==4.28.1
 # (http://docs.python-requests.org/en/latest/community/faq/#what-are-hostname-doesn-t-match-errors)
 ndg-httpsclient==0.3.0
 # Python markdown extensions for comment emails
-git+git://github.com/CenterForOpenScience/mdx_del_ins.git
+git+https://github.com/CenterForOpenScience/mdx_del_ins.git
 
 certifi==2020.12.5
 sendgrid==1.5.13
