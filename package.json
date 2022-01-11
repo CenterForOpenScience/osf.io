@@ -21,7 +21,7 @@
     "bower": "^1.8.8",
     "css-loader": "^0.9.1",
     "diff": "~2.2.2",
-    "dropzone": "git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
+    "dropzone": "git://github.com/CenterForOpenScience/dropzone.git",
     "exports-loader": "0.6.3",
     "file-loader": "^0.8.1",
     "font-awesome": "^4.4.0",
