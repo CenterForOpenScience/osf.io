@@ -43,6 +43,12 @@
                         <td>Title</td>
                         <td>{{ node.title }}</td>
                     </tr>
+                    {% if not node.is_registration %}
+                        <tr>
+                            <td>Project</td>
+                            <td>{{ reverse_node | node.registered_from }}</td>
+                        </tr>
+                    {% endif %}
                     <tr>
                         <td>Deleted</td>
                         <td>{{ node.deleted }}</td>
