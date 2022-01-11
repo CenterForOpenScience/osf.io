@@ -1066,7 +1066,7 @@ var MyProjects = {
             document.addEventListener('wheel', function(e) {
                   var scroll = $('#tb-tbody')[0];
                   if(current._flat && current._flat.length >= current.limit && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
-                      current.limit = current.limit + 5;
+                      current.limit = current.limit + 10;
                       current.resume();
                   }
                   m.redraw();
@@ -1951,7 +1951,7 @@ var Filters = {
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
                     }, ''),
-                    m('.text-muted.m-t-sm.m-r-sm.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable,  are filterable, '),
+                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable.'),
                     m('.pull-right',
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                         )
@@ -1961,7 +1961,7 @@ var Filters = {
                 ]),
                 m('h5.m-t-sm', [
                     'Tags',
-                    m('.text-muted.m-t-sm.m-r-sm', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable'),
+                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable'),
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
                         )
