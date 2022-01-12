@@ -46,7 +46,7 @@
                     {% if node.is_registration %}
                         <tr>
                             <td>Project</td>
-                            <td><a href="{{ node.registered_from | reverse_node }}">{{ node.registered_from }}</a></td>
+                            <td><a href="{{ node.registered_from | reverse_node }}">{{ node.registered_from.title }}</a></td>
                         </tr>
                     {% endif %}
                     <tr>
