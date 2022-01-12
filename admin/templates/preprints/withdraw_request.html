@@ -17,7 +17,11 @@
                         <tbody>
                             <tr>
                                 <td style="width: 500px;"> {{ request.comment }} </td>
-                                <td> {{ request.creator.fullname }} </td>
+                                <td>
+                                    <a href="{{ preprint.creator | reverse_user }}">
+                                        {{ preprint.creator }}
+                                    </a>
+                                </td>
                                 <td>
                                     {% if request.machine_state == 'initial' %}
                                         <span class="label label-success">Initial</span>
