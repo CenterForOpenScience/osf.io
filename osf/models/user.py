@@ -1451,9 +1451,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.reactivate_account()
         super().confirm_ham(save=save)
 
-        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
             node.confirm_ham(save=save, train_akismet=False)
-        for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
+        for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_akismet=False)
 
     @property
