@@ -43,8 +43,6 @@ from osf.models.notable_email_domain import NotableEmailDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
-from osf.models.nodelog import NodeLog
-from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag

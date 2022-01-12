@@ -19,8 +19,6 @@ from admin.comments.templatetags.comment_extras import reverse_comment_detail
 
 class CommentList(PermissionRequiredMixin, ListView):
     """ Allow authorized admin user to see the things people have marked as spam
-
-    Interface with OSF database. No admin models.
     """
     template_name = 'comments/spam_list.html'
     paginate_by = 10
@@ -53,8 +51,6 @@ class CommentList(PermissionRequiredMixin, ListView):
 class UserCommentList(CommentList):
     """ Allow authorized admin user to see the comments a user has had
      marked spam
-
-    Interface with OSF database. No admin models.
     """
     template_name = 'comments/user.html'
 
@@ -79,8 +75,6 @@ class UserCommentList(CommentList):
 
 class CommentDetail(PermissionRequiredMixin, TemplateView):
     """ Allow authorized admin user to see details of reported spam.
-
-    Interface with OSF database. Logs action (confirming spam) on admin db.
     """
     template_name = 'comments/detail.html'
     permission_required = 'osf.view_spam'

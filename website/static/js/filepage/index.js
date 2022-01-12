@@ -491,7 +491,7 @@ var FileViewPage = {
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
+                ctrl.isLatestVersion && !window.contextVars.node.isRegistration ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
@@ -505,7 +505,7 @@ var FileViewPage = {
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 (document.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
+                ctrl.isLatestVersion && !window.contextVars.node.isRegistration ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             m('.btn-group.m-t-xs', [
                 ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
