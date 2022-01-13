@@ -35,7 +35,8 @@ from osf.models.admin_log_entry import (
     CONFIRM_SPAM,
     CONFIRM_HAM,
     APPROVE_WITHDRAWAL,
-    REJECT_WITHDRAWAL
+    REJECT_WITHDRAWAL,
+    UNFLAG_SPAM,
 )
 
 from website import search, settings
@@ -452,5 +453,53 @@ class PreprintConfirmHamView(PreprintMixin, View):
             message=f'Confirmed HAM: {preprint._id}',
             action_flag=CONFIRM_HAM
         )
+
+        return redirect(self.get_success_url())
+
+
+class PreprintConfirmUnflagView(PreprintMixin, View):
+    """ Allows authorized users to remove the spam flag from a preprint.
+    """
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.spam_status = None
+        preprint.save()
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=preprint._id,
+            object_repr='Node',
+            message=f'Confirmed Unflagged: {preprint._id}',
+            action_flag=UNFLAG_SPAM
+        )
+        return redirect(self.get_success_url())
+
+
+class PreprintMakePrivate(PreprintMixin, View):
+    """ Allows an authorized user to manually make a public preprint private.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        preprint.set_privacy('private', force=True)
+        preprint.save()
+
+        return redirect(self.get_success_url())
+
+
+class PreprintMakePublic(PreprintMixin, View):
+    """ Allows an authorized user to manually make a private preprint public.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        preprint.set_privacy('public', force=True)
+        preprint.save()
 
         return redirect(self.get_success_url())

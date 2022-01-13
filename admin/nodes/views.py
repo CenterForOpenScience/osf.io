@@ -475,7 +475,7 @@ class NodeConfirmHamView(NodeMixin, View):
 
 
 class NodeConfirmUnflagView(NodeMixin, View):
-    """ Allows authorized users to mark a particular node as ham.
+    """ Allows authorized users to remove the spam flag from a node.
     """
     permission_required = 'osf.mark_spam'
     raise_exception = True
@@ -572,7 +572,6 @@ class NodeMakePrivate(NodeMixin, View):
     """ Allows an authorized user to manually make a public node private.
     """
     permission_required = 'osf.change_node'
-    template_name = 'nodes/make_private.html'
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
@@ -591,6 +590,17 @@ class NodeMakePrivate(NodeMixin, View):
 
         node.save()
 
+        return redirect(self.get_success_url())
+
+
+class NodeMakePublic(NodeMixin, View):
+    """ Allows an authorized user to manually make a public node private.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.set_privacy('public')
         return redirect(self.get_success_url())
 
 

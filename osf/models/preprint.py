@@ -836,8 +836,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         """
         if auth and not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to change privacy settings.')
-        if permissions == 'public' and not self.is_public and not force:
-            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
+        if permissions == 'public' and not self.is_public:
+            if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy) and not force:
                 # TODO: Should say will review within a certain agreed upon time period.
                 raise PreprintStateError('This preprint has been marked as spam. Please contact the help desk if you think this is in error.')
             self.is_public = True

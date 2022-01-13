@@ -5,7 +5,6 @@ from django.views.generic import FormView, ListView
 from osf.models import OSFGroup
 from admin.osf_groups.forms import OSFGroupSearchForm
 from admin.base.views import GuidView
-from admin.osf_groups.serializers import serialize_group
 
 
 class OSFGroupsView(PermissionRequiredMixin, GuidView):
@@ -73,6 +72,6 @@ class OSFGroupsListView(PermissionRequiredMixin, ListView):
             query_set, page_size)
 
         return {
-            'groups': list(map(serialize_group, query_set)),
+            'groups': query_set,
             'page': page,
         }

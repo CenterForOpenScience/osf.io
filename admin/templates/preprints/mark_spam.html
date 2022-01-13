@@ -1,6 +1,6 @@
 {% if perms.osf.mark_spam %}
     {% if preprint.spam_status and preprint.spam_status == 1 %}
-        <form action="{% url 'preprints:confirm-unflag' guid=node.guid %}" method="post" style="display: inline;">
+        <form action="{% url 'preprints:confirm-unflag' guid=preprint.guid %}" method="post" style="display: inline;">
             {% csrf_token %}
             {% include "preprints/unflag_modal.html" with preprint=preprint %}
         </form>

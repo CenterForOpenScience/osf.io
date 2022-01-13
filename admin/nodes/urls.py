@@ -35,6 +35,6 @@ urlpatterns = [
         name='adjust-storage-usage'),
     url(r'^(?P<guid>[a-z0-9]+)/recalculate_node_storage/$', views.NodeRecalculateStorage.as_view(),
         name='recalculate-node-storage'),
-    url(r'^(?P<guid>[a-z0-9]+)/make_private/$', views.NodeMakePrivate.as_view(),
-        name='make-node-private'),
+    url(r'^(?P<guid>[a-z0-9]+)/make_private/$', views.NodeMakePrivate.as_view(), name='make-private'),
+    url(r'^(?P<guid>[a-z0-9]+)/make_public/$', views.NodeMakePublic.as_view(), name='make-public'),
 ]
