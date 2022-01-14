@@ -20,6 +20,9 @@
     height: 600px;
 }
 
+.results-tail-btn:hover {
+    background-color: #E1F3E0;
+}
 
 /* Header with breadcrumbs and buttons */
 

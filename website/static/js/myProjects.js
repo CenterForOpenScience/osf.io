@@ -757,7 +757,27 @@ var MyProjects = {
             if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
+
+            if (!$('.results-tail-btn').length & !self.currentView().fetcher.isFinished()) {
+                    var div = document.createElement("div");
+                    var caret = document.createElement("i");
+                    caret.classList.add('fa');
+                    caret.classList.add('fa-caret-down');
+                    div.classList.add('tb-row');
+                    div.classList.add('results-tail-btn');
+                    div.innerHTML = 'load more results';
+                    div.style = 'text-align: center; font-style: italic;';
+                    div.onclick = function () {
+                        self.currentView().fetcher.resume();
+                    };
+                    $('.tb-tbody-inner').append(div);
+                }
+
+            if (self.currentView().fetcher.total === self.currentView().fetcher.loaded) {
+                $('.results-tail-btn').remove();
+            }
             m.redraw(true);
+
         };
 
         self.nonLoadTemplate = function (){
