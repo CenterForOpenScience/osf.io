@@ -88,7 +88,8 @@ class IQBRIMSProvider(ExternalProvider):
         }
 
     def fetch_access_token(self, force_refresh=False):
-        self.refresh_oauth_key(force=force_refresh)
+        refreshed = self.refresh_oauth_key(force=force_refresh)
+        logger.debug('refresh_oauth_key returns {}'.format(refreshed))
         return self.account.oauth_key
 
 

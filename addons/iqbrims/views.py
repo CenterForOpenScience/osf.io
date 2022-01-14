@@ -112,13 +112,18 @@ def iqbrims_get_status(**kwargs):
     management_node = _get_management_node(node)
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)
     if management_node_addon is None:
+        logger.error('management_node is not set.')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'IQB-RIMS addon disabled in management node')
+    logger.debug('checking management_node...')
     try:
         access_token = management_node_addon.fetch_access_token()
     except exceptions.InvalidAuthError:
+        logger.error('fetch_access_token is failed.')
         raise HTTPError(403)
+    logger.debug('management_node has been configured.')
     user_settings = IQBRIMSWorkflowUserSettings(access_token, management_node_addon.folder_id)
     status = iqbrims.get_status()
+    logger.debug('extracting settings from management_node...')
     status['labo_list'] = [u'{}:{}'.format(l['id'], l['text'])
                            for l in user_settings.LABO_LIST]
     status['review_folders'] = REVIEW_FOLDERS
@@ -126,6 +131,7 @@ def iqbrims_get_status(**kwargs):
     status['is_admin'] = is_admin
     if is_admin:
         status['task_url'] = user_settings.FLOWABLE_TASK_URL
+    logger.debug('settings extracted.')
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': status}}
 
@@ -622,6 +628,9 @@ def _iqbrims_import_auth_from_management_node(node, node_addon, management_node)
 
 def _get_management_node(node):
     inst_ids = node.affiliated_institutions.values('id')
+    if len(inst_ids) == 0:
+        logger.error('node.affiliated_institutions is not set')
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     try:
         opt = RdmAddonOption.objects.filter(
             provider=SHORT_NAME,
