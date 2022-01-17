@@ -551,7 +551,7 @@ class SpreadsheetClient(BaseClient):
         COMMENT_MARGIN = 3
         c = self.ensure_columns(files_sheet_id,
                                 entry_cols +
-                                ['Extention (File)'] +
+                                ['Extension (File)'] +
                                 ['Persons Involved (File)'] +
                                 ['{} (File)'.format(col) for col in fcolumns] +
                                 ['Extension'] +
@@ -652,7 +652,7 @@ class SpreadsheetClient(BaseClient):
                         'protectedRange': {
                             'range': {'sheetId': files_sheet_idx,
                                       'startColumnIndex': 0,
-                                      'endColumnIndex': c.index('Extention (File)') + 1,
+                                      'endColumnIndex': c.index('Extension (File)') + 1,
                                       'startRowIndex': 1 + COMMENT_MARGIN,
                                       'endRowIndex': 1 + COMMENT_MARGIN + len(values)},
                             'warningOnly': True
@@ -721,7 +721,7 @@ class SpreadsheetClient(BaseClient):
                 e = values[index] if index < len(values) else ''
             elif c == 'Extension':
                 e = ext
-            elif c == 'Extention (File)':
+            elif c == 'Extension (File)':
                 e = '-' if typestr != 'file' else self._get_ext(values)
             r.append(e)
         return r
