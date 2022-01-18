@@ -250,6 +250,14 @@
          "display_text":"4"
       },
       {
+         "block_type":"select-input-option",
+         "display_text":"5"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"6"
+      },
+      {
          "block_type":"question-label",
          "display_text":"Total number of students"
       },
@@ -375,7 +383,7 @@
       },
       {
          "block_type":"question-label",
-         "display_text":"Did anything emerge in this pilot data that you weren't expecting?"
+         "display_text":"Did anything emerge in this input that you weren\u2019t expecting?"
       },
       {
          "block_type":"long-text-input",
@@ -383,7 +391,7 @@
       },
       {
          "block_type":"question-label",
-         "display_text":"What are your three main takeaways from this pilot?"
+         "display_text":"What are your three main takeaways from your student input?"
       },
       {
          "block_type":"long-text-input",
