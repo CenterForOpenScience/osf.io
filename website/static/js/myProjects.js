@@ -759,21 +759,24 @@ var MyProjects = {
             }
 
             if (!$('.results-tail-btn').length & !self.currentView().fetcher.isFinished()) {
-                    var div = document.createElement("div");
-                    var caret = document.createElement("i");
-                    caret.classList.add('fa');
-                    caret.classList.add('fa-caret-down');
-                    div.classList.add('tb-row');
-                    div.classList.add('results-tail-btn');
-                    div.innerHTML = 'load more results';
-                    div.style = 'text-align: center; font-style: italic;';
-                    div.onclick = function () {
-                        self.currentView().fetcher.resume();
-                    };
-                    $('.tb-tbody-inner').append(div);
-                }
+                var span = document.createElement("span");
+                span.style = 'width: 100%; text-align: center;'
+                var caret = document.createElement("i");
+                span.className = 'results-tail-btn fa-stack fa-4x';
+                caret.className = 'fa fa-caret-down fa-stack-2x';
+                span.append(caret);
+                var innerspan = document.createElement("span");
+                innerspan.style = 'font-size:12px; margin-top:-3%; display:block;';
+                innerspan.innerHTML = 'Load More Results';
+                span.onclick = function () {
+                    self.currentView().fetcher.resume();
+                };
+                span.append(innerspan);
 
-            if (self.currentView().fetcher.total === self.currentView().fetcher.loaded) {
+                $('#tb-tbody').append(span);
+            }
+
+            if (self.currentView().fetcher.isFinished()) {
                 $('.results-tail-btn').remove();
             }
             m.redraw(true);

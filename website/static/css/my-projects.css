@@ -24,6 +24,17 @@
     background-color: #E1F3E0;
 }
 
+
+.results-tail-btn {
+    width: 100% !important;
+    text-align: center;
+}
+
+.results-tail-btn > span {
+    width: 100% !important;
+    text-align: center;
+}
+
 /* Header with breadcrumbs and buttons */
 
 .db-header {
