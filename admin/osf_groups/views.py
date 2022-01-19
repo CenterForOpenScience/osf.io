@@ -18,7 +18,7 @@ class OSFGroupsView(PermissionRequiredMixin, GuidView):
     def get_object(self, queryset=None):
         id = self.kwargs.get('id')
         osf_group = OSFGroup.objects.get(_id=id)
-        return serialize_group(osf_group)
+        return osf_group
 
 
 class OSFGroupsFormView(PermissionRequiredMixin, FormView):

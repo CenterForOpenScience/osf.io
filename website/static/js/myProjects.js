@@ -759,13 +759,13 @@ var MyProjects = {
             }
 
             if (!$('.results-tail-btn').length & !self.currentView().fetcher.isFinished()) {
-                var span = document.createElement("span");
-                span.style = 'width: 100%; text-align: center;'
-                var caret = document.createElement("i");
+                var span = document.createElement('span');
+                span.style = 'width: 100%; text-align: center;';
+                var caret = document.createElement('i');
                 span.className = 'results-tail-btn fa-stack fa-4x';
                 caret.className = 'fa fa-caret-down fa-stack-2x';
                 span.append(caret);
-                var innerspan = document.createElement("span");
+                var innerspan = document.createElement('span');
                 innerspan.style = 'font-size:12px; margin-top:-3%; display:block;';
                 innerspan.innerHTML = 'Load More Results';
                 span.onclick = function () {
