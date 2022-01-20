@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 THRESHOLD_HOURS = int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)
 
-@celery_app.task(name='management.commands.approve_pending_schema_responses')
+@celery_app.task(name='osf.management.commands.approve_pending_schema_responses')
 @transaction.atomic
 def approve_pending_schema_responses(dry_run=False):
     '''Migrate registration_responses into a SchemaResponse for historical registrations.'''
