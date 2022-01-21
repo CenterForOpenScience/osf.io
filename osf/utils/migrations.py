@@ -451,14 +451,15 @@ def map_schemas_to_schemablocks(*args):
 
     WARNING: Deletes existing schema blocks
     """
-    state = args[0] if args else apps
+    app_state = args[0] if args else apps
     try:
-        schema_model = state.get_model('osf', 'registrationschema')
+        schema_model = app_state.get_model('osf', 'registrationschema')
     except LookupError:
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
-        schema_model = state.get_model('osf', 'metaschema')
+        schema_model = app_state.get_model('osf', 'metaschema')
 
     # Delete all existing schema blocks (avoid creating duplicates)
+    previous_input_block_ids = _cache_input_block_ids(app_state)
     unmap_schemablocks(*args)
 
     for rs in schema_model.objects.all():
@@ -470,14 +471,16 @@ def map_schemas_to_schemablocks(*args):
         for page in rs.schema['pages']:
             # Create page heading block
             create_schema_block(
-                state,
+                app_state,
                 rs.id,
                 'page-heading',
                 display_text=strip_html(page.get('title', '')),
                 help_text=strip_html(page.get('description', ''))
             )
             for question in page['questions']:
-                create_schema_blocks_for_question(state, rs, question)
+                create_schema_blocks_for_question(app_state, rs, question)
+
+        _remap_response_blocks(rs, previous_input_block_ids[rs._id], app_state)
 
 
 def unmap_schemablocks(*args):
@@ -485,6 +488,40 @@ def unmap_schemablocks(*args):
     schema_block_model = state.get_model('osf', 'registrationschemablock')
 
     schema_block_model.objects.all().delete()
+
+
+def _cache_input_block_ids(app_state):
+    RegistrationSchema = app_state.get_model('osf', 'registrationschema')
+    input_blocks_per_schema = {}
+    for schema in RegistrationSchema.objects.all():
+        input_blocks = schema.schema_blocks.filter(
+            registration_response_key__isnull=False
+        ).values('id', 'registration_response_key')
+        input_blocks_per_schema[schema.id] = {
+            block.registration_resposne_key: block.id
+            for block in input_blocks
+        }
+    return input_blocks_per_schema
+
+
+def _remap_response_blocks(schema, previous_input_blocks, app_state):
+    try:
+        SchemaResponseBlock = app_state.get_model('osf', 'schemaresponseblock')
+    except LookupError:
+        return
+
+    input_blocks = schema.schema_blocks.filter(
+        registration_response_key__isnull=False
+    ).values('id', 'registration_response_key')
+    new_input_block_ids = {
+        block.registration_response_key: block.id for block in input_blocks
+    }
+
+    for registration_response_key, previous_id in previous_input_blocks.items():
+        new_block_id = new_input_block_ids[registration_response_key]
+        SchemaResponseBlock.filter(
+            source_schema_block__id=previous_id
+        ).update(source_schema_block=new_block_id)
 
 
 class UpdateRegistrationSchemas(Operation):

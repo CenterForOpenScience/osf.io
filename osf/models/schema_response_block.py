@@ -22,10 +22,20 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     source_schema_response = models.ForeignKey(
         'osf.SchemaResponse',
         null=False,
-        related_name='updated_response_blocks'
+        related_name='updated_response_blocks',
+        on_delete=models.CASCADE,
     )
     # The RegistrationSchemaBlock that defines the question being answered
-    source_schema_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
+    source_schema_block = models.ForeignKey(
+        'osf.RegistrationSchemaBlock',
+        null=False,
+        # SchemaBlocks all get deleted and re-created whenever schemas are updated.
+        # That action should explicitly re-map this reference.
+        # If SchemaBlocks are deleted by a cascade from deleting the parent Schema,
+        # then the SchemaResponses for that Schema will also cascade, causing
+        # their resposne blocks to be deleted as well.
+        on_delete=models.DO_NOTHING,
+    )
 
     # Should match source_schema_block.registration_response_key
     schema_key = models.CharField(max_length=255)
