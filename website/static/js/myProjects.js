@@ -132,7 +132,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return this.total && (this.loaded >= this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink);
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
