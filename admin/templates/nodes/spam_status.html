@@ -1,5 +1,10 @@
 {% if resource.spam_status == SPAM_STATUS.UNKNOWN %}
-    <span class="label label-default">Unknown</span>
+    <span class="label label-default">
+        Unknown
+        {% if resource.is_assumed_ham %}
+            (assumed Ham)
+        {% endif %}
+    </span>
 {% elif resource.spam_status == SPAM_STATUS.FLAGGED %}
     <span class="label label-warning">Flagged</span>
 {% elif resource.spam_status == SPAM_STATUS.SPAM %}

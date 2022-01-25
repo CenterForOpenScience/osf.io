@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+21.09.0 (2021-12-21)
+====================
+- Bulk Upload follow-ups, fixes, and improvements
+
+21.08.0 (2021-11-30)
+====================
+- Remaining work in support of Registrion Versioning/Updating
+
 21.07.0 (2021-10-04)
 ====================
 - Add support for Registry Admins to bulk upload

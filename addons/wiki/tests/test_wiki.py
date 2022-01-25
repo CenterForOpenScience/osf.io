@@ -331,6 +331,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('Add important information, links, or images here to describe your project.', res)
 
+    @pytest.mark.skip('Content rendering handled by front-end')
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -390,16 +391,18 @@ class TestWikiViews(OsfTestCase):
 
         self.sec_wiki.update(self.user, short_content)
         res = serialize_wiki_widget(self.second_project)
-        assert_in(short_content, res['wiki_content'])
-        assert_not_in('...', res['wiki_content'])
+        # Content rendering handled by front-end
+        # assert_in(short_content, res['wiki_content'])
+        # assert_not_in('...', res['wiki_content'])
         assert_false(res['more'])
 
     def test_wiki_widget_long_content_cutoff(self):
         long_content = 'a' * 600
         self.sec_wiki.update(self.user, long_content)
         res = serialize_wiki_widget(self.second_project)
-        assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
-        assert_in('...', res['wiki_content'].decode())
+        # Content rendering handled by front-end
+        # assert_less(len(res['wiki_content']), 520)  # wiggle room for closing tags
+        # assert_in('...', res['wiki_content'].decode())
         assert_true(res['more'])
 
     def test_wiki_widget_with_multiple_short_pages_has_more(self):
@@ -444,6 +447,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_not_in('data-osf-panel="Edit"', res.text)
 
+    @pytest.mark.skip('Content rendering handled by front-end. Also, this view is now ember')
     def test_wiki_widget_not_show_in_registration_for_contributor(self):
         registration = RegistrationFactory(project=self.project)
         res = self.app.get(

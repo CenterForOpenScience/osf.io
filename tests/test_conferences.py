@@ -15,7 +15,7 @@ from framework.auth.core import Auth
 
 from osf.models import OSFUser, AbstractNode
 from addons.wiki.models import WikiVersion
-from osf.exceptions import BlacklistedEmailError
+from osf.exceptions import BlockedEmailError
 from website import settings
 from website.conferences import views
 from website.conferences import utils, message
@@ -90,10 +90,10 @@ class TestConferenceUtils(OsfTestCase):
         assert_equal(fetched.username, username)
         assert_true('is_spam' in fetched.system_tags)
 
-    def test_get_or_create_user_with_blacklisted_domain(self):
+    def test_get_or_create_user_with_blocked_domain(self):
         fullname = 'Kanye West'
         username = 'kanye@mailinator.com'
-        with assert_raises(BlacklistedEmailError) as e:
+        with assert_raises(BlockedEmailError) as e:
             get_or_create_user(fullname, username, is_spam=True)
         assert_equal(str(e.exception), 'Invalid Email')
 

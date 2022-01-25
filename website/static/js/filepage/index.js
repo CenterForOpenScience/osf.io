@@ -466,7 +466,8 @@ var FileViewPage = {
                 return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
-                        // atleast one button must remain enabled.
+                        $osf.trackClick('file-page', 'file-edit', 'click-file-edit');
+                        // at least one button must remain enabled.
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
@@ -518,6 +519,7 @@ var FileViewPage = {
                 m('button.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
+                        $osf.trackClick('file-page', 'file-share', 'click-file-view');
                         // at least one button must remain enabled.
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
@@ -533,6 +535,7 @@ var FileViewPage = {
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                    $osf.trackClick('file-page', 'file-revision', 'click-file-revision');
                     var editable = ctrl.editor && ctrl.editor.selected;
                     var viewable = ctrl.mfrIframeParent.is(':visible');
                     if (editable || viewable){

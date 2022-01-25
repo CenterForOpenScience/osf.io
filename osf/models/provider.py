@@ -231,6 +231,7 @@ class RegistrationProvider(AbstractProvider):
     default_schema = models.ForeignKey(RegistrationSchema, related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
     bulk_upload_auto_approval = models.NullBooleanField(default=False)
     allow_updates = models.NullBooleanField(default=False)
+    allow_bulk_uploads = models.NullBooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
