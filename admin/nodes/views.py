@@ -4,6 +4,7 @@ from framework import status
 
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.urlresolvers import NoReverseMatch
 from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -108,7 +109,10 @@ class NodeSearchView(PermissionRequiredMixin, FormView):
     def form_valid(self, form):
         guid = form.cleaned_data['guid']
         if guid:
-            return redirect(reverse('nodes:node', kwargs={'guid': guid}))
+            try:
+                return redirect(reverse('nodes:node', kwargs={'guid': guid}))
+            except NoReverseMatch as e:
+                messages.error(self.request, str(e))
 
         return super().form_valid(form)
 
