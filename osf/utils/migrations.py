@@ -458,9 +458,13 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = state.get_model('osf', 'metaschema')
 
+    try:
+        RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    except LookupError:
+        return  # can't create SchemaBlocks if they don't exist
+
     for rs in schema_model.objects.all():
-        # Only create schema_blocks for new schemas/versions
-        if rs.schema_blocks.exists():
+        if RegistrationSchemaBlock.objects.filter(schema_id=rs.id).exists():
             continue
 
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))

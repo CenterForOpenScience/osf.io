@@ -16,7 +16,9 @@ class TestUpdateRegistrationSchemas:
     def updated_schema(self):
         known_schemas = get_osf_meta_schemas()
         schema_to_update = copy.deepcopy(random.choice(known_schemas))
-        schema_to_update['version'] += 1
+        # some schemas have multiple versions present in get_osf_metaschemas
+        # increment by a silly number to account for this
+        schema_to_update['version'] += 100
         return schema_to_update
 
     def test_update_schemas_creates_new_schemas(self, updated_schema):
@@ -25,7 +27,7 @@ class TestUpdateRegistrationSchemas:
         ).exists()
         assert not RegistrationSchema.objects.filter(
             name=(updated_schema.get('title') or updated_schema.get('name')),
-            version=updated_schema['version']
+            schema_version=updated_schema['version']
         ).exists()
 
         test_schemas = get_osf_meta_schemas() + [updated_schema, DEFAULT_TEST_SCHEMA]
@@ -40,8 +42,8 @@ class TestUpdateRegistrationSchemas:
             name=DEFAULT_TEST_SCHEMA_NAME
         ).exists()
         assert RegistrationSchema.objects.filter(
-            name=(updated_schema.get('title') or updated_schema.get('name')),
-            version=updated_schema['version']
+            name=updated_schema.get('name'),
+            schema_version=updated_schema['version']
         ).exists()
 
     def test_update_schemas_only_creates_schemablocks_for_new_schemas(self, updated_schema):
@@ -49,8 +51,8 @@ class TestUpdateRegistrationSchemas:
             schema__name=DEFAULT_TEST_SCHEMA_NAME
         ).exists()
         assert not RegistrationSchemaBlock.objects.filter(
-            schema__name=(updated_schema.get('title') or updated_schema.get('name')),
-            schema__version=updated_schema['version']
+            schema__name=updated_schema.get('name'),
+            schema__schema_version=updated_schema['version']
         ).exists()
 
         initial_block_ids = set(RegistrationSchemaBlock.objects.values_list('id', flat=True))
@@ -72,15 +74,15 @@ class TestUpdateRegistrationSchemas:
         block_ids_for_updated_schema = set(
             RegistrationSchemaBlock.objects.filter(
                 schema__name=(updated_schema.get('title') or updated_schema.get('name')),
-                schema__version=updated_schema['version']
+                schema__schema_version=updated_schema['version']
             ).values_list('id', flat=True)
         )
         assert block_ids_for_updated_schema
 
         expected_block_ids = (
             initial_block_ids
-            & block_ids_for_new_schema
-            & block_ids_for_updated_schema
+            | block_ids_for_new_schema
+            | block_ids_for_updated_schema
         )
         all_block_ids = set(RegistrationSchemaBlock.objects.values_list('id', flat=True))
         assert all_block_ids == expected_block_ids

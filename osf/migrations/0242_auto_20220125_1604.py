@@ -12,12 +12,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='schemaresponseblock',
-            name='source_schema_block',
-        ),
         migrations.AlterUniqueTogether(
             name='schemaresponseblock',
             unique_together=set([('source_schema_response', 'schema_key')]),
+        ),
+        migrations.RemoveField(
+            model_name='schemaresponseblock',
+            name='source_schema_block',
         ),
     ]
