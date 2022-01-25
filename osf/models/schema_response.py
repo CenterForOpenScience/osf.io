@@ -306,12 +306,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if not file_block_ids:
             return
 
-        file_response_blocks = self.response_blocks.filter(
-            source_schema_block_id__in=file_block_ids
-        )
-        for block in file_response_blocks:
-            block.response = updated_responses[block.schema_key]
-            if save:
+        for block in self.response_blocks.all():
+            if block.source_schema_block.id in file_block_ids and save:
+                block.response = updated_responses[block.schema_key]
                 block.save()
 
     def delete(self, *args, **kwargs):
