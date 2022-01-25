@@ -482,47 +482,8 @@ def map_schemas_to_schemablocks(*args):
 
 
 def unmap_schemablocks(*args):
-    state = args[0] if args else apps
-    schema_block_model = state.get_model('osf', 'registrationschemablock')
-
-    schema_block_model.objects.all().delete()
-
-
-def _cache_input_block_ids(app_state):
-    RegistrationSchema = app_state.get_model('osf', 'registrationschema')
-    input_blocks_per_schema = {}
-    for schema in RegistrationSchema.objects.all():
-        try:
-            input_blocks = schema.schema_blocks.filter(
-                registration_response_key__isnull=False
-            ).values('id', 'registration_response_key')
-        except AttributeError:  # Running in a pre-schemablocks state
-            break
-        else:
-            input_blocks_per_schema[schema.id] = {
-                block['registration_response_key']: block['id'] for block in input_blocks
-            }
-    return input_blocks_per_schema
-
-
-def _remap_response_blocks(schema, previous_input_blocks, app_state):
-    try:
-        SchemaResponseBlock = app_state.get_model('osf', 'schemaresponseblock')
-    except LookupError:
-        return
-
-    input_blocks = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
-    ).values('id', 'registration_response_key')
-    new_input_block_ids = {
-        block['registration_response_key']: block['id'] for block in input_blocks
-    }
-
-    for registration_response_key, previous_id in previous_input_blocks.items():
-        new_block_id = new_input_block_ids[registration_response_key]
-        SchemaResponseBlock.objects.filter(
-            source_schema_block_id=previous_id
-        ).update(source_schema_block=new_block_id)
+    '''Noop for historical purposes'''
+    return
 
 
 class UpdateRegistrationSchemas(Operation):
