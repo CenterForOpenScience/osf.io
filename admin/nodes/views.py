@@ -600,7 +600,10 @@ class NodeMakePublic(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        node.set_privacy('public')
+        try:
+            node.set_privacy('public')
+        except NodeStateError as e:
+            messages.error(request, str(e))
         return redirect(self.get_success_url())
 
 
