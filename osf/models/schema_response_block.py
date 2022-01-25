@@ -48,7 +48,7 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         return RegistrationSchemaBlock.objects.filter(
             schema=self.source_schema_response.schema,
             registration_response_key=self.schema_key
-        ).prefetch_related('block_type', 'required').get()
+        ).get()
 
     @cached_property
     def block_type(self):
