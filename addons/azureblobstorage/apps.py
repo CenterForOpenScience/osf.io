@@ -1,5 +1,6 @@
 import os
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
+from addons.azureblobstorage.settings import MAX_UPLOAD_SIZE
 
 azureblobstorage_root_folder = generic_root_folder('azureblobstorage')
 
@@ -19,7 +20,7 @@ class AzureBlobStorageAddonAppConfig(BaseAddonAppConfig):
     configs = ['accounts', 'node']
     categories = ['storage']
     has_hgrid_files = True
-    max_file_size = 128  # MB
+    max_file_size = MAX_UPLOAD_SIZE
     node_settings_template = os.path.join(TEMPLATE_PATH, 'azureblobstorage_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'azureblobstorage_user_settings.mako')
 
