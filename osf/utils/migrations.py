@@ -458,15 +458,14 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = app_state.get_model('osf', 'metaschema')
 
-    # Delete all existing schema blocks (avoid creating duplicates)
-    previous_input_block_ids = _cache_input_block_ids(app_state)
-    unmap_schemablocks(*args)
-
     for rs in schema_model.objects.all():
+        # Only create schema_blocks for new schemas/versions
+        if rs.schema_blocks.exists():
+            continue
+
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
-            _remap_response_blocks(rs, previous_input_block_ids[rs.id], app_state)
             continue
 
         for page in rs.schema['pages']:
@@ -480,9 +479,6 @@ def map_schemas_to_schemablocks(*args):
             )
             for question in page['questions']:
                 create_schema_blocks_for_question(app_state, rs, question)
-
-        if rs.id in previous_input_block_ids:
-            _remap_response_blocks(rs, previous_input_block_ids[rs.id], app_state)
 
 
 def unmap_schemablocks(*args):

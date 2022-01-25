@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from osf.exceptions import SchemaResponseUpdateError
+from osf.models import RegistrationSchemaBlock
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import sanitize
@@ -25,34 +26,29 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
         related_name='updated_response_blocks',
         on_delete=models.CASCADE,
     )
-    # The RegistrationSchemaBlock that defines the question being answered
-    source_schema_block = models.ForeignKey(
-        'osf.RegistrationSchemaBlock',
-        null=False,
-        # SchemaBlocks all get deleted and re-created whenever schemas are updated.
-        # That action should explicitly re-map this reference.
-        # If SchemaBlocks are deleted by a cascade from deleting the parent Schema,
-        # then the SchemaResponses for that Schema will also cascade, causing
-        # their resposne blocks to be deleted as well.
-        on_delete=models.DO_NOTHING,
-    )
-
-    # Should match source_schema_block.registration_response_key
+    # Must align with the `registration_response_key from some schema_block on the
+    # source_schema_response's schema
     schema_key = models.CharField(max_length=255)
     response = DateTimeAwareJSONField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('source_schema_response', 'source_schema_block')
+        unique_together = ('source_schema_response', 'schema_key')
 
     @classmethod
     def create(cls, source_schema_response, source_schema_block, response_value=None):
         new_response_block = cls(
             source_schema_response=source_schema_response,
-            source_schema_block=source_schema_block,
             schema_key=source_schema_block.registration_response_key
         )
         new_response_block.set_response(response_value)
         return new_response_block
+
+    @cached_property
+    def source_schema_block(self):
+        return RegistrationSchemaBlock.objects.filter(
+            schema=self.source_schema_response.schema,
+            registration_response_key=self.schema_key
+        ).prefetch_related('block_type', 'required').get()
 
     @cached_property
     def block_type(self):

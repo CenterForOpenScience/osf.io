@@ -1,36 +1,86 @@
-import pytest
+import copy
+import mock
 import random
+import pytest
 
-from osf.management.commands.update_registration_schemas import update_registration_schemas
-from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
-from osf_tests.factories import RegistrationFactory
+from osf.management.commands import update_registration_schemas
+from osf.models import RegistrationSchema, RegistrationSchemaBlock
+from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA, DEFAULT_TEST_SCHEMA_NAME
+from website.project.metadata.schemas import get_osf_meta_schemas
 
 
 @pytest.mark.django_db
 class TestUpdateRegistrationSchemas:
 
     @pytest.fixture
-    def registrations(self):
-        schemas = RegistrationSchema.objects.all()
-        for _ in range(20):
-            schema = random.choice(schemas)
-            RegistrationFactory(schema=schema)
+    def updated_schema(self):
+        known_schemas = get_osf_meta_schemas()
+        schema_to_update = copy.deepcopy(random.choice(known_schemas))
+        schema_to_update['version'] += 1
+        return schema_to_update
 
-    def test_update_schemas_rebuilds_schema_blocks(self, registrations):
-        initial_schema_blocks = set(RegistrationSchemaBlock.objects.all())
-        update_registration_schemas()
-        new_schema_blocks = set(RegistrationSchemaBlock.objects.all())
-        assert len(new_schema_blocks) == len(initial_schema_blocks)
-        assert (new_schema_blocks & initial_schema_blocks) == set()
+    def test_update_schemas_creates_new_schemas(self, updated_schema):
+        assert not RegistrationSchema.objects.filter(
+            name=DEFAULT_TEST_SCHEMA_NAME
+        ).exists()
+        assert not RegistrationSchema.objects.filter(
+            name=(updated_schema.get('title') or updated_schema.get('name')),
+            version=updated_schema['version']
+        ).exists()
 
-    def test_update_schemas_does_not_delete_schema_response_blocks(self, registrations):
-        initial_response_blocks = set(SchemaResponseBlock.objects.all())
-        update_registration_schemas()
-        assert set(SchemaResponseBlock.objects.all()) == initial_response_blocks
+        test_schemas = get_osf_meta_schemas() + [updated_schema, DEFAULT_TEST_SCHEMA]
+        with mock.patch.object(
+            update_registration_schemas.migrations,
+            'get_osf_meta_schemas',
+            return_value=test_schemas
+        ):
+            update_registration_schemas.update_registration_schemas()
 
-    def test_update_schemas_remaps_source_schema_block_for_response_blocks(self, registrations):
-        update_registration_schemas()
-        for response_block in SchemaResponseBlock.objects.all():
-            assert RegistrationSchemaBlock.objects.filter(id=response_block.source_schema_block_id).exists()
-            assert response_block.source_schema_block.registration_response_key == response_block.schema_key
-            assert response_block.source_schema_block.schema == response_block.source_schema_response.schema
+        assert RegistrationSchema.objects.filter(
+            name=DEFAULT_TEST_SCHEMA_NAME
+        ).exists()
+        assert RegistrationSchema.objects.filter(
+            name=(updated_schema.get('title') or updated_schema.get('name')),
+            version=updated_schema['version']
+        ).exists()
+
+    def test_update_schemas_only_creates_schemablocks_for_new_schemas(self, updated_schema):
+        assert not RegistrationSchemaBlock.objects.filter(
+            schema__name=DEFAULT_TEST_SCHEMA_NAME
+        ).exists()
+        assert not RegistrationSchemaBlock.objects.filter(
+            schema__name=(updated_schema.get('title') or updated_schema.get('name')),
+            schema__version=updated_schema['version']
+        ).exists()
+
+        initial_block_ids = set(RegistrationSchemaBlock.objects.values_list('id', flat=True))
+        test_schemas = get_osf_meta_schemas() + [updated_schema, DEFAULT_TEST_SCHEMA]
+        with mock.patch.object(
+            update_registration_schemas.migrations,
+            'get_osf_meta_schemas',
+            return_value=test_schemas
+        ):
+            update_registration_schemas.update_registration_schemas()
+
+        block_ids_for_new_schema = set(
+            RegistrationSchemaBlock.objects.filter(
+                schema__name=DEFAULT_TEST_SCHEMA_NAME
+            ).values_list('id', flat=True)
+        )
+        assert block_ids_for_new_schema
+
+        block_ids_for_updated_schema = set(
+            RegistrationSchemaBlock.objects.filter(
+                schema__name=(updated_schema.get('title') or updated_schema.get('name')),
+                schema__version=updated_schema['version']
+            ).values_list('id', flat=True)
+        )
+        assert block_ids_for_updated_schema
+
+        expected_block_ids = (
+            initial_block_ids
+            & block_ids_for_new_schema
+            & block_ids_for_updated_schema
+        )
+        all_block_ids = set(RegistrationSchemaBlock.objects.values_list('id', flat=True))
+        assert all_block_ids == expected_block_ids
