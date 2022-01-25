@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0241_abstractprovider_allow_bulk_uploads'),
+        ('osf', '0242_auto_20220125_1604'),
     ]
 
     operations = [
