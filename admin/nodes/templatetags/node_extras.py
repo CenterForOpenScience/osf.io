@@ -16,7 +16,10 @@ register = template.Library()
 
 @register.filter
 def reverse_node(value):
-    return reverse('nodes:node', kwargs={'guid': value._id})
+    if hasattr(value, '_id'):
+        return reverse('nodes:node', kwargs={'guid': value._id})
+    else:
+        return 'N/A'
 
 
 @register.filter

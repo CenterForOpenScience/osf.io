@@ -404,7 +404,7 @@ class TestRemoveContributor(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
         self.url = reverse('preprints:remove-user', kwargs={'guid': self.preprint._id, 'user_id': self.user._id})
 
-    @mock.patch('admin.preprints.views.Preprint.remove_contributor')
+    @mock.patch('osf.models.preprint.Preprint.remove_contributor')
     def test_remove_contributor(self, mock_remove_contributor):
         user_id = self.user_2.id
         preprint_id = self.preprint._id

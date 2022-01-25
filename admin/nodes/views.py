@@ -29,7 +29,6 @@ from osf.exceptions import NodeStateError
 from osf.models import (
     OSFUser,
     NodeLog,
-    Node,
     AbstractNode,
     Registration,
     SpamStatus
@@ -347,7 +346,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return Node.objects.filter(
+        return AbstractNode.objects.filter(
             spam_status=self.SPAM_STATE
         ).order_by(
             self.ordering
