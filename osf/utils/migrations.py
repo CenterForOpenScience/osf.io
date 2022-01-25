@@ -200,34 +200,67 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
     state = state or apps
     schema_block_model = state.get_model('osf', 'registrationschemablock')
 
-    return schema_block_model.objects.create(
-        schema_id=schema_id,
-        block_type=block_type,
-        required=required,
-        display_text=unescape_entities(
-            display_text,
-            safe={
-                '&lt;': '<',
-                '&gt;': '>'
-            }
-        ),
-        help_text=unescape_entities(
-            help_text,
-            safe={
-                '&lt;': '<',
-                '&gt;': '>'
-            }
-        ),
-        registration_response_key=registration_response_key,
-        schema_block_group_key=schema_block_group_key,
-        example_text=unescape_entities(
-            example_text,
-            safe={
-                '&lt;': '<',
-                '&gt;': '>'
-            }
+    if schema_block_model.objects.filter(schema_id=schema_id, registration_response_key=registration_response_key).exists():
+        schema_block_model.objects.filter(
+            schema_id=schema_id,
+            registration_response_key=registration_response_key,
+        ).update(
+            schema_id=schema_id,
+            block_type=block_type,
+            required=required,
+            display_text=unescape_entities(
+                display_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            ),
+            help_text=unescape_entities(
+                help_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            ),
+            registration_response_key=registration_response_key,
+            schema_block_group_key=schema_block_group_key,
+            example_text=unescape_entities(
+                example_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            )
         )
-    )
+    else:
+        return schema_block_model.objects.create(
+            schema_id=schema_id,
+            block_type=block_type,
+            required=required,
+            display_text=unescape_entities(
+                display_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            ),
+            help_text=unescape_entities(
+                help_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            ),
+            registration_response_key=registration_response_key,
+            schema_block_group_key=schema_block_group_key,
+            example_text=unescape_entities(
+                example_text,
+                safe={
+                    '&lt;': '<',
+                    '&gt;': '>'
+                }
+            )
+        )
 
 # Split question multiple choice options into their own blocks
 def split_options_into_blocks(state, rs, question, schema_block_group_key):
@@ -427,10 +460,16 @@ def create_schema_blocks_for_atomic_schema(schema):
         else:  # Ignore any improperly-supplied registration_response_key
             block['registration_response_key'] = None
 
-        RegistrationSchemaBlock.objects.create(
-            schema_id=schema.id,
-            **block
-        )
+        if RegistrationSchemaBlock.objects.filter(schema_id=schema.id, registration_response_key__isnull=False).exists():
+            RegistrationSchemaBlock.objects.filter(
+                schema_id=schema.id,
+                registration_response_key=block.pop('registration_response_key__isnull')
+            ).update(**block)
+        else:
+            RegistrationSchemaBlock.objects.create(
+                schema_id=schema.id,
+                **block
+            )
 
 def map_schema_to_schemablocks(rs, state=None):
     for page in rs.schema['pages']:
@@ -458,15 +497,10 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = app_state.get_model('osf', 'metaschema')
 
-    # Delete all existing schema blocks (avoid creating duplicates)
-    previous_input_block_ids = _cache_input_block_ids(app_state)
-    unmap_schemablocks(*args)
-
     for rs in schema_model.objects.all():
-        logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
+        logger.info(f'Migrating schema {rs.name}, version {rs.schema_version} to schema blocks.')
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
-            _remap_response_blocks(rs, previous_input_block_ids[rs.id], app_state)
             continue
 
         for page in rs.schema['pages']:
@@ -480,53 +514,6 @@ def map_schemas_to_schemablocks(*args):
             )
             for question in page['questions']:
                 create_schema_blocks_for_question(app_state, rs, question)
-
-        if rs.id in previous_input_block_ids:
-            _remap_response_blocks(rs, previous_input_block_ids[rs.id], app_state)
-
-
-def unmap_schemablocks(*args):
-    state = args[0] if args else apps
-    schema_block_model = state.get_model('osf', 'registrationschemablock')
-
-    schema_block_model.objects.all().delete()
-
-
-def _cache_input_block_ids(app_state):
-    RegistrationSchema = app_state.get_model('osf', 'registrationschema')
-    input_blocks_per_schema = {}
-    for schema in RegistrationSchema.objects.all():
-        try:
-            input_blocks = schema.schema_blocks.filter(
-                registration_response_key__isnull=False
-            ).values('id', 'registration_response_key')
-        except AttributeError:  # Running in a pre-schemablocks state
-            break
-        else:
-            input_blocks_per_schema[schema.id] = {
-                block['registration_response_key']: block['id'] for block in input_blocks
-            }
-    return input_blocks_per_schema
-
-
-def _remap_response_blocks(schema, previous_input_blocks, app_state):
-    try:
-        SchemaResponseBlock = app_state.get_model('osf', 'schemaresponseblock')
-    except LookupError:
-        return
-
-    input_blocks = schema.schema_blocks.filter(
-        registration_response_key__isnull=False
-    ).values('id', 'registration_response_key')
-    new_input_block_ids = {
-        block['registration_response_key']: block['id'] for block in input_blocks
-    }
-
-    for registration_response_key, previous_id in previous_input_blocks.items():
-        new_block_id = new_input_block_ids[registration_response_key]
-        SchemaResponseBlock.objects.filter(
-            source_schema_block_id=previous_id
-        ).update(source_schema_block=new_block_id)
 
 
 class UpdateRegistrationSchemas(Operation):
