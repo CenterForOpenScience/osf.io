@@ -451,12 +451,12 @@ def map_schemas_to_schemablocks(*args):
 
     WARNING: Deletes existing schema blocks
     """
-    app_state = args[0] if args else apps
+    state = args[0] if args else apps
     try:
-        schema_model = app_state.get_model('osf', 'registrationschema')
+        schema_model = state.get_model('osf', 'registrationschema')
     except LookupError:
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
-        schema_model = app_state.get_model('osf', 'metaschema')
+        schema_model = state.get_model('osf', 'metaschema')
 
     for rs in schema_model.objects.all():
         # Only create schema_blocks for new schemas/versions
@@ -471,14 +471,14 @@ def map_schemas_to_schemablocks(*args):
         for page in rs.schema['pages']:
             # Create page heading block
             create_schema_block(
-                app_state,
+                state,
                 rs.id,
                 'page-heading',
                 display_text=strip_html(page.get('title', '')),
                 help_text=strip_html(page.get('description', ''))
             )
             for question in page['questions']:
-                create_schema_blocks_for_question(app_state, rs, question)
+                create_schema_blocks_for_question(state, rs, question)
 
 
 def unmap_schemablocks(*args):
