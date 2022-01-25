@@ -463,7 +463,7 @@ def create_schema_blocks_for_atomic_schema(schema):
         if RegistrationSchemaBlock.objects.filter(schema_id=schema.id, registration_response_key__isnull=False).exists():
             RegistrationSchemaBlock.objects.filter(
                 schema_id=schema.id,
-                registration_response_key=block.pop('registration_response_key__isnull')
+                registration_response_key=block.pop('registration_response_key')
             ).update(**block)
         else:
             RegistrationSchemaBlock.objects.create(

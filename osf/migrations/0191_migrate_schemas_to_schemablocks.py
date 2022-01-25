@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import logging
 from django.db import migrations
-from osf.utils.migrations import map_schemas_to_schemablocks, unmap_schemablocks
+from osf.utils.migrations import map_schemas_to_schemablocks
 
 logger = logging.getLogger(__file__)
 
@@ -70,5 +70,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(remove_version_1_schemas, noop),
         migrations.RunPython(update_schemaless_registrations, noop),
         migrations.RunPython(update_schema_configs, unset_schema_configs),
-        migrations.RunPython(map_schemas_to_schemablocks, unmap_schemablocks)
+        migrations.RunPython(map_schemas_to_schemablocks, migrations.RunPython.noop)
     ]
