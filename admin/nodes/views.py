@@ -16,6 +16,7 @@ from django.views.generic import (
     TemplateView,
 )
 from django.shortcuts import redirect, reverse
+from django.urls import reverse_lazy
 
 from admin.base.utils import change_embargo_date, validate_embargo_date
 from admin.base.views import GuidView
@@ -105,6 +106,7 @@ class NodeSearchView(PermissionRequiredMixin, FormView):
     permission_required = 'osf.view_node'
     raise_exception = True
     form_class = GuidForm
+    success_url = reverse_lazy('nodes:search')
 
     def form_valid(self, form):
         guid = form.cleaned_data['guid']

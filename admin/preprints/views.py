@@ -18,6 +18,8 @@ from admin.preprints.forms import ChangeProviderForm
 
 from api.share.utils import update_share
 
+from osf.exceptions import PreprintStateError
+
 from osf.models import (
     SpamStatus,
     Preprint,
@@ -498,8 +500,10 @@ class PreprintMakePublic(PreprintMixin, View):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-
-        preprint.set_privacy('public', force=True)
-        preprint.save()
+        try:
+            preprint.set_privacy('public')
+            preprint.save()
+        except PreprintStateError as e:
+            messages.error(self.request, str(e))
 
         return redirect(self.get_success_url())
