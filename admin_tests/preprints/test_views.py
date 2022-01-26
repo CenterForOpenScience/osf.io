@@ -404,8 +404,7 @@ class TestRemoveContributor(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
         self.url = reverse('preprints:remove-user', kwargs={'guid': self.preprint._id, 'user_id': self.user._id})
 
-    @mock.patch('osf.models.preprint.Preprint.remove_contributor')
-    def test_remove_contributor(self, mock_remove_contributor):
+    def test_remove_contributor(self):
         user_id = self.user_2.id
         preprint_id = self.preprint._id
         view = setup_log_view(
@@ -415,7 +414,7 @@ class TestRemoveContributor(AdminTestCase):
             user_id=user_id
         )
         view.post(self.request)
-        mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
+        assert not self.preprint.contributors.filter(id=user_id)
 
     def test_integration_remove_contributor(self):
         assert self.user_2 in self.preprint.contributors

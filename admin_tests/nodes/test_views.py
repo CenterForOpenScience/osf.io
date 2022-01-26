@@ -178,13 +178,12 @@ class TestRemoveContributor(AdminTestCase):
         self.request = RequestFactory().post('/fake_path')
         self.url = reverse('nodes:remove-user', kwargs={'guid': self.node._id, 'user_id': self.user.id})
 
-    @mock.patch('admin.nodes.views.Node.remove_contributor')
-    def test_remove_contributor(self, mock_remove_contributor):
+    def test_remove_contributor(self):
         user_id = self.user_2.id
         node_id = self.node._id
         view = setup_log_view(self.view(), self.request, guid=node_id, user_id=user_id)
         view.post(self.request)
-        mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
+        assert not self.node.contributors.filter(id=user_id)
 
     def test_integration_remove_contributor(self):
         patch_messages(self.request)
