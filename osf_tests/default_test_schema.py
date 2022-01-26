@@ -2,7 +2,7 @@ DEFAULT_TEST_SCHEMA_NAME = '***OSF Internal Test Schema***'
 TEST_SCHEMA_SINGLE_SELECT_OPTIONS = ['A', 'B', 'A and B', 'None of the Above']
 TEST_SCHEME_MULTI_SELECT_OPTIONS = ['D', 'E', 'F', 'G']
 DEFAULT_TEST_SCHEMA = {
-    'title': DEFAULT_TEST_SCHEMA_NAME,
+    'name': DEFAULT_TEST_SCHEMA_NAME,
     'version': 1,
     'description': 'Test Registration Schema for internal use only',
     'atomicSchema': True,
