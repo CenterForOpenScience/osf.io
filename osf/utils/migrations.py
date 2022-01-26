@@ -451,7 +451,6 @@ def map_schemas_to_schemablocks(*args):
 
     WARNING: Deletes existing schema blocks
     """
-    assert False, 'This deletes too much, temporarily disabling'
     state = args[0] if args else apps
     try:
         schema_model = state.get_model('osf', 'registrationschema')
@@ -459,11 +458,15 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = state.get_model('osf', 'metaschema')
 
-    # TODO: Not this
-    # # Delete all existing schema blocks (avoid creating duplicates)
-    # unmap_schemablocks(*args)
+    try:
+        RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    except LookupError:
+        return  # can't create SchemaBlocks if they don't exist
 
     for rs in schema_model.objects.all():
+        if RegistrationSchemaBlock.objects.filter(schema_id=rs.id).exists():
+            continue
+
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
@@ -483,11 +486,8 @@ def map_schemas_to_schemablocks(*args):
 
 
 def unmap_schemablocks(*args):
-    assert False, 'This deletes too much, temporarily disabling'
-    # state = args[0] if args else apps
-    # schema_block_model = state.get_model('osf', 'registrationschemablock')
-
-    # schema_block_model.objects.all().delete()
+    '''Noop for historical purposes'''
+    return
 
 
 class UpdateRegistrationSchemas(Operation):

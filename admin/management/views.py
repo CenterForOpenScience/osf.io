@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from osf.management.commands.manage_switch_flags import manage_waffle
-# from osf.management.commands.update_registration_schemas import update_registration_schemas
+from osf.management.commands.update_registration_schemas import update_registration_schemas
 from scripts.find_spammy_content import manage_spammy_content
 from django.core.urlresolvers import reverse
 from django.shortcuts import redirect
@@ -32,9 +32,8 @@ class WaffleFlag(ManagementCommandPermissionView):
 class UpdateRegistrationSchemas(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
-        # update_registration_schemas()
-        # messages.success(request, 'Registration schemas have been successfully updated.')
-        messages.success(request, 'This has been temporarily disabled')
+        update_registration_schemas()
+        messages.success(request, 'Registration schemas have been successfully updated.')
         return redirect(reverse('management:commands'))
 
 class GetSpamDataCSV(ManagementCommandPermissionView):
