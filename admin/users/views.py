@@ -533,6 +533,7 @@ class ResetPasswordView(UserMixin, View):
 class UserReindexElastic(UserMixin, View):
     """ Allows authorized users to reindex a user in elasticsearch.
     """
+    permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
