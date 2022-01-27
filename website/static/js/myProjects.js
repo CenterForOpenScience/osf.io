@@ -133,13 +133,13 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return !this.total && this.counted || this.loaded > this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return (!this.total && this.counted) || this.loaded > this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
   },
   progress: function() {
-    if (!this.nextLink){
+    if (this.isFinished()){
         return 100;
     }
     return Math.ceil(this.loaded / (this.total || 1) * 100);
@@ -634,7 +634,9 @@ var MyProjects = {
             self.currentView().contributor = [];
 
             self.currentView().fetcher = self.fetchers[filter.id];
-            self.currentView().fetcher.resume();
+            if (!self.currentView().fetcher.loaded) {
+                self.currentView().fetcher.resume();
+            }
             self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
 
             self.generateFiltersList();
@@ -762,7 +764,7 @@ var MyProjects = {
             if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
-            if (!$('.results-tail-btn').length && !self.currentView().fetcher.isFinished() && self.currentView().total) {
+            if (!$('.results-tail-btn').length && (!self.currentView().fetcher.isFinished() || !this.counted)) {
                 var span = document.createElement('span');
                 span.style = 'width: 100%; text-align: center;';
                 var caret = document.createElement('i');
@@ -779,8 +781,7 @@ var MyProjects = {
 
                 $('#tb-tbody').append(span);
             }
-
-            if (self.currentView().fetcher.isFinished()) {
+            if (self.currentView().fetcher.isFinished() || self.currentView().fetcher.loaded === self.currentView().fetcher.total) {
                 $('.results-tail-btn').remove();
             }
             m.redraw(true);
@@ -1087,18 +1088,17 @@ var MyProjects = {
             var filterIndex = self.getFilterIndex();
             self.updateBreadcrumbs(self.collections()[filterIndex]);
             self.updateFilter(self.collections()[filterIndex]);
-
-            var current = self.currentView().fetcher;
-
             document.addEventListener('wheel', function(e) {
+                  var fetcher;
+                  fetcher = self.currentView().fetcher;
                   var scroll = $('#tb-tbody')[0];
-                  if(current._flat && current._flat.length >= current.limit && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
-                      current.limit = current.limit + 10;
-                      current.resume();
+                  if(fetcher.loaded < fetcher.total && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
+                      fetcher.limit = fetcher.limit + 10;
+                      fetcher.resume();
+                      m.redraw();
                   }
-                  m.redraw();
             });
-
+            m.redraw();
         };
 
         self.init();
