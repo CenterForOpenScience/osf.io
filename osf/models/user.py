@@ -1943,16 +1943,3 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
-
-
-# Allows this hook to be easily mock.patched
-def _create_quickfiles_project(instance):
-    from osf.models.quickfiles import QuickFilesNode
-
-    QuickFilesNode.objects.create_for_user(instance)
-
-
-@receiver(post_save, sender=OSFUser)
-def create_quickfiles_project(sender, instance, created, **kwargs):
-    if created:
-        _create_quickfiles_project(instance)

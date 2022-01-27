@@ -14,7 +14,7 @@ from api.base.serializers import (
 )
 from api.base.utils import default_node_list_queryset
 from osf.models import Registration, Node
-from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
+from api.base.utils import absolute_reverse, get_user_auth, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
@@ -27,23 +27,6 @@ from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from api.base.schemas.utils import validate_user_json, from_json
 from framework.auth.views import send_confirm_email
 from api.base.versioning import get_kebab_snake_case_field
-
-
-class QuickFilesRelationshipField(RelationshipField):
-
-    def to_representation(self, value):
-        relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
-        upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
-        relationship_links['links']['upload'] = {
-            'href': upload_url,
-            'meta': {},
-        }
-        relationship_links['links']['download'] = {
-            'href': '{}?zip='.format(upload_url),
-            'meta': {},
-        }
-        return relationship_links
 
 
 class SocialField(ser.DictField):
@@ -119,12 +102,6 @@ class UserSerializer(JSONAPISerializer):
     groups = HideIfDisabled(RelationshipField(
         related_view='users:user-groups',
         related_view_kwargs={'user_id': '<_id>'},
-    ))
-
-    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
-        related_view='users:user-quickfiles',
-        related_view_kwargs={'user_id': '<_id>'},
-        related_meta={'count': 'get_quickfiles_count'},
     ))
 
     registrations = HideIfDisabled(RelationshipField(
