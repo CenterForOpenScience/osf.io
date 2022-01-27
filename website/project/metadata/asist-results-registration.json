@@ -1,7 +1,7 @@
 {
   "atomicSchema": true,
   "name": "ASIST Registration Results",
-  "version": 1,
+  "version": 2,
   "description": null,
   "blocks": [
     {
@@ -31,16 +31,6 @@
       "block_type": "question-label",
       "help_text": "Please provide a link to the preregistration this results registration is following upon.",
       "display_text": "Preregistration link"
-    },
-    {
-      "block_type": "short-text-input",
-      "required": true
-    },
-    {
-      "block_type": "question-label",
-      "help_text": "Please provide the testbed version used (please do not share the link)",
-      "display_text": "Testbed used",
-      "example_text": "Results were generated using ASIST Testbed version [insert version]. This testbed is currently available only to registered performers on this DARPA program. The testbed will become publicly available by July 2024 at a site to be determined. The testbed versions used ranged from: [insert version] to [insert version]."
     },
     {
       "block_type": "short-text-input",
