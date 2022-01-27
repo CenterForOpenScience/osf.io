@@ -93,6 +93,7 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
+    this.counted = false;
     this.limit = 14;
     this._flat = [];
     this._orphans = [];
@@ -132,12 +133,15 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.total && (this.loaded >= this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink);
+    return !this.total && this.counted || this.loaded > this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
   },
   progress: function() {
+    if (!this.nextLink){
+        return 100;
+    }
     return Math.ceil(this.loaded / (this.total || 1) * 100);
   },
   start: function() {
@@ -239,6 +243,7 @@ NodeFetcher.prototype = {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.meta.total)
         this.total = results.meta.total;
+        this.counted = true;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
@@ -757,8 +762,7 @@ var MyProjects = {
             if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
-
-            if (!$('.results-tail-btn').length & !self.currentView().fetcher.isFinished()) {
+            if (!$('.results-tail-btn').length && !self.currentView().fetcher.isFinished() && self.currentView().total) {
                 var span = document.createElement('span');
                 span.style = 'width: 100%; text-align: center;';
                 var caret = document.createElement('i');
