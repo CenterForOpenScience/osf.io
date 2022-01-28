@@ -12,7 +12,7 @@ from api_tests.utils import create_test_file
 from framework.auth import Auth
 from osf.management.commands.update_institution_project_counts import update_institution_project_counts
 from osf.management.commands.project_to_draft_registration_contributor_sync import retrieve_draft_registrations_to_sync, project_to_draft_registration_contributor_sync
-from osf.models import QuickFilesNode, RegistrationSchema
+from osf.models import RegistrationSchema
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf_tests.factories import (
     AuthUserFactory,
@@ -103,7 +103,6 @@ class TestDataStorageUsage(DbTestCase):
             ('total', 0),
             ('deleted', 0),
             ('registrations', 0),
-            ('nd_quick_files', 0),
             ('nd_public_nodes', 0),
             ('nd_private_nodes', 0),
             ('nd_preprints', 0),
@@ -220,29 +219,6 @@ class TestDataStorageUsage(DbTestCase):
 
         expected_summary_data['total'] += file_size
         expected_summary_data['nd_preprints'] += file_size
-        expected_summary_data['united_states'] += file_size
-
-        quickfiles_node_us = QuickFilesNode.objects.get(creator=user)
-        file_size = next(small_size)
-        create_test_file(target=quickfiles_node_us, user=user, size=file_size)
-        logger.debug(u'Quickfile, US: {}'.format(file_size))
-
-        expected_summary_data['total'] += file_size
-        expected_summary_data['nd_quick_files'] += file_size
-        expected_summary_data['united_states'] += file_size
-
-        file_size = next(small_size)
-        quickfile_deleted = create_test_file(
-            filename='deleted_test_file',
-            target=quickfiles_node_us,
-            user=user,
-            size=file_size
-        )
-        quickfile_deleted.delete(user=user, save=True)
-        logger.debug(u'Deleted quickfile, US: {}'.format(file_size))
-
-        expected_summary_data['total'] += file_size
-        expected_summary_data['deleted'] += file_size
         expected_summary_data['united_states'] += file_size
 
         project_to_register_us = self.project(creator=user, is_public=True, region=self.region_us)

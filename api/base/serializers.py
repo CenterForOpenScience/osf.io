@@ -187,6 +187,15 @@ class HideIfDisabled(ConditionalField):
         return not isinstance(self.field, RelationshipField)
 
 
+class HideIfNoQuickfiles(ConditionalField):
+
+    def should_hide(self, instance):
+        return not instance.nodes.filter(type='osf.quickfilesnode').exists()
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
+
+
 class HideIfPreprint(ConditionalField):
     """
     If object is a preprint or related to a preprint, hide the field.

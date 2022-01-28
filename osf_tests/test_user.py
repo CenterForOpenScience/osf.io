@@ -35,7 +35,6 @@ from osf.models import (
     Contributor,
     Session,
     NotableEmailDomain,
-    QuickFilesNode,
     PreprintContributor,
     DraftRegistrationContributor,
 )
@@ -290,9 +289,8 @@ class TestOSFUser:
 
         assert user.nodes.filter(type='osf.node').count() == 5
         # one group for each node
-        assert user.groups.count() == 6  # (including quickfiles node)
+        assert user.groups.count() == 5
         assert user2.nodes.filter(type='osf.node').count() == 0
-        assert user2.groups.count() == 1  # (quickfilesnode)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_one)
         assert contrib_obj.visible is True
@@ -1466,17 +1464,6 @@ class TestMergingUsers:
         merge_dupe()
         assert not master.collection_set.filter(id=dashnode.id).exists()
 
-    # Note the files are merged, but the actual node stays with the dupe user
-    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
-        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
-        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
-
-        merge_dupe()
-        master.refresh_from_db()
-        dupe.refresh_from_db()
-        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
-        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
-
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
         assert dupe.is_merged
@@ -1816,11 +1803,10 @@ class TestUser(OsfTestCase):
         project_three.save()
 
         user_nodes = self.user.all_nodes
-        assert user_nodes.count() == 3
+        assert user_nodes.count() == 2
         assert project in user_nodes
         assert project_two in user_nodes
         assert project_three not in user_nodes
-        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     def test_visible_contributor_to_property(self):
         invisible_contributor = UserFactory()
@@ -2388,18 +2374,12 @@ class TestUserGdprDelete:
     def test_can_gdpr_delete_personal_nodes(self, user):
 
         user.gdpr_delete()
-
-        # user still has nodes because we did a soft delete
-        assert user.nodes.all().count()
-        # but they're all deleted
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
-
-        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
-        assert user.nodes.all().count() == 1
+        assert user.nodes.all().count() == 0
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 

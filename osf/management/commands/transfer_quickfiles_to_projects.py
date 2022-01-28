@@ -24,21 +24,24 @@ def remove_quickfiles(dry_run=False):
     )
     quick_files_nodes = QuickFilesNode.objects.filter(id__in=quick_files_node_with_files_ids)
 
-    for quick_file_node in quick_files_nodes:
-        if not dry_run:
-            NodeLog.objects.create(
-                node=quick_file_node,
-                action=NodeLog.MIGRATED_QUICK_FILES
-            )
+    if not dry_run:
+        NodeLog.objects.bulk_create(
+            [
+                NodeLog(
+                    node=quick_files_node,
+                    action=NodeLog.MIGRATED_QUICK_FILES
+                ) for quick_files_node in quick_files_nodes
+            ]
+        )
 
-    logger.info(f'{quick_files_nodes.count()} nodes projectified.')
+    logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
     if not dry_run:
         quick_files_nodes.update(type='osf.node')
         result = QuickFilesNode.objects.all().delete()
-        logger.debug(f'Quickfiles deleted {result}')
+        logger.info(f'Quickfiles deleted {result}')
         with connection.cursor() as cursor:
             cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
-        logger.debug('`one_quickfiles_per_user` constraint dropped.')
+        logger.info('`one_quickfiles_per_user` constraint dropped.')
 
 
 def reverse_remove_quickfiles(dry_run=False):
@@ -52,14 +55,16 @@ def reverse_remove_quickfiles(dry_run=False):
             if not dry_run:
                 QuickFilesNode.objects.create_for_user(user)
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
-                WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
-                """
-            )
-        logger.debug('`one_quickfiles_per_user` constraint was reinstated.')
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
+            WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
+            """
+        )
+    logger.info('`one_quickfiles_per_user` constraint was reinstated.')
+
+    NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
 
     logger.info(f'{users.count()} quickfiles were restored.')
 
@@ -74,11 +79,13 @@ class Command(BaseCommand):
             action='store_true',
             dest='dry_run',
             help='Run migration and roll back changes to db',
+            required=False,
         )
         parser.add_argument(
-            'reverse',
+            '--reverse',
             type=bool,
             help='is the reverse to be run?.',
+            required=False,
         )
 
     def handle(self, *args, **options):
