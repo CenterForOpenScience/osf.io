@@ -8,7 +8,6 @@ from osf_tests.factories import (
 from osf.utils import permissions
 
 
-@pytest.mark.enable_quickfiles_creation
 class ProviderModeratorDetailTestClass:
 
     @pytest.fixture()

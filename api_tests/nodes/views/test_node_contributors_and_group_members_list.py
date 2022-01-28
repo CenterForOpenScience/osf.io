@@ -54,7 +54,6 @@ def project(group, admin_contributor, write_contributor, group_member_and_contri
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeContributorsAndGroupMembers:
     def test_list_and_filter_contributors_and_group_members(
             self, app, project, admin_contributor, write_contributor, group_manager,

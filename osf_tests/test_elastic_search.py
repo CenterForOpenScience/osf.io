@@ -329,7 +329,6 @@ class TestUserUpdate(OsfTestCase):
         # Ensure user is not in search index
         assert_equal(len(query_user(user.fullname)['results']), 0)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merged_user(self):
         user = factories.UserFactory(fullname='Annie Lennox')
         merged_user = factories.UserFactory(fullname='Lisa Stansfield')
@@ -1515,7 +1514,6 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_quickfiles_files_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
@@ -1526,7 +1524,6 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(len(find), 1)
         assert find[0]['node_url'] == '/{}/quickfiles/'.format(quickfiles.creator._id)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_qatest_quickfiles_files_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
@@ -1541,7 +1538,6 @@ class TestSearchFiles(OsfTestCase):
         find = query_file('GreenLight.mp3')['results']
         assert_equal(len(find), 0)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
         quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
         quickfiles_osf_storage = quickfiles.get_addon('osfstorage')

@@ -79,7 +79,6 @@ def configure_user_auth(registration, role):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionDetailGETPermissions:
     '''Checks access for GET requests to the RegistrationSchemaResponseList Endpoint.
 
@@ -199,7 +198,6 @@ class TestSchemaResponseActionDetailGETPermissions:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionDetailGETBehavior:
 
     @pytest.fixture()
@@ -239,7 +237,6 @@ class TestSchemaResponseActionDetailGETBehavior:
         assert data['attributes']['to_state'] == ApprovalStates.UNAPPROVED.db_name
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionDetailUnsupportedMethods:
 
     @pytest.mark.parametrize('role', USER_ROLES)

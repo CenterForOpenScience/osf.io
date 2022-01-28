@@ -37,7 +37,6 @@ class OAuthAddonModelTestSuiteMixinBase(object):
         pass
 
 
-@pytest.mark.enable_quickfiles_creation
 class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def setUp(self):

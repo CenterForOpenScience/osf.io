@@ -12,7 +12,6 @@ from website import settings
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeStorage:
     @pytest.fixture()
     def admin_contributor(self):

@@ -1047,7 +1047,6 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         assert_equal(res.status_code, 200)
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -1310,7 +1309,6 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestCopyHook(HookTestCase):
 
     def setUp(self):

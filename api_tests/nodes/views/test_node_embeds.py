@@ -17,7 +17,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeEmbeds:
 
     @pytest.fixture()

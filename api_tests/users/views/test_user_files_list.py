@@ -8,7 +8,6 @@ from osf.models import QuickFilesNode
 from addons.osfstorage.models import OsfStorageFile
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserQuickFiles:
 
     @pytest.fixture

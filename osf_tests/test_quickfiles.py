@@ -31,7 +31,6 @@ def auth(user):
     return Auth(user)
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestQuickFilesNode:
 
     @pytest.fixture()

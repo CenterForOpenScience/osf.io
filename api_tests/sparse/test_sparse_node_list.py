@@ -138,7 +138,6 @@ class TestNodeList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
 class TestNodeFiltering:
 
@@ -295,7 +294,6 @@ class TestNodeFiltering:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeCreate:
 

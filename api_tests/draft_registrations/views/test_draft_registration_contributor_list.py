@@ -483,7 +483,6 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestDraftRegistrationContributorFiltering(DraftRegistrationCRUDTestCase, TestNodeContributorFiltering):
     @pytest.fixture()

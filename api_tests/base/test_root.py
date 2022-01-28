@@ -19,7 +19,6 @@ from website import settings
 from osf.models import ApiOAuth2PersonalToken, Session
 from osf.utils.permissions import ADMIN
 
-@pytest.mark.enable_quickfiles_creation
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()

@@ -94,7 +94,6 @@ class TestDataStorageUsage(DbTestCase):
         return ProjectFactory(creator=user, is_deleted=True)
 
     @mock.patch('website.settings.ENABLE_ARCHIVER', False)
-    @pytest.mark.enable_quickfiles_creation
     def test_data_storage_usage_command(self):
         import logging
         logger = logging.getLogger(__name__)

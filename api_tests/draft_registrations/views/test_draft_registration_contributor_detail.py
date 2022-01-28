@@ -269,7 +269,6 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestDraftBibliographicContributorDetail():
     @pytest.fixture()
     def user(self):

@@ -24,7 +24,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeForksList:
 
     @pytest.fixture()
@@ -219,7 +218,6 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeForkCreate:
 
     @pytest.fixture()

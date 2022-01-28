@@ -46,7 +46,6 @@ def url(osf_group):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestGroupMembersList:
     def test_return_perms(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -82,7 +81,6 @@ class TestGroupMembersList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersFilter:
     def test_filtering(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -157,7 +155,6 @@ def make_create_payload(role, user=None, full_name=None, email=None):
     return base_payload
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersCreate:
     def test_create_manager(self, app, manager, user3, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -314,7 +311,6 @@ def make_bulk_create_payload(role, user=None, full_name=None, email=None):
     return base_payload
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersBulkCreate:
     def test_bulk_create_group_member_perms(self, app, url, manager, member, user, user3, osf_group):
         with override_flag(OSF_GROUPS, active=True):
@@ -462,7 +458,6 @@ def build_bulk_update_payload(group_id, user_id, role):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersBulkUpdate:
     def test_update_role(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -556,7 +551,6 @@ def create_bulk_delete_payload(group_id, user_id):
     }
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersBulkDelete:
     def test_delete_perms(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):

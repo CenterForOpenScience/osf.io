@@ -10,7 +10,6 @@ from osf.utils.permissions import READ, WRITE
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestRegistrationBibliographicContributors(TestNodeBibliographicContributors):
 
     @pytest.fixture()

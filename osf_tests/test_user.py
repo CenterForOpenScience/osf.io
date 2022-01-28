@@ -89,7 +89,6 @@ def auth(user):
 
 # Tests copied from tests/test_models.py
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestOSFUser:
 
     def test_create(self):
@@ -1430,7 +1429,6 @@ class TestCitationProperties:
 # copied from tests/test_models.py
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestMergingUsers:
 
     @pytest.yield_fixture()
@@ -1657,7 +1655,6 @@ class TestDisablingUsers(OsfTestCase):
             self.user.disable_account()
 
 # Copied from tests/modes/test_user.py
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
@@ -1852,7 +1849,6 @@ class TestUser(OsfTestCase):
 # Copied from tests/models/test_user.py
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
@@ -2308,7 +2304,7 @@ class TestUserValidation(OsfTestCase):
                 self.user.save()
 
 
-@pytest.mark.enable_quickfiles_creation
+@pytest.mark.
 class TestUserGdprDelete:
 
     @pytest.fixture()

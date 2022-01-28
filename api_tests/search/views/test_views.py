@@ -26,7 +26,6 @@ SCHEMA_VERSION = 2
 @pytest.mark.django_db
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
-@pytest.mark.enable_quickfiles_creation
 class ApiSearchTestCase:
 
     @pytest.fixture(autouse=True)
@@ -679,7 +678,6 @@ class TestSearchUsers(ApiSearchTestCase):
     def url_user_search(self):
         return '/{}search/users/'.format(API_BASE)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_search_user(self, app, url_user_search, user, user_one, user_two):
 
         # test_search_users_no_auth

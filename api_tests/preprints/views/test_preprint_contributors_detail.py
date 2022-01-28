@@ -20,7 +20,6 @@ def user():
     return AuthUserFactory()
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorDetail:
 
@@ -256,7 +255,6 @@ class TestPreprintContributorDetail:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorOrdering:
 
     @pytest.fixture()
@@ -545,7 +543,6 @@ class TestPreprintContributorOrdering:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorUpdate:
 
     @pytest.fixture()
@@ -957,7 +954,6 @@ class TestPreprintContributorUpdate:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorPartialUpdate:
 
     @pytest.fixture()

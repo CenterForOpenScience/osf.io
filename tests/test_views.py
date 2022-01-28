@@ -1109,7 +1109,6 @@ class TestGetNodeTree(OsfTestCase):
 
 @pytest.mark.enable_enqueue_task
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -2388,7 +2387,6 @@ class TestUserInviteViews(OsfTestCase):
 
 
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -3212,7 +3210,6 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -4992,7 +4989,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('resetpassword', location)
 
 
-@pytest.mark.enable_quickfiles_creation
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):

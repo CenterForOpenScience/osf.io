@@ -75,7 +75,6 @@ class TestSloanStudyWaffling:
     def flags(self, user):
         Flag.objects.filter(name__in=SLOAN_FLAGS, percent=50).update(everyone=None)
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
     def test_sloan_study_variable(self, app, user, preprint):
         headers = {'Referer': preprint.absolute_url}
@@ -97,7 +96,6 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_DATA_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', inactive)
     def test_sloan_study_control(self, app, user, preprint):
         headers = {'Referer': preprint.absolute_url}
@@ -179,7 +177,6 @@ class TestSloanStudyWaffling:
         provider = SloanOverrideWaffleMiddleware.get_provider_from_url(reffer_url)
         assert provider is None
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
     def test_provider_custom_domain(self, app, user, preprint):
         headers = {'Referer': f'https://burdixiv.burds/preprints/{preprint._id}'}
@@ -196,7 +193,6 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
         assert f' dwf_{SLOAN_COI_DISPLAY}_custom_domain=True; Domain=.burdixiv.burds; Path=/; samesite=None; Secure' in cookies
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('waffle.models.Decimal', active)
     def test_unauth_user_logs_in(self, app, user, preprint):
         user.add_system_tag(SLOAN_COI)
@@ -218,7 +214,6 @@ class TestSloanStudyWaffling:
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
         assert f' dwf_{SLOAN_PREREG_DISPLAY}=True; Domain=localhost; Path=/; samesite=None; Secure' in cookies
 
-    @pytest.mark.enable_quickfiles_creation
     def test_user_get_cookie_when_flag_is_everyone(self, app, user, preprint):
         user.add_system_tag(f'no_{SLOAN_PREREG}')
         Flag.objects.filter(name=SLOAN_COI_DISPLAY).update(everyone=True)
@@ -243,7 +238,6 @@ class TestSloanStudyWaffling:
         actual_domain = SloanOverrideWaffleMiddleware.get_domain(url)
         assert actual_domain == expected_domain
 
-    @pytest.mark.enable_quickfiles_creation
     def test_user_override_cookie(self, app, user, preprint):
         user.add_system_tag(SLOAN_COI)
         cookies = {
@@ -257,7 +251,6 @@ class TestSloanStudyWaffling:
 
         assert f' dwf_{SLOAN_COI_DISPLAY}=True; Domain=.osf.io; Path=/; samesite=None; Secure' in cookies
 
-    @pytest.mark.enable_quickfiles_creation
     def test_user_override_cookie_false(self, app, user, preprint):
         user.add_system_tag(f'no_{SLOAN_COI}')
         cookies = {

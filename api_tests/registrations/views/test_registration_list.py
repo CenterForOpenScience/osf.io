@@ -38,7 +38,6 @@ from osf.utils import permissions
 SCHEMA_VERSION = 2
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -121,7 +120,6 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.public_project._id, ids)
         assert_not_in(self.project._id, ids)
 
-@pytest.mark.enable_quickfiles_creation
 class TestSparseRegistrationList(ApiTestCase):
 
     def setUp(self):

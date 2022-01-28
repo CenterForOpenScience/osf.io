@@ -117,7 +117,6 @@ def pytest_generate_tests(metafunc):
             for funcargs in funcarglist])
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserSerializer:
 
     params = {
