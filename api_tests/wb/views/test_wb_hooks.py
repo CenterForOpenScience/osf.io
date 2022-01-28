@@ -164,41 +164,6 @@ class TestMove():
         res = app.post_json(move_url, signed_payload, expect_errors=False)
         assert res.status_code == 200
 
-    def test_can_move_file_out_of_quickfiles_node(self, app, quickfiles_move_url, quickfiles_file, quickfiles_node, quickfiles_folder, node, user):
-        dest_folder = OsfStorageFolder.objects.get_root(target=node)
-        signed_payload = sign_payload({
-            'source': quickfiles_folder._id,
-            'target': quickfiles_node._id,
-            'user': user._id,
-            'destination': {
-                'parent': dest_folder._id,
-                'target': node._id,
-                'name': quickfiles_file.name,
-            }
-        })
-        res = app.post_json(quickfiles_move_url, signed_payload, expect_errors=False)
-        assert res.status_code == 200
-
-    def test_can_rename_file_in_quickfiles_node(self, app, node, user, quickfiles_move_url, quickfiles_node, quickfiles_file, quickfiles_folder):
-        new_name = 'new_file_name.txt'
-        signed_payload = sign_payload({
-            'source': quickfiles_file._id,
-            'target': quickfiles_node._id,
-            'user': user._id,
-            'name': quickfiles_file.name,
-            'destination': {
-                'parent': quickfiles_folder._id,
-                'target': quickfiles_node._id,
-                'name': new_name,
-            }
-        })
-
-        res = app.post_json(quickfiles_move_url, signed_payload, expect_errors=False)
-        assert res.status_code == 200
-        quickfiles_file.reload()
-        assert quickfiles_file.name == new_name
-        assert res.json['name'] == new_name
-
     def test_blank_destination_file_name(self, app, move_url, user, root_node, folder, file):
         signed_payload = sign_payload(
             {

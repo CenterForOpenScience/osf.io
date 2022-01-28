@@ -118,17 +118,6 @@ class TestUserDetail:
         assert 'relationships' not in user_json
         assert user_json['links'] == {}
 
-    def test_files_relationship_upload(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
-        quickfiles = QuickFilesNode.objects.get(creator=user_one)
-        user_json = res.json['data']
-        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = waterbutler_api_url_for(
-            quickfiles._id, 'osfstorage')
-
-        assert upload_url == waterbutler_upload
-
     def test_preprint_relationship(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         preprint_url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)

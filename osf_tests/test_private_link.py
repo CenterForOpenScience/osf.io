@@ -64,13 +64,6 @@ class TestPrivateLink:
         assert data == draft.registration_metadata
         assert proj == draft.branched_from
 
-    def test_cannot_be_added_for_quickfiles(self):
-        link = PrivateLinkFactory()
-        user = AuthUserFactory()
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-
-        with pytest.raises(ValidationError):
-            link.nodes.add(quickfiles)
 
 @pytest.mark.django_db
 class TestNodeProperties:

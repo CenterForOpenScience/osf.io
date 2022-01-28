@@ -615,19 +615,6 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
-    def test_embed_user_on_quickfiles_detail(self, app, user):
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('speedyfile.txt')
-
-        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
-        res = app.get(url, auth=user.auth)
-
-        assert res.json['data'].get('embeds', None)
-        assert res.json['data']['embeds'].get('user')
-        assert res.json['data']['embeds']['user']['data']['id'] == user._id
-
 
 @pytest.mark.django_db
 class TestFileVersionView:
