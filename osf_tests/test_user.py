@@ -2304,7 +2304,6 @@ class TestUserValidation(OsfTestCase):
                 self.user.save()
 
 
-@pytest.mark.
 class TestUserGdprDelete:
 
     @pytest.fixture()

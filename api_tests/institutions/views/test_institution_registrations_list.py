@@ -1,4 +1,3 @@
-import pytest
 from nose.tools import *  # noqa:
 
 from tests.base import ApiTestCase

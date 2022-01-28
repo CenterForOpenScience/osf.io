@@ -5,7 +5,6 @@ from nose.tools import *  # noqa:
 import unittest
 from django.utils import timezone
 
-import pytest
 from tests.base import ApiTestCase
 from osf_tests.factories import (
     AuthUserFactory,

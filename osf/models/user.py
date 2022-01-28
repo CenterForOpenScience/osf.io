@@ -4,7 +4,6 @@ import re
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
-from os.path import splitext
 
 from flask import Request as FlaskRequest
 from framework import analytics
@@ -37,7 +36,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
+from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.notable_email_domain import NotableEmailDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
@@ -814,7 +813,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
-        from addons.osfstorage.models import OsfStorageFolder
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)

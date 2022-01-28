@@ -1,11 +1,9 @@
 import pytest
 
-from django.core.exceptions import ValidationError
-
 from website.project import new_private_link
 
-from .factories import PrivateLinkFactory, NodeFactory, AuthUserFactory
-from osf.models import RegistrationSchema, DraftRegistration, NodeLog, QuickFilesNode
+from .factories import PrivateLinkFactory, NodeFactory
+from osf.models import RegistrationSchema, DraftRegistration, NodeLog
 
 @pytest.mark.django_db
 def test_factory():

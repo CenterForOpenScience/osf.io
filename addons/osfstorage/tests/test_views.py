@@ -1309,39 +1309,6 @@ class TestMoveHookProjectsOnly(TestMoveHook):
 
 
 @pytest.mark.django_db
-class TestCopyHook(HookTestCase):
-
-    def setUp(self):
-        super(TestCopyHook, self).setUp()
-        self.root_node = self.node_settings.get_root()
-
-    @pytest.mark.enable_implicit_clean
-    def test_can_copy_file_out_of_quickfiles_node(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
-
-        res = self.send_hook(
-            'osfstorage_copy_hook',
-            {'guid': quickfiles_node._id},
-            payload={
-                'source': quickfiles_folder._id,
-                'target': quickfiles_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': dest_folder._id,
-                    'target': self.project._id,
-                    'name': dest_folder.name,
-                }
-            },
-            target=self.project,
-            method='post_json',
-        )
-        assert_equal(res.status_code, 201)
-
-
-
-@pytest.mark.django_db
 class TestFileTags(StorageTestCase):
 
     def test_file_add_tag(self):

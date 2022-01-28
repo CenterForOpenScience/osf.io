@@ -9,9 +9,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 
 from osf.utils.sanitize import strip_html
-from osf.models import QuickFilesNode
 from api.base.settings.defaults import API_BASE
-from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,

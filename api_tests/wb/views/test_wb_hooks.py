@@ -690,21 +690,6 @@ class TestCopy():
         res = app.post_json(copy_url, signed_payload, expect_errors=False)
         assert res.status_code == 201
 
-    def test_can_copy_file_out_of_quickfiles_node(self, app, quickfiles_copy_url, quickfiles_file, quickfiles_node, quickfiles_folder, node, user):
-        dest_folder = OsfStorageFolder.objects.get_root(target=node)
-        signed_payload = sign_payload({
-            'source': quickfiles_folder._id,
-            'target': quickfiles_node._id,
-            'user': user._id,
-            'destination': {
-                'parent': dest_folder._id,
-                'target': node._id,
-                'name': quickfiles_file.name,
-            }
-        })
-        res = app.post_json(quickfiles_copy_url, signed_payload, expect_errors=False)
-        assert res.status_code == 201
-
     def test_blank_destination_file_name(self, app, copy_url, user, root_node, folder, file):
         signed_payload = sign_payload(
             {
