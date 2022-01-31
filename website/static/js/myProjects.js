@@ -1215,7 +1215,7 @@ var MyProjects = {
                 m.component(Filters, ctrl)
             ]) : '',
             m('.db-main', { style : poStyle },[
-                ctrl.loadValue() < 100 ? m('.line-loader', [
+                ctrl.loadValue() < 100 && ctrl.currentView().fetcher.total && ctrl.currentView().fetcher.counted ? m('.line-loader', [
                     m('.line-empty'),
                     m('', { style : 'width: ' + ctrl.loadValue() +'%;', class: 'line-full ' + (ctrl.currentView().fetcher._continue ? 'bg-color-green': 'bg-color-blue')}, m('span.progress')),
                     m('.spinner-loading-wrapper', {},
