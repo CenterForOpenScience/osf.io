@@ -102,10 +102,6 @@
 <hr />
 <div class="row">
     <div class="col-sm-6">
-        % if user['has_quickfiles']:
-        <div class="row">
-            <div class="col-sm-12">
-        %endif
                 <div class="panel panel-default">
                     <div class="panel-heading clearfix">
                       <h3 class="panel-title" >Public projects</h3>
@@ -119,11 +115,6 @@
                     </div>
                 </div>
             </div>
-        % if user['has_quickfiles']:
-        </div>
-        <div class="row">
-            <div class="col-sm-12">
-        %else:
             <div class="col-sm-6">
             %endif
                 <div class="panel panel-default">
@@ -141,23 +132,8 @@
             </div>
         </div>
     </div>
-    % if user['has_quickfiles']:
-    <div class="col-sm-6">
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Quick files</h3>
-            </div>
-            <div class="panel-body clearfix" id="quickFiles">
-              <div class="ball-pulse ball-scale-blue text-center">
-                <div></div>
-                <div></div>
-                <div></div>
-              </div>
-            </div>
-        </div>
-    </div>
-    % endif
-</div><!-- end row -->
+</div>
+<!-- end row -->
 
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />

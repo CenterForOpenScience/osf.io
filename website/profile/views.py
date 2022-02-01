@@ -23,7 +23,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
 from osf.exceptions import BlockedEmailError
 from osf.utils.requests import string_type_request_headers
 from website import mails
@@ -231,7 +231,6 @@ def _profile_view(profile, is_profile=False, include_node_counts=False):
                 'is_profile': is_profile,
                 'can_edit': None,  # necessary for rendering nodes
                 'permissions': [],  # necessary for rendering nodes
-                'has_quickfiles': False
             },
         }
         return ret
