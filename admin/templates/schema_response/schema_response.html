@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Schema Responses</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'schema_responses:list' %}" class="btn btn-primary"> All Schema Responses</a>
+                    <a href="{% url 'nodes:schema-responses' guid=schema_response.parent_guid %}" class="btn btn-primary"> All Revisions for Parent </a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h3>Schema Response Details</h3>
+        </div>
+        <div class="row">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Schema</td>
+                        <td>{{schema_response.schema.name}} (v {{schema_response.schema.schema_version}})</td>
+                    </tr>
+                    <tr>
+                        <td>Reviews State</td>
+                        <td>{{schema_response.reviews_state}}</td>
+                    </tr>
+                    <tr>
+                        <td>Revision Justification</td>
+                        <td>{{schema_response.revision_justification}}</td>
+                    </tr>
+                    <tr>
+                        <td>Submitted Timestamp</td>
+                        <td>{{schema_response.submitted_timestamp}}</td>
+                    </tr>
+                    <tr>
+                        <td>Previous Response</td>
+                        {% if schema_response.previous_response %}
+                            <td><a href="{{ schema_response.previous_response | reverse_schema_response }}">{{ schema_response.previous_response.reviews_state }}</a></td>
+                        {% endif %}
+                    </tr>
+                    <tr>
+                        <td>Initiator</td>
+                        <td><a href="{{ schema_response.initiator | reverse_user }}">{{ schema_response.initiator }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Pending approvers</td>
+                        <td>
+                            {% for approver in schema_response.pending_approvers.all %}
+                                <br><a href="{{ approver | reverse_user }}">{{ approver }}</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Parent</td>
+                        <td><a href="{{ schema_response.parent | reverse_node }}">{{ schema_response.parent.title }}</a></td>
+                    </tr>
+                    {% include "nodes/actions.html" with actions=schema_response.actions.all|order_by:"created" %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

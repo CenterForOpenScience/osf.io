@@ -1548,7 +1548,7 @@ class TestSearchFiles(OsfTestCase):
         quickfiles_root = quickfiles_osf_storage.get_root()
         quickfiles_root.append_file('GreenLight.mp3')
 
-        self.node.creator.disable_account()
+        self.node.creator.deactivate_account()
         self.node.creator.confirm_spam()
         self.node.creator.save()
 

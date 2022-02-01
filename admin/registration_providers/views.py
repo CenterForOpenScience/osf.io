@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.db.models import When, Case, Value, IntegerField, F
 from django.core.exceptions import ValidationError
-from django.core.management import call_command
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
@@ -16,8 +15,9 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
+from admin.preprint_providers.views import ImportProviderView
 from website import settings as website_settings
-from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema, OSFUser
+from osf.models import RegistrationProvider, OSFUser
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -255,64 +255,9 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
             return result
 
 
-class ImportRegistrationProvider(PermissionRequiredMixin, View):
+class ImportRegistrationProvider(ImportProviderView):
     permission_required = 'osf.change_registrationprovider'
-    raise_exception = True
-
-    def post(self, request, *args, **kwargs):
-        form = ImportFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file_str = self.parse_file(request.FILES['file'])
-            file_json = json.loads(file_str)
-            cleaned_result = file_json['fields']
-            try:
-                registration_provider = self.create_or_update_provider(cleaned_result)
-            except ValidationError:
-                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
-                return redirect('registration_providers:create')
-            return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
-
-    def parse_file(self, f):
-        parsed_file = ''
-        for chunk in f.chunks():
-            if isinstance(chunk, bytes):
-                chunk = chunk.decode()
-            parsed_file += chunk
-        return parsed_file
-
-    def get_page_provider(self):
-        page_provider_id = self.kwargs.get('registration_provider_id', '')
-        if page_provider_id:
-            return RegistrationProvider.objects.get(id=page_provider_id)
-
-    def add_subjects(self, provider, subject_data):
-        call_command('populate_custom_taxonomies', '--provider', provider._id, '--data', json.dumps(subject_data), '--type', 'osf.registrationprovider')
-
-    def create_or_update_provider(self, provider_data):
-        provider = self.get_page_provider()
-        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
-        default_license = provider_data.pop('default_license', False)
-        subject_data = provider_data.pop('subjects', False)
-        provider_data.pop('additional_providers')
-
-        if provider:
-            for key, val in provider_data.items():
-                setattr(provider, key, val)
-            provider.save()
-        else:
-            provider = RegistrationProvider(**provider_data)
-            provider._creator = self.request.user
-            provider.save()
-
-        if licenses:
-            provider.licenses_acceptable.set(licenses)
-        if default_license:
-            provider.default_license = NodeLicense.objects.get(license_id=default_license)
-
-        # Only adds the JSON taxonomy if there is no existing taxonomy data
-        if subject_data and not provider.subjects.count():
-            self.add_subjects(provider, subject_data)
-        return provider
+    provider_class = RegistrationProvider
 
 
 class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
@@ -391,6 +336,7 @@ class ChangeSchema(TemplateView):
     raise_exception = True
 
     def get_context_data(self, **kwargs):
+        from osf.models import RegistrationSchema
         registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         ids = registration_provider.schemas.all().values_list('id', flat=True)
         context = super().get_context_data(**kwargs)
@@ -409,6 +355,8 @@ class ChangeSchema(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        from osf.models import RegistrationSchema
+
         registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         data = dict(request.POST)
         del data['csrfmiddlewaretoken']  # just to remove the key from the form dict

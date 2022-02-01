@@ -88,9 +88,8 @@ class Sanction(ObjectIDMixin, BaseModel):
             active_state=self.approval_stage
         )
 
-    def __repr__(self):
-        return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
-            self=self)
+    def __str__(self):
+        return f'<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'
 
     @property
     def is_pending_approval(self):
@@ -507,23 +506,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     @property
     def pending_registration(self):
         return not self.for_existing_registration and self.is_pending_approval
-
-        # def __repr__(self):
-        #     pass
-        # from osf.models import Node
-        #
-        # parent_registration = None
-        # try:
-        #     parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        # except NoResultsFound:
-        #     pass
-        # return ('<Embargo(parent_registration={0}, initiated_by={1}, '
-        #         'end_date={2}) with _id {3}>').format(
-        #     parent_registration,
-        #     self.initiated_by,
-        #     self.end_date,
-        #     self._id
-        # )
 
     def _get_registration(self):
         return self.registrations.first()

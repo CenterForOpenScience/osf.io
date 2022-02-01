@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import requests
 
 from django.apps import apps
@@ -19,7 +20,7 @@ from osf.models.licenses import NodeLicense
 from osf.models.mixins import ReviewProviderMixin
 from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
-from osf.models.metaschema import RegistrationSchema
+from osf.models.brand import Brand
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
@@ -28,7 +29,6 @@ from website import settings
 from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
-
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
@@ -51,6 +51,63 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
     @property
     def is_default(self):
         return self._id == self.default__id
+
+    @classmethod
+    def update_or_create_from_json(cls, provider_data, user):
+        licenses = [
+            NodeLicense.objects.get(license_id=license_id) for license_id in
+            provider_data.pop('licenses_acceptable', [])
+        ]
+        default_license = provider_data.pop('default_license', False)
+        provider_data.pop('additional_providers', False)
+        subject_data = provider_data.pop('subjects', False)
+
+        brand = None
+        if provider_data.get('brand'):
+            try:
+                brand = Brand.objects.get(id=provider_data.pop('brand'))
+            except Brand.DoesNotExist:  # JSON is old or imported from staging etc.
+                pass
+
+        if provider_data.get('id'):  # <- determines if creating new or updating
+            provider = cls.objects.get(id=provider_data.pop('id'))
+        else:
+            provider = cls(**provider_data)
+            if provider._perform_unique_checks([(AbstractProvider, ('_id', 'type'))]):
+                provider_data.pop('_id')  # these must be unique, but catch and remove and allow for UX
+                provider = cls(**provider_data)
+                provider._creator = user
+
+        provider.save()
+
+        if brand:
+            provider.brand = brand
+        if licenses:
+            provider.licenses_acceptable.set(licenses)
+        if default_license:
+            provider.default_license = NodeLicense.objects.get(license_id=default_license)
+
+        # Only adds the JSON taxonomy if there is no existing taxonomy data
+        if subject_data and not provider.subjects.count():
+            # circular import
+            from osf.management.commands.populate_custom_taxonomies import migrate as add_subjects
+            add_subjects(
+                provider=provider._id,
+                data=subject_data if isinstance(subject_data, dict) else json.loads(subject_data),
+                dry_run=False
+            )
+
+        # Collections only code
+        primary_collection = provider_data.pop('primary_collection', None)
+        if primary_collection:
+            provider.primary_collection.collected_type_choices = primary_collection['fields']['collected_type_choices']
+            provider.primary_collection.status_choices = primary_collection['fields']['status_choices']
+            provider.primary_collection.issue_choices = primary_collection['fields']['issue_choices']
+            provider.primary_collection.volume_choices = primary_collection['fields']['volume_choices']
+            provider.primary_collection.program_area_choices = primary_collection['fields']['program_area_choices']
+            provider.primary_collection.save()
+
+        return provider
 
     primary_collection = models.ForeignKey('Collection', related_name='+',
                                            null=True, blank=True, on_delete=models.SET_NULL)
@@ -228,7 +285,7 @@ class RegistrationProvider(AbstractProvider):
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
     additional_metadata_fields = DateTimeAwareJSONField(blank=True)
-    default_schema = models.ForeignKey(RegistrationSchema, related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
+    default_schema = models.ForeignKey('osf.registrationschema', related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
     bulk_upload_auto_approval = models.NullBooleanField(default=False)
     allow_updates = models.NullBooleanField(default=False)
     allow_bulk_uploads = models.NullBooleanField(default=False)
