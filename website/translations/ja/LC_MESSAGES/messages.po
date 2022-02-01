@@ -320,7 +320,7 @@ msgstr "BinderHubを追加"
 
 #: addons/binderhub/templates/hosts_modal.mako:6
 msgid "Configure a BinderHub client"
-msgstr "BinderHubクライアント情報を設定"
+msgstr "BinderHubクライアント情報の設定"
 
 #: addons/binderhub/templates/hosts_modal.mako:21
 msgid "BinderHub OAuth Client ID"
