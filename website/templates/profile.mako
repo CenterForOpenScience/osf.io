@@ -116,7 +116,6 @@
                 </div>
             </div>
             <div class="col-sm-6">
-            %endif
                 <div class="panel panel-default">
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Public components</h3>

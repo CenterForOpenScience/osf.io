@@ -23,7 +23,7 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
 from osf.exceptions import BlockedEmailError
 from osf.utils.requests import string_type_request_headers
 from website import mails

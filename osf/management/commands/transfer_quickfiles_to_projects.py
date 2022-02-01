@@ -36,7 +36,10 @@ def remove_quickfiles(dry_run=False):
 
     logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
     if not dry_run:
-        quick_files_nodes.update(type='osf.node')
+        quick_files_nodes.update(
+            type='osf.node',
+            description='This Project was created because...'
+        )
         result = QuickFilesNode.objects.all().delete()
         logger.info(f'Quickfiles deleted {result}')
         with connection.cursor() as cursor:

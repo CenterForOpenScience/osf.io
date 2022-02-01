@@ -71,7 +71,7 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled, PermissionDenied
 from osf.models import (
     Contributor,
     ExternalAccount,
@@ -380,7 +380,15 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Us
     view_name = 'user-quickfiles'
 
     def get_node(self, check_object_permissions):
-        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
+        user = self.get_user()
+        node = QuickFilesNode.objects.get_for_user(user)
+        if not node:
+            raise NotFound()
+
+        if not node.is_public or node.deleted:
+            raise PermissionDenied()
+
+        return node
 
     def get_default_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'

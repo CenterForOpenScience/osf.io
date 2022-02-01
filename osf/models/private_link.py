@@ -8,6 +8,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.sanitize import unescape_entities
 from osf.utils.fields import NonNaiveDateTimeField
 
+
 class PrivateLink(ObjectIDMixin, BaseModel):
     key = models.CharField(max_length=512, null=False, unique=True, blank=False)
     name = models.CharField(max_length=255, blank=True, null=True)
@@ -44,7 +45,6 @@ class PrivateLink(ObjectIDMixin, BaseModel):
         }
 
 
-##### Signal listeners #####
 @receiver(models.signals.m2m_changed, sender=PrivateLink.nodes.through)
 def check_if_private_link_is_to_quickfiles(sender, instance, action, reverse, model, pk_set, **kwargs):
     from osf.models.node import AbstractNode

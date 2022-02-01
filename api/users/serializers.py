@@ -12,7 +12,6 @@ from api.base.serializers import (
     JSONAPIRelationshipSerializer,
     VersionedDateTimeField,
     HideIfDisabled,
-    HideIfNoQuickfiles,
     IDField,
     Link,
     LinksField,
@@ -29,7 +28,7 @@ from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_
 from api.files.serializers import QuickFilesSerializer
 from osf.models import Email
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import OSFUser, QuickFilesNode, Preprint
+from osf.models import OSFUser, QuickFilesNode, Preprint, AbstractNode
 from osf.utils.requests import string_type_request_headers
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from osf.models.provider import AbstractProviderGroupObjectPermission
@@ -43,8 +42,17 @@ from api.base.versioning import get_kebab_snake_case_field
 class QuickFilesRelationshipField(RelationshipField):
 
     def to_representation(self, value):
-        relationship_links = super(QuickFilesRelationshipField, self).to_representation(value)
-        quickfiles_guid = value.nodes_created.filter(type=QuickFilesNode._typedmodels_type).values_list('guids___id', flat=True).get()
+        relationship_links = super().to_representation(value)
+        try:
+            quickfiles_guid = value.nodes_created.get(
+                type=QuickFilesNode._typedmodels_type,
+            ).values_list(
+                'guids___id',
+                flat=True,
+            ).get()
+        except AbstractNode.DoesNotExist:
+            return relationship_links
+
         upload_url = waterbutler_api_url_for(quickfiles_guid, 'osfstorage')
         relationship_links['links']['upload'] = {
             'href': upload_url,
@@ -132,7 +140,7 @@ class UserSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<_id>'},
     ))
 
-    quickfiles = HideIfNoQuickfiles(QuickFilesRelationshipField(
+    quickfiles = HideIfDisabled(QuickFilesRelationshipField(
         related_view='users:user-quickfiles',
         related_view_kwargs={'user_id': '<_id>'},
         related_meta={'count': 'get_quickfiles_count'},
@@ -205,7 +213,14 @@ class UserSerializer(JSONAPISerializer):
         return default_queryset.count()
 
     def get_quickfiles_count(self, obj):
-        return QuickFilesNode.objects.get(contributor__user__id=obj.id).files.filter(type='osf.osfstoragefile').count()
+        try:
+            return QuickFilesNode.objects.get(
+                contributor__user__id=obj.id,
+            ).files.filter(
+                type='osf.osfstoragefile',
+            ).count()
+        except AbstractNode.DoesNotExist:
+            return 0
 
     def get_registration_count(self, obj):
         auth = get_user_auth(self.context['request'])
