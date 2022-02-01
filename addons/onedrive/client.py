@@ -8,14 +8,21 @@ from addons.onedrive.settings import DEFAULT_ROOT_ID
 
 class OneDriveClient(BaseClient):
 
-    def __init__(self, access_token=None):
+    def __init__(self, access_token=None, drive_id=None):
         self.access_token = access_token
+        self.drive_id = drive_id
 
     @property
     def _default_headers(self):
         if self.access_token:
             return {'Authorization': 'bearer {}'.format(self.access_token)}
         return {}
+
+    @property
+    def _drive_url(self):
+        if self.drive_id is not None:
+            return self._build_url(settings.ONEDRIVE_API_URL, 'drives', self.drive_id)
+        return self._build_url(settings.ONEDRIVE_API_URL, 'drive')
 
     def folders(self, folder_id=None):
         """Get list of subfolders of the folder with id ``folder_id``
@@ -28,9 +35,9 @@ class OneDriveClient(BaseClient):
         """
 
         if folder_id is None or folder_id == DEFAULT_ROOT_ID:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', DEFAULT_ROOT_ID)
+            url = self._build_url(self._drive_url, 'items', DEFAULT_ROOT_ID)
         else:
-            url = self._build_url(settings.ONEDRIVE_API_URL, 'drive', 'items', folder_id)
+            url = self._build_url(self._drive_url, 'items', folder_id)
         url = url + '?$expand=children($filter=folder%20ne%20null)'
 
         resp = self._make_request(

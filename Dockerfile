@@ -50,6 +50,7 @@ COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
 #COPY ./addons/iqbrims/requirements.txt ./addons/iqbrims/
 COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
 COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
+COPY ./addons/onedrivebusiness/requirements.txt /code/addons/onedrivebusiness/
 #COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
 COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
 COPY ./addons/s3/requirements.txt ./addons/s3/
@@ -153,6 +154,7 @@ COPY ./addons/gitlab/static/ ./addons/gitlab/static/
 COPY ./addons/googledrive/static/ ./addons/googledrive/static/
 COPY ./addons/mendeley/static/ ./addons/mendeley/static/
 COPY ./addons/onedrive/static/ /code/addons/onedrive/static/
+COPY ./addons/onedrivebusiness/static/ /code/addons/onedrivebusiness/static/
 COPY ./addons/osfstorage/static/ ./addons/osfstorage/static/
 COPY ./addons/owncloud/static/ ./addons/owncloud/static/
 COPY ./addons/s3/static/ ./addons/s3/static/

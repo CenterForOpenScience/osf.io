@@ -505,7 +505,11 @@ def test(ctx, all=False, lint=False):
 def remove_failures_from_testmon(ctx, db_path=None):
 
     conn = sqlite3.connect(db_path)
-    tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
+    try:
+        tests_decached = conn.execute("delete from node where result <> '{}'").rowcount
+    except Exception:
+        # Typically "sqlite3.OperationalError: no such table: node"
+        tests_decached = 0
     ctx.run('echo {} failures purged from travis cache'.format(tests_decached))
 
 @task

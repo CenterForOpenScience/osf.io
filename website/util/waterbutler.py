@@ -77,7 +77,7 @@ def create_folder(osf_cookie, pid, folder_name, dest_path):
             name=folder_name, kind='folder', meta='', _internal=True
         ),
         cookies={
-            'osf': osf_cookie
+            settings.COOKIE_NAME: osf_cookie
         }
     )
     return response
@@ -93,7 +93,7 @@ def upload_file(osf_cookie, pid, file_path, file_name, dest_path):
             ),
             data=f,
             cookies={
-                'osf': osf_cookie
+                settings.COOKIE_NAME: osf_cookie
             }
         )
     return response
@@ -105,7 +105,7 @@ def get_node_info(osf_cookie, pid, provider, path):
                 pid, provider, path=path, _internal=True, meta=''
             ),
             headers={'content-type': 'application/json'},
-            cookies={'osf': osf_cookie}
+            cookies={settings.COOKIE_NAME: osf_cookie}
         )
     except Exception as err:
         logger.error(err)

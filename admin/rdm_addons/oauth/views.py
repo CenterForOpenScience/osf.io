@@ -75,8 +75,14 @@ class ConnectView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTes
         with self.app.test_request_context(request.get_full_path()):
             from framework.sessions import session
             auth_url = provider.auth_url
-            state = session.data['oauth_states'][addon_name]['state']
-            request.session['oauth_states'][addon_name]['state'] = state
+            if provider._oauth_version == 1:
+                token = session.data['oauth_states'][addon_name]['token']
+                secret = session.data['oauth_states'][addon_name]['secret']
+                request.session['oauth_states'][addon_name]['oauth_token'] = token
+                request.session['oauth_states'][addon_name]['oauth_token_secret'] = secret
+            elif provider._oauth_version == 2:
+                state = session.data['oauth_states'][addon_name]['state']
+                request.session['oauth_states'][addon_name]['state'] = state
 
         # Force saving the session
         request.session.modified = True
@@ -101,7 +107,6 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
     def get(self, request, *args, **kwargs):
         addon_name = kwargs['addon_name']
 
-        state = request.session['oauth_states'][addon_name]['state']
         institution_id = request.session['oauth_states'][addon_name]['institution_id']
         provider = get_service(addon_name)
 
@@ -111,11 +116,18 @@ class CallbackView(RdmPermissionMixin, RdmAddonRequestContextMixin, UserPassesTe
             from framework.sessions import session
             session.data['oauth_states'] = {
                 addon_name: {
-                    'state': state,
                     'institution_id': institution_id,
                     'is_custom': request.session['oauth_states'][addon_name]['is_custom']
                 }
             }
+            if provider._oauth_version == 1:
+                token = request.session['oauth_states'][addon_name]['oauth_token']
+                secret = request.session['oauth_states'][addon_name]['oauth_token_secret']
+                session.data['oauth_states'][addon_name]['token'] = token
+                session.data['oauth_states'][addon_name]['secret'] = secret
+            elif provider._oauth_version == 2:
+                state = request.session['oauth_states'][addon_name]['state']
+                session.data['oauth_states'][addon_name]['state'] = state
 
             rdm_addon_option = get_rdm_addon_option(institution_id, addon_name)
             # Retrieve permanent credentials from provider

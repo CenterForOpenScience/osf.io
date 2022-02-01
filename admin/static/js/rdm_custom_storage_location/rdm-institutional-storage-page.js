@@ -10,7 +10,7 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var clipboard = require('js/clipboard');
 
-var no_storage_name_providers = ['osfstorage'];
+var no_storage_name_providers = ['osfstorage', 'onedrivebusiness'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py
@@ -173,6 +173,14 @@ $('#box_modal input').keyup(function () {
 
 $('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
+});
+
+$('#onedrivebusiness_modal input').keyup(function () {
+    authSaveButtonState('onedrivebusiness');
+});
+
+$('#onedrivebusiness_modal input').on('paste', function(e) {
+    authSaveButtonState('onedrivebusiness');
 });
 
 function strip_last_slash(s) {
@@ -590,7 +598,7 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.removeClass('hidden');
     $('#' + providerShortName + '_authorized_by').text(authorizedBy);
-    $('#' + providerShortName + '_current_token').text(currentToken);
+    $('#' + providerShortName + '_current_token').text('********');
     authSaveButtonState(providerShortName);
 }
 

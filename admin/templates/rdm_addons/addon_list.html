@@ -67,7 +67,7 @@
 <script type="text/javascript">
     window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': {{ addon_enabled_settings|safe }} });
 </script>
-<script src="{{ '/static/public/js/rdm-addons-page.js' }}"></script>
+{% render_bundle 'rdm-addons-page' %}
 
 
 {% for js_asset in addons_js %}

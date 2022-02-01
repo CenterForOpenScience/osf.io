@@ -69,6 +69,7 @@ EMAIL_HOST_USER = osf_settings.MAIL_USERNAME
 EMAIL_HOST_PASSWORD = osf_settings.MAIL_PASSWORD
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_USERS_CHUNK_SIZE = 40
 
 # Application definition
 
@@ -136,6 +137,7 @@ INSTALLED_APPS = (
     'addons.nextcloudinstitutions',
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
+    'addons.onedrivebusiness',
 )
 
 MIGRATION_MODULES = {
@@ -170,6 +172,7 @@ MIGRATION_MODULES = {
     'addons_nextcloudinstitutions': None,
     'addons_s3compatinstitutions': None,
     'addons_ociinstitutions': None,
+    'addons_onedrivebusiness': None,
 }
 
 UNSUPPORTED_FORCE_TO_USE_ADDONS = [

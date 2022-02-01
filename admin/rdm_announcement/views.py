@@ -13,12 +13,14 @@ from osf.models.user import OSFUser
 from django.core.mail import EmailMessage
 from website.settings import SUPPORT_EMAIL
 from admin.base.settings import FCM_SETTINGS
-from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM  # noqa
+from admin.base.settings import EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, EMAIL_USE_TLS, ANNOUNCEMENT_EMAIL_FROM, EMAIL_USERS_CHUNK_SIZE  # noqa
 from redminelib import Redmine
 from pyfcm import FCMNotification
 import facebook
 from urllib.parse import urlparse
 import tweepy
+import time
+import math
 
 class RdmAnnouncementPermissionMixin(RdmPermissionMixin):
     @property
@@ -229,28 +231,28 @@ class SendView(RdmAnnouncementPermissionMixin, UserPassesTestMixin, FormView):
     def send_email(self, data):
         ret = {'is_success': True, 'error': ''}
         now_user = self.request.user
-        to_list = []
         if self.is_super_admin:
-            all_users = OSFUser.objects.all()
-            for user in all_users:
-                if user.is_active and user.is_registered:
-                    to_list.append(user.username)
+            users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
         elif self.is_admin:
             now_institutions_id = list(now_user.affiliated_institutions.all().values_list('pk', flat=True))
-            qs = OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('username', flat=True)
-            to_list = list(qs)
+            users_query = OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id, is_active=True, is_registered=True).distinct()
         else:
             ret['is_success'] = False
             return ret
         try:
-            email = EmailMessage(
-                subject=data['title'],
-                body=data['body'],
-                from_email=ANNOUNCEMENT_EMAIL_FROM,
-                to=[SUPPORT_EMAIL or now_user.username],
-                bcc=to_list
-            )
-            email.send(fail_silently=False)
+            max_page = int(math.ceil(float(users_query.count()) / EMAIL_USERS_CHUNK_SIZE))
+            for page in range(0, max_page):
+                to_list = list(users_query[(page * EMAIL_USERS_CHUNK_SIZE):((page + 1) * EMAIL_USERS_CHUNK_SIZE)].values_list('username', flat=True))
+                email = EmailMessage(
+                    subject=data['title'],
+                    body=data['body'],
+                    from_email=ANNOUNCEMENT_EMAIL_FROM,
+                    to=[SUPPORT_EMAIL or now_user.username],
+                    bcc=to_list
+                )
+                email.send(fail_silently=False)
+                if page < max_page - 1:
+                    time.sleep(0.2)  # wait for send rate
         except Exception as e:
             ret['is_success'] = False
             ret['error'] = 'Email error: ' + str(e)

@@ -62,14 +62,14 @@
                                     % if addons['binderhub']['icon'] and addons['binderhub']['has_page_icon']:
                                         <img src="${addons['binderhub']['icon']}" class="addon-logo"/>
                                     % endif
-                                    ${addons['binderhub']['full_name']}
+                                    ${_("Computation")}
                                 </a>
                             </li>
                         % endif
 
                         % if project_analytics:
                         % if node['is_public'] or user['is_contributor_or_group_member']:
-                            <li><a href="${node['url']}analytics/">${ _("Analytics") }</a></li>
+                            <li><a href="${node['url']}analytics/">${ _("Statistics") }</a></li>
                         % endif
                         % endif
 

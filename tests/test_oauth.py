@@ -1457,13 +1457,21 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
 class TestCallback(OsfTestCase):
 
+    def setUp(self):
+        super(TestCallback, self).setUp()
+        self.user = UserFactory()
+        self.provider = MockOAuth2Provider()
+        self.provider.short_name = 'googledrive'
+
     @mock.patch('website.oauth.views.osf_oauth_callback')
     def test_web_callback(self, osf_callback_mock):
         with self.app.app.test_request_context(
                 '/oauth/connect/googledrive/',
                 query_string='state=googledrivestate1'):
 
-            session.data = {'oauth_states': {'googledrive': {'state': 'googledrivestate1'}}}
+            authenticate(user=self.user, access_token=None, response=None)
+
+            session.data['oauth_states'] = {'googledrive': {'state': 'googledrivestate1'}}
             session.save()
             oauth_views.oauth_callback('googledrive')
             osf_callback_mock.assert_called_with('googledrive')
@@ -1472,6 +1480,8 @@ class TestCallback(OsfTestCase):
         with self.app.app.test_request_context(
                 '/oauth/connect/googledrive/',
                 query_string='state=googledrivestate2'):
+
+            authenticate(user=self.user, access_token=None, response=None)
 
             response = oauth_views.oauth_callback('googledrive')
             assert_equal(response.status_code, 302)

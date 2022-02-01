@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2021-03-12 18:15+0900\n"
+"POT-Creation-Date: 2022-02-01 08:32+0000\n"
 "PO-Revision-Date: 2020-07-02 20:20+0900\n"
 "Last-Translator: Takuya Ishibashi\n"
 "Language: en\n"
@@ -33,6 +33,8 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_node_settings.mako:39
+#: addons/binderhub/templates/hosts_modal.mako:64
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:75
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:55
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:99
@@ -78,6 +80,8 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: addons/binderhub/templates/binderhub_node_settings.mako:42
+#: addons/binderhub/templates/hosts_modal.mako:67
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:78
 #: addons/dataverse/templates/dataverse_node_settings.mako:118
 #: addons/forward/templates/forward_node_settings.mako:36
@@ -261,6 +265,7 @@ msgid "Private project"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/binderhub/templates/binderhub_user_settings.mako:41
 #: addons/s3/templates/s3_user_settings.mako:36
 #: addons/s3compat/templates/s3compat_user_settings.mako:36
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
@@ -268,6 +273,86 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:35
 #: website/templates/profile/user_settings_default.mako:32
 msgid "disconnect Project"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:14
+msgid "Select a BinderHub client"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:24
+#: addons/binderhub/templates/binderhub_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_user_settings.mako:31
+#: addons/binderhub/templates/hosts_modal.mako:17
+msgid "BinderHub URL"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:28
+msgid "Select a BinderHub"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:69
+#: addons/binderhub/templates/binderhub_user_settings.mako:22
+msgid "Loading..."
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:87
+msgid "disconnect binderhub"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:91
+msgid "set to default"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:95
+msgid "default"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:105
+msgid "Add Host"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:108
+msgid "Add Host from Account or GRDM"
+msgstr ""
+
+#: addons/binderhub/templates/binderhub_user_settings.mako:14
+msgid "Add BinderHub"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:6
+msgid "Configure a BinderHub client"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:21
+msgid "BinderHub OAuth Client ID"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:25
+msgid "BinderHub OAuth Client Secret"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:29
+msgid "JupyterHub URL"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:33
+msgid "JupyterHub OAuth Client ID"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:37
+msgid "JupyterHub OAuth Client Secret"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:41
+msgid "JupyterHub Admin Token"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:51
+msgid "BinderHub URL is invalid. BinderHub URL should be start with http(s)://"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:56
+msgid "JupyterHub URL is invalid. JupyterHub URL should be start with http(s)://"
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
@@ -1041,17 +1126,19 @@ msgstr ""
 #: website/templates/base.mako:154
 #, python-format
 msgid ""
-"GakuNin RDM is a service provided by the National Institute of Informatics "
-"(NII) on trust from user organizations,                  and the <a "
-"%(meatwikiTermsOfUse)s>terms of use</a> and <a "
-"%(meatwikiPrivacyPolicy)s>privacy policy</a> of each user organization are "
-"applied.                  GakuNin RDM uses cookies to operate the service "
-"and improve the user experience. Users of GakuNin RDM are requested to read "
-"the information on our privacy policy.                  By clicking "
-"\"I agree\" or continuing to use this site, you agree to our use of cookies. "
-"If you disagree, please disable cookies in your browser settings or "
-"discontinue using this site.                  Please note that by not using "
-"cookies, you may not be able to use some of this website's functions."
+"GakuNin RDM is a service provided by National Institute of Informatics "
+"(NII) with its user organizations’ consent,                  and the "
+"rules set by each user organization shall apply to the individual users. "
+"                 GakuNin RDM uses cookies to operate its services and "
+"improve the user experience. Users of GakuNin RDM are requested to read "
+"the information on our <a href='https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers/GakuNin+RDM+Privacy+Policy'>privacy policy</a>. "
+"                 By clicking \"I agree\" button on the right or continuing "
+"to use this site, you agree to our use of cookies. If you do not agree, "
+"                 please disable cookies in your browser settings or "
+"discontinue using this site. Please note that by not using cookies, "
+"you may not be able to use some of the functions of this site. "
+"                 Please refer to <a target='_blank' href='https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419'>the Terms of Use</a> "
+"for the details on the agreement between the user organizations and NII."
 msgstr ""
 
 #: website/templates/base.mako:172
@@ -1290,7 +1377,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422\">Privacy"
+"href=\"https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers/GakuNin+RDM+Privacy+Policy\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
@@ -3235,8 +3322,12 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
+#: website/templates/project/project_header.mako:65
+msgid "Computation"
+msgstr ""
+
 #: website/templates/project/project_header.mako:61
-msgid "Analytics"
+msgid "Statistics"
 msgstr ""
 
 #: website/templates/project/project_header.mako:67
@@ -3446,10 +3537,7 @@ msgid "Control who can edit the wiki of <b>%(title)s</b>"
 msgstr ""
 
 #: website/templates/project/settings.mako:288
-#, python-format
-msgid ""
-"Control who can edit your wiki. To allow all GakuNin RDM users to edit "
-"the wiki, <b>%(title)s</b> must be public."
+msgid "Control who can edit your wiki"
 msgstr ""
 
 #: website/templates/project/settings.mako:298
@@ -3808,4 +3896,3 @@ msgstr ""
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr ""
-

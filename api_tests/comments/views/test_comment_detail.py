@@ -672,7 +672,7 @@ class TestCommentDetailView(CommentDetailMixin):
 
     def test_public_node_non_contrib_commenter_can_delete_comment(
             self, app, non_contrib):
-        project = ProjectFactory(is_public=True)
+        project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=non_contrib)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = app.delete_json_api(url, auth=non_contrib.auth)
@@ -815,7 +815,7 @@ class TestFileCommentDetailView(CommentDetailMixin):
 
     def test_public_node_non_contrib_commenter_can_update_file_comment(
             self, app, non_contrib, set_up_payload):
-        project = ProjectFactory(is_public=True)
+        project = ProjectFactory(is_public=True, comment_level='public')
         test_file = test_utils.create_test_file(project, project.creator)
         comment = CommentFactory(
             node=project,
@@ -992,7 +992,7 @@ class TestWikiCommentDetailView(CommentDetailMixin):
 
     def test_public_node_non_contrib_commenter_can_update_wiki_comment(
             self, app, user, non_contrib, set_up_payload):
-        project = ProjectFactory(is_public=True)
+        project = ProjectFactory(is_public=True, comment_level='public')
         wiki_page = WikiFactory(
             user=user,
             node=project,

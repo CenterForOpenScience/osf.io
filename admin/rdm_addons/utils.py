@@ -11,6 +11,7 @@ from website import settings
 from admin.base.settings import BASE_DIR
 from admin.rdm.utils import get_institution_id
 from admin.base.settings import UNSUPPORTED_FORCE_TO_USE_ADDONS
+from admin import rdm_addons
 
 def get_institusion_settings_template(config):
     """get template file settings"""
@@ -53,10 +54,14 @@ def collect_addon_js(addons):
     js_url_list = []
     for addon in addons:
         filename = 'rdm-{}-cfg.js'.format(addon.short_name)
-        public_js_file = os.path.join(BASE_DIR, 'static', 'public', 'js', filename)
-        if os.path.exists(public_js_file):
-            js_url = '/static/public/js/{}'.format(filename)
-            js_url_list.append(js_url)
+        public_js_file = os.path.join('/', 'static', 'public', 'js', filename)
+        try:
+            hash_path = rdm_addons.webpack_asset(public_js_file)
+        except KeyError:
+            continue
+        public_hash_file = public_js_file.replace(os.path.basename(public_js_file), os.path.basename(hash_path))
+        if os.path.exists(os.path.join(BASE_DIR, public_hash_file.lstrip('/'))):
+            js_url_list.append(hash_path)
     return js_url_list
 
 def _get_rdm_addon_option_get_only(institution_id, addon_name):
