@@ -33,8 +33,11 @@ def get_region_external_account(node):
     ).first()
     if addon_option is None:
         return None
-    region = Region.objects.get(_id=institution._id)
-    return RegionExternalAccount.objects.get(region=region)
+    try:
+        region = Region.objects.get(_id=institution._id)
+        return RegionExternalAccount.objects.get(region=region)
+    except Region.DoesNotExist:
+        return None
 
 def get_column_id(sheet, text):
     for row in sheet.iter_rows():
