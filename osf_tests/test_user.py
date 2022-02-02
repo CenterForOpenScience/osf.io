@@ -1621,13 +1621,13 @@ class TestDisablingUsers(OsfTestCase):
         assert new_date_disabled == old_date_disabled
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_disable_account_and_remove_sessions(self, mock_mail):
+    def test_deactivate_account_and_remove_sessions(self, mock_mail):
         session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
         session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
-        self.user.disable_account()
+        self.user.deactivate_account()
 
         assert self.user.is_disabled is True
         assert isinstance(self.user.date_disabled, dt.datetime)
@@ -1636,10 +1636,10 @@ class TestDisablingUsers(OsfTestCase):
         assert not Session.load(session1._id)
         assert not Session.load(session2._id)
 
-    def test_disable_account_api(self):
+    def test_deactivate_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.disable_account()
+            self.user.deactivate_account()
 
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_bookmark_creation

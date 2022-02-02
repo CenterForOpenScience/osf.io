@@ -307,7 +307,7 @@ class TestInstitutionAuth:
         user.set_password(password)
         # User must be saved before deactivation
         user.save()
-        user.disable_account()
+        user.deactivate_account()
         user.save()
         # Disabled user still has the original usable password
         assert user.has_usable_password()

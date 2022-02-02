@@ -1,0 +1,36 @@
+{% load node_extras %}
+
+{% if registrations %}
+    <tr>
+        <td>Registrations</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <td>Registration</td>
+                        <td>Date Created</td>
+                        <td>Pending</td>
+                        <td>Withdrawn</td>
+                        <td>Embargo</td>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for registration in registrations %}
+                    <tr>
+                        <td><a href="{{ registration | reverse_node }}">{{ registration.title }}</a></td>
+                        <td>{{ registration.created | date }}</td>
+                        <td>{{ registration.pending_registration }}</td>
+                        <td>{{ registration.withdrawn }}</td>
+                        <td>{{ registration.embargo }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td>Registrations</td>
+        <td>No Registrations</td>
+    </tr>
+{% endif %}

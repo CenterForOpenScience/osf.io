@@ -218,11 +218,6 @@ def project_before_register(auth, node, **kwargs):
     }
 
 
-def osf_admin_change_status_identifier(node):
-    if node.get_identifier_value('doi'):
-        node.request_identifier_update(category='doi')
-
-
 def get_referent_by_identifier(category, value):
     """Look up identifier by `category` and `value` and redirect to its referent
     if found.

@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load user_extras %}
 {% load node_extras %}
 {% block title %}
     <title>Preprint</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <div class="row">
             <div class="col-md-12">
                 <div class="btn-group" role="group">
@@ -14,84 +18,19 @@
                        class="btn btn-primary">
                         <i class="fa fa-search"></i>
                     </a>
-                    {% if perms.osf.delete_preprint %}
-                        {% if not serialized_preprint.deleted %}
-                            <a href="{% url 'preprints:remove' guid=serialized_preprint.id %}"
-                               data-toggle="modal" data-target="#deleteModal"
-                               class="btn btn-danger">
-                                Delete Preprint
-                            </a>
-                            <div class="modal" id="deleteModal">
-                                <div class="modal-dialog">
-                                    <div class="modal-content"></div>
-                                     Data from above link
-                                </div>
-                            </div>
-                        {% else %}
-                            <form method="post" action="{% url 'preprints:restore' guid=serialized_preprint.id %}">
-                                {% csrf_token %}
-                                <input class="btn btn-success" type="submit"
-                                       value="Restore Preprint" />
-                            </form>
-                        {% endif %}
-                    {% endif %}
-                    {% if perms.osf.mark_spam %}
-                        <a href="{% url 'preprints:confirm-spam' guid=serialized_preprint.id %}"
-                           data-toggle="modal" data-target="#confirmSpamModal"
-                           class="btn btn-warning">
-                            Confirm Spam
-                        </a>
-                        <div class="modal" id="confirmSpamModal">
-                            <div class="modal-dialog">
-                                <div class="modal-content"></div>
-                                {# Data from above link #}
-                            </div>
-                        </div>
-                        <a href="{% url 'preprints:confirm-ham' guid=serialized_preprint.id %}"
-                           data-toggle="modal" data-target="#confirmHamModal"
-                           class="btn btn-default">
-                            Confirm <strong>Not</strong> Spam
-                        </a>
-                        <div class="modal" id="confirmHamModal">
-                            <div class="modal-dialog">
-                                <div class="modal-content"></div>
-                                {# Data from above link #}
-                            </div>
-                        </div>
-                    {% endif %}
-                    <a href="{% url 'preprints:reindex-share-preprint' guid=serialized_preprint.id %}"
-                       data-toggle="modal" data-target="#confirmReindexSharePreprint"
-                       class="btn btn-default">
-                        SHARE Reindex
-                    </a>
-                    <div class="modal" id="confirmReindexSharePreprint">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
-                    <a href="{% url 'preprints:reindex-elastic-preprint' guid=serialized_preprint.id %}"
-                       data-toggle="modal" data-target="#confirmReindexElasticNode"
-                       class="btn btn-default">
-                        Elastic Reindex
-                    </a>
-                    <div class="modal" id="confirmReindexElasticNode">
-                        <div class="modal-dialog">
-                            <div class="modal-content"></div>
-                            {# Data from above link #}
-                        </div>
-                    </div>
+                    {% include "preprints/remove_preprint.html" with preprint=preprint %}
+                    {% include "preprints/mark_spam.html" with preprint=preprint %}
+                    {% include "preprints/reindex_preprint_share.html" with preprint=preprint %}
+                    {% include "preprints/reindex_preprint_elastic.html" with preprint=preprint %}
+                    {% include "preprints/make_private.html" with preprint=preprint %}
+                    {% include "preprints/make_public.html" with preprint=preprint %}
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-12">
-                <h3>Preprint Details</h3>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12 table-responsive">
-                <table class="table table-striped">
+            <table class="table table-striped">
+                <h2>Preprint: <b>{{ preprint.title }}</b> <a href="{{ preprint.absolute_url }}"> ({{preprint.guid}})</a> </h2>
+
                 <thead>
                     <tr>
                         <th>Field</th>
@@ -101,230 +40,86 @@
                 <tbody>
                     <tr>
                         <td>GUID</td>
-                        <td>{{ serialized_preprint.id }}</td>
+                        <td>{{ preprint.guid }}</td>
                     </tr>
                     <tr>
                         <td>Title</td>
-                        <td>{{ serialized_preprint.title }}</td>
-                    </tr>
-                    <tr>
-                        <td>Node</td>
-                        <td>
-                            {% if serialized_preprint.node %}
-                                <a href="{{ serialized_preprint.node.id | reverse_node }}">{{ serialized_preprint.node.id }}</a>
-                            {% else %}
-                                None
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Public</td>
-                        <td>{{ serialized_preprint.is_public }}</td>
-                    </tr>
-                    <tr>
-                        <td>Provider</td>
-                        <td>
-                            {{ serialized_preprint.provider.name }}
-                            {% if perms.osf.change_preprint %}
-                            <span class="provider_form_link" style="margin-left: 100px;">
-                                <a class="btn btn-link" role="button" data-toggle="collapse" href="#collapseChangeProvider">
-                                    Change preprint provider
-                                </a>
-                                {% if messages %}
-                                    <ul class="messages">
-                                        {% for message in messages %}
-                                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                                <div class="collapse" id="collapseChangeProvider">
-                                    <div class="well">
-                                        <form action="" method="post">
-                                            {% csrf_token %}
-                                            {{ change_provider_form.as_p }}
-                                            <input class="btn-btn-primary" type="submit" value="Submit" />
-                                        </form>
-                                    </div>
-                                </div>
-                            </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Subjects</td>
-                        <td>
-                            <ul>
-                                {%  for subject in serialized_preprint.subjects %}
-                                <li>{{ subject.text }}</li>
-                                {%  endfor %}
-                            </ul>
-                        </td>
+                        <td>{{ preprint.title }}</td>
                     </tr>
                     <tr>
                         <td>Date Created</td>
-                        <td>{{ serialized_preprint.date_created }} UTC</td>
+                        <td>{{ preprint.created | date }}</td>
                     </tr>
                     <tr>
                         <td>Date Modified</td>
-                        <td>{{ serialized_preprint.modified }} UTC</td>
-                    </tr>
-                    <tr>
-                        <td>Published</td>
-                        <td>{{ serialized_preprint.is_published }}</td>
-                    </tr>
-                    {%  if serialized_preprint.is_published %}
-                    <tr>
-                        <td>Date Published</td>
-                        <td>{{ serialized_preprint.date_published }} UTC</td>
-                    </tr>
-                    {%  endif %}
-                    <tr>
-                        <td>Verified Publishable</td>
-                        <td>{{ serialized_preprint.verified_publishable }}</td>
+                        <td>{{ preprint.modified | date }}</td>
                     </tr>
                     <tr>
                         <td>Creator</td>
                         <td>
-                             <a href="{{ serialized_preprint.creator | reverse_user }}">
-                                {{ serialized_preprint.creator }}
+                             <a href="{{ preprint.creator | reverse_user }}">
+                                {{ preprint.creator }}
                             </a>
                         </td>
                     </tr>
                     <tr>
-                        <td>Contributors</td>
-                        <td>
-                            <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr>
-                                    <td>User id</td>
-                                    <td>Name</td>
-                                    <td>Permissions</td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for user in serialized_preprint.contributors %}
-                                <tr>
-                                    <td>
-                                        <a href="{{ user.id | reverse_user }}">
-                                            {{ user.id }}
-                                        </a>
-                                    </td>
-                                    <td>{{ user.name }}</td>
-                                    <td>{{ user.permission|capfirst }}</td>
-                                    {%  if perms.osf.change_preprint %}
-                                        <td>
-                                            <a href="{% url 'preprints:remove_user' guid=serialized_preprint.id user_id=user.id %}"
-                                               data-toggle="modal"
-                                               data-target="#{{ user.id }}Modal"
-                                               class="btn btn-danger">
-                                                Remove
-                                            </a>
-                                            <div class="modal" id="{{ user.id }}Modal">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                    {# from remove_preprintcontributor.html#}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                            </tbody>
-                            </table>
-                        </td>
+                        <td>Deleted</td>
+                        <td>{{ preprint.deleted | date }}</td>
                     </tr>
                     <tr>
-                        <td>SPAM Pro Tip</td>
-                        <td>{{ serialized_preprint.spam_pro_tip }}</td>
+                        <td>Public</td>
+                        <td>{{ preprint.is_public }}</td>
                     </tr>
                     <tr>
-                    <td>SPAM Status</td>
-                    <td>
-                        {% if serialized_preprint.spam_status == SPAM_STATUS.UNKNOWN %}
-                            <span class="label label-default">Unknown</span>
-                        {% elif serialized_preprint.spam_status == SPAM_STATUS.FLAGGED %}
-                            <span class="label label-warning">Flagged</span>
-                        {% elif serialized_preprint.spam_status == SPAM_STATUS.SPAM %}
-                            <span class="label label-danger">Spam</span>
-                        {% elif serialized_preprint.spam_status == SPAM_STATUS.HAM %}
-                            <span class="label label-success">Ham</span>
-                        {% endif %}
-                    </td>
+                        <td>Published</td>
+                        <td>{{ preprint.is_published }}</td>
                     </tr>
                     <tr>
-                        <td>SPAM Data</td>
-                        <td>
-                            <pre style="white-space:pre-wrap;">{{ serialized_preprint.spam_data }}</pre>
-                        </td>
+                        <td>Machine State</td>
+                        <td>{{ preprint.machine_state }}</td>
                     </tr>
-                    {% if perms.osf.change_preprintrequest %}
+                    {%  if preprint.is_published %}
+                        <tr>
+                            <td>Date Published</td>
+                            <td>{{ preprint.date_published }} UTC</td>
+                        </tr>
+                    {%  endif %}
                     <tr>
-                        <td>Withdrawal Request</td>
-                        <td>
-                            <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <td>Withdrawal Justification</td>
-                                    <td>Creator</td>
-                                    <td>Status</td>
-                                    <td>Created</td>
-                                    <td></td>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="width: 500px;"> {{ serialized_preprint.withdrawal_request.comment }} </td>
-                                    <td> {{ serialized_preprint.withdrawal_request.creator.fullname }} </td>
-                                    <td>
-                                        {% if serialized_preprint.withdrawal_request.machine_state == 'accepted' %}
-                                            <span class="label label-success">Approved</span>
-                                        {% elif serialized_preprint.withdrawal_request.machine_state == 'rejected' %}
-                                            <span class="label label-danger">Rejected</span>
-                                        {% elif serialized_preprint.withdrawal_request.machine_state == 'pending' %}
-                                            <span class="label label-default">Pending</span>
-                                        {% endif %}
-                                    </td>
-                                    <td> {{ serialized_preprint.withdrawal_request.created }} </td>
-                                    {% if serialized_preprint.pending_withdrawal %}
-                                    <td>
-                                        <span>
-                                            <a href="{% url 'preprints:approve-withdrawal' guid=serialized_preprint.id %}"
-                                               data-toggle="modal" data-target="#confirmApproveWithdrawal"
-                                               class="btn btn-warning btn-sm">
-                                                Approve
-                                            </a>
-                                            <div class="modal" id="confirmApproveWithdrawal">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content"></div>
-                                                    {# Data from above link #}
-                                                </div>
-                                            </div>
-                                        </span>&nbsp;&nbsp;
-                                        <span>
-                                            <a href="{% url 'preprints:reject-withdrawal' guid=serialized_preprint.id %}"
-                                               data-toggle="modal" data-target="#confirmRejectWithdrawal"
-                                               class="btn btn-default btn-sm">
-                                                Reject
-                                            </a>
-                                            <div class="modal" id="confirmRejectWithdrawal">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content"></div>
-                                                    {# Data from above link #}
-                                                </div>
-                                            </div>
-                                        </span>
-                                    </td>
-                                    {% endif %}
-                                </tr>
-                            </tbody>
-                            </table>
-                        </td>
+                        <td>Verified Publishable</td>
+                        <td>{{ preprint.verified_publishable }}</td>
                     </tr>
+                    {% if preprint.node %}
+                        <tr>
+                            <td>Node</td>
+                            <td>
+                                <a href="{{ preprint.node | reverse_node }}">{{ preprint.node.title }}</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td>Node</td>
+                            <td>
+                                No Node for this Preprint
+                            </td>
+                        </tr>
                     {% endif %}
+                    {% include "preprints/provider.html" with preprint=preprint %}
+                    <tr>
+                        <td>Subjects</td>
+                        <td>
+                            <ul>
+                                {% for subject in preprint.subjects.all %}
+                                    <li>{{ subject.text }}</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% include "preprints/contributors.html" with preprint=preprint %}
+                    {% include "nodes/spam_status.html" with resource=preprint %}
+                    {% include "preprints/withdraw_request.html" with preprint=preprint %}
+
                 </tbody>
-                </table>
-            </div>
+            </table>
         </div>
     </div>
 {% endblock content %}
