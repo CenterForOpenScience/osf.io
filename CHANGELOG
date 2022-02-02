@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.01.0 (2022-2-02)
+====================
+- Improve Admin App functionality
+- Improve MyProject Page performance
+- Other assorted bugfixes
+
 21.09.0 (2021-12-21)
 ====================
 - Bulk Upload follow-ups, fixes, and improvements
