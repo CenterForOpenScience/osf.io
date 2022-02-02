@@ -11,4 +11,4 @@ BOX_OAUTH_AUTH_ENDPOINT = 'https://www.box.com/api/oauth2/authorize'
 BOX_OAUTH_REVOKE_ENDPOINT = 'https://api.box.com/oauth2/revoke'
 
 # Max file size permitted by frontend in megabytes
-MAX_UPLOAD_SIZE = 250
+MAX_UPLOAD_SIZE = 5 * 1024
