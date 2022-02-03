@@ -5,7 +5,6 @@ import logging
 from osf.models.node import (
     AbstractNode,
     AbstractNodeManager,
-    NodeLog
 )
 
 from osf.exceptions import NodeStateError
@@ -34,11 +33,8 @@ class QuickFilesNodeManager(AbstractNodeManager):
     def get_for_user(self, user):
         try:
             return QuickFilesNode.objects.get(creator=user)
-        except QuickFilesNode.DoesNotExist:
-            try:
-                return user.nodes.get(logs__action=NodeLog.MIGRATED_QUICK_FILES)
-            except AbstractNode.DoesNotExist:
-                return None
+        except AbstractNode.DoesNotExist:
+            return None
 
 
 class QuickFilesNode(AbstractNode):

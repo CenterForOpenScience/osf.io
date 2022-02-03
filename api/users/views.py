@@ -8,7 +8,7 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.waffle_decorators import require_flag
-from api.base.exceptions import Conflict, UserGone
+from api.base.exceptions import Conflict, UserGone, Gone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -24,7 +24,7 @@ from api.base.utils import (
     hashids,
     is_truthy,
 )
-from api.base.views import JSONAPIBaseView, WaterButlerMixin
+from api.base.views import JSONAPIBaseView
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
@@ -51,7 +51,6 @@ from api.users.serializers import (
     UserNodeSerializer,
     UserSettingsSerializer,
     UserSettingsUpdateSerializer,
-    UserQuickFilesSerializer,
     UserAccountExportSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
@@ -71,12 +70,11 @@ from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
     ExternalAccount,
     Guid,
-    QuickFilesNode,
     AbstractNode,
     Preprint,
     Node,
@@ -363,43 +361,12 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
         return self.get_queryset_from_request()
 
 
-class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    ordering = ('-last_touched')
-
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
-
-    serializer_class = UserQuickFilesSerializer
+class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'users'
     view_name = 'user-quickfiles'
 
-    def get_node(self, check_object_permissions):
-        user = self.get_user()
-        node = QuickFilesNode.objects.get_for_user(user)
-        if not node:
-            raise NotFound()
-
-        if not node.is_public or node.deleted:
-            raise PermissionDenied()
-
-        return node
-
-    def get_default_queryset(self):
-        self.kwargs[self.path_lookup_url_kwarg] = '/'
-        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
-        files_list = self.fetch_from_waterbutler()
-
-        return files_list.children.prefetch_related('versions', 'tags').include('guids')
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
+    def get(self, *args, **kwargs):
+        raise Gone()
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
