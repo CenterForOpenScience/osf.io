@@ -1779,20 +1779,14 @@ class TestLegacyViews(OsfTestCase):
         )
         assert_urls_equal(res.location, expected_url)
 
+    @pytest.mark.enable_bookmark_creation
     def test_action_as_param(self):
         url = '/{}/osfstorage/files/{}/?action=download'.format(
             self.project._id,
             self.path,
         )
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 301)
-        expected_url = self.project.web_url_for(
-            'addon_view_or_download_file',
-            path=self.expected_path,
-            action='download',
-            provider='osfstorage',
-        )
-        assert_urls_equal(res.location, expected_url)
+        assert_equal(res.status_code, 200)
 
     def test_other_addon_redirect(self):
         url = '/project/{0}/mycooladdon/files/{1}/'.format(
