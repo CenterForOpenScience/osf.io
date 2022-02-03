@@ -365,8 +365,8 @@ class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'users'
     view_name = 'user-quickfiles'
 
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     def get(self, *args, **kwargs):
         raise Gone()
