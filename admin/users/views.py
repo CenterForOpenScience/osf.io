@@ -352,10 +352,10 @@ class UserKnownHamList(UserSpamList):
     template_name = 'users/known_spam_list.html'
 
 
-class User2FactorDeleteView(UserDisableView):
+class User2FactorDeleteView(UserMixin, View):
     """ Allows authorized users to remove a user's 2 factor authentication.
     """
-    template_name = 'users/remove_2_factor.html'
+    permission_required = 'osf.change_osfuser'
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
@@ -373,7 +373,6 @@ class User2FactorDeleteView(UserDisableView):
 class UserAddSystemTag(UserMixin, FormView):
     """ Allows authorized users to add system tags to a user.
     """
-    template_name = 'users/add_system_tag.html'
     permission_required = 'osf.change_osfuser'
     raise_exception = True
     form_class = AddSystemTagForm
