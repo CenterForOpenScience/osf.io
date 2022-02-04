@@ -1,6 +1,6 @@
 import logging
 
-from django.db import connection
+from django.db import connection, transaction
 from django.core.management.base import BaseCommand
 
 from osf.models import (
@@ -8,10 +8,14 @@ from osf.models import (
     QuickFilesNode,
     NodeLog
 )
+from osf.models.quickfiles import get_quickfiles_project_title
 
 from addons.osfstorage.models import OsfStorageFile
 
 logger = logging.getLogger(__name__)
+QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files were migrated into this Project on March' \
+                  ' 11, 2022. The file URL’s will still resolve properly, and the Quick Files logs are available in' \
+                  ' the Project’s Recent Activity.'
 
 
 def remove_quickfiles(dry_run=False):
@@ -38,7 +42,7 @@ def remove_quickfiles(dry_run=False):
     if not dry_run:
         quick_files_nodes.update(
             type='osf.node',
-            description='This Project was created because...'
+            description=QUICKFILES_DESC
         )
         result = QuickFilesNode.objects.all().delete()
         logger.info(f'Quickfiles deleted {result}')
@@ -48,15 +52,29 @@ def remove_quickfiles(dry_run=False):
 
 
 def reverse_remove_quickfiles(dry_run=False):
-    users = OSFUser.objects.all()
-    for user in users:
-        type_swapped_qf = user.nodes.filter(logs__action=NodeLog.MIGRATED_QUICK_FILES)
-        if type_swapped_qf:
-            if not dry_run:
-                type_swapped_qf.update(type='osf.quickfilesnode')
-        else:
-            if not dry_run:
-                QuickFilesNode.objects.create_for_user(user)
+    users_with_nodes = OSFUser.objects.filter(nodes__logs__action=NodeLog.MIGRATED_QUICK_FILES)
+    for user in users_with_nodes:
+        user.nodes.filter(
+            logs__action=NodeLog.MIGRATED_QUICK_FILES
+        ).update(
+            type='osf.quickfilesnode'
+        )
+
+    users_without_nodes = OSFUser.objects.exclude(nodes__type='osf.quickfilesnode')
+    quickfiles_created = []
+    for user in users_without_nodes:
+        quickfiles_created.append(
+            QuickFilesNode(
+                title=get_quickfiles_project_title(user),
+                creator=user
+            )
+        )
+
+    QuickFilesNode.objects.bulk_create(quickfiles_created)
+
+    with transaction.atomic():
+        for quickfiles in quickfiles_created:
+            quickfiles.add_addon('osfstorage', auth=None, log=False)
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -69,7 +87,8 @@ def reverse_remove_quickfiles(dry_run=False):
 
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
 
-    logger.info(f'{users.count()} quickfiles were restored.')
+    logger.info(f'{len(quickfiles_created)} quickfiles were restored.')
+
 
 class Command(BaseCommand):
     """
