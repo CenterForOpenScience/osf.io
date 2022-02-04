@@ -28,6 +28,7 @@ RUN apk add --no-cache --virtual .run-deps \
 
 RUN apk add curl
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+# cosmetic change to confirm breakage
 RUN python3 get-pip.py --force-reinstall pip==21.0
 
 WORKDIR /code
