@@ -75,6 +75,16 @@
                     <input class="btn btn-danger" type="submit" value="Run" style="color: red" />
                 </form>
             </ul>
+            <h4> <u>Remove Quickfiles</u>
+            </h4>
+            <ul>
+                This is a quick tool made to test the quick files removal.
+                <form method="post" action="{%url 'management:migrate_quickfiles'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-danger" type="submit" name="action" value="run"/>
+                    <input class="btn btn-danger" type="submit" name="action" value="reverse" />
+                </form>
+            </ul>
         </div>
     </section>
 {% endblock %}
