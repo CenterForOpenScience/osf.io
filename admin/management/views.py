@@ -103,4 +103,3 @@ class MigrateQuickfiles(ManagementCommandPermissionView):
             messages.success(request, 'quickfiles restored')
 
         return redirect(reverse('management:commands'))
-
