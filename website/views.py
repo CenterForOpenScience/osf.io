@@ -263,11 +263,9 @@ def resolve_guid(guid, suffix=None):
         return resolve_guid_download(guid)
 
     try:
-        guid = Guid.objects.get(_id=guid.lower())
+        resource = Guid.objects.get(_id=guid.lower()).referent
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    resource = guid.referent
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
@@ -277,10 +275,7 @@ def resolve_guid(guid, suffix=None):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
-    elif isinstance(resource, BaseFileNode) and resource.is_file:
-        if resource.is_deleted:
-            raise HTTPError(http_status.HTTP_410_GONE)
-    elif isinstance(resource, Registration):
+    elif isinstance(resource, Registration) or isinstance(resource, BaseFileNode) and resource.is_file:
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     return proxy_url(_build_guid_url(unquote(resource.deep_url), suffix))
