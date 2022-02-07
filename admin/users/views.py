@@ -233,6 +233,7 @@ class UserConfirmHamView(UserMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
+        user.is_registered = True  # back in the day spam users were de-registered
         user.confirm_ham(save=True)
         update_admin_log(
             user_id=request.user.id,
