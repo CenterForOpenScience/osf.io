@@ -1,6 +1,6 @@
 import logging
 
-from django.db import connection, transaction
+from django.db import connection, transaction, utils
 from django.core.management.base import BaseCommand
 
 from osf.models import (
@@ -77,12 +77,17 @@ def reverse_remove_quickfiles(dry_run=False):
             quickfiles.add_addon('osfstorage', auth=None, log=False)
 
     with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
-            WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
-            """
-        )
+        try:
+            cursor.execute(
+                """
+                CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
+                WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
+                """
+            )
+        except utils.OperationalError:
+            # already present
+            transaction.rollback()
+            pass
     logger.info('`one_quickfiles_per_user` constraint was reinstated.')
 
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
