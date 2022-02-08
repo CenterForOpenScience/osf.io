@@ -3,8 +3,7 @@ from django.core.validators import validate_email
 
 
 class GuidForm(forms.Form):
-    guid = forms.CharField(label='Guid', min_length=5, max_length=5,
-                           required=True)  # TODO: Move max to 6 when needed
+    guid = forms.CharField(label='Guid', min_length=5, max_length=10, required=True)
 
 
 class MultiEmailField(forms.Field):
@@ -21,6 +20,7 @@ class MultiEmailField(forms.Field):
 
 class ImportFileForm(forms.Form):
     file = forms.FileField()
+
 
 class ArchiveRegistrationWithPigeonForm(forms.Form):
     guid_to_archive = forms.CharField(label='guid_to_archive', min_length=5, max_length=1024, required=False)

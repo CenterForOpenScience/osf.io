@@ -64,6 +64,7 @@ var FileEditor = {
         };
 
         self.loadFile = function(reload) {
+            $osf.trackClick('file-page', 'load-file', 'click-revert-file');
             self.loaded = false;
             var response = FileFetcher.fetch(self.url, reload);
 
@@ -90,6 +91,7 @@ var FileEditor = {
         };
 
         self.saveFile = $osf.throttle(function() {
+            $osf.trackClick('file-page', 'save-file', 'click-save-file');
             var oldstatus = self.observables.status();
             model.editor.setReadOnly(true);
             self.unthrottledStatus('saving');

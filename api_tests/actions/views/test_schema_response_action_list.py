@@ -68,6 +68,13 @@ def configure_test_preconditions(
         schema_response.pending_approvers.add(
             *[user for user, _ in registration.get_admin_contributors_recursive()]
         )
+
+    if schema_response_state is ApprovalStates.IN_PROGRESS:
+        # need valid changes for submission validations
+        schema_response.update_responses({'q1': 'update for submission'})
+        schema_response.revision_justification = 'has for valid revision_justification for submission'
+        schema_response.save()
+
     return auth, schema_response, registration, provider
 
 
@@ -391,6 +398,33 @@ class TestSchemaResponseActionListPOSTPermissions:
 @pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTBehavior:
 
+    def test_POST_submit__denies_unchanged_submission(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
+        )
+        schema_response.updated_response_blocks.all().delete()
+        assert schema_response.updated_response_keys == set()
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+
+    def test_POST_submit__denies_submission_without_justification(self, app):
+        auth, schema_response, _, _ = configure_test_preconditions(
+            schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
+        )
+        schema_response.revision_justification = ''
+        schema_response.save()
+
+        payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
+        resp = app.post_json_api(
+            make_api_url(schema_response), payload, auth=auth, expect_errors=True
+        )
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['detail'] == 'Cannot submit SchemaResponses without a revision justification or updated registration responses.'
+
     def test_POST_submit__writes_action_and_advances_state(self, app):
         auth, schema_response, _, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
@@ -412,7 +446,6 @@ class TestSchemaResponseActionListPOSTBehavior:
         auth, schema_response, registration, _ = configure_test_preconditions(
             schema_response_state=ApprovalStates.IN_PROGRESS, role='admin'
         )
-
         payload = make_payload(schema_response, trigger=Triggers.SUBMIT)
         app.post_json_api(make_api_url(schema_response), payload, auth=auth)
 

@@ -39,7 +39,7 @@ django-waffle==0.13.0
 pymongo==3.7.1
 tqdm==4.28.1
 # Python markdown extensions for comment emails
-git+git://github.com/CenterForOpenScience/mdx_del_ins.git
+git+https://github.com/CenterForOpenScience/mdx_del_ins.git
 
 certifi==2020.12.5
 sendgrid==1.5.13

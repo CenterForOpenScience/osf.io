@@ -24,7 +24,7 @@ from framework.utils import throttle_period_expired
 
 from osf import features
 from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, QuickFilesNode
-from osf.exceptions import BlacklistedEmailError
+from osf.exceptions import BlockedEmailError
 from osf.utils.requests import string_type_request_headers
 from website import mails
 from website import mailchimp_utils
@@ -141,16 +141,16 @@ def update_user(auth):
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                     message_long='Invalid Email')
                 )
-            except BlacklistedEmailError:
+            except BlockedEmailError:
                 sentry.log_message(
-                    'User attempted to add a blacklisted email',
+                    'User attempted to add a blocked email',
                     extra_data={
                         'user_id': user.id,
                         'address': address,
                     }
                 )
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
-                    message_long=language.BLACKLISTED_EMAIL)
+                    message_long=language.BLOCKED_EMAIL)
                 )
 
             # TODO: This setting is now named incorrectly.

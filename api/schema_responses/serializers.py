@@ -28,12 +28,26 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         'revision_responses',
     ])
 
+    non_anonymized_fields = frozenset([
+        'id',
+        'date_created',
+        'date_modified',
+        'date_submitted',
+        'is_original_response',
+        'links',
+        'registration',
+        'registration_schema',
+        'revision_justification',
+        'revision_responses',
+        'updated_response_keys',
+    ])
+
     id = ser.CharField(source='_id', required=True, allow_null=True)
     type = TypeField()
     date_created = VersionedDateTimeField(source='created', required=False)
     date_submitted = VersionedDateTimeField(source='submitted_timestamp', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
-    revision_justification = ser.CharField(required=False)
+    revision_justification = ser.CharField(required=False, allow_blank=True)
     revision_responses = ser.JSONField(source='all_responses', required=False)
     updated_response_keys = ser.JSONField(required=False, read_only=True)
     reviews_state = ser.CharField(required=False)

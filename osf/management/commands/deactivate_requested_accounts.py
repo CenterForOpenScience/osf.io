@@ -30,7 +30,7 @@ def deactivate_requested_accounts(dry_run=True):
         else:
             logger.info('Disabling user {}.'.format(user._id))
             if not dry_run:
-                user.disable_account()
+                user.deactivate_account()
                 user.is_registered = False
                 mails.send_mail(
                     to_addr=user.username,

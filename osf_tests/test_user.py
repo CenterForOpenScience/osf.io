@@ -34,7 +34,7 @@ from osf.models import (
     Tag,
     Contributor,
     Session,
-    BlacklistedEmailDomain,
+    NotableEmailDomain,
     QuickFilesNode,
     PreprintContributor,
     DraftRegistrationContributor,
@@ -45,7 +45,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlacklistedEmailError, UserStateError
+from osf.exceptions import ValidationError, BlockedEmailError, UserStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -487,9 +487,12 @@ class TestOSFUser:
         with pytest.raises(ValidationError):
             u.save()
 
-    def test_add_blacklisted_domain_unconfirmed_email(self, user):
-        BlacklistedEmailDomain.objects.get_or_create(domain='mailinator.com')
-        with pytest.raises(BlacklistedEmailError) as e:
+    def test_add_blocked_domain_unconfirmed_email(self, user):
+        NotableEmailDomain.objects.get_or_create(
+            domain='mailinator.com',
+            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        )
+        with pytest.raises(BlockedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
         assert str(e.value) == 'Invalid Email'
 
@@ -1633,13 +1636,13 @@ class TestDisablingUsers(OsfTestCase):
         assert new_date_disabled == old_date_disabled
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_disable_account_and_remove_sessions(self, mock_mail):
+    def test_deactivate_account_and_remove_sessions(self, mock_mail):
         session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
         session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
-        self.user.disable_account()
+        self.user.deactivate_account()
 
         assert self.user.is_disabled is True
         assert isinstance(self.user.date_disabled, dt.datetime)
@@ -1648,10 +1651,10 @@ class TestDisablingUsers(OsfTestCase):
         assert not Session.load(session1._id)
         assert not Session.load(session2._id)
 
-    def test_disable_account_api(self):
+    def test_deactivate_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.disable_account()
+            self.user.deactivate_account()
 
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_quickfiles_creation

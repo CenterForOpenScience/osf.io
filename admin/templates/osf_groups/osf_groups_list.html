@@ -21,7 +21,7 @@
         {% for group in groups %}
         <tr>
             <td>
-                <a href="{{ group.id | reverse_osf_group }}">{{ group.name }}</a>
+                <a href="{{ group | reverse_osf_group }}">{{ group.name }}</a>
             </td>
             <td>
                 {{ group.created }}
@@ -30,7 +30,7 @@
                 {{ group.modified }}
             </td>
             <td>
-                <a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a>
+                <a href="{{ group.creator | reverse_user }}">{{ group.creator.name }}</a>
             </td>
         </tr>
         {% endfor %}

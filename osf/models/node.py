@@ -1205,7 +1205,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
                 raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True, force=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1214,9 +1214,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
+        :param bool force: force private for spam.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
+
         if permissions == 'public' and not self.is_public:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
                 # TODO: Should say will review within a certain agreed upon time period.
@@ -1235,7 +1237,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.is_pending_embargo:
+            if self.is_registration and not self.is_pending_embargo and not force:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
 
             self.check_privacy_change_viability(auth)
@@ -1597,6 +1599,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.custom_storage_usage_limit_private = None
+        forked.custom_storage_usage_limit_public = None
         forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
