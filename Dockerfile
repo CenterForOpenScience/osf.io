@@ -68,6 +68,7 @@ COPY ./addons/nextcloud/requirements.txt ./addons/nextcloud/
 COPY ./addons/nextcloudinstitutions/requirements.txt ./addons/nextcloudinstitutions/
 COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
 COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
+COPY ./addons/metadata/requirements.txt ./addons/metadata/
 
 RUN pip3 install pip==21.0
 
@@ -174,6 +175,7 @@ COPY ./addons/nextcloud/static/ ./addons/nextcloud/static/
 COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/static/
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
 COPY ./addons/binderhub/static/ ./addons/binderhub/static/
+COPY ./addons/metadata/static/ ./addons/metadata/static/
 RUN \
     # OSF
     yarn install --frozen-lockfile \
