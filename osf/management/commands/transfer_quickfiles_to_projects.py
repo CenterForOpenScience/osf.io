@@ -11,6 +11,7 @@ from osf.models import (
 from osf.models.quickfiles import get_quickfiles_project_title
 
 from addons.osfstorage.models import OsfStorageFile
+from website import mails
 
 logger = logging.getLogger(__name__)
 QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files were migrated into this Project on March' \
@@ -33,6 +34,8 @@ def remove_quickfiles(dry_run=False):
             [
                 NodeLog(
                     node=quick_files_node,
+                    user=quick_files_node.creator,
+                    original_node=quick_files_node,
                     action=NodeLog.MIGRATED_QUICK_FILES
                 ) for quick_files_node in quick_files_nodes
             ]
@@ -49,6 +52,13 @@ def remove_quickfiles(dry_run=False):
         with connection.cursor() as cursor:
             cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
         logger.info('`one_quickfiles_per_user` constraint dropped.')
+
+        for node in quick_files_nodes:
+            mails.send_mail(
+                to_addr=node.creator.email,
+                user=node.creator,
+                mail=mails.QUICKFILES_MIGRATED,
+            )
 
 
 def reverse_remove_quickfiles(dry_run=False):
@@ -75,6 +85,7 @@ def reverse_remove_quickfiles(dry_run=False):
     with transaction.atomic():
         for quickfiles in quickfiles_created:
             quickfiles.add_addon('osfstorage', auth=None, log=False)
+            quickfiles.save()
 
     with connection.cursor() as cursor:
         try:
