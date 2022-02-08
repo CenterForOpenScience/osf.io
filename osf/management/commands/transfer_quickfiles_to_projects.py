@@ -6,7 +6,8 @@ from django.core.management.base import BaseCommand
 from osf.models import (
     OSFUser,
     QuickFilesNode,
-    NodeLog
+    NodeLog,
+    Node
 )
 from osf.models.quickfiles import get_quickfiles_project_title
 
@@ -62,15 +63,17 @@ def remove_quickfiles(dry_run=False):
 
 
 def reverse_remove_quickfiles(dry_run=False):
-    users_with_nodes = OSFUser.objects.filter(nodes__logs__action=NodeLog.MIGRATED_QUICK_FILES)
-    for user in users_with_nodes:
-        user.nodes.filter(
-            logs__action=NodeLog.MIGRATED_QUICK_FILES
-        ).update(
-            type='osf.quickfilesnode'
+    Node.objects.filter(
+        logs__action=NodeLog.MIGRATED_QUICK_FILES
+    ).update(
+        type='osf.quickfilesnode'
+    )
+    users_without_nodes = OSFUser.objects.exclude(
+        id__in=QuickFilesNode.objects.all().values_list(
+            'creator__id',
+            flat=True
         )
-
-    users_without_nodes = OSFUser.objects.exclude(nodes__type='osf.quickfilesnode')
+    )
     quickfiles_created = []
     for user in users_without_nodes:
         quickfiles_created.append(
@@ -87,6 +90,7 @@ def reverse_remove_quickfiles(dry_run=False):
             quickfiles.add_addon('osfstorage', auth=None, log=False)
             quickfiles.save()
 
+    savepoint = transaction.savepoint()
     with connection.cursor() as cursor:
         try:
             cursor.execute(
@@ -95,10 +99,9 @@ def reverse_remove_quickfiles(dry_run=False):
                 WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
                 """
             )
-        except utils.OperationalError:
-            # already present
-            transaction.rollback()
-            pass
+        except (utils.OperationalError, utils.ProgrammingError, utils.IntegrityError):
+            transaction.savepoint_rollback(savepoint)
+
     logger.info('`one_quickfiles_per_user` constraint was reinstated.')
 
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
