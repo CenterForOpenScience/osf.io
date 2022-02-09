@@ -36,7 +36,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote
+from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote, validate_email, build_query_email
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -1790,7 +1790,10 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
+    if validate_email(escaped_query):
+        results = search(build_query_email(query, start=start, size=size, sort=None, user_email=escaped_query), index=None, doc_type='user', normalize=False, private=True)
+    else:
+        results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

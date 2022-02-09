@@ -588,3 +588,42 @@ def unicode_normalize(text):
     if not settings.ENABLE_MULTILINGUAL_SEARCH:
         normalized = normalized.encode('ascii', 'ignore').decode('utf-8')
     return normalized
+
+def validate_email(user_email):
+    if user_email is not None:
+        regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        if (re.fullmatch(regex,user_email)):
+            return True
+        return False
+
+def build_query_email(qs='*', start=0, size=10, sort=None, user_email=None):
+    query_body = build_query_string(qs)
+    if user_email is not None:
+        query_body = {
+            'bool': {
+                'should': [
+                    query_body,
+                    {
+                        'match': {
+                            'id': {
+                                'query': user_email,
+                                'boost': 10.0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    query = {
+        'query': query_body,
+        'from': start,
+        'size': size,
+    }
+
+    if sort:
+        query['sort'] = [
+            {
+                sort: 'desc'
+            }
+        ]
+    return query
