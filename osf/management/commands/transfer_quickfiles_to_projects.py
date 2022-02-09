@@ -65,50 +65,53 @@ def remove_quickfiles(dry_run=False):
                 user=node.creator,
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
                 can_change_preferences=False,
+                quickfiles_link=node.absolute_url
             )
 
 
 def reverse_remove_quickfiles(dry_run=False):
-    Node.objects.filter(
-        logs__action=NodeLog.MIGRATED_QUICK_FILES
-    ).update(
-        type='osf.quickfilesnode'
-    )
-    users_without_nodes = OSFUser.objects.exclude(
-        id__in=QuickFilesNode.objects.all().values_list(
-            'creator__id',
-            flat=True
+    if not dry_run:
+        Node.objects.filter(
+            logs__action=NodeLog.MIGRATED_QUICK_FILES
+        ).update(
+            type='osf.quickfilesnode'
         )
-    )
-    quickfiles_created = []
-    for user in users_without_nodes:
-        quickfiles_created.append(
-            QuickFilesNode(
-                title=get_quickfiles_project_title(user),
-                creator=user
+        users_without_nodes = OSFUser.objects.exclude(
+            id__in=QuickFilesNode.objects.all().values_list(
+                'creator__id',
+                flat=True
             )
         )
-
-    QuickFilesNode.objects.bulk_create(quickfiles_created)
-
-    with transaction.atomic():
-        for quickfiles in quickfiles_created:
-            quickfiles.add_addon('osfstorage', auth=None, log=False)
-            quickfiles.save()
-
-    savepoint = transaction.savepoint()
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute(
-                """
-                CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
-                WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
-                """
+        quickfiles_created = []
+        for user in users_without_nodes:
+            quickfiles_created.append(
+                QuickFilesNode(
+                    title=get_quickfiles_project_title(user),
+                    creator=user
+                )
             )
-        except (utils.OperationalError, utils.ProgrammingError, utils.IntegrityError):
-            transaction.savepoint_rollback(savepoint)
 
-    logger.info('`one_quickfiles_per_user` constraint was reinstated.')
+        QuickFilesNode.objects.bulk_create(quickfiles_created)
+
+    if not dry_run:
+        with transaction.atomic():
+            for quickfiles in quickfiles_created:
+                quickfiles.add_addon('osfstorage', auth=None, log=False)
+                quickfiles.save()
+
+    if not dry_run:
+        savepoint = transaction.savepoint()
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute(
+                    """
+                    CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
+                    WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
+                    """
+                )
+            except (utils.OperationalError, utils.ProgrammingError, utils.IntegrityError):
+                transaction.savepoint_rollback(savepoint)
+        logger.info('`one_quickfiles_per_user` constraint was reinstated.')
 
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
     QuickFilesNode.bulk_update_search(QuickFilesNode.objects.all())
@@ -137,8 +140,8 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        dry_run = options.get('dry_run', None)
-        reverse = options.get('reverse', None)
+        dry_run = options.get('dry_run', False)
+        reverse = options.get('reverse', False)
         if reverse:
             reverse_remove_quickfiles(dry_run)
         else:
