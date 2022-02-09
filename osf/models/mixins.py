@@ -2021,7 +2021,7 @@ class SpamOverrideMixin(SpamMixin):
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
             # set objects to prior public state if known
-            if spam_log.params.get('was_public', False):
+            if spam_log.params.get('was_public', False) and not self.is_pending_registration:
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False
