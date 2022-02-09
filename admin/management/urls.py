@@ -15,4 +15,5 @@ urlpatterns = [
     url(r'^get_spam_csv', views.GetSpamDataCSV.as_view(), name='get_spam_csv'),
     url(r'^ban_spam_regex', views.BanSpamByRegex.as_view(), name='ban_spam_regex'),
     url(r'^migrate_quickfiles', views.MigrateQuickfiles.as_view(), name='migrate_quickfiles'),
+    url(r'^reindex_quickfiles', views.ReindexQuickfiles.as_view(), name='reindex_quickfiles'),
 ]

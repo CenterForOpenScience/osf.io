@@ -43,6 +43,9 @@ def remove_quickfiles(dry_run=False):
         )
 
     logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
+
+    QuickFilesNode.bulk_update_search(quick_files_nodes)
+
     if not dry_run:
         quick_files_nodes.update(
             type='osf.node',
@@ -105,6 +108,7 @@ def reverse_remove_quickfiles(dry_run=False):
     logger.info('`one_quickfiles_per_user` constraint was reinstated.')
 
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
+    QuickFilesNode.bulk_update_search(QuickFilesNode.objects.all())
 
     logger.info(f'{len(quickfiles_created)} quickfiles were restored.')
 

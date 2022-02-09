@@ -85,6 +85,15 @@
                     <input class="btn btn-danger" type="submit" name="action" value="reverse" />
                 </form>
             </ul>
+            <h4> <u>Reindex removed Quickfiles</u>
+            </h4>
+            <ul>
+                This is a quick tool made to test quickfiles reindex feature
+                <form method="post" action="{%url 'management:reindex_quickfiles'%}">
+                    {% csrf_token %}
+                    <input class="btn btn-danger" type="submit" name="action" value="Reindex"/>
+                </form>
+            </ul>
         </div>
     </section>
 {% endblock %}
