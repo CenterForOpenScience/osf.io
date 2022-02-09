@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "List of Entitlements" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <h2>{% trans "List of Entitlements [ONGOING]" %}</h2>
+
+        <form class="form-horizontal">
+        <div class="form-group">
+            <label for="inputState" class="col-sm-2 control-label">Institution</label>
+            <div class="col-sm-4">
+                <select id="inputState" class="form-control">
+                    <option selected="">Institution A</option>
+                    <option>Institution B</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">Entitlements</label>
+            <div class="form-inline col-sm-4">
+                <div class="clearfix" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="inlineForm" placeholder="Enter new entitlement">
+                    </div>
+
+                    <div class="input-group form-check">
+                        <input type="checkbox" checked="" data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+                        <label class="form-check-label" for="inlineFormCheck">login availability</label>
+                    </div>
+                </div>
+                <div class="clearfix" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="inlineForm" placeholder="Enter new entitlement">
+                    </div>
+
+                    <div class="input-group form-check">
+                        <input type="checkbox" checked="" data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+                        <label class="form-check-label" for="inlineFormCheck">login availability</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" class="btn btn-default">New entitlement</button>
+                <button type="submit" class="btn btn-primary" style="width: 90px;">Save</button>
+            </div>
+        </div>
+    </form>
+
+    {% include "util/pagination.html" with items=page status=status %}
+
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr>
+            <th>{% trans "Logo" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Description" %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for institution in institutions %}
+            <tr>
+                <td>
+                    <a href="{% url 'institutions:institution_user_list' institution_id=institution.id %}">
+                        <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.logo_name }}">
+                    </a>
+                </td>
+                <td><a href="{% url 'institutions:institution_user_list' institution_id=institution.id %}">{{ institution.name }}</a></td>
+                <td>{{ institution.description | safe }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        </thead>
+        <tbody>
+        <tr>
+            <td>grdm-allow</td>
+            <td>
+                <input type="checkbox" checked="" data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+            </td>
+            <td>
+                <button type="submit" class="btn btn-primary">Delete</button>
+            </td>
+        </tr>
+        <tr>
+            <td>grdm-deny</td>
+            <td>
+                <input type="checkbox" checked="" data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+            </td>
+            <td>
+                <button type="submit" class="btn btn-primary">Delete</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+{% endblock content %}
