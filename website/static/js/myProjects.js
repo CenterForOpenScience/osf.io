@@ -93,6 +93,8 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
+    this.counted = false;
+    this.limit = 14;
     this._flat = [];
     this._orphans = [];
     this._cache = {};
@@ -131,12 +133,15 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return (!this.total && this.counted) || this.loaded > this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
   },
   progress: function() {
+    if (this.isFinished()){
+        return 100;
+    }
     return Math.ceil(this.loaded / (this.total || 1) * 100);
   },
   start: function() {
@@ -155,7 +160,15 @@ NodeFetcher.prototype = {
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
           m.redraw(true);
-          if(this.nextLink && this._continue) return this.resume();
+          if(this.nextLink && this._continue && this._flat.length < this.limit) {
+            this._continue = true;
+            return this.resume();
+          } else {
+            this._continue = false;
+            m.redraw(true);
+
+          }
+
       }).bind(this));
   },
   add: function(item) {
@@ -230,6 +243,7 @@ NodeFetcher.prototype = {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.meta.total)
         this.total = results.meta.total;
+        this.counted = true;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
@@ -428,7 +442,7 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
+            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects and components'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
             new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
         ];
@@ -620,7 +634,9 @@ var MyProjects = {
             self.currentView().contributor = [];
 
             self.currentView().fetcher = self.fetchers[filter.id];
-            self.currentView().fetcher.resume();
+            if (!self.currentView().fetcher.loaded) {
+                self.currentView().fetcher.resume();
+            }
             self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
 
             self.generateFiltersList();
@@ -748,7 +764,28 @@ var MyProjects = {
             if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
+            if (!$('.results-tail-btn').length && (!self.currentView().fetcher.isFinished() || !this.counted)) {
+                var span = document.createElement('span');
+                span.style = 'width: 100%; text-align: center;';
+                var caret = document.createElement('i');
+                span.className = 'results-tail-btn fa-stack fa-4x';
+                caret.className = 'fa fa-caret-down fa-stack-2x';
+                span.append(caret);
+                var innerspan = document.createElement('span');
+                innerspan.style = 'font-size:12px; margin-top:-3%; display:block;';
+                innerspan.innerHTML = 'Load More Results';
+                span.onclick = function () {
+                    self.currentView().fetcher.resume();
+                };
+                span.append(innerspan);
+
+                $('#tb-tbody').append(span);
+            }
+            if (self.currentView().fetcher.isFinished() || self.currentView().fetcher.loaded === self.currentView().fetcher.total) {
+                $('.results-tail-btn').remove();
+            }
             m.redraw(true);
+
         };
 
         self.nonLoadTemplate = function (){
@@ -1051,6 +1088,17 @@ var MyProjects = {
             var filterIndex = self.getFilterIndex();
             self.updateBreadcrumbs(self.collections()[filterIndex]);
             self.updateFilter(self.collections()[filterIndex]);
+            document.addEventListener('wheel', function(e) {
+                  var fetcher;
+                  fetcher = self.currentView().fetcher;
+                  var scroll = $('#tb-tbody')[0];
+                  if(fetcher.loaded < fetcher.total && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
+                      fetcher.limit = fetcher.limit + 10;
+                      fetcher.resume();
+                      m.redraw();
+                  }
+            });
+            m.redraw();
         };
 
         self.init();
@@ -1167,10 +1215,12 @@ var MyProjects = {
                 m.component(Filters, ctrl)
             ]) : '',
             m('.db-main', { style : poStyle },[
-                ctrl.loadValue() < 100 ? m('.line-loader', [
+                ctrl.loadValue() < 100 && ctrl.currentView().fetcher.total && ctrl.currentView().fetcher.counted ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('', { style : 'width: ' + ctrl.loadValue() +'%;', class: 'line-full ' + (ctrl.currentView().fetcher._continue ? 'bg-color-green': 'bg-color-blue')}, m('span.progress')),
+                    m('.spinner-loading-wrapper', {},
+                        m('#load-message.ball-scale.ball-scale-blue.scroll-ball', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, m(''), m(''), m(''))
+                    )
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
@@ -1923,26 +1973,27 @@ var Filters = {
             [
                 m('p.m-t-sm', [
                     'Contributors ',
+                    m('.pull-right',
+                        args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
+                    ),
+                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable.'),
                     args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
-                    }, ''),
-                    m('.pull-right',
-                        args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
-                        )
+                    }, '')
                 ]),
                 m('p', [
                     args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
-                m('p',
-                    m('p.m-t-sm', [
-                        'Tags',
-                        m('.pull-right',
-                            args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
-                            )
-                ])), m('ul', [
-                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('li.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                m('p.m-t-sm', [
+                    'Tags',
+                    m('.pull-right',
+                        args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
+                    ),
+                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable')
+                ]), m('ul', [
+                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );

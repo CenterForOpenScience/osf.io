@@ -20,6 +20,20 @@
     height: 600px;
 }
 
+.results-tail-btn:hover {
+    background-color: #E1F3E0;
+}
+
+
+.results-tail-btn {
+    width: 100% !important;
+    text-align: center;
+}
+
+.results-tail-btn > span {
+    width: 100% !important;
+    text-align: center;
+}
 
 /* Header with breadcrumbs and buttons */
 
@@ -303,7 +317,32 @@ div[data-growl="container"] {
     padding: 3px 16px;
     font-weight: bold;
     color: #744E06;
+}
+
+.scroll-ball {
+    position: relative;
+    padding-top: 40%;
     text-align: center;
+    z-index: 9999;
+}
+
+.bg-color-green {
+    background-color: #079907;
+    animation-name: color;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+}
+
+@keyframes color {
+  0% {
+    background-color: #079907;
+  }
+  50% {
+    background-color: lightgreen;
+  }
+  100 {
+    background-color: #079907;
+  }
 }
 
 .text-muted-more {

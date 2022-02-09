@@ -39,11 +39,10 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
+from osf.models.notable_email_domain import NotableEmailDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
-from osf.models.nodelog import NodeLog
-from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -978,7 +977,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
-    def disable_account(self):
+    def deactivate_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
         from mailchimp emails, remove any existing sessions.
@@ -1013,6 +1012,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+
+    def reactivate_account(self):
+        """
+        Enable user account
+        """
+        self.is_disabled = False
+        self.requested_deactivation = False
+        from website.mailchimp_utils import subscribe_on_confirm
+        subscribe_on_confirm(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
@@ -1059,7 +1067,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @classmethod
     def create(cls, username, password, fullname, accepted_terms_of_service=None):
-        validate_email(username)  # Raises BlacklistedEmailError if spam address
+        validate_email(username)  # Raises BlockedEmailError if spam address
 
         user = cls(
             username=username,
@@ -1429,18 +1437,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, save=True):
+        self.deactivate_account()
         super().confirm_spam(save=save)
+
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
+        self.reactivate_account()
         super().confirm_ham(save=save)
-        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+
+        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
             node.confirm_ham(save=save, train_akismet=False)
-        for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
+        for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_akismet=False)
+
+    @property
+    def is_assumed_ham(self):
+        user_email_addresses = self.emails.values_list('address', flat=True)
+        user_email_domains = [
+            # get everything after the @
+            address.rpartition('@')[2].lower()
+            for address in user_email_addresses
+        ]
+        user_has_trusted_email = NotableEmailDomain.objects.filter(
+            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+            domain__in=user_email_domains,
+        ).exists()
+
+        return user_has_trusted_email
 
     def update_search(self):
         from website.search.search import update_user
@@ -1468,8 +1495,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for group in self.osf_groups:
             group.update_search()
 
-    def update_date_last_login(self):
-        self.date_last_login = timezone.now()
+    def update_date_last_login(self, login_time=None):
+        self.date_last_login = login_time or timezone.now()
 
     def get_summary(self, formatter='long'):
         return {
@@ -1842,7 +1869,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.disable_account()
+        self.deactivate_account()
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():

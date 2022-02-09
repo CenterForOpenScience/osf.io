@@ -1,0 +1,602 @@
+{
+	"atomicSchema": true,
+	"name": "Character Lab Long-Form Registration",
+	"version": 3,
+	"description": null,
+	"blocks": [{
+		"block_type": "page-heading",
+		"display_text": "Background and Study Intent"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Study description"
+	}, {
+		"registration_response_key": "Q1",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license. ",
+		"display_text": "Expected outcomes"
+	}, {
+		"registration_response_key": "Q2",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Access to Trustworthy Personal/Professional Networks"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Attendance and Persistence in School"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Career Access and Readiness"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Civic / Community Engagement"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "College Access and Readiness"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "College Persistence and Completion"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Development of Tools for Active Learning"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Effective School Leadership"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Effective Teachers"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Equitable Education"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "High School Completion"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Improved Academic Attitudes, Beliefs, and Motivations"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Improved Academic Performance"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Improved Academic Skills"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Mathematics and Science Knowledge Gains"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Navigation of Institutions"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Oral Language and Emergent Literacy Gains"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Positive School Environment"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Social and Emotional Gains"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "STEM Interest"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "STEM Persistence"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "STEM Proficiency"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Use of Personal/Professional Networks"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Primary outcomes"
+	}, {
+		"registration_response_key": "Q3",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Character strengths"
+	}, {
+		"registration_response_key": "Q4",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Creativity"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Curiosity"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Decision Making"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Emotional Intelligence"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Empathy"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Gratitude"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Grit"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Growth Mindset"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Honesty"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Intellectual Humility"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Interpersonal Relationships"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Judgment"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Kindness"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Motivation"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Proactivity"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Prosocial Purpose"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Purpose"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Resilience"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Self-Control"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Self-Efficacy"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Social Identity"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Social Intelligence"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Other"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Number of conditions"
+	}, {
+		"registration_response_key": "Q5",
+		"block_type": "single-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "1"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "2"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "3"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "4"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Total number of students"
+	}, {
+		"registration_response_key": "Q6",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "page-heading",
+		"display_text": "Sample"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Study Grade Assignment"
+	}, {
+		"registration_response_key": "Q7",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "6th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "7th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "8th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "9th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "10th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "11th Grade"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "12th Grade"
+	}, {
+		"block_type": "question-label",
+		"display_text": "School Stratum Assignment"
+	}, {
+		"registration_response_key": "Q8",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Stratum A: Mostly Hispanic, high percentage of students receiving free/reduced-price lunch, often urban schools. These schools represent 19% of all middle schools and 13% of all high schools in the United States."
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Stratum B: Small, mostly White, rural schools. These schools represent 33% of all middle schools and 41% of all high schools in the United States."
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Stratum C: Large, diverse, suburban and urban schools. These schools represent 15% of all middle schools and 13% of all high schools in the United States."
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Stratum D: Mostly Black, high percentage of students receiving free/reduced-price lunch, often urban schools. These schools represent 12% of all middle and high schools in the United States."
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Stratum E: Mostly White, high socioeconomic status, suburban schools. These schools represent 21% of all middle and high schools in the United States."
+	}, {
+		"block_type": "page-heading",
+		"display_text": "Study Information"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Is this a pilot?"
+	}, {
+		"registration_response_key": "Q9",
+		"block_type": "single-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Yes"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "No"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Study design"
+	}, {
+		"registration_response_key": "Q10",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Correlational, Cross-Sectional"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Correlational, Longitudinal"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Intervention, Cross-Sectional"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Intervention, Longitudinal"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Measurement Validation, Cross-Sectional"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Measurement Validation, Longitudinal"
+	}, {
+		"block_type": "page-heading",
+		"display_text": "Contact Information"
+	}, {
+		"block_type": "section-heading",
+		"display_text": "First team member"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member name"
+	}, {
+		"registration_response_key": "Q11",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member institution"
+	}, {
+		"registration_response_key": "Q12",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member role"
+	}, {
+		"registration_response_key": "Q13",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Principal Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Co-Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Post Doc"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Research Scientist"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Graduate Student"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Manager"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
+	}, {
+		"block_type": "section-heading",
+		"display_text": "Second team member"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member name"
+	}, {
+		"registration_response_key": "Q14",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member institution"
+	}, {
+		"registration_response_key": "Q15",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member role"
+	}, {
+		"registration_response_key": "Q16",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Principal Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Co-Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Post Doc"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Research Scientist"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Graduate Student"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Manager"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
+	}, {
+		"block_type": "section-heading",
+		"display_text": "Third team member"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member name"
+	}, {
+		"registration_response_key": "Q17",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member institution"
+	}, {
+		"registration_response_key": "Q18",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member role"
+	}, {
+		"registration_response_key": "Q19",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Principal Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Co-Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Post Doc"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Research Scientist"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Graduate Student"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Manager"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
+	}, {
+		"block_type": "section-heading",
+		"display_text": "Fourth team member"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member name"
+	}, {
+		"registration_response_key": "Q20",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member institution"
+	}, {
+		"registration_response_key": "Q21",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member role"
+	}, {
+		"registration_response_key": "Q22",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Principal Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Co-Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Post Doc"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Research Scientist"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Graduate Student"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Manager"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
+	}, {
+		"block_type": "section-heading",
+		"display_text": "Fifth team member"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member name"
+	}, {
+		"registration_response_key": "Q23",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member institution"
+	}, {
+		"registration_response_key": "Q24",
+		"block_type": "short-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Team member role"
+	}, {
+		"registration_response_key": "Q25",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Principal Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Co-Investigator"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Post Doc"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Research Scientist"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Graduate Student"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Manager"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Lab Member"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Unknown"
+	}, {
+		"block_type": "page-heading",
+		"display_text": "Pilot Reporting"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Have you piloted this study?"
+	}, {
+		"registration_response_key": "Q26",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Yes"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "No"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Did you pilot this study on the Character Lab Research Network?"
+	}, {
+		"registration_response_key": "Q27",
+		"block_type": "multi-select-input"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "Yes"
+	}, {
+		"block_type": "select-input-option",
+		"display_text": "No"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Piloting Experience"
+	}, {
+		"registration_response_key": "Q28",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Pilot Goals"
+	}, {
+		"registration_response_key": "Q29",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Pilot Hypotheses"
+	}, {
+		"registration_response_key": "Q30",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "How did you use feedback from a CLIPster/SRL while developing your pilot?"
+	}, {
+		"registration_response_key": "Q31",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "How did your pilot data line up with your hypotheses?"
+	}, {
+		"registration_response_key": "Q32",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Have your hypotheses about this study changed at all following the pilot? If so, how?"
+	}, {
+		"registration_response_key": "Q33",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Did anything emerge in this pilot data that you weren't expecting?"
+	}, {
+		"registration_response_key": "Q34",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "What concerns you the most about this pilot data?"
+	}, {
+		"registration_response_key": "Q35",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "What are your three main takeaways from this pilot?"
+	}, {
+		"registration_response_key": "Q36",
+		"block_type": "long-text-input"
+	}, {
+		"block_type": "question-label",
+		"display_text": "Changes Based On Piloting"
+	}, {
+		"registration_response_key": "Q37",
+		"block_type": "long-text-input"
+	}]
+}

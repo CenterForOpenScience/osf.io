@@ -14,7 +14,7 @@ $(function() {
     // Tag input
     $('#fileTags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEdit && !window.contextVars.node.isRegistration,
         maxChars: 128,
         defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function (tag) {

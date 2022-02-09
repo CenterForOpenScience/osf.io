@@ -12,14 +12,16 @@ from website.signals import ALL_SIGNALS
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from osf.models import Sanction, RegistrationProvider
+from osf.models import Sanction, RegistrationProvider, RegistrationSchema
+from osf.utils.migrations import create_schema_blocks_for_atomic_schema
+
+from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA_NAME, DEFAULT_TEST_SCHEMA
 
 from .factories import (
     get_default_metaschema,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
 )
-
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -120,7 +122,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     provider = provider or RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
-        draft_reg = DraftRegistrationFactory(branched_from=project)
+        draft_reg = DraftRegistrationFactory(branched_from=project, registration_schema=schema)
         registration = project.register_node(
             schema=schema,
             auth=auth,
@@ -198,3 +200,16 @@ def create_mock_gcs_client():
     mock_client = mock.create_autospec(Client)
     mock_client.get_bucket.return_value = create_mock_bucket()
     return mock_client
+
+def get_default_test_schema():
+    try:
+        test_schema = RegistrationSchema.objects.get(name=DEFAULT_TEST_SCHEMA_NAME)
+    except RegistrationSchema.DoesNotExist:
+        test_schema = RegistrationSchema.objects.create(
+            name=DEFAULT_TEST_SCHEMA_NAME,
+            schema_version=1,
+            schema=DEFAULT_TEST_SCHEMA
+        )
+        create_schema_blocks_for_atomic_schema(test_schema)
+
+    return test_schema

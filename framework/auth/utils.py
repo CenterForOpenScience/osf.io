@@ -1,3 +1,5 @@
+from enum import IntEnum
+import logging
 from rest_framework import status as http_status
 import re
 
@@ -7,7 +9,11 @@ import requests
 from django.apps import apps
 from django.core.exceptions import ValidationError
 
+from framework import sentry
 from website import settings
+
+logger = logging.getLogger(__name__)
+
 
 # email verification adopted from django. For licence information, see NOTICE
 USER_REGEX = re.compile(
@@ -25,8 +31,28 @@ DOMAIN_REGEX = re.compile(
     r'(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE)
 
 
+class LogLevel(IntEnum):
+    DEBUG = 0
+    INFO = 1
+    WARN = 2
+    ERROR = 3
+    NONE = 4
+
+
+def print_cas_log(msg, level):
+    if settings.CAS_LOG_LEVEL > level.value:
+        return
+    if level == LogLevel.ERROR:
+        logger.error(msg)
+        sentry.log_message(msg)
+    elif level == LogLevel.DEBUG:
+        logger.debug(msg)
+    elif level == LogLevel.INFO:
+        logger.info(msg)
+
+
 def validate_email(email):
-    BlacklistedEmailDomain = apps.get_model('osf.BlacklistedEmailDomain')
+    NotableEmailDomain = apps.get_model('osf.NotableEmailDomain')
     if len(email) > 254:
         raise ValidationError('Invalid Email')
 
@@ -34,7 +60,10 @@ def validate_email(email):
         raise ValidationError('Invalid Email')
 
     domain = email.split('@')[1].lower()
-    if BlacklistedEmailDomain.objects.filter(domain=domain).exists():
+    if NotableEmailDomain.objects.filter(
+        domain=domain,
+        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+    ).exists():
         raise ValidationError('Invalid Email')
 
     user_part, domain_part = email.rsplit('@', 1)

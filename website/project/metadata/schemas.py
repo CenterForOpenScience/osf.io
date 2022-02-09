@@ -10,6 +10,7 @@ OSF_META_SCHEMA_FILES = [
     'brandt-postcomp-2.json',
     'character-lab-fully-powered-study.json',
     'character-lab-pilot-study.json',
+    'character-lab-winter.json',
     'prereg-prize.json',
     'erpc-prize.json',
     'confirmatory-general-2.json',
@@ -30,10 +31,13 @@ OSF_META_SCHEMA_FILES = [
     'asist-hypothesis-capability-registration.json',
     'asist-results-registration.json',
     'real-world-evidence.json',
+    'real-world-evidence-2.json',
     'qualitative-research.json',
     'secondary-data.json',
     'hypothesis-testing-studies-using-youth-data.json',
-    'other-studies-using-youth-data.json'
+    'other-studies-using-youth-data.json',
+    'character-lab-short-form-registration.json',
+    'character-lab-long-form-registration.json',
 ]
 
 METASCHEMA_ORDERING = (

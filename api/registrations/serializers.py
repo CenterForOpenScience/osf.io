@@ -28,11 +28,13 @@ from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
+    HideIfWithdrawalOrWikiDisabled,
 )
 from framework.auth.core import Auth
 from osf.exceptions import ValidationValueError, NodeStateError
 from osf.models import Node, AbstractNode
 from osf.utils.registrations import strip_registered_meta_comments
+from osf.utils.workflows import ApprovalStates
 from framework.sentry import log_exception
 
 class RegistrationSerializer(NodeSerializer):
@@ -52,6 +54,8 @@ class RegistrationSerializer(NodeSerializer):
         'date_withdrawn',
         'embargo_end_date',
         'embargoed',
+        'latest_response',
+        'original_response',
         'pending_embargo_approval',
         'pending_embargo_termination_approval',
         'pending_registration_approval',
@@ -64,9 +68,16 @@ class RegistrationSerializer(NodeSerializer):
         'registration_responses',
         'registration_schema',
         'registration_supplement',
+        'schema_responses',
         'withdrawal_justification',
         'withdrawn',
     ]
+
+    # Union filterable fields unique to the RegistrationSerializer with
+    # filterable fields from the NodeSerializer
+    filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
+        'revision_state',
+    ])
 
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
@@ -191,7 +202,7 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_files_count'},
     ))
 
-    wikis = HideIfWithdrawal(RelationshipField(
+    wikis = HideIfWithdrawalOrWikiDisabled(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_wiki_page_count'},
@@ -352,6 +363,23 @@ class RegistrationSerializer(NodeSerializer):
 
     provider_specific_metadata = ser.JSONField(required=False)
 
+    schema_responses = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:schema-responses-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
+    original_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_original_response_id'},
+    ))
+
+    latest_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
+    ))
+
+    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -382,8 +410,15 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
+        latest_approved_response = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved_response is not None:
+            return self.anonymize_fields(obj, latest_approved_response.all_responses)
+
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
+
         return None
 
     def get_embargo_end_date(self, obj):
@@ -410,6 +445,20 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_original_response_id(self, obj):
+        original_response = obj.root.schema_responses.last()
+        if original_response:
+            return original_response._id
+        return None
+
+    def get_latest_response_id(self, obj):
+        latest_approved = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved:
+            return latest_approved._id
+        return None
 
     def anonymize_registered_meta(self, obj):
         """

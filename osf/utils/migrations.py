@@ -398,29 +398,53 @@ def create_schema_blocks_for_atomic_schema(schema):
 
     from osf.models import RegistrationSchemaBlock
     current_group_key = None
-    for index, block in enumerate(schema.schema['blocks']):
+    grouped_block_types = RegistrationSchemaBlock.INPUT_BLOCK_TYPES.union(
+        {'select-input-option', 'select-input-other'}
+    )
 
-        # registration_response_key and schema_block_group_key are unused
-        # for most block types and can/should be empty.
-        # registration_response_key gets explicitly filtered by isnull :/
-        block['registration_response_key'] = None
-        block['schema_block_group_key'] = ''
+    for index, block in enumerate(schema.schema['blocks']):
+        # Not all block types use all '*_text' fields, so provide an easy default
+        for optional_text_field in ['display_text', 'help_text', 'example_text']:
+            block[optional_text_field] = block.get(optional_text_field, '')
+
         block_type = block['block_type']
 
+        # Each 'question-label' generates a 'schema_block_group_key' that is inherited
+        # By all input and input-option blocks until the next question-label appears
         if block_type == 'question-label':
-            # This key will be used by input and option fields for this question
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
-        elif block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
-            block['registration_response_key'] = f'{schema.id}-{index}'
+        elif block_type in grouped_block_types:
             block['schema_block_group_key'] = current_group_key
-        elif block_type in ['select-input-option', 'select-input-other']:
-            block['schema_block_group_key'] = current_group_key
+        else:
+            block['schema_block_group_key'] = ''
+
+        # Input blocks define a 'registration_response_key', while it is NULL for all other blocks
+        # Either honor a provided key or auto-generate one based on the block's index
+        if block_type in RegistrationSchemaBlock.INPUT_BLOCK_TYPES:
+            if not block.get('registration_response_key'):
+                block['registration_response_key'] = f'{schema.id}-{index}'
+        else:  # Ignore any improperly-supplied registration_response_key
+            block['registration_response_key'] = None
 
         RegistrationSchemaBlock.objects.create(
             schema_id=schema.id,
             **block
         )
+
+def map_schema_to_schemablocks(rs, state=None):
+    for page in rs.schema['pages']:
+        # Create page heading block
+        create_schema_block(
+            state,
+            rs.id,
+            'page-heading',
+            display_text=strip_html(page.get('title', '')),
+            help_text=strip_html(page.get('description', ''))
+        )
+        for question in page['questions']:
+            create_schema_blocks_for_question(state, rs, question)
+
 
 def map_schemas_to_schemablocks(*args):
     """Map schemas to schema blocks
@@ -434,10 +458,15 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = state.get_model('osf', 'metaschema')
 
-    # Delete all existing schema blocks (avoid creating duplicates)
-    unmap_schemablocks(*args)
+    try:
+        RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    except LookupError:
+        return  # can't create SchemaBlocks if they don't exist
 
     for rs in schema_model.objects.all():
+        if RegistrationSchemaBlock.objects.filter(schema_id=rs.id).exists():
+            continue
+
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
@@ -457,10 +486,8 @@ def map_schemas_to_schemablocks(*args):
 
 
 def unmap_schemablocks(*args):
-    state = args[0] if args else apps
-    schema_block_model = state.get_model('osf', 'registrationschemablock')
-
-    schema_block_model.objects.all().delete()
+    '''Noop for historical purposes'''
+    return
 
 
 class UpdateRegistrationSchemas(Operation):

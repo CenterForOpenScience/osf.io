@@ -2222,7 +2222,7 @@ var FGToolbar = {
         }
 
         var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
-        if(storageLimitsStatus && window.contextVars.currentUser.canEdit) {
+        if(storageLimitsStatus && storageLimitsStatus.text && window.contextVars.currentUser.canEdit) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',

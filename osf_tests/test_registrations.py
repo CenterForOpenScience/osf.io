@@ -10,12 +10,13 @@ from nose.tools import assert_raises
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
+from osf.registrations.utils import get_registration_provider_submissions_url
 
 from website import settings
 
 from . import factories
 from .utils import assert_datetime_equal, mock_archive
-from .factories import get_default_metaschema, DraftRegistrationFactory
+from osf_tests.factories import get_default_metaschema, DraftRegistrationFactory
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.providers.workflows import Workflows
 from osf.migrations import update_provider_auth_groups
@@ -29,7 +30,7 @@ from osf_tests.management_commands.test_migration_registration_responses import 
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
-    SanctionStates
+    ApprovalStates
 )
 
 pytestmark = pytest.mark.django_db
@@ -78,10 +79,6 @@ def test_factory(user, project):
     )
     assert registration2.registered_from == project
     assert registration2.registered_user == user2
-    assert (
-        registration2.registered_meta[get_default_metaschema()._id] ==
-        data
-    )
 
 
 class TestRegistration:
@@ -412,7 +409,7 @@ class TestRegisterNodeContributors:
 
 
 # copied from tests/test_registrations
-class TestNodeSanctionStates:
+class TestNodeApprovalStates:
 
     def test_sanction_none(self):
         node = factories.NodeFactory()
@@ -629,7 +626,7 @@ class TestRegistrationMixin:
         assert registration_metadata == veer_condensed
 
 
-class TestRegistationModerationStates():
+class TestRegistationModerationStates:
 
     @pytest.fixture
     def embargo(self):
@@ -832,7 +829,7 @@ class TestRegistationModerationStates():
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
 
-class TestForcedWithdrawal():
+class TestForcedWithdrawal:
 
     @pytest.fixture
     def embargo_termination(self):
@@ -871,7 +868,7 @@ class TestForcedWithdrawal():
 
         moderated_registration.refresh_from_db()
         assert moderated_registration.is_retracted
-        assert moderated_registration.retraction.approval_stage is SanctionStates.APPROVED
+        assert moderated_registration.retraction.approval_stage is ApprovalStates.APPROVED
         assert moderated_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
     def test_force_retraction_writes_action(self, moderated_registration, moderator):
@@ -901,3 +898,26 @@ class TestForcedWithdrawal():
 
         assert moderated_registration.retraction is None
         assert moderated_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+
+class TestUtils:
+
+    @pytest.fixture
+    def provider_valid(self):
+        provider = factories.RegistrationProviderFactory()
+        return provider
+
+    @pytest.fixture
+    def provider_invalid(self):
+        provider = factories.PreprintProviderFactory()
+        return provider
+
+    def test_submissions_url_with_valid_provider(self, provider_valid):
+
+        submissions_url = get_registration_provider_submissions_url(provider_valid)
+        assert submissions_url == f'{settings.DOMAIN}registries/{provider_valid._id}/moderation/pending'
+
+    def test_submissions_url_with_invalid_provider(self, provider_invalid):
+
+        with pytest.raises(AssertionError):
+            get_registration_provider_submissions_url(provider_invalid)

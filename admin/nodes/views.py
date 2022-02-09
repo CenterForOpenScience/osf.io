@@ -1,26 +1,38 @@
-from __future__ import unicode_literals
-
 import pytz
 from datetime import datetime
+from framework import status
 
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.views.generic import ListView, DeleteView, View, TemplateView
-from django.shortcuts import redirect
-from django.views.defaults import page_not_found
+from django.core.urlresolvers import NoReverseMatch
+from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
-from django.db.models import Q
+from django.views.generic import (
+    View,
+    FormView,
+    ListView,
+    TemplateView,
+)
+from django.shortcuts import redirect, reverse
+from django.urls import reverse_lazy
 
-from website import search
-from osf.models import NodeLog
-from osf.models.user import OSFUser
-from osf.models.node import Node, AbstractNode
-from osf.models.registrations import Registration
-from osf.models import SpamStatus
 from admin.base.utils import change_embargo_date, validate_embargo_date
-from admin.base.views import GuidFormView, GuidView
+from admin.base.views import GuidView
+from admin.base.forms import GuidForm
+
+from api.share.utils import update_share
+from api.caching.tasks import update_storage_usage_cache
+
+from osf.exceptions import NodeStateError
+from osf.models import (
+    OSFUser,
+    NodeLog,
+    AbstractNode,
+    Registration,
+    SpamStatus
+)
 from osf.models.admin_log_entry import (
     update_admin_log,
     NODE_REMOVED,
@@ -28,44 +40,111 @@ from osf.models.admin_log_entry import (
     CONTRIBUTOR_REMOVED,
     CONFIRM_SPAM,
     CONFIRM_HAM,
+    UNFLAG_SPAM,
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
-from admin.nodes.templatetags.node_extras import reverse_node
-from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
-from api.share.utils import update_share
-from api.caching.tasks import update_storage_usage_cache
-from website.project.views.register import osf_admin_change_status_identifier
-from website.settings import STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, StorageLimits
+
+from website import settings, search
 
 
-class NodeFormView(PermissionRequiredMixin, GuidFormView):
-    """ Allow authorized admin user to input specific node guid.
+class NodeMixin(PermissionRequiredMixin):
 
-    Basic form. No admin models.
+    def get_object(self):
+        return AbstractNode.objects.filter(
+            guids___id=self.kwargs['guid']
+        ).annotate(
+            guid=F('guids___id'),
+            public_cap=Case(
+                When(
+                    custom_storage_usage_limit_public=None,
+                    then=settings.STORAGE_LIMIT_PUBLIC,
+                ),
+                When(
+                    custom_storage_usage_limit_public__gt=0,
+                    then=F('custom_storage_usage_limit_public'),
+                ),
+                output_field=IntegerField()
+            ),
+            private_cap=Case(
+                When(
+                    custom_storage_usage_limit_private=None,
+                    then=settings.STORAGE_LIMIT_PRIVATE,
+                ),
+                When(
+                    custom_storage_usage_limit_private__gt=0,
+                    then=F('custom_storage_usage_limit_private'),
+                ),
+                output_field=IntegerField()
+            )
+        ).get()
+
+    def get_success_url(self):
+        return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
+
+
+class NodeView(NodeMixin, GuidView):
+    """ Allows authorized users to view node info.
     """
-    template_name = 'nodes/search.html'
-    object_type = 'node'
+    template_name = 'nodes/node.html'
     permission_required = 'osf.view_node'
     raise_exception = True
 
-    @property
-    def success_url(self):
-        return reverse_node(self.guid)
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**{
+            'SPAM_STATUS': SpamStatus,
+            'STORAGE_LIMITS': settings.StorageLimits,
+            'node': kwargs.pop('object', self.get_object()),
+        }, **kwargs)
 
 
-class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
-    """ Allow authorized admin user to remove project contributor
-
-    Interface with OSF database. No admin models.
+class NodeSearchView(PermissionRequiredMixin, FormView):
+    """ Allows authorized users to search for a node by it's guid.
     """
-    template_name = 'nodes/remove_contributor.html'
-    context_object_name = 'node'
+    template_name = 'nodes/search.html'
+    permission_required = 'osf.view_node'
+    raise_exception = True
+    form_class = GuidForm
+    success_url = reverse_lazy('nodes:search')
+
+    def form_valid(self, form):
+        guid = form.cleaned_data['guid']
+        if guid:
+            try:
+                return redirect(reverse('nodes:node', kwargs={'guid': guid}))
+            except NoReverseMatch as e:
+                messages.error(self.request, str(e))
+
+        return super().form_valid(form)
+
+
+class NodeRemoveContributorView(NodeMixin, View):
+    """ Allows authorized users to remove contributors from nodes.
+    """
     permission_required = ('osf.view_node', 'osf.change_node')
     raise_exception = True
 
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
+        if not node._get_admin_contributors_query(node._contributors.all()).exclude(user=user).exists():
+            messages.error(self.request, 'Must be at least one admin on this node.')
+            return redirect(self.get_success_url())
+
+        if node.remove_contributor(user, None, log=False):
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=node.pk,
+                object_repr='Contributor',
+                message=f'User {user.pk} removed from {node.__class__.__name__.lower()} {node.pk}.',
+                action_flag=CONTRIBUTOR_REMOVED
+            )
+            # Log invisibly on the OSF.
+            self.add_contributor_removed_log(node, user)
+        return redirect(self.get_success_url())
+
     def add_contributor_removed_log(self, node, user):
-        osf_log = NodeLog(
+        NodeLog(
             action=NodeLog.CONTRIB_REMOVED,
             user=None,
             params={
@@ -75,223 +154,136 @@ class NodeRemoveContributorView(PermissionRequiredMixin, DeleteView):
             },
             date=timezone.now(),
             should_hide=True,
-        )
-        return osf_log.save()
-
-    def delete(self, request, *args, **kwargs):
-        try:
-            node, user = self.get_object()
-            if node.remove_contributor(user, None, log=False):
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=node.pk,
-                    object_repr='Contributor',
-                    message='User {} removed from {} {}.'.format(
-                        user.pk, node.__class__.__name__.lower(), node.pk
-                    ),
-                    action_flag=CONTRIBUTOR_REMOVED
-                )
-                # Log invisibly on the OSF.
-                self.add_contributor_removed_log(node, user)
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        self.kwargs.get('guid')
-                    )
-                )
-            )
-        if isinstance(node, Node):
-            return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        node, user = kwargs.get('object')
-        context.setdefault('guid', node._id)
-        context.setdefault('user', serialize_simple_user_and_node_permissions(node, user))
-        context['link'] = 'nodes:remove_user'
-        context['resource_type'] = 'project'
-        return super(NodeRemoveContributorView, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return (Node.load(self.kwargs.get('guid')),
-                OSFUser.load(self.kwargs.get('user_id')))
+        ).save()
 
 
-class NodeDeleteBase(DeleteView):
-    template_name = None
-    context_object_name = 'node'
-    object = None
-
-    def get_context_data(self, **kwargs):
-        context = {}
-        context.setdefault('guid', kwargs.get('object')._id)
-        return super(NodeDeleteBase, self).get_context_data(**context)
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-
-
-class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
-    """ Allow authorized admin user to remove/hide nodes
-
-    Interface with OSF database. No admin models.
+class NodeDeleteView(NodeMixin, TemplateView):
+    """ Allows authorized users to mark nodes as deleted.
     """
     template_name = 'nodes/remove_node.html'
-    object = None
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
 
-    def get_context_data(self, **kwargs):
-        context = super(NodeDeleteView, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:remove'
-        context['resource_type'] = 'node'
-        return context
-
-    def delete(self, request, *args, **kwargs):
-        try:
-            node = self.get_object()
-            flag = None
-            osf_flag = None
-            message = None
-            if node.is_deleted:
-                node.is_deleted = False
-                node.deleted_date = None
-                node.deleted = None
-                flag = NODE_RESTORED
-                message = 'Node {} restored.'.format(node.pk)
-                osf_flag = NodeLog.NODE_CREATED
-            elif not node.is_registration:
-                node.is_deleted = True
-                node.deleted = timezone.now()
-                node.deleted_date = node.deleted
-                flag = NODE_REMOVED
-                message = 'Node {} removed.'.format(node.pk)
-                osf_flag = NodeLog.NODE_REMOVED
-            node.save()
-            if flag is not None:
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=node.pk,
-                    object_repr='Node',
-                    message=message,
-                    action_flag=flag
-                )
-            if osf_flag is not None:
-                # Log invisibly on the OSF.
-                osf_log = NodeLog(
-                    action=osf_flag,
-                    user=None,
-                    params={
-                        'project': node.parent_id,
-                    },
-                    date=timezone.now(),
-                    should_hide=True,
-                )
-                osf_log.save()
-        except AttributeError:
-            return page_not_found(
-                request,
-                AttributeError(
-                    '{} with id "{}" not found.'.format(
-                        self.context_object_name.title(),
-                        kwargs.get('guid')
-                    )
-                )
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        if node.is_deleted:
+            node.is_deleted = False
+            node.deleted_date = None
+            node.deleted = None
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=node.pk,
+                object_repr='Node',
+                message=f'Node {node.pk} restored.',
+                action_flag=NODE_RESTORED
             )
-        return redirect(reverse_node(self.kwargs.get('guid')))
+            NodeLog(
+                action=NodeLog.NODE_CREATED,
+                user=None,
+                params={
+                    'project': node.parent_id,
+                },
+                date=timezone.now(),
+                should_hide=True,
+            ).save()
+        else:
+            node.is_deleted = True
+            node.deleted = timezone.now()
+            node.deleted_date = node.deleted
+            update_admin_log(
+                user_id=self.request.user.id,
+                object_id=node.pk,
+                object_repr='Node',
+                message=f'Node {node.pk} removed.',
+                action_flag=NODE_REMOVED
+            )
+            NodeLog(
+                action=NodeLog.NODE_REMOVED,
+                user=None,
+                params={
+                    'project': node.parent_id,
+                },
+                date=timezone.now(),
+                should_hide=True,
+            ).save()
+        node.save()
+
+        return redirect(self.get_success_url())
 
 
-class NodeView(PermissionRequiredMixin, GuidView):
-    """ Allow authorized admin user to view nodes
-
-    View of OSF database. No admin models.
+class AdminNodeLogView(NodeMixin, ListView):
+    """ Allows authorized users to view node logs.
     """
-    template_name = 'nodes/node.html'
-    context_object_name = 'node'
-    permission_required = 'osf.view_node'
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        kwargs = super(NodeView, self).get_context_data(**kwargs)
-        kwargs.update({'SPAM_STATUS': SpamStatus})  # Pass spam status in to check against
-        kwargs.update({'message': kwargs.get('message')})  # Pass spam status in to check against
-        kwargs.update({'STORAGE_LIMITS': StorageLimits})
-        return kwargs
-
-    def get_object(self, queryset=None):
-        guid = self.kwargs.get('guid')
-        node = Node.load(guid) or Registration.load(guid)
-        return serialize_node(node)
-
-
-class AdminNodeLogView(PermissionRequiredMixin, ListView):
-    """ Allow admins to see logs"""
-
     template_name = 'nodes/node_logs.html'
-    context_object_name = 'node'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'date'
     permission_required = 'osf.view_node'
     raise_exception = True
 
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-
     def get_queryset(self):
-        node = self.get_object()
-        query = Q(node_id__in=list(Node.objects.get_children(node).values_list('id', flat=True)) + [node.id])
-        return NodeLog.objects.filter(query).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
-        )
+        return self.get_object().logs.order_by('created')
 
     def get_context_data(self, **kwargs):
         query_set = self.get_queryset()
         page_size = self.get_paginate_by(query_set)
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
+
         return {
-            'logs': list(map(serialize_log, query_set)),
+            'logs': query_set,
             'page': page,
         }
 
 
-class RegistrationListView(PermissionRequiredMixin, ListView):
-    """ Allow authorized admin user to view list of registrations
+class AdminNodeSchemaResponseView(NodeMixin, ListView):
+    """ Allows authorized users to view schema response info.
+    """
+    template_name = 'schema_response/schema_response_list.html'
+    paginate_by = 10
+    paginate_orphans = 1
+    ordering = 'date'
+    permission_required = 'osf.view_schema_response'
+    raise_exception = True
 
-    View of OSF database. No admin models.
+    def get_queryset(self):
+        return self.get_object().schema_responses.all()
+
+    def get_context_data(self, **kwargs):
+        return {'schema_responses': self.get_queryset()}
+
+
+class RegistrationListView(PermissionRequiredMixin, ListView):
+    """ Allow authorized users to view the list of registrations of a node.
     """
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
     ordering = 'created'
-    context_object_name = '-node'
     permission_required = 'osf.view_registration'
     raise_exception = True
 
     def get_queryset(self):
-        return Registration.objects.all().order_by(self.ordering)
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.objects.all().annotate(guid=F('guids___id')).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
-        query_set = kwargs.pop('object_list', self.object_list)
+        query_set = self.get_queryset()
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
         return {
-            'nodes': list(map(serialize_node, query_set)),
+            'nodes': query_set,
             'page': page,
         }
 
 
 class StuckRegistrationListView(RegistrationListView):
-    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations the have been archiving files by more then 24 hours.
     """
 
     def get_queryset(self):
-        return Registration.find_failed_registrations().order_by(self.ordering)
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_failed_registrations().annotate(guid=F('guids___id'))
 
 
 class RegistrationBacklogListView(RegistrationListView):
@@ -299,25 +291,27 @@ class RegistrationBacklogListView(RegistrationListView):
     """
 
     def get_queryset(self):
-        return Registration.find_ia_backlog()
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_ia_backlog().annotate(guid=F('guids___id'))
 
 
 class DoiBacklogListView(RegistrationListView):
-    """ List view that filters by registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations that have not yet been assigned a doi.
     """
 
     def get_queryset(self):
-        return Registration.find_doi_backlog()
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return Registration.find_doi_backlog().annotate(guid=F('guids___id'))
 
 
-class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
-    """ Allow authorized admin user to update the embargo of a registration
+class RegistrationUpdateEmbargoView(NodeMixin, View):
+    """ Allows authorized users to update the embargo of a registration.
     """
     permission_required = ('osf.change_node')
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        validation_only = (request.POST.get('validation_only', False) == 'True')
+        validation_only = request.POST.get('validation_only', False) == 'True'
         end_date = request.POST.get('date')
         user = request.user
         registration = self.get_object()
@@ -333,267 +327,296 @@ class RegistrationUpdateEmbargoView(PermissionRequiredMixin, View):
             else:
                 change_embargo_date(registration, user, end_date)
         except ValidationError as e:
-            return HttpResponse(e, status=409)
+            messages.error(request, e.message)
         except PermissionDenied as e:
             return HttpResponse(e, status=403)
 
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
-    def get_object(self, queryset=None):
-        return Registration.load(self.kwargs.get('guid'))
 
 class NodeSpamList(PermissionRequiredMixin, ListView):
+    """ Allows authorized users to view a list of nodes that have a particular spam status.
+    """
     SPAM_STATE = SpamStatus.UNKNOWN
 
     paginate_by = 25
     paginate_orphans = 1
     ordering = 'created'
-    context_object_name = '-node'
     permission_required = 'osf.view_spam'
     raise_exception = True
 
     def get_queryset(self):
-        return Node.objects.filter(spam_status=self.SPAM_STATE).order_by(self.ordering)
+        return AbstractNode.objects.filter(
+            spam_status=self.SPAM_STATE
+        ).order_by(
+            self.ordering
+        ).annotate(guid=F('guids___id'))
 
     def get_context_data(self, **kwargs):
-        query_set = kwargs.pop('object_list', self.object_list)
+        query_set = self.get_queryset()
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(
-            query_set, page_size)
-        return {
-            'nodes': list(map(serialize_node, query_set)),
-            'page': page,
-        }
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        return {'nodes': query_set, 'page': page}
 
-class NodeFlaggedSpamList(NodeSpamList, DeleteView):
-    SPAM_STATE = SpamStatus.FLAGGED
+
+class NodeFlaggedSpamList(NodeSpamList, View):
+    """ Allows authorized users to mark users flagged as spam as either spam or ham, or they can simply remove the flag.
+    """
     template_name = 'nodes/flagged_spam_list.html'
+    SPAM_STATE = SpamStatus.FLAGGED
 
-    def delete(self, request, *args, **kwargs):
-        if (('spam_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam')) or
-                ('ham_confirm' in list(request.POST.keys()) and not request.user.has_perm('osf.mark_spam'))):
-            raise PermissionDenied('You do not have permission to update a node flagged as spam.')
-        node_ids = [
-            nid for nid in list(request.POST.keys())
-            if nid not in ('csrfmiddlewaretoken', 'spam_confirm', 'ham_confirm')
-        ]
-        for nid in node_ids:
-            node = Node.load(nid)
-            osf_admin_change_status_identifier(node)
-            if ('spam_confirm' in list(request.POST.keys())):
-                node.confirm_spam(save=True)
-                update_admin_log(
-                    user_id=self.request.user.id,
-                    object_id=nid,
-                    object_repr='Node',
-                    message='Confirmed SPAM: {}'.format(nid),
-                    action_flag=CONFIRM_SPAM
-                )
-            elif ('ham_confirm' in list(request.POST.keys())):
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_perm('osf.mark_spam'):
+            raise PermissionDenied("You don't have permission to update this user's spam status.")
+
+        data = dict(request.POST)
+        action = data.pop('action')[0]
+        data.pop('csrfmiddlewaretoken', None)
+        nodes = AbstractNode.objects.filter(id__in=list(data.keys()))
+
+        if action == 'spam':
+            for node in nodes:
+                try:
+                    node.confirm_spam(save=True)
+                    update_admin_log(
+                        user_id=self.request.user.id,
+                        object_id=node.id,
+                        object_repr='Node',
+                        message=f'Confirmed SPAM: {node._id}',
+                        action_flag=CONFIRM_SPAM
+                    )
+                except NodeStateError as e:
+                    messages.error(self.request, e)
+
+        if action == 'ham':
+            for node in nodes:
                 node.confirm_ham(save=True)
                 update_admin_log(
                     user_id=self.request.user.id,
-                    object_id=nid,
-                    object_repr='Node',
-                    message='Confirmed HAM: {}'.format(nid),
+                    object_id=node.id,
+                    object_repr='User',
+                    message=f'Confirmed HAM: {node._id}',
                     action_flag=CONFIRM_HAM
                 )
+
+        if action == 'unflag':
+            for node in nodes:
+                node.spam_status = None
+                node.save()
+                update_admin_log(
+                    user_id=self.request.user.id,
+                    object_id=node._id,
+                    object_repr='Node',
+                    message=f'Confirmed Unflagged: {node._id}',
+                    action_flag=UNFLAG_SPAM
+                )
+
+        for node in nodes:
+            if node.get_identifier_value('doi'):
+                node.request_identifier_update(category='doi')
+
         return redirect('nodes:flagged-spam')
 
 
 class NodeKnownSpamList(NodeSpamList):
-    SPAM_STATE = SpamStatus.SPAM
+    """ Allows authorized users to view a list of users that have a spam status of being spam.
+    """
     template_name = 'nodes/known_spam_list.html'
+
+    SPAM_STATE = SpamStatus.SPAM
+
 
 class NodeKnownHamList(NodeSpamList):
-    SPAM_STATE = SpamStatus.HAM
+    """ Allows authorized users to view a list of users that have a spam status of being ham (non-spam).
+    """
     template_name = 'nodes/known_spam_list.html'
+    SPAM_STATE = SpamStatus.HAM
 
-class NodeConfirmSpamView(PermissionRequiredMixin, NodeDeleteBase):
-    template_name = 'nodes/confirm_spam.html'
+
+class NodeConfirmSpamView(NodeMixin, View):
+    """ Allows authorized users to mark a particular node as spam.
+    """
     permission_required = 'osf.mark_spam'
     raise_exception = True
-    object_type = 'Node'
-
-    def delete(self, request, *args, **kwargs):
-        node = self.get_object()
-        osf_admin_change_status_identifier(node)
-        node.confirm_spam(save=True)
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=node._id,
-            object_repr=self.object_type,
-            message='Confirmed SPAM: {}'.format(node._id),
-            action_flag=CONFIRM_SPAM
-        )
-        if isinstance(node, Node):
-            return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = super(NodeConfirmSpamView, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:confirm-spam'
-        context['resource_type'] = self.object_type.lower()
-        return context
-
-
-class NodeConfirmHamView(PermissionRequiredMixin, NodeDeleteBase):
-    template_name = 'nodes/confirm_ham.html'
-    permission_required = 'osf.mark_spam'
-    raise_exception = True
-    object_type = 'Node'
-
-    def get_context_data(self, **kwargs):
-        context = super(NodeConfirmHamView, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:confirm-ham'
-        context['resource_type'] = self.object_type.lower()
-        return context
-
-    def delete(self, request, *args, **kwargs):
-        node = self.get_object()
-        node.confirm_ham(save=True)
-        osf_admin_change_status_identifier(node)
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=node._id,
-            object_repr=self.object_type,
-            message='Confirmed HAM: {}'.format(node._id),
-            action_flag=CONFIRM_HAM
-        )
-        if isinstance(node, Node) or isinstance(node, Registration):
-            return redirect(reverse_node(self.kwargs.get('guid')))
-
-
-class NodeReindexShare(PermissionRequiredMixin, NodeDeleteBase):
-    template_name = 'nodes/reindex_node_share.html'
-    permission_required = 'osf.mark_spam'
-    raise_exception = True
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-
-    def delete(self, request, *args, **kwargs):
-        node = self.get_object()
-        update_share(node)
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=node._id,
-            object_repr='Node',
-            message='Node Reindexed (SHARE): {}'.format(node._id),
-            action_flag=REINDEX_SHARE
-        )
-        if isinstance(node, (Node, Registration)):
-            return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = super(NodeReindexShare, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:reindex-share-node'
-        context['resource_type'] = 'node'
-        return context
-
-class NodeReindexElastic(PermissionRequiredMixin, NodeDeleteBase):
-    template_name = 'nodes/reindex_node_elastic.html'
-    permission_required = 'osf.mark_spam'
-    raise_exception = True
-
-    def get_object(self, queryset=None):
-        return Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-
-    def delete(self, request, *args, **kwargs):
-        node = self.get_object()
-        search.search.update_node(node, bulk=False, async_update=False)
-        update_admin_log(
-            user_id=self.request.user.id,
-            object_id=node._id,
-            object_repr='Node',
-            message='Node Reindexed (Elastic): {}'.format(node._id),
-            action_flag=REINDEX_ELASTIC
-        )
-        return redirect(reverse_node(self.kwargs.get('guid')))
-
-    def get_context_data(self, **kwargs):
-        context = super(NodeReindexElastic, self).get_context_data(**kwargs)
-        context['link'] = 'nodes:reindex-elastic-node'
-        context['resource_type'] = 'node'
-        return context
-
-class NodeModifyStorageUsage(TemplateView):
-    template_name = 'nodes/modify_storage_caps.html'
-
-    def get_object(self, queryset=None):
-        node = AbstractNode.load(self.kwargs.get('guid'))
-        return {
-            'id': node.id,
-        }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
-        context['id'] = node._id
-        context['public_cap'] = round(node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC, 1)
-        context['private_cap'] = round(node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE, 1)
-        return context
 
     def post(self, request, *args, **kwargs):
-        node = Node.load(self.kwargs.get('guid')) or Registration.load(self.kwargs.get('guid'))
+        node = self.get_object()
+        node.confirm_spam(save=True)
+
+        if node.get_identifier_value('doi'):
+            node.request_identifier_update(category='doi')
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Confirmed SPAM: {node._id}',
+            action_flag=CONFIRM_SPAM
+        )
+        return redirect(self.get_success_url())
+
+
+class NodeConfirmHamView(NodeMixin, View):
+    """ Allows authorized users to mark a particular node as ham.
+    """
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.confirm_ham(save=True)
+
+        if node.get_identifier_value('doi'):
+            node.request_identifier_update(category='doi')
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Confirmed HAM: {node._id}',
+            action_flag=CONFIRM_HAM
+        )
+        return redirect(self.get_success_url())
+
+
+class NodeConfirmUnflagView(NodeMixin, View):
+    """ Allows authorized users to remove the spam flag from a node.
+    """
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        node.spam_status = None
+        node.save()
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Confirmed Unflagged: {node._id}',
+            action_flag=UNFLAG_SPAM
+        )
+        return redirect(self.get_success_url())
+
+
+class NodeReindexShare(NodeMixin, View):
+    """ Allows an authorized user to reindex a node in SHARE.
+    """
+    permission_required = 'osf.mark_spam'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        if settings.SHARE_ENABLED:
+            update_share(node)
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Node Reindexed (SHARE): {node._id}',
+            action_flag=REINDEX_SHARE
+        )
+        return redirect(self.get_success_url())
+
+
+class NodeReindexElastic(NodeMixin, View):
+    """ Allows an authorized user to reindex a node in ElasticSearch.
+    """
+    permission_required = 'osf.mark_spam'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        search.search.update_node(node, bulk=False, async_update=False)
+
+        update_admin_log(
+            user_id=self.request.user.id,
+            object_id=node._id,
+            object_repr='Node',
+            message=f'Node Reindexed (Elastic): {node._id}',
+            action_flag=REINDEX_ELASTIC
+        )
+        return redirect(self.get_success_url())
+
+
+class NodeModifyStorageUsage(NodeMixin, View):
+    """ Allows an authorized user to view a node's storage usage info and set their public/private storage cap.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
         new_private_cap = request.POST.get('private-cap-input')
         new_public_cap = request.POST.get('public-cap-input')
-        if float(new_private_cap) != (node.custom_storage_usage_limit_private or STORAGE_LIMIT_PRIVATE):
+
+        node_private_cap = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
+        node_public_cap = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
+
+        if float(new_private_cap) != node_private_cap:
             node.custom_storage_usage_limit_private = new_private_cap
 
-        if float(new_public_cap) != (node.custom_storage_usage_limit_public or STORAGE_LIMIT_PUBLIC):
+        if float(new_public_cap) != node_public_cap:
             node.custom_storage_usage_limit_public = new_public_cap
 
         node.save()
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
-class NodeRecalculateStorage(NodeDeleteBase):
-    template_name = 'nodes/recalculate_node_storage.html'
 
-    def get_object(self, queryset=None):
-        return AbstractNode.load(self.kwargs.get('guid'))
+class NodeRecalculateStorage(NodeMixin, View):
+    """ Allows an authorized user to manually set a node's storage cache by recalculating the value.
+    """
+    permission_required = 'osf.change_node'
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         node = self.get_object()
         update_storage_usage_cache(node.id, node._id)
-        if isinstance(node, (Node, Registration)):
-            return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['link'] = 'nodes:recalculate-node-storage'
-        context['resource_type'] = 'node'
-        return context
 
-class NodeMakePrivate(NodeDeleteBase):
-    template_name = 'nodes/make_private.html'
+class NodeMakePrivate(NodeMixin, View):
+    """ Allows an authorized user to manually make a public node private.
+    """
+    permission_required = 'osf.change_node'
 
-    def get_object(self, queryset=None):
-        return AbstractNode.load(self.kwargs.get('guid'))
-
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         node = self.get_object()
-        # TODO: update to force set private
-        node.set_privacy('private')
-        if isinstance(node, (Node, Registration)):
-            return redirect(reverse_node(self.kwargs.get('guid')))
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['link'] = 'nodes:make-node-private'
-        context['resource_type'] = 'node'
-        return context
+        node.is_public = False
+        node.keenio_read_key = ''
 
-class StuckRegistrationsView(PermissionRequiredMixin, TemplateView):
-    permission_required = ('osf.view_node', 'osf.change_node')
-    raise_exception = True
-    context_object_name = 'node'
+        # After set permissions callback
+        for addon in node.get_addons():
+            message = addon.after_set_privacy(node, 'private')
+            if message:
+                status.push_status_message(message, kind='info', trust=False)
 
-    def get_object(self, queryset=None):
-        return Registration.load(self.kwargs.get('guid'))
+        if node.get_identifier_value('doi'):
+            node.request_identifier_update(category='doi')
+
+        node.save()
+
+        return redirect(self.get_success_url())
 
 
-class RestartStuckRegistrationsView(StuckRegistrationsView):
+class NodeMakePublic(NodeMixin, View):
+    """ Allows an authorized user to manually make a public node private.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        try:
+            node.set_privacy('public')
+        except NodeStateError as e:
+            messages.error(request, str(e))
+        return redirect(self.get_success_url())
+
+
+class RestartStuckRegistrationsView(NodeMixin, TemplateView):
+    """ Allows an authorized user to restart a registrations archive process.
+    """
     template_name = 'nodes/restart_registrations_modal.html'
+    permission_required = ('osf.view_node', 'osf.change_node')
 
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
@@ -604,18 +627,20 @@ class RestartStuckRegistrationsView(StuckRegistrationsView):
                 archive(stuck_reg)
                 messages.success(request, 'Registration archive processes has restarted')
             except Exception as exc:
-                messages.error(request, 'This registration cannot be unstuck due to {} '
-                                        'if the problem persists get a developer to fix it.'.format(exc.__class__.__name__))
-
+                messages.error(request, f'This registration cannot be unstuck due to {exc.__class__.__name__} '
+                                        f'if the problem persists get a developer to fix it.')
         else:
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')
 
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())
 
 
-class RemoveStuckRegistrationsView(StuckRegistrationsView):
+class RemoveStuckRegistrationsView(NodeMixin, TemplateView):
+    """ Allows an authorized user to remove a registrations if it's stuck in the archiving process.
+    """
     template_name = 'nodes/remove_registrations_modal.html'
+    permission_required = ('osf.view_node', 'osf.change_node')
 
     def post(self, request, *args, **kwargs):
         stuck_reg = self.get_object()
@@ -626,4 +651,4 @@ class RemoveStuckRegistrationsView(StuckRegistrationsView):
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')
 
-        return redirect(reverse_node(self.kwargs.get('guid')))
+        return redirect(self.get_success_url())

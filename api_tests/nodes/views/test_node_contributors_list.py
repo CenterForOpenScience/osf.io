@@ -596,7 +596,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blocked.'
 
     def test_contributor_create_invalid_data(
             self, app, user_three, url_public):

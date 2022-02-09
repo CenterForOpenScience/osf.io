@@ -142,9 +142,9 @@ class PreprintProviderError(PreprintError):
     pass
 
 
-class BlacklistedEmailError(OSFError):
+class BlockedEmailError(OSFError):
     """Raised if a user tries to register an email that is included
-    in the blacklisted domains list
+    in the blocked domains list
     """
     pass
 
@@ -154,3 +154,72 @@ class SchemaBlockConversionError(OSFError):
     'schema block' format.
     """
     pass
+
+
+class SchemaResponseError(OSFError):
+    """Superclass for errors ariseing from unexpected SchemaResponse behavior."""
+    pass
+
+
+class SchemaResponseStateError(SchemaResponseError):
+    """Raised when attempting to perform an operation against a
+    SchemaResponse with an invalid state.
+    """
+    pass
+
+
+class PreviousSchemaResponseError(SchemaResponseError):
+    """Raised when attempting to create a new SchemaResponse for a parent that
+    already has a SchemaResponse in an unsupported state
+    """
+    pass
+
+
+class RegistrationBulkCreationContributorError(OSFError):
+    """Raised if contributor preparation has failed"""
+
+    def __init__(self, error=None):
+        self.error = error if error else 'Contributor preparation error'
+
+
+class RegistrationBulkCreationRowError(OSFError):
+    """Raised if a draft registration failed creation during bulk upload"""
+
+    def __init__(self, upload_id, row_id, title, external_id, draft_id=None, error=None, approval_failure=False):
+
+        # `draft_id` is provided when the draft is created but not related to the row object
+        self.draft_id = draft_id
+        # `approval_failure` determines whether the error happens during the approval process
+        self.approval_failure = approval_failure
+        # The error information for logging, sentry and email
+        self.error = error if error else 'Draft registration creation error'
+        # The short error message to be added to the error list that will be returned to the initiator via email
+        self.short_message = 'Title: {}, External ID: {}, Error: {}'.format(title, external_id, self.error)
+        # The long error message for logging and sentry
+        self.long_message = 'Draft registration creation failed: [upload_id="{}", row_id="{}", title="{}", ' \
+                            'external_id="{}", error="{}"]'.format(upload_id, row_id, title, external_id, self.error)
+
+
+class SchemaResponseUpdateError(SchemaResponseError):
+    """Raised when assigning an invalid value (or key) to a SchemaResponseBlock."""
+
+    def __init__(self, response, invalid_responses=None, unsupported_keys=None):
+        self.invalid_responses = invalid_responses
+        self.unsupported_keys = unsupported_keys
+
+        invalid_response_message = ''
+        unsupported_keys_message = ''
+        if invalid_responses:
+            invalid_response_message = (
+                f'\nThe following responses had invalid values: {invalid_responses}'
+            )
+        if unsupported_keys:
+            unsupported_keys_message = (
+                f'\nReceived the following resposnes had invalid keys: {unsupported_keys}'
+            )
+        error_message = (
+            f'Error update SchemaResponse with id [{response._id}]:'
+            f'{invalid_response_message}{unsupported_keys_message}'
+        )
+
+        super().__init__(error_message)

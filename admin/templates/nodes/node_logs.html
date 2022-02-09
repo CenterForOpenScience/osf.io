@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}
-    <title>Node Logs</title>
+    <title>Logs</title>
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
@@ -21,7 +21,7 @@
                 </th>
             </thead>
             <tbody>
-            {% for log, params in logs %}
+            {% for log in logs %}
                 <tr>
                     <td>
                         {{ log.date }}
@@ -33,7 +33,7 @@
                         {{ log.user }}
                     </td>
                     <td>
-                        {% for key, value in params %}
+                        {% for key, value in logs.params %}
                             <div>
                                 <span><b>{{ key }}</b></span> : <span>{{ value }}</span>
                             </div>

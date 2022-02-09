@@ -2,6 +2,27 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.01.0 (2022-2-02)
+====================
+- Improve Admin App functionality
+- Improve MyProject Page performance
+- Other assorted bugfixes
+
+21.09.0 (2021-12-21)
+====================
+- Bulk Upload follow-ups, fixes, and improvements
+
+21.08.0 (2021-11-30)
+====================
+- Remaining work in support of Registrion Versioning/Updating
+
+21.07.0 (2021-10-04)
+====================
+- Add support for Registry Admins to bulk upload
+- Add models suppoorting Registration Versioning
+- Normalize default institutional affiliation for drafts
+- Fix bugs with spam training
+
 21.06.0 (2021-7-19)
 ====================
 - Add support to deactivate institutions

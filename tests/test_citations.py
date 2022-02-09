@@ -141,7 +141,7 @@ class CitationsUserTestCase(OsfTestCase):
         # Tests the csl name for a disabled user
         user = UserFactory()
         project = NodeFactory(creator=user)
-        user.disable_account()
+        user.deactivate_account()
         user.is_registered = False
         user.save()
         assert bool(
