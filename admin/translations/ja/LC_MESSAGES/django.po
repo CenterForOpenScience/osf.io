@@ -1,4 +1,4 @@
-># Japanese translations for .
+# Japanese translations for .
 # Copyright (C) 2020 ORGANIZATION
 # This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
@@ -214,6 +214,7 @@ msgstr "バナーをスケジュールする"
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:59
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:115
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
@@ -1743,6 +1744,7 @@ msgstr "ありませんか？：%(guid)s"
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:57
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:113
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
@@ -2375,6 +2377,7 @@ msgstr "その後、Box認証ページにリダイレクトされます。"
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:31
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:60
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:27
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:27
 msgid "Get OAuth permission"
 msgstr "OAuthアクセス許可を取得する"
 
@@ -2382,11 +2385,13 @@ msgstr "OAuthアクセス許可を取得する"
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:43
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:72
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:31
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:31
 msgid "Authorized by:"
 msgstr "承認者："
 
 #: admin/templates/rdm_custom_storage_location/providers/box_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:37
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:37
 msgid "Current token:"
 msgstr "現在のトークン："
 
@@ -2394,6 +2399,7 @@ msgstr "現在のトークン："
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:28
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:31
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:26
 msgid "Folder"
 msgstr "フォルダ"
@@ -2407,6 +2413,7 @@ msgstr "フォルダID(例：ルートの場合は0)"
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:58
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:114
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:41
@@ -2553,6 +2560,22 @@ msgstr "ファイルを選択"
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:94
 msgid "Example of User Mapping file"
 msgstr "ユーザ対応表ファイルの例"
+
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:8
+msgid "Connect a OneDrive Account"
+msgstr "OneDriveアカウントに接続"
+
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:14
+msgid "Please click \"Get OAuth Permission\" button to connect OneDrive."
+msgstr "[OAuthアクセス許可を取得する]ボタンをクリックして、OneDriveに接続してください。"
+
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:16
+msgid "Then you will be redirected to Microsoft authentication page."
+msgstr "その後、Microsoft認証ページにリダイレクトされます。"
+
+#: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:44
+msgid "Folder ID (Ex: root) or Folder Path (Ex: /child/directory/)"
+msgstr "フォルダID (例: root) またはOneDriveのフォルダパス (例: /child/directory/)"
 
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:8
 msgid "Connect NII Storage"

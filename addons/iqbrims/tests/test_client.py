@@ -133,9 +133,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A4:H4',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '']],
+                  'range': 'sheet01!A4:I4',
+                  'values': [['file1.txt', '', '.txt', '', '', '.txt', '', ''],
+                             ['file2.txt', '', '.txt', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
@@ -146,7 +146,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'protectedRange': {
                       'range': {
                         'endRowIndex': 1,
-                        'endColumnIndex': 7,
+                        'endColumnIndex': 8,
                         'sheetId': 1,
                         'startColumnIndex': 0,
                         'startRowIndex': 0
@@ -160,7 +160,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'protectedRange': {
                       'range': {
                         'endRowIndex': 1 + 3,
-                        'endColumnIndex': 7,
+                        'endColumnIndex': 8,
                         'sheetId': 1,
                         'startColumnIndex': 0,
                         'startRowIndex': 0 + 3
@@ -174,7 +174,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'protectedRange': {
                       'range': {
                         'endRowIndex': 3 + 3,
-                        'endColumnIndex': 2,
+                        'endColumnIndex': 3,
                         'sheetId': 1,
                         'startColumnIndex': 0,
                         'startRowIndex': 1 + 3
@@ -188,9 +188,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                     'protectedRange': {
                       'range': {
                         'endRowIndex': 3 + 3,
-                        'endColumnIndex': 5,
+                        'endColumnIndex': 6,
                         'sheetId': 1,
-                        'startColumnIndex': 4,
+                        'startColumnIndex': 5,
                         'startRowIndex': 1 + 3
                       },
                       'warningOnly': True
@@ -225,26 +225,26 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
-                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:J4')
                 assert_equal(len(json.loads(kwargs['data'])['values']), 4)
                 assert_equal(json.loads(kwargs['data'])['values'][0],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                             ['file1.txt', '', '', '.txt', '', '', '.txt', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][1],
-                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                             ['file2.txt', '', '', '.txt', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][2],
-                             [u'\u2514\u2212\u2212', 'test', '', '', '', '', '', ''])
+                             ['test', '', '', '-', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][3],
-                             [u'', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file3.txt', '', '.txt', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 6);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -258,7 +258,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1 + 3,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0 + 3
@@ -272,7 +272,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 5 + 3,
-                          'endColumnIndex': 3,
+                          'endColumnIndex': 4,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 1 + 3
@@ -286,9 +286,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 5 + 3,
-                          'endColumnIndex': 6,
+                          'endColumnIndex': 7,
                           'sheetId': 1,
-                          'startColumnIndex': 5,
+                          'startColumnIndex': 6,
                           'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
@@ -303,6 +303,26 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 3,
                     }
+                  }
+                })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 
@@ -323,30 +343,30 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
-                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:I4')
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:J4')
                 assert_equal(len(json.loads(kwargs['data'])['values']), 6)
                 assert_equal(json.loads(kwargs['data'])['values'][0],
-                             [u'\u251c\u2212\u2212', 'file1.txt', '', '', '', '.txt', '', ''])
+                             ['file1.txt', '', '', '.txt', '', '', '.txt', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][1],
-                             [u'\u251c\u2212\u2212', 'file2.txt', '', '', '', '', '', ''])
+                             ['file2.txt', '', '', '.txt', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][2],
-                             [u'\u251c\u2212\u2212', 'test1', '', '', '', '', '', ''])
+                             ['test1', '', '', '-', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][3],
-                             [u'\u2502', u'\u2514\u2212\u2212', 'file3.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file3.txt', '', '.txt', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][4],
-                             [u'\u2514\u2212\u2212', 'test2', '', '', '', '', '', ''])
+                             ['test2', '', '', '-', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['values'][5],
-                             [u'', u'\u2514\u2212\u2212', 'file4.txt', '', '', '', '', ''])
+                             [u'\u2514\u2212\u2212', 'file4.txt', '', '.txt', '', '', '', '', ''])
                 assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 7);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -360,7 +380,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1 + 3,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0 + 3
@@ -374,7 +394,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 7 + 3,
-                          'endColumnIndex': 3,
+                          'endColumnIndex': 4,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 1 + 3
@@ -388,9 +408,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 7 + 3,
-                          'endColumnIndex': 6,
+                          'endColumnIndex': 7,
                           'sheetId': 1,
-                          'startColumnIndex': 5,
+                          'startColumnIndex': 6,
                           'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
@@ -405,6 +425,46 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 3,
                     }
+                  }
+                })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                assert_equal(requests[6], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 5 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 5 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 
@@ -427,22 +487,22 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A4:I4',
-                  'values': [[u'\u251c\u2212\u2212', u'ファイル1.txt', '', '', '', '.txt', '', ''],
-                             [u'\u251c\u2212\u2212', u'ファイル2.txt', '', '', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', u'テスト', '', '', '', '', '', ''],
-                             [u'', u'\u2514\u2212\u2212', u'ファイル3.txt', '', '', '', '', '']],
+                  'range': 'sheet01!A4:J4',
+                  'values': [[u'ファイル1.txt', '', '', '.txt', '', '', '.txt', '', ''],
+                             [u'ファイル2.txt', '', '', '.txt', '', '', '', '', ''],
+                             [u'テスト', '', '', '-', '', '', '', '', ''],
+                             [u'\u2514\u2212\u2212', u'ファイル3.txt', '', '.txt', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
                 requests = json.loads(kwargs['data'])['requests']
-                assert_equal(len(requests), 5);
+                assert_equal(len(requests), 6);
                 assert_equal(requests[0], {
                     'addProtectedRange': {
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -456,7 +516,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1 + 3,
-                          'endColumnIndex': 8,
+                          'endColumnIndex': 9,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0 + 3
@@ -470,7 +530,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 5 + 3,
-                          'endColumnIndex': 3,
+                          'endColumnIndex': 4,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 1 + 3
@@ -484,9 +544,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 5 + 3,
-                          'endColumnIndex': 6,
+                          'endColumnIndex': 7,
                           'sheetId': 1,
-                          'startColumnIndex': 5,
+                          'startColumnIndex': 6,
                           'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
@@ -501,6 +561,26 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'startIndex': 1,
                       'endIndex': 3,
                     }
+                  }
+                })
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 3 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 3 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
                   }
                 })
 
@@ -522,9 +602,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                 })
                 name, args, kwargs = mkreq.mock_calls[1]
                 assert_equal(json.loads(kwargs['data']), {
-                  'range': 'sheet01!A4:J4',
-                  'values': [[u'\u251c\u2212\u2212', 'file1.txt', '', '', '.txt', '', '', '', ''],
-                             [u'\u2514\u2212\u2212', 'file2.txt', '', '', '', '', '', '', '']],
+                  'range': 'sheet01!A4:K4',
+                  'values': [['file1.txt', '', '.txt', '', '', '.txt', '', '', '', ''],
+                             ['file2.txt', '', '.txt', '', '', '', '', '', '', '']],
                   'majorDimension': 'ROWS'
                 })
                 name, args, kwargs = mkreq.mock_calls[2]
@@ -535,7 +615,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1,
-                          'endColumnIndex': 7,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0
@@ -549,7 +629,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 1 + 3,
-                          'endColumnIndex': 7,
+                          'endColumnIndex': 8,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 0 + 3
@@ -563,7 +643,7 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 3 + 3,
-                          'endColumnIndex': 2,
+                          'endColumnIndex': 3,
                           'sheetId': 1,
                           'startColumnIndex': 0,
                           'startRowIndex': 1 + 3
@@ -577,9 +657,9 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'protectedRange': {
                         'range': {
                           'endRowIndex': 3 + 3,
-                          'endColumnIndex': 5,
+                          'endColumnIndex': 6,
                           'sheetId': 1,
-                          'startColumnIndex': 4,
+                          'startColumnIndex': 5,
                           'startRowIndex': 1 + 3
                         },
                         'warningOnly': True
@@ -601,8 +681,8 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'range': {
                         'sheetId': 1,
                         'dimension': 'COLUMNS',
-                        'startIndex': 7,
-                        'endIndex': 8,
+                        'startIndex': 8,
+                        'endIndex': 9,
                       },
                       'properties': {
                         'hiddenByUser': True,
@@ -615,14 +695,421 @@ class TestIQBRIMSSpreadsheetClient(OsfTestCase):
                       'range': {
                         'sheetId': 1,
                         'dimension': 'COLUMNS',
-                        'startIndex': 8,
-                        'endIndex': 9,
+                        'startIndex': 9,
+                        'endIndex': 10,
                       },
                       'properties': {
                         'hiddenByUser': True,
                       },
                       'fields': 'hiddenByUser',
                     }
+                })
+
+    def test_add_files_with_complex_dirs(self):
+        client = SpreadsheetClient('0001')
+        with mock.patch.object(client, 'ensure_columns',
+                               side_effect=lambda sid, cols, row: cols):
+            with mock.patch.object(client, '_make_request',
+                                   return_value=MockResponse('{"test": true}',
+                                                             200)) as mkreq:
+                client.add_files('sheet01', 1, 'sheet02', 2,
+                                 ['Data_2022_Sample/manuscript.tex',
+                                  'Data_2022_Sample/suppl.tex',
+                                  'Data_2022_Sample/Fig1/Sample.key',
+                                  'Data_2022_Sample/Fig1/B/processed/SampleB.png',
+                                  'Data_2022_Sample/Fig1/B/raw/Sample01.csv',
+                                  'Data_2022_Sample/Fig1/B/raw/Sample02.csv',
+                                  'Data_2022_Sample/Fig2/Sample.key',
+                                  'Data_2022_Sample/Fig2/A/processed/SampleA.png',
+                                  'Data_2022_Sample/Fig2/A/processed/SampleA.txt',
+                                  'Data_2022_Sample/Fig2/A/raw/Sample03.csv',
+                                  'Data_2022_Sample/Fig2/A/raw/Sample04.csv',
+                                  'Data_2022_Sample/Fig2/C/processed/SampleC.png',
+                                  'Data_2022_Sample/Fig2/C/processed/SampleC.txt',
+                                  'Data_2022_Sample/Fig2/C/raw/Sample05.csv'])
+                assert_equal(len(mkreq.mock_calls), 3)
+                name, args, kwargs = mkreq.mock_calls[0]
+                assert_equal(json.loads(kwargs['data']), {
+                  'range': 'sheet02!A2:C2',
+                  'values': [['FALSE']],
+                  'majorDimension': 'ROWS'
+                })
+                name, args, kwargs = mkreq.mock_calls[1]
+                assert_equal(json.loads(kwargs['data'])['range'], 'sheet01!A4:M4')
+                assert_equal(len(json.loads(kwargs['data'])['values']), 26)
+                assert_equal(json.loads(kwargs['data'])['values'][0],
+                             ['Data_2022_Sample', '', '', '', '', '', '-', '', '', '.csv', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][1],
+                             ['├−−', 'manuscript.tex', '', '', '', '', '.tex', '', '', '.key', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][2],
+                             ['├−−', 'suppl.tex', '', '', '', '', '.tex', '', '', '.png', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][3],
+                             ['├−−', 'Fig1', '', '', '', '', '-', '', '', '.tex', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][4],
+                             ['│', '├−−', 'Sample.key', '', '', '', '.key', '', '', '.txt', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][5],
+                             ['│', '└−−', 'B', '', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][6],
+                             ['│', '', '├−−', 'processed', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][7],
+                             ['│', '', '│', '└−−', 'SampleB.png', '', '.png', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][8],
+                             ['│', '', '└−−', 'raw', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][9],
+                             ['│', '', '', '├−−', 'Sample01.csv', '', '.csv', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][10],
+                             ['│', '', '', '└−−', 'Sample02.csv', '', '.csv', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][11],
+                             ['└−−', 'Fig2', '', '', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][12],
+                             ['', '├−−', 'Sample.key', '', '', '', '.key', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][13],
+                             ['', '├−−', 'A', '', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][14],
+                             ['', '│', '├−−', 'processed', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][15],
+                             ['', '│', '│', '├−−', 'SampleA.png', '', '.png', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][16],
+                             ['', '│', '│', '└−−', 'SampleA.txt', '', '.txt', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][17],
+                             ['', '│', '└−−', 'raw', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][18],
+                             ['', '│', '', '├−−', 'Sample03.csv', '', '.csv', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][19],
+                             ['', '│', '', '└−−', 'Sample04.csv', '', '.csv', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][20],
+                             ['', '└−−', 'C', '', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][21],
+                             ['', '', '├−−', 'processed', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][22],
+                             ['', '', '│', '├−−', 'SampleC.png', '', '.png', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][23],
+                             ['', '', '│', '└−−', 'SampleC.txt', '', '.txt', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][24],
+                             ['', '', '└−−', 'raw', '', '', '-', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['values'][25],
+                             ['', '', '', '└−−', 'Sample05.csv', '', '.csv', '', '', '', '', ''])
+                assert_equal(json.loads(kwargs['data'])['majorDimension'], 'ROWS')
+                name, args, kwargs = mkreq.mock_calls[2]
+                requests = json.loads(kwargs['data'])['requests']
+                assert_equal(len(requests), 5 + 12);
+                assert_equal(requests[0], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1,
+                          'endColumnIndex': 12,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[1], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 1 + 3,
+                          'endColumnIndex': 12,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 0 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[2], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 27 + 3,
+                          'endColumnIndex': 7,
+                          'sheetId': 1,
+                          'startColumnIndex': 0,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[3], {
+                    'addProtectedRange': {
+                      'protectedRange': {
+                        'range': {
+                          'endRowIndex': 27 + 3,
+                          'endColumnIndex': 10,
+                          'sheetId': 1,
+                          'startColumnIndex': 9,
+                          'startRowIndex': 1 + 3
+                        },
+                        'warningOnly': True
+                      }
+                    }
+                })
+                assert_equal(requests[4], {
+                  'autoResizeDimensions': {
+                    'dimensions': {
+                      'sheetId': 1,
+                      'dimension': 'COLUMNS',
+                      'startIndex': 1,
+                      'endIndex': 6,
+                    }
+                  }
+                })
+                # Data_2022_Sample
+                assert_equal(requests[5], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 1 + 3 + 1,
+                      'endColumnIndex': 1,
+                      'sheetId': 1,
+                      'startColumnIndex': 0,
+                      'startRowIndex': 1 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # Fig1
+                assert_equal(requests[6], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 4 + 3 + 1,
+                      'endColumnIndex': 2,
+                      'sheetId': 1,
+                      'startColumnIndex': 1,
+                      'startRowIndex': 4 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # B
+                assert_equal(requests[7], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 6 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 6 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[8], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 7 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 7 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[9], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 9 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 9 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # Fig2
+                assert_equal(requests[10], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 12 + 3 + 1,
+                      'endColumnIndex': 2,
+                      'sheetId': 1,
+                      'startColumnIndex': 1,
+                      'startRowIndex': 12 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # A
+                assert_equal(requests[11], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 14 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 14 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[12], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 15 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 15 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[13], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 18 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 18 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # C
+                assert_equal(requests[14], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 21 + 3 + 1,
+                      'endColumnIndex': 3,
+                      'sheetId': 1,
+                      'startColumnIndex': 2,
+                      'startRowIndex': 21 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # processed
+                assert_equal(requests[15], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 22 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 22 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
+                })
+                # raw
+                assert_equal(requests[16], {
+                  'repeatCell': {
+                    'range': {
+                      'endRowIndex': 25 + 3 + 1,
+                      'endColumnIndex': 4,
+                      'sheetId': 1,
+                      'startColumnIndex': 3,
+                      'startRowIndex': 25 + 3,
+                    },
+                    'cell': {
+                      'userEnteredFormat': {
+                        'textFormat': {
+                          'bold': True,
+                          'italic': True,
+                        },
+                      },
+                    },
+                    'fields': 'userEnteredFormat.textFormat',
+                  }
                 })
 
 class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
@@ -714,6 +1201,40 @@ class TestIQBRIMSWorkflowUserSettings(OsfTestCase):
 
         client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
         assert_equal(client.LABO_LIST, [{'text': u"No text: {'id': 'xxx', 'tet': 'XXX'}", 'id': 'error'}])
+
+    @mock.patch.object(IQBRIMSClient, 'files')
+    @mock.patch.object(IQBRIMSClient, 'create_spreadsheet')
+    @mock.patch.object(SpreadsheetClient, 'sheets')
+    @mock.patch.object(SpreadsheetClient, 'ensure_columns')
+    @mock.patch.object(SpreadsheetClient, 'get_row_values')
+    def test_load_messages(self, mock_get_row_values, mock_ensure_columns,
+                            mock_sheets, mock_create_spreadsheet, mock_files):
+        mock_files.return_value = []
+        mock_create_spreadsheet.return_value = {'id': 'test_spreadsheet'}
+        gp = {'rowCount': 1}
+        mock_sheets.return_value = [
+          {'properties': {'title': settings.USER_SETTINGS_SHEET_SHEET_NAME,
+                          'gridProperties': gp}}
+        ]
+        mock_ensure_columns.side_effect = lambda sid, cols: cols
+        keys = ['MESSAGES', 'MESSAGES.0']
+        values = ['{"msg1": {"data": "MESSAGE1"}}', '{"msg2": {"data": "MESSAGE2"}}']
+        mock_get_row_values.side_effect = lambda sid, col, rcount: keys if col == 0 else values
+        if 'loadedTime' in _user_settings_cache:
+            del _user_settings_cache['loadedTime']
+
+        client = IQBRIMSWorkflowUserSettings('0001', 'test_folder')
+        assert_equal(client.MESSAGES, {
+            'msg1': {'data': 'MESSAGE1'},
+            'msg2': {'data': 'MESSAGE2'},
+        })
+        assert_equal(client.FLOWABLE_HOST, settings.FLOWABLE_HOST)
+        assert_equal(client.FLOWABLE_USER, settings.FLOWABLE_USER)
+        assert_equal(client.FLOWABLE_PASSWORD, settings.FLOWABLE_PASSWORD)
+        assert_equal(client.FLOWABLE_RESEARCH_APP_ID, settings.FLOWABLE_RESEARCH_APP_ID)
+        assert_equal(client.FLOWABLE_SCAN_APP_ID, settings.FLOWABLE_SCAN_APP_ID)
+
+        assert_equal(len(mock_sheets.mock_calls), 1)
 
 
 class TestIQBRIMSFlowableClient(OsfTestCase):

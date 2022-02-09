@@ -307,6 +307,13 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 institution,
                 storage_name,
                 provider_short_name)
+        elif provider_short_name == 'onedrivebusiness':
+            result = utils.save_onedrivebusiness_credentials(
+                request.user,
+                storage_name,
+                provider_short_name,
+                data.get('onedrivebusiness_folder'),
+            )
         else:
             result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
         status = result[1]

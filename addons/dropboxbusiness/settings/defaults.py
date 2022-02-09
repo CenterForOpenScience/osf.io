@@ -26,7 +26,7 @@ PROPERTY_SPLIT_DATA_CONF = {
 }
 
 # Max file size permitted by frontend in megabytes
-MAX_UPLOAD_SIZE = 150
+MAX_UPLOAD_SIZE = 5 * 1024
 
 EPPN_TO_EMAIL_MAP = {
     # e.g.
