@@ -536,5 +536,5 @@ SCHEMA_RESPONSE_REJECTED = Mail(
 
 QUICKFILES_MIGRATED = Mail(
     'quickfiles_migrated',
-    subject='The updates for ${resource_type} ${title} were not accepted'
+    subject='Your Quickfiles have been changed.'
 )

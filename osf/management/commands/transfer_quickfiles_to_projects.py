@@ -12,7 +12,7 @@ from osf.models import (
 from osf.models.quickfiles import get_quickfiles_project_title
 
 from addons.osfstorage.models import OsfStorageFile
-from website import mails
+from website import mails, settings
 
 logger = logging.getLogger(__name__)
 QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files were migrated into this Project on March' \
@@ -30,17 +30,16 @@ def remove_quickfiles(dry_run=False):
     )
     quick_files_nodes = QuickFilesNode.objects.filter(id__in=quick_files_node_with_files_ids)
 
+    node_logs = [
+        NodeLog(
+            node=quick_files_node,
+            user=quick_files_node.creator,
+            original_node=quick_files_node,
+            action=NodeLog.MIGRATED_QUICK_FILES
+        ) for quick_files_node in quick_files_nodes
+    ]
     if not dry_run:
-        NodeLog.objects.bulk_create(
-            [
-                NodeLog(
-                    node=quick_files_node,
-                    user=quick_files_node.creator,
-                    original_node=quick_files_node,
-                    action=NodeLog.MIGRATED_QUICK_FILES
-                ) for quick_files_node in quick_files_nodes
-            ]
-        )
+        NodeLog.objects.bulk_create(node_logs)
 
     logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
 
@@ -57,11 +56,15 @@ def remove_quickfiles(dry_run=False):
             cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
         logger.info('`one_quickfiles_per_user` constraint dropped.')
 
-        for node in quick_files_nodes:
+    for log in node_logs:
+        node = log.node
+        if not dry_run:
             mails.send_mail(
                 to_addr=node.creator.email,
-                user=node.creator,
                 mail=mails.QUICKFILES_MIGRATED,
+                user=node.creator,
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
             )
 
 
