@@ -20,10 +20,14 @@
     "raven": "^0.7.2",
     "simple-statistics": "2.0.0-beta1",
     "urijs": "^1.14.1",
-    "webpack": "3.8.1",
+    "webpack": "3.12.0",
+    "css-loader": "^1.0.0",
     "webpack-bundle-tracker": "0.0.8"
   },
   "scripts": {
     "webpack-prod": "webpack --config webpack.prod.config.js"
+  },
+  "resolutions": {
+    "css-loader": "^1.0.0"
   }
 }

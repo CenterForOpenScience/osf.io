@@ -238,8 +238,7 @@ MIDDLEWARE = (
     # 'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    # 'waffle.middleware.WaffleMiddleware',
-    'api.base.middleware.SloanOverrideWaffleMiddleware',  # Delete this and uncomment WaffleMiddleware to revert Sloan
+    'waffle.middleware.WaffleMiddleware',
 )
 
 TEMPLATES = [
@@ -345,8 +344,6 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     },
 }
-
-SLOAN_ID_COOKIE_NAME = 'sloan_id'
 
 EGAP_PROVIDER_NAME = 'EGAP'
 

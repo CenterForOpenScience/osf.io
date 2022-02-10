@@ -32,9 +32,6 @@ flags = {
     'EMBER_USER_SETTINGS_APPS': 'ember_user_settings_apps_page',
     'EMBER_USER_SETTINGS_NOTIFICATIONS': 'ember_user_settings_notifications_page',
     'EMBER_USER_SETTINGS_TOKENS': 'ember_user_settings_tokens_page',
-    'SLOAN_COI_DISPLAY': 'sloan_coi_display',
-    'SLOAN_DATA_DISPLAY': 'sloan_data_display',
-    'SLOAN_PREREG_DISPLAY': 'sloan_prereg_display',
 }
 
 switches = {
@@ -43,9 +40,6 @@ switches = {
     'DISABLE_ENGAGEMENT_EMAILS': 'disable_engagement_emails',
     'ELASTICSEARCH_METRICS': 'elasticsearch_metrics',
     'ENFORCE_CSRF': 'enforce_csrf',
-    'SLOAN_COI_INPUT': 'sloan_coi_input',
-    'SLOAN_DATA_INPUT': 'sloan_data_input',
-    'SLOAN_PREREG_INPUT': 'sloan_prereg_input',
     'ENABLE_RAW_METRICS': 'enable_raw_metrics',
 }
 

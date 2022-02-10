@@ -311,6 +311,7 @@ div[data-growl="container"] {
     border-bottom-right-radius: 5px;
     border-top-right-radius: 5px;
 }
+
 .line-loader > .load-message {
     float: right;
     background: rgba(255, 255, 255, 0.66);

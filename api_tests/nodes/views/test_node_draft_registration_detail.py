@@ -1,9 +1,6 @@
-import binascii
-import hashlib
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from django.contrib.auth.models import Permission
 
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
@@ -13,7 +10,6 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
-from rest_framework import exceptions
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 
 SCHEMA_VERSION = 2
@@ -159,16 +155,16 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         )
 
     @pytest.fixture()
-    def schema_prereg(self):
+    def reg_schema(self):
         return RegistrationSchema.objects.get(
-            name='Prereg Challenge',
+            name='OSF Preregistration',
             schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
-    def draft_registration_prereg(self, user, project_public, schema_prereg):
+    def draft_registration_prereg(self, user, project_public, reg_schema):
         return DraftRegistrationFactory(
             initiator=user,
-            registration_schema=schema_prereg,
+            registration_schema=reg_schema,
             branched_from=project_public
         )
 
@@ -396,11 +392,11 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     def test_cannot_update_registration_schema(
             self, app, user, schema, payload,
-            schema_prereg, url_draft_registrations):
+            reg_schema, url_draft_registrations):
         payload['data']['relationships'] = {
             'registration_schema': {
                 'data': {
-                    'id': schema_prereg._id,
+                    'id': reg_schema._id,
                     'type': 'registration_schema'
                 }
             }
@@ -548,16 +544,16 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
         )
 
     @pytest.fixture()
-    def schema_prereg(self):
+    def reg_schema(self):
         return RegistrationSchema.objects.get(
-            name='Prereg Challenge',
+            name='OSF Preregistration',
             schema_version=SCHEMA_VERSION)
 
     @pytest.fixture()
-    def draft_registration_prereg(self, user, project_public, schema_prereg):
+    def draft_registration_prereg(self, user, project_public, reg_schema):
         return DraftRegistrationFactory(
             initiator=user,
-            registration_schema=schema_prereg,
+            registration_schema=reg_schema,
             branched_from=project_public
         )
 
@@ -723,271 +719,3 @@ class TestDraftRegistrationDelete(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been registered and cannot be modified.'
-
-    def test_reviewer_cannot_delete_draft_registration(
-            self, app, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-
-        res = app.delete_json_api(
-            url_draft_registrations,
-            auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
-
-
-@pytest.mark.django_db
-class TestDraftPreregChallengeRegistrationMetadataValidation(
-        DraftRegistrationTestCase):
-
-    @pytest.fixture()
-    def schema_prereg(self):
-        return RegistrationSchema.objects.get(
-            name='Prereg Challenge',
-            schema_version=SCHEMA_VERSION)
-
-    @pytest.fixture()
-    def draft_registration_prereg(self, user, project_public, schema_prereg):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema_prereg,
-            branched_from=project_public
-        )
-
-    @pytest.fixture()
-    def project_other(self, user):
-        return ProjectFactory(creator=user)
-
-    @pytest.fixture()
-    def url_draft_registrations(
-            self, project_public,
-            draft_registration_prereg):
-        return '/{}nodes/{}/draft_registrations/{}/?{}'.format(
-            API_BASE, project_public._id, draft_registration_prereg._id, 'version=2.19')
-
-    @pytest.fixture()
-    def payload(self, draft_registration_prereg):
-        return {
-            'data': {
-                'id': draft_registration_prereg._id,
-                'type': 'draft_registrations',
-                'attributes': {
-                    'registration_metadata': {}
-                }
-            }
-        }
-
-    def test_first_level_open_ended_answers(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q1'] = {
-            'value': 'This is my answer.'
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == 'This is my answer.'
-
-    def test_first_level_open_ended_answer_must_have_correct_key(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q1'] = {
-            'values': 'This is my answer.'
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'For your registration your response to the \'Title\' field is invalid.'
-
-    def test_first_level_open_ended_answer_must_be_of_correct_type(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q1'] = {
-            'value': 12345
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
-
-    def test_first_level_open_ended_answer_not_expecting_more_nested_data(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q1'] = {
-            'value': {
-                'question': {
-                    'value': 'This is my answer.'
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Title\' field is invalid.'
-
-    def test_second_level_answers(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'question': {
-                    'value': 'This is my answer.'
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q7']['value']['question']['value'] == 'This is my answer.'
-
-    def test_second_level_open_ended_answer_must_have_correct_key(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'questions': {
-                    'value': 'This is my answer.'
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
-
-    def test_third_level_open_ended_answer_must_have_correct_key(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'question': {
-                    'values': 'This is my answer.'
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == \
-               'For your registration your response to the \'Data collection procedures\' field is invalid.'
-
-    def test_second_level_open_ended_answer_must_have_correct_type(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'question': 'This is my answer'
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
-                                                  ' field is invalid.'
-
-    def test_third_level_open_ended_answer_must_have_correct_type(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'question': {
-                    'value': True
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Data collection procedures\'' \
-                                                  ' field is invalid.'
-
-    def test_uploader_metadata(
-            self, app, user, project_public,
-            draft_registration_prereg,
-            payload, url_draft_registrations):
-        sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'uploader': {
-                    'value': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                    'extra': [{
-                        'data': {},
-                        'nodeId': project_public._id,
-                        'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
-                        'selectedFileName': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256).decode()
-                    }]
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q7']['value'][
-            'uploader']['value'] == 'Screen Shot 2016-03-30 at 7.02.05 PM.png'
-
-    def test_uploader_metadata_incorrect_key(
-            self, app, user, project_public,
-            draft_registration_prereg,
-            payload, url_draft_registrations):
-        sha256 = hashlib.pbkdf2_hmac('sha256', b'password', b'salt', 100000)
-        payload['data']['attributes']['registration_metadata']['q7'] = {
-            'value': {
-                'uploader': {
-                    'value': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                    'extra': [{
-                        'data': {},
-                        'nodeId': project_public._id,
-                        'viewUrl': '/project/{}/files/osfstorage/{}'.format(project_public._id, draft_registration_prereg._id),
-                        'selectedFileNames': 'Screen Shot 2016-03-30 at 7.02.05 PM.png',
-                        'sha256': binascii.hexlify(sha256).decode()
-                    }]
-                }
-            }
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0][
-            'detail'] == 'For your registration your response to the \'Data collection procedures\' field is invalid.'
-
-    def test_multiple_choice_questions_incorrect_choice(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q15'] = {
-            'value': ['This is my answer.']
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'For your registration your response to the \'Blinding\' field is invalid, your ' \
-                                                  'response must be one of the provided options.'
-
-    def test_multiple_choice_questions(
-            self, app, user, payload, url_draft_registrations):
-        payload['data']['attributes']['registration_metadata']['q15'] = {
-            'value': ['No blinding is involved in this study.']
-        }
-        res = app.put_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q15']['value'] == ['No blinding is involved in this study.']

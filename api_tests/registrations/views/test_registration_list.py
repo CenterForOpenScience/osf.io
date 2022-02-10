@@ -13,7 +13,7 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema, DraftRegistration
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -27,7 +27,7 @@ from osf_tests.factories import (
     SubjectFactory,
     InstitutionFactory,
 )
-from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
+from osf_tests.test_registrations import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
@@ -1351,29 +1351,6 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been registered and cannot be modified.'
-
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_cannot_register_draft_that_is_pending_review(
-            self, mock_enqueue, app, user, payload, url_registrations):
-        with mock.patch.object(DraftRegistration, 'is_pending_review', mock.PropertyMock(return_value=True)):
-            res = app.post_json_api(
-                url_registrations,
-                payload,
-                auth=user.auth,
-                expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'This draft is pending review and cannot be modified.'
-
-    def test_cannot_register_draft_that_has_already_been_approved(
-            self, app, user, payload, url_registrations):
-        with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
-            res = app.post_json_api(
-                url_registrations,
-                payload,
-                auth=user.auth,
-                expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
 
     def test_cannot_register_draft_that_has_orphan_files(
             self, app, user, payload, draft_registration, url_registrations):

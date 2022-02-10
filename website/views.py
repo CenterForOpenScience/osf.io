@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import furl
 import itertools
 from rest_framework import status as http_status
 import logging
@@ -375,6 +376,11 @@ def redirect_to_home():
 def redirect_to_cos_news(**kwargs):
     # Redirect to COS News page
     return redirect('https://cos.io/news/')
+
+
+def redirect_to_registration_workflow(**kwargs):
+    # Redirect to making new registration
+    return redirect(furl.furl(DOMAIN).add(path='registries/osf/new').url)
 
 
 # Return error for legacy SHARE v1 search route
