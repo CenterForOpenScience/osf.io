@@ -89,6 +89,33 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 
+class LoginAvailability(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    """The documentation TODO
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.INSTITUTION_READ]
+    required_write_scopes = [CoreScopes.NULL]
+    model_class = Institution
+
+    pagination_class = MaxSizePagination
+    serializer_class = InstitutionSerializer
+    view_category = 'institutions'
+    view_name = 'institution-list'
+
+    ordering = ('name', )
+
+    def get_default_queryset(self):
+        return Institution.objects.filter(_id__isnull=False, is_deleted=False)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_detail).
     """

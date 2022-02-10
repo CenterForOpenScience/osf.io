@@ -45,6 +45,7 @@ class InstitutionList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
 
+
 class InstitutionUserList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/institution_list.html'
@@ -222,6 +223,7 @@ class CannotDeleteInstitution(TemplateView):
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
 
+
 class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_institution'
     raise_exception = True
@@ -259,6 +261,7 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})
+
 
 class QuotaUserList(ListView):
     """Base class for UserListByInstitutionID and StatisticalStatusDefaultStorage.
@@ -364,11 +367,11 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
         return self.request.user.affiliated_institutions.first()
 
 
-class InstitutionEntitlements(PermissionRequiredMixin, ListView):
-    """[ONGOING]"""
+class InstitutionEntitlementList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/institution_entitlements.html'
     ordering = 'name'
+    permission_required = 'osf.view_institution'
     raise_exception = True
     model = Institution
 
@@ -382,6 +385,4 @@ class InstitutionEntitlements(PermissionRequiredMixin, ListView):
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
-        return super(InstitutionEntitlements, self).get_context_data(**kwargs)
-
-
+        return super(InstitutionEntitlementList, self).get_context_data(**kwargs)

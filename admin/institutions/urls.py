@@ -5,7 +5,7 @@ app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.InstitutionList.as_view(), name='list'),
-    url(r'^fake/$', views.InstitutionList.as_view(), name='list_fake'),
+    url(r'^institution_entitlements/$', views.InstitutionList.as_view(), name='entitlements'),
     url(r'^institution_list/$', views.InstitutionUserList.as_view(), name='institution_list'),
     url(r'^create/$', views.CreateInstitution.as_view(), name='create'),
     url(r'^import/$', views.ImportInstitution.as_view(), name='import'),
@@ -17,5 +17,4 @@ urlpatterns = [
     url(r'^(?P<institution_id>[0-9]+)/register/$', views.InstitutionalMetricsAdminRegister.as_view(), name='register_metrics_admin'),
     url(r'^user_list_by_institution_id/(?P<institution_id>.*)/$', views.UserListByInstitutionID.as_view(), name='institution_user_list'),
     url(r'^statistical_status_default_storage/$', views.StatisticalStatusDefaultStorage.as_view(), name='statistical_status_default_storage'),
-    url(r'^institution_entitlements/$', views.InstitutionEntitlements.as_view(), name='entitlements'),
 ]
