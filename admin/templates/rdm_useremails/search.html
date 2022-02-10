@@ -9,34 +9,18 @@
 
 <h2>User Search</h2>
 
-<div class="row">
-    <div class="col-sm-12">
-        <form class="form-horizontal" method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="id_{{ form.guid.name }}" class="col-sm-2 control-label">{{ form.guid.label }}</label>
-                <div class="col-sm-10">
-                    {{ form.guid }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="id_{{ form.name.name }}" class="col-sm-2 control-label">{{ form.name.label }}</label>
-                <div class="col-sm-10">
-                    {{ form.name }}
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="id_{{ form.email.name }}" class="col-sm-2 control-label">{{ form.email.label }}</label>
-                <div class="col-sm-10">
-                    {{ form.email }}
-                </div>
-            </div>
-            <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button type="submit" class="btn btn-primary">Submit@search</button>
-                </div>
-            </div>
-        </form>
+<div class="container-fluid">
+    <div class="row">
+        <h3>{% trans "User Search" %}</h3>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <form action="{% url 'useremails:search' %}" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}" />
+            </form>
+        </div>
     </div>
 </div>
 
