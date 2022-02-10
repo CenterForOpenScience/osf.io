@@ -245,8 +245,9 @@ def resolve_guid_download(guid, suffix=None, provider=None):
         resource = resource.primary_file
 
     request.args = request.args.copy()
-    request.args.update({'action': 'download'})
-    # Do not include the `download` suffix in the url rebuild.
+    if 'revision' not in request.args:  # This is to maintain legacy behavior
+        request.args.update({'action': 'download'})
+
     url = _build_guid_url(unquote(resource.deep_url), suffix)
     return proxy_url(url)
 
@@ -259,7 +260,7 @@ def stream_emberapp(server, directory):
 
 
 def resolve_guid(guid, suffix=None):
-    if 'download' == request.args.get('action') or suffix and 'download' == suffix.rstrip('/'):
+    if 'download' == request.args.get('action') or suffix and 'download' == suffix.rstrip('/') or 'revision' in request.args:
         return resolve_guid_download(guid)
 
     try:
