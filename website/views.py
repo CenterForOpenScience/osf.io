@@ -21,9 +21,10 @@ from framework.routing import proxy_url
 from website import settings
 from website.institutions.views import serialize_institution
 
+from addons.osfstorage.models import Region, OsfStorageFile
+
 from osf import features
 from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration
-from addons.osfstorage.models import Region
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -215,24 +216,34 @@ def forgot_password_form():
     return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
 
-# GUID ###
-def _build_guid_url(base, suffix=None):
-    url = '/'.join([
-        each.strip('/') for each in [base, suffix]
-        if each
-    ])
-    if not isinstance(url, str):
-        url = url.decode('utf-8')
-    return u'/{0}/'.format(url)
-
-
-def resolve_guid_download(guid, suffix=None, provider=None):
+def resolve_guid_download(guid, provider=None):
     try:
         guid = Guid.objects.get(_id=guid.lower())
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     resource = guid.referent
+
+    suffix = request.view_args.get('suffix')
+    if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
+        filename = suffix.replace('osfstorage/files/', '').rstrip('/')
+        if '/' in filename:  # legacy behavior
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        try:
+            file_path = resource.files.get(name=filename)._id
+        except OsfStorageFile.DoesNotExist:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        return redirect(
+            resource.web_url_for(
+                'addon_view_or_download_file',
+                path=file_path,
+                action='download',
+                provider='osfstorage',
+            ), code=http_status.HTTP_301_MOVED_PERMANENTLY
+        )
+
     if isinstance(resource, Preprint):
         if not resource.is_published:
             auth = Auth.from_kwargs(request.args.to_dict(), {})
@@ -248,8 +259,7 @@ def resolve_guid_download(guid, suffix=None, provider=None):
     if 'revision' not in request.args:  # This is to maintain legacy behavior
         request.args.update({'action': 'download'})
 
-    url = _build_guid_url(unquote(resource.deep_url), suffix)
-    return proxy_url(url)
+    return proxy_url(unquote(resource.deep_url))
 
 
 def stream_emberapp(server, directory):
@@ -259,15 +269,30 @@ def stream_emberapp(server, directory):
     return send_from_directory(directory, 'index.html')
 
 
+def _build_guid_url(base, suffix=None):
+    url = '/'.join([
+        each.strip('/') for each in [base, suffix]
+        if each
+    ])
+    if not isinstance(url, str):
+        url = url.decode('utf-8')
+    return u'/{0}/'.format(url)
+
+
 def resolve_guid(guid, suffix=None):
-    if 'download' == request.args.get('action') or suffix and 'download' == suffix.rstrip('/') or 'revision' in request.args:
+    if suffix and 'download' == suffix.rstrip('/'):
+        return resolve_guid_download(guid)
+    if 'download' == request.args.get('action'):
+        return resolve_guid_download(guid)
+    if 'revision' in request.args:
         return resolve_guid_download(guid)
 
     try:
         resource = Guid.objects.get(_id=guid.lower()).referent
     except Guid.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-    if not resource:
+
+    if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if isinstance(resource, DraftNode):
@@ -281,7 +306,8 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
-    return proxy_url(_build_guid_url(unquote(resource.deep_url), suffix))
+    url = unquote(_build_guid_url(resource.deep_url, suffix))
+    return proxy_url(url)
 
 # Redirects #
 

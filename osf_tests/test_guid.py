@@ -152,6 +152,15 @@ class TestResolveGuid(OsfTestCase):
         )
         assert res.status_code == 404
 
+    @mock.patch('osf.models.node.Node.deep_url', None)
+    def test_resolve_guid_no_url(self):
+        res = self.app.get(
+            self.node.web_url_for('node_setting', _guid=True),
+            auth=self.node.creator.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 404
+
     def test_resolve_guid_download_file(self):
         pp = PreprintFactory(finish=True)
 

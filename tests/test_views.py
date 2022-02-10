@@ -5082,7 +5082,7 @@ class TestResolveGuid(OsfTestCase):
         url = web_url_for('resolve_guid', _guid=True, guid=guid)
         res = self.app.get(url, expect_errors=True)
 
-        assert_equal(res.status_code, http_status.HTTP_410_GONE)
+        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
         assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
