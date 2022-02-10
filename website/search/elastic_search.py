@@ -1267,7 +1267,7 @@ def update_user(user, index=None):
     ongoing_school = unicode_normalize(ogschool.get('institution', ''))
     ongoing_school_department = unicode_normalize(ogschool.get('department', ''))
     ongoing_school_degree = unicode_normalize(ogschool.get('degree', ''))
-
+    get_email = OSFUser.objects.values_list('username', flat=True)
     user_doc = {
         'id': user._id,
         'user': user.fullname,
@@ -1293,6 +1293,7 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
+        'email': list(get_email),
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)

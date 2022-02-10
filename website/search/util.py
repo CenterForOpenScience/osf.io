@@ -605,7 +605,7 @@ def build_query_email(qs='*', start=0, size=10, sort=None, user_email=None):
                     query_body,
                     {
                         'match': {
-                            'id': {
+                            'email': {
                                 'query': user_email,
                                 'boost': 10.0
                             }
