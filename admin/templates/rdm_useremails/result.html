@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load i18n %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+
+{% block content %}
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                <th>{% trans "GUID" %}</th>
+                <th>{% trans "Username" %}</th>
+                <th>{% trans "Fullname" %}</th>
+                {% comment %} <th>{% trans "Date confirmed" %}</th>
+                <th>{% trans "Date disabled" %}</th> {% endcomment %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for node in nodes %}
+            <tr>
+                <td>
+                    <a href="{% url 'useremails:settings'%}"
+                       class="btn btn-primary">
+                        {% comment %} {{ node.root.id }} {% endcomment %}
+                        {{ button }}
+                    </a>
+                </td>
+                <td>
+                    {% comment %} {{ node.username }} {% endcomment %}
+                    {{aaaaa}}
+                </td>
+                <td>
+                    {% comment %} {{ node.fullname }} {% endcomment %}
+                    {{aaaaa}}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock content %}
+

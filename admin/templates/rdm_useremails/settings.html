@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load i18n %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+
+{% block content %}
+    <h2>User Email<h2>
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+            <tr>
+                <th>{% trans "Settings" %}</th>
+                <th>{% trans "Email" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+{% endblock content %}
+
