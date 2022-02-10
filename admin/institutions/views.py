@@ -17,7 +17,7 @@ from admin.rdm.utils import RdmPermissionMixin
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
+from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm, InstitutionEntitlementForm
 from django.contrib.auth.models import Group
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
@@ -371,9 +371,10 @@ class InstitutionEntitlementList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/institution_entitlements.html'
     ordering = 'name'
-    permission_required = 'osf.view_institution'
+    permission_required = 'osf.admin_institution_entitlement'
     raise_exception = True
     model = Institution
+    form_class = InstitutionEntitlementForm
 
     def get_queryset(self):
         return Institution.objects.all().order_by(self.ordering)

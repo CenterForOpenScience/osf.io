@@ -1,5 +1,5 @@
 from django import forms
-from osf.models import Institution
+from osf.models import Institution, InstitutionEntitlement
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -24,6 +24,7 @@ class InstitutionForm(forms.ModelForm):
             'is_deleted', 'contributors'
         ]
 
+
 class InstitutionalMetricsAdminRegisterForm(forms.Form):
     """ A form that finds an existing OSF User, and grants permissions to that
     user so that they can view institutional metrics"""
@@ -33,3 +34,13 @@ class InstitutionalMetricsAdminRegisterForm(forms.Form):
         super(InstitutionalMetricsAdminRegisterForm, self).__init__(*args, **kwargs)
 
     user_id = forms.CharField(required=True, max_length=5, min_length=5)
+
+
+class InstitutionEntitlementForm(forms.ModelForm):
+    class Meta:
+        model = InstitutionEntitlement
+
+        exclude = [
+            'modifier_id',
+        ]
+

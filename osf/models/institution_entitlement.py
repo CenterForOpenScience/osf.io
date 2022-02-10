@@ -15,6 +15,11 @@ class InstitutionEntitlement(base.BaseModel):
 
     class Meta:
         unique_together = ('institution', 'entitlement')
+        # custom permissions for use in the GakuNin RDM Admin App
+        permissions = (
+            ('view_institution_entitlement', 'Can view institution entitlement'),
+            ('admin_institution_entitlement', 'Can manage institution entitlement'),
+        )
 
     def __init__(self, *args, **kwargs):
         kwargs.pop('node', None)
