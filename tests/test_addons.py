@@ -1485,14 +1485,19 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_head_returns_url_and_redriect(self):
+    @mock.patch('website.views.stream_emberapp')
+    def test_head_returns_url_and_redriect(self, mock_ember):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
-        location = furl.furl(resp.location)
-        assert_equals(resp.status_code, 302)
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, version=''))
+        assert_equals(resp.status_code, 200)
+
+        args, kwargs = mock_ember.call_args
+        assert_equals(kwargs, {})
+        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+
 
     def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
@@ -1773,6 +1778,7 @@ class TestLegacyViews(OsfTestCase):
         )
         assert_urls_equal(res.location, expected_url)
 
+    @pytest.mark.enable_bookmark_creation
     def test_action_as_param(self):
         url = '/{}/osfstorage/files/{}/?action=download'.format(
             self.project._id,
