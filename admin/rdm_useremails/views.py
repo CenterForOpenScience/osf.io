@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.views.defaults import page_not_found
 
 class SearchView(PermissionRequiredMixin, FormView):
-    template_name = 'users/search.html'
+    template_name = 'rdm_useremails/search.html'
     object_type = 'osfuser'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
