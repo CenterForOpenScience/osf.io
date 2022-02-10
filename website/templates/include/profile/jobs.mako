@@ -31,18 +31,34 @@
                                 >${_("Read IdP Profile")}</a>
                     </div>
 
-                    <div class="form-group">
-                        <label>${_("Institution / Employer")}</label>
-                        <input class="form-control" data-bind="value: institution"
-                            placeholder="${_('Required')}"/>
-                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
-                            <p data-bind="validationMessage: institution"></p>
+                    <div class="form-row row">
+                        <div class="form-group col-md-6">
+                            <label>${_("Institution / Employer")}</label>
+                                <input class="form-control" data-bind="value: institution"
+                                    placeholder="${_('Required')}"/>
+                                <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                                    <p data-bind="validationMessage: institution"></p>
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-group col-md-6">
+                            <label>${_("Department / Institute")}</label>
+                            <input class="form-control" data-bind="value: department" />
+                        </div>
+                     </div>
 
-                    <div class="form-group">
-                        <label>${_("Department / Institute")}</label>
-                        <input class="form-control" data-bind="value: department" />
+                    <div class="form-row row">
+                        <div class="form-group col-md-6">
+                            <label>${_("Institution / Employer (EN)")}</label>
+                            <input class="form-control" data-bind="value: institution_en"
+                                    placeholder="${_('Required')}"/>
+                            <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                                    <p data-bind="validationMessage: institution"></p>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>${_("Department / Institute (EN)")}</label>
+                            <input class="form-control" data-bind="value: department" />
+                        </div>
                     </div>
 
                     <div class="form-group">

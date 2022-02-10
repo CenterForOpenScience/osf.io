@@ -452,6 +452,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     mapcore_api_locked = models.BooleanField(default=False)
     mapcore_refresh_locked = models.BooleanField(default=False)
 
+    # Add 4 field _en:
+    given_name_en = models.CharField(max_length=255, blank=True)
+    middle_names_en = models.CharField(max_length=255, blank=True)
+    family_name_end = models.CharField(max_length=255, blank=True)
+    erad = models.CharField(max_length=255, blank=True)
+
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 

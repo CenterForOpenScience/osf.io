@@ -21,21 +21,36 @@
         <div style="margin-bottom: 10px;">
             <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: autoFill">${_("Auto-fill")}</a>
         </div>
-
-        <div class="form-group">
-            <label>${_("Given name (e.g. Rosalind)")}</label>
-            <input class="form-control" data-bind="value: given" maxlength="255"/>
+        <div class="form-row row">
+            <div class="form-group col-md-4">
+                <label>${_("Given name (e.g. Rosalind)")}</label>
+                <input class="form-control" data-bind="value: given" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label>${_("Middle name(s) (e.g. Elsie)")}</label>
+                <input class="form-control" data-bind="value: middle" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label>${_("Family name (e.g. Franklin)")}</label>
+                <input class="form-control" data-bind="value: family" maxlength="255"/>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>${_("Middle name(s) (e.g. Elsie)")}</label>
-            <input class="form-control" data-bind="value: middle" maxlength="255"/>
+        <div class="form-row row">
+            <div class="form-group col-md-4">
+                <label>${_("Given name (EN) (e.g. Rosalind)")}</label>
+                <input class="form-control" data-bind="value: given" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label>${_("Middle name(s) (EN) (e.g. Elsie)")}</label>
+                <input class="form-control" data-bind="value: middle" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label>${_("Family name (EN) (e.g. Franklin)")}</label>
+                <input class="form-control" data-bind="value: family" maxlength="255"/>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>${_("Family name (e.g. Franklin)")}</label>
-            <input class="form-control" data-bind="value: family" maxlength="255"/>
-        </div>
 
         <div class="form-group">
             <label>${_("Suffix")}</label>
