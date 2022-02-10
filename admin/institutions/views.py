@@ -367,7 +367,7 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
         return self.request.user.affiliated_institutions.first()
 
 
-class InstitutionEntitlementList(RdmPermissionMixin, ListView):
+class InstitutionEntitlementList(ListView):
     paginate_by = 25
     template_name = 'institutions/institution_entitlements.html'
     ordering = 'name'

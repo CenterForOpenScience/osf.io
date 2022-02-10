@@ -5,11 +5,12 @@ from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
+from rest_framework.views import APIView
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.metrics import InstitutionProjectCounts
-from osf.models import OSFUser, Node, Institution, Registration
+from osf.models import OSFUser, Node, Institution, InstitutionEntitlement, Registration
 from osf.metrics import UserInstitutionProjectCounts
 from osf.utils import permissions as osf_permissions
 
@@ -41,6 +42,7 @@ from api.institutions.serializers import (
     InstitutionSummaryMetricSerializer,
     InstitutionDepartmentMetricsSerializer,
     InstitutionUserMetricsSerializer,
+    LoginAvailabilitySerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
 from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
@@ -89,31 +91,20 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 
-class LoginAvailability(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation TODO
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_READ]
-    required_write_scopes = [CoreScopes.NULL]
-    model_class = Institution
-
-    pagination_class = MaxSizePagination
-    serializer_class = InstitutionSerializer
+class LoginAvailability(APIView):
     view_category = 'institutions'
-    view_name = 'institution-list'
+    view_name = 'login_availability'
 
-    ordering = ('name', )
-
-    def get_default_queryset(self):
-        return Institution.objects.filter(_id__isnull=False, is_deleted=False)
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
+    def post(self, request, format=None):
+        serializer = LoginAvailabilitySerializer(data=request.data)
+        if serializer.is_valid():
+            data = serializer.validated_data
+            institution_id = data.get('institution_id')
+            entitlements = data.get('entitlements')
+            entitlement_list = InstitutionEntitlement.objects.filter(institution_id=institution_id, entitlement__in=entitlements)
+            login_availability = all(list(entitlement_list.values_list('login_availability', flat=True)))
+            return Response({"login_availability": login_availability}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):

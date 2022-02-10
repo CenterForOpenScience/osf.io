@@ -19,6 +19,11 @@ from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse
 
 
+class LoginAvailabilitySerializer(ser.Serializer):
+    institution_id = ser.IntegerField(required=True, read_only=True)
+    entitlements = ser.ListField(required=True, child=ser.CharField())
+
+
 class InstitutionSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
