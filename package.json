@@ -16,7 +16,7 @@
     "assets-webpack-plugin": "^7.1.1",
     "body-parser": "~1.19.1",
     "bootbox": "^5.5.2",
-    "bootstrap": "5.1.3",
+    "bootstrap": "4.6.1",
     "bower": "^1.8.8",
     "diff": "~5.0.0",
     "dropzone": "https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
