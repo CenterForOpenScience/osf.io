@@ -278,7 +278,7 @@ def resolve_guid(guid, suffix=None):
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
     elif isinstance(resource, Registration):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
-    elif isinstance(resource, BaseFileNode) and resource.is_file:
+    elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     return proxy_url(_build_guid_url(unquote(resource.deep_url), suffix))
