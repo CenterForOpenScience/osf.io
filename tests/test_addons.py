@@ -1396,25 +1396,21 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
         assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
-    @mock.patch('addons.base.views.addon_view_file')
+    @mock.patch('website.views.stream_emberapp')
     @pytest.mark.enable_bookmark_creation
-    def test_no_action_calls_view_file(self, mock_view_file):
+    def test_no_action_calls_view_file(self, mock_ember):
         self.user.reload()
         self.project.reload()
 
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        mock_view_file.return_value = self.get_mako_return()
-
         self.app.get('/{}/'.format(guid._id), auth=self.user.auth)
 
-        args, kwargs = mock_view_file.call_args
+        args, kwargs = mock_ember.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user._id, self.user._id)
-        assert_equals(args[1], self.project)
-        assert_equals(args[2], file_node)
-        assert_true(isinstance(args[3], file_node.touch(None).__class__))
+        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
     def test_download_create_guid(self):
         file_node = self.get_test_file()
