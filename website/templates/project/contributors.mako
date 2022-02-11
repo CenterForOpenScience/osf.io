@@ -320,7 +320,7 @@
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
                 <a class="btn btn-success btn-sm m-l-md">
-                    ${_("コードの再発行(")}
+                    ${_("Invite")}
                 </a>
             </div>
         </td>
