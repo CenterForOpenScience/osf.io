@@ -1,10 +1,14 @@
 from __future__ import unicode_literals
 
-from django.views.generic import ListView
+import json
 
-from admin.base import settings
-from admin.entitlements.forms import InstitutionEntitlementForm
-from osf.models import Institution, InstitutionEntitlement
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import ListView, View
+
+from osf.models import Institution
+from osf.models import InstitutionEntitlement
 
 
 class InstitutionEntitlementList(ListView):
@@ -15,11 +19,11 @@ class InstitutionEntitlementList(ListView):
     model = InstitutionEntitlement
 
     def get_queryset(self):
-        institutions = Institution.objects.all().order_by(self.ordering)
-        return InstitutionEntitlement.objects.get(institution_id=institutions.first().id).login_availability
+        institutions = Institution.objects.all().order_by('name')
+        return InstitutionEntitlement.objects.filter(institution_id=institutions.first().id)
 
     def get_context_data(self, **kwargs):
-        institutions = Institution.objects.all().order_by(self.ordering)
+        institutions = Institution.objects.all().order_by('name')
 
         selected_id = kwargs.pop('selected_id', institutions.first().id)
         query_set = kwargs.pop('object_list', self.object_list)
@@ -30,3 +34,35 @@ class InstitutionEntitlementList(ListView):
         kwargs.setdefault('entitlements', query_set)
         kwargs.setdefault('page', page)
         return super(InstitutionEntitlementList, self).get_context_data(**kwargs)
+
+
+class AddInstitutionEntitlement(PermissionRequiredMixin, View):
+    permission_required = 'osf.admin_institution_entitlement'
+    raise_exception = True
+    success_url = reverse_lazy('entitlements:list')
+
+    def post(self, request):
+        input_dict = json.loads(request.body)
+        institution_id = input_dict.get('institution_id')
+        entitlements = input_dict.get('entitlements')
+        login_availability_list = input_dict.get('login_availability')
+        for idx, entitlement in enumerate(entitlements):
+            InstitutionEntitlement.objects.create(institution_id=institution_id,
+                                                  entitlement=entitlement,
+                                                  login_availability=login_availability_list[idx],
+                                                  modifier=request.user)
+        return redirect('entitlements:list', selected_id=institution_id)
+
+
+class DeleteInstitutionEntitlement(PermissionRequiredMixin, View):
+    permission_required = 'osf.admin_institution_entitlement'
+    raise_exception = True
+    success_url = reverse_lazy('entitlements:list')
+
+    def get_object(self, queryset=None):
+        entitlement = InstitutionEntitlement.objects.get(id=self.kwargs['entitlement_id'])
+        return entitlement
+
+    def delete(self, request, *args, **kwargs):
+        entitlement = InstitutionEntitlement.objects.get(id=self.kwargs['entitlement_id'])
+        return super(DeleteInstitutionEntitlement, self).delete(request, *args, **kwargs)

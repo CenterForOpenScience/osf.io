@@ -11,7 +11,7 @@ class InstitutionEntitlement(base.BaseModel):
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
     entitlement = models.CharField(max_length=255)
     login_availability = models.BooleanField(default=True)
-    modifier_id = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
+    modifier = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('institution', 'entitlement')
