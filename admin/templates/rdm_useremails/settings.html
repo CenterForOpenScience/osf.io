@@ -9,17 +9,21 @@
 {% endblock %}
 
 {% block content %}
-    <h2>User Email<h2>
-    <table class="table table-striped table-hover table-responsive">
-        <thead>
-            <tr>
-                <th>{% trans "Settings" %}</th>
-                <th>{% trans "Email" %}</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-
+<h3>User Emails<h3>
+<table class="table table-striped table-hover table-responsive">
+    <tbody>
+    {% for user in users %}
+        <tr>
+            <td>
+                <button class="btn btn-primary">
+                </button>
+            </td>
+            <td>
+                {{user.username}}
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+</table>
 {% endblock content %}
 
