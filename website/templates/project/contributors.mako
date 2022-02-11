@@ -319,6 +319,9 @@
                     type="checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
+                <a class="btn btn-success btn-sm m-l-md">
+                    ${_("コードの再発行(")}
+                </a>
             </div>
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
