@@ -17,6 +17,7 @@ urlpatterns = [
             url(r'^brands/', include('admin.brands.urls', namespace='brands')),
             url(r'^spam/', include('admin.spam.urls', namespace='spam')),
             url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
+            url(r'^entitlements/', include('admin.entitlements.urls', namespace='entitlements')),
             url(r'^quota_recalc/', include('admin.quota_recalc.urls', namespace='quota_recalc')),
             url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
             url(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),

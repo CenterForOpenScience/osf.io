@@ -1,11 +1,10 @@
-from django.conf.urls import url
+from django.conf.urls import include, url
 from . import views
 
 app_name = 'admin'
 
 urlpatterns = [
     url(r'^$', views.InstitutionList.as_view(), name='list'),
-    url(r'^institution_entitlements/$', views.InstitutionEntitlementList.as_view(), name='entitlements'),
     url(r'^institution_list/$', views.InstitutionUserList.as_view(), name='institution_list'),
     url(r'^create/$', views.CreateInstitution.as_view(), name='create'),
     url(r'^import/$', views.ImportInstitution.as_view(), name='import'),

@@ -17,7 +17,7 @@ from admin.rdm.utils import RdmPermissionMixin
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm, InstitutionEntitlementForm
+from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
@@ -44,7 +44,6 @@ class InstitutionList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
-
 
 class InstitutionUserList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -223,7 +222,6 @@ class CannotDeleteInstitution(TemplateView):
         context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
         return context
 
-
 class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_institution'
     raise_exception = True
@@ -261,7 +259,6 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})
-
 
 class QuotaUserList(ListView):
     """Base class for UserListByInstitutionID and StatisticalStatusDefaultStorage.
@@ -365,25 +362,3 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
-
-
-class InstitutionEntitlementList(ListView):
-    paginate_by = 25
-    template_name = 'institutions/institution_entitlements.html'
-    ordering = 'name'
-    permission_required = 'osf.admin_institution_entitlement'
-    raise_exception = True
-    model = Institution
-    form_class = InstitutionEntitlementForm
-
-    def get_queryset(self):
-        return Institution.objects.all().order_by(self.ordering)
-
-    def get_context_data(self, **kwargs):
-        query_set = kwargs.pop('object_list', self.object_list)
-        page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
-        kwargs.setdefault('institutions', query_set)
-        kwargs.setdefault('page', page)
-        kwargs.setdefault('logohost', settings.OSF_URL)
-        return super(InstitutionEntitlementList, self).get_context_data(**kwargs)

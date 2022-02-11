@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "List of Entitlements" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <h2>{% trans "Entitlements" %}</h2>
+
+    <form action="#" method="post" class="form-horizontal" id="entitlements_form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="institution_id" class="col-sm-2 control-label">Institution</label>
+            <div class="col-sm-4">
+                <select id="institution_id" name="institution_id" class="form-control">
+                    {% for institution in institutions %}
+                        <option value="{{ institution.id }}" {% if selected_id == institution.id %}selected="selected"{% endif %}>{{ institution.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="entitlements" class="col-sm-2 control-label">Entitlements</label>
+            <div class="form-inline col-sm-4" id="entitlements_block">
+                <div class="clearfix" style="margin-bottom: 15px;">
+                    <div class="input-group">
+                        <input type="text" name="entitlements" placeholder="Enter new entitlement"
+                               class="form-control">
+                    </div>
+                    <div class="input-group form-check">
+                        <input type="checkbox" name="entitlements" checked="checked"
+                               data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+                        <label class="form-check-label" for="inlineFormCheck">login availability</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" class="btn btn-default" onclick="new_entitlement_element()">{% trans 'New entitlement' %}</button>
+                <button type="button" class="btn btn-primary" style="width: 90px;" onclick="submit_form()">{% trans 'Save' %}</button>
+            </div>
+        </div>
+    </form>
+    <script type="application/javascript">
+        function new_entitlement_element() {
+            let entitlements_html = `<div class="clearfix" style="margin-bottom: 15px;"> <div class="input-group"> <input type="text" name="entitlements" placeholder="Enter new entitlement" class="form-control"> </div>
+            <div class="input-group form-check"> <input type="checkbox" name="entitlements" checked="checked" data-toggle="toggle" data-onstyle="success" class="btn apple-switch"> <label class="form-check-label" for="inlineFormCheck">login availability</label> </div> </div>`;
+            document.getElementById("entitlements_block").append(new DOMParser().parseFromString(entitlements_html, 'text/html').body.childNodes[0])
+        }
+
+        function submit_form() {
+            let object = {};
+            let form_el = document.getElementById("entitlements_form")
+            let formData = form_el.serializeArray()
+            formData.forEach(function (value, key) {
+                object[key] = value;
+            });
+            let json = JSON.stringify(object);
+
+            {#let request = new XMLHttpRequest();#}
+            {#request.open("POST", "");#}
+            {#request.send(formData);#}
+        }
+    </script>
+
+    {% include "util/pagination.html" with items=page status=status %}
+
+    <table class="table table-striped table-hover table-responsive">
+        <thead></thead>
+        <tbody>
+        {% for entitlement in entitlements %}
+            <tr>
+                <td>entitlement.entitlement</td>
+                <td>
+                    <input type="checkbox"
+                           {% if entitlement.login_availability %}checked=""{% endif %}
+                           data-toggle="toggle" data-onstyle="success" class="btn apple-switch">
+                </td>
+                <td>
+                    <button type="submit" class="btn btn-primary">
+                        <a href="{% url 'institutions:detail' institution_id=entitlement.institution_id %}">
+                            Delete
+                        </a>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock content %}
