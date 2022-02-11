@@ -7,8 +7,6 @@
 {% endblock title %}
 {% block content %}
 
-<h2>User Search</h2>
-
 <div class="container-fluid">
     <div class="row">
         <h3>{% trans "User Search" %}</h3>
@@ -23,5 +21,8 @@
         </div>
     </div>
 </div>
-
+<script type="text/javascript"> 
+   var a = "{{user}}"
+   console.log(a)
+</script>
 {% endblock content %}

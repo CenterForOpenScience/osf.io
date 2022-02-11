@@ -17,6 +17,7 @@ class SearchView(PermissionRequiredMixin, FormView):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     form_class = SearchForm
+    context_object_name = 'user'
 
     def __init__(self, *args, **kwargs):
         self.redirect_url = None
@@ -26,14 +27,15 @@ class SearchView(PermissionRequiredMixin, FormView):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
         email = form.cleaned_data['email']
-        try:
-            user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id').get()
-            guid = user.guids.first()._id
-        except OSFUser.DoesNotExist:
-            return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
-        except OSFUser.MultipleObjectsReturned:
-            self.redirect_url = reverse('useremails:result', kwargs={'guid': guid})
-        return super(SearchView, self).form_valid(form)
+        # try:
+        #     user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id').get()
+        #     guid = user.guids.first()._id
+        # except OSFUser.DoesNotExist:
+        #     return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+        # except OSFUser.MultipleObjectsReturned:
+        #     self.redirect_url = reverse('useremails:result', kwargs={'guid': guid})
+        # return super(SearchView, self).form_valid(form)
+        user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id')
 
     @property
     def success_url(self):

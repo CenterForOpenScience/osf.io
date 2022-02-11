@@ -186,15 +186,14 @@
                     <td>
                         {% for email in user.emails %}
                             <li>
-                                {% comment %} {% if email == user.username %}
+                                {% if email == user.username %}
                                     <strong>{% trans "Primary: " %}</strong>
                                     {{ email }}
                                     <a href=""
                                        class="btn btn-default disabled">{% trans "Email" %}</a>
                                 {% else %}
                                     {{ email }}
-                                {% endif %} {% endcomment %}
-                                {{email}}
+                                {% endif %}
                             </li>
                         {% endfor %}
                     </td>
