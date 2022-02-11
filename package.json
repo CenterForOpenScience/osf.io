@@ -20,6 +20,7 @@
     "bower": "^1.8.8",
     "diff": "~5.0.0",
     "dropzone": "https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
+	"exports-loader": "0.6.3",
     "file-loader": "^0.11.2",
     "font-awesome": "^4.4.0",
     "font-awesome-webpack": "0.0.5-beta.2",
