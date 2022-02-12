@@ -104,13 +104,13 @@
           <ul class="sidebar-menu">
             <li class="header">{% trans "Menu" %}</li>
 
-            {#{% if perms.osf.admin_institution_entitlement %}#}
+            {% if perms.osf.admin_institution_entitlement %}
                 <li>
                     <a href="{% url 'institutions:entitlements' %}">
                         <i class='fa fa-link'></i><span> {% trans "Login Availability Control" %}</span>
                     </a>
                 </li>
-            {#{% elif %}#}
+            {% endif %}
             {% if perms.osf.view_node %}
                 <li><a role="button" data-toggle="collapse" href="#collapseNodes">
                   <i class='fa fa-caret-down'></i> {% trans "RDM Nodes" %}
