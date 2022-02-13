@@ -77,14 +77,12 @@
                            {% if entitlement.login_availability %}checked="checked"{% endif %}
                            value="{% if entitlement.login_availability %}on{% else %}off{% endif %}"
                             class="btn apple-switch {% if entitlement.login_availability %}checked{% endif %}"
-                            {# onchange="toggle_entitlement(this, window.location.origin + '{% url 'institutions:entitlement_toggle' selected_id entitlement.id %}');"#}
                            onchange="{$('#toggle_entitlement_{{ entitlement.id }}').submit()}"
                            data-toggle="toggle" data-onstyle="success">
                     <form id="toggle_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_toggle' selected_id entitlement.id %}">{% csrf_token %}</form>
                 </td>
                 <td>
                     <a class="btn btn-primary"
-                            {# onclick="delete_entitlement(this, window.location.origin + '{% url 'institutions:entitlement_delete' selected_id entitlement.id %}');"#}
                        onclick="{$('#delete_entitlement_{{ entitlement.id }}').submit()}">
                         Delete
                     </a>
@@ -94,27 +92,6 @@
         {% endfor %}
         </tbody>
     </table>
-    {% comment %}
-    <script type="application/javascript">
-        function toggle_entitlement(el, url) {
-            el.classList.toggle('checked');
-            el.value = el.classList.contains('checked') ? 'on' : 'off';
-            el.checked = true;
-
-            let request = new XMLHttpRequest();
-            request.open("POST", url);
-            request.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
-            request.send();
-        }
-
-        function delete_entitlement(el, url) {
-            let request = new XMLHttpRequest();
-            request.open("DELETE", url);
-            request.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
-            request.send();
-        }
-    </script>
-    {% endcomment %}
 
 {% endblock content %}
 

@@ -45,7 +45,6 @@ class InstitutionEntitlementList(ListView):
 class BulkAddInstitutionEntitlement(PermissionRequiredMixin, View):
     permission_required = 'osf.admin_institution_entitlement'
     raise_exception = True
-    success_url = reverse_lazy('entitlements:list')
 
     def post(self, request):
         institution_id = request.POST.get('institution_id')
