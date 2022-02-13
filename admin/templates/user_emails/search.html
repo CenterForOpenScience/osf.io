@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "RDM User-Emails - User Search" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <h3>{% trans "User Search" %}</h3>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <form action="{% url 'user-emails:search' %}" method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}"/>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

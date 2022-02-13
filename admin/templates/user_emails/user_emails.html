@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    <title>{% trans "RDM User-Emails - User Emails Setting " %}</title>
+{% endblock title %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/users.css"/>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h3>{% trans "User Emails" %} <small>of {{ user.username }} ({{ user.name }})</small></h3>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-striped table-hover table-responsive">
+                    <thead></thead>
+                    <tbody>
+                    {% for email in user.emails %}
+                        <tr>
+                            <td>
+                                {% if email == user.username %}
+                                    <button type="button" class="btn btn-default disabled">{% trans "Primary" %}</button>
+                                {% else %}
+                                    <form id="set_primary_{{ email.id }}" method="POST" action="{% url 'user-emails:primary' user.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="primary_email" value="{{ email }}">
+                                        <button type="submit" class="btn btn-primary">{% trans "Set Primary" %}</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ email }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

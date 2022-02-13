@@ -27,6 +27,7 @@ urlpatterns = [
             url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
             url(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
             url(r'^users/', include('admin.users.urls', namespace='users')),
+            url(r'^user-emails/', include('admin.user_emails.urls', namespace='user-emails')),
             url(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
             url(r'^meetings/', include('admin.meetings.urls',
                                        namespace='meetings')),
