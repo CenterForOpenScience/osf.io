@@ -68,6 +68,7 @@
     "webpack-prod": "webpack --config webpack.prod.config.js"
   },
   "resolutions": {
-    "font-awesome-webpack/css-loader": "1.0.1"
+    "font-awesome-webpack/css-loader": "1.0.1",
+	"webpack/uglifyjs-webpack-plugin": "1.3.0"
   }
 }
