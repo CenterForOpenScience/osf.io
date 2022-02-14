@@ -60,6 +60,9 @@ pyjwt==1.5.3
 django-celery-beat==1.1.1  # BSD 3 Clause
 django-celery-results==1.0.1
 pyjwe==1.0.0
+# pyjwe requires cryptography but will grab an unsupported version by default (needs rust compiler to build)
+# explicitly require the latest version we can support
+cryptography==3.3.2
 jsonschema==2.6.0
 django-guardian==1.4.9
 
