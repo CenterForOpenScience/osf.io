@@ -1503,7 +1503,7 @@ class TestFileViews(StorageTestCase):
 
     @mock.patch('website.views.stream_emberapp')
     def test_file_views(self, mock_ember):
-        with override_flag(features.EMBER_FILE_DETAIL, active=True):
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
             file = create_test_file(target=self.node, user=self.user)
             url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
             res = self.app.get(url, auth=self.user.auth)
