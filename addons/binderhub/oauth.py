@@ -5,7 +5,7 @@ from flask import request
 from flask import redirect
 import logging
 import requests
-from future.moves.urllib.parse import urljoin
+from future.moves.urllib.parse import urljoin, urlencode
 
 from osf.models.node import AbstractNode
 from framework.sessions import session
@@ -174,6 +174,8 @@ def binderhub_oauth_authorize(**kwargs):
     service_id = kwargs['serviceid']
     default_binderhub_url = node.get_addon(SHORT_NAME).get_binder_url()
     binderhub_url = request.args.get('binderhub_url', default_binderhub_url)
+    context_bh = request.args.get('bh', None)
+    context_jh = request.args.get('jh', None)
     # create a dict on the session object if it's not already there
     if session.data.get('oauth_states') is None:
         session.data['oauth_states'] = {}
@@ -195,6 +197,8 @@ def binderhub_oauth_authorize(**kwargs):
         'node_id': node._id,
         'service_id': service_id,
         'binderhub_url': binderhub_url,
+        'context_bh': context_bh,
+        'context_jh': context_jh,
     }
 
     session.save()
@@ -244,5 +248,11 @@ def binderhub_oauth_callback(**kwargs):
         token.save()
     except (MissingTokenError, RequestsHTTPError):
         raise HTTPError(http_status.HTTP_503_SERVICE_UNAVAILABLE)
+    context_params = {}
+    if 'context_bh' in cached_credentials and cached_credentials['context_bh'] is not None:
+        context_params['bh'] = cached_credentials['context_bh']
+    if 'context_jh' in cached_credentials and cached_credentials['context_jh'] is not None:
+        context_params['jh'] = cached_credentials['context_jh']
+    context_query = '' if len(context_params) == 0 else ('?' + urlencode(context_params))
     return redirect(web_url_for('project_binderhub',
-                                pid=node._id))
+                                pid=node._id) + context_query)
