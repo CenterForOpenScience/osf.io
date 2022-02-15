@@ -154,7 +154,7 @@ class Registration(AbstractNode):
         help_text='Where the archive.org data for the registration is stored'
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
-    additional_metadata = DateTimeAwareJSONField(blank=True)
+    additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
@@ -929,7 +929,9 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
 
 
 def get_default_id():
-    return RegistrationProvider.get_default_id()
+    from django.apps import apps
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+    return RegistrationProvider.objects.filter(_id=RegistrationProvider.default__id).values('id').get()['id']
 
 
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,

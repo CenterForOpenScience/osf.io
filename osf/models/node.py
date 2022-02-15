@@ -311,7 +311,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # TODO: Can this be a reference instead of data?
     child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
-                                           through=Contributor,
+                                           through='osf.Contributor',
                                            related_name='nodes')
 
     creator = models.ForeignKey(OSFUser,
@@ -981,7 +981,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values_list('region_id', flat=True)[0]
         return Region.objects.get(id=region_subquery)
 
     @property

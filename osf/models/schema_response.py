@@ -44,7 +44,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
     This allows SchemaResponses to also serve as a revision history when
     users submit updates to the schema form on a given parent object.
     '''
-    schema = models.ForeignKey('osf.RegistrationSchema')
+    schema = models.ForeignKey('osf.RegistrationSchema', on_delete=models.DO_NOTHING)
     response_blocks = models.ManyToManyField('osf.SchemaResponseBlock')
     initiator = models.ForeignKey('osf.OsfUser', null=False)
     previous_response = models.ForeignKey(
