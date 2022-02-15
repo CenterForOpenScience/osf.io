@@ -19,7 +19,7 @@ from website.search.search import update_institution
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', ]
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local']
 
 # TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
@@ -2013,6 +2013,80 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
         ],
+    'local': [
+        {
+            '_id': 'fake-saml-type-0',
+            'name': 'Fake SAML-auth Institution Type-0',
+            'description': 'A fake SAML-auth institution with no special features',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fake-saml-idp-type-0-default')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'fake-saml-type-1',
+            'name': 'Fake SAML-auth Institution Type-1',
+            'description': 'A fake SAML-auth institution that has shared SSO enabled',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fake-saml-idp-type-1-shared-sso')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'fake-saml-type-2',
+            'name': 'Fake SAML-auth Institution Type-2',
+            'description': 'A fake SAML-auth institution that has selective SSO enabled',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fake-saml-idp-type-2-selective-sso')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'fake-saml-type-3',
+            'name': 'Fake SAML-auth Institution Type-3',
+            'description': 'A fake SAML-auth institution that uses eduPersonPrimaryOrgUnitDN for department',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fake-saml-idp-type-3-department-eduperson')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'fake-saml-type-4',
+            'name': 'Fake SAML-auth Institution Type-4',
+            'description': 'A fake SAML-auth institution that uses a non-eduPerson attribute for department',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('fake-saml-idp-type-4-department-customized')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'fake-cas-type-0',
+            'name': 'Fake CAS-auth Institution Type-0',
+            'description': 'A fake CAS-auth institution with no special features',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': None,
+            'logout_url': None,
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'cas-pac4j',
+        },
+    ],
 }
 
 
