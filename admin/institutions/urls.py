@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from . import views
-from ..entitlements.views import InstitutionEntitlementList, ToggleInstitutionEntitlement, DeleteInstitutionEntitlement
+from admin.entitlements.views import InstitutionEntitlementList, ToggleInstitutionEntitlement, DeleteInstitutionEntitlement
 
 app_name = 'admin'
 
