@@ -36,7 +36,12 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote, validate_email, build_query_email
+from website.search.util import (
+    build_query, clean_splitters,
+    es_escape, convert_query_string,
+    unicode_normalize, quote,
+    validate_email
+)
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -1267,7 +1272,7 @@ def update_user(user, index=None):
     ongoing_school = unicode_normalize(ogschool.get('institution', ''))
     ongoing_school_department = unicode_normalize(ogschool.get('department', ''))
     ongoing_school_degree = unicode_normalize(ogschool.get('degree', ''))
-    get_email = OSFUser.objects.values_list('username', flat=True)
+
     user_doc = {
         'id': user._id,
         'user': user.fullname,
@@ -1293,7 +1298,6 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
-        'email': list(get_email),
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
@@ -1791,10 +1795,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    if validate_email(escaped_query):
-        results = search(build_query_email(query, start=start, size=size, sort=None, user_email=escaped_query), index=None, doc_type='user', normalize=False, private=True)
-    else:
-        results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
+    match_key = 'username' if validate_email(escaped_query) else 'id'
+    query_object = build_query(query, start=start, size=size, sort=None, match_value=escaped_query, match_key=match_key)
+    results = search(query_object, index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

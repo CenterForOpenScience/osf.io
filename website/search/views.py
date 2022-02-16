@@ -14,14 +14,15 @@ from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
 from osf import features
-from osf.models import OSFUser, AbstractNode
+from osf.models import OSFUser, AbstractNode, Email
 from osf.models.session import Session
 from website import settings
+from website.filters import profile_image_url
 from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
-from website.search.util import build_query, build_private_search_query
+from website.search.util import build_query, build_private_search_query, validate_email
 
 logger = logging.getLogger(__name__)
 
@@ -356,5 +357,48 @@ def search_contributor(auth):
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
+
+    # TODO: Let's add fields username and emails to elasticsearch database and search by search.search_contributor method
+    if validate_email(query):
+        user_ids = list(Email.objects.filter(Q(address__exact=query)).values_list('user_id', flat=True))
+        query_set = OSFUser.objects.filter(Q(pk__in=user_ids) | Q(username__exact=query)).filter(is_active=True)
+        if exclude:
+            query_set = query_set.exclude(pk__in=exclude.values_list('_id', flat=True))
+
+        if len(query_set):
+            user = query_set.first()
+            current_employment = None
+            education = None
+
+            if user.jobs:
+                current_employment = user.jobs[0]['institution']
+
+            if user.schools:
+                education = user.schools[0]['institution']
+
+            result = {
+                'users': [
+                    {
+                        'fullname': user.fullname,
+                        'id': user._id,
+                        'employment': current_employment,
+                        'education': education,
+                        'social': user.social_links,
+                        'n_projects_in_common': 0,
+                        'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
+                                                               user,
+                                                               use_ssl=True,
+                                                               size=settings.PROFILE_IMAGE_MEDIUM),
+                        'profile_url': user.profile_url,
+                        'registered': user.is_registered,
+                        'active': user.is_active
+                    }
+                ],
+                'total': len(query_set),
+                'pages': 1,
+                'page': 0
+            }
+            return result
+
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
