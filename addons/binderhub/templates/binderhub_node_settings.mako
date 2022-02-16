@@ -58,7 +58,7 @@
     <div class="${addon_short_name}-settings">
         <div class="row">
             <div class="col-md-12">
-                Default BinderHub URL:
+                ${_("Default BinderHub URL:")}
                 <a
                   data-bind="attr: {href: binderUrl}, text: binderUrl" target="_blank"
                   rel="noopener"

@@ -289,6 +289,10 @@ msgstr "BinderHub URL"
 msgid "Select a BinderHub"
 msgstr "BinderHubを選択"
 
+#: addons/binderhub/templates/binderhub_node_settings.mako:61
+msgid "Default BinderHub URL:"
+msgstr "デフォルトBinderHub URL:"
+
 #: addons/binderhub/templates/binderhub_node_settings.mako:69
 #: addons/binderhub/templates/binderhub_user_settings.mako:22
 msgid "Loading..."
