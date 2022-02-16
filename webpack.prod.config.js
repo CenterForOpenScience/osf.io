@@ -5,6 +5,9 @@ var common = require('./webpack.common.config.js');
 var assign = require('object-assign');
 var SaveAssetsJson = require('assets-webpack-plugin');
 
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+
+
 module.exports = assign(common, {
     stats: {reasons: false},
     plugins: common.plugins.concat([
@@ -16,7 +19,7 @@ module.exports = assign(common, {
             DEBUG: false,
             '__DEV__': false
         }),
-        new webpack.optimize.UglifyJsPlugin({
+        new UglifyJsPlugin({
             exclude: /conference.*?\.js$/,
             sourceMap: true,
             warnings: true,
