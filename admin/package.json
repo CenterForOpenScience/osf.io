@@ -28,6 +28,7 @@
     "webpack-prod": "webpack --config webpack.prod.config.js"
   },
   "resolutions": {
-    "css-loader": "^1.0.1"
+    "css-loader": "^1.0.1",
+    "webpack/uglifyjs-webpack-plugin": "1.3.0"
   }
 }

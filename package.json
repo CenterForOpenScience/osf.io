@@ -14,7 +14,8 @@
     "@centerforopenscience/osf-style": "1.9.0",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^2.3.0",
-    "babel-loader": "^4.1.0",
+	"babel-core": "^6.0.0",
+    "babel-loader": "^6.4.1",
     "body-parser": "~1.19.1",
     "bootbox": "^5.5.2",
     "bootstrap": "4.6.1",
@@ -69,6 +70,7 @@
     "webpack-prod": "webpack --config webpack.prod.config.js"
   },
   "resolutions": {
-    "font-awesome-webpack/css-loader": "1.0.1"
+    "font-awesome-webpack/css-loader": "1.0.1",
+    "webpack/uglifyjs-webpack-plugin": "1.3.0"
   }
 }
