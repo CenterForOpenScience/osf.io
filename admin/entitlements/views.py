@@ -63,11 +63,14 @@ class BulkAddInstitutionEntitlement(PermissionRequiredMixin, View):
         entitlements = request.POST.getlist('entitlements')
         login_availability_list = request.POST.getlist('login_availability')
 
+        existing_set = InstitutionEntitlement.objects.filter(institution_id=institution_id, entitlement__in=entitlements)
+        existing_list = existing_set.values_list('entitlement', flat=True)
         for idx, entitlement in enumerate(entitlements):
-            InstitutionEntitlement.objects.create(institution_id=institution_id,
-                                                  entitlement=entitlement,
-                                                  login_availability=login_availability_list[idx] == 'on',
-                                                  modifier=request.user)
+            if entitlement not in existing_list:
+                InstitutionEntitlement.objects.create(institution_id=institution_id,
+                                                      entitlement=entitlement,
+                                                      login_availability=login_availability_list[idx] == 'on',
+                                                      modifier=request.user)
 
         base_url = reverse('institutions:entitlements')
         query_string = urlencode({'institution_id': institution_id})
