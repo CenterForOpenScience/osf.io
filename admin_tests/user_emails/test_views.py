@@ -1,43 +1,26 @@
+from datetime import datetime
+
 import mock
-import csv
-import furl
-import pytz
 import pytest
-from datetime import datetime, timedelta
-
-from nose import tools as nt
-from django.test import RequestFactory
-from django.http import Http404
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
-from django.contrib.messages.storage.fallback import FallbackStorage
-
-from api.base import settings as api_settings
-from tests.base import AdminTestCase
-from website import settings
-from framework.auth import Auth
-from osf.models.user import OSFUser
-from osf.models.spam import SpamStatus
-from osf.models import UserQuota
-from osf_tests.factories import (
-    UserFactory,
-    AuthUserFactory,
-    ProjectFactory,
-    UnconfirmedUserFactory,
-    InstitutionFactory
-)
-from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
+from django.core.exceptions import PermissionDenied
+from django.test import RequestFactory
+from django.urls import reverse
+from nose import tools as nt
 
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm
-from osf.models.admin_log_entry import AdminLogEntry
-
+from admin_tests.utilities import setup_view, setup_form_view
 from framework.exceptions import HTTPError
-import mock
+from osf.models.user import OSFUser
+from osf_tests.factories import (
+    UserFactory,
+    AuthUserFactory
+)
+from tests.base import AdminTestCase
 
 pytestmark = pytest.mark.django_db
+
 
 class TestUserEmailsFormView(AdminTestCase):
 
@@ -128,7 +111,6 @@ class TestUserEmailsFormView(AdminTestCase):
 
     @mock.patch('admin.user_emails.views.OSFUser.objects')
     def test_form_valid_with_multiple_OSFUser_returned(self, mockOSFUser):
-
         name = "test"
         email = "test@mail.com"
         data = {'name': name, 'email': email}
@@ -168,6 +150,7 @@ class TestUserEmailsFormView(AdminTestCase):
         view = views.UserEmailsFormView()
         self.assertEqual(view.redirect_url, '/user-emails/')
 
+
 class TestUserEmailSearchList(AdminTestCase):
 
     def setUp(self):
@@ -198,7 +181,7 @@ class TestUserEmailSearchList(AdminTestCase):
         view = setup_view(view, self.request)
         data = {'name': 'Broken Matt Hardy', 'is_disabled': False}
         view.kwargs = data
-        view.object_list= [{'name': 'Broken Matt Hardy'}]
+        view.object_list = [{'name': 'Broken Matt Hardy'}]
         result = view.get_context_data()
 
         nt.assert_equal(result['users'][0]['name'], data['name'])
@@ -206,15 +189,15 @@ class TestUserEmailSearchList(AdminTestCase):
         nt.assert_equal(result['users'][0]['disabled'], None)
 
     @pytest.mark.skip
-    def test_get_context_data_method_with_user_is_disabled_equal_True(self): # pragma: no cover
+    def test_get_context_data_method_with_user_is_disabled_equal_True(self):  # pragma: no cover
         view = views.UserEmailsSearchList()
         view = setup_view(view, self.request)
         data = {'name': 'Broken Matt Hardy', 'is_disabled': True, 'date_disabled': datetime(2022, 2, 14)}
         view.kwargs = data
-        view.object_list= [{'name': 'Broken Matt Hardy'}]
+        view.object_list = [{'name': 'Broken Matt Hardy'}]
         result = view.get_context_data()
 
-        nt.assert_equal(result['users'][0]  ['name'], data['name'])
+        nt.assert_equal(result['users'][0]['name'], data['name'])
         nt.assert_equal(result['object_list'][0]['name'], data['name'])
         nt.assert_equal(result['users'][0]['disabled'], data['date_disabled'])
 
@@ -255,7 +238,7 @@ class TestUserEmailsView(AdminTestCase):
     def test_UserEmailsView_no_user_permissions_raises_error(self):
         user = UserFactory()
         guid = user._id
-        request = RequestFactory().get(reverse('user-emails:user',kwargs={'guid': guid}))
+        request = RequestFactory().get(reverse('user-emails:user', kwargs={'guid': guid}))
         request.user = user
 
         with self.assertRaises(PermissionDenied):
@@ -269,7 +252,7 @@ class TestUserEmailsView(AdminTestCase):
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().get(reverse('user-emails:user',kwargs={'guid': guid}))
+        request = RequestFactory().get(reverse('user-emails:user', kwargs={'guid': guid}))
         request.user = user
 
         response = views.UserEmailsView.as_view()(request, guid=guid)
@@ -288,6 +271,7 @@ class TestUserEmailsView(AdminTestCase):
         self.view.object = self.user
         res = self.view.get_context_data()
         nt.assert_is_instance(res, dict)
+
 
 class TestUserPrimaryEmail(AdminTestCase):
     def setUp(self):
@@ -331,8 +315,8 @@ class TestUserPrimaryEmail(AdminTestCase):
 
     def test_post_alternate_email_equal_primary_email(self):
         request = RequestFactory().post(
-                 reverse('user-emails:primary', kwargs={'guid': self.user._id}),
-                 {'primary_email': 'email@gmail.com'})
+            reverse('user-emails:primary', kwargs={'guid': self.user._id}),
+            {'primary_email': 'email@gmail.com'})
         request.user = self.user
 
         response = self.view(
