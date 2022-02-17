@@ -1546,6 +1546,10 @@ msgstr ""
 msgid "Social"
 msgstr ""
 
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+msgid "ID"
+msgstr ""
+
 #: website/templates/profile.mako:115
 msgid "Public projects"
 msgstr ""

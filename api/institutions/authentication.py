@@ -68,18 +68,23 @@ class InstitutionAuthentication(BaseAuthentication):
                 "idp":  "",
                 "id":   "",
                 "user": {
-                    "username":     "",  # email or eppn
-                    "fullname":     "",  # displayName
-                    "familyName":   "",
-                    "givenName":    "",
-                    "middleNames":  "",
-                    "suffix":       "",
-                    "groups":       "",  # isMemberOf for mAP API v1
-                    "eptid":        "",  # persistent-id for mAP API v1
-                    "entitlement":  "",  # eduPersonEntitlement
-                    "email":        "",  # mail
-                    "organizationName": "",    # o
-                    "organizationalUnit": "",  # ou
+                    "username":                 "",  # email or eppn
+                    "fullname":                 "",  # displayName
+                    "familyName":               "",  # sn or surname
+                    "jaSurname":                "",  # jasn
+                    "givenName":                "",  # givenName
+                    "jaGivenName":              "",  # jaGivenName
+                    "middleNames":              "",
+                    "jaMiddleNames":            "",
+                    "suffix":                   "",
+                    "groups":                   "",  # isMemberOf for mAP API v1
+                    "eptid":                    "",  # persistent-id for mAP API v1
+                    "entitlement":              "",  # eduPersonEntitlement
+                    "email":                    "",  # mail
+                    "organizationName":         "",  # o
+                    "jaOrganizationName":       "",  # jao
+                    "organizationalUnit":       "",  # ou
+                    "jaOrganizationalUnitName": "",  # jaou
                 }
             }
         }
@@ -111,21 +116,29 @@ class InstitutionAuthentication(BaseAuthentication):
 
         logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
-        username = provider['user'].get('username')
-        fullname = provider['user'].get('fullname')
-        given_name = provider['user'].get('givenName')
-        family_name = provider['user'].get('familyName')
-        middle_names = provider['user'].get('middleNames')
-        suffix = provider['user'].get('suffix')
-        department = provider['user'].get('department')
-        entitlement = provider['user'].get('entitlement')
-        email = provider['user'].get('email')
-        organization_name = provider['user'].get('organizationName')
-        organizational_unit = provider['user'].get('organizationalUnit')
+        p_user = provider['user']
+        username = p_user.get('username')
+        fullname = p_user.get('fullname', p_user.get('displayName'))
+        given_name = p_user.get('givenName')
+        family_name = p_user.get('familyName', p_user.get('surname'))
+        middle_names = p_user.get('middleNames')
+        given_name_ja = p_user.get('jaGivenName')
+        family_name_ja = p_user.get('jaSurname')
+        middle_names_ja = p_user.get('jaMiddleNames')
+        suffix = p_user.get('suffix')
+        department = p_user.get('department')
+        entitlement = p_user.get('entitlement')
+        email = p_user.get('email')
+        organization_name = p_user.get('organizationName')
+        organizational_unit = p_user.get('organizationalUnit')
+        organization_name_ja = p_user.get('jaOrganizationName')
+        organizational_unit_ja = p_user.get('jaOrganizationalUnitName')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
+        if given_name_ja and family_name_ja and not fullname:
+            fullname = given_name_ja + ' ' + family_name_ja
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME

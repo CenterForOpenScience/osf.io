@@ -4,7 +4,10 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers.js');
 var accountSettings = require('js/accountSettings.js');
 var passwordForms = require('js/passwordForms');
+var profile = require('../profile.js');
 
+var ctx = window.contextVars;
+new profile.Names('#accountInformation', ctx.nameUrls, ['edit']);
 
 $(function() {
     var viewModel = new accountSettings.UserProfileViewModel();

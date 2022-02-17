@@ -1608,6 +1608,10 @@ msgstr "学歴"
 msgid "Social"
 msgstr "SNS"
 
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+msgid "ID"
+msgstr ""
+
 #: website/templates/profile.mako:115
 msgid "Public projects"
 msgstr "公開プロジェクト"

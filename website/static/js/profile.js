@@ -410,10 +410,14 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         required: true
     });
 
-    self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.given = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
+
+    self.given_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_en = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
 
     self.imputedGiven = ko.observable();
     self.imputedMiddle = ko.observable();
@@ -425,6 +429,9 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         self.given,
         self.middle,
         self.family,
+        self.given_en,
+        self.middle_en,
+        self.family_en,
         self.suffix
     ];
 
@@ -564,6 +571,8 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     TrackedMixin.call(self);
 
     self.addons = ko.observableArray();
+
+    self.erad = ko.observable('');
 
     self.profileWebsite = ko.observable('').extend({
         ensureHttp: true
@@ -1067,6 +1076,7 @@ var JobViewModel = function() {
     TrackedMixin.call(self);
 
     self.department = ko.observable('').extend({trimmed: true});
+    self.department_en = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
 
     self.institution = ko.observable('').extend({
@@ -1076,6 +1086,15 @@ var JobViewModel = function() {
                return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
             },
             message: _('Institution/Employer required')
+        }
+    });
+    self.institution_en = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+            },
+            message: _('Institution/Employer (English) required')
         }
     });
 
@@ -1094,6 +1113,8 @@ var JobViewModel = function() {
     self.trackedProperties = [
         self.institution,
         self.department,
+        self.institution_en,
+        self.department_en,
         self.title,
         self.startMonth,
         self.startYear,
@@ -1106,6 +1127,9 @@ var JobViewModel = function() {
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     self.institutionObjectEmpty = ko.pureComputed(function() {
         return !self.institution() && !self.department() && !self.title();
+    }, self);
+    self.institutionEnObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_en() && !self.department() && !self.title();
     }, self);
 
     self.isValid = ko.computed(function() {
@@ -1208,8 +1232,181 @@ var Schools = function(selector, urls, modes, preventUnsaved) {
     $osf.applyBindings(this.viewModel, selector);
 };
 
+var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
+    var self = this;
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
+    TrackedMixin.call(self);
+
+    self.full = koHelpers.sanitizedObservable().extend({
+        trimmed: true,
+        required: true
+    });
+
+    self.given = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
+
+    self.given_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_en = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+
+    self.department = ko.observable('').extend({trimmed: true});
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+            },
+            message: _('Institution/Employer required')
+        }
+    });
+
+    self.department_en = ko.observable('').extend({trimmed: true});
+    self.institution_en = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+            },
+            message: _('Institution/Employer (English) required')
+        }
+    });
+    self.erad = ko.observable('');
+
+    self.imputedGiven = ko.observable();
+    self.imputedMiddle = ko.observable();
+    self.imputedFamily = ko.observable();
+    self.imputedSuffix = ko.observable();
+
+    self.trackedProperties = [
+        self.full,
+        self.given,
+        self.middle,
+        self.family,
+        self.given_en,
+        self.middle_en,
+        self.family_en,
+        self.suffix,
+        self.suffix,
+        self.suffix,
+        self.suffix,
+        self.erad
+    ];
+
+    var validated = ko.validatedObservable(self);
+    self.isValid = ko.computed(function() {
+        return validated.isValid();
+    });
+    self.hasValidProperty(true);
+
+    self.citations = ko.observable();
+
+    self.hasFirst = ko.computed(function() {
+        return !! self.full();
+    });
+
+    self.autoFill = function() {
+        self.given(self.imputedGiven());
+        self.middle(self.imputedMiddle());
+        self.family(self.imputedFamily());
+        self.suffix(self.imputedSuffix());
+    };
+
+    self.impute = function () {
+        return $.ajax({
+            type: 'GET',
+            url: urls.impute,
+            data: {
+                name: self.full()
+            },
+            dataType: 'json',
+        }).done(function (response) {
+            self.imputedGiven(response.given);
+            self.imputedMiddle(response.middle);
+            self.imputedFamily(response.family);
+            self.imputedSuffix(response.suffix);
+        });
+    };
+
+    self.initials = function(names) {
+        names = $.trim(names);
+        return names
+            .split(/\s+/)
+            .map(function(name) {
+                return name[0].toUpperCase() + '.';
+            })
+            .filter(function(initial) {
+                return initial.match(/^[a-z]/i);
+            }).join(' ');
+    };
+
+    var suffix = function(suffix) {
+        var suffixLower = suffix.toLowerCase();
+        if ($.inArray(suffixLower, ['jr', 'sr']) !== -1) {
+            suffix = suffix + '.';
+            suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
+        } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) !== -1) {
+            suffix = suffix.toUpperCase();
+        }
+        return suffix;
+    };
+
+    self.hasDetail = ko.computed(function() {
+        return !! (self.given() && self.family());
+    });
+
+    self.citeApa = ko.computed(function() {
+        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
+        var given = self.hasDetail() ? $.trim(self.given() + ' ' + self.middle()) : $.trim(self.imputedGiven() + ' ' + self.imputedMiddle());
+
+        if (given) {
+            cite = cite + ', ' + self.initials(given);
+        }
+        if (self.hasDetail() && self.suffix()) {
+            cite = cite + ', ' + suffix(self.suffix());
+        } else if (self.imputedSuffix()){
+            cite = cite + ', ' + suffix(self.imputedSuffix());
+        }
+        return cite;
+    });
+
+    self.citeMla = ko.computed(function() {
+        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
+        if (self.hasDetail()) {
+            cite = cite + ', ' + self.given();
+            if (self.middle()) {
+                cite = cite + ' ' + self.initials(self.middle());
+            }
+        } else if (self.full()) {
+            cite = cite + ', ' + self.imputedGiven();
+            if (self.imputedMiddle()) {
+                cite = cite + ' ' + self.initials(self.imputedMiddle());
+            }
+        }
+        if (self.hasDetail() && self.suffix()) {
+            cite = cite + ', ' + suffix(self.suffix());
+        } else if (self.imputedSuffix()) {
+            cite = cite + ', ' + suffix(self.imputedSuffix());
+        }
+        return cite;
+    });
+
+    self.fetch(self.impute);
+    self.full.subscribe(self.impute);
+};
+AccountInformationViewModel.prototype = Object.create(BaseViewModel.prototype);
+$.extend(AccountInformationViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
+
+var AccountInformation = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new AccountInformationViewModel(urls, modes, preventUnsaved);
+    $osf.applyBindings(this.viewModel, selector);
+    window.nameModel = this.viewModel;
+};
+
 /*global module */
 module.exports = {
+    AccountInformation: AccountInformation,
     Names: Names,
     Social: Social,
     Jobs: Jobs,

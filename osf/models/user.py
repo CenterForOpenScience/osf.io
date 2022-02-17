@@ -135,6 +135,7 @@ class UserExtendedData(BaseModel):
     data = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   'idp_attr': {
+    #      'eppn': <eppn>,
     #      'fullname': <displayName>,
     #      'entitlement': <eduPersonEntitlement>,
     #      'email': <mail address>,
@@ -328,6 +329,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     family_name = models.CharField(max_length=255, blank=True)
     suffix = models.CharField(max_length=255, blank=True)
 
+    # names in english
+    given_name_en = models.CharField(max_length=255, blank=True)
+    middle_names_en = models.CharField(max_length=255, blank=True)
+    family_name_en = models.CharField(max_length=255, blank=True)
+
+    # optional
+    erad = models.CharField(max_length=255, blank=True)
+
     # identity for user logged in through external idp
     external_identity = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
@@ -343,7 +352,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
+    #     'institution_en': <institution or organization in english>,
     #     'department': <department>,
+    #     'department_en': <department_en>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -357,7 +368,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
+    #     'institution_en': <institution or organization in english>,
     #     'department': <department>,
+    #     'department_en': <department_en>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -451,12 +464,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                                        related_name='osf_user')
     mapcore_api_locked = models.BooleanField(default=False)
     mapcore_refresh_locked = models.BooleanField(default=False)
-
-    # Add 4 field _en:
-    given_name_en = models.CharField(max_length=255, blank=True)
-    middle_names_en = models.CharField(max_length=255, blank=True)
-    family_name_end = models.CharField(max_length=255, blank=True)
-    erad = models.CharField(max_length=255, blank=True)
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
