@@ -3539,15 +3539,10 @@ mississippi@^2.0.0:
     stream-each "^1.1.0"
     through2 "^2.0.0"
 
-mithril@0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/mithril/-/mithril-0.2.0.tgz#98e007699a15b243a26b3b522f61bee90fa5ffb9"
-  integrity sha1-mOAHaZoVskOiaztSL2G+6Q+l/7k=
-
-mithril@>=0.2:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/mithril/-/mithril-2.0.4.tgz#d125969d992b924c7185d24ff92d997e5c00116b"
-  integrity sha512-mgw+DMZlhMS4PpprF6dl7ZoeZq5GGcAuWnrg5e12MvaGauc4jzWsDZtVGRCktsiQczOEUr2K5teKbE5k44RlOg==
+mithril@0.2.8, mithril@>=0.2, mithril@^0.2.8:
+  version "0.2.8"
+  resolved "https://registry.yarnpkg.com/mithril/-/mithril-0.2.8.tgz#cc6d470b9227cebb342718655bd0a1d7ab2afb96"
+  integrity sha512-9XuGnVmS2OyFexUuP/CcJFFJjHLM+RGYBxyVRNyQ6khbMfDJIF/xyZ4zq18ZRfPagpFmWUFpjHd5ZqPULGZyNg==
 
 mixin-deep@^1.2.0:
   version "1.3.2"
@@ -3770,6 +3765,11 @@ number-is-nan@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
   integrity sha1-CXtgK1NCKlIsGvuHkDGDNpQaAR0=
+
+object-assign@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-3.0.0.tgz#9bedd5ca0897949bca47e7ff408062d549f587f2"
+  integrity sha1-m+3VygiXlJvKR+f/QIBi1Un1h/I=
 
 object-assign@^4.0.1, object-assign@^4.1.0, object-assign@^4.1.1:
   version "4.1.1"
