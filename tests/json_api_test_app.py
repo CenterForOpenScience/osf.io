@@ -116,10 +116,13 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
             else:  # Django < 1.6
                 signals.request_finished.connect(close_connection)
 
-    def json_api_method(method):
+    def json_api_method(method, contentType=None):
 
         def wrapper(self, url, params=NoDefault, bulk=False, **kw):
-            content_type = 'application/vnd.api+json'
+            if contentType:
+                content_type = contentType
+            else:
+                content_type = 'application/vnd.api+json'
             if bulk:
                 content_type = 'application/vnd.api+json; ext=bulk'
             return JSONAPIWrapper.make_wrapper(self, url, method, content_type, params, **kw)
@@ -129,3 +132,4 @@ class JSONAPITestApp(TestApp, JSONAPIWrapper):
     put_json_api = json_api_method('PUT')
     patch_json_api = json_api_method('PATCH')
     delete_json_api = json_api_method('DELETE')
+    simple_post_api = json_api_method('POST', 'application/json')

@@ -262,6 +262,22 @@ class InstitutionFactory(DjangoModelFactory):
         model = models.Institution
 
 
+class InstitutionEntitlementFactory(DjangoModelFactory):
+    entitlement = factory.Faker('name')
+
+    class Meta:
+        model = models.InstitutionEntitlement
+
+    @classmethod
+    def _create(cls, target_class, institution=None, login_availability=None, modifier=None, *args, **kwargs):
+        institution = institution or models.Institution.objects.first() or InstitutionFactory()
+        login_availability = login_availability or False
+        modifier = modifier or models.OSFUser.objects.first() or UserFactory()
+
+        return super(InstitutionEntitlementFactory, cls)._create(target_class, institution=institution, login_availability=login_availability,
+                                                                 modifier=modifier, *args, **kwargs)
+
+
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')
     copyright_holders = FakeList('name', n=3)
