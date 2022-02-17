@@ -43,6 +43,8 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 
+from waffle.testutils import override_flag
+
 from website import mailchimp_utils, mails, settings, language
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import update_osf_help_mails_subscription
@@ -60,6 +62,7 @@ from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
+from osf import features
 from osf.utils import permissions
 from osf.models import (
     Comment,
@@ -971,37 +974,38 @@ class TestProjectViews(OsfTestCase):
 
     @mock.patch('website.views.stream_emberapp')
     def test_retraction_view(self, mock_ember):
-        project = ProjectFactory(creator=self.user1, is_public=True)
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            project = ProjectFactory(creator=self.user1, is_public=True)
 
-        registration = RegistrationFactory(project=project, is_public=True)
-        reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
-        registration.retract_registration(self.user1)
+            registration = RegistrationFactory(project=project, is_public=True)
+            reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
+            registration.retract_registration(self.user1)
 
-        approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
-        registration.retraction.approve_retraction(self.user1, approval_token)
-        registration.save()
+            approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
+            registration.retraction.approve_retraction(self.user1, approval_token)
+            registration.save()
 
-        url = registration.web_url_for('view_project')
-        res = self.app.get(url, auth=self.auth)
+            url = registration.web_url_for('view_project')
+            res = self.app.get(url, auth=self.auth)
 
-        assert_not_in('Mako Runtime Error', res.body.decode())
-        assert_in(registration.title, res.body.decode())
-        assert_equal(res.status_code, 200)
+            assert_not_in('Mako Runtime Error', res.body.decode())
+            assert_in(registration.title, res.body.decode())
+            assert_equal(res.status_code, 200)
 
-        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
-            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
-            assert_equal(res.status_code, 302, route)
-            res = res.follow()
-            assert_equal(res.status_code, 200, route)
+            for route in ['wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+                res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
+                assert_equal(res.status_code, 302, route)
+                res = res.follow()
+                assert_equal(res.status_code, 200, route)
+                args, kwargs = mock_ember.call_args
+                assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+                assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+
+            self.app.get(f'/{reg_file.guids.first()._id}/')
             args, kwargs = mock_ember.call_args
+            assert_equals(kwargs, {})
             assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
             assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
-
-        self.app.get(f'/{reg_file.guids.first()._id}/')
-        args, kwargs = mock_ember.call_args
-        assert_equals(kwargs, {})
-        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -5070,20 +5074,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-    def test_deleted_quick_file_gone(self):
-        user = AuthUserFactory()
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('soon_to_be_deleted.txt')
-        guid = test_file.get_guid(create=True)._id
-        test_file.delete()
-
-        url = web_url_for('resolve_guid', _guid=True, guid=guid)
-        res = self.app.get(url, expect_errors=True)
-
-        assert_equal(res.status_code, http_status.HTTP_404_NOT_FOUND)
-        assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

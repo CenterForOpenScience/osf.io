@@ -26,6 +26,7 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
+from osf import features
 from osf.models import Session, QuickFilesNode
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
@@ -40,6 +41,7 @@ from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
 from website.settings import EXTERNAL_EMBER_APPS
+from waffle.testutils import override_flag
 
 
 class SetEnvironMiddleware(object):
@@ -1388,7 +1390,8 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        self.app.get('/{}/?action=view'.format(guid._id), auth=self.user.auth)
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            self.app.get(f'/{guid._id}/?action=view', auth=self.user.auth)
 
         args, kwargs = mock_ember.call_args
         assert_equals(kwargs, {})
@@ -1404,7 +1407,8 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        self.app.get('/{}/'.format(guid._id), auth=self.user.auth)
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            self.app.get(f'/{guid._id}/', auth=self.user.auth)
 
         args, kwargs = mock_ember.call_args
         assert_equals(kwargs, {})
@@ -1485,7 +1489,8 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
         assert_equals(resp.status_code, 200)
 
         args, kwargs = mock_ember.call_args
