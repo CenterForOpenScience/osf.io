@@ -27,7 +27,7 @@ RUN apk add --no-cache --virtual .run-deps \
     && yarn global add bower
 
 RUN apk add curl
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+RUN curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
 RUN python3 get-pip.py --force-reinstall pip==21.0
 
 WORKDIR /code
