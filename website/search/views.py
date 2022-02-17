@@ -365,7 +365,7 @@ def search_contributor(auth):
         if exclude:
             query_set = query_set.exclude(pk__in=exclude.values_list('_id', flat=True))
 
-        if len(query_set):
+        if query_set.exists():
             user = query_set.first()
             current_employment = None
             education = None
