@@ -2,16 +2,15 @@ from datetime import datetime
 
 import mock
 import pytest
+from admin.user_emails import views
+from admin.user_emails.forms import UserEmailsSearchForm
+from admin_tests.utilities import setup_view, setup_form_view
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
-from nose import tools as nt
-
-from admin.user_emails import views
-from admin.user_emails.forms import UserEmailsSearchForm
-from admin_tests.utilities import setup_view, setup_form_view
 from framework.exceptions import HTTPError
+from nose import tools as nt
 from osf.models.user import OSFUser
 from osf_tests.factories import (
     UserFactory,
@@ -67,7 +66,8 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/user-emails/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
+        _url = '/user-emails/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/'
+        nt.assert_equal(self.view.success_url, _url)
 
     def test_form_valid_search_user_by_username(self):
         form_data = {
@@ -112,7 +112,7 @@ class TestUserEmailsFormView(AdminTestCase):
     @mock.patch('admin.user_emails.views.OSFUser.objects')
     def test_form_valid_with_multiple_OSFUser_returned(self, mockOSFUser):
         name = 'test'
-        email ='test@mail.com'
+        email = 'test@mail.com'
         data = {'name': name, 'email': email}
 
         mockOSFUser.filter.return_value.distinct.return_value.get.side_effect = OSFUser.MultipleObjectsReturned
@@ -203,7 +203,6 @@ class TestUserEmailSearchList(AdminTestCase):
 
     def test_UserEmailsSearchList_with_no_user_permissions_raises_error(self):
         user = UserFactory()
-        guid = user._id
         request = RequestFactory().get(reverse('user-emails:search_list', kwargs={'name': 'Hardy'}))
         request.user = user
 
@@ -336,11 +335,6 @@ class TestUserPrimaryEmail(AdminTestCase):
         request.user = self.user
         mockApi.return_value = 'Call it'
 
-        response = self.view(
-            request,
-            guid=self.user._id
-        )
-
         mockApi.assert_called()
 
     @mock.patch('admin.user_emails.views.mailchimp_utils.unsubscribe_mailchimp_async')
@@ -352,11 +346,6 @@ class TestUserPrimaryEmail(AdminTestCase):
         self.user.save()
         request.user = self.user
         mockApi.return_value = 'Call it'
-
-        response = self.view(
-            request,
-            guid=self.user._id
-        )
 
         mockApi.assert_not_called()
 

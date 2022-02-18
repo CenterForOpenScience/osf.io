@@ -115,6 +115,7 @@ class UserPrimaryEmail(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         user = OSFUser.load(self.kwargs.get('guid'))
         primary_email = request.POST.get('primary_email')
+        username = None
 
         # Refer to website.profile.views.update_user
         if primary_email:
