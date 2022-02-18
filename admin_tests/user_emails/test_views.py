@@ -111,8 +111,8 @@ class TestUserEmailsFormView(AdminTestCase):
 
     @mock.patch('admin.user_emails.views.OSFUser.objects')
     def test_form_valid_with_multiple_OSFUser_returned(self, mockOSFUser):
-        name = "test"
-        email = "test@mail.com"
+        name = 'test'
+        email ='test@mail.com'
         data = {'name': name, 'email': email}
 
         mockOSFUser.filter.return_value.distinct.return_value.get.side_effect = OSFUser.MultipleObjectsReturned
@@ -334,7 +334,7 @@ class TestUserPrimaryEmail(AdminTestCase):
         self.user.mailchimp_mailing_lists = {'list_name': 'Value1', 'subscription': 'value2'}
         self.user.save()
         request.user = self.user
-        mockApi.return_value = "Call it"
+        mockApi.return_value = 'Call it'
 
         response = self.view(
             request,
@@ -351,7 +351,7 @@ class TestUserPrimaryEmail(AdminTestCase):
         self.user.mailchimp_mailing_lists = {}
         self.user.save()
         request.user = self.user
-        mockApi.return_value = "Call it"
+        mockApi.return_value = 'Call it'
 
         response = self.view(
             request,
