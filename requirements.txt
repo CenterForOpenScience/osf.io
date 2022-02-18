@@ -20,7 +20,7 @@ WTForms==1.0.4
 git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 itsdangerous==1.1.0
-lxml==4.6.3
+lxml==4.6.5
 mailchimp==2.0.9
 nameparser==0.5.3
 bcrypt==3.1.4
@@ -32,7 +32,7 @@ furl==0.4.92
 elasticsearch2==2.5.0  # pyup: >=2.4,<3.0 # Major version must be same as ES version
 elasticsearch==6.3.1
 google-api-python-client==1.6.4
-Babel==2.5.1
+Babel==2.9.1
 citeproc-py==0.4.0
 boto3==1.4.7
 django-waffle==0.13.0
@@ -45,20 +45,20 @@ certifi==2020.12.5
 sendgrid==1.5.13
 
 requests>=2.21.0
-urllib3==1.24.2
+urllib3==1.26.5
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
 raven==6.4.0
 
 # API requirements
 Django==1.11.29
-djangorestframework==3.8.2
+djangorestframework==3.11.2
 django-cors-headers==2.1.0
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
 pyjwt==1.5.3
 django-celery-beat==1.1.1  # BSD 3 Clause
-django-celery-results==1.0.1
+django-celery-results==1.2.1
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
