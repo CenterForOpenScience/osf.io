@@ -61,7 +61,7 @@
     "style-loader": "^0.23.1",
     "treebeard": "https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e",
     "typeahead.js": "^0.11.1",
-    "url-loader": "~0.5.0",
+    "url-loader": "~0.6.2",
     "uuid": "^8.3.2",
     "webpack": "3.12.0",
     "zxcvbn": "^4.2.0"
