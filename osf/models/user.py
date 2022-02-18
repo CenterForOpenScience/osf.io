@@ -487,7 +487,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             institution_ja = self.jobs[0].get('organization_name_ja')
         ja = [self.family_name, self.given_name, institution]
         en = [self.family_name_en, self.given_name_en, institution_ja]
-        return all([ja, en])
+        return all(ja + en)
 
     @property
     def deep_url(self):
