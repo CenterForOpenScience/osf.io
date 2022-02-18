@@ -358,7 +358,7 @@ def search_contributor(auth):
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
 
-    # TODO: Let's add fields username and emails to elasticsearch database and search by search.search_contributor method
+    # Let's add fields username and emails to elasticsearch database and search by search.search_contributor method
     if validate_email(query):
         user_ids = list(Email.objects.filter(Q(address__exact=query)).values_list('user_id', flat=True))
         query_set = OSFUser.objects.filter(Q(pk__in=user_ids) | Q(username__exact=query)).filter(is_active=True)
