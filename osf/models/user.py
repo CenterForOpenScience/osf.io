@@ -443,6 +443,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
+    temp_account = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True) # temporary user identifier
 
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,

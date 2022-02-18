@@ -38,6 +38,7 @@ from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 from api.base.settings import LOGIN_BY_EPPN
 from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 from nii.mapcore import mapcore_sync_is_enabled, mapcore_sync_map_group
+from random import randint
 
 
 @collect_auth
@@ -492,6 +493,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
+        get_eppn = unclaimed_user.eppn if unclaimed_user.eppn else ''
+        unclaimed_user.temp_account = get_eppn + str(randint(10**8, 10**9 - 1))
         unclaimed_user.save()
     # Option 2:
     # TODO: [new improvement ticket] this option is disabled from preprint but still available on the project page
@@ -918,84 +921,101 @@ def claim_user_form(auth, **kwargs):
     HTTP Method: GET, POST
     """
 
-    uid, pid = kwargs['uid'], kwargs['pid']
-    token = request.form.get('token') or request.args.get('token')
-    user = OSFUser.load(uid)
+    cancel_request = request.form.get('cancel') or request.args.get('cancel')
+    if cancel_request:
+        contributor_id, node_id = kwargs['uid'], kwargs['pid']
+        contributor = OSFUser.load(contributor_id)
+        if contributor is None:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Contributor not found.'})
+        redirect_url = request.host_url + 'dashboard'
+        node = AbstractNode.load(node_id)
+        nodes_removed = node.cancel_invite(contributor)
+        # remove_contributor returns false if there is not one admin or visible contributor left after the move.
+        if not nodes_removed:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                'message_long': 'Could not remove contributor.'})
 
-    # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
-    if not user or not verify_claim_token(user, token, pid):
-        error_data = {
-            'message_short': 'Invalid url.',
-            'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
-        }
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
+        return redirect(redirect_url)
 
-    if LOGIN_BY_EPPN:
-        return redirect(web_url_for('claim_user_login_by_eppn',
-            uid=uid, pid=pid, token=token))
+    else:
+        uid, pid = kwargs['uid'], kwargs['pid']
+        token = request.form.get('token') or request.args.get('token')
+        user = OSFUser.load(uid)
 
-    # If user is logged in, redirect to 're-enter password' page
-    if auth.logged_in:
-        return redirect(web_url_for('claim_user_registered',
-            uid=uid, pid=pid, token=token))
+        # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
+        if not user or not verify_claim_token(user, token, pid):
+            error_data = {
+                'message_short': 'Invalid url.',
+                'message_long': 'Claim user does not exists, the token in the URL is invalid or has expired.'
+            }
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
-    unclaimed_record = user.unclaimed_records[pid]
-    user.fullname = unclaimed_record['name']
-    user.update_guessed_names()
-    # The email can be the original referrer email if no claimer email has been specified.
-    claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
-    # If there is a registered user with this email, redirect to 're-enter password' page
-    try:
-        user_from_email = OSFUser.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
-    except OSFUser.DoesNotExist:
-        user_from_email = None
-    if user_from_email and user_from_email.is_registered:
-        return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
+        if LOGIN_BY_EPPN:
+            return redirect(web_url_for('claim_user_login_by_eppn',
+                uid=uid, pid=pid, token=token))
 
-    form = SetEmailAndPasswordForm(request.form, token=token)
-    if request.method == 'POST':
-        if not form.validate():
-            forms.push_errors_to_status(form.errors)
-        elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response'), remote_ip=request.remote_addr):
-            status.push_status_message('Invalid captcha supplied.', kind='error')
-        else:
-            username, password = claimer_email, form.password.data
-            if not username:
-                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
-                    message_long='No email associated with this account. Please claim this '
-                    'account on the project to which you were invited.'
+        # If user is logged in, redirect to 're-enter password' page
+        if auth.logged_in:
+            return redirect(web_url_for('claim_user_registered',
+                uid=uid, pid=pid, token=token))
+
+        unclaimed_record = user.unclaimed_records[pid]
+        user.fullname = unclaimed_record['name']
+        user.update_guessed_names()
+        # The email can be the original referrer email if no claimer email has been specified.
+        claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
+        # If there is a registered user with this email, redirect to 're-enter password' page
+        try:
+            user_from_email = OSFUser.objects.get(emails__address=claimer_email.lower().strip()) if claimer_email else None
+        except OSFUser.DoesNotExist:
+            user_from_email = None
+        if user_from_email and user_from_email.is_registered:
+            return redirect(web_url_for('claim_user_registered', uid=uid, pid=pid, token=token))
+
+        form = SetEmailAndPasswordForm(request.form, token=token)
+        if request.method == 'POST':
+            if not form.validate():
+                forms.push_errors_to_status(form.errors)
+            elif settings.RECAPTCHA_SITE_KEY and not validate_recaptcha(request.form.get('g-recaptcha-response'), remote_ip=request.remote_addr):
+                status.push_status_message('Invalid captcha supplied.', kind='error')
+            else:
+                username, password = claimer_email, form.password.data
+                if not username:
+                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+                        message_long='No email associated with this account. Please claim this '
+                        'account on the project to which you were invited.'
+                    ))
+
+                user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
+                # Clear unclaimed records
+                user.unclaimed_records = {}
+                user.verification_key = generate_verification_key()
+                user.save()
+                # Authenticate user and redirect to project page
+                status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
+                # Redirect to CAS and authenticate the user with a verification key.
+                provider = PreprintProvider.load(pid)
+                redirect_url = None
+                if provider:
+                    redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
+                else:
+                    # Add related claimed tags to user
+                    _add_related_claimed_tag_to_user(pid, user)
+                    redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
+
+                return redirect(cas.get_login_url(
+                    redirect_url,
+                    username=user.username,
+                    verification_key=user.verification_key
                 ))
 
-            user.register(username=username, password=password, accepted_terms_of_service=form.accepted_terms_of_service.data)
-            # Clear unclaimed records
-            user.unclaimed_records = {}
-            user.verification_key = generate_verification_key()
-            user.save()
-            # Authenticate user and redirect to project page
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
-            # Redirect to CAS and authenticate the user with a verification key.
-            provider = PreprintProvider.load(pid)
-            redirect_url = None
-            if provider:
-                redirect_url = web_url_for('auth_login', next=provider.landing_url, _absolute=True)
-            else:
-                # Add related claimed tags to user
-                _add_related_claimed_tag_to_user(pid, user)
-                redirect_url = web_url_for('resolve_guid', guid=pid, _absolute=True)
-
-            return redirect(cas.get_login_url(
-                redirect_url,
-                username=user.username,
-                verification_key=user.verification_key
-            ))
-
-    return {
-        'firstname': user.given_name,
-        'email': claimer_email if claimer_email else '',
-        'fullname': user.fullname,
-        'form': forms.utils.jsonify(form) if is_json_request() else form,
-        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-    }
+        return {
+            'firstname': user.given_name,
+            'email': claimer_email if claimer_email else '',
+            'fullname': user.fullname,
+            'form': forms.utils.jsonify(form) if is_json_request() else form,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
 
 
 def _add_related_claimed_tag_to_user(pid, user):

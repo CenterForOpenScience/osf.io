@@ -1683,6 +1683,28 @@ class ContributorMixin(models.Model):
             request, user_id = get_request_and_user_id()
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
         return True
+    def cancel_invite(self, contributor):
+        """Cancel join the project
+        :param contributor: User object, the contributor to be removed
+        """
+
+        if isinstance(contributor, self.contributor_class):
+            contributor = contributor.user
+
+        # remove unclaimed record if necessary
+        if self._id in contributor.unclaimed_records:
+            del contributor.unclaimed_records[self._id]
+            contributor.save()
+
+
+        contrib_obj = self.contributor_set.get(user=contributor)
+        contrib_obj.delete()
+
+        self.save()
+        if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
+            request, user_id = get_request_and_user_id()
+            self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+        return True
 
     def remove_contributors(self, contributors, auth=None, log=True, save=False):
 
