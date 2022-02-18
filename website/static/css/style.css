@@ -933,3 +933,30 @@ table.add-links {
     box-shadow: none;
     opacity: .65;
 }
+
+.subnav-header {
+    color: #205075;
+}
+
+.alert-info {
+    background-color: #337AB7;
+    color: white;
+}
+
+.alert-info a {
+    color: white;
+    text-decoration: underline;
+}
+
+.high-contrast-link {
+    color: #595959;
+}
+
+.high-contrast-link-italic {
+    color: #595959;
+    font-style: italic;
+}
+
+.text-smaller {
+    color: #4d4d4d;
+}

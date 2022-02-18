@@ -2,7 +2,7 @@
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
-<nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope" role="navigation">
+<nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope">
     <div class="container">
         <div class="navbar-header">
         <a class="navbar-brand" href="/" aria-label="Go home"><span class="osf-navbar-logo"></span></a>
@@ -13,7 +13,7 @@
             </a>
         </div>
         <div class="dropdown primary-nav">
-            <button data-bind="click: trackClick.bind($data, 'Dropdown Arrow')" id="primary-navigation" class="dropdown-toggle btn-link" data-toggle="dropdown" role="button" aria-expanded="false" aria-label="Toggle primary navigation">
+            <button data-bind="click: trackClick.bind($data, 'Dropdown Arrow')" class="dropdown-toggle btn-link" data-toggle="dropdown" aria-expanded="false" aria-label="Toggle primary navigation">
                 <span class="fa fa-caret-down fa-2x"></span>
             </button>
             <ul class="dropdown-menu service-dropdown" role="menu">

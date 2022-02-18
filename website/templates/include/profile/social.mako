@@ -169,7 +169,7 @@
 
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
-                    <td><a target="_blank" data-bind="attr: {href: value}"><span data-bind="html: iconName(label)"></span></a></td>
+                    <td><a target="_blank" ="" data-bind="attr: {href: value, 'aria-label': 'Link to user ' + label}"><span data-bind="html: iconName(label)"></span></a></td>
                     <td><span data-bind="text: label"></span></td>
                     <td><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
                 </tr>

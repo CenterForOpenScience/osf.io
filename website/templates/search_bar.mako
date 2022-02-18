@@ -4,12 +4,12 @@
         <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
-                    <input id="searchPageFullBar" name="search-placeholder" type="text" class="osf-search-input form-control" placeholder="OSF Search" data-bind="value: query, hasFocus: true">
+                    <input id="searchPageFullBar" aria-label="OSF Search Input" name="search-placeholder" type="text" class="osf-search-input form-control" placeholder="OSF Search" data-bind="value: query, hasFocus: true">
                     <label id="searchBarLabel" class="search-label-placeholder" for="search-placeholder">OSF Search</label>
                     <span class="input-group-btn">
-                        <button type=button class="btn osf-search-btn" data-bind="click: submit"><i class="fa fa-arrow-circle-right fa-lg"></i></button>
-                        <button type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
-                        <button type="button" class="btn osf-search-btn" data-bind="visible: showClose, click : toggleSearch"><i class="fa fa-times fa-lg"></i></button>
+                        <button aria-label="OSF Submit Search" type=button class="btn osf-search-btn" data-bind="click: submit"><i class="fa fa-arrow-circle-right fa-lg"></i></button>
+                        <button aria-label="OSF Search Help Text" type=button class="btn osf-search-btn" data-toggle="modal" data-target="#search-help-modal"><i class="fa fa-question fa-lg"></i></button>
+                        <button aria-label="OSF Search Close" type="button" class="btn osf-search-btn" data-bind="visible: showClose, click : toggleSearch"><i class="fa fa-times fa-lg"></i></button>
                     </span>
 
                 </form>
