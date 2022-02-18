@@ -1683,6 +1683,7 @@ class ContributorMixin(models.Model):
             request, user_id = get_request_and_user_id()
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
         return True
+
     def cancel_invite(self, contributor):
         """Cancel join the project
         :param contributor: User object, the contributor to be removed

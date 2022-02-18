@@ -1666,6 +1666,13 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        Rule(
+            '/project/<pid>/contributor/re_invite/',
+            'POST',
+            project_views.contributor.project_contributor_re_invite,
+            json_renderer,
+        ),
+
         Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',

@@ -202,6 +202,7 @@
                     data-html="true"
                 ></i>
             </th>
+            <th style="width: 150px;"></th>
             <th class="remove"></th>
         </tr>
     </thead>
@@ -319,10 +320,16 @@
                     type="checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
-                <a class="btn btn-success btn-sm m-l-md">
-                    ${_("Invite")}
+            </div>
+        </td>
+        <td>
+            <!-- ko if: (!contributor.registered) -->
+            <div class="td-content">
+                <a class="btn btn-success btn-sm m-l-md" data-bind="click: reInvite, class: {}">
+                    ${_("Invitation Code")}
                 </a>
             </div>
+            <!-- /ko -->
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">

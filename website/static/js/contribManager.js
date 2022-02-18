@@ -120,6 +120,17 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             id:self.id});
     };
 
+    self.reInvite = function() {
+        $osf.postJSON(
+            window.contextVars.node.urls.api + 'contributor/re_invite/',
+            {guid: self.id}
+        ).done(function(response) {
+            $osf.growl(_('Sent'), _('Email will arrive shortly'), 'success');
+        }).fail(function(xhr) {
+            $osf.growl(_('Error'), _('Invitation failed '), 'danger');
+        });
+    };
+
     self.addParentAdmin = function() {
         // Immediately adds parent admin to the component with permissions=read and visible=True
         $osf.block();
