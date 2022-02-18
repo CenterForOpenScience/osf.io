@@ -1,34 +1,22 @@
-import mock
-import csv
-import furl
-import pytz
-import pytest
-from datetime import datetime, timedelta
-
-from nose import tools as nt
 from urllib.parse import urlencode
-from django.test import RequestFactory
-from django.http import Http404
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.models import Permission
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.db.models.query import QuerySet
 
-from api.base import settings as api_settings
-from tests.base import AdminTestCase
-from website import settings
-from framework.auth import Auth
+import mock
+import pytest
+from admin.entitlements import views
+from admin_tests.utilities import setup_user_view
+from django.contrib.auth.models import Permission
+from django.core.exceptions import PermissionDenied
+from django.db.models.query import QuerySet
+from django.test import RequestFactory
+from django.urls import reverse
+from nose import tools as nt
 from osf.models.institution_entitlement import InstitutionEntitlement
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     InstitutionEntitlementFactory,
 )
-from admin_tests.utilities import setup_user_view
-
-from admin.entitlements import views
+from tests.base import AdminTestCase
 
 pytestmark = pytest.mark.django_db
 
@@ -44,22 +32,21 @@ class TestInstitutionEntitlementList(AdminTestCase):
         self.user.save()
 
         self.request = RequestFactory().get('/fake_path')
-        #self.request.user = self.user_2
 
         self.view = views.InstitutionEntitlementList()
-        #self.view.request = self.request
 
     def test_get_context_data_is_super_admin(self):
         self.institution = InstitutionFactory()
         self.institution.name = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution, login_availability=True, modifier=self.user_2)
+        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution,
+                                                                    login_availability=True, modifier=self.user_2)
         self.institution.save()
 
-        request = RequestFactory().get('/fake_path', kwargs={'institution_id' : self.institution.id})
+        request = RequestFactory().get('/fake_path', kwargs={'institution_id': self.institution.id})
 
         self.view.request = request
         self.view.request.user = self.user_2
-        self.view.kwargs = {'institution_id' : self.institution.id}
+        self.view.kwargs = {'institution_id': self.institution.id}
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
 
@@ -73,7 +60,8 @@ class TestInstitutionEntitlementList(AdminTestCase):
     def test_get_context_data_is_admin_and_has_affiliated_institutions(self):
         self.institution = InstitutionFactory()
         self.institution.name = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution, login_availability=True, modifier=self.user_2)
+        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution,
+                                                                    login_availability=True, modifier=self.user_2)
         self.institution.save()
 
         self.user_2.is_staff = True
@@ -81,10 +69,10 @@ class TestInstitutionEntitlementList(AdminTestCase):
         self.user_2.affiliated_institutions.add(self.institution)
         self.user_2.save()
 
-        request = RequestFactory().get('/fake_path', kwargs={'institution_id' : self.institution.id})
+        request = RequestFactory().get('/fake_path', kwargs={'institution_id': self.institution.id})
         self.view.request = request
         self.view.request.user = self.user_2
-        self.view.kwargs = {'institution_id' : self.institution.id}
+        self.view.kwargs = {'institution_id': self.institution.id}
         self.view.object_list = self.view.get_queryset()
         res = self.view.get_context_data()
 
@@ -98,17 +86,18 @@ class TestInstitutionEntitlementList(AdminTestCase):
     def test_get_context_data_raise_PermissionDenined(self):
         self.institution = InstitutionFactory()
         self.institution.name = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution, login_availability=True, modifier=self.user_2)
+        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution,
+                                                                    login_availability=True, modifier=self.user_2)
         self.institution.save()
 
         self.user_2.is_staff = False
         self.user_2.is_superuser = False
         self.user_2.save()
 
-        request = RequestFactory().get('/fake_path', kwargs={'institution_id' : self.institution.id})
+        request = RequestFactory().get('/fake_path', kwargs={'institution_id': self.institution.id})
         self.view.request = request
         self.view.request.user = self.user_2
-        self.view.kwargs = {'institution_id' : self.institution.id}
+        self.view.kwargs = {'institution_id': self.institution.id}
         self.view.object_list = self.view.get_queryset()
 
         with self.assertRaises(PermissionDenied):
@@ -134,6 +123,13 @@ class TestInstitutionEntitlementList(AdminTestCase):
     def test_InstitutionEntitlementList_correct_view_permissions(self):
         user = AuthUserFactory()
         user.is_superuser = True
+
+        self.institution = InstitutionFactory()
+        self.institution.name = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+        self.institutionEntitlement = InstitutionEntitlementFactory(institution=self.institution,
+                                                                    login_availability=True, modifier=user)
+        self.institution.save()
+
         self.view_permission = views.InstitutionEntitlementList
 
         change_permission = Permission.objects.get(codename='admin_institution_entitlement')
@@ -153,6 +149,7 @@ class TestInstitutionEntitlementList(AdminTestCase):
 
         with self.assertRaises(PermissionDenied):
             views.InstitutionEntitlementList.as_view()(request)
+
 
 class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
@@ -208,7 +205,6 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
     def test_BulkAddInstitutionEntitlement_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
-        guid = user._id
         request = RequestFactory().post(reverse('entitlements:bulk_add'))
         request.user = user
 
@@ -217,7 +213,6 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
     def test_BulkAddInstitutionEntitlement_correct_view_permissions(self):
         user = AuthUserFactory()
-        guid = user._id
 
         change_permission = Permission.objects.get(codename='admin_institution_entitlement')
         user.user_permissions.add(change_permission)
@@ -228,6 +223,7 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
         response = self.view_permission.as_view()(request)
         self.assertEqual(response.status_code, 302)
+
 
 class TestToggleInstitutionEntitlement(AdminTestCase):
 
@@ -265,7 +261,6 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
 
     def test_ToggleInstitutionEntitlement_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
-        guid = user._id
         request = RequestFactory().post(
             reverse('institutions:entitlement_toggle',
                     kwargs={'institution_id': self.institution.id, 'entitlement_id': self.entitlement_1.id})
@@ -277,7 +272,6 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
 
     def test_ToggleInstitutionEntitlement_correct_view_permissions(self):
         user = AuthUserFactory()
-        guid = user._id
 
         change_permission = Permission.objects.get(codename='admin_institution_entitlement')
         user.user_permissions.add(change_permission)
@@ -296,6 +290,7 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         )
         self.assertEqual(response.status_code, 302)
 
+
 class TestDeleteInstitutionEntitlement(AdminTestCase):
 
     def setUp(self):
@@ -313,28 +308,29 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         self.view_permission = views.DeleteInstitutionEntitlement
 
         self.institution1 = InstitutionFactory()
-        self.intitution_entitlement1 = InstitutionEntitlementFactory(institution = self.institution1, login_availability = True, modifier = self.user)
-
+        self.intitution_entitlement1 = InstitutionEntitlementFactory(institution=self.institution1,
+                                                                     login_availability=True, modifier=self.user)
 
     def test_DeleteInstitutionEntitlement_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
-        #guid = user._id
         request = RequestFactory().get('/fake_path')
         request.user = user
 
         with self.assertRaises(PermissionDenied):
-            self.view_permission.as_view()(request, institution_id=self.institution1.id, entitlement_id=self.intitution_entitlement1.id)
+            self.view_permission.as_view()(request, institution_id=self.institution1.id,
+                                           entitlement_id=self.intitution_entitlement1.id)
 
     def test_DeleteInstitutionEntitlement_correct_view_permissions(self):
         user = AuthUserFactory()
-        #guid = user._id
 
         change_permission = Permission.objects.get(codename='admin_institution_entitlement')
         user.user_permissions.add(change_permission)
         user.save()
 
-        request = RequestFactory().post(reverse('institutions:entitlement_delete', kwargs={'institution_id': self.institution1.id, 'entitlement_id': self.intitution_entitlement1.id})
-        )
+        request = RequestFactory().post(reverse('institutions:entitlement_delete',
+                                                kwargs={'institution_id': self.institution1.id,
+                                                        'entitlement_id': self.intitution_entitlement1.id})
+                                        )
         request.user = user
 
         response = self.view_permission.as_view()(

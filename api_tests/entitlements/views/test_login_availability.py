@@ -1,28 +1,8 @@
-import json
-
-import jwe
-import jwt
 import pytest
-from django.utils import timezone
-
-from api.base import settings
 from api.base.settings.defaults import API_BASE
-
-from framework.auth import signals, Auth
-from framework.auth.views import send_confirm_email
-
-from osf.models import OSFUser
-from osf_tests.factories import InstitutionFactory, InstitutionEntitlementFactory, ProjectFactory, UserFactory, AuthUserFactory, InstitutionEntitlementFactory
-
-from tests.base import capture_signals
-
-from api.entitlements import views
-
-from django.test import RequestFactory
-
 from nose import tools as nt
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, InstitutionEntitlementFactory
 
-import requests
 
 @pytest.mark.django_db
 class TestLoginAvailability:
@@ -44,14 +24,14 @@ class TestLoginAvailability:
         url = '/{0}institutions/login_availability/'.format(API_BASE)
         data = {
             'institution_id': self.institution.id,
-            'entitlements': [self.institution_entitlement1.entitlement, self.institution_entitlement2.entitlement, self.institution_entitlement3.entitlement]
+            'entitlements': [self.institution_entitlement1.entitlement, self.institution_entitlement2.entitlement,
+                             self.institution_entitlement3.entitlement]
         }
 
         res = app.simple_post_api(url, data, expect_errors=True)
         res_data = res.json['login_availability']
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res_data, False)
-
 
     def test_post_serializer_invalid(self, app):
         self.institution = InstitutionFactory()
@@ -68,7 +48,6 @@ class TestLoginAvailability:
         self.user = AuthUserFactory()
         self.user.save()
         url = '/{0}institutions/login_availability/'.format(API_BASE)
-        url = '/{0}institutions/login_availability/'.format(API_BASE)
         data = {
             'institution_id': self.institution.id,
             'entitlements': [True, False, True]
@@ -76,6 +55,3 @@ class TestLoginAvailability:
 
         res = app.simple_post_api(url, data, expect_errors=True)
         nt.assert_equal(res.status_code, 400)
-
-
-
