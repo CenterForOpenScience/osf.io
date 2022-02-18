@@ -7,7 +7,7 @@ import jwt
 import waffle
 
 from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from api.base.authentication import drf
 from api.base import exceptions, settings
@@ -60,6 +60,13 @@ INSTITUTION_SHARED_SSO_MAP = {
     },
 }
 
+# A map that defines whether to allow an institutional user to access OSF via SSO. For each entry,
+# the key is the institution ID and the (entry) value is the expected value of the filter attribute
+# "selectiveSsoFilter". For local testing w/ Postman and CAS, add `'fake-saml-type-2': 'allowOsf'`.
+INSTITUTION_SELECTIVE_SSO_MAP = {
+    'uom': 'http://directory.manchester.ac.uk/epe/3rdparty/osf',
+}
+
 
 class InstitutionAuthentication(BaseAuthentication):
     """A dedicated authentication class for view ``InstitutionAuth``.
@@ -79,22 +86,30 @@ class InstitutionAuthentication(BaseAuthentication):
         The JWT `data` payload is expected in the following structure:
         {
             "provider": {
-                "idp":  "",
-                "id":   "",
+                "idp": "",
+                "id": "",
                 "user": {
-                    "username":     "",
-                    "fullname":     "",
-                    "familyName":   "",
-                    "givenName":    "",
-                    "middleNames":  "",
-                    "suffix":       "",
+                    "username": "",
+                    "fullname": "",
+                    "familyName": "",
+                    "givenName": "",
+                    "middleNames": "",
+                    "suffix": "",
+                    "department": "",
+                    "isMemberOf": "",  # Shared SSO
+                    "selectiveSsoFilter": "",  # Selective SSO
                 }
             }
         }
 
+        Note that if authentication failed, HTTP 403 Forbidden is returned no matter what type of
+        exception is raised. In this method, we use `AuthenticationFailed` when the payload is not
+        correctly encrypted/encoded since it is the "authentication" between CAS and this endpoint.
+        We use `PermissionDenied` for all other exceptions that happened afterwards.
+
         :param request: the POST request
         :return: user, None if authentication succeed
-        :raises: AuthenticationFailed if authentication fails
+        :raises: AuthenticationFailed or PermissionDenied if authentication fails
         """
 
         # Verify / decrypt / decode the payload
@@ -106,7 +121,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 algorithm='HS256',
             )
         except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
-            raise AuthenticationFailed
+            raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')
 
         # Load institution and user data
         data = json.loads(payload['data'])
@@ -116,7 +131,7 @@ class InstitutionAuthentication(BaseAuthentication):
             message = 'Institution SSO Error: invalid institution ID [{}]'.format(provider['id'])
             logger.error(message)
             sentry.log_message(message)
-            raise AuthenticationFailed(message)
+            raise PermissionDenied(detail='InstitutionSsoInvalidInstitution')
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
@@ -124,6 +139,20 @@ class InstitutionAuthentication(BaseAuthentication):
         middle_names = provider['user'].get('middleNames')
         suffix = provider['user'].get('suffix')
         department = provider['user'].get('department')
+        selective_sso_filter = provider['user'].get('selectiveSsoFilter')
+
+        # Check selective login first
+        if provider['id'] in INSTITUTION_SELECTIVE_SSO_MAP:
+            if selective_sso_filter != INSTITUTION_SELECTIVE_SSO_MAP[provider['id']]:
+                message = f'Institution SSO Error: user [email={username}] is not allowed for ' \
+                          f'institution SSO [id={institution._id}] due to selective SSO rules'
+                logger.error(message)
+                sentry.log_message(message)
+                raise PermissionDenied(detail='InstitutionSsoSelectiveNotAllowed')
+            logger.info(
+                f'Institution SSO: selective SSO verified for user [email={username}] '
+                f'at institution [id={institution._id}]',
+            )
 
         # Check secondary institutions which uses the SSO of primary ones
         secondary_institution = None
@@ -168,7 +197,7 @@ class InstitutionAuthentication(BaseAuthentication):
                       'for user [{}] from institution [{}]'.format(username, provider['id'])
             logger.error(message)
             sentry.log_message(message)
-            raise AuthenticationFailed(message)
+            raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
 
         # Get an existing user or create a new one. If a new user is created, the user object is
         # confirmed but not registered,which is temporarily of an inactive status. If an existing
@@ -208,19 +237,19 @@ class InstitutionAuthentication(BaseAuthentication):
                               'created via IdP login'.format(username)
                     sentry.log_message(message)
                     logger.error(message)
-                    return None, None
+                    raise PermissionDenied(detail='InstitutionSsoAccountNotConfirmed')
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
                 message = 'Institution SSO Error: SSO is not eligible for a deactivated account: [{}]'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
-                return None, None
+                raise PermissionDenied(detail='InstitutionSsoAccountDisabled')
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
                 message = 'Institution SSO Error: SSO is not eligible for a merged account: [{}]'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
-                return None, None
+                raise PermissionDenied(detail='InstitutionSsoAccountMerged')
             except exceptions.InvalidAccountError:
                 # Other invalid status: this shouldn't happen unless the user happens to be in a
                 # temporary state. Such state requires more updates before the user can be saved
@@ -229,7 +258,7 @@ class InstitutionAuthentication(BaseAuthentication):
                           'with an unknown or invalid status'.format(username)
                 sentry.log_message(message)
                 logger.error(message)
-                return None, None
+                raise PermissionDenied(detail='InstitutionSsoInvalidAccount')
         else:
             logger.info('Institution SSO: new user [{}]'.format(username))
 

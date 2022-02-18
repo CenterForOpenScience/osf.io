@@ -60,6 +60,9 @@ pyjwt==1.5.3
 django-celery-beat==1.1.1  # BSD 3 Clause
 django-celery-results==1.0.1
 pyjwe==1.0.0
+# Required by pyjwe and ndg-httpsclient
+# Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
+cryptography==3.3.2
 jsonschema==2.6.0
 django-guardian==1.4.9
 
