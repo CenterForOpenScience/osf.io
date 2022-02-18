@@ -1,6 +1,6 @@
 <%namespace name="contributor_list" file="../util/contributor_list.mako" />
 <div id="projectScope">
-    <header class="subhead" id="overview">
+    <header class="subhead">
 
         <div id="title" class="row">
             <h2 class="node-title">

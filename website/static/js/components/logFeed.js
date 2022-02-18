@@ -213,13 +213,13 @@ var LogFeed = {
                 var image = m('i.fa.fa-desktop');
                 if (ctrl.node.anonymous) item.anonymous = true;
                 if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.data) {
-                    image = m('img', { src : item.embeds.user.data.links.profile_image});
+                    image = m('img', { src : item.embeds.user.data.links.profile_image, 'aria-label' : 'Log Profile Logo'});
                 } else if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
-                    image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
+                    image = m('img', { src : item.embeds.user.errors[0].meta.profile_image, 'aria-label' : 'Log Profile Logo'});
                 }
                 return m('.db-activity-item', [
                     m('', [m('.db-log-avatar.db-log-avatar-project-overview.m-r-xs', image), m('span.p-l-sm.p-r-sm', ''), m.component(LogText.LogText, item)]),
-                    m('.text-right', m('span.text-muted.m-r-xs', item.attributes.formattableDate.local))
+                    m('.text-right', m('span.high-contrast-link.m-r-xs', item.attributes.formattableDate.local))
                 ]);
             }) : '',
             // Log pagination
