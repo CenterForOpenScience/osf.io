@@ -9,8 +9,8 @@
             <div class="form-group">
                 <label>${_("e-Rad number")}</label>
                 <div class="input-group">
-                <span class="input-group-addon">e-Rad</span>
-                <input class="form-control" data-bind="value: erad" placeholder=""/>
+                    <span class="input-group-addon">e-Rad</span>
+                    <input class="form-control" data-bind="value: erad" placeholder=""/>
                 </div>
             </div>
 

@@ -3,7 +3,7 @@
     <form role="form" data-bind="submit: submit">
 
         <div class="form-group">
-            <label>${_("Full name (e.g. Rosalind Elsie Franklin)")}</label>
+            <label>${_("Full name (e.g. Rosalind Elsie Franklin)")} <span style="color: red">*</span></label>
             ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
             <input class="form-control" data-bind="value: full" maxlength="186"/>
             <div data-bind="visible: showMessages, css:'text-danger'">
@@ -25,6 +25,9 @@
             <div class="form-group col-md-4">
                 <label>${_("Family name")} <span style="color: red">*</span></label>
                 <input class="form-control" data-bind="value: family" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: family"></p>
+                </div>
             </div>
             <div class="form-group col-md-4">
                 <label>${_("Middle name(s)")}</label>
@@ -33,6 +36,9 @@
             <div class="form-group col-md-4">
                 <label>${_("Given name")} <span style="color: red">*</span></label>
                 <input class="form-control" data-bind="value: given" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: given"></p>
+                </div>
             </div>
         </div>
 
@@ -40,6 +46,9 @@
             <div class="form-group col-md-4">
                 <label>${_("Given name (EN)")} <span style="color: red">*</span></label>
                 <input class="form-control" data-bind="value: given_en" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: given_en"></p>
+                </div>
             </div>
             <div class="form-group col-md-4">
                 <label>${_("Middle name(s) (EN)")}</label>
@@ -48,6 +57,9 @@
             <div class="form-group col-md-4">
                 <label>${_("Family name (EN)")} <span style="color: red">*</span></label>
                 <input class="form-control" data-bind="value: family_en" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: family_en"></p>
+                </div>
             </div>
         </div>
 

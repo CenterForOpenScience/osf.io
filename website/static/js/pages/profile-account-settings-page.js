@@ -6,10 +6,11 @@ var accountSettings = require('js/accountSettings.js');
 var passwordForms = require('js/passwordForms');
 var profile = require('../profile.js');
 
-var ctx = window.contextVars;
-new profile.Names('#accountInformation', ctx.nameUrls, ['edit']);
 
 $(function() {
+    var ctx = window.contextVars;
+    new profile.AccountInformation('#accountInformation', ctx.accountUrls, ['edit']);
+
     var viewModel = new accountSettings.UserProfileViewModel();
     $osf.applyBindings(viewModel, '#connectedEmails');
     viewModel.init();

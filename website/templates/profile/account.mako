@@ -18,14 +18,21 @@
                     <div class="panel-body">
                         <form role="form" data-bind="submit: submit">
                             <div class="form-group">
-                                <label>${_("displayName")}表示名 <span style="color: red">*</span></label>
-                                <input class="form-control" data-bind="value: full" maxlength="186"><span class="validationMessage" style="display: none;"></span>
+                                <label>${_("Full name (e.g. Rosalind Elsie Franklin)")} <span style="color: red">*</span></label>
+                                ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+                                <input class="form-control" data-bind="value: full" maxlength="186"/>
+                                <div data-bind="visible: showMessages, css:'text-danger'">
+                                    <p data-bind="validationMessage: full"></p>
+                                </div>
                             </div>
 
                             <div class="form-row row">
                                 <div class="form-group col-md-4">
                                     <label>${_("Family name")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: family" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: family"></p>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label>${_("Middle name(s)")}</label>
@@ -34,6 +41,9 @@
                                 <div class="form-group col-md-4">
                                     <label>${_("Given name")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: given" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: given"></p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -41,6 +51,9 @@
                                 <div class="form-group col-md-4">
                                     <label>${_("Given name (EN)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: given_en" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: given_en"></p>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label>${_("Middle name(s) (EN)")}</label>
@@ -49,6 +62,9 @@
                                 <div class="form-group col-md-4">
                                     <label>${_("Family name (EN)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: family_en" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: family_en"></p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -57,7 +73,7 @@
                                     <label>${_("Institution / Employer")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution"
                                         placeholder="${_('Required')}"/>
-                                    <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
                                         <p data-bind="validationMessage: institution"></p>
                                     </div>
                                 </div>
@@ -72,7 +88,7 @@
                                     <label>${_("Institution / Employer (English)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution_en"
                                            placeholder="${_('Required')}"/>
-                                    <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
                                         <p data-bind="validationMessage: institution_en"></p>
                                     </div>
                                 </div>
@@ -84,8 +100,7 @@
 
                             <div class="form-group">
                                 <label>${_("e-Rad number")}</label>
-                                <input class="form-control" data-bind="value: erad" maxlength="186">
-                                <span class="validationMessage" style="display: none;"></span>
+                                <input class="form-control" data-bind="value: erad" placeholder=""/>
                             </div>
 
                             <div class="p-t-lg p-b-lg">
@@ -362,8 +377,8 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             username: ${user_name | sjson, n},
             requestedDeactivation: ${requested_deactivation | sjson, n},
-            nameUrls: {
-                crud: ${ api_url_for('serialize_names') | sjson, n },
+            accountUrls: {
+                crud: ${ api_url_for('serialize_account_info') | sjson, n },
                 impute: ${ api_url_for('impute_names') | sjson, n }
             }
         });

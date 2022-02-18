@@ -71,10 +71,11 @@ class InstitutionAuthentication(BaseAuthentication):
                     "username":                 "",  # email or eppn
                     "fullname":                 "",  # displayName
                     "familyName":               "",  # sn or surname
-                    "jaSurname":                "",  # jasn
                     "givenName":                "",  # givenName
-                    "jaGivenName":              "",  # jaGivenName
                     "middleNames":              "",
+                    "jaDisplayName":            "",  # jaDisplayName
+                    "jaSurname":                "",  # jasn
+                    "jaGivenName":              "",  # jaGivenName
                     "jaMiddleNames":            "",
                     "suffix":                   "",
                     "groups":                   "",  # isMemberOf for mAP API v1
@@ -82,8 +83,8 @@ class InstitutionAuthentication(BaseAuthentication):
                     "entitlement":              "",  # eduPersonEntitlement
                     "email":                    "",  # mail
                     "organizationName":         "",  # o
-                    "jaOrganizationName":       "",  # jao
                     "organizationalUnit":       "",  # ou
+                    "jaOrganizationName":       "",  # jao
                     "jaOrganizationalUnitName": "",  # jaou
                 }
             }
@@ -116,12 +117,14 @@ class InstitutionAuthentication(BaseAuthentication):
 
         logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
+        p_idp = provider['idp']
         p_user = provider['user']
         username = p_user.get('username')
         fullname = p_user.get('fullname', p_user.get('displayName'))
         given_name = p_user.get('givenName')
         family_name = p_user.get('familyName', p_user.get('surname'))
         middle_names = p_user.get('middleNames')
+        fullname_ja = p_user.get('jaFullname', p_user.get('jaDisplayName'))
         given_name_ja = p_user.get('jaGivenName')
         family_name_ja = p_user.get('jaSurname')
         middle_names_ja = p_user.get('jaMiddleNames')
@@ -137,8 +140,10 @@ class InstitutionAuthentication(BaseAuthentication):
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
-        if given_name_ja and family_name_ja and not fullname:
-            fullname = given_name_ja + ' ' + family_name_ja
+        if given_name_ja and family_name_ja and not fullname_ja:
+            fullname_ja = given_name_ja + ' ' + family_name_ja
+        if fullname_ja:
+            fullname = fullname_ja
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME
@@ -266,12 +271,19 @@ class InstitutionAuthentication(BaseAuthentication):
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
 
+            if given_name_ja:
+                user.given_name = given_name_ja
+            if family_name_ja:
+                user.family_name = family_name_ja
+            if middle_names_ja:
+                user.middle_names = middle_names_ja
+
             if given_name:
-                user.given_name = given_name
+                user.given_name_en = given_name
             if family_name:
-                user.family_name = family_name
+                user.family_name_en = family_name
             if middle_names:
-                user.middle_names = middle_names
+                user.middle_names_en = middle_names
             if suffix:
                 user.suffix = suffix
 
@@ -308,8 +320,10 @@ class InstitutionAuthentication(BaseAuthentication):
                     #   organizational_unit (ou) : Department / Institute
                     job = {
                         'title': '',
-                        'institution': organization_name,  # required
+                        'institution': organization_name_ja,  # required
+                        'institution_en': organization_name,  # required
                         'department': '',
+                        'department_en': '',
                         'location': '',
                         'startMonth': '',
                         'startYear': '',
@@ -317,8 +331,10 @@ class InstitutionAuthentication(BaseAuthentication):
                         'endYear': '',
                         'ongoing': False,
                     }
+                    if organizational_unit_ja:
+                        job['department'] = organizational_unit_ja
                     if organizational_unit:
-                        job['department'] = organizational_unit
+                        job['department_en'] = organizational_unit
                     user.jobs.append(job)
             else:
                 user.eppn = None
@@ -339,13 +355,17 @@ class InstitutionAuthentication(BaseAuthentication):
         # update every login.
         ext.set_idp_attr(
             {
+                'idp': p_idp,
                 'eppn': eppn,
                 'username': username,
                 'fullname': fullname,
+                'fullname_ja': fullname_ja,
                 'entitlement': entitlement,
                 'email': email,
-                'organization_name': organization_name,
-                'organizational_unit': organizational_unit,
+                'organization_name': organization_name_ja,
+                'organizational_unit': organizational_unit_ja,
+                'organization_name_en': organization_name,
+                'organizational_unit_en': organizational_unit,
             },
         )
 

@@ -424,15 +424,20 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.imputedFamily = ko.observable();
     self.imputedSuffix = ko.observable();
 
+    self.imputedGivenEn = ko.observable();
+    self.imputedMiddleEn = ko.observable();
+    self.imputedFamilyEn = ko.observable();
+
     self.trackedProperties = [
         self.full,
         self.given,
         self.middle,
         self.family,
+        self.suffix,
+
         self.given_en,
         self.middle_en,
         self.family_en,
-        self.suffix
     ];
 
     var validated = ko.validatedObservable(self);
@@ -452,6 +457,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         self.middle(self.imputedMiddle());
         self.family(self.imputedFamily());
         self.suffix(self.imputedSuffix());
+
+        self.given_en(self.imputedGivenEn());
+        self.middle_en(self.imputedMiddleEn());
+        self.family_en(self.imputedFamilyEn());
     };
 
     self.impute = function () {
@@ -467,6 +476,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
             self.imputedMiddle(response.middle);
             self.imputedFamily(response.family);
             self.imputedSuffix(response.suffix);
+
+            self.imputedGivenEn(response.given);
+            self.imputedMiddleEn(response.middle);
+            self.imputedFamilyEn(response.family);
         });
     };
 
@@ -667,6 +680,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     );
 
     self.trackedProperties = [
+        self.erad,
         self.profileWebsites,
         self.orcid,
         self.researcherId,
@@ -1083,7 +1097,8 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
             },
             message: _('Institution/Employer required')
         }
@@ -1092,7 +1107,8 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
             },
             message: _('Institution/Employer (English) required')
         }
@@ -1251,67 +1267,73 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
     self.middle_en = koHelpers.sanitizedObservable().extend({trimmed: true});
     self.family_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
 
+    self.erad = ko.observable('');
+
     self.department = ko.observable('').extend({trimmed: true});
+    self.department_en = ko.observable('').extend({trimmed: true});
     self.institution = ko.observable('').extend({
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
             },
             message: _('Institution/Employer required')
         }
     });
-
-    self.department_en = ko.observable('').extend({trimmed: true});
     self.institution_en = ko.observable('').extend({
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
             },
             message: _('Institution/Employer (English) required')
         }
     });
-    self.erad = ko.observable('');
 
     self.imputedGiven = ko.observable();
     self.imputedMiddle = ko.observable();
     self.imputedFamily = ko.observable();
     self.imputedSuffix = ko.observable();
 
+    self.imputedGivenEn = ko.observable();
+    self.imputedMiddleEn = ko.observable();
+    self.imputedFamilyEn = ko.observable();
+
     self.trackedProperties = [
         self.full,
         self.given,
         self.middle,
         self.family,
+        self.suffix,
+
         self.given_en,
         self.middle_en,
         self.family_en,
-        self.suffix,
-        self.suffix,
-        self.suffix,
-        self.suffix,
-        self.erad
+
+        self.erad,
+
+        self.institution,
+        self.department,
+        self.institution_en,
+        self.department_en,
     ];
 
     var validated = ko.validatedObservable(self);
+
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    self.institutionObjectEmpty = ko.pureComputed(function() {
+        return !self.institution() && !self.department() && !self.title();
+    }, self);
+    self.institutionEnObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_en() && !self.department() && !self.title();
+    }, self);
+
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
     self.hasValidProperty(true);
-
-    self.citations = ko.observable();
-
-    self.hasFirst = ko.computed(function() {
-        return !! self.full();
-    });
-
-    self.autoFill = function() {
-        self.given(self.imputedGiven());
-        self.middle(self.imputedMiddle());
-        self.family(self.imputedFamily());
-        self.suffix(self.imputedSuffix());
-    };
 
     self.impute = function () {
         return $.ajax({
@@ -1326,71 +1348,12 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
             self.imputedMiddle(response.middle);
             self.imputedFamily(response.family);
             self.imputedSuffix(response.suffix);
+
+            self.imputedGivenEn(response.given);
+            self.imputedMiddleEn(response.middle);
+            self.imputedFamilyEn(response.family);
         });
     };
-
-    self.initials = function(names) {
-        names = $.trim(names);
-        return names
-            .split(/\s+/)
-            .map(function(name) {
-                return name[0].toUpperCase() + '.';
-            })
-            .filter(function(initial) {
-                return initial.match(/^[a-z]/i);
-            }).join(' ');
-    };
-
-    var suffix = function(suffix) {
-        var suffixLower = suffix.toLowerCase();
-        if ($.inArray(suffixLower, ['jr', 'sr']) !== -1) {
-            suffix = suffix + '.';
-            suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-        } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) !== -1) {
-            suffix = suffix.toUpperCase();
-        }
-        return suffix;
-    };
-
-    self.hasDetail = ko.computed(function() {
-        return !! (self.given() && self.family());
-    });
-
-    self.citeApa = ko.computed(function() {
-        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
-        var given = self.hasDetail() ? $.trim(self.given() + ' ' + self.middle()) : $.trim(self.imputedGiven() + ' ' + self.imputedMiddle());
-
-        if (given) {
-            cite = cite + ', ' + self.initials(given);
-        }
-        if (self.hasDetail() && self.suffix()) {
-            cite = cite + ', ' + suffix(self.suffix());
-        } else if (self.imputedSuffix()){
-            cite = cite + ', ' + suffix(self.imputedSuffix());
-        }
-        return cite;
-    });
-
-    self.citeMla = ko.computed(function() {
-        var cite = self.hasDetail() ? self.family() : self.imputedFamily();
-        if (self.hasDetail()) {
-            cite = cite + ', ' + self.given();
-            if (self.middle()) {
-                cite = cite + ' ' + self.initials(self.middle());
-            }
-        } else if (self.full()) {
-            cite = cite + ', ' + self.imputedGiven();
-            if (self.imputedMiddle()) {
-                cite = cite + ' ' + self.initials(self.imputedMiddle());
-            }
-        }
-        if (self.hasDetail() && self.suffix()) {
-            cite = cite + ', ' + suffix(self.suffix());
-        } else if (self.imputedSuffix()) {
-            cite = cite + ', ' + suffix(self.imputedSuffix());
-        }
-        return cite;
-    });
 
     self.fetch(self.impute);
     self.full.subscribe(self.impute);

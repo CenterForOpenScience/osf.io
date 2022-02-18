@@ -648,8 +648,68 @@ def serialize_names(**kwargs):
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
+        'given_en': user.given_name_en,
+        'middle_en': user.middle_names_en,
+        'family_en': user.family_name_en,
         'suffix': user.suffix,
     }
+
+
+@collect_auth
+def serialize_account_info(auth, uid=None, **kwargs):
+    ret_jobs = serialize_contents('jobs', serialize_job, auth, uid)
+    jobs = ret_jobs.get('contents', [{}])
+    first_job = jobs[0] if jobs else {}
+    user = get_target_user(auth)
+    logger.info(f"user is_full_account_required_info {user.is_full_account_required_info}")
+    ret = {
+        'full': user.fullname,
+        'given': user.given_name,
+        'middle': user.middle_names,
+        'family': user.family_name,
+        'given_en': user.given_name_en,
+        'middle_en': user.middle_names_en,
+        'family_en': user.family_name_en,
+        'suffix': user.suffix,
+        'erad': user.erad,
+        'institution': first_job.get('institution'),
+        'department': first_job.get('department'),
+        'institution_en': first_job.get('institution_en'),
+        'department_en': first_job.get('department_en'),
+    }
+    return ret
+
+
+@must_be_logged_in
+def unserialize_account_info(auth, **kwargs):
+    verify_user_match(auth, **kwargs)
+
+    user = get_target_user(auth)
+    json_data = escape_html(request.get_json())
+
+    # json get can return None, use `or` here to ensure we always strip a string
+    user.fullname = (json_data.get('full') or '').strip()
+    user.given_name_en = (json_data.get('given_en') or '').strip()
+    user.middle_names_en = (json_data.get('middle_en') or '').strip()
+    user.family_name_en = (json_data.get('family_en') or '').strip()
+    user.given_name = (json_data.get('given') or '').strip()
+    user.middle_names = (json_data.get('middle') or '').strip()
+    user.family_name = (json_data.get('family') or '').strip()
+    user.suffix = (json_data.get('suffix') or '').strip()
+
+    if user.jobs:
+        first_job = user.jobs[0]
+        first_job['institution'] = (json_data.get('institution', '')).strip()
+        first_job['department'] = (json_data.get('department', '')).strip()
+        first_job['institution_en'] = (json_data.get('institution_en', '')).strip()
+        first_job['department_en'] = (json_data.get('department_en', '')).strip()
+
+    user.save()
+
+    if user.jobs:
+        saved_fields = {'jobs': user.jobs}
+        request_headers = string_type_request_headers(request)
+        user.check_spam(saved_fields=saved_fields, request_headers=request_headers)
 
 
 def get_target_user(auth, uid=None):
@@ -679,6 +739,7 @@ def serialize_social(auth, uid=None, **kwargs):
     ret = target.social
     append_editable(ret, auth, uid)
     if ret['editable']:
+        ret['erad'] = target.erad
         ret['addons'] = serialize_social_addons(target)
     return ret
 
@@ -687,6 +748,8 @@ def serialize_job(job):
     return {
         'institution': job.get('institution'),
         'department': job.get('department'),
+        'institution_en': job.get('institution_en'),
+        'department_en': job.get('department_en'),
         'title': job.get('title'),
         'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
@@ -700,6 +763,8 @@ def serialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
+        'institution_en': school.get('institution_en'),
+        'department_en': school.get('department_en'),
         'degree': school.get('degree'),
         'startMonth': school.get('startMonth'),
         'startYear': school.get('startYear'),
@@ -720,6 +785,8 @@ def append_idp_attr_common(data, user):
     data['idp_attr'] = {
         'institution': idp_attr.get('organization_name'),
         'department': idp_attr.get('organizational_unit'),
+        'institution_en': idp_attr.get('organization_name_en'),
+        'department_en': idp_attr.get('organizational_unit_en'),
     }
 
 
@@ -756,6 +823,9 @@ def unserialize_names(**kwargs):
     json_data = escape_html(request.get_json())
     # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
+    user.given_name_en = (json_data.get('given_en') or '').strip()
+    user.middle_names_en = (json_data.get('middle_en') or '').strip()
+    user.family_name_en = (json_data.get('family_en') or '').strip()
     user.given_name = (json_data.get('given') or '').strip()
     user.middle_names = (json_data.get('middle') or '').strip()
     user.family_name = (json_data.get('family') or '').strip()
@@ -777,6 +847,8 @@ def unserialize_social(auth, **kwargs):
     user = auth.user
     json_data = escape_html(request.get_json())
 
+    user.erad = json_data.get('erad')
+
     for soc in user.SOCIAL_FIELDS.keys():
         user.social[soc] = json_data.get(soc)
 
@@ -792,6 +864,8 @@ def unserialize_job(job):
     return {
         'institution': job.get('institution'),
         'department': job.get('department'),
+        'institution_en': job.get('institution_en'),
+        'department_en': job.get('department_en'),
         'title': job.get('title'),
         'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
@@ -805,6 +879,8 @@ def unserialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
+        'institution_en': school.get('institution_en'),
+        'department_en': school.get('department_en'),
         'degree': school.get('degree'),
         'startMonth': school.get('startMonth'),
         'startYear': school.get('startYear'),
