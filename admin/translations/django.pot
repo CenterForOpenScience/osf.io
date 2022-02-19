@@ -3110,3 +3110,15 @@ msgstr ""
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
+
+msgid "Login Availability Control"
+msgstr ""
+
+msgid "List of Entitlements"
+msgstr ""
+
+msgid "Entitlements"
+msgstr ""
+
+msgid "New entitlement"
+msgstr ""

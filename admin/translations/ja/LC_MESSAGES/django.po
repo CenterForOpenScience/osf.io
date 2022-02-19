@@ -3156,3 +3156,15 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
 #~ msgid "Institutions"
 #~ msgstr "機関"
+
+msgid "Login Availability Control"
+msgstr ""
+
+msgid "List of Entitlements"
+msgstr ""
+
+msgid "Entitlements"
+msgstr ""
+
+msgid "New entitlement"
+msgstr ""

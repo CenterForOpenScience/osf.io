@@ -3096,3 +3096,14 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
+msgid "Login Availability Control"
+msgstr ""
+
+msgid "List of Entitlements"
+msgstr ""
+
+msgid "Entitlements"
+msgstr ""
+
+msgid "New entitlement"
+msgstr ""
