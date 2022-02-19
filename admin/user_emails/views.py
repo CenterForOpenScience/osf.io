@@ -2,17 +2,17 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
-from django.views.defaults import page_not_found
+from django.views.defaults import page_not_found, permission_denied
 from django.views.generic import FormView
 from django.views.generic import ListView
 from rest_framework import status as http_status
 
 from admin.base.views import GuidView
+from admin.rdm.utils import RdmPermissionMixin
 from admin.user_emails.forms import UserEmailsSearchForm
 from framework.exceptions import HTTPError
 from osf.models.user import OSFUser
@@ -23,10 +23,10 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 
-class UserEmailsFormView(PermissionRequiredMixin, FormView):
+class UserEmailsFormView(RdmPermissionMixin, FormView):
     template_name = 'user_emails/search.html'
     object_type = 'osfuser'
-    permission_required = 'osf.view_osfuser'
+    permission_required = ()
     raise_exception = True
     form_class = UserEmailsSearchForm
 
@@ -38,16 +38,24 @@ class UserEmailsFormView(PermissionRequiredMixin, FormView):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
         email = form.cleaned_data['email']
+        request_user = self.request.user
 
         if guid or email:
             if email:
                 try:
-                    user = OSFUser.objects.filter(Q(username=email) | Q(emails__address=email)).distinct('id').get()
+                    users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
+                    users_query = users_query.filter(Q(username=email) | Q(emails__address=email))
+                    if self.is_admin:
+                        now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
+                        users_query = users_query.filter(affiliated_institutions__in=now_institutions_id)
+                    user = users_query.distinct('id').get()
                     guid = user.guids.first()._id
                 except OSFUser.DoesNotExist:
-                    return page_not_found(self.request, AttributeError('User with email address {} not found.'.format(email)))
+                    msg = 'User with email address {} not found.'.format(email)
+                    return page_not_found(self.request, AttributeError(msg))
                 except OSFUser.MultipleObjectsReturned:
-                    return page_not_found(self.request, AttributeError('Multiple users with email address {} found, please notify DevOps.'.format(email)))
+                    msg = 'Multiple users with email address {} found, please notify DevOps.'.format(email)
+                    return page_not_found(self.request, AttributeError(msg))
             self.redirect_url = reverse('user-emails:user', kwargs={'guid': guid})
         elif name:
             self.redirect_url = reverse('user-emails:search_list', kwargs={'name': name})
@@ -59,7 +67,7 @@ class UserEmailsFormView(PermissionRequiredMixin, FormView):
         return self.redirect_url
 
 
-class UserEmailsSearchList(PermissionRequiredMixin, ListView):
+class UserEmailsSearchList(RdmPermissionMixin, ListView):
     template_name = 'user_emails/user_list.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
@@ -67,10 +75,20 @@ class UserEmailsSearchList(PermissionRequiredMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        query = OSFUser.objects.filter(fullname__icontains=self.kwargs['name']).only(
+        keyword = self.kwargs['name']
+        request_user = self.request.user
+
+        if not keyword:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
+        users_query = users_query.filter(fullname__icontains=keyword)
+        if self.is_admin:
+            now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
+            users_query = users_query.filter(affiliated_institutions__in=now_institutions_id)
+        users_query = users_query.order_by('fullname').only(
             'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
         )
-        return query
+        return users_query
 
     def get_context_data(self, **kwargs):
         users = self.get_queryset()
@@ -87,7 +105,7 @@ class UserEmailsSearchList(PermissionRequiredMixin, ListView):
         return super(UserEmailsSearchList, self).get_context_data(**kwargs)
 
 
-class UserEmailsView(PermissionRequiredMixin, GuidView):
+class UserEmailsView(RdmPermissionMixin, GuidView):
     template_name = 'user_emails/user_emails.html'
     context_object_name = 'user'
     permission_required = 'osf.view_osfuser'
@@ -98,7 +116,15 @@ class UserEmailsView(PermissionRequiredMixin, GuidView):
         return kwargs
 
     def get_object(self, queryset=None):
+        request_user = self.request.user
         user = OSFUser.load(self.kwargs.get('guid'))
+
+        if self.is_admin:
+            now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
+            all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
+
+            if user.pk not in all_institution_users_id:
+                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         return {
             'username': user.username,
@@ -108,20 +134,30 @@ class UserEmailsView(PermissionRequiredMixin, GuidView):
         }
 
 
-class UserPrimaryEmail(PermissionRequiredMixin, View):
+class UserPrimaryEmail(RdmPermissionMixin, View):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
+        request_user = self.request.user
         user = OSFUser.load(self.kwargs.get('guid'))
         primary_email = request.POST.get('primary_email')
         username = None
+
+        if self.is_admin:
+            now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
+            all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
+
+            if user.pk not in all_institution_users_id:
+                # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+                return permission_denied(self.request)
 
         # Refer to website.profile.views.update_user
         if primary_email:
             primary_email_address = primary_email.strip().lower()
             if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
-                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+                # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+                return permission_denied(self.request)
             username = primary_email_address
 
         # make sure the new username has already been confirmed
