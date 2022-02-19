@@ -39,6 +39,7 @@ from api.base.settings import LOGIN_BY_EPPN
 from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 from nii.mapcore import mapcore_sync_is_enabled, mapcore_sync_map_group
 from random import randint
+from datetime import datetime, timedelta
 
 
 @collect_auth
@@ -968,6 +969,13 @@ def claim_user_form(auth, **kwargs):
             uid=uid, pid=pid, token=token))
 
     unclaimed_record = user.unclaimed_records[pid]
+    expire_time = unclaimed_record['expires']
+    time_now = datetime.now(timezone.utc)
+    if expire_time < time_now:
+        unclaimed_record['expires'] = datetime.now(timezone.utc) + timedelta(minutes=5)
+        user.unclaimed_records[pid] = unclaimed_record
+        user.save()
+        return redirect(web_url_for('claim_user_activate', uid= uid, pid=pid, token=token))
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
@@ -1025,6 +1033,12 @@ def claim_user_form(auth, **kwargs):
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
 
+def claim_user_activate(**kwargs):
+    uid, pid = kwargs['uid'], kwargs['pid']
+    user = OSFUser.load(uid)
+    url = user.get_claim_url(project_id=pid)
+
+    return {'url': url}
 
 def _add_related_claimed_tag_to_user(pid, user):
     """
