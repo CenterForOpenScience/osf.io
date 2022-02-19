@@ -252,6 +252,7 @@ msgstr "バナーを削除"
 #: admin/templates/base.html:233 admin/templates/base.html:236
 #: admin/templates/base.html:239 admin/templates/base.html:242
 #: admin/templates/base.html:246 admin/templates/base.html:279
+#: .\admin\templates\base.html:153
 msgid "RDM"
 msgstr "RDM"
 
@@ -3157,58 +3158,26 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-#: admin/templates/user_emails/search.html:16
+#: admin/templates/user_emails/search.html
+msgid "User-Emails"
+msgstr ""
+
 msgid "User Search"
 msgstr ""
 
-#: admin/templates/user_emails/search.html:10
-msgid "RDM User-Emails - User Search"
+#: admin/templates/user_emails/user_emails.html
+msgid "User Emails Setting"
 msgstr ""
 
-#: admin/templates/user_emails/search.html:23
-msgid "Submit@search"
-msgstr ""
-
-#: admin/templates/user_emails/user_emails.html:6
-msgid "RDM User-Emails - User Emails Setting"
-msgstr ""
-
-#: admin/templates/user_emails/user_emails.html:17
 msgid "User Emails"
 msgstr ""
 
-#: admin/templates/user_emails/user_emails.html:30
 msgid "Primary"
 msgstr ""
 
-#: admin/templates/user_emails/user_emails.html:35
 msgid "Set Primary"
 msgstr ""
 
-#: admin/templates/user_emails/user_list.html:6
-msgid "RDM User-Emails - Search Results"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:15
-msgid "GUID"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:16
-msgid "Username"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:17
-msgid "Fullname"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:18
-msgid "Date confirmed"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:19
-msgid "Date disabled"
-msgstr ""
-
-#: admin/templates/user_emails/user_list.html:49
-msgid "No results found"
+#: admin/templates/user_emails/user_list.html
+msgid "Search Results"
 msgstr ""

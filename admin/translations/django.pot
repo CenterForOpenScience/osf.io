@@ -247,6 +247,7 @@ msgstr ""
 #: admin/templates/base.html:233 admin/templates/base.html:236
 #: admin/templates/base.html:239 admin/templates/base.html:242
 #: admin/templates/base.html:246 admin/templates/base.html:279
+#: .\admin\templates\base.html:153
 msgid "RDM"
 msgstr ""
 
@@ -3109,4 +3110,28 @@ msgstr ""
 #: admin/templates/util/pagination.html:25
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr ""
+
+#: admin/templates/user_emails/search.html
+msgid "User-Emails"
+msgstr ""
+
+msgid "User Search"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html
+msgid "User Emails Setting"
+msgstr ""
+
+msgid "User Emails"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Set Primary"
+msgstr ""
+
+#: admin/templates/user_emails/user_list.html
+msgid "Search Results"
 msgstr ""
