@@ -335,6 +335,8 @@ class TestUserPrimaryEmail(AdminTestCase):
         request.user = self.user
         mockApi.return_value = 'Call it'
 
+        self.view(request, guid=self.user._id)
+
         mockApi.assert_called()
 
     @mock.patch('admin.user_emails.views.mailchimp_utils.unsubscribe_mailchimp_async')
@@ -346,6 +348,8 @@ class TestUserPrimaryEmail(AdminTestCase):
         self.user.save()
         request.user = self.user
         mockApi.return_value = 'Call it'
+
+        self.view(request, guid=self.user._id)
 
         mockApi.assert_not_called()
 
