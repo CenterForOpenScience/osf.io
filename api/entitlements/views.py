@@ -1,13 +1,14 @@
 import logging
 
-from api.entitlements.serializers import (
-    LoginAvailabilitySerializer,
-)
-from osf.models import InstitutionEntitlement
 from rest_framework import status
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from api.entitlements.serializers import (
+    LoginAvailabilitySerializer,
+)
+from osf.models import InstitutionEntitlement
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,13 @@ class LoginAvailability(APIView):
     view_category = 'institutions'
     view_name = 'login_availability'
     parser_classes = (JSONParser,)
+    permission_classes = ()
+
+    def get_serializer_class(self):
+        return None
+
+    def _get_embed_partial(self):
+        return None
 
     def post(self, request, *args, **kwargs):
         serializer = LoginAvailabilitySerializer(data=request.data)
