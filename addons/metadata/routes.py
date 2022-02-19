@@ -3,6 +3,7 @@ Routes associated with the metadata addon
 """
 
 from framework.routing import Rule, json_renderer
+from website.routes import notemplate
 from . import SHORT_NAME
 from . import views
 
@@ -40,4 +41,18 @@ api_routes = {
         ], 'delete', views.metadata_delete_file, json_renderer),
     ],
     'prefix': '/api/v1',
+}
+
+page_routes = {
+    'rules': [
+        Rule(
+            [
+                '/<pid>/{}'.format(SHORT_NAME),
+                '/<pid>/node/<nid>/{}'.format(SHORT_NAME),
+            ],
+            'get',
+            views.metadata_report_list_view,
+            notemplate
+        ),
+    ]
 }

@@ -14,6 +14,7 @@ from website.project.decorators import (
     must_have_addon,
     must_have_permission,
 )
+from website.ember_osf_web.views import use_ember_app
 
 
 logger = logging.getLogger(__name__)
@@ -160,3 +161,9 @@ def metadata_delete_file(auth, filepath=None, **kwargs):
     addon = node.get_addon(SHORT_NAME)
     addon.delete_file_metadata(filepath)
     return _response_file_metadata(addon, filepath)
+
+
+@must_be_valid_project
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_report_list_view(**kwargs):
+    return use_ember_app()

@@ -21,7 +21,7 @@ class AddonAppConfig(BaseAddonAppConfig):
 
     owners = ['user', 'node']
 
-    views = []
+    views = ['page']
     configs = ['accounts', 'node']
 
     categories = ['other']
@@ -40,7 +40,7 @@ class AddonAppConfig(BaseAddonAppConfig):
     @property
     def routes(self):
         from . import routes
-        return [routes.api_routes]
+        return [routes.api_routes, routes.page_routes]
 
     @property
     def user_settings(self):
