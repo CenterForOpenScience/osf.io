@@ -1,4 +1,3 @@
-from past.builtins import basestring
 from osf.models.institution_entitlement import InstitutionEntitlement
 from nose import tools as nt
 from .factories import InstitutionFactory, InstitutionEntitlementFactory, AuthUserFactory
@@ -11,7 +10,7 @@ class TestInstitutionEntitlementModel:
     def test_factory(self):
         institution = InstitutionFactory()
         user = AuthUserFactory()
-        inst = InstitutionEntitlementFactory(institution = institution, login_availability = True, modifier = user)
+        inst = InstitutionEntitlementFactory(institution=institution, login_availability=True, modifier=user)
         nt.assert_equal(inst.institution, institution)
         nt.assert_equal(inst.login_availability, True)
         nt.assert_equal(inst.modifier, user)
