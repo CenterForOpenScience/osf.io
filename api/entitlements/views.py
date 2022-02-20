@@ -5,6 +5,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.base.permissions import TokenHasScope
 from api.entitlements.serializers import (
     LoginAvailabilitySerializer,
 )
@@ -17,7 +18,7 @@ class LoginAvailability(APIView):
     view_category = 'institutions'
     view_name = 'login_availability'
     parser_classes = (JSONParser,)
-    permission_classes = ()
+    permission_classes = (TokenHasScope,)
 
     def get_serializer_class(self):
         return None
