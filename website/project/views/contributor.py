@@ -481,7 +481,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = OSFUser.load(unclaimed_record['referrer_id'])
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
-
+    cancel_claim_url = claim_url + '&cancel=true'
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
@@ -558,6 +558,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         logo=logo if logo else settings.OSF_LOGO,
         osf_contact_email=settings.OSF_CONTACT_EMAIL,
         login_by_eppn=LOGIN_BY_EPPN,
+        cancel_claim_url=cancel_claim_url,
     )
 
     return to_addr
@@ -932,7 +933,7 @@ def claim_user_form(auth, **kwargs):
     """
 
     cancel_request = request.form.get('cancel') or request.args.get('cancel')
-    if cancel_request:
+    if cancel_request == 'true':
         contributor_id, node_id = kwargs['uid'], kwargs['pid']
         contributor = OSFUser.load(contributor_id)
         if contributor is None:
@@ -975,7 +976,7 @@ def claim_user_form(auth, **kwargs):
         unclaimed_record['expires'] = datetime.now(timezone.utc) + timedelta(minutes=5)
         user.unclaimed_records[pid] = unclaimed_record
         user.save()
-        return redirect(web_url_for('claim_user_activate', uid=uid, pid=pid, token=token))
+        return redirect(web_url_for('claim_user_activate', uid=uid, pid=pid))
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
