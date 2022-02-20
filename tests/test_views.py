@@ -1112,6 +1112,7 @@ class TestUserProfile(OsfTestCase):
             'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
+            'erad': '123-123',
         }
         self.app.put_json(
             url,
@@ -1218,6 +1219,8 @@ class TestUserProfile(OsfTestCase):
         jobs = [{
             'institution': 'an institution',
             'department': 'a department',
+            'institution_en': 'an institution_en',
+            'department_en': 'a department_en',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -1227,6 +1230,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
+            'institution_en': 'another institution_en',
+            'department_en': None,
             'title': None,
             'startMonth': 'May',
             'startYear': '2001',
@@ -1251,6 +1256,8 @@ class TestUserProfile(OsfTestCase):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
+            'institution_en': 'an institution_en',
+            'department_en': 'a department_en',
             'degree': 'a degree',
             'startMonth': 1,
             'startYear': '2001',
@@ -1260,6 +1267,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
+            'institution_en': 'another institution_en',
+            'department_en': None,
             'degree': None,
             'startMonth': 5,
             'startYear': '2001',
@@ -1286,6 +1295,8 @@ class TestUserProfile(OsfTestCase):
             {
                 'institution': fake.company(),
                 'department': fake.catch_phrase(),
+                'institution_en': fake.company(),
+                'department_en': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
                 'startYear': '2013',
@@ -1329,6 +1340,8 @@ class TestUserProfile(OsfTestCase):
             {
                 'institution': fake.company(),
                 'department': fake.catch_phrase(),
+                'institution_en': fake.company(),
+                'department_en': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
                 'startYear': '2013',

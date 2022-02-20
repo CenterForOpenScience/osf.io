@@ -31,6 +31,7 @@ def make_payload(
 
     data = {
         'provider': {
+            'idp': institution.email_domains,
             'id': institution._id,
             'user': {
                 'middleNames': '',
@@ -39,7 +40,11 @@ def make_payload(
                 'fullname': fullname,
                 'suffix': '',
                 'username': username,
-                'department': department
+                'department': department,
+                'jaDisplayName': '',  # jaDisplayName
+                'jaSurname': '',  # jasn
+                'jaGivenName': '',  # jaGivenName
+                'jaMiddleNames': '',
             }
         }
     }

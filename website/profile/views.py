@@ -661,7 +661,6 @@ def serialize_account_info(auth, uid=None, **kwargs):
     jobs = ret_jobs.get('contents', [{}])
     first_job = jobs[0] if jobs else {}
     user = get_target_user(auth)
-    logger.info(f"user is_full_account_required_info {user.is_full_account_required_info}")
     ret = {
         'full': user.fullname,
         'given': user.given_name,
