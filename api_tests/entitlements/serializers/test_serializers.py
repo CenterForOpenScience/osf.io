@@ -12,7 +12,7 @@ class TestLoginAvailabilitySerializer:
             'entitlements': ['gkn1-ent1', 'gkn1-ent2', 'gkn1-ent1']
         }
         data = LoginAvailabilitySerializer(data=payload)
-        assert data.is_valid() == True
+        assert data.is_valid() is True
 
         data = data.validated_data
         institution_id = data.get('institution_id')
