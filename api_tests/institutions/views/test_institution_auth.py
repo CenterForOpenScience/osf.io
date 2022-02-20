@@ -27,6 +27,8 @@ def make_payload(
         given_name='',
         family_name='',
         department='',
+        given_name_ja='',
+        family_name_ja='',
 ):
 
     data = {
@@ -42,8 +44,8 @@ def make_payload(
                 'username': username,
                 'department': department,
                 'jaDisplayName': '',  # jaDisplayName
-                'jaSurname': '',  # jasn
-                'jaGivenName': '',  # jaGivenName
+                'jaSurname': family_name_ja,  # jasn
+                'jaGivenName': given_name_ja,  # jaGivenName
                 'jaMiddleNames': '',
             }
         }
@@ -155,7 +157,7 @@ class TestInstitutionAuth:
         username = 'user_created_with_names@osf.edu'
         res = app.post(
             url_auth_institution,
-            make_payload(institution, username, given_name='Foo', family_name='Bar')
+            make_payload(institution, username, given_name='Foo', family_name='Bar', given_name_ja='Foo_ja', family_name_ja='Bar_ja')
         )
         assert res.status_code == 204
 
@@ -163,8 +165,10 @@ class TestInstitutionAuth:
         assert user
         assert user.fullname == 'Fake User'
         # Given name and family name are set instead of guessed
-        assert user.given_name == 'Foo'
-        assert user.family_name == 'Bar'
+        assert user.given_name == 'Foo_ja'
+        assert user.family_name == 'Bar_ja'
+        assert user.given_name_en == 'Foo'
+        assert user.family_name_en == 'Bar'
 
     def test_user_active(self, app, institution, url_auth_institution):
 
@@ -222,6 +226,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
+                    family_name_ja='User_ja',
+                    given_name_ja='Fake_ja',
                     fullname='Fake User',
                     department='Fake Department',
                 )
@@ -234,8 +240,10 @@ class TestInstitutionAuth:
         # User becomes active and all names are updated
         assert user.is_active
         assert user.fullname == 'Fake User'
-        assert user.family_name == 'User'
-        assert user.given_name == 'Fake'
+        assert user.family_name == 'User_ja'
+        assert user.given_name == 'Fake_ja'
+        assert user.family_name_en == 'User'
+        assert user.given_name_en == 'Fake'
         assert user.department == 'Fake Department'
         # Unclaimed records must have been cleared
         assert not user.unclaimed_records
@@ -262,6 +270,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
+                    family_name_ja='User_ja',
+                    given_name_ja='Fake_ja',
                     fullname='Fake User'
                 )
             )
@@ -273,8 +283,10 @@ class TestInstitutionAuth:
         # User becomes active and all names are updated
         assert user.is_active
         assert user.fullname == 'Fake User'
-        assert user.family_name == 'User'
-        assert user.given_name == 'Fake'
+        assert user.family_name == 'User_ja'
+        assert user.given_name == 'Fake_ja'
+        assert user.family_name_en == 'User'
+        assert user.given_name_en == 'Fake'
         # Pending email verifications must be cleared
         assert not user.email_verifications
         # Previously unconfirmed user must be given a new password during institution auth
@@ -304,6 +316,8 @@ class TestInstitutionAuth:
                     username,
                     family_name='User',
                     given_name='Fake',
+                    family_name_ja='User_ja',
+                    given_name_ja='Fake_ja',
                     fullname='Fake User'
                 ),
                 expect_errors=True

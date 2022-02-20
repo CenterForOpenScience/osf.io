@@ -50,11 +50,11 @@ def make_payload(
                 'organizationName': organization_name,
                 'organizationalUnit': organizational_unit,
                 'jaDisplayName': '',  # jaDisplayName
-                'jaSurname': '',  # jasn
-                'jaGivenName': '',  # jaGivenName
+                'jaSurname': family_name + '_ja',  # jasn
+                'jaGivenName': given_name + '_ja',  # jaGivenName
                 'jaMiddleNames': '',
-                'jaOrganizationName': '',  # jao
-                'jaOrganizationalUnitName': '',  # jaou
+                'jaOrganizationName': organization_name + '_ja',  # jao
+                'jaOrganizationalUnitName': organizational_unit + '_ja',  # jaou
             }
         }
     }
@@ -138,8 +138,10 @@ class TestGettingShibbolethAttribute:
         assert user.have_email == True
         assert user.jobs[-1] == {
             'title': '',
-            'institution': organization_name,
-            'department': organizational_unit,
+            'institution': organization_name + '_ja',
+            'department': organizational_unit + '_ja',
+            'institution_en': organization_name,
+            'department_en': organizational_unit,
             'location': '',
             'startMonth': '',
             'startYear': '',
@@ -301,8 +303,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_jobs_with_idp_attr(self):
         jobs = [{
-            'institution': 'an institution',
-            'department': 'a department',
+            'institution': 'an institution' + '_ja',
+            'department': 'a department' + '_ja',
+            'institution_en': 'an institution',
+            'department_en': 'a department',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -310,8 +314,10 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
-            'institution': 'another institution',
+            'institution': 'another institution' + '_ja',
             'department': None,
+            'institution_en': 'another institution',
+            'department_en': None,
             'title': None,
             'startMonth': 'May',
             'startYear': '2001',
@@ -341,8 +347,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_schools_with_idp_attr(self):
         schools = [{
-            'institution': 'an institution',
-            'department': 'a department',
+            'institution': 'an institution' + '_ja',
+            'department': 'a department' + '_ja',
+            'institution_en': 'an institution',
+            'department_en': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
             'startYear': '2001',
@@ -350,8 +358,10 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
-            'institution': 'another institution',
+            'institution': 'another institution' + '_ja',
             'department': None,
+            'institution_en': 'another institution',
+            'department_en': None,
             'degree': None,
             'startMonth': 5,
             'startYear': '2001',

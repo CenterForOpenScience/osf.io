@@ -1121,6 +1121,9 @@ class TestUserProfile(OsfTestCase):
         )
         self.user.reload()
         for key, value in payload.items():
+            if key == 'erad':
+                assert_equal(self.user.get('erad'), value)
+                continue
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
