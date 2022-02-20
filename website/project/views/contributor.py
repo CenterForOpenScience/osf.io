@@ -975,7 +975,7 @@ def claim_user_form(auth, **kwargs):
         unclaimed_record['expires'] = datetime.now(timezone.utc) + timedelta(minutes=5)
         user.unclaimed_records[pid] = unclaimed_record
         user.save()
-        return redirect(web_url_for('claim_user_activate', uid= uid, pid=pid, token=token))
+        return redirect(web_url_for('claim_user_activate', uid=uid, pid=pid, token=token))
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.

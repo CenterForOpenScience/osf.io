@@ -1697,7 +1697,6 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
-
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
 
