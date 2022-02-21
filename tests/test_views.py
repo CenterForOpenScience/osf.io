@@ -614,6 +614,16 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs.latest().action, 'contributor_removed')
 
+    @mock.patch('website.project.views.contributor.finalize_invitation')
+    def test_project_contributor_re_invite(self, mock_finalize_invitation):
+        url = self.project.api_url_for('project_contributor_re_invite')
+        payload = {'guid': self.user2._id}
+        self.app.post(url, json.dumps(payload),
+                      content_type='application/json',
+                      auth=self.auth).maybe_follow()
+        self.project.reload()
+        mock_finalize_invitation.assert_called()
+
     def test_multiple_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
@@ -2344,6 +2354,97 @@ class TestUserInviteViews(OsfTestCase):
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
             login_by_eppn=False,
         )
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_claim_email_with_user_has_eppn(self, send_mail):
+        project = ProjectFactory()
+        given_email = fake_email()
+        unreg_user = project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(project.creator),
+        )
+        unreg_user.eppn = 'EPPN'
+        project.save()
+        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
+        claimer_email = given_email.lower().strip()
+        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
+        referrer = OSFUser.load(unclaimed_record['referrer_id'])
+
+        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
+
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(
+            given_email,
+            mails.INVITE_DEFAULT,
+            user=unreg_user,
+            referrer=referrer,
+            node=project,
+            claim_url=claim_url,
+            email=claimer_email,
+            fullname=unclaimed_record['name'],
+            branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            login_by_eppn=False,
+        )
+        assert_true(unreg_user.eppn in unreg_user.temp_account)
+
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_send_claim_email_with_user_has_not_eppn(self, send_mail):
+        project = ProjectFactory()
+        given_email = fake_email()
+        unreg_user = project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(project.creator),
+        )
+        unreg_user.eppn = None
+        project.save()
+        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
+        claimer_email = given_email.lower().strip()
+        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
+        referrer = OSFUser.load(unclaimed_record['referrer_id'])
+
+        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
+
+        assert_true(send_mail.called)
+        send_mail.assert_called_with(
+            given_email,
+            mails.INVITE_DEFAULT,
+            user=unreg_user,
+            referrer=referrer,
+            node=project,
+            claim_url=claim_url,
+            email=claimer_email,
+            fullname=unclaimed_record['name'],
+            branded_service=None,
+            can_change_preferences=False,
+            logo=settings.OSF_LOGO,
+            osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            login_by_eppn=False,
+        )
+        assert_equal(len(unreg_user.temp_account), 9)
+
+    def test_claim_user_activate(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+        given_email = fake_email()
+        unreg_user = self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(self.project.creator),
+        )
+        unreg_user.save()
+
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid=unreg_user._id,
+            pid=self.project._id,
+        )
+        res = self.app.get(claim_url)
+        assert_equal(res.status_code, 200)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_referrer(self, send_mail):
@@ -5188,6 +5289,71 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             }
         )
         assert_equal(res.status_code, 403)
+
+    def test_claim_user_form_cancel_request(self):
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        project.save()
+
+        claim_url = user.get_claim_url(project._primary_key)
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true'
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 302)
+
+    def test_claim_user_form_contributor_is_none(self):
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        claim_url = user.get_claim_url(project._primary_key)
+        claim_url = claim_url.replace(user._id, 'abcde')
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true',
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('osf.models.node.Node.cancel_invite')
+    def test_claim_user_form_not_nodes_removed(self, mock):
+        mock.return_value = False
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        claim_url = user.get_claim_url(project._primary_key)
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true',
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
     # confirmation for existing user claiming contributor should fail with BingPreview
     def test_claim_user_form_existing_user(self):
