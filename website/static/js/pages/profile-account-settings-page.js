@@ -9,7 +9,7 @@ var profile = require('../profile.js');
 
 $(function() {
     var ctx = window.contextVars;
-    new profile.AccountInformation('#accountInformation', ctx.accountUrls, ['edit']);
+    !!$('#accountInformation').length && new profile.AccountInformation('#accountInformation', ctx.accountUrls, ['edit']);
 
     var viewModel = new accountSettings.UserProfileViewModel();
     $osf.applyBindings(viewModel, '#connectedEmails');
