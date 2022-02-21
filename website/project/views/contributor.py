@@ -932,7 +932,7 @@ def claim_user_form(auth, **kwargs):
 
     cancel_request = request.form.get('cancel') or request.args.get('cancel')
     if cancel_request == 'true':
-        contributor_id, node_id = kwargs['uimixd'], kwargs['pid']
+        contributor_id, node_id = kwargs['uid'], kwargs['pid']
         contributor = OSFUser.load(contributor_id)
         if contributor is None:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Contributor not found.'})
