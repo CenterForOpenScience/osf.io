@@ -39,7 +39,8 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-preregistration.json')),
     ensure_schema_structure(from_json('osf-preregistration-3.json')),
     ensure_schema_structure(from_json('egap-registration.json')),
-    ensure_schema_structure(from_json('egap-registration-3.json'))
+    ensure_schema_structure(from_json('egap-registration-3.json')),
+    ensure_schema_structure(from_json('e-rad-metadata-1.json')),
 ]
 
 METASCHEMA_ORDERING = (
@@ -56,4 +57,5 @@ METASCHEMA_ORDERING = (
     'RIDIE Registration - Study Initiation',
     'RIDIE Registration - Study Complete',
     'EGAP Registration',
+    '公的資金による研究データのメタデータ登録',
 )

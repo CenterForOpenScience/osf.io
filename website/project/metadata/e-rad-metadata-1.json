@@ -1,0 +1,47 @@
+{
+  "name": "公的資金による研究データのメタデータ登録",
+  "version": 1,
+  "description": "公的資金による研究データのメタデータ登録",
+  "pages": [
+    {
+      "id": "page1",
+      "title": "メタデータ登録（Metadata Registration）",
+      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。",
+      "questions": [
+        {
+          "qid": "e-rad-award-funder",
+          "nav": "資金配分機関情報（Funder）",
+          "title": "資金配分機関情報（Funder）",
+          "type": "choose",
+          "format": "e-rad-award-funder",
+          "options": ["JST", "JSPS", "NEDO", "BRAIN", "AMEDO", "MEXT", "METI", "MAFF", "MHLW"],
+          "required": true
+        },
+        {
+          "qid": "e-rad-award-number",
+          "nav": "e-Rad の課題番号（e-Rad project ID）",
+          "title": "e-Rad の課題番号（e-Rad project ID）",
+          "type": "string",
+          "format": "e-rad-award-number",
+          "required": true
+        },
+        {
+          "qid": "e-rad-award-title-ja",
+          "nav": "プロジェクト名（日本語）",
+          "title": "プロジェクト名（日本語）",
+          "type": "string",
+          "format": "e-rad-award-title-ja",
+          "required": true
+        },
+        {
+          "qid": "e-rad-award-title-en",
+          "nav": "Project name (English)",
+          "title": "Project name (English)",
+          "type": "string",
+          "format": "e-rad-award-title-en",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
