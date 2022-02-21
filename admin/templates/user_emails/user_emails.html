@@ -19,6 +19,26 @@
         </div>
 
         <div class="row">
+            <div class="col-md-12 clearfix">
+                <form class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
+                      style="margin-top: 15px; margin-bottom: 15px; ">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="primary_email" class="col-sm-1 control-label">Email address</label>
+                        <div class="col-sm-4">
+                            <input type="email" class="form-control" name="primary_email" id="primary_email" placeholder="Email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-1 col-sm-4">
+                            <button type="submit" class="btn btn-primary">{% trans "Add email as Primary" %}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-md-12">
                 <table class="table table-striped table-hover table-responsive">
                     <thead></thead>

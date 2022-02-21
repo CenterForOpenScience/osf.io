@@ -157,7 +157,8 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
             primary_email_address = primary_email.strip().lower()
             if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
                 # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-                return permission_denied(self.request)
+                # return permission_denied(self.request)
+                user.emails.create(address=primary_email_address.lower().strip())
             username = primary_email_address
 
         # make sure the new username has already been confirmed
