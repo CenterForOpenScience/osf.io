@@ -26,7 +26,7 @@ To set a password for your account, visit:<br>
     <br>
     To preview "${node.title}" click the following link: ${node.absolute_url}<br>
     <br>
-    To cancel register join "${node.title}" click the following link: ${cancel_claim_url}<br>
+    To cancel register join "${node.title}" click the following link: ${claim_url}&cancel=true<br>
     <br>
     (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
     <br>
