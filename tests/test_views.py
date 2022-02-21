@@ -1107,12 +1107,13 @@ class TestUserProfile(OsfTestCase):
         self.user = AuthUserFactory()
 
     def test_unserialize_social(self):
+        erad = '007'
         url = api_url_for('unserialize_social')
         payload = {
             'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
-            'erad': '123-123',
+            'erad': erad
         }
         self.app.put_json(
             url,
@@ -1120,11 +1121,11 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        for key, value in payload.items():
-            if key == 'erad':
-                assert_equal(self.user.get('erad'), value)
-                continue
-            assert_equal(self.user.social[key], value)
+
+        assert_equal(self.user.social['profileWebsites'], payload['profileWebsites'])
+        assert_equal(self.user.social['twitter'], payload['twitter'])
+        assert_equal(self.user.social['github'], payload ['github'])
+        assert_equal(self.user.erad, payload['erad'])
         assert_true(self.user.social['researcherId'] is None)
 
     # Regression test for help-desk ticket
@@ -1222,8 +1223,8 @@ class TestUserProfile(OsfTestCase):
         jobs = [{
             'institution': 'an institution',
             'department': 'a department',
-            'institution_en': 'an institution_en',
-            'department_en': 'a department_en',
+            'institution_en': 'an institution en',
+            'department_en': 'a department en',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -1233,8 +1234,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
-            'institution_en': 'another institution_en',
-            'department_en': None,
+            'institution_en': 'another institution en',
+            'department_en': 'another department en',
             'title': None,
             'startMonth': 'May',
             'startYear': '2001',
@@ -1259,8 +1260,8 @@ class TestUserProfile(OsfTestCase):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
-            'institution_en': 'an institution_en',
-            'department_en': 'a department_en',
+            'institution_en': 'an institution en',
+            'department_en': 'a department en',
             'degree': 'a degree',
             'startMonth': 1,
             'startYear': '2001',
@@ -1270,8 +1271,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
-            'institution_en': 'another institution_en',
-            'department_en': None,
+            'institution_en': 'another institution en',
+            'department_en': 'another department en',
             'degree': None,
             'startMonth': 5,
             'startYear': '2001',
