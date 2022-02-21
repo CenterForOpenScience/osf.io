@@ -283,6 +283,17 @@ def _build_guid_url(base, suffix=None):
 
 
 def resolve_guid(guid, suffix=None):
+    '''
+    This function is supposed to resolve a guid to a specific page of the OSF some pages are "legacy pages" that use v1
+    endpoints to serve pages from django, some page are new "emberized" pages only available via the ember app.
+    Preprints for example are served from the external emberapp and streamed into Django and on to the user, while Wikis
+    are served via a `/v1` endpoint, the `deep_url` for that resource.
+
+    There are also additional routes in this fintion that lead to legacies views that serve bytes for that files guid,
+    for example the url `/<file-guid>/?action=download` a response for file data is served.
+    '''
+
+    # Legacies views that serve bytes
     if suffix and 'download' == suffix.rstrip('/'):
         return resolve_guid_download(guid)
     if 'download' == request.args.get('action'):
@@ -290,6 +301,7 @@ def resolve_guid(guid, suffix=None):
     if 'revision' in request.args:
         return resolve_guid_download(guid)
 
+    # Retrieve guid data if present, error if missing
     try:
         resource = Guid.objects.get(_id=guid.lower()).referent
     except Guid.DoesNotExist:
@@ -300,16 +312,19 @@ def resolve_guid(guid, suffix=None):
 
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-    elif isinstance(resource, Preprint):
+
+    # Stream to ember app if resource has emberized view
+    if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
-    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')):
+    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components', 'files/osfstorage')):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
+    # Redirect to legacy endpoint for Nodes, Wikis etc.
     url = unquote(_build_guid_url(resource.deep_url, suffix))
     return proxy_url(url)
 
