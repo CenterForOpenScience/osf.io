@@ -137,7 +137,7 @@
 
         <div class="row">
             <div class="col-md-2">
-                <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}">
+                <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}" alt="profile image" >
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr: {href: url}, text: user"></a></h4>
@@ -172,7 +172,7 @@
                     </li>
                     <li data-bind="visible: social.scholar">
                         <a data-bind="attr: {href: social.scholar}">
-                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar" alt="google scholar icon">
                         </a>
                     </li>
                     <li data-bind="visible: social.impactStory">
@@ -192,7 +192,7 @@
                     </li>
                     <li data-bind="visible: social.researchGate">
                         <a data-bind="attr: {href: social.researchGate}">
-                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"  alt="ResearchGate icon"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
@@ -202,12 +202,12 @@
                     </li>
                     <li data-bind="visible: social.baiduScholar">
                         <a data-bind="attr: {href: social.baiduScholar}">
-                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar" alt="Baidu Scholar icon">
                         </a>
                     </li>
                     <li data-bind="visible: social.ssrn">
                         <a data-bind="attr: {href: social.ssrn}">
-                            <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                            <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN"  alt="SSRN icon">
                         </a>
                     </li>
                 </ul>
