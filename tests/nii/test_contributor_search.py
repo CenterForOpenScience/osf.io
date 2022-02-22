@@ -6,12 +6,14 @@ from nose.tools import *  # noqa PEP8 asserts
 from website import settings
 import website.search.search as search
 from website.search_migration.migrate import migrate
-from website.search.util import build_query
+from website.search.util import build_query, build_query_string, validate_email
+from website.util import api_url_for
 
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
-from osf_tests.factories import AuthUserFactory, InstitutionFactory, ProjectFactory
+from osf_tests.factories import AuthUserFactory, UserFactory, InstitutionFactory, ProjectFactory, fake
 from osf_tests.test_elastic_search import retry_assertion
+from osf.models.user import Email
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -25,6 +27,8 @@ class TestContributorSearch(OsfTestCase):
             self.fullname1 = self.firstname + ' 1'
             self.fullname2 = self.firstname + ' 2'
             self.fullname3 = self.firstname + ' 3'
+            self.fullname4 = self.firstname + ' 4'
+            self.fullname5 = self.firstname + ' 5'
             self.dummy1_fullname = self.firstname + ' dummy1'
             self.dummy2_fullname = self.firstname + ' dummy2'
             self.dummy3_fullname = self.firstname + ' dummy3'
@@ -91,6 +95,250 @@ class TestContributorSearch(OsfTestCase):
         )
         assert_equal(set([u['fullname'] for u in contribs['users']]),
                      set([self.user2.fullname]))
+
+    @mock.patch('osf.models.user.OSFUser.objects.filter')
+    def test_search_contributor_email_not_valid(self, mockApi):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        res = self.app.get(
+            api_url_for('search_contributor'), {
+                'query': 'abc@.@gmail.com',
+                'page': 5,
+                'size': 10},
+            expect_errors=True
+        )
+        mockApi.assert_not_called()
+        assert res.status_code == 200
+
+    def test_search_contributor_query_set_exists(self):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        res = self.app.get(
+            api_url_for('search_contributor'), {
+                'query': self.user4_alternate_email,
+                'page': 5,
+                'size': 10
+            },
+            expect_errors=True
+        )
+        assert res.json['users'][0]['fullname'] == self.fullname4
+        assert res.status_code == 200
+
+    def test_search_contributor_user_schools(self):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        res = self.app.get(
+            api_url_for('search_contributor'), {
+                'query': self.user4_alternate_email,
+                'page': 5,
+                'size': 10
+            },
+            expect_errors=True
+        )
+        assert res.json['users'][0]['education'] == self.user4.schools[0]['institution']
+        assert res.status_code == 200
+
+    def test_search_contributor_user_jobs(self):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        res = self.app.get(
+            api_url_for('search_contributor'), {
+                'query': self.user4_alternate_email,
+                'page': 5,
+                'size': 10
+            },
+            expect_errors=True
+        )
+        assert res.json['users'][0]['employment'] == self.user4.jobs[0]['institution']
+        assert res.status_code == 200
+
+    @mock.patch('website.search.views.OSFUser.objects')
+    def test_search_contributor_email_not_valid_temp(self, mockOSFUser):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        mockOSFUser.filter.return_value.filter.return_value = Email.objects.none()
+        self.app.get(
+            api_url_for('search_contributor'), {
+                'query': self.user4_alternate_email,
+                'page': 5,
+                'size': 10},
+            expect_errors=True
+        )
+        assert mockOSFUser.filter.return_value.filter.called == True
+
+    @mock.patch('osf.models.node.AbstractNode.load')
+    @mock.patch('website.search.views.OSFUser.objects')
+    def test_search_contributor_exclude_is_not_none_temp(self, mockOSFUser, mockAbstractNode):
+        # Create OSFUser without authenticate
+
+        self.user4 = UserFactory(fullname=self.fullname4)
+        self.user5 = UserFactory(fullname=self.fullname5)
+
+        self.user4_alternate_email = 'user1@gmail.com'
+        self.user4.emails.create(address=self.user4_alternate_email)
+        self.user4.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.jobs = [{
+            'title': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': '2020',
+            'endMonth': 1,
+            'endYear': '2022',
+        }]
+        self.user4.save()
+        self.user5.save()
+
+        mockOSFUser.filter.return_value.filter.return_value.exclude.return_value = Email.objects.none()
+        mockAbstractNode.contributors.return_value = 'contributor'
+
+        self.app.get(
+            api_url_for('search_contributor'), {
+                'query': self.user4_alternate_email,
+                'page': 5,
+                'size': 10,
+                'excludeNode': 'excludeNode value'},
+            expect_errors=True
+        )
+        assert mockOSFUser.filter.return_value.filter.return_value.exclude.called == True
 
 
 class TestEscape(OsfTestCase):
@@ -226,3 +474,76 @@ class TestSearchMigrationNormalizedField(OsfTestCase):
 
         self.search_contrib(0)
         self.search_project(0)
+
+class TestSearchUtils(OsfTestCase):
+
+    def test_build_query_with_match_key_and_match_value_valid(self):
+        query_body = build_query_string('*')
+        match_key = "test"
+        match_value = 1
+        start = 0
+        size = 10
+        query_body = {
+            'bool': {
+                'should': [
+                    query_body,
+                    {
+                        'match_phrase': {
+                            match_key: {
+                                'query': match_value,
+                                'boost': 10.0
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        assert_is_instance(res, dict)
+        assert_equal(res, expectedResult)
+
+    def test_build_query_with_match_key_and_match_value_invalid(self):
+        query_body = build_query_string('*')
+        match_key = 1
+        match_value = None
+        start = 0
+        size = 10
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        assert_is_instance(res, dict)
+        assert_equal(res, expectedResult)
+
+    def test_validate_email_is_not_none(self):
+        self.email = 'roger@queen.com'
+        result = validate_email(self.email)
+        assert_equal(result, True)
+
+        result2 = validate_email('')
+        assert_equal(result2, False)
+
+        result3 = validate_email('"joe bloggs"@b.c')
+        assert_equal(result3, False)
+
+        result4 = validate_email('a@b.c')
+        assert_equal(result4, False)
+
+        result5 = validate_email('a@b.c@')
+        assert_equal(result5, False)
+
+    def test_validate_email_is_none(self):
+        self.email = None
+        result = validate_email(self.email)
+        assert_equal(result, False)
