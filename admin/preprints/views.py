@@ -1,5 +1,6 @@
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
+from django.core.urlresolvers import NoReverseMatch
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -98,7 +99,10 @@ class PreprintSearchView(PermissionRequiredMixin, FormView):
     def form_valid(self, form):
         guid = form.cleaned_data['guid']
         if guid:
-            return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
+            try:
+                return redirect(reverse_lazy('preprints:preprint', kwargs={'guid': guid}))
+            except NoReverseMatch as e:
+                messages.error(self.request, str(e))
 
         return super().form_valid(form)
 
@@ -296,7 +300,6 @@ class WithdrawalRequestMixin(PermissionRequiredMixin):
         return PreprintRequest.objects.filter(
             request_type='withdrawal',
             target__guids___id=self.kwargs['guid'],
-            target__provider__reviews_workflow=None
         ).first()
 
     def get_success_url(self):
