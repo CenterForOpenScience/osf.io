@@ -630,8 +630,8 @@ class TestProject:
 
     def test_url(self, project):
         assert (
-                project.url ==
-                '/{0}/'.format(project._primary_key)
+            project.url ==
+            '/{0}/'.format(project._primary_key)
         )
 
     def test_api_url(self, project):
@@ -954,8 +954,8 @@ class TestContributorMethods:
         )
         last_log = node.logs.all().order_by('-date')[0]
         assert (
-                last_log.params['contributors'] ==
-                [user1._id, user2._id]
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
         )
         assert node.is_contributor(user1)
         assert node.is_contributor(user2)
@@ -965,8 +965,8 @@ class TestContributorMethods:
         assert set(node.get_permissions(user2)) == set([permissions.READ, permissions.WRITE])
         last_log = node.logs.all().order_by('-date')[0]
         assert (
-                last_log.params['contributors'] ==
-                [user1._id, user2._id]
+            last_log.params['contributors'] ==
+            [user1._id, user2._id]
         )
 
     def test_add_contributor_unreg_user_without_unclaimed_records(self, user, node):
@@ -1217,8 +1217,8 @@ class TestContributorMethods:
 
         # test unclaimed_records is removed
         assert (
-                node._id not in
-                contrib.unclaimed_records.keys()
+            node._id not in
+            contrib.unclaimed_records.keys()
         )
 
     def test_permission_override_on_readded_contributor(self, node, user):
@@ -3009,19 +3009,19 @@ class TestPointerMethods:
         node.add_pointer(node2, auth=auth)
         assert node2 in node.linked_nodes.all()
         assert (
-                node.logs.latest().action == NodeLog.POINTER_CREATED
+            node.logs.latest().action == NodeLog.POINTER_CREATED
         )
         assert (
-                node.logs.latest().params == {
-            'parent_node': node.parent_id,
-            'node': node._primary_key,
-            'pointer': {
-                'id': node2._id,
-                'url': node2.url,
-                'title': node2.title,
-                'category': node2.category,
-            },
-        }
+            node.logs.latest().params == {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': node2._id,
+                    'url': node2.url,
+                    'title': node2.title,
+                    'category': node2.category,
+                },
+            }
         )
 
     def test_add_linked_nodes_property(self, node, auth):
@@ -3074,19 +3074,19 @@ class TestPointerMethods:
         # assert len(node.nodes) == 0
         assert NodeRelation.objects.filter(child=node2, is_node_link=True).count() == 0
         assert (
-                node.logs.latest().action == NodeLog.POINTER_REMOVED
+            node.logs.latest().action == NodeLog.POINTER_REMOVED
         )
-        assert (
-                node.logs.latest().params == {
-            'parent_node': node.parent_id,
-            'node': node._primary_key,
-            'pointer': {
-                'id': node2._id,
-                'url': node2.url,
-                'title': node2.title,
-                'category': node2.category,
-            },
-        }
+        assert(
+            node.logs.latest().params == {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': node2._id,
+                    'url': node2.url,
+                    'title': node2.title,
+                    'category': node2.category,
+                },
+            }
         )
 
     def test_rm_pointer_not_present(self, user, node, auth):
@@ -3117,20 +3117,20 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert (
-                node.logs.latest().action == NodeLog.POINTER_FORKED
+        assert(
+            node.logs.latest().action == NodeLog.POINTER_FORKED
         )
-        assert (
-                node.logs.latest().params == {
-            'parent_node': node.parent_id,
-            'node': node._primary_key,
-            'pointer': {
-                'id': content._id,
-                'url': content.url,
-                'title': content.title,
-                'category': content.category,
-            },
-        }
+        assert(
+            node.logs.latest().params == {
+                'parent_node': node.parent_id,
+                'node': node._primary_key,
+                'pointer': {
+                    'id': content._id,
+                    'url': content.url,
+                    'title': content.title,
+                    'category': content.category,
+                },
+            }
         )
 
     def test_fork_pointer_project(self, node, user, auth):
@@ -3178,23 +3178,23 @@ class TestForkNode:
         assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
-        assert (
-                list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
+        assert(
+            list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
         )
 
         # Test that subjects were copied correctly
-        assert (
-                list(original.subjects.all()) == list(fork.subjects.all())
+        assert(
+            list(original.subjects.all()) == list(fork.subjects.all())
         )
 
         # Test that add-ons were copied correctly
-        assert (
-                original.get_addon_names() ==
-                fork.get_addon_names()
+        assert(
+            original.get_addon_names() ==
+            fork.get_addon_names()
         )
-        assert (
-                [addon.config.short_name for addon in original.get_addons()] ==
-                [addon.config.short_name for addon in fork.get_addons()]
+        assert(
+            [addon.config.short_name for addon in original.get_addons()] ==
+            [addon.config.short_name for addon in fork.get_addons()]
         )
 
         fork_user_auth = Auth(user=fork_user)
@@ -3574,9 +3574,9 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)  # another subcomponent
 
-        assert (
-                   node.has_permission_on_children(non_admin_user, permissions.READ)
-               ) is True
+        assert(
+            node.has_permission_on_children(non_admin_user, permissions.READ)
+        ) is True
 
     def test_check_user_has_permission_excludes_deleted_components(self):
         non_admin_user = UserFactory()
@@ -3591,9 +3591,9 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)
 
-        assert (
-                   node.has_permission_on_children(non_admin_user, permissions.READ)
-               ) is False
+        assert(
+            node.has_permission_on_children(non_admin_user, permissions.READ)
+        ) is False
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
         non_admin_user = UserFactory()
@@ -3604,8 +3604,8 @@ class TestHasPermissionOnChildren:
         NodeFactory(parent=node)
 
         assert (
-                   node.has_permission_on_children(non_admin_user, permissions.READ)
-               ) is False
+            node.has_permission_on_children(non_admin_user, permissions.READ)
+        ) is False
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
         non_admin_user = UserFactory()
@@ -3614,9 +3614,9 @@ class TestHasPermissionOnChildren:
         parent.save()
         node = NodeFactory(parent=parent, category='project')
 
-        assert (
-                   node.has_permission_on_children(non_admin_user, permissions.READ)
-               ) is False
+        assert(
+            node.has_permission_on_children(non_admin_user, permissions.READ)
+        ) is False
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = ProjectFactory()
@@ -3624,8 +3624,8 @@ class TestHasPermissionOnChildren:
         NodeFactory(parent=node)
 
         assert (
-                   node.has_permission_on_children(parent.creator, permissions.READ)
-               ) is True
+            node.has_permission_on_children(parent.creator, permissions.READ)
+        ) is True
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
         user = UserFactory()
@@ -3635,8 +3635,8 @@ class TestHasPermissionOnChildren:
         parent.save()
 
         assert (
-                   parent.has_permission_on_children(user, permissions.READ)
-               ) is False
+            parent.has_permission_on_children(user, permissions.READ)
+        ) is False
 
 
 # copied from test/test_citations.py#CitationsNodeTestCase
@@ -3645,19 +3645,19 @@ class TestCitationsProperties:
     def test_csl_single_author(self, node):
         # Nodes with one contributor generate valid CSL-data
         assert (
-                node.csl ==
-                {
-                    'publisher': 'GakuNin RDM',
-                    'author': [{
-                        'given': node.creator.given_name,
-                        'family': node.creator.family_name,
-                    }],
-                    'URL': node.display_absolute_url,
-                    'issued': datetime_to_csl(node.logs.latest().date),
-                    'title': node.title,
-                    'type': 'webpage',
-                    'id': node._id,
-                }
+            node.csl ==
+            {
+                'publisher': 'GakuNin RDM',
+                'author': [{
+                    'given': node.creator.given_name,
+                    'family': node.creator.family_name,
+                }],
+                'URL': node.display_absolute_url,
+                'issued': datetime_to_csl(node.logs.latest().date),
+                'title': node.title,
+                'type': 'webpage',
+                'id': node._id,
+            }
         )
 
     def test_csl_multiple_authors(self, node):
@@ -3667,25 +3667,25 @@ class TestCitationsProperties:
         node.save()
 
         assert (
-                node.csl ==
-                {
-                    'publisher': 'GakuNin RDM',
-                    'author': [
-                        {
-                            'given': node.creator.given_name,
-                            'family': node.creator.family_name,
-                        },
-                        {
-                            'given': user.given_name,
-                            'family': user.family_name,
-                        }
-                    ],
-                    'URL': node.display_absolute_url,
-                    'issued': datetime_to_csl(node.logs.latest().date),
-                    'title': node.title,
-                    'type': 'webpage',
-                    'id': node._id,
-                }
+            node.csl ==
+            {
+                'publisher': 'GakuNin RDM',
+                'author': [
+                    {
+                        'given': node.creator.given_name,
+                        'family': node.creator.family_name,
+                    },
+                    {
+                        'given': user.given_name,
+                        'family': user.family_name,
+                    }
+                ],
+                'URL': node.display_absolute_url,
+                'issued': datetime_to_csl(node.logs.latest().date),
+                'title': node.title,
+                'type': 'webpage',
+                'id': node._id,
+            }
         )
 
     def test_non_visible_contributors_arent_included_in_csl(self):
@@ -3988,8 +3988,8 @@ class TestRemoveNode:
         assert project.is_deleted
         # parent node should have a log of the event
         assert (
-                parent_project.get_logs_queryset(auth)[0].action ==
-                'node_removed'
+            parent_project.get_logs_queryset(auth)[0].action ==
+            'node_removed'
         )
 
     def test_delete_project_log_present(self, project, parent_project, auth):
@@ -4169,8 +4169,8 @@ class TestTemplateNode:
         assert len(list(new.nodes)) == len(list(project1.nodes))
         # check that all children were copied
         assert (
-                [x.title for x in new.nodes] ==
-                [x.title for x in project1.nodes if x not in project1.linked_nodes]
+            [x.title for x in new.nodes] ==
+            [x.title for x in project1.nodes if x not in project1.linked_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -4187,8 +4187,8 @@ class TestTemplateNode:
         assert len(list(new.nodes)) == len(list(project.nodes)) - 1
         # check that all children were copied
         assert (
-                [x.title for x in new.nodes] ==
-                [x.title for x in project.nodes if x not in project.linked_nodes]
+            [x.title for x in new.nodes] ==
+            [x.title for x in project.nodes if x not in project.linked_nodes]
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -4214,13 +4214,13 @@ class TestTemplateNode:
         for old_node, new_node in zip(old_nodes, new.nodes):
             if isinstance(old_node, Node):
                 assert (
-                        changes[old_node._primary_key]['title'] ==
-                        new_node.title
+                    changes[old_node._primary_key]['title'] ==
+                    new_node.title
                 )
             else:
                 assert (
-                        old_node.title ==
-                        new_node.title
+                    old_node.title ==
+                    new_node.title
                 )
 
     def test_template_wiki_pages_not_copied(self, project, auth):
@@ -4282,8 +4282,8 @@ class TestTemplateNode:
 
         # check that all children were copied
         assert (
-                set(x.template_node._id for x in new.nodes) ==
-                set(x._id for x in visible_nodes if x not in project.linked_nodes)
+            set(x.template_node._id for x in new.nodes) ==
+            set(x._id for x in visible_nodes if x not in project.linked_nodes)
         )
         # ensure all child nodes were actually copied, instead of moved
         assert bool({x._primary_key for x in new.nodes}.isdisjoint(
@@ -4293,8 +4293,8 @@ class TestTemplateNode:
         # ensure that the creator is admin for each node copied
         for node in new.nodes:
             assert (
-                    set(node.get_permissions(other_user)) ==
-                    set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+                set(node.get_permissions(other_user)) ==
+                set([permissions.READ, permissions.WRITE, permissions.ADMIN])
             )
 
 
@@ -4368,16 +4368,16 @@ class TestAddonMethods:
         assert bool(added) is True
         node.reload()
         assert (
-                len(node.get_addon_names()) ==
-                addon_count + 1
+            len(node.get_addon_names()) ==
+            addon_count + 1
         )
         assert (
-                len(node.addons) ==
-                addon_record_count + 1
+            len(node.addons) ==
+            addon_record_count + 1
         )
         assert (
-                node.logs.latest().action ==
-                NodeLog.ADDON_ADDED
+            node.logs.latest().action ==
+            NodeLog.ADDON_ADDED
         )
 
     def test_add_existing_addon(self, node, auth):
@@ -4386,12 +4386,12 @@ class TestAddonMethods:
         added = node.add_addon('wiki', auth)
         assert bool(added) is False
         assert (
-                len(node.get_addon_names()) ==
-                addon_count
+            len(node.get_addon_names()) ==
+            addon_count
         )
         assert (
-                len(node.addons) ==
-                addon_record_count
+            len(node.addons) ==
+            addon_record_count
         )
 
     def test_delete_addon(self, node, auth):
@@ -4399,12 +4399,12 @@ class TestAddonMethods:
         deleted = node.delete_addon('wiki', auth)
         assert deleted is True
         assert (
-                len(node.get_addon_names()) ==
-                addon_count - 1
+            len(node.get_addon_names()) ==
+            addon_count - 1
         )
         assert (
-                node.logs.latest().action ==
-                NodeLog.ADDON_REMOVED
+            node.logs.latest().action ==
+            NodeLog.ADDON_REMOVED
         )
 
     @mock.patch('addons.dropbox.models.NodeSettings.config')
@@ -4419,8 +4419,8 @@ class TestAddonMethods:
         deleted = node.delete_addon('dropbox', auth)
         assert bool(deleted) is False
         assert (
-                len(node.get_addon_names()) ==
-                addon_count
+            len(node.get_addon_names()) ==
+            addon_count
         )
 
 
