@@ -1976,8 +1976,8 @@ var Filters = {
                     m('.pull-right',
                         args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
                     ),
-                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable.'),
-                    args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
+                    m('.m-t-sm.m-r-sm.m-b-md.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable.'),
+                    args.viewOnly ? '' : m('i.fa.fa-question-circle', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
@@ -1993,7 +1993,7 @@ var Filters = {
                     ),
                     m('.text-muted.m-t-sm.m-r-sm.m-b-md.', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable')
                 ]), m('ul', [
-                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('li.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
