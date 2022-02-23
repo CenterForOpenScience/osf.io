@@ -63,8 +63,7 @@ from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
 from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added, contributor_removed, after_create_registration, \
-    contributor_cancel_invite
+from website.project.signals import contributor_added, contributor_removed, after_create_registration
 from website.project.views.node import serialize_collections
 from website.util import api_url_for, web_url_for
 from website.views import find_bookmark_collection
@@ -1296,8 +1295,7 @@ class TestContributorMethods:
         user = UserFactory()
         node.add_contributor(contributor=user, auth=auth, save=True)
         assert user in node.contributors
-        with disconnected_from_listeners(contributor_cancel_invite):
-            node.cancel_invite(contributor=user)
+        node.cancel_invite(contributor=user)
         node.reload()
 
         assert user not in node.contributors
@@ -1310,8 +1308,7 @@ class TestContributorMethods:
         node.add_contributor(contributor=user, auth=auth, save=True)
         assert user in node.contributors
 
-        with disconnected_from_listeners(contributor_cancel_invite):
-            node.cancel_invite(contributor=contributor)
+        node.cancel_invite(contributor=contributor)
         node.reload()
 
         assert user not in node.contributors
@@ -1347,8 +1344,7 @@ class TestContributorMethods:
         setattr(node, 'get_identifier_value', my_function)
         assert user in node.contributors
 
-        with disconnected_from_listeners(contributor_cancel_invite):
-            node.cancel_invite(contributor=user)
+        node.cancel_invite(contributor=user)
         node.reload()
 
         assert user not in node.contributors
