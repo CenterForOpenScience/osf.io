@@ -7,7 +7,7 @@ class TestSearchUtils(OsfTestCase):
 
     def test_build_query_with_match_key_and_match_value_valid(self):
         query_body = util.build_query_string('*')
-        match_key = "test"
+        match_key = 'test'
         match_value = 1
         start = 0
         size = 10
