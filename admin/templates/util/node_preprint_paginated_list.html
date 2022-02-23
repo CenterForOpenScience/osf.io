@@ -48,14 +48,7 @@
             <tr>
                 <th>GUID</th>
                 <th>Name</th>
-                {% if resource_type == "preprint" %}
-                    <th>Public*</th>
-                {% else %}
-                    <th>Public</th>
-                {% endif %}
-                {% if resource_type == "node" %}
-                    <th>Registration</th>
-                {% endif %}
+                <th>Public</th>
                 <th># of Contributors</th>
                 <th>SPAM Status</th>
                 <th>Actions</th>
@@ -77,12 +70,11 @@
                 </td>
                 <td>{{ item.title | truncatechars:20 }}</td>
                 <td>{{ item.is_public }}</td>
-                <td>{{ item.is_registration }}</td>
-                <td>{{ item.contributors.count }}</td>
-                <td> {% get_spam_status item %} </td>
+                <td>{{ item.contributors|length }}</td>
+                <td>{% get_spam_status item %}</td>
                 {%  if perms.osf.delete_node %}
                     <td>
-                        {% if item.number_contributors < 2 and resource_type == "preprint" or not item.is_registration %}
+                        {% if item.contributors|length < 2 and resource_type == "preprint" or not item.is_registration %}
                             {% if not item.deleted %}
                                 {% if resource_type == "node" %}
                                     <a data-toggle="modal" data-target="#deleteModalNode{{ item.guid }}" class="btn btn-danger">

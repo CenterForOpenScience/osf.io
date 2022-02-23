@@ -24,7 +24,7 @@
                     </td>
                     <td>{{ child.title }}</td>
                     <td>{{ child.public }}</td>
-                    <td>{{ child.number_contributors }}</td>
+                    <td>{{ child.contributors|length }}</td>
                     {%  if perms.osf.delete_node %}
                     <td>
                         {% if not child.is_registration %}
