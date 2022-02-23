@@ -68,9 +68,6 @@ def remove_quickfiles(dry_run=False):
 
         paginated_progressbar(QuickFilesNode.objects.all(), lambda item: item.delete(), dry_run=dry_run)
         logger.info(f'All Quickfiles deleted 🎉')
-        with connection.cursor() as cursor:
-            cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
-        logger.info('`one_quickfiles_per_user` constraint dropped.')
 
     if not dry_run:
         paginated_progressbar(
