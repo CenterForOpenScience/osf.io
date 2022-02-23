@@ -260,7 +260,7 @@ class TestFrameworkUtils(unittest.TestCase):
 class TestWebpackFilter(unittest.TestCase):
 
     def setUp(self):
-        self.asset_paths = {'assets': 'assets.07123e.js'}
+        self.asset_paths = {'assets': {'js': 'assets.07123e.js'}}
 
     def test_resolve_asset(self):
         asset = paths.webpack_asset('assets.js', self.asset_paths, debug=False)

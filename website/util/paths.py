@@ -35,7 +35,7 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
         return path
     if not debug:
         key = path.replace(base_static_path, '').replace('.js', '')
-        hash_path = asset_paths[key]
+        hash_path = asset_paths[key]['js']
         return os.path.join(base_static_path, hash_path)
     else:  # We don't cachebust in debug mode, so just return unmodified path
         return path
