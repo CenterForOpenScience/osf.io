@@ -13,11 +13,28 @@ from osf.models.quickfiles import get_quickfiles_project_title
 
 from addons.osfstorage.models import OsfStorageFile
 from website import mails, settings
+from django.core.paginator import Paginator
+from tqdm import tqdm
+
 
 logger = logging.getLogger(__name__)
 QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files were migrated into this Project on March' \
                   ' 11, 2022. The file URL’s will still resolve properly, and the Quick Files logs are available in' \
                   ' the Project’s Recent Activity.'
+
+
+def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
+    paginator = Paginator(queryset, page_size)
+    progress_bar = tqdm(total=len(queryset))
+    n_processed = 0
+    for page_num in paginator.page_range:
+        page = paginator.page(page_num)
+        for item in page.object_list:
+            if not dry_run:
+                function(item)
+        n_processed += len(page.object_list)
+        progress_bar.update(n_processed)
+    progress_bar.close()
 
 
 def remove_quickfiles(dry_run=False):
@@ -40,33 +57,33 @@ def remove_quickfiles(dry_run=False):
     ]
     if not dry_run:
         NodeLog.objects.bulk_create(node_logs)
-
-    logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
-
-    QuickFilesNode.bulk_update_search(quick_files_nodes)
+        logger.info(f'{len(node_logs)} node logs were added.')
 
     if not dry_run:
         quick_files_nodes.update(
             type='osf.node',
             description=QUICKFILES_DESC
         )
-        result = QuickFilesNode.objects.all().delete()
-        logger.info(f'Quickfiles deleted {result}')
+        logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
+
+        paginated_progressbar(QuickFilesNode.objects.all(), lambda item: item.delete(), dry_run=dry_run)
+        logger.info(f'All Quickfiles deleted 🎉')
         with connection.cursor() as cursor:
             cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
         logger.info('`one_quickfiles_per_user` constraint dropped.')
 
-    for log in node_logs:
-        node = log.node
-        if not dry_run:
-            mails.send_mail(
-                to_addr=node.creator.email,
-                mail=mails.QUICKFILES_MIGRATED,
-                user=node.creator,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                can_change_preferences=False,
-                quickfiles_link=node.absolute_url
-            )
+    paginated_progressbar(
+        node_logs,
+        lambda log: mails.send_mailmails.send_mail(
+            to_addr=log.node.creator.email,
+            mail=mails.QUICKFILES_MIGRATED,
+            user=log.node.creator,
+            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+            can_change_preferences=False,
+            quickfiles_link=log.node.absolute_url
+        ),
+        dry_run=dry_run,
+    )
 
 
 def reverse_remove_quickfiles(dry_run=False):

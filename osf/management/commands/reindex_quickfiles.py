@@ -1,30 +1,37 @@
 from django.core.paginator import Paginator
 from website.search.search import update_file
-from osf.models import Node, NodeLog
+from osf.models import Node, NodeLog, QuickFilesNode
 from addons.osfstorage.models import OsfStorageFileNode
 from django.core.management.base import BaseCommand
 
 PAGE_SIZE = 100
 from tqdm import tqdm
 
-def reindex_quickfiles(dry_run):
-    file_ids = Node.objects.filter(
-        logs__action=NodeLog.MIGRATED_QUICK_FILES
-    ).values_list('files__id', flat=True)
-
-    files_to_reindex = OsfStorageFileNode.objects.filter(id__in=file_ids)
-    paginator = Paginator(files_to_reindex, PAGE_SIZE)
-
-    progress_bar = tqdm(total=files_to_reindex.count())
+def paginated_progressbar(queryset, page_size, function, dry_run=False):
+    paginator = Paginator(queryset, page_size)
+    progress_bar = tqdm(total=queryset.count())
     n_processed = 0
     for page_num in paginator.page_range:
         page = paginator.page(page_num)
-        for quickfile in page.object_list:
+        for item in page.object_list:
             if not dry_run:
-                update_file(quickfile)
+                function(item)
         n_processed += len(page.object_list)
         progress_bar.update(n_processed)
     progress_bar.close()
+
+
+def reindex_quickfiles(dry_run):
+    nodes = Node.objects.filter(
+        logs__action=NodeLog.MIGRATED_QUICK_FILES
+    )
+
+    file_ids = nodes.values_list('files__id', flat=True)
+
+    files_to_reindex = OsfStorageFileNode.objects.filter(id__in=file_ids)
+
+    QuickFilesNode.bulk_update_search(nodes)
+    paginated_progressbar(files_to_reindex, PAGE_SIZE, update_file, dry_run)
 
 
 class Command(BaseCommand):
