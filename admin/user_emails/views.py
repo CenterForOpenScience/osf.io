@@ -150,7 +150,7 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
 
             if user.pk not in all_institution_users_id:
                 # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-                return permission_denied(self.request, Exception("You cannot access this specific page"))
+                return permission_denied(self.request, Exception('You cannot access this specific page'))
 
         # Refer to website.profile.views.update_user
         if primary_email:
