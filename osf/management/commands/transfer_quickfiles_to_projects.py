@@ -72,18 +72,20 @@ def remove_quickfiles(dry_run=False):
             cursor.execute("""DROP INDEX IF EXISTS one_quickfiles_per_user RESTRICT;""")
         logger.info('`one_quickfiles_per_user` constraint dropped.')
 
-    paginated_progressbar(
-        node_logs,
-        lambda log: mails.send_mailmails.send_mail(
-            to_addr=log.node.creator.email,
-            mail=mails.QUICKFILES_MIGRATED,
-            user=log.node.creator,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            can_change_preferences=False,
-            quickfiles_link=log.node.absolute_url
-        ),
-        dry_run=dry_run,
-    )
+    if not dry_run:
+        paginated_progressbar(
+            node_logs,
+            lambda log: mails.send_mail(
+                to_addr=log.node.creator.email,
+                mail=mails.QUICKFILES_MIGRATED,
+                user=log.node.creator,
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
+                quickfiles_link=log.node.absolute_url
+            ),
+            dry_run=dry_run,
+        )
+        logger.info('quickfiles removal emails sent')
 
 
 def reverse_remove_quickfiles(dry_run=False):
