@@ -162,6 +162,7 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
             username = primary_email_address
 
         # make sure the new username has already been confirmed
+        old_primary_email = ''
         if username and username != user.username and user.emails.filter(address=username).exists():
 
             mails.send_mail(
@@ -177,8 +178,12 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
             for list_name, subscription in user.mailchimp_mailing_lists.items():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)
+
+            old_primary_email = user.username
             user.username = username
 
         user.save()
+        # remove old primary email to use for other purposes
+        user.emails.filter(address=old_primary_email).delete()
 
         return redirect(reverse('user-emails:user', kwargs={'guid': user._id}))
