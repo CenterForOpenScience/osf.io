@@ -7,9 +7,11 @@ from osf.models import (
     OSFUser,
     QuickFilesNode,
     NodeLog,
-    Node
+    Node,
+    AbstractNode
 )
 from osf.models.quickfiles import get_quickfiles_project_title
+from osf.models.queued_mail import queue_mail
 
 from addons.osfstorage.models import OsfStorageFile
 from website import mails, settings
@@ -24,16 +26,31 @@ QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files wer
                   ' the Project’s Recent Activity.'
 
 
-def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
-    paginator = Paginator(queryset, page_size)
+def turn_quickfiles_into_projects(queryset):
+    queryset.update(
+        type='osf.node',
+        description=QUICKFILES_DESC
+    )
+    for node in queryset:
+        node.guids.all().delete()  # remove legacy guid
+        node.save()
 
-    i = 0
+
+def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
+    '''
+    This is a little strange because Paginator's Page class has a __getitem__ method that list-ifies querysets, this
+    function preserved the Django Queryset class allowing calls to the Django object managers, otherwise we'd use
+    Django's paginator.
+    '''
     with tqdm(total=len(queryset)) as pbar:
-        for page_num in paginator.page_range:
-            for item in paginator.page(page_num).object_list:
-                if not dry_run:
-                    function(item)
-                pbar.update(1)
+        page_range = range(0, len(queryset) // page_size)
+        for page_num in page_range:
+            if not dry_run:
+                if page_num == page_range.stop:
+                    function(queryset[page_num * page_size:])
+                else:
+                    function(queryset[page_num * page_size: page_num * page_size + page_size])
+            pbar.update(1)
 
 
 def remove_quickfiles(dry_run=False, page_size=1000):
@@ -45,7 +62,10 @@ def remove_quickfiles(dry_run=False, page_size=1000):
         'target_object_id',
         flat=True
     )
-    quick_files_nodes = QuickFilesNode.objects.filter(id__in=quick_files_node_with_files_ids)
+    quick_files_nodes = AbstractNode.objects.filter(
+        id__in=quick_files_node_with_files_ids,
+        creator__is_active=True,
+    ).order_by('pk')
 
     node_logs = [
         NodeLog(
@@ -59,26 +79,26 @@ def remove_quickfiles(dry_run=False, page_size=1000):
         NodeLog.objects.bulk_create(node_logs)
         logger.info(f'{len(node_logs)} node logs were added.')
 
-    if not dry_run:
-        quick_files_count = quick_files_nodes.count()
-        quick_files_nodes.update(
-            type='osf.node',
-            description=QUICKFILES_DESC
-        )
-        logger.info(f'{quick_files_count} quickfiles nodes were projectified.')
+    paginated_progressbar(
+        quick_files_nodes,
+        lambda page: turn_quickfiles_into_projects(page),
+        page_size=page_size,
+        dry_run=dry_run
+    )
+    logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
 
-        paginated_progressbar(
-            QuickFilesNode.objects.all(),
-            lambda item: item.delete(),
-            page_size=page_size,
-            dry_run=dry_run
-        )
-        logger.info(f'All Quickfiles deleted')
+    paginated_progressbar(
+        QuickFilesNode.objects.all(),
+        lambda page: page.all().delete(),
+        page_size=page_size,
+        dry_run=dry_run
+    )
+    logger.info(f'All Quickfiles deleted')
 
     if not dry_run:
         paginated_progressbar(
             node_logs,
-            lambda log: mails.send_mail(
+            lambda log: queue_mail(
                 to_addr=log.node.creator.email,
                 mail=mails.QUICKFILES_MIGRATED,
                 user=log.node.creator,
