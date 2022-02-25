@@ -333,9 +333,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     suffix = models.CharField(max_length=255, blank=True)
 
     # names in english
-    given_name_en = models.CharField(max_length=255, blank=True)
-    middle_names_en = models.CharField(max_length=255, blank=True)
-    family_name_en = models.CharField(max_length=255, blank=True)
+    given_name_ja = models.CharField(max_length=255, blank=True)
+    middle_names_ja = models.CharField(max_length=255, blank=True)
+    family_name_ja = models.CharField(max_length=255, blank=True)
 
     # optional
     erad = models.CharField(max_length=255, blank=True)
@@ -355,9 +355,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
-    #     'institution_en': <institution or organization in english>,
+    #     'institution_ja': <institution or organization in japanese>,
     #     'department': <department>,
-    #     'department_en': <department_en>,
+    #     'department_ja': <department_ja>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -371,9 +371,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
-    #     'institution_en': <institution or organization in english>,
+    #     'institution_ja': <institution or organization in japanese>,
     #     'department': <department>,
-    #     'department_en': <department_en>,
+    #     'department_ja': <department_ja>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -485,8 +485,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except Exception:
             institution = self.jobs[0].get('organization_name')
             institution_ja = self.jobs[0].get('organization_name_ja')
-        ja = [self.family_name, self.given_name, institution]
-        en = [self.family_name_en, self.given_name_en, institution_ja]
+        en = [self.family_name, self.given_name, institution]
+        ja = [self.family_name_ja, self.given_name_ja, institution_ja]
         return all(ja + en)
 
     @property

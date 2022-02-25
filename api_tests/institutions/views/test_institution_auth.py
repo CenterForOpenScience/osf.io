@@ -176,8 +176,8 @@ class TestInstitutionAuth:
         assert user
         assert user.fullname == 'Fake User'
         # Given name and family name are set instead of guessed
-        assert user.given_name_en == 'Foo'
-        assert user.family_name_en == 'Bar'
+        assert user.given_name == 'Foo'
+        assert user.family_name == 'Bar'
 
     def test_user_active(self, app, institution, url_auth_institution):
 
@@ -398,24 +398,7 @@ class TestInstitutionAuth:
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.fullname == jagivenname + ' ' + jasurname
-
-    def test_authenticate_jaDisplayName_and_jaFullname_are_not_valid(
-            self, app, institution, url_auth_institution):
-        username = 'user@gmail.com'
-        jafullname = 'full'
-        jasurname = ''
-        res = app.post(
-            url_auth_institution,
-            make_payload(institution, username, jaFullname=jafullname),
-            expect_errors=True
-        )
-        assert res.status_code == 204
-
-        user = OSFUser.objects.filter(username=username).first()
-        assert user
-        assert user.given_name != jasurname
-        assert user.fullname == jafullname
+        assert user.ext.data['idp_attr']['fullname_ja'] == jagivenname + ' ' + jasurname
 
     def test_authenticate_jaGivenName_is_valid(
             self, app, institution, url_auth_institution):
@@ -429,7 +412,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.given_name == jagivenname
+        assert user.given_name_ja == jagivenname
 
     def test_authenticate_jaSurname_is_valid(
             self, app, institution, url_auth_institution):
@@ -443,7 +426,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.family_name == jasurname
+        assert user.family_name_ja == jasurname
 
     def test_authenticate_jaMiddleNames_is_valid(
             self, app, institution, url_auth_institution):
@@ -457,7 +440,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.middle_names == middlename
+        assert user.middle_names_ja == middlename
 
     def test_authenticate_givenname_is_valid(
             self, app, institution, url_auth_institution):
@@ -471,7 +454,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.given_name_en == given_name
+        assert user.given_name == given_name
 
     def test_authenticate_familyname_is_valid(
             self, app, institution, url_auth_institution):
@@ -485,7 +468,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.family_name_en == family_name
+        assert user.family_name == family_name
 
     def test_authenticate_middlename_is_valid(
             self, app, institution, url_auth_institution):
@@ -499,7 +482,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        assert user.middle_names_en == middle_names
+        assert user.middle_names == middle_names
 
     @mock.patch('api.institutions.authentication.login_by_eppn')
     def test_authenticate_jaOrganizationalUnitName_is_valid(
@@ -518,7 +501,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
         assert user
-        assert user.jobs[0]['department'] == jaorganizationname
+        assert user.jobs[0]['department_ja'] == jaorganizationname
 
     @mock.patch('api.institutions.authentication.login_by_eppn')
     def test_authenticate_OrganizationalUnitName_is_valid(
@@ -537,4 +520,4 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
         assert user
-        assert user.jobs[0]['department_en'] == organizationnameunit
+        assert user.jobs[0]['department'] == organizationnameunit

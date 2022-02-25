@@ -648,9 +648,9 @@ def serialize_names(**kwargs):
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
-        'given_en': user.given_name_en,
-        'middle_en': user.middle_names_en,
-        'family_en': user.family_name_en,
+        'given_ja': user.given_name_ja,
+        'middle_ja': user.middle_names_ja,
+        'family_ja': user.family_name_ja,
         'suffix': user.suffix,
     }
 
@@ -666,15 +666,15 @@ def serialize_account_info(auth, uid=None, **kwargs):
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
-        'given_en': user.given_name_en,
-        'middle_en': user.middle_names_en,
-        'family_en': user.family_name_en,
+        'given_ja': user.given_name_ja,
+        'middle_ja': user.middle_names_ja,
+        'family_ja': user.family_name_ja,
         'suffix': user.suffix,
         'erad': user.erad,
         'institution': first_job.get('institution'),
         'department': first_job.get('department'),
-        'institution_en': first_job.get('institution_en'),
-        'department_en': first_job.get('department_en'),
+        'institution_ja': first_job.get('institution_ja'),
+        'department_ja': first_job.get('department_ja'),
     }
     return ret
 
@@ -688,20 +688,21 @@ def unserialize_account_info(auth, **kwargs):
 
     # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
-    user.given_name_en = (json_data.get('given_en') or '').strip()
-    user.middle_names_en = (json_data.get('middle_en') or '').strip()
-    user.family_name_en = (json_data.get('family_en') or '').strip()
     user.given_name = (json_data.get('given') or '').strip()
     user.middle_names = (json_data.get('middle') or '').strip()
     user.family_name = (json_data.get('family') or '').strip()
     user.suffix = (json_data.get('suffix') or '').strip()
+    user.given_name_ja = (json_data.get('given_ja') or '').strip()
+    user.middle_names_ja = (json_data.get('middle_ja') or '').strip()
+    user.family_name_ja = (json_data.get('family_ja') or '').strip()
+    user.erad = (json_data.get('erad') or '').strip()
 
     if user.jobs:
         first_job = user.jobs[0]
         first_job['institution'] = (json_data.get('institution', '')).strip()
         first_job['department'] = (json_data.get('department', '')).strip()
-        first_job['institution_en'] = (json_data.get('institution_en', '')).strip()
-        first_job['department_en'] = (json_data.get('department_en', '')).strip()
+        first_job['institution_ja'] = (json_data.get('institution_ja', '')).strip()
+        first_job['department_ja'] = (json_data.get('department_ja', '')).strip()
 
     user.save()
 
@@ -747,8 +748,8 @@ def serialize_job(job):
     return {
         'institution': job.get('institution'),
         'department': job.get('department'),
-        'institution_en': job.get('institution_en'),
-        'department_en': job.get('department_en'),
+        'institution_ja': job.get('institution_ja'),
+        'department_ja': job.get('department_ja'),
         'title': job.get('title'),
         'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
@@ -762,8 +763,8 @@ def serialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
-        'institution_en': school.get('institution_en'),
-        'department_en': school.get('department_en'),
+        'institution_ja': school.get('institution_ja'),
+        'department_ja': school.get('department_ja'),
         'degree': school.get('degree'),
         'startMonth': school.get('startMonth'),
         'startYear': school.get('startYear'),
@@ -784,8 +785,8 @@ def append_idp_attr_common(data, user):
     data['idp_attr'] = {
         'institution': idp_attr.get('organization_name'),
         'department': idp_attr.get('organizational_unit'),
-        'institution_en': idp_attr.get('organization_name_en'),
-        'department_en': idp_attr.get('organizational_unit_en'),
+        'institution_ja': idp_attr.get('organization_name_ja'),
+        'department_ja': idp_attr.get('organizational_unit_ja'),
     }
 
 
@@ -822,13 +823,13 @@ def unserialize_names(**kwargs):
     json_data = escape_html(request.get_json())
     # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
-    user.given_name_en = (json_data.get('given_en') or '').strip()
-    user.middle_names_en = (json_data.get('middle_en') or '').strip()
-    user.family_name_en = (json_data.get('family_en') or '').strip()
     user.given_name = (json_data.get('given') or '').strip()
     user.middle_names = (json_data.get('middle') or '').strip()
     user.family_name = (json_data.get('family') or '').strip()
     user.suffix = (json_data.get('suffix') or '').strip()
+    user.given_name_ja = (json_data.get('given_ja') or '').strip()
+    user.middle_names_ja = (json_data.get('middle_ja') or '').strip()
+    user.family_name_ja = (json_data.get('family_ja') or '').strip()
     user.save()
 
 
@@ -863,8 +864,8 @@ def unserialize_job(job):
     return {
         'institution': job.get('institution'),
         'department': job.get('department'),
-        'institution_en': job.get('institution_en'),
-        'department_en': job.get('department_en'),
+        'institution_ja': job.get('institution_ja'),
+        'department_ja': job.get('department_ja'),
         'title': job.get('title'),
         'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
@@ -878,8 +879,8 @@ def unserialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
-        'institution_en': school.get('institution_en'),
-        'department_en': school.get('department_en'),
+        'institution_ja': school.get('institution_ja'),
+        'department_ja': school.get('department_ja'),
         'degree': school.get('degree'),
         'startMonth': school.get('startMonth'),
         'startYear': school.get('startYear'),

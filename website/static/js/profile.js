@@ -415,18 +415,18 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
 
-    self.given_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
-    self.middle_en = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.family_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.given_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_ja = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
 
     self.imputedGiven = ko.observable();
     self.imputedMiddle = ko.observable();
     self.imputedFamily = ko.observable();
     self.imputedSuffix = ko.observable();
 
-    self.imputedGivenEn = ko.observable();
-    self.imputedMiddleEn = ko.observable();
-    self.imputedFamilyEn = ko.observable();
+    self.imputedGivenJa = ko.observable();
+    self.imputedMiddleJa = ko.observable();
+    self.imputedFamilyJa = ko.observable();
 
     self.trackedProperties = [
         self.full,
@@ -435,9 +435,9 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         self.family,
         self.suffix,
 
-        self.given_en,
-        self.middle_en,
-        self.family_en,
+        self.given_ja,
+        self.middle_ja,
+        self.family_ja,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -458,9 +458,9 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         self.family(self.imputedFamily());
         self.suffix(self.imputedSuffix());
 
-        self.given_en(self.imputedGivenEn());
-        self.middle_en(self.imputedMiddleEn());
-        self.family_en(self.imputedFamilyEn());
+        self.given_ja(self.imputedGivenJa());
+        self.middle_ja(self.imputedMiddleJa());
+        self.family_ja(self.imputedFamilyJa());
     };
 
     self.impute = function () {
@@ -477,9 +477,9 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
             self.imputedFamily(response.family);
             self.imputedSuffix(response.suffix);
 
-            self.imputedGivenEn(response.given);
-            self.imputedMiddleEn(response.middle);
-            self.imputedFamilyEn(response.family);
+            self.imputedGivenJa(response.given);
+            self.imputedMiddleJa(response.middle);
+            self.imputedFamilyJa(response.family);
         });
     };
 
@@ -1090,7 +1090,7 @@ var JobViewModel = function() {
     TrackedMixin.call(self);
 
     self.department = ko.observable('').extend({trimmed: true});
-    self.department_en = ko.observable('').extend({trimmed: true});
+    self.department_ja = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
 
     self.institution = ko.observable('').extend({
@@ -1100,17 +1100,17 @@ var JobViewModel = function() {
                // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
-            message: _('Institution/Employer required')
+            message: _('Institution/Employer (English) required')
         }
     });
-    self.institution_en = ko.observable('').extend({
+    self.institution_ja = ko.observable('').extend({
         trimmed: true,
         required: {
             onlyIf: function() {
                // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
-            message: _('Institution/Employer (English) required')
+            message: _('Institution/Employer required')
         }
     });
 
@@ -1129,8 +1129,8 @@ var JobViewModel = function() {
     self.trackedProperties = [
         self.institution,
         self.department,
-        self.institution_en,
-        self.department_en,
+        self.institution_ja,
+        self.department_ja,
         self.title,
         self.startMonth,
         self.startYear,
@@ -1144,8 +1144,8 @@ var JobViewModel = function() {
     self.institutionObjectEmpty = ko.pureComputed(function() {
         return !self.institution() && !self.department() && !self.title();
     }, self);
-    self.institutionEnObjectEmpty = ko.pureComputed(function() {
-        return !self.institution_en() && !self.department() && !self.title();
+    self.institutionJaObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_ja() && !self.department_ja() && !self.title();
     }, self);
 
     self.isValid = ko.computed(function() {
@@ -1263,25 +1263,15 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
     self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
 
-    self.given_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
-    self.middle_en = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.family_en = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.given_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_ja = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
 
     self.erad = ko.observable('');
 
     self.department = ko.observable('').extend({trimmed: true});
-    self.department_en = ko.observable('').extend({trimmed: true});
+    self.department_ja = ko.observable('').extend({trimmed: true});
     self.institution = ko.observable('').extend({
-        trimmed: true,
-        required: {
-            onlyIf: function() {
-               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
-               return true;
-            },
-            message: _('Institution/Employer required')
-        }
-    });
-    self.institution_en = ko.observable('').extend({
         trimmed: true,
         required: {
             onlyIf: function() {
@@ -1291,15 +1281,25 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
             message: _('Institution/Employer (English) required')
         }
     });
+    self.institution_ja = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
+            },
+            message: _('Institution/Employer required')
+        }
+    });
 
     self.imputedGiven = ko.observable();
     self.imputedMiddle = ko.observable();
     self.imputedFamily = ko.observable();
     self.imputedSuffix = ko.observable();
 
-    self.imputedGivenEn = ko.observable();
-    self.imputedMiddleEn = ko.observable();
-    self.imputedFamilyEn = ko.observable();
+    self.imputedGivenJa = ko.observable();
+    self.imputedMiddleJa = ko.observable();
+    self.imputedFamilyJa = ko.observable();
 
     self.trackedProperties = [
         self.full,
@@ -1308,16 +1308,16 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
         self.family,
         self.suffix,
 
-        self.given_en,
-        self.middle_en,
-        self.family_en,
+        self.given_ja,
+        self.middle_ja,
+        self.family_ja,
 
         self.erad,
 
         self.institution,
         self.department,
-        self.institution_en,
-        self.department_en,
+        self.institution_ja,
+        self.department_ja,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -1326,8 +1326,8 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
     self.institutionObjectEmpty = ko.pureComputed(function() {
         return !self.institution() && !self.department() && !self.title();
     }, self);
-    self.institutionEnObjectEmpty = ko.pureComputed(function() {
-        return !self.institution_en() && !self.department() && !self.title();
+    self.institutionJaObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_ja() && !self.department_ja() && !self.title();
     }, self);
 
     self.isValid = ko.computed(function() {
@@ -1349,9 +1349,9 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
             self.imputedFamily(response.family);
             self.imputedSuffix(response.suffix);
 
-            self.imputedGivenEn(response.given);
-            self.imputedMiddleEn(response.middle);
-            self.imputedFamilyEn(response.family);
+            self.imputedGivenJa(response.given);
+            self.imputedMiddleJa(response.middle);
+            self.imputedFamilyJa(response.family);
         });
     };
 

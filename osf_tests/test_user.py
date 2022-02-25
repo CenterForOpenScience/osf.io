@@ -877,15 +877,15 @@ class TestOSFUser:
 
     @mock.patch('osf.models.user.OSFUser.ext', new_callable=mock.PropertyMock)
     def test_is_full_account_required_info_exception(self, mock_idp_attr):
-        family_name = 'family name'
         family_name_en = 'family name en'
-        given_name = 'given_name'
-        given_name_en = 'given_name_en'
+        family_name_ja = 'family name ja'
+        given_name_en = 'given_name en'
+        given_name_ja = 'given_name ja'
         user_auth = AuthUserFactory()
-        user_auth.family_name = family_name
-        user_auth.family_name_en = family_name_en
-        user_auth.given_name = given_name
-        user_auth.given_name_en = given_name_en
+        user_auth.family_name = family_name_en
+        user_auth.family_name_ja = family_name_ja
+        user_auth.given_name = given_name_en
+        user_auth.given_name_ja = given_name_ja
         institution = InstitutionFactory()
         user_auth.affiliated_institutions.add(institution)
         user_auth.jobs = [{

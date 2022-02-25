@@ -34,30 +34,30 @@
                     <div class="form-row row">
                         <div class="form-group col-md-6">
                             <label>${_("Institution / Employer")} <span style="color: red">*</span></label>
-                            <input class="form-control" data-bind="value: institution"
+                            <input class="form-control" data-bind="value: institution_ja"
                                 placeholder="${_('Required')}"/>
                             <div data-bind="visible: $parent.showMessages, css:'text-danger'">
-                                <p data-bind="validationMessage: institution"></p>
+                                <p data-bind="validationMessage: institution_ja"></p>
                             </div>
                         </div>
                         <div class="form-group col-md-6">
                             <label>${_("Department / Institute")}</label>
-                            <input class="form-control" data-bind="value: department" />
+                            <input class="form-control" data-bind="value: department_ja" />
                         </div>
                      </div>
 
                     <div class="form-row row">
                         <div class="form-group col-md-6">
                             <label>${_("Institution / Employer (English)")} <span style="color: red">*</span></label>
-                            <input class="form-control" data-bind="value: institution_en"
+                            <input class="form-control" data-bind="value: institution"
                                    placeholder="${_('Required')}"/>
                             <div data-bind="visible: $parent.showMessages, css:'text-danger'">
-                                <p data-bind="validationMessage: institution_en"></p>
+                                <p data-bind="validationMessage: institution"></p>
                             </div>
                         </div>
                         <div class="form-group col-md-6">
                             <label>${_("Department / Institute (English)")}</label>
-                            <input class="form-control" data-bind="value: department_en" />
+                            <input class="form-control" data-bind="value: department" />
                         </div>
                     </div>
 

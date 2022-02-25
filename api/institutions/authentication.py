@@ -142,8 +142,8 @@ class InstitutionAuthentication(BaseAuthentication):
             fullname = given_name + ' ' + family_name
         if given_name_ja and family_name_ja and not fullname_ja:
             fullname_ja = given_name_ja + ' ' + family_name_ja
-        if fullname_ja:
-            fullname = fullname_ja
+        # if fullname_ja:
+        #     fullname = fullname_ja
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME
@@ -271,21 +271,21 @@ class InstitutionAuthentication(BaseAuthentication):
         # Both created and activated accounts need to be updated and registered
         if created or activation_required:
 
-            if given_name_ja:
-                user.given_name = given_name_ja
-            if family_name_ja:
-                user.family_name = family_name_ja
-            if middle_names_ja:
-                user.middle_names = middle_names_ja
-
             if given_name:
-                user.given_name_en = given_name
+                user.given_name = given_name
             if family_name:
-                user.family_name_en = family_name
+                user.family_name = family_name
             if middle_names:
-                user.middle_names_en = middle_names
+                user.middle_names = middle_names
             if suffix:
                 user.suffix = suffix
+
+            if given_name_ja:
+                user.given_name_ja = given_name_ja
+            if family_name_ja:
+                user.family_name_ja = family_name_ja
+            if middle_names_ja:
+                user.middle_names_ja = middle_names_ja
 
             # Users claimed or confirmed via institution SSO should have their full name updated
             if activation_required:
@@ -320,10 +320,10 @@ class InstitutionAuthentication(BaseAuthentication):
                     #   organizational_unit (ou) : Department / Institute
                     job = {
                         'title': '',
-                        'institution': organization_name_ja,  # required
-                        'institution_en': organization_name,  # required
+                        'institution': organization_name,  # required
+                        'institution_ja': organization_name_ja,  # required
                         'department': '',
-                        'department_en': '',
+                        'department_ja': '',
                         'location': '',
                         'startMonth': '',
                         'startYear': '',
@@ -331,10 +331,10 @@ class InstitutionAuthentication(BaseAuthentication):
                         'endYear': '',
                         'ongoing': False,
                     }
-                    if organizational_unit_ja:
-                        job['department'] = organizational_unit_ja
                     if organizational_unit:
-                        job['department_en'] = organizational_unit
+                        job['department'] = organizational_unit
+                    if organizational_unit_ja:
+                        job['department_ja'] = organizational_unit_ja
                     user.jobs.append(job)
             else:
                 user.eppn = None
@@ -362,10 +362,10 @@ class InstitutionAuthentication(BaseAuthentication):
                 'fullname_ja': fullname_ja,
                 'entitlement': entitlement,
                 'email': email,
-                'organization_name': organization_name_ja,
-                'organizational_unit': organizational_unit_ja,
-                'organization_name_en': organization_name,
-                'organizational_unit_en': organizational_unit,
+                'organization_name': organization_name,
+                'organizational_unit': organizational_unit,
+                'organization_name_ja': organization_name_ja,
+                'organizational_unit_ja': organizational_unit_ja,
             },
         )
 

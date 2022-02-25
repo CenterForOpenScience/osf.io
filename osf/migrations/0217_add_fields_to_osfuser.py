@@ -19,17 +19,17 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='osfuser',
-            name='family_name_en',
+            name='family_name_ja',
             field=models.CharField(blank=True, max_length=255),
         ),
         migrations.AddField(
             model_name='osfuser',
-            name='given_name_en',
+            name='given_name_ja',
             field=models.CharField(blank=True, max_length=255),
         ),
         migrations.AddField(
             model_name='osfuser',
-            name='middle_names_en',
+            name='middle_names_ja',
             field=models.CharField(blank=True, max_length=255),
         ),
     ]

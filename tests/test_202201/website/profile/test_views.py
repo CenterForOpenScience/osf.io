@@ -24,7 +24,7 @@ class TestUserProfileExtend(OsfTestCase):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
         self.user.social['profileWebsites'] = ['http://www.cos.io']
-        self.user.social['erad'] = '123'
+        self.user.erad = '123'
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -35,7 +35,7 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io'])
         nt.assert_true(res.json.get('github') is None)
         nt.assert_false(res.json['editable'])
-        nt.assert_equal(res.json.get('erad'), '123')
+        nt.assert_true(res.json.get('erad') is None)
 
     def test_serialize_social_with_erad_and_editable(self):
         self.user.social['twitter'] = 'howtopizza'
@@ -69,9 +69,9 @@ class TestUserProfileExtend(OsfTestCase):
             'middle': 'Gray',
             'family': 'Pot',
             'suffix': 'Ms.',
-            'given_en': 'Tony',
-            'middle_en': 'lil',
-            'family_en': 'Micheal',
+            'given_ja': 'Given name ja',
+            'middle_ja': 'Middle name ja',
+            'family_ja': 'Family name ja',
         }
 
         url = api_url_for('unserialize_names')
@@ -84,9 +84,9 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(self.user.middle_names, names['middle'])
         nt.assert_equal(self.user.family_name, names['family'])
         nt.assert_equal(self.user.suffix, names['suffix'])
-        nt.assert_equal(self.user.given_name_en, names['given_en'])
-        nt.assert_equal(self.user.middle_names_en, names['middle_en'])
-        nt.assert_equal(self.user.family_name_en, names['family_en'])
+        nt.assert_equal(self.user.given_name_ja, names['given_ja'])
+        nt.assert_equal(self.user.middle_names_ja, names['middle_ja'])
+        nt.assert_equal(self.user.family_name_ja, names['family_ja'])
 
     def test_serialize_account_info(self):
         url = api_url_for('serialize_account_info')
@@ -103,15 +103,15 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(response_data['given'], self.user.given_name)
         nt.assert_equal(response_data['middle'], self.user.middle_names)
         nt.assert_equal(response_data['family'], self.user.family_name)
-        nt.assert_equal(response_data['given_en'], self.user.given_name_en)
-        nt.assert_equal(response_data['middle_en'], self.user.middle_names_en)
-        nt.assert_equal(response_data['family_en'], self.user.family_name_en)
+        nt.assert_equal(response_data['given_ja'], self.user.given_name_ja)
+        nt.assert_equal(response_data['middle_ja'], self.user.middle_names_ja)
+        nt.assert_equal(response_data['family_ja'], self.user.family_name_ja)
         nt.assert_equal(response_data['suffix'], self.user.suffix)
         nt.assert_equal(response_data['erad'], self.user.erad)
         nt.assert_equal(response_data['institution'], None)
         nt.assert_equal(response_data['department'], None)
-        nt.assert_equal(response_data['institution_en'], None)
-        nt.assert_equal(response_data['department_en'], None)
+        nt.assert_equal(response_data['institution_ja'], None)
+        nt.assert_equal(response_data['department_ja'], None)
 
     def test_unserialize_account_info_without_jobs(self):
         url = api_url_for('serialize_account_info')
@@ -120,15 +120,15 @@ class TestUserProfileExtend(OsfTestCase):
             'given': self.user.given_name,
             'middle': self.user.middle_names,
             'family': self.user.family_name,
-            'given_en': self.user.given_name_en,
-            'middle_en': self.user.middle_names_en,
-            'family_en': self.user.family_name_en,
+            'given_ja': self.user.given_name_ja,
+            'middle_ja': self.user.middle_names_ja,
+            'family_ja': self.user.family_name_ja,
             'suffix': self.user.suffix,
             'erad': self.user.erad,
             'institution': None,
             'department': None,
-            'institution_en': None,
-            'department_en': None,
+            'institution_ja': None,
+            'department_ja': None,
         }
 
         self.app.put_json(
@@ -143,24 +143,24 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(self.user.given_name, payload['given'])
         nt.assert_equal(self.user.middle_names, payload['middle'])
         nt.assert_equal(self.user.family_name, payload['family'])
-        nt.assert_equal(self.user.given_name_en, payload['given_en'])
-        nt.assert_equal(self.user.middle_names_en, payload['middle_en'])
-        nt.assert_equal(self.user.family_name_en, payload['family_en'])
+        nt.assert_equal(self.user.given_name_ja, payload['given_ja'])
+        nt.assert_equal(self.user.middle_names_ja, payload['middle_ja'])
+        nt.assert_equal(self.user.family_name_ja, payload['family_ja'])
         nt.assert_equal(self.user.suffix, payload['suffix'])
         nt.assert_equal(self.user.erad, payload['erad'])
         nt.assert_equal(None, payload['institution'])
         nt.assert_equal(None, payload['department'])
-        nt.assert_equal(None, payload['institution_en'])
-        nt.assert_equal(None, payload['department_en'])
+        nt.assert_equal(None, payload['institution_ja'])
+        nt.assert_equal(None, payload['department_ja'])
 
     @mock.patch('osf.models.user.OSFUser.check_spam')
     def test_unserialize_account_info_with_jobs(self, mock_check_spam):
         url = api_url_for('serialize_account_info')
         jobs = [{
             'institution': 'an institution',
-            'institution_en': 'Institution',
+            'institution_ja': 'Institution',
             'department': 'department A',
-            'department_en': 'Department A',
+            'department_ja': 'Department A',
             'location': 'Anywhere',
             'startMonth': 'January',
             'startYear': '2001',
@@ -169,9 +169,9 @@ class TestUserProfileExtend(OsfTestCase):
             'ongoing': False,
         }, {
             'institution': 'another institution',
-            'institution_en': 'Another Institution',
+            'institution_ja': 'Another Institution',
             'department': 'department B',
-            'department_en': 'Department B',
+            'department_ja': 'Department B',
             'location': 'Nowhere',
             'startMonth': 'January',
             'startYear': '2001',
@@ -187,15 +187,15 @@ class TestUserProfileExtend(OsfTestCase):
             'given': self.user.given_name,
             'middle': self.user.middle_names,
             'family': self.user.family_name,
-            'given_en': self.user.given_name_en,
-            'middle_en': self.user.middle_names_en,
-            'family_en': self.user.family_name_en,
+            'given_ja': self.user.given_name_ja,
+            'middle_ja': self.user.middle_names_ja,
+            'family_ja': self.user.family_name_ja,
             'suffix': self.user.suffix,
             'erad': self.user.erad,
             'institution': 'change institution',
             'department': 'change department',
-            'institution_en': 'Change Institution',
-            'department_en': 'Change Department',
+            'institution_ja': 'Change Institution',
+            'department_ja': 'Change Department',
         }
 
         self.app.put_json(
@@ -211,9 +211,9 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(
             self.user.jobs[0]['department'], payload['department'])
         nt.assert_equal(
-            self.user.jobs[0]['institution_en'], payload['institution_en'])
+            self.user.jobs[0]['institution_ja'], payload['institution_ja'])
         nt.assert_equal(
-            self.user.jobs[0]['department_en'], payload['department_en'])
+            self.user.jobs[0]['department_ja'], payload['department_ja'])
 
         assert mock_check_spam.called
 
@@ -232,9 +232,9 @@ class TestUserProfileExtend(OsfTestCase):
         nt.assert_equal(response_data['given'], self.user.given_name)
         nt.assert_equal(response_data['middle'], self.user.middle_names)
         nt.assert_equal(response_data['family'], self.user.family_name)
-        nt.assert_equal(response_data['given_en'], self.user.given_name_en)
-        nt.assert_equal(response_data['middle_en'], self.user.middle_names_en)
-        nt.assert_equal(response_data['family_en'], self.user.family_name_en)
+        nt.assert_equal(response_data['given_ja'], self.user.given_name_ja)
+        nt.assert_equal(response_data['middle_ja'], self.user.middle_names_ja)
+        nt.assert_equal(response_data['family_ja'], self.user.family_name_ja)
         nt.assert_equal(response_data['suffix'], self.user.suffix)
 
     def test_unserialize_social(self):
@@ -274,8 +274,8 @@ class TestUserProfileExtend(OsfTestCase):
                 'email': 'abc@mail.com',
                 'organization_name': 'a organization',
                 'organizational_unit': 'a organizational unit',
-                'organization_name_en': 'a organization en',
-                'organizational_unit_en': 'a organizational unit en',
+                'organization_name_ja': 'a organization ja',
+                'organizational_unit_ja': 'a organizational unit ja',
             },
         )
 
@@ -291,19 +291,19 @@ class TestUserProfileExtend(OsfTestCase):
                         self.user.ext.data['idp_attr']['organization_name'])
         nt.assert_equal(data['idp_attr']['department'],
                         self.user.ext.data['idp_attr']['organizational_unit'])
-        nt.assert_equal(data['idp_attr']['institution_en'],
-                        self.user.ext.data['idp_attr']['organization_name_en'])
+        nt.assert_equal(data['idp_attr']['institution_ja'],
+                        self.user.ext.data['idp_attr']['organization_name_ja'])
         nt.assert_equal(
-            data['idp_attr']['department_en'],
+            data['idp_attr']['department_ja'],
             self.user.ext.data['idp_attr']
-            ['organizational_unit_en'])
+            ['organizational_unit_ja'])
 
     def test_serialize_job(self):
         job = {
             'institution': 'an institution',
-            'institution_en': 'Institution',
+            'institution_ja': 'Institution',
             'department': 'department A',
-            'department_en': 'Department A',
+            'department_ja': 'Department A',
             'title': 'Title B',
             'startMonth': 'January',
             'startYear': '2001',
@@ -319,8 +319,8 @@ class TestUserProfileExtend(OsfTestCase):
         school = {
             'institution': 'an institution',
             'department': 'a department',
-            'institution_en': 'an institution en',
-            'department_en': 'a department en',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
             'degree': None,
             'startMonth': 1,
             'startYear': '2001',
@@ -336,8 +336,8 @@ class TestUserProfileExtend(OsfTestCase):
         job = {
             'institution': 'an institution',
             'department': 'a department',
-            'institution_en': 'an institution en',
-            'department_en': 'a department en',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -353,8 +353,8 @@ class TestUserProfileExtend(OsfTestCase):
         school = {
             'institution': 'an institution',
             'department': 'a department',
-            'institution_en': 'an institution en',
-            'department_en': 'a department en',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
             'degree': None,
             'startMonth': 1,
             'startYear': '2001',
