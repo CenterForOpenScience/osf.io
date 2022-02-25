@@ -30,7 +30,12 @@
                      </div>
                      <div class="form-group" data-bind="if: subscribed.indexOf('${settings.MAILCHIMP_GENERAL_LIST}') == -1 " style="margin-bottom: 0px;">
                          <div>
-                            <input type="checkbox" data-bind="checked: subscribed, visible: unsubscribedToGeneral" value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                            <input type="checkbox" data-bind="checked: subscribed, visible: !showResubscribe" value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                            <span data-bind="visible: showResubscribe">
+                                <a href="https://cos.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=c5fabe3548">
+                                    <i class="fa fa-external-link"></i>
+                                </a>
+                            </span>
                              <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
                              <p class="text-muted" style="padding-left: 15px">Receive general notifications about the
                                  OSF every 2-3 weeks. If you unsubscribe you must resubscribe via
