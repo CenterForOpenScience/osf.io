@@ -11,6 +11,7 @@ var ViewModel = function(list) {
     self.subscribed = ko.observableArray();
     // Flashed messages
     self.message = ko.observable('');
+    self.unsubscribedToGeneral = ko.observable(false);
     self.messageClass = ko.observable('text-success');
 
     self.getListInfo = function() {
@@ -21,6 +22,9 @@ var ViewModel = function(list) {
             success: function(response) {
                 for (var key in response.mailing_lists){
                     if (response.mailing_lists[key]){
+                        if (key === 'Open Science Framework General') {
+                            self.unsubscribedToGeneral(true);
+                        }
                         self.subscribed.push(key);
                     }
                 }
@@ -53,7 +57,11 @@ var ViewModel = function(list) {
             payload[self.list[i]] = $.inArray(self.list[i], self.subscribed()) !== -1;
         }
         var request = $osf.postJSON('/api/v1/settings/notifications/', payload);
-        request.done(function () {
+        request.done(function (response) {
+            console.log(response);
+            if (self.unsubscribedToGeneral().result === 'Open Science Framework General'){
+                self.unsubscribedToGeneral(true);
+            }
             self.changeMessage('Settings updated.', 'text-success', 5000);
         });
         request.fail(function (xhr) {

@@ -15,36 +15,49 @@
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Email Preferences</h3></div>
             <div class="panel-body">
                  <h3>Emails</h3>
-                    </br>
-                    <form>
-                        <div class="form-group">
-                            <input type="checkbox"
-                                data-bind="checked: subscribed"
-                                value="${settings.MAILCHIMP_GENERAL_LIST}"/>
-                              <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                 </br>
+                 <div class="form-group">
+                     <div data-bind="if: subscribed.indexOf('${settings.MAILCHIMP_GENERAL_LIST}') != -1 ">
+                         <input type="checkbox"
+                             data-bind="checked: subscribed"
+                             value="${settings.MAILCHIMP_GENERAL_LIST}" />
+                         <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
+                         <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF
+                            every 2-3 weeks. If you unsubscribe you must resubscribe via
+                            <a href="https://cos.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=c5fabe3548">Mailchip's form <i class="fa fa-external-link"></i></a>
+                            in order to better verify your identity.
+                         </p>
+                     </div>
+                     <div class="form-group" data-bind="if: subscribed.indexOf('${settings.MAILCHIMP_GENERAL_LIST}') == -1 " style="margin-bottom: 0px;">
+                         <div>
+                            <input type="checkbox" data-bind="checked: subscribed, visible: unsubscribedToGeneral" value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                             <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
+                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the
+                                 OSF every 2-3 weeks. If you unsubscribe you must resubscribe via
+                                 <a href="https://cos.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=c5fabe3548">Mailchip's form <i class="fa fa-external-link"></i></a>
+                                 in order to better verify your identity.
+                             </p>
                         </div>
-                    </form>
-                    <form>
-                        <div class="form-group">
-                            <input type="checkbox"
-                                data-bind="checked: subscribed"
-                                value="${settings.OSF_HELP_LIST}"/>
-                              <label>${settings.OSF_HELP_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
-                        </div>
-                        <div class="p-t-md p-b-md">
-                        <button
-                            type="submit"
-                            class="btn btn-success"
-                            data-bind="click: submit"
-                        >Save</button>
-                        </div>
-
-                    </form>
-
-                    <!-- Flashed Messages -->
-                    <div data-bind="html: message, attr: {class: messageClass}"></div>
+                     </div>
+                 </div>
+                <form>
+                    <div class="form-group">
+                        <input type="checkbox"
+                            data-bind="checked: subscribed"
+                            value="${settings.OSF_HELP_LIST}"/>
+                          <label>${settings.OSF_HELP_LIST}</label>
+                        <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
+                    </div>
+                    <div class="p-t-md p-b-md">
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                        data-bind="click: submit"
+                    >Save</button>
+                    </div>
+                </form>
+                <!-- Flashed Messages -->
+                <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
         <div class="panel panel-default">
