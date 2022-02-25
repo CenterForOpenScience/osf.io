@@ -26,19 +26,17 @@ QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files wer
 
 def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
     paginator = Paginator(queryset, page_size)
-    progress_bar = tqdm(total=len(queryset))
-    n_processed = 0
-    for page_num in paginator.page_range:
-        page = paginator.page(page_num)
-        for item in page.object_list:
-            if not dry_run:
-                function(item)
-        n_processed += len(page.object_list)
-        progress_bar.update(n_processed)
-    progress_bar.close()
+
+    i = 0
+    with tqdm(total=len(queryset)) as pbar:
+        for page_num in paginator.page_range:
+            for item in paginator.page(page_num).object_list:
+                if not dry_run:
+                    function(item)
+                pbar.update(1)
 
 
-def remove_quickfiles(dry_run=False):
+def remove_quickfiles(dry_run=False, page_size=1000):
     quick_files_ids = QuickFilesNode.objects.values_list('id', flat=True)
     quick_files_node_with_files_ids = OsfStorageFile.objects.filter(
         target_object_id__in=quick_files_ids,
@@ -62,13 +60,19 @@ def remove_quickfiles(dry_run=False):
         logger.info(f'{len(node_logs)} node logs were added.')
 
     if not dry_run:
+        quick_files_count = quick_files_nodes.count()
         quick_files_nodes.update(
             type='osf.node',
             description=QUICKFILES_DESC
         )
-        logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
+        logger.info(f'{quick_files_count} quickfiles nodes were projectified.')
 
-        paginated_progressbar(QuickFilesNode.objects.all(), lambda item: item.delete(), dry_run=dry_run)
+        paginated_progressbar(
+            QuickFilesNode.objects.all(),
+            lambda item: item.delete(),
+            page_size=page_size,
+            dry_run=dry_run
+        )
         logger.info(f'All Quickfiles deleted')
 
     if not dry_run:
@@ -82,12 +86,13 @@ def remove_quickfiles(dry_run=False):
                 can_change_preferences=False,
                 quickfiles_link=log.node.absolute_url
             ),
+            page_size=page_size,
             dry_run=dry_run,
         )
         logger.info('quickfiles removal emails sent')
 
 
-def reverse_remove_quickfiles(dry_run=False):
+def reverse_remove_quickfiles(dry_run=False, page_size=1000):
     if not dry_run:
         Node.objects.filter(
             logs__action=NodeLog.MIGRATED_QUICK_FILES
@@ -117,22 +122,7 @@ def reverse_remove_quickfiles(dry_run=False):
                 quickfiles.add_addon('osfstorage', auth=None, log=False)
                 quickfiles.save()
 
-    if not dry_run:
-        savepoint = transaction.savepoint()
-        with connection.cursor() as cursor:
-            try:
-                cursor.execute(
-                    """
-                    CREATE UNIQUE INDEX one_quickfiles_per_user ON osf_abstractnode (creator_id, type, is_deleted)
-                    WHERE type='osf.quickfilesnode' AND is_deleted=FALSE;
-                    """
-                )
-            except (utils.OperationalError, utils.ProgrammingError, utils.IntegrityError):
-                transaction.savepoint_rollback(savepoint)
-        logger.info('`one_quickfiles_per_user` constraint was reinstated.')
-
     NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
-    QuickFilesNode.bulk_update_search(QuickFilesNode.objects.all())
 
     logger.info(f'{len(quickfiles_created)} quickfiles were restored.')
 
@@ -156,10 +146,17 @@ class Command(BaseCommand):
             help='is the reverse to be run?.',
             required=False,
         )
+        parser.add_argument(
+            '--page',
+            type=int,
+            help='how many many query items should be in a page?',
+            required=False,
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         reverse = options.get('reverse', False)
+        page_size = options.get('page', 1000)
         if reverse:
             reverse_remove_quickfiles(dry_run)
         else:
