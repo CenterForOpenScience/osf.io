@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import json
+import logging
 from operator import itemgetter
 
 from django.http import Http404
@@ -23,6 +24,8 @@ from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
+
+logger = logging.getLogger(__name__)
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -326,7 +329,7 @@ class QuotaUserList(ListView):
         return super(QuotaUserList, self).get_context_data(**kwargs)
 
 
-class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
+class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     template_name = 'institutions/list_institute.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
@@ -341,6 +344,17 @@ class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
 
+
+class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        institution_id = self.kwargs['institution_id']
+        max_quota = self.request.POST.get('maxQuota')
+        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+           UserQuota.objects.update_or_create(user=user, storage_type=UserQuota.NII_STORAGE, defaults={'max_quota': max_quota})
+        return redirect('institutions:institution_user_list', institution_id=institution_id)
 
 class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
     template_name = 'institutions/statistical_status_default_storage.html'
