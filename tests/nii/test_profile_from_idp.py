@@ -83,7 +83,6 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
         tmp_eppn_username = TMP_EPPN_PREFIX + eppn
 
         res = app.post(
@@ -94,9 +93,11 @@ class TestGettingShibbolethAttribute:
         assert res.status_code == 204
         user = OSFUser.objects.get(username=tmp_eppn_username)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
         assert user.eppn == eppn
         assert user.have_email == False
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email(self, app, institution, url_auth_institution):
@@ -107,7 +108,6 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
@@ -117,10 +117,12 @@ class TestGettingShibbolethAttribute:
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
         assert user.eppn == eppn
         assert user.have_email == True
         assert user.emails.filter(address=email).exists()
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email_and_profile_attr(self, app, institution, url_auth_institution):
@@ -137,7 +139,7 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
+        expected_full_name_ja = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
@@ -151,15 +153,17 @@ class TestGettingShibbolethAttribute:
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.eppn == eppn
         assert user.have_email == True
         assert user.jobs[-1] == {
             'title': '',
-            'institution': organization_name_ja,
-            'department': organizational_unit_ja,
-            'institution_en': organization_name,
-            'department_en': organizational_unit,
+            'institution_ja': organization_name_ja,
+            'department_ja': organizational_unit_ja,
+            'institution': organization_name,
+            'department': organizational_unit,
             'location': '',
             'startMonth': '',
             'startYear': '',
@@ -170,12 +174,15 @@ class TestGettingShibbolethAttribute:
 
         idp_attr = user.ext.data['idp_attr']
         assert idp_attr
-        assert idp_attr['fullname'] == expected_full_name
+        assert idp_attr['fullname'] == fullname
+        assert idp_attr['fullname_ja'] == expected_full_name_ja
         assert idp_attr['entitlement'] == entitlement
         assert user.is_staff == True
         assert idp_attr['email'] == email
-        assert idp_attr['organization_name'] == organization_name_ja
-        assert idp_attr['organizational_unit'] == organizational_unit_ja
+        assert idp_attr['organization_name'] == organization_name
+        assert idp_attr['organizational_unit'] == organizational_unit
+        assert idp_attr['organization_name_ja'] == organization_name_ja
+        assert idp_attr['organizational_unit_ja'] == organizational_unit_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email_and_profile_attr_without_orgname(self, app, institution, url_auth_institution):
@@ -187,7 +194,6 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
@@ -199,7 +205,9 @@ class TestGettingShibbolethAttribute:
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.have_email == True
         assert not user.jobs
         assert not user.schools
@@ -231,7 +239,9 @@ class TestGettingShibbolethAttribute:
 
         user = OSFUser.objects.get(username=tmp_eppn_username)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.eppn == eppn
         assert not user.emails.filter(address=email).exists()
         assert user.have_email == False
@@ -245,7 +255,6 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
@@ -270,7 +279,9 @@ class TestGettingShibbolethAttribute:
         # same email is ignored
         user2 = OSFUser.objects.get(username=tmp_eppn_username2)
         assert user2
-        assert user2.fullname == expected_full_name  # same fullname is OK
+        assert user2.fullname == fullname  # same fullname is OK
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user2.eppn == eppn2
         assert not user2.emails.filter(address=email).exists()
         assert user2.have_email == False
@@ -284,7 +295,6 @@ class TestGettingShibbolethAttribute:
         given_name_ja = given_name + '_ja'
         family_name = 'Smitth'
         family_name_ja = family_name + '_ja'
-        expected_full_name = given_name_ja + ' ' + family_name_ja
 
         app.post(
             url_auth_institution,
@@ -299,7 +309,7 @@ class TestGettingShibbolethAttribute:
         new_given_name_ja = new_given_name + '_ja'
         new_family_name = 'Wayne'
         new_family_name_ja = new_family_name + '_ja'
-        new_expected_full_name = new_given_name_ja + ' ' + new_family_name_ja
+        new_expected_full_name_ja = new_given_name_ja + ' ' + new_family_name_ja
 
         res = app.post(
             url_auth_institution,
@@ -311,14 +321,18 @@ class TestGettingShibbolethAttribute:
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
         assert user
-        assert user.fullname == expected_full_name
+        assert user.fullname == fullname
         assert user.emails.filter(address=email).exists()
         assert not user.emails.filter(address=new_email).exists()
+
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
 
         # user.ext is changed
         idp_attr = user.ext.data['idp_attr']
         assert idp_attr
-        assert idp_attr['fullname'] == new_expected_full_name
+        assert idp_attr['fullname'] == new_fullname
+        assert idp_attr['fullname_ja'] == new_expected_full_name_ja
         assert idp_attr['email'] == new_email
 
 
@@ -352,10 +366,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_jobs_with_idp_attr(self):
         jobs = [{
-            'institution': 'an institution' + '_ja',
-            'department': 'a department' + '_ja',
-            'institution_en': 'an institution',
-            'department_en': 'a department',
+            'institution_ja': 'an institution' + '_ja',
+            'department_ja': 'a department' + '_ja',
+            'institution': 'an institution',
+            'department': 'a department',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -363,10 +377,10 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
-            'institution': 'another institution' + '_ja',
+            'institution_ja': 'another institution' + '_ja',
+            'department_ja': None,
+            'institution': 'another institution',
             'department': None,
-            'institution_en': 'another institution',
-            'department_en': None,
             'title': None,
             'startMonth': 'May',
             'startYear': '2001',
@@ -396,10 +410,10 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_schools_with_idp_attr(self):
         schools = [{
-            'institution': 'an institution' + '_ja',
-            'department': 'a department' + '_ja',
-            'institution_en': 'an institution',
-            'department_en': 'a department',
+            'institution_ja': 'an institution' + '_ja',
+            'department_ja': 'a department' + '_ja',
+            'institution': 'an institution',
+            'department': 'a department',
             'degree': 'a degree',
             'startMonth': 1,
             'startYear': '2001',
@@ -407,10 +421,10 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
-            'institution': 'another institution' + '_ja',
+            'institution_ja': 'another institution' + '_ja',
+            'department_ja': None,
+            'institution': 'another institution',
             'department': None,
-            'institution_en': 'another institution',
-            'department_en': None,
             'degree': None,
             'startMonth': 5,
             'startYear': '2001',
