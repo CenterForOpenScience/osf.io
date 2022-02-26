@@ -1,5 +1,6 @@
-import logging
+from enum import Enum
 from future.moves.urllib.parse import urljoin
+import logging
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -20,6 +21,17 @@ from website import mails
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
+
+
+class IntegrationType(Enum):
+    """Defines 5 SSO types for OSF institution integration.
+    """
+
+    SAML_SHIBBOLETH = 'saml-shib'  # SSO va SAML (Shibboleth impl) where CAS serves as the SP and institutions as IdP
+    CAS_PAC4J = 'cas-pac4j'  # SSO via CAS (pac4j impl) where CAS serves as the client and institution as server
+    OAUTH_PAC4J = 'oauth-pac4j'  # SSO via OAuth (pac4j impl) where CAS serves as the client and institution as server
+    AFFILIATION_VIA_ORCID = 'via-orcid'  # Using ORCiD SSO for sign in; using ORCiD public API for affiliation
+    NONE = ''  # Institution affiliation is done via email domain whitelist w/o SSO
 
 
 class InstitutionManager(models.Manager):
@@ -51,18 +63,16 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     banner_name = models.CharField(max_length=255, blank=True, null=True)
     logo_name = models.CharField(max_length=255, blank=True, null=True)
 
-    # The protocol which is used to delegate authentication.
-    # Currently, we have `CAS`, `SAML`, `OAuth` available.
-    # For `SAML`, we use Shibboleth.
-    # For `CAS` and `OAuth`, we use pac4j.
-    # Only institutions with a valid delegation protocol show up on the institution login page.
-    DELEGATION_PROTOCOL_CHOICES = (
-        ('cas-pac4j', 'CAS by pac4j'),
-        ('oauth-pac4j', 'OAuth by pac4j'),
-        ('saml-shib', 'SAML by Shibboleth'),
-        ('', 'No Delegation Protocol'),
+    # Institution integration type
+    delegation_protocol = models.CharField(
+        choices=[(type.value, type.name) for type in IntegrationType],
+        max_length=15,
+        blank=True,
+        default=''
     )
-    delegation_protocol = models.CharField(max_length=15, choices=DELEGATION_PROTOCOL_CHOICES, blank=True, default='')
+
+    # Verified employment/education affiliation source for `via-orcid` institutions
+    orcid_record_verified_source = models.CharField(max_length=255, blank=True, default='')
 
     # login_url and logout_url can be null or empty
     login_url = models.URLField(null=True, blank=True)
