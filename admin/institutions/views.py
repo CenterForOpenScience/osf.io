@@ -314,6 +314,9 @@ class QuotaUserList(ListView):
         kwargs['institution_id'] = institution.id
         kwargs['institution_name'] = institution.name
 
+        if hasattr(institution, 'storage_name'):
+            kwargs['institution_storage_name'] = institution.storage_name
+
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
