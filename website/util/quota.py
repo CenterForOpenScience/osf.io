@@ -16,21 +16,18 @@ logger = logging.getLogger(__name__)
 
 
 def used_quota(user_id, storage_type=UserQuota.NII_STORAGE, from_all_project=False):
-    projects_ids = []
 
     if from_all_project:
-        user_list = OSFUser.objects.all()
-        for user in user_list:
-            if user._id == user_id:
-                node_ids = Contributor.objects.filter(user_id=user.id).values_list('node_id', flat=True)
+        user = getattr(Guid.load(user_id), 'referent')
+        node_ids = Contributor.objects.filter(user_id=user.id).values_list('node_id', flat=True)
 
-                projects_ids = AbstractNode.objects.filter(
-                    id__in=node_ids,
-                    category='project',
-                    is_deleted=False,
-                    projectstoragetype__storage_type=storage_type
-                ).values_list('id', flat=True)
-                break
+        projects_ids = AbstractNode.objects.filter(
+            id__in=node_ids,
+            category='project',
+            is_deleted=False,
+            projectstoragetype__storage_type=storage_type
+        ).values_list('id', flat=True)
+
     else:
         guid = Guid.objects.get(
             _id=user_id,

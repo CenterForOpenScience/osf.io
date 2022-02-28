@@ -49,7 +49,7 @@ from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink,
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
-from osf.models import RdmTimestampGrantPattern
+from osf.models import RdmTimestampGrantPattern, OSFUser, Contributor, UserQuota
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -691,6 +691,27 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
+
+    contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+    user_list = OSFUser.objects.filter(id__in=contributor_ids)
+    for user in user_list:
+        used_quota = quota.used_quota(user._id, from_all_project=True)
+
+        try:
+            user_quota = UserQuota.objects.get(
+                user=user,
+                storage_type=UserQuota.NII_STORAGE,
+            )
+            user_quota.used = used_quota
+            user_quota.save()
+        except UserQuota.DoesNotExist:
+            UserQuota.objects.create(
+                user=user,
+                storage_type=UserQuota.NII_STORAGE,
+                max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                used=used_quota,
+            )
+
     id = '{}_deleted'.format(node.project_or_component)
     status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node

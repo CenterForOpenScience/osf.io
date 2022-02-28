@@ -14,7 +14,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 
 from website import search
-from osf.models import NodeLog
+from osf.models import NodeLog, Contributor, UserQuota
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
@@ -35,6 +35,8 @@ from admin.nodes.templatetags.node_extras import reverse_node
 from admin.nodes.serializers import serialize_node, serialize_simple_user_and_node_permissions, serialize_log
 from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
+from website.util import quota
+from api.base import settings as api_settings
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
@@ -151,6 +153,7 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         try:
             node = self.get_object()
+            contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
             flag = None
             osf_flag = None
             message = None
@@ -189,6 +192,25 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
                     should_hide=True,
                 )
                 osf_log.save()
+
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                used_quota = quota.used_quota(user._id, from_all_project=True)
+
+                try:
+                    user_quota = UserQuota.objects.get(
+                        user=user,
+                        storage_type=UserQuota.NII_STORAGE,
+                    )
+                    user_quota.used = used_quota
+                    user_quota.save()
+                except UserQuota.DoesNotExist:
+                    UserQuota.objects.create(
+                        user=user,
+                        storage_type=UserQuota.NII_STORAGE,
+                        max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                        used=used_quota,
+                    )
         except AttributeError:
             return page_not_found(
                 request,
