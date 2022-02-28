@@ -2287,10 +2287,10 @@ knockout.validation@^2.0.2:
   resolved "https://registry.yarnpkg.com/knockout.validation/-/knockout.validation-2.0.4.tgz#e87f82f41b5bdcb7029ea6be3fef2a903054558b"
   integrity sha512-64eDuEvALXf5GsRK5b2WIetF/eSIlTsw/ZDerrhKt+3eRBBk95SXdczTLhcoNL4Hi8Gym14YYIjj7vLCXEeHDA==
 
-knockout@~3.5.1:
-  version "3.5.1"
-  resolved "https://registry.yarnpkg.com/knockout/-/knockout-3.5.1.tgz#62c81e81843bea2008fd23c575edd9ca978e75cf"
-  integrity sha512-wRJ9I4az0QcsH7A4v4l0enUpkS++MBx0BnL/68KaLzJg7x1qmbjSlwEoCNol7KTYZ+pmtI7Eh2J0Nu6/2Z5J/Q==
+knockout@~3.4.2:
+  version "3.4.2"
+  resolved "https://registry.yarnpkg.com/knockout/-/knockout-3.4.2.tgz#e87958de77ad1e936f7ce645bab8b5d7c456d937"
+  integrity sha1-6HlY3netHpNvfOZFuri118RW2Tc=
 
 latest-version@^3.0.0:
   version "3.1.0"
