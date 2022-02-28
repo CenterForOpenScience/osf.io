@@ -47,7 +47,7 @@
             "display_text": "Approved data request file"
         },
         {
-            "block_type": "subsection-heading",
+            "block_type": "question-label",
             "display_text": "Upload the data request form output pdf file here"
         },
         {
