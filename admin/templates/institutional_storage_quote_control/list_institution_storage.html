@@ -26,22 +26,21 @@
     </thead>
     <tbody>
     {% for institution in institutions %}
-
-    {% if institution.institution_id %}
-    <tr>
-        <td>
-            <a href="{% url 'institutional_storage_quote_control:institution_user_list' institution_id=institution.institution_id %}">
-                <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.institution_logo_name }}">
-            </a>
-        </td>
-        <td>
-            <a href="{% url 'institutional_storage_quote_control:institution_user_list' institution_id=institution.institution_id %}">
-                {{ institution.institution_name }}
-            </a>
-        </td>
-        <td>{{ institution.name}}</td>
-    </tr>
-    {% endif %}
+        {% if institution.institution_id %}
+        <tr>
+            <td>
+                <a href="{% url 'institutional_storage_quote_control:institution_user_list' institution_id=institution.institution_id %}">
+                    <img class="institution-logo" src="{{ logohost }}/static/img/institutions/shields/{{ institution.institution_logo_name }}">
+                </a>
+            </td>
+            <td>
+                <a href="{% url 'institutional_storage_quote_control:institution_user_list' institution_id=institution.institution_id %}">
+                    {{ institution.institution_name }}
+                </a>
+            </td>
+            <td>{{ institution.name}}</td>
+        </tr>
+        {% endif %}
     {% endfor %}
     </tbody>
     </table>

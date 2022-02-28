@@ -1,33 +1,87 @@
-from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
 from admin.institutions.views import QuotaUserList
 from osf.models import Institution, OSFUser, UserQuota
 from admin.base import settings
 from addons.osfstorage.models import Region
 from django.views.generic import ListView, View, DetailView
 from django.shortcuts import redirect
+from admin.rdm.utils import RdmPermissionMixin
+from django.core.urlresolvers import reverse
 
 
-class InstitutionStorageList(PermissionRequiredMixin, ListView):
-    paginate_by = 5
+class InstitutionStorageList(RdmPermissionMixin, ListView):
+    paginate_by = 3
     template_name = 'institutional_storage_quote_control/list_institution_storage.html'
     ordering = 'name'
-    permission_required = 'osf.view_institution'
     raise_exception = True
     model = Institution
 
-    def get_queryset(self):
+    def get(self, request, *args, **kwargs):
+        if self.is_super_admin:
+            self.object_list = self.get_queryset()
+            ctx = self.get_context_data()
+            return self.render_to_response(ctx)
+        elif self.is_admin:
+            self.object_list = self.get_queryset()
+            ctx = self.get_context_data()
+            count = 0
+            institution_id = 0
+            for item in self.object_list:
+                if item.institution_id:
+                    institution_id = item.institution_id
+                    count += 1
+                else:
+                    self.object_list.exclude(id=item.id)
+                if count > 1:
+                    return self.render_to_response(ctx)
+            if count == 1:
+                return redirect(reverse('institutional_storage_quote_control:institution_user_list',
+                                        kwargs={'institution_id': institution_id}))
+            return self.render_to_response(ctx)
 
-        return Region.objects.filter(waterbutler_settings__storage__provider='filesystem').extra(select={
-            'institution_id': 'select id '
-                              'from osf_institution '
-                              'where addons_osfstorage_region._id = osf_institution._id',
-            'institution_name': 'select name '
-                                'from osf_institution '
-                                'where addons_osfstorage_region._id = osf_institution._id',
-            'institution_logo_name': 'select logo_name '
-                                     'from osf_institution '
-                                     'where addons_osfstorage_region._id = osf_institution._id',
-        }).order_by('institution_name', self.ordering)
+    def get_queryset(self):
+        user_id = self.request.user.id
+
+        if self.is_super_admin:
+            return Region.objects.filter(waterbutler_settings__storage__provider='filesystem').extra(select={
+                'institution_id': 'select id '
+                                  'from osf_institution '
+                                  'where addons_osfstorage_region._id = osf_institution._id',
+                'institution_name': 'select name '
+                                    'from osf_institution '
+                                    'where addons_osfstorage_region._id = osf_institution._id',
+                'institution_logo_name': 'select logo_name '
+                                         'from osf_institution '
+                                         'where addons_osfstorage_region._id = osf_institution._id',
+            }).order_by('institution_name', self.ordering)
+        elif self.is_admin:
+            return Region.objects.filter(waterbutler_settings__storage__provider='filesystem').extra(select={
+                'institution_id': 'select id '
+                                  'from osf_institution '
+                                  'where addons_osfstorage_region._id = osf_institution._id '
+                                  'and id in ('
+                                  '    select institution_id '
+                                  '    from osf_osfuser_affiliated_institutions '
+                                  '    where osfuser_id = {}'
+                                  ')'.format(user_id),
+
+                'institution_name': 'select name '
+                                    'from osf_institution '
+                                    'where addons_osfstorage_region._id = osf_institution._id '
+                                    'and id in ('
+                                    '    select institution_id '
+                                    '    from osf_osfuser_affiliated_institutions '
+                                    '    where osfuser_id = {}'
+                                    ')'.format(user_id),
+
+                'institution_logo_name': 'select logo_name '
+                                         'from osf_institution '
+                                         'where addons_osfstorage_region._id = osf_institution._id '
+                                         'and id in ('
+                                         '    select institution_id '
+                                         '    from osf_osfuser_affiliated_institutions '
+                                         '    where osfuser_id = {}'
+                                         ')'.format(user_id),
+            })
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -39,9 +93,8 @@ class InstitutionStorageList(PermissionRequiredMixin, ListView):
         return super(InstitutionStorageList, self).get_context_data(**kwargs)
 
 
-class UserListByInstitutionStorageID(PermissionRequiredMixin, QuotaUserList):
+class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
     template_name = 'institutional_storage_quote_control/list_institute.html'
-    permission_required = 'osf.view_institution'
     raise_exception = True
     paginate_by = 10
 
@@ -59,11 +112,10 @@ class UserListByInstitutionStorageID(PermissionRequiredMixin, QuotaUserList):
                                 'where addons_osfstorage_region._id = osf_institution._id',
             }
         )
-        return institution[0]
+        return institution.first()
 
 
-class UpdateQuotaUserListByInstitutionStorageID(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_institution'
+class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
