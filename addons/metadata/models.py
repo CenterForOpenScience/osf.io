@@ -6,6 +6,7 @@ import os
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
 from . import settings
 
@@ -62,6 +63,15 @@ class ERadRecord(BaseModel):
 
     bunya_cd = models.TextField(blank=True, null=True)
     bunya_mei = models.TextField(blank=True, null=True)
+
+
+class RegistrationReportFormat(BaseModel):
+    registration_schema = models.ForeignKey(RegistrationSchema, null=True, on_delete=models.CASCADE)
+
+    name = models.TextField(blank=True, null=True)
+
+    default_filename = models.TextField(blank=True, null=True)
+    csv_template = models.TextField(blank=True, null=True)
 
 
 class UserSettings(BaseUserSettings):
@@ -141,7 +151,6 @@ class NodeSettings(BaseNodeSettings):
         m.save()
 
     def delete_file_metadata(self, filepath):
-        self._validate_file_metadata(file_metadata)
         q = self.file_metadata.filter(path=filepath)
         if not q.exists():
             return
