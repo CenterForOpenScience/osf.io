@@ -3,13 +3,16 @@ from __future__ import unicode_literals
 import json
 from operator import itemgetter
 
-from django.http import Http404
+from django.http import Http404, HttpResponseRedirect
 from django.core import serializers
 from django.shortcuts import redirect
 from django.forms.models import model_to_dict
+from django.db.models.functions import Coalesce
+from django.db.models import Sum
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
@@ -19,9 +22,16 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
-from osf.models import Institution, Node, OSFUser, UserQuota
+from django.contrib.contenttypes.models import ContentType
+#from osf.models import Institution, Node, OSFUser, UserQuota
+from osf.models import (
+    Institution, Node, AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
+    ProjectStorageType
+)
 from website.util import quota
-from addons.osfstorage.models import Region
+from admin.quota_recalc.views import calculate_quota
+#from addons.osfstorage.models import Region
+from addons.osfstorage.models import OsfStorageFileNode, Region
 from api.base import settings as api_settings
 
 
@@ -362,3 +372,53 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
+
+
+class RecalculateQuota(PermissionRequiredMixin, RedirectView):
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+
+    def dispatch(self, request, *args, **kwargs):
+        # Get all institutions
+        institutions_list = Institution.objects.all()
+        # Get all user in this institutions
+        list = []
+        for institution in institutions_list:
+            print('Institutions: ', institution.name)
+            user_list = OSFUser.objects.filter(affiliated_institutions=institution)
+            print('User belong to this institution: ')
+            for user in user_list:
+                print(user.username)
+                # used_quota = quota.used_quota_of_active_project(user)
+                print(user._id)
+                from_all_project_data = {'from_all_project': True, 'user_id': user.id}
+                used_quota = quota.used_quota(user._id, from_all_project_data)
+                # Check user's used_quota
+                print('User: ')
+                print(user.username)
+                print('User used quota')
+                print(used_quota)
+                # if user not in list:
+                #     list.append(user)
+
+        # print(list)
+        # Check user has institutions
+        # for user in list:
+        #     print('User: ')
+        #     print(user.username)
+        #     print('Institution belong to this user: ')
+        #     for inst in user.affiliated_institutions.all():
+        #         print(inst.name)
+        #     print('')
+
+        # Calculate used quota of user
+        # for user in list:
+        #     #used_quota = quota.used_quota_of_active_project(user)
+        #     used_quota = quota.used_quota(user._id)
+        #     # Check user's used_quota
+        #     print('User: ')
+        #     print(user.username)
+        #     print('User used quota')
+        #     print(used_quota)
+        #
+        return redirect('institutions:list')
