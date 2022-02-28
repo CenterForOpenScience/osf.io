@@ -17,13 +17,17 @@ from admin.rdm.utils import RdmPermissionMixin
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
+from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm, UserSearchForm
 from django.contrib.auth.models import Group
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
-
+from django.db.models import Q
+from django.views.defaults import page_not_found
+import csv
+from osf.models.validators import validate_email
+from osf.exceptions import BlacklistedEmailError
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -325,22 +329,50 @@ class QuotaUserList(ListView):
         kwargs['direction'] = self.get_direction()
         return super(QuotaUserList, self).get_context_data(**kwargs)
 
+class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
 
-class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
+    def get(self, request, *args, **kwargs):
+        institution_id = self.kwargs['institution_id']
+        response = HttpResponse(content_type='text/tsv')
+        writer = csv.writer(response, delimiter='\t')
+        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+            user_data = self.get_user_quota_info(user, UserQuota.NII_STORAGE)
+            writer.writerow([user_data.get('id'), user_data.get('username'), user_data.get('fullname'),
+                             round(user_data.get('ratio'), 1), round(user_data.get('usage_value'), 1),
+                             round(user_data.get('remaining_value'), 1), user_data.get('quota')])
+        response['Content-Disposition'] = 'attachment; filename=institution_{}_export.tsv'.format(institution_id)
+        return response
+
+
+
+class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     template_name = 'institutions/list_institute.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 10
 
     def get_userlist(self):
+        guid = self.request.GET.get('guid')
+        name = self.request.GET.get('info')
+        email = self.request.GET.get('email')
+
         user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
+        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+        if email:
+            queryset = queryset.filter(username=email)
+        elif guid:
+            queryset = queryset.filter(guids___id=guid)
+        elif name:
+            queryset = queryset.filter(fullname__icontains=name)
+
+        for user in queryset:
             user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
         return user_list
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
-
 
 class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
     template_name = 'institutions/statistical_status_default_storage.html'
@@ -362,3 +394,6 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
+
+
+
