@@ -58,7 +58,10 @@ function JupyterButton() {
                 var base = Fangorn.Components.defaultItemButtons;
                 if (target[propname] !== undefined) {
                   var prop = target[propname];
-                  base = typeof prop === 'function' ? prop.apply(this, [item]) : prop;
+                  var baseButtons = typeof prop === 'function' ? prop.apply(this, [item]) : prop;
+                  if (baseButtons !== undefined) {
+                    base = baseButtons;
+                  }
                 }
                 var launcher = m.component(Fangorn.Components.button, {
                     onclick: function(event) {
