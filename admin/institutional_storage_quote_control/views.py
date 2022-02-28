@@ -27,7 +27,7 @@ class InstitutionStorageList(PermissionRequiredMixin, ListView):
             'institution_logo_name': 'select logo_name '
                                      'from osf_institution '
                                      'where addons_osfstorage_region._id = osf_institution._id',
-        }).order_by(self.ordering)
+        }).order_by('institution_name', self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -47,7 +47,6 @@ class UserListByInstitutionStorageID(PermissionRequiredMixin, QuotaUserList):
 
     def get_userlist(self):
         user_list = []
-        print('vao toi day roi -----------------------------------------------------------------')
         for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
             user_list.append(self.get_user_quota_info(user, UserQuota.CUSTOM_STORAGE))
         return user_list
