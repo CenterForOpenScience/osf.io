@@ -318,7 +318,7 @@ def resolve_guid(guid, suffix=None):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
-    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components', 'files/osfstorage')):
+    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components', 'files/osfstorage', 'files')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
