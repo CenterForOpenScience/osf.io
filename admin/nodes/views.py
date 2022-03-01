@@ -153,7 +153,6 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
     def delete(self, request, *args, **kwargs):
         try:
             node = self.get_object()
-            contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
             flag = None
             osf_flag = None
             message = None
@@ -193,9 +192,12 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
                 )
                 osf_log.save()
 
-            user_list = OSFUser.objects.filter(id__in=contributor_ids)
-            for user in user_list:
-                quota.update_user_used_quota(user)
+            if node.category == 'project':
+                storage_type = node.projectstoragetype.storage_type
+                contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+                user_list = OSFUser.objects.filter(id__in=contributor_ids)
+                for user in user_list:
+                    quota.update_user_used_quota(user, storage_type=storage_type)
 
         except AttributeError:
             return page_not_found(

@@ -692,10 +692,12 @@ def component_remove(auth, node, **kwargs):
         node.project_or_component.capitalize()
     )
 
-    contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
-    user_list = OSFUser.objects.filter(id__in=contributor_ids)
-    for user in user_list:
-        quota.update_user_used_quota(user)
+    if node.project_or_component == 'project':
+        storage_type = node.projectstoragetype.storage_type
+        contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+        user_list = OSFUser.objects.filter(id__in=contributor_ids)
+        for user in user_list:
+            quota.update_user_used_quota(user, storage_type=storage_type)
 
     id = '{}_deleted'.format(node.project_or_component)
     status.push_status_message(message, kind='success', trust=False, id=id)
