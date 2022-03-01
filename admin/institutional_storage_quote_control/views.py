@@ -6,10 +6,11 @@ from django.views.generic import ListView, View, DetailView
 from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 
 
 class InstitutionStorageList(RdmPermissionMixin, ListView):
-    paginate_by = 3
+    paginate_by = 25
     template_name = 'institutional_storage_quote_control/' \
                     'list_institution_storage.html'
     ordering = 'name'
@@ -48,7 +49,7 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
                     'from osf_institution ' \
                     'where addons_osfstorage_region._id = osf_institution._id'
             return Region.objects.filter(
-                waterbutler_settings__storage__provider='filesystem')\
+                ~Q(waterbutler_settings__storage__provider='filesystem'))\
                 .extra(select={'institution_id': query.format('id'),
                                'institution_name': query.format('name'),
                                'institution_logo_name': query.format(
@@ -66,7 +67,7 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
                     '    where osfuser_id = {}' \
                     ')'
             return Region.objects.filter(
-                waterbutler_settings__storage__provider='filesystem')\
+                ~Q(waterbutler_settings__storage__provider='filesystem'))\
                 .extra(select={'institution_id': query.format('id', user_id),
                                'institution_name': query.format(
                                    'name',
@@ -92,7 +93,7 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
 class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
     template_name = 'institutional_storage_quote_control/list_institute.html'
     raise_exception = True
-    paginate_by = 10
+    paginate_by = 25
 
     def get_userlist(self):
         user_list = []
