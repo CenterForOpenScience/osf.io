@@ -68,23 +68,23 @@ class InstitutionAuthentication(BaseAuthentication):
                 "idp":  "",
                 "id":   "",
                 "user": {
-                    "username":                 "",  # email or eppn
-                    "fullname":                 "",  # displayName
-                    "familyName":               "",  # sn or surname
-                    "givenName":                "",  # givenName
-                    "middleNames":              "",
-                    "jaDisplayName":            "",  # jaDisplayName
-                    "jaSurname":                "",  # jasn
-                    "jaGivenName":              "",  # jaGivenName
-                    "jaMiddleNames":            "",
-                    "suffix":                   "",
-                    "groups":                   "",  # isMemberOf for mAP API v1
-                    "eptid":                    "",  # persistent-id for mAP API v1
-                    "entitlement":              "",  # eduPersonEntitlement
-                    "email":                    "",  # mail
-                    "organizationName":         "",  # o
-                    "organizationalUnit":       "",  # ou
-                    "jaOrganizationName":       "",  # jao
+                    "username":     "",  # email or eppn
+                    "fullname":     "",  # displayName
+                    "familyName":   "",  # sn or surname
+                    "givenName":    "",  # givenName
+                    "middleNames":  "",
+                    "jaDisplayName": "",  # jaDisplayName
+                    "jaSurname":     "",  # jasn
+                    "jaGivenName":   "",  # jaGivenName
+                    "jaMiddleNames": "",
+                    "suffix":       "",
+                    "groups":       "",  # isMemberOf for mAP API v1
+                    "eptid":        "",  # persistent-id for mAP API v1
+                    "entitlement":  "",  # eduPersonEntitlement
+                    "email":        "",  # mail
+                    "organizationName": "",    # o
+                    "organizationalUnit": "",  # ou
+                    "jaOrganizationName": "",  # jao
                     "jaOrganizationalUnitName": "",  # jaou
                 }
             }

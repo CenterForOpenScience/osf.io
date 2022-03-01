@@ -21,14 +21,14 @@
                             [ drag to reorder ]
                         </span>
                         <a
-                            class="text-danger pull-right"
-                            data-bind="click: $parent.removeContent.bind($parent)"
-                            >${_("Remove")}</a>
+                                class="text-danger pull-right"
+                                data-bind="click: $parent.removeContent.bind($parent)"
+                                >${_("Remove")}</a>
                         <a
-                            style="margin-right: 15px"
-                            class="btn-link pull-right"
-                            data-bind="click: $parent.setContentFromIdP.bind($parent)"
-                            >${_("Read IdP Profile")}</a>
+                                style="margin-right: 15px"
+                                class="btn-link pull-right"
+                                data-bind="click: $parent.setContentFromIdP.bind($parent)"
+                                >${_("Read IdP Profile")}</a>
                     </div>
 
                     <div class="form-row row">
@@ -44,13 +44,13 @@
                             <label>${_("Department / Institute")}</label>
                             <input class="form-control" data-bind="value: department_ja" />
                         </div>
-                     </div>
+                    </div>
 
                     <div class="form-row row">
                         <div class="form-group col-md-6">
                             <label>${_("Institution / Employer (English)")} <span style="color: red">*</span></label>
                             <input class="form-control" data-bind="value: institution"
-                                   placeholder="${_('Required')}"/>
+                                placeholder="${_('Required')}"/>
                             <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                                 <p data-bind="validationMessage: institution"></p>
                             </div>

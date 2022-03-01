@@ -144,10 +144,11 @@ class TestGettingShibbolethAttribute:
         res = app.post(
             url_auth_institution,
             make_payload(institution, eppn, fullname,
-                         given_name, family_name,
-                         entitlement=entitlement, email=email,
-                         organization_name=organization_name,
-                         organizational_unit=organizational_unit)
+                given_name, family_name,
+                entitlement=entitlement, email=email,
+                organization_name=organization_name,
+                organizational_unit=organizational_unit
+            )
         )
 
         assert res.status_code == 204
@@ -197,9 +198,9 @@ class TestGettingShibbolethAttribute:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname,
-                         given_name, family_name, email=email,
-                         organizational_unit=organizational_unit)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email,
+                organizational_unit=organizational_unit
+            )
         )
 
         assert res.status_code == 204
@@ -226,8 +227,7 @@ class TestGettingShibbolethAttribute:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname,
-                         given_name, family_name, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
 
         assert res.status_code == 204
@@ -258,8 +258,7 @@ class TestGettingShibbolethAttribute:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname,
-                         given_name, family_name, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
@@ -271,8 +270,7 @@ class TestGettingShibbolethAttribute:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn2, fullname,
-                         given_name, family_name, email=email)
+            make_payload(institution, eppn2, fullname, given_name, family_name, email=email)
         )
         assert res.status_code == 204
 
@@ -298,8 +296,7 @@ class TestGettingShibbolethAttribute:
 
         app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname,
-                         given_name, family_name, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
 
         new_fullname = 'New John Smith'

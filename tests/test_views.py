@@ -1122,10 +1122,9 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-
         assert_equal(self.user.social['profileWebsites'], payload['profileWebsites'])
         assert_equal(self.user.social['twitter'], payload['twitter'])
-        assert_equal(self.user.social['github'], payload ['github'])
+        assert_equal(self.user.social['github'], payload['github'])
         assert_equal(self.user.erad, payload['erad'])
         assert_true(self.user.social['researcherId'] is None)
 
