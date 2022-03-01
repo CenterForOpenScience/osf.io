@@ -2,7 +2,7 @@ from admin.institutions.views import QuotaUserList
 from osf.models import Institution, OSFUser, UserQuota
 from admin.base import settings
 from addons.osfstorage.models import Region
-from django.views.generic import ListView, View, DetailView
+from django.views.generic import ListView, View
 from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
