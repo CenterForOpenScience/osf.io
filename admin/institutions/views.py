@@ -377,7 +377,7 @@ class RecalculateQuota(PermissionRequiredMixin, RedirectView):
             for user in user_list:
                 quota.update_user_used_quota(user)
 
-        return redirect('institutions:list')
+        return redirect('institutions:institution_list')
 
 
 class RecalculateQuotaOfUsersInInstitution(PermissionRequiredMixin, RedirectView):
