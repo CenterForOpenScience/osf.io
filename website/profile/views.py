@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
+
+from django.db.models import Q
 from rest_framework import status as http_status
 
 from django.utils import timezone
@@ -170,11 +172,19 @@ def update_user(auth):
                 )
 
             if settings.ENABLE_USER_MERGE is False:
-                if Email.objects.filter(address=address).exists() \
-                   or OSFUser.objects.filter(username=address).exists():
+                user_ids = list(Email.objects.filter(Q(address__exact=address)).values_list('user_id', flat=True))
+                query_set = OSFUser.objects.filter(Q(pk__in=user_ids) | Q(username__exact=address))
+                if query_set.filter(is_active=True).exists():
                     raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                         message_long='Existing email address')
                     )
+                # Update temp account's username with 'tmp_email_' prefix
+                unregistered_user = query_set.exclude(is_active=True)
+                if unregistered_user.exists():
+                    unregistered_user = unregistered_user.first()
+                    username_tmp = ('tmp_email_' + unregistered_user.username).lower()
+                    unregistered_user.username = username_tmp
+                    unregistered_user.save()
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

@@ -197,6 +197,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
+            contributor.username = ('tmp_email_' + contributor.username).lower()
             contributor.save()
 
         contribs.append({

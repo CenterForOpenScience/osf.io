@@ -728,7 +728,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """The ability of the `merge_user` method to fully merge the user"""
         return all((addon.can_be_merged for addon in self.get_addons()))
 
-    def merge_user(self, user):
+    def merge_user(self, user, is_forced=False):
         """Merge a registered user into this account. This user will be
         a contributor on any project. if the registered user and this account
         are both contributors of the same project. Then it will remove the
@@ -737,6 +737,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         the project.
 
         :param user: A User object to be merged.
+        :param is_forced: forced to merge.
         """
 
         # Attempt to prevent self merges which end up removing self as a contributor from all projects
@@ -747,7 +748,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
 
-        if not website_settings.ENABLE_USER_MERGE:
+        if not is_forced and not website_settings.ENABLE_USER_MERGE:
             raise MergeDisableError('The merge feature is disabled')
 
         # Move over the other user's attributes
@@ -1432,6 +1433,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self.get_unconfirmed_email_for_token(token)
+        username_tmp = ('tmp_email_' + email).lower()
+        is_forced_merge = False
 
         # If this email is confirmed on another account, abort
         try:
@@ -1455,12 +1458,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
-            unregistered_user = None
+            # Check temp account and replace contributor
+            unregistered_users = OSFUser.objects.filter(username__exact=username_tmp).exclude(is_active=True)
+            if unregistered_users.exists():
+                unregistered_user = unregistered_users.first()
+                is_forced_merge = True
+            else:
+                unregistered_user = None
 
         if unregistered_user:
-            self.merge_user(unregistered_user)
+            self.merge_user(unregistered_user, is_forced=is_forced_merge)
             self.save()
-            unregistered_user.username = None
+            unregistered_user.gdpr_delete()
+            unregistered_user.save()
 
         if self.have_email is False:
             from api.institutions.authentication import send_welcome
