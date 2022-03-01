@@ -759,8 +759,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             guid = file_node.get_guid(create=True)
             guid.save()
             file_node.save()
-
-        return proxy_url(guid._id)
+        return redirect(f'{settings.DOMAIN}{guid._id}/')
 
 
     # Note: Cookie is provided for authentication to waterbutler
