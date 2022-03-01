@@ -9,25 +9,26 @@ from django.shortcuts import redirect
 from django.forms.models import model_to_dict
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
-from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import (ListView, DetailView, View,
+                                  CreateView, UpdateView,
+                                  DeleteView, TemplateView)
 from django.views.generic.edit import FormView
 from django.contrib import messages
-from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import (PermissionRequiredMixin,
+                                        UserPassesTestMixin)
 from admin.rdm.utils import RdmPermissionMixin
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm, UserSearchForm
+from admin.institutions.forms import (InstitutionForm,
+                                      InstitutionalMetricsAdminRegisterForm)
 from django.contrib.auth.models import Group
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
-from django.db.models import Q
-from django.views.defaults import page_not_found
 import csv
-from osf.models.validators import validate_email
-from osf.exceptions import BlacklistedEmailError
+
 
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -43,11 +44,13 @@ class InstitutionList(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionList, self).get_context_data(**kwargs)
+
 
 class InstitutionUserList(PermissionRequiredMixin, ListView):
     paginate_by = 25
@@ -63,7 +66,8 @@ class InstitutionUserList(PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
@@ -138,10 +142,12 @@ class InstitutionChangeForm(PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
-        return super(InstitutionChangeForm, self).get_context_data(*args, **kwargs)
+        return super(InstitutionChangeForm, self).get_context_data(
+            *args, **kwargs)
 
     def get_success_url(self, *args, **kwargs):
-        return reverse_lazy('institutions:detail', kwargs={'institution_id': self.kwargs.get('institution_id')})
+        return reverse_lazy('institutions:detail', kwargs={
+            'institution_id': self.kwargs.get('institution_id')})
 
 
 class InstitutionExport(PermissionRequiredMixin, View):
@@ -155,7 +161,8 @@ class InstitutionExport(PermissionRequiredMixin, View):
         filename = '{}_export.json'.format(institution.name)
 
         response = HttpResponse(data, content_type='text/json')
-        response['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        response['Content-Disposition'] = 'attachment;' \
+                                          ' filename={}'.format(filename)
         return response
 
 
@@ -182,14 +189,17 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
 
     def get_queryset(self):
         inst = self.kwargs['institution_id']
-        return Node.objects.filter(affiliated_institutions=inst).order_by(self.ordering)
+        return Node.objects.filter(
+            affiliated_institutions=inst).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set, page_size)
         kwargs.setdefault('nodes', query_set)
-        kwargs.setdefault('institution', Institution.objects.get(id=self.kwargs['institution_id']))
+        kwargs.setdefault('institution', Institution.objects.get(
+            id=self.kwargs['institution_id']))
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super(InstitutionNodeList, self).get_context_data(**kwargs)
@@ -204,13 +214,15 @@ class DeleteInstitution(PermissionRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         if institution.nodes.count() > 0:
-            return redirect('institutions:cannot_delete', institution_id=institution.pk)
+            return redirect('institutions:cannot_delete',
+                            institution_id=institution.pk)
         return super(DeleteInstitution, self).delete(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
         if institution.nodes.count() > 0:
-            return redirect('institutions:cannot_delete', institution_id=institution.pk)
+            return redirect('institutions:cannot_delete',
+                            institution_id=institution.pk)
         return super(DeleteInstitution, self).get(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
@@ -222,9 +234,12 @@ class CannotDeleteInstitution(TemplateView):
     template_name = 'institutions/cannot_delete.html'
 
     def get_context_data(self, **kwargs):
-        context = super(CannotDeleteInstitution, self).get_context_data(**kwargs)
-        context['institution'] = Institution.objects.get(id=self.kwargs['institution_id'])
+        context = super(CannotDeleteInstitution,
+                        self).get_context_data(**kwargs)
+        context['institution'] = Institution.objects.get(
+            id=self.kwargs['institution_id'])
         return context
+
 
 class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     permission_required = 'osf.change_institution'
@@ -233,13 +248,16 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
     form_class = InstitutionalMetricsAdminRegisterForm
 
     def get_form_kwargs(self):
-        kwargs = super(InstitutionalMetricsAdminRegister, self).get_form_kwargs()
+        kwargs = super(InstitutionalMetricsAdminRegister,
+                       self).get_form_kwargs()
         kwargs['institution_id'] = self.kwargs['institution_id']
         return kwargs
 
     def get_context_data(self, **kwargs):
-        context = super(InstitutionalMetricsAdminRegister, self).get_context_data(**kwargs)
-        context['institution_name'] = Institution.objects.get(id=self.kwargs['institution_id']).name
+        context = super(InstitutionalMetricsAdminRegister,
+                        self).get_context_data(**kwargs)
+        context['institution_name'] = Institution.objects.get(
+            id=self.kwargs['institution_id']).name
         return context
 
     def form_valid(self, form):
@@ -247,22 +265,33 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
         user_id = form.cleaned_data.get('user_id')
         osf_user = OSFUser.load(user_id)
         institution_id = kwargs['institution_id']
-        target_institution = Institution.objects.filter(id=institution_id).first()
+        target_institution = Institution.objects.filter(
+            id=institution_id).first()
 
         if not osf_user:
-            raise Http404('OSF user with id "{}" not found. Please double check.'.format(user_id))
+            raise Http404(
+                'OSF user with id "{}" not found. Please double check.'.format(
+                    user_id))
 
-        group = Group.objects.filter(name__startswith='institution_{}'.format(target_institution._id)).first()
+        group = Group.objects.filter(
+            name__startswith='institution_{}'.format(
+                target_institution._id)).first()
 
         group.user_set.add(osf_user)
         group.save()
 
         osf_user.save()
-        messages.success(self.request, 'Permissions update successful for OSF User {}!'.format(osf_user.username))
+        messages.success(
+            self.request,
+            'Permissions update successful for OSF User {}!'.format(
+                             osf_user.username))
         return super(InstitutionalMetricsAdminRegister, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse('institutions:register_metrics_admin', kwargs={'institution_id': self.kwargs['institution_id']})
+        return reverse('institutions:register_metrics_admin',
+                       kwargs={'institution_id': self.kwargs[
+                           'institution_id']})
+
 
 class QuotaUserList(ListView):
     """Base class for UserListByInstitutionID and StatisticalStatusDefaultStorage.
@@ -277,8 +306,10 @@ class QuotaUserList(ListView):
         max_quota, used_quota = quota.get_quota_info(user, storage_type)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
         remaining_quota = max_quota_bytes - used_quota
-        used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(used_quota))
-        remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
+        used_quota_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(
+            used_quota))
+        remaining_abbr = self.custom_size_abbreviation(*quota.abbreviate_size(
+            remaining_quota))
         return {
             'id': user.guids.first()._id,
             'fullname': user.fullname,
@@ -303,7 +334,8 @@ class QuotaUserList(ListView):
 
     def get_order_by(self):
         order_by = self.request.GET.get('order_by', 'ratio')
-        if order_by not in ['fullname', 'eppn', 'username', 'ratio', 'usage', 'remaining', 'quota']:
+        if order_by not in ['fullname', 'eppn', 'username',
+                            'ratio', 'usage', 'remaining', 'quota']:
             return 'ratio'
         return order_by
 
@@ -329,52 +361,64 @@ class QuotaUserList(ListView):
         kwargs['direction'] = self.get_direction()
         return super(QuotaUserList, self).get_context_data(**kwargs)
 
+
 class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, **kwargs):
         institution_id = self.kwargs['institution_id']
         response = HttpResponse(content_type='text/tsv')
         writer = csv.writer(response, delimiter='\t')
-        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+        for user in OSFUser.objects.filter(
+                affiliated_institutions=institution_id):
             user_data = self.get_user_quota_info(user, UserQuota.NII_STORAGE)
-            writer.writerow([user_data.get('id'), user_data.get('username'), user_data.get('fullname'),
-                             round(user_data.get('ratio'), 1), round(user_data.get('usage_value'), 1),
-                             round(user_data.get('remaining_value'), 1), user_data.get('quota')])
-        response['Content-Disposition'] = 'attachment; filename=institution_{}_export.tsv'.format(institution_id)
+            writer.writerow([user_data.get('id'), user_data.get('username'),
+                             user_data.get('fullname'),
+                             round(user_data.get('ratio'), 1),
+                             round(user_data.get('usage_value'), 1),
+                             round(user_data.get('remaining_value'), 1),
+                             user_data.get('quota')])
+        query = 'attachment; filename=institution_{}_export.tsv'.format(
+            institution_id)
+        response['Content-Disposition'] = query
         return response
 
 
-
-class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
+class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
     template_name = 'institutions/list_institute.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 10
 
     def get_userlist(self):
+        user_list = []
         guid = self.request.GET.get('guid')
         name = self.request.GET.get('info')
         email = self.request.GET.get('email')
+        queryset = OSFUser.objects.filter(
+            affiliated_institutions=self.kwargs['institution_id'])
 
-        user_list = []
-        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
-        if email:
-            queryset = queryset.filter(username=email)
-        elif guid:
-            queryset = queryset.filter(guids___id=guid)
-        elif name:
-            queryset = queryset.filter(fullname__icontains=name)
+        query = queryset
+        if email or guid or name:
+            query = queryset.filter(username=email)
+            if len(query) == 0:
+                if guid or name:
+                    query = queryset.filter(guids___id=guid)
+                    if len(query) == 0:
+                        query = queryset.filter(fullname__icontains=name)
 
-        for user in queryset:
-            user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
+        for user in query:
+            user_list.append(self.get_user_quota_info(
+                user, UserQuota.NII_STORAGE))
         return user_list
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
 
-class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
+
+class StatisticalStatusDefaultStorage(QuotaUserList,
+                                      RdmPermissionMixin, UserPassesTestMixin):
     template_name = 'institutions/statistical_status_default_storage.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -387,13 +431,13 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
     def get_userlist(self):
         user_list = []
         institution = self.request.user.affiliated_institutions.first()
-        if institution is not None and Region.objects.filter(_id=institution._id).exists():
-            for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
-                user_list.append(self.get_user_quota_info(user, UserQuota.CUSTOM_STORAGE))
+        if institution is not None and Region.objects.filter(
+                _id=institution._id).exists():
+            for user in OSFUser.objects.filter(
+                    affiliated_institutions=institution.id):
+                user_list.append(self.get_user_quota_info(
+                    user, UserQuota.CUSTOM_STORAGE))
         return user_list
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
-
-
-

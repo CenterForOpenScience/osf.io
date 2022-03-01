@@ -3,17 +3,19 @@
 <h3 id="sub-title">{% blocktrans %}NII Storage > {{ institution_name }}{% endblocktrans %}</h3>
 
 <div class="form-row justify-content-between">
-    <button type="button" class="btn btn-primary" style="margin: 20px 0;" href="{% url 'institutions:csv' institution_id %}">Export All User Statistics</button>
+    <div style="margin: 20px 0">
+        <a class="btn btn-primary" href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics" %}</a>
+    </div>
 </div>
 
-<form class="form-inline" action="{% url 'institutions:UserListByInstitutionID' institution_id %}" method="get">
+<form class="form-inline" action="{% url 'institutions:institution_user_list' institution_id %}" method="get">
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">GUID</label>
         <input name="guid" type="text" class="form-control" placeholder="GUID" value="">
     </div>
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">Email</label>
-        <input name="email" type="text" class="form-control" placeholder="Email" value="">
+        <input name="email" type="email" class="form-control" oninvalid="this.setCustomValidity('Please enter an valid email')" oninput="setCustomValidity('')" placeholder="Email" value="">
     </div>
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">Info</label>
