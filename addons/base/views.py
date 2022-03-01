@@ -717,10 +717,6 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     guid = kwargs.get('guid')
     guid_target = getattr(Guid.load(guid), 'referent', None)
     target = guid_target or kwargs.get('node') or kwargs['project']
-    if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-        return use_ember_app()
-    if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
-        return use_ember_app()
 
     provider_safe = markupsafe.escape(provider)
     path_safe = markupsafe.escape(path)
@@ -753,6 +749,19 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
+    if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        return use_ember_app()
+
+    if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if file_node.get_guid():
+           guid = file_node.get_guid()
+        else:
+            guid = file_node.get_guid(create=True)
+            guid.save()
+            file_node.save()
+
+        return proxy_url(guid._id)
+
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
