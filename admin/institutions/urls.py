@@ -17,4 +17,6 @@ urlpatterns = [
     url(r'^user_list_by_institution_id/(?P<institution_id>.*)/$', views.UserListByInstitutionID.as_view(), name='institution_user_list'),
     url(r'^statistical_status_default_storage/$', views.StatisticalStatusDefaultStorage.as_view(), name='statistical_status_default_storage'),
     url(r'^recalculate_quota/$', views.RecalculateQuota.as_view(), name='recalculate_quota'),
+    url(r'^recalculate_quota_of_users_in_institution/$',
+        views.RecalculateQuotaOfUsersInInstitution.as_view(), name='recalculate_quota_of_users_in_institution'),
 ]

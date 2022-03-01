@@ -195,22 +195,8 @@ class NodeDeleteView(PermissionRequiredMixin, NodeDeleteBase):
 
             user_list = OSFUser.objects.filter(id__in=contributor_ids)
             for user in user_list:
-                used_quota = quota.used_quota(user._id, from_all_project=True)
+                quota.update_user_used_quota(user)
 
-                try:
-                    user_quota = UserQuota.objects.get(
-                        user=user,
-                        storage_type=UserQuota.NII_STORAGE,
-                    )
-                    user_quota.used = used_quota
-                    user_quota.save()
-                except UserQuota.DoesNotExist:
-                    UserQuota.objects.create(
-                        user=user,
-                        storage_type=UserQuota.NII_STORAGE,
-                        max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                        used=used_quota,
-                    )
         except AttributeError:
             return page_not_found(
                 request,

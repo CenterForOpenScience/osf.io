@@ -695,22 +695,7 @@ def component_remove(auth, node, **kwargs):
     contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
     user_list = OSFUser.objects.filter(id__in=contributor_ids)
     for user in user_list:
-        used_quota = quota.used_quota(user._id, from_all_project=True)
-
-        try:
-            user_quota = UserQuota.objects.get(
-                user=user,
-                storage_type=UserQuota.NII_STORAGE,
-            )
-            user_quota.used = used_quota
-            user_quota.save()
-        except UserQuota.DoesNotExist:
-            UserQuota.objects.create(
-                user=user,
-                storage_type=UserQuota.NII_STORAGE,
-                max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                used=used_quota,
-            )
+        quota.update_user_used_quota(user)
 
     id = '{}_deleted'.format(node.project_or_component)
     status.push_status_message(message, kind='success', trust=False, id=id)

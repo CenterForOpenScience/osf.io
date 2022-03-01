@@ -20,10 +20,7 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
-from osf.models import (
-    Institution, Node, AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
-    ProjectStorageType
-)
+from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
 from addons.osfstorage.models import OsfStorageFileNode, Region
 from api.base import settings as api_settings
@@ -378,21 +375,19 @@ class RecalculateQuota(PermissionRequiredMixin, RedirectView):
         for institution in institutions_list:
             user_list = OSFUser.objects.filter(affiliated_institutions=institution)
             for user in user_list:
-                used_quota = quota.used_quota(user._id, from_all_project=True)
-
-                try:
-                    user_quota = UserQuota.objects.get(
-                        user=user,
-                        storage_type=UserQuota.NII_STORAGE,
-                    )
-                    user_quota.used = used_quota
-                    user_quota.save()
-                except UserQuota.DoesNotExist:
-                    UserQuota.objects.create(
-                        user=user,
-                        storage_type=UserQuota.NII_STORAGE,
-                        max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                        used=used_quota,
-                    )
+                quota.update_user_used_quota(user)
 
         return redirect('institutions:list')
+
+
+class RecalculateQuotaOfUsersInInstitution(PermissionRequiredMixin, RedirectView):
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+
+    def dispatch(self, request, *args, **kwargs):
+        institution = self.request.user.affiliated_institutions.first()
+        if institution is not None and Region.objects.filter(_id=institution._id).exists():
+            for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+                quota.update_user_used_quota(user, UserQuota.CUSTOM_STORAGE)
+
+        return redirect('institutions:statistical_status_default_storage')
