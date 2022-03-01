@@ -142,8 +142,6 @@ class InstitutionAuthentication(BaseAuthentication):
             fullname = given_name + ' ' + family_name
         if given_name_ja and family_name_ja and not fullname_ja:
             fullname_ja = given_name_ja + ' ' + family_name_ja
-        # if fullname_ja:
-        #     fullname = fullname_ja
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME

@@ -1097,7 +1097,6 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
             message: _('Institution/Employer (English) required')
@@ -1107,7 +1106,6 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
             message: _('Institution/Employer required')
@@ -1275,7 +1273,6 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
         trimmed: true,
         required: {
             onlyIf: function() {
-               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
             message: _('Institution/Employer (English) required')
@@ -1285,7 +1282,6 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
         trimmed: true,
         required: {
             onlyIf: function() {
-               // return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
                return true;
             },
             message: _('Institution/Employer required')

@@ -102,26 +102,7 @@ class TestInstitutionAuth:
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        #assert user.fullname == jagivenname + ' ' + jasurname
         assert user.ext.data['idp_attr']['fullname_ja'] == jagivenname + ' ' + jasurname
-
-    # def test_authenticate_jaDisplayName_and_jaFullname_are_not_valid(
-    #         self, app, institution, url_auth_institution):
-    #
-    #     username = 'user@gmail.com'
-    #     jafullname = 'full'
-    #     jasurname = ''
-    #     res = app.post(
-    #         url_auth_institution,
-    #         make_payload(institution, username, jaFullname=jafullname),
-    #         expect_errors=True
-    #     )
-    #     assert res.status_code == 204
-    #
-    #     user = OSFUser.objects.filter(username=username).first()
-    #     assert user
-    #     assert user.given_name != jasurname
-    #     assert user.fullname == jafullname
 
     def test_authenticate_jaGivenName_is_valid(
             self, app, institution, url_auth_institution):
