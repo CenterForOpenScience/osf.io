@@ -1436,7 +1436,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Confirm the email address associated with the token"""
         email = self.get_unconfirmed_email_for_token(token)
         username_tmp = (str(email) + '_tmp_email').lower()
-        is_forced_merge = False
 
         # If this email is confirmed on another account, abort
         try:
@@ -1448,7 +1447,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_to_merge = None
 
         if user_to_merge and merge:
-            self.merge_user(user_to_merge)
+            self.merge_user(user_to_merge, is_forced=user_to_merge.is_temp_account)
         elif user_to_merge:
             raise MergeConfirmedRequiredError(
                 'Merge requires confirmation',
@@ -1464,12 +1463,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             unregistered_users = OSFUser.objects.filter(username__exact=username_tmp).exclude(is_active=True)
             if unregistered_users.exists():
                 unregistered_user = unregistered_users.first()
-                is_forced_merge = True
             else:
                 unregistered_user = None
 
         if unregistered_user:
-            self.merge_user(unregistered_user, is_forced=is_forced_merge)
+            self.merge_user(unregistered_user, is_forced=unregistered_user.is_temp_account)
             self.save()
             unregistered_user.gdpr_delete()
             unregistered_user.temp_account = None
