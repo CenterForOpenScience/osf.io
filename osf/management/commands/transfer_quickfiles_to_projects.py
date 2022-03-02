@@ -1,6 +1,10 @@
+import pytz
+import math
 import logging
+import datetime
 
-from django.db import connection, transaction, utils
+from django.db import transaction, utils
+from django.utils import timezone
 from django.core.management.base import BaseCommand
 
 from osf.models import (
@@ -11,12 +15,11 @@ from osf.models import (
     AbstractNode
 )
 from osf.models.quickfiles import get_quickfiles_project_title
-from osf.models.queued_mail import queue_mail
+from osf.models.queued_mail import QueuedMail
 
 from addons.osfstorage.models import OsfStorageFile
 from website import mails, settings
 from django.contrib.contenttypes.models import ContentType
-from django.core.paginator import Paginator
 from tqdm import tqdm
 
 
@@ -26,13 +29,36 @@ QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files wer
                   ' the Project’s Recent Activity.'
 
 
-def turn_quickfiles_into_projects(queryset):
-    queryset.update(
-        type='osf.node',
-        description=QUICKFILES_DESC
-    )
-    for node in queryset:
+def send_emails(page):
+    for log in page:
+        new_mail = QueuedMail(
+            user=log.node.creator,
+            to_addr=log.node.creator.email,
+            send_at=datetime.datetime(2022, 3, 11, tzinfo=pytz.utc),
+            email_type=mails.QUICKFILES_MIGRATED.tpl_prefix,
+            data=dict(
+                osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                can_change_preferences=False,
+                quickfiles_link=log.node.absolute_url
+            )
+        )
+        new_mail.save()
+
+
+def turn_quickfiles_into_projects(page):
+    for node in page:
+        node.type = 'osf.node'
+        node.description = QUICKFILES_DESC
+        node.recast(Node._typedmodels_type)
+        node.save()
         node.guids.all().delete()  # remove legacy guid
+        node.save()
+
+
+def delete_fileless_quickfiles_nodes(page):
+    for node in page:
+        node.is_deleted = True
+        node.deleted = timezone.now()
         node.save()
 
 
@@ -43,14 +69,17 @@ def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
     Django's paginator.
     '''
     with tqdm(total=len(queryset)) as pbar:
-        page_range = range(0, len(queryset) // page_size)
+        page_range = range(0, math.ceil(len(queryset) / page_size))
         for page_num in page_range:
             if not dry_run:
-                if page_num == page_range.stop:
-                    function(queryset[page_num * page_size:])
+                if page_num == page_range.stop - 1:
+                    with transaction.atomic():
+                        function(queryset[page_num * page_size:])
+                    pbar.update(len(queryset[page_num * page_size:]))
                 else:
-                    function(queryset[page_num * page_size: page_num * page_size + page_size])
-            pbar.update(1)
+                    with transaction.atomic():
+                        function(queryset[page_num * page_size: page_num * page_size + page_size])
+                    pbar.update(page_size)
 
 
 def remove_quickfiles(dry_run=False, page_size=1000):
@@ -89,7 +118,7 @@ def remove_quickfiles(dry_run=False, page_size=1000):
 
     paginated_progressbar(
         QuickFilesNode.objects.all(),
-        lambda page: page.all().delete(),
+        lambda page: delete_fileless_quickfiles_nodes(page),
         page_size=page_size,
         dry_run=dry_run
     )
@@ -98,14 +127,7 @@ def remove_quickfiles(dry_run=False, page_size=1000):
     if not dry_run:
         paginated_progressbar(
             node_logs,
-            lambda log: queue_mail(
-                to_addr=log.node.creator.email,
-                mail=mails.QUICKFILES_MIGRATED,
-                user=log.node.creator,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                can_change_preferences=False,
-                quickfiles_link=log.node.absolute_url
-            ),
+            lambda page: send_emails(page),
             page_size=page_size,
             dry_run=dry_run,
         )
