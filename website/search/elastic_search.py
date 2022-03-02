@@ -1298,7 +1298,7 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
-        'username': user.username,
+        'emails': list(user.address.values_list('address', flat=True))
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
@@ -1796,7 +1796,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    match_key = 'username' if validate_email(escaped_query) else 'id'
+    match_key = 'emails' if validate_email(escaped_query) else 'id'
     query_object = build_query(query, start=start, size=size, sort=None, match_value=escaped_query, match_key=match_key)
     results = search(query_object, index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
