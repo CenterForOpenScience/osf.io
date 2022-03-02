@@ -188,10 +188,6 @@ def update_user(auth):
                             data['emails'].remove(email_obj)
                             user.remove_unconfirmed_email(address)
                             return _profile_view(user, is_profile=True, temp_user=existing_user)
-                        else:
-                            # Update temp account's username with '_tmp_email' suffix
-                            # existing_users.username = (existing_users.username + '_tmp_email').lower()
-                            existing_user.save()
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:

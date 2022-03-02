@@ -196,7 +196,6 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
-            # contributor.username = (contributor.username + '_tmp_email').lower()
             contributor.gen_temp_account()
             contributor.save()
 
@@ -1032,12 +1031,14 @@ def claim_user_form(auth, **kwargs):
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
 
+
 def claim_user_activate(**kwargs):
     uid, pid = kwargs['uid'], kwargs['pid']
     user = OSFUser.load(uid)
     url = user.get_claim_url(project_id=pid)
 
     return {'url': url}
+
 
 def _add_related_claimed_tag_to_user(pid, user):
     """

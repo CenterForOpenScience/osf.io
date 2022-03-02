@@ -446,7 +446,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
     # temporary user identifier
-    temp_account = models.CharField(blank=True, max_length=255, db_index=True, unique=True, null=True)
+    temp_account = models.CharField(blank=True, max_length=255, null=True)
 
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,
@@ -1435,7 +1435,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self.get_unconfirmed_email_for_token(token)
-        username_tmp = (str(email) + '_tmp_email').lower()
 
         # If this email is confirmed on another account, abort
         try:
@@ -1459,12 +1458,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             unregistered_user = OSFUser.objects.exclude(guids___id=self._id, guids___id__isnull=False).get(username=email)
         except OSFUser.DoesNotExist:
-            # Check temp account and replace contributor
-            unregistered_users = OSFUser.objects.filter(username__exact=username_tmp).exclude(is_active=True)
-            if unregistered_users.exists():
-                unregistered_user = unregistered_users.first()
-            else:
-                unregistered_user = None
+            unregistered_user = None
 
         if unregistered_user:
             self.merge_user(unregistered_user, is_forced=unregistered_user.is_temp_account)
