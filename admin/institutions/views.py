@@ -365,29 +365,27 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
         return self.request.user.affiliated_institutions.first()
 
 
-class RecalculateQuota(PermissionRequiredMixin, RedirectView):
-    permission_required = 'osf.view_institution'
-    raise_exception = True
+class RecalculateQuota(RdmPermissionMixin, RedirectView):
 
     def dispatch(self, request, *args, **kwargs):
-        institutions_list = Institution.objects.all()
+        if self.is_super_admin:
+            institutions_list = Institution.objects.all()
 
-        for institution in institutions_list:
-            user_list = OSFUser.objects.filter(affiliated_institutions=institution)
-            for user in user_list:
-                quota.update_user_used_quota(user)
+            for institution in institutions_list:
+                user_list = OSFUser.objects.filter(affiliated_institutions=institution)
+                for user in user_list:
+                    quota.update_user_used_quota(user)
 
         return redirect('institutions:institution_list')
 
 
-class RecalculateQuotaOfUsersInInstitution(PermissionRequiredMixin, RedirectView):
-    permission_required = 'osf.view_institution'
-    raise_exception = True
+class RecalculateQuotaOfUsersInInstitution(RdmPermissionMixin, RedirectView):
 
     def dispatch(self, request, *args, **kwargs):
-        institution = self.request.user.affiliated_institutions.first()
-        if institution is not None and Region.objects.filter(_id=institution._id).exists():
-            for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
-                quota.update_user_used_quota(user, UserQuota.CUSTOM_STORAGE)
+        if self.is_admin:
+            institution = self.request.user.affiliated_institutions.first()
+            if institution is not None and Region.objects.filter(_id=institution._id).exists():
+                for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+                    quota.update_user_used_quota(user, UserQuota.CUSTOM_STORAGE)
 
         return redirect('institutions:statistical_status_default_storage')
