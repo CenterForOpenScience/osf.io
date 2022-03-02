@@ -49,7 +49,7 @@ from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink,
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
-from osf.models import RdmTimestampGrantPattern, OSFUser, Contributor, UserQuota
+from osf.models import RdmTimestampGrantPattern, OSFUser
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list

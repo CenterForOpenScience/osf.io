@@ -20,7 +20,8 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
         _id=user_id,
         content_type_id=ContentType.objects.get_for_model(OSFUser).id
     )
-    projects_ids = AbstractNode.objects.filter(projectstoragetype__storage_type=storage_type,
+    projects_ids = AbstractNode.objects.filter(
+        projectstoragetype__storage_type=storage_type,
         is_deleted=False,
         creator_id=guid.object_id
     ).values_list('id', flat=True)

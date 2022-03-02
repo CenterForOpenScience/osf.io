@@ -22,7 +22,7 @@ from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminR
 from django.contrib.auth.models import Group
 from osf.models import Institution, Node, OSFUser, UserQuota
 from website.util import quota
-from addons.osfstorage.models import OsfStorageFileNode, Region
+from addons.osfstorage.models import Region
 from api.base import settings as api_settings
 
 

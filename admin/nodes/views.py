@@ -14,7 +14,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 
 from website import search
-from osf.models import NodeLog, Contributor, UserQuota
+from osf.models import NodeLog, Contributor
 from osf.models.user import OSFUser
 from osf.models.node import Node
 from osf.models.registrations import Registration
@@ -36,7 +36,6 @@ from admin.nodes.serializers import serialize_node, serialize_simple_user_and_no
 from website.project.tasks import update_node_share
 from website.project.views.register import osf_admin_change_status_identifier
 from website.util import quota
-from api.base import settings as api_settings
 
 
 class NodeFormView(PermissionRequiredMixin, GuidFormView):
