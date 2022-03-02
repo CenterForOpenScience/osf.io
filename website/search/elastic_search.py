@@ -1298,6 +1298,7 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
+        'username': user.username,
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
