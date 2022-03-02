@@ -1,6 +1,8 @@
 import datetime as dt
 import logging
+import random
 import re
+import string
 from urllib.parse import urlparse, parse_qs
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
@@ -1433,7 +1435,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
         email = self.get_unconfirmed_email_for_token(token)
-        username_tmp = ('tmp_email_' + email).lower()
+        username_tmp = (str(email) + '_tmp_email').lower()
         is_forced_merge = False
 
         # If this email is confirmed on another account, abort
@@ -1470,6 +1472,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.merge_user(unregistered_user, is_forced=is_forced_merge)
             self.save()
             unregistered_user.gdpr_delete()
+            unregistered_user.temp_account = None
             unregistered_user.save()
 
         if self.have_email is False:
@@ -2028,6 +2031,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
         return groups or nodes or quickfiles or preprints
+
+    def gen_temp_account(self):
+        self.temp_account = (self.eppn or '') + ''.join(random.choice(string.digits) for _ in range(9))
+
+    @property
+    def is_temp_account(self):
+        return bool(self.temp_account)
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

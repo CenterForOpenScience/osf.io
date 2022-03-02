@@ -38,7 +38,6 @@ from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 from api.base.settings import LOGIN_BY_EPPN
 from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 from nii.mapcore import mapcore_sync_is_enabled, mapcore_sync_map_group
-from random import randint
 from datetime import datetime, timedelta
 
 
@@ -197,7 +196,8 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
-            contributor.username = ('tmp_email_' + contributor.username).lower()
+            # contributor.username = (contributor.username + '_tmp_email').lower()
+            contributor.gen_temp_account()
             contributor.save()
 
         contribs.append({
@@ -482,6 +482,7 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = OSFUser.load(unclaimed_record['referrer_id'])
     claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
+
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
@@ -503,8 +504,6 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
-        get_eppn = unclaimed_user.eppn if unclaimed_user.eppn else ''
-        unclaimed_user.temp_account = get_eppn + str(randint(10**8, 10**9 - 1))
         unclaimed_user.save()
     # Option 2:
     # TODO: [new improvement ticket] this option is disabled from preprint but still available on the project page

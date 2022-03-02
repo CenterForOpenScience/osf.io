@@ -17,6 +17,7 @@ var UserEmail = oop.defclass({
         this.address = ko.observable(params.address);
         this.isConfirmed = ko.observable(params.isConfirmed || false);
         this.isPrimary = ko.observable(params.isPrimary || false);
+        this.allowActive = ko.observable(params.allowActive || false);
     }
 });
 
@@ -28,6 +29,7 @@ var UserProfile = oop.defclass({
         this.emails = ko.observableArray();
         this.defaultRegion = ko.observable();
         this.availableRegions = ko.observableArray();
+        this.inactiveProfile = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
             var emails = this.emails();
@@ -141,7 +143,8 @@ var UserProfileClient = oop.defclass({
                 return {
                     address: email.address(),
                     primary: email.isPrimary(),
-                    confirmed: email.isConfirmed()
+                    confirmed: email.isConfirmed(),
+                    allow_active: email.allowActive()
                 };
             })
 
@@ -160,11 +163,13 @@ var UserProfileClient = oop.defclass({
                 var email = new UserEmail({
                     address: emailData.address,
                     isPrimary: emailData.primary,
-                    isConfirmed: emailData.confirmed
+                    isConfirmed: emailData.confirmed,
+                    allowActive: emailData.allow_active
                 });
                 return email;
             })
         );
+        profile.inactiveProfile(data.profile.inactive_profile);
 
         return profile;
     }
@@ -184,13 +189,14 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
             function(profile) { this.profile(profile); }.bind(this)
         );
     },
-    addEmail: function () {
+    addEmail: function (new_email, allow_active) {
         this.changeMessage('', 'text-info');
         var newEmail = this.emailInput().toLowerCase().trim();
         if(newEmail){
 
             var email = new UserEmail({
-                address: newEmail
+                address: newEmail,
+                allowActive: newEmail === new_email ? allow_active : false
             });
 
             // ensure email isn't already in the list
@@ -206,13 +212,40 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
 
             this.client.update(this.profile()).done(function (profile) {
                 this.profile(profile);
+                this.inactive_profile = profile.inactiveProfile();
                 var emails = profile.emails();
                 var emailAdded = false;
+                var activationConfirm = false;
                 for (var i=0; i<emails.length; i++) {
+                    if (this.inactive_profile && this.inactive_profile.email === email.address()) {
+                        activationConfirm = true;
+                        this.emailInput(this.inactive_profile.email);
+                        break;
+                    }
                     if (emails[i].address() === email.address()) {
                         emailAdded = true;
                         this.emailInput('');
                     }
+                }
+                if (activationConfirm === true) {
+                    bootbox.confirm({
+                        title: _('Do you want to active account?\n'),
+                        message: sprintf(_('Fullname: <em>%1$s</em></br>Email: <em>%2$s</em></br>'), this.inactive_profile.fullname, this.inactive_profile.email),
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                this.addEmail(this.inactive_profile.email, true);
+                            }
+                        }.bind(this),
+                        buttons:{
+                            cancel:{
+                                label:_('Cancel')
+                            },
+                            confirm:{
+                                label:_('Active'),
+                                className:'btn-success'
+                            }
+                        }
+                    });
                 }
                 if (emailAdded === true) {
                     var safeAddr = $osf.htmlEscape(email.address());
