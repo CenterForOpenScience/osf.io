@@ -1298,7 +1298,7 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
-        'emails': list(user.address.values_list('address', flat=True))
+        'emails': list(user.emails.values_list('address', flat=True))
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
