@@ -95,6 +95,14 @@ def remove_quickfiles(dry_run=False, page_size=1000):
             creator__is_active=True,
         ).order_by('pk')
 
+        paginated_progressbar(
+            quick_files_nodes,
+            lambda page: turn_quickfiles_into_projects(page),
+            page_size=page_size,
+            dry_run=dry_run
+        )
+        logger.info(f'all quickfiles with files were projectified.')
+
         node_logs = [
             NodeLog(
                 node=quick_files_node,
@@ -106,14 +114,6 @@ def remove_quickfiles(dry_run=False, page_size=1000):
         if not dry_run:
             NodeLog.objects.bulk_create(node_logs)
             logger.info(f'{len(node_logs)} node logs were added.')
-
-        paginated_progressbar(
-            quick_files_nodes,
-            lambda page: turn_quickfiles_into_projects(page),
-            page_size=page_size,
-            dry_run=dry_run
-        )
-        logger.info(f'{quick_files_nodes.count()} quickfiles nodes were projectified.')
 
         paginated_progressbar(
             QuickFilesNode.objects.all(),
@@ -130,39 +130,44 @@ def remove_quickfiles(dry_run=False, page_size=1000):
                 page_size=page_size,
                 dry_run=dry_run,
             )
-            logger.info('quickfiles removal emails sent')
+            logger.info('quickfiles removal emails were queued to be sent at 2022, 3, 11')
 
 
 def reverse_remove_quickfiles(dry_run=False, page_size=1000):
     with transaction.atomic():
-        if not dry_run:
-            Node.objects.filter(
-                logs__action=NodeLog.MIGRATED_QUICK_FILES
-            ).update(
-                type='osf.quickfilesnode'
-            )
-            users_without_nodes = OSFUser.objects.exclude(
-                id__in=QuickFilesNode.objects.all().values_list(
-                    'creator__id',
-                    flat=True
-                )
-            )
-            quickfiles_created = []
-            for user in users_without_nodes:
-                quickfiles_created.append(
-                    QuickFilesNode(
-                        title=get_quickfiles_project_title(user),
-                        creator=user
-                    )
-                )
+        quickfiles_nodes_with_files = AbstractNode.objects.filter(
+            logs__action=NodeLog.MIGRATED_QUICK_FILES
+        )
+        quickfiles_nodes_with_files.update(
+            type='osf.quickfilesnode'
+        )
 
+        for node in quickfiles_nodes_with_files:
+            node.guids.all().delete()
+            node.save()
+
+        users_without_nodes = OSFUser.objects.exclude(
+            id__in=QuickFilesNode.objects.all().values_list(
+                'creator__id',
+                flat=True
+            )
+        )
+        quickfiles_created = []
+        for user in users_without_nodes:
+            quickfiles_created.append(
+                QuickFilesNode(
+                    title=get_quickfiles_project_title(user),
+                    creator=user
+                )
+            )
+
+        if not dry_run:
             QuickFilesNode.objects.bulk_create(quickfiles_created)
 
         if not dry_run:
-            with transaction.atomic():
-                for quickfiles in quickfiles_created:
-                    quickfiles.add_addon('osfstorage', auth=None, log=False)
-                    quickfiles.save()
+            for quickfiles in quickfiles_created:
+                quickfiles.add_addon('osfstorage', auth=None, log=False)
+                quickfiles.save()
 
         NodeLog.objects.filter(action=NodeLog.MIGRATED_QUICK_FILES).delete()
 
