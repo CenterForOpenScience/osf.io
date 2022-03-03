@@ -4,7 +4,6 @@ import logging
 import datetime
 
 from django.db import transaction
-from django.utils import timezone
 from django.core.management.base import BaseCommand
 
 from osf.models import (
@@ -53,13 +52,7 @@ def turn_quickfiles_into_projects(page):
         node.save()
         node.guids.all().delete()  # remove legacy guid
         node.save()
-
-
-def delete_fileless_quickfiles_nodes(page):
-    for node in page:
-        node.is_deleted = True
-        node.deleted = timezone.now()
-        node.save()
+        node.logs.update(node=node)  # update guid in logs
 
 
 def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
@@ -114,14 +107,6 @@ def remove_quickfiles(dry_run=False, page_size=1000):
         if not dry_run:
             NodeLog.objects.bulk_create(node_logs)
             logger.info(f'{len(node_logs)} node logs were added.')
-
-        paginated_progressbar(
-            QuickFilesNode.objects.all(),
-            lambda page: delete_fileless_quickfiles_nodes(page),
-            page_size=page_size,
-            dry_run=dry_run
-        )
-        logger.info(f'All Quickfiles deleted')
 
         if not dry_run:
             paginated_progressbar(

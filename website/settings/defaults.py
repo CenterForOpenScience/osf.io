@@ -515,6 +515,7 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.populate_initial_schema_responses',
         'osf.management.commands.approve_pending_schema_responses',
+        'osf.management.commands.delete_legacy_quickfiles_nodes',
         'api.providers.tasks'
     )
 
@@ -685,6 +686,11 @@ class CeleryConfig:
                 'task': 'osf.management.commands.approve_pending_schema_responses',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
+            },
+            'delete_legacy_quickfiles_nodes': {
+                'task': 'osf.management.commands.delete_legacy_quickfiles_nodes',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False, 'batch_size': 10000, 'page_size': 1000},
             },
         }
 
