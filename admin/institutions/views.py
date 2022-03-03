@@ -284,7 +284,7 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
         messages.success(
             self.request,
             'Permissions update successful for OSF User {}!'.format(
-                             osf_user.username))
+                osf_user.username))
         return super(InstitutionalMetricsAdminRegister, self).form_valid(form)
 
     def get_success_url(self):
@@ -426,7 +426,7 @@ class StatisticalStatusDefaultStorage(QuotaUserList,
 
     def test_func(self):
         return not self.is_super_admin and self.is_admin \
-            and self.request.user.affiliated_institutions.exists()
+               and self.request.user.affiliated_institutions.exists()
 
     def get_userlist(self):
         user_list = []
