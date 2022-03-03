@@ -1,4 +1,5 @@
 import pytest
+from addons.osfstorage.models import Region
 from admin.institutional_storage_quote_control import views
 from django.test import RequestFactory
 from django.urls import reverse
@@ -87,8 +88,9 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         request = RequestFactory().get(
             reverse(
                 'institutional_storage_quote_control:institution_user_list',
-                kwargs={'institution_id': self.institution.id}),
+                kwargs={'institution_id': self.institution.id}
             )
+        )
         request.user = self.user
 
         view = setup_view(self.view, request,
@@ -103,8 +105,9 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         request = RequestFactory().get(
             reverse(
                 'institutional_storage_quote_control:institution_user_list',
-                kwargs={'institution_id': self.institution.id}),
+                kwargs={'institution_id': self.institution.id}
             )
+        )
         request.user = self.user
 
         view = setup_view(self.view, request,
@@ -117,8 +120,10 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         request = RequestFactory().get(
             reverse(
                 'institutional_storage_quote_control:institution_user_list',
-                kwargs={'institution_id': self.institution.id}),
+                kwargs={'institution_id': self.institution.id}
             )
+        )
+
         request.user = self.user
 
         view = setup_view(self.view, request,
@@ -168,7 +173,6 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
     def test_get_render_response(self):
         inst1 = InstitutionFactory()
         inst2 = InstitutionFactory()
-        inst3 = InstitutionFactory()
         region1 = RegionFactory(_id=inst1._id, name='Storage1')
         region2 = RegionFactory(_id=inst2._id, name='Storage2')
         self.user.affiliated_institutions.add(inst1)
@@ -186,6 +190,8 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
         )
 
         nt.assert_equal(response.status_code, 200)
+        nt.assert_is_not_none(Region.objects.filter(id=region1.id))
+        nt.assert_is_not_none(Region.objects.filter(id=region2.id))
         nt.assert_is_instance(
             response.context_data['view'],
             views.InstitutionStorageList
