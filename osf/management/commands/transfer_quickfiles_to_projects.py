@@ -49,10 +49,14 @@ def turn_quickfiles_into_projects(page):
         node.type = 'osf.node'
         node.description = QUICKFILES_DESC
         node.recast(Node._typedmodels_type)
-        node.save()
         node.guids.all().delete()  # remove legacy guid
+        node.get_guid(create=True).save()
+
+        # update guid in logs
+        for log in node.logs.all():
+            log.params['node'] = node._id
+            log.save()
         node.save()
-        node.logs.update(node=node)  # update guid in logs
 
 
 def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
