@@ -35,7 +35,7 @@ def build_query(qs='*', start=0, size=10, sort=None, match_value=None, match_key
                 'bool': {
                     'should': [
                         {
-                            'match_phrase_prefix': {
+                            'match_phrase': {
                                 match_key: match_value
                             }
                         }
