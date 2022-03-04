@@ -11,6 +11,11 @@ from osf.models import (
     AbstractNode, BaseFileNode, FileLog, FileInfo, Guid, OSFUser, UserQuota,
     ProjectStorageType
 )
+from django.utils import timezone
+
+
+PROVIDERS = ['s3', 's3compat']
+
 # import inspect
 logger = logging.getLogger(__name__)
 
@@ -62,26 +67,66 @@ def get_project_storage_type(node):
 
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
-    if payload.get('provider') != 'osfstorage':
-        return
-    try:
-        file_node = BaseFileNode.objects.get(
-            _id=payload['metadata']['path'].strip('/'),
-            target_object_id=target.id,
-            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-        )
-    except BaseFileNode.DoesNotExist:
-        logging.error('FileNode not found, cannot update used quota!')
+    data = dict(payload.get('metadata'))
+    metadata_provider = data.get('provider')
+    if metadata_provider in PROVIDERS or metadata_provider == 'osfstorage':
+        action_payload = dict(payload).get('action')
+        try:
+            if metadata_provider in PROVIDERS:
+                if data.get('kind') == "folder" and action_payload == 'create_folder':
+                    base_file_node = BaseFileNode(type=f"osf.{metadata_provider}folder", provider="s3", _path=data.get('materialized'), _materialized_path=data.get('materialized'),
+                                    parent_id=target.id, target_object_id=target.id, target_content_type=ContentType.objects.get_for_model(AbstractNode))
+                    base_file_node.save()
+                file_node = BaseFileNode.objects.filter(
+                    _path=data.get('materialized'),
+                    provider=metadata_provider,
+                    target_object_id=target.id,
+                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                ).order_by("-id").first()
+            else:
+                file_node = BaseFileNode.objects.get(
+                    _id=data.get('path').strip('/'),
+                    target_object_id=target.id,
+                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                )
+        except BaseFileNode.DoesNotExist:
+            logging.error('FileNode not found, cannot update used quota!')
+            return
+
+        storage_type = get_project_storage_type(target)
+        if event_type == FileLog.FILE_ADDED:
+            file_added(target, payload, file_node, storage_type)
+        elif event_type == FileLog.FILE_REMOVED:
+            if metadata_provider in PROVIDERS and data.get('kind') == "file":
+                file_node.is_deleted = True
+                file_node.deleted = timezone.now()
+                file_node.deleted_on = file_node.deleted
+                file_node.type = "osf.trashedfile"
+                file_node.deleted_by_id = user.id
+                file_node.save()
+            elif metadata_provider in PROVIDERS and data.get('kind') == "folder":
+                list_file_node = BaseFileNode.objects.filter(
+                    _path__startswith=data.get('materialized'),
+                    target_object_id=target.id,
+                    provider=metadata_provider,
+                    target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+                ).all()
+                for file_node_remove in list_file_node:
+                    file_node_remove.is_deleted = True
+                    if file_node_remove.type == f"osf.{metadata_provider}file":
+                        file_node_remove.type = "osf.trashedfile"
+                    elif file_node_remove.type == f"osf.{metadata_provider}folder":
+                        file_node_remove.type = "osf.trashedfolder"
+                    file_node_remove.deleted_by_id = user.id
+                    file_node_remove.save()
+                    if file_node_remove.type == "osf.trashedfile":
+                        node_removed(target, user, payload, file_node_remove, storage_type)
+            node_removed(target, user, payload, file_node, storage_type)
+        elif event_type == FileLog.FILE_UPDATED:
+            file_modified(target, user, payload, file_node, storage_type)
+    else:
         return
 
-    storage_type = get_project_storage_type(target)
-
-    if event_type == FileLog.FILE_ADDED:
-        file_added(target, payload, file_node, storage_type)
-    elif event_type == FileLog.FILE_REMOVED:
-        node_removed(target, user, payload, file_node, storage_type)
-    elif event_type == FileLog.FILE_UPDATED:
-        file_modified(target, user, payload, file_node, storage_type)
 
 def file_added(target, payload, file_node, storage_type):
     file_size = int(payload['metadata']['size'])
