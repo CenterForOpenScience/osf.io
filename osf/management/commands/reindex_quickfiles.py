@@ -30,7 +30,6 @@ def reindex_quickfiles(dry_run):
 
     files_to_reindex = OsfStorageFileNode.objects.filter(id__in=file_ids)
 
-    QuickFilesNode.bulk_update_search(nodes)
     paginated_progressbar(files_to_reindex, PAGE_SIZE, update_file, dry_run)
 
 
