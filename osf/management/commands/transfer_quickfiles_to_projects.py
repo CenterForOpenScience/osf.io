@@ -114,7 +114,9 @@ def reverse_remove_quickfiles(dry_run=False, page_size=1000):
             logs__action=NodeLog.MIGRATED_QUICK_FILES
         )
         quickfiles_nodes_with_files.update(
-            type='osf.quickfilesnode'
+            type='osf.quickfilesnode',
+            is_deleted=False,
+            deleted=None,
         )
 
         for node in quickfiles_nodes_with_files:
