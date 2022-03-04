@@ -425,14 +425,15 @@ class StatisticalStatusDefaultStorage(QuotaUserList,
     paginate_by = 10
 
     def test_func(self):
-        return not self.is_super_admin and self.is_admin \
-               and self.request.user.affiliated_institutions.exists()
+        return not self.is_super_admin and self.is_admin and\
+               self.request.user.affiliated_institutions.exists()
 
     def get_userlist(self):
         user_list = []
         institution = self.request.user.affiliated_institutions.first()
         if institution is not None and Region.objects.filter(
-                _id=institution._id).exists():
+                _id=institution._id
+        ).exists():
             for user in OSFUser.objects.filter(
                     affiliated_institutions=institution.id):
                 user_list.append(self.get_user_quota_info(
