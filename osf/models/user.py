@@ -446,7 +446,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
     # temporary user identifier
-    temp_account = models.CharField(blank=True, max_length=255, null=True)
+    temp_account = models.BooleanField(default=False)
 
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,
@@ -1446,7 +1446,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_to_merge = None
 
         if user_to_merge and merge:
-            self.merge_user(user_to_merge, is_forced=user_to_merge.is_temp_account)
+            self.merge_user(user_to_merge, is_forced=user_to_merge.temp_account)
         elif user_to_merge:
             raise MergeConfirmedRequiredError(
                 'Merge requires confirmation',
@@ -1461,10 +1461,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             unregistered_user = None
 
         if unregistered_user:
-            self.merge_user(unregistered_user, is_forced=unregistered_user.is_temp_account)
+            self.merge_user(unregistered_user, is_forced=unregistered_user.temp_account)
             self.save()
             unregistered_user.gdpr_delete()
-            unregistered_user.temp_account = None
+            unregistered_user.temp_account = False
             unregistered_user.save()
 
         if self.have_email is False:
@@ -2023,13 +2023,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
         return groups or nodes or quickfiles or preprints
-
-    def gen_temp_account(self):
-        self.temp_account = (self.eppn or '') + ''.join(random.choice(string.digits) for _ in range(9))
-
-    @property
-    def is_temp_account(self):
-        return bool(self.temp_account)
 
     class Meta:
         # custom permissions for use in the GakuNin RDM Admin App

@@ -178,7 +178,7 @@ def update_user(auth):
                 existing_users = OSFUser.objects.filter(Q(pk__in=existing_user_ids) | Q(username__exact=address))
                 existing_user = existing_users.first() if existing_users.exists() else None
                 if existing_user:
-                    if not existing_user.is_temp_account:
+                    if not existing_user.temp_account:
                         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
                             message_long='Existing email address')
                         )

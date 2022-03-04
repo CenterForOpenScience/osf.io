@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='osfuser',
             name='temp_account',
-            field=models.CharField(blank=True, max_length=255, null=True),
+            field=models.BooleanField(default=False),
         ),
     ]
