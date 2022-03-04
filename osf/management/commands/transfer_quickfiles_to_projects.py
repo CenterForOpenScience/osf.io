@@ -39,7 +39,7 @@ def turn_quickfiles_into_projects(page):
             object_id=node.pk,
             content_type_id=ContentType.objects.get_for_model(node).pk
         )
-
+        node.save()
         # update guid in logs
         for old_log in node.logs.all():
             old_log.params['node'] = node._id

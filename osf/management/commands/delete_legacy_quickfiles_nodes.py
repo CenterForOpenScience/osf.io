@@ -5,11 +5,10 @@ from django.core.management.base import BaseCommand
 from framework.celery_tasks import app as celery_app
 
 from osf.models import QuickFilesNode, Node
-from osf.management.commands.transfer_quickfiles_to_projects import paginated_progressbar
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name='management.commands.delete_legacy_quickfiles_nodes')
+@celery_app.task(name='osf.management.commands.delete_legacy_quickfiles_nodes')
 def delete_quickfiles(batch_size=1000, dry_run=False):
     with transaction.atomic():
         for node in QuickFilesNode.objects.all()[:batch_size]:
