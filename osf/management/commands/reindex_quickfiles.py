@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 
 PAGE_SIZE = 100
 from tqdm import tqdm
+from api.share.utils import update_share
 
 def paginated_progressbar(queryset, page_size, function, dry_run=False):
     paginator = Paginator(queryset, page_size)
@@ -29,8 +30,11 @@ def reindex_quickfiles(dry_run):
     file_ids = nodes.values_list('files__id', flat=True)
 
     files_to_reindex = OsfStorageFileNode.objects.filter(id__in=file_ids)
-
     paginated_progressbar(files_to_reindex, PAGE_SIZE, update_file, dry_run)
+
+    for node in nodes:
+        update_share(node)
+        node.update_search()
 
 
 class Command(BaseCommand):
