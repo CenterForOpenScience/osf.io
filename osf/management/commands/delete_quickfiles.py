@@ -4,30 +4,25 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from framework.celery_tasks import app as celery_app
 
-from osf.models import QuickFilesNode
+from osf.models import QuickFilesNode, Node
 from osf.management.commands.transfer_quickfiles_to_projects import paginated_progressbar
 logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='management.commands.delete_legacy_quickfiles_nodes')
-def delete_legacy_quickfiles_nodes(page):
-    for node in page:
-        node.is_deleted = True
-        node.deleted = timezone.now()
-        node.save()
-
-
-def delete_quickfiles(batch_size=1000, page_size=1000, dry_run=False):
+def delete_quickfiles(batch_size=1000, dry_run=False):
     with transaction.atomic():
+        for node in QuickFilesNode.objects.all()[:batch_size]:
+            node.is_deleted = True
+            node.deleted = timezone.now()
+            node.recast(Node._typedmodels_type)
+            if not dry_run:
+                node.save()
 
-        paginated_progressbar(
-            QuickFilesNode.objects.all()[:batch_size],
-            lambda page: delete_legacy_quickfiles_nodes(page),
-            page_size=page_size,
-            dry_run=dry_run
-        )
         logger.info(f'All Quickfiles deleted')
 
+    if not QuickFilesNode.objects.exists():
+        logger.info("Clean-up complete, none more QuickFilesNode delete this task.")
 
 class Command(BaseCommand):
     """

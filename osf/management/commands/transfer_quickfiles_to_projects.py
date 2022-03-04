@@ -11,7 +11,8 @@ from osf.models import (
     QuickFilesNode,
     NodeLog,
     Node,
-    AbstractNode
+    AbstractNode,
+    Guid
 )
 from osf.models.quickfiles import get_quickfiles_project_title
 from osf.models.queued_mail import QueuedMail
@@ -28,35 +29,41 @@ QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files wer
                   ' the Project’s Recent Activity.'
 
 
-def send_emails(page):
-    for log in page:
-        new_mail = QueuedMail(
-            user=log.node.creator,
-            to_addr=log.node.creator.email,
+def turn_quickfiles_into_projects(page):
+    for node in page:
+        node.description = QUICKFILES_DESC
+        node.recast(Node._typedmodels_type)
+        node.guids.all().delete()  # remove legacy guid
+
+        Guid.objects.create(
+            object_id=node.pk,
+            content_type_id=ContentType.objects.get_for_model(node).pk
+        )
+
+        # update guid in logs
+        for old_log in node.logs.all():
+            old_log.params['node'] = node._id
+            old_log.save()
+
+        QueuedMail(
+            user=node.creator,
+            to_addr=node.creator.email,
             send_at=datetime.datetime(2022, 3, 11, tzinfo=pytz.utc),
             email_type=mails.QUICKFILES_MIGRATED.tpl_prefix,
             data=dict(
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
                 can_change_preferences=False,
-                quickfiles_link=log.node.absolute_url
+                quickfiles_link=node.absolute_url
             )
-        )
-        new_mail.save()
+        ).save()
 
-
-def turn_quickfiles_into_projects(page):
-    for node in page:
-        node.type = 'osf.node'
-        node.description = QUICKFILES_DESC
-        node.recast(Node._typedmodels_type)
-        node.guids.all().delete()  # remove legacy guid
-        node.get_guid(create=True).save()
-
-        # update guid in logs
-        for log in node.logs.all():
-            log.params['node'] = node._id
-            log.save()
-        node.save()
+        NodeLog(
+            node=node,
+            user=node.creator,
+            original_node=node,
+            params={'node': node._id},
+            action=NodeLog.MIGRATED_QUICK_FILES
+        ).save()
 
 
 def paginated_progressbar(queryset, function, page_size=100, dry_run=False):
@@ -99,27 +106,6 @@ def remove_quickfiles(dry_run=False, page_size=1000):
             dry_run=dry_run
         )
         logger.info(f'all quickfiles with files were projectified.')
-
-        node_logs = [
-            NodeLog(
-                node=quick_files_node,
-                user=quick_files_node.creator,
-                original_node=quick_files_node,
-                action=NodeLog.MIGRATED_QUICK_FILES
-            ) for quick_files_node in quick_files_nodes
-        ]
-        if not dry_run:
-            NodeLog.objects.bulk_create(node_logs)
-            logger.info(f'{len(node_logs)} node logs were added.')
-
-        if not dry_run:
-            paginated_progressbar(
-                node_logs,
-                lambda page: send_emails(page),
-                page_size=page_size,
-                dry_run=dry_run,
-            )
-            logger.info('quickfiles removal emails were queued to be sent at 2022, 3, 11')
 
 
 def reverse_remove_quickfiles(dry_run=False, page_size=1000):
