@@ -24,6 +24,7 @@ from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
 from django.urls import reverse
 
+
 class TestInstitutionList(AdminTestCase):
     def setUp(self):
         super(TestInstitutionList, self).setUp()
