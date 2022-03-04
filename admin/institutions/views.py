@@ -352,9 +352,13 @@ class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         institution_id = self.kwargs['institution_id']
         max_quota = self.request.POST.get('maxQuota')
-        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
-           UserQuota.objects.update_or_create(user=user, storage_type=UserQuota.NII_STORAGE, defaults={'max_quota': max_quota})
-        return redirect('institutions:institution_user_list', institution_id=institution_id)
+        for user in OSFUser.objects.filter(
+                affiliated_institutions=institution_id):
+            UserQuota.objects.update_or_create(
+                user=user, storage_type=UserQuota.NII_STORAGE,
+                defaults={'max_quota': max_quota})
+        return redirect('institutions:institution_user_list',
+                        institution_id=institution_id)
 
 class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPassesTestMixin):
     template_name = 'institutions/statistical_status_default_storage.html'
