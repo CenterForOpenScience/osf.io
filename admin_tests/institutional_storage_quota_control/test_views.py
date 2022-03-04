@@ -1,6 +1,6 @@
 import pytest
 from addons.osfstorage.models import Region
-from admin.institutional_storage_quote_control import views
+from admin.institutional_storage_quota_control import views
 from django.test import RequestFactory
 from django.urls import reverse
 from nose import tools as nt
@@ -31,7 +31,7 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         max_quota = 50
         request = RequestFactory().post(
             reverse(
-                'institutional_storage_quote_control'
+                'institutional_storage_quota_control'
                 ':update_quota_institution_user_list',
                 kwargs={'institution_id': self.institution.id}),
             {'maxQuota': max_quota})
@@ -54,7 +54,7 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
         max_quota = 150
         request = RequestFactory().post(
             reverse(
-                'institutional_storage_quote_control:'
+                'institutional_storage_quota_control:'
                 'update_quota_institution_user_list',
                 kwargs={'institution_id': self.institution.id}),
             {'maxQuota': max_quota})
@@ -87,7 +87,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
     def test_get_user_list(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:institution_user_list',
+                'institutional_storage_quota_control:institution_user_list',
                 kwargs={'institution_id': self.institution.id}
             )
         )
@@ -104,7 +104,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
     def test_get_institution(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:institution_user_list',
+                'institutional_storage_quota_control:institution_user_list',
                 kwargs={'institution_id': self.institution.id}
             )
         )
@@ -119,7 +119,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
     def test_get_context_data_has_storage_name(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:institution_user_list',
+                'institutional_storage_quota_control:institution_user_list',
                 kwargs={'institution_id': self.institution.id}
             )
         )
@@ -153,7 +153,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
     def test_get_redirect_to_user_list(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user
@@ -165,7 +165,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
 
         nt.assert_equal(response.status_code, 302)
         nt.assert_equal(response.url,
-                        '/institutional_storage_quote_control'
+                        '/institutional_storage_quota_control'
                         '/user_list_by_institution_id/{}/'.format(
                             self.institution.id
                         ))
@@ -180,7 +180,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
 
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user
@@ -200,7 +200,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
     def test_get_query_set(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user
@@ -214,7 +214,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
     def test_get_context_data(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user
@@ -248,7 +248,7 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
     def test_get_render_response(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user
@@ -266,7 +266,7 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
     def test_get_query_set(self):
         request = RequestFactory().get(
             reverse(
-                'institutional_storage_quote_control:list_institution_storage'
+                'institutional_storage_quota_control:list_institution_storage'
             )
         )
         request.user = self.user

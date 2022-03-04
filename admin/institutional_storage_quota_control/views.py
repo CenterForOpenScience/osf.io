@@ -11,7 +11,7 @@ from django.db.models import Q
 
 class InstitutionStorageList(RdmPermissionMixin, ListView):
     paginate_by = 25
-    template_name = 'institutional_storage_quote_control/' \
+    template_name = 'institutional_storage_quota_control/' \
                     'list_institution_storage.html'
     ordering = 'name'
     raise_exception = True
@@ -37,7 +37,7 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
         elif self.is_admin:
             if count == 1:
                 return redirect(reverse(
-                    'institutional_storage_quote_control:'
+                    'institutional_storage_quota_control:'
                     'institution_user_list',
                     kwargs={'institution_id': institution_id}
                 ))
@@ -91,7 +91,7 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
 
 
 class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
-    template_name = 'institutional_storage_quote_control/list_institute.html'
+    template_name = 'institutional_storage_quota_control/list_institute.html'
     raise_exception = True
     paginate_by = 25
 
@@ -132,6 +132,6 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, View):
                 defaults={'max_quota': max_quota}
             )
         return redirect(
-            'institutional_storage_quote_control:institution_user_list',
+            'institutional_storage_quota_control:institution_user_list',
             institution_id=institution_id
         )

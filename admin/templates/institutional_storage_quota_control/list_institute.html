@@ -11,7 +11,7 @@
 {% endblock title %}
 
 {% block content %}
-  {% include 'institutional_storage_quote_control/user_list_by_institute.html' %}
+  {% include 'institutional_storage_quota_control/user_list_by_institute.html' %}
     {% if not users|length %}
      <h3>{% trans "No results found" %}</h3>
     {% endif %}

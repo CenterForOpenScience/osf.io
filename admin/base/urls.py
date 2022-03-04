@@ -44,8 +44,8 @@ urlpatterns = [
             url(r'^keymanagement/', include('admin.rdm_keymanagement.urls', namespace='keymanagement')),
             url(r'^timestampsettings/', include('admin.rdm_timestampsettings.urls', namespace='timestampsettings')),
             url(r'^custom_storage_location/', include('admin.rdm_custom_storage_location.urls', namespace='custom_storage_location')),
-            url(r'^institutional_storage_quote_control/', include('admin.institutional_storage_quote_control.urls',
-                                                                  namespace='institutional_storage_quote_control')),
+            url(r'^institutional_storage_quota_control/', include('admin.institutional_storage_quota_control.urls',
+                                                                  namespace='institutional_storage_quota_control')),
         ]),
     ),
 ]
