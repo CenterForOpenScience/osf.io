@@ -142,7 +142,6 @@ class TestExportFileTSV(AdminTestCase):
         res = view.get(request)
 
         result = res.content.decode('utf-8')
-        print('result: ', result)
 
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/tsv')
