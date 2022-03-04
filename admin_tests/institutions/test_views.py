@@ -676,7 +676,6 @@ class TestQuotaUserList(AdminTestCase):
                 'storage_name': query,
             }
         )
-        print('institution: ', institution)
         return institution.first()
 
     def get_userlist(self):
