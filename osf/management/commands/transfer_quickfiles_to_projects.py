@@ -32,7 +32,7 @@ QUICKFILES_DESC = 'The Quick Files feature was discontinued and it’s files wer
 def turn_quickfiles_into_projects(page):
     for node in page:
         node.description = QUICKFILES_DESC
-        node.recast(Node._typedmodels_type)
+        node.type = 'osf.node'
         node.guids.all().delete()  # remove legacy guid
 
         Guid.objects.create(
