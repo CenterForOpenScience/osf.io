@@ -7,8 +7,8 @@ class TestSearchUtils(OsfTestCase):
 
     def test_build_query_with_match_key_and_match_value_valid(self):
         query_body = util.build_query_string('*')
-        match_key = 'test'
-        match_value = 1
+        match_key = 'id'
+        match_value = 'f8pzw'
         start = 0
         size = 10
         query_body = {
@@ -26,6 +26,23 @@ class TestSearchUtils(OsfTestCase):
                 ]
             }
         }
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = util.build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(res, expectedResult)
+
+    def test_build_query_with_match_key_invalid_and_match_value(self):
+        query_body = util.build_query_string('*')
+        match_key = 1
+        match_value = 'f8pzw'
+        start = 0
+        size = 10
 
         expectedResult = {
             'query': query_body,

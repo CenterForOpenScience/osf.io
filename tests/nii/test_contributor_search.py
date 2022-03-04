@@ -1,16 +1,17 @@
-import mock
 import pytest
-import website.search.search as search
+import mock
+
 from nose.tools import *  # noqa PEP8 asserts
-from osf.models.user import Email
-from osf_tests.factories import AuthUserFactory, UserFactory, InstitutionFactory, ProjectFactory, fake
-from osf_tests.test_elastic_search import retry_assertion
+
+from website import settings
+import website.search.search as search
+from website.search_migration.migrate import migrate
+from website.search.util import build_query, build_query_string, validate_email
+
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
-from website.search.util import build_query, build_query_string, validate_email
-from website.search_migration.migrate import migrate
-from website.util import api_url_for
-
+from osf_tests.factories import AuthUserFactory, InstitutionFactory, ProjectFactory
+from osf_tests.test_elastic_search import retry_assertion
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -230,8 +231,8 @@ class TestSearchUtils(OsfTestCase):
 
     def test_build_query_with_match_key_and_match_value_valid(self):
         query_body = build_query_string('*')
-        match_key = 'test'
-        match_value = 1
+        match_key = 'id'
+        match_value = 'f8pzw'
         start = 0
         size = 10
         query_body = {
@@ -277,6 +278,23 @@ class TestSearchUtils(OsfTestCase):
         assert_is_instance(res, dict)
         assert_equal(res, expectedResult)
 
+    def test_build_query_with_match_key_invalid_and_match_value(self):
+        query_body = build_query_string('*')
+        match_key = 1
+        match_value = 'f8pzw'
+        start = 0
+        size = 10
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        assert_is_instance(res, dict)
+        assert_equal(res, expectedResult)
+
     def test_validate_email_is_not_none(self):
         self.email = 'roger@queen.com'
         result = validate_email(self.email)
@@ -298,116 +316,3 @@ class TestSearchUtils(OsfTestCase):
         self.email = None
         result = validate_email(self.email)
         assert_equal(result, False)
-
-
-@pytest.mark.django_db
-@pytest.mark.enable_search
-class TestViewContributorSearch(OsfTestCase):
-
-    def setUp(self):
-        super(TestViewContributorSearch, self).setUp()
-        self.firstname = 'jane'
-        self.fullname1 = self.firstname + ' 1'
-        self.fullname2 = self.firstname + ' 2'
-
-        self.user1 = UserFactory(fullname=self.fullname1)
-        self.user2 = UserFactory(fullname=self.fullname2)
-
-        self.user1_alternate_email = 'user1@gmail.com'
-        self.user1.emails.create(address=self.user1_alternate_email)
-        self.user1.schools = [{
-            'degree': fake.catch_phrase(),
-            'institution': fake.company(),
-            'department': fake.bs(),
-            'startMonth': 1,
-            'startYear': '2020',
-            'endMonth': 1,
-            'endYear': '2022',
-        }]
-        self.user1.jobs = [{
-            'title': fake.catch_phrase(),
-            'institution': fake.company(),
-            'department': fake.bs(),
-            'startMonth': 1,
-            'startYear': '2020',
-            'endMonth': 1,
-            'endYear': '2022',
-        }]
-        self.user1.save()
-        self.user2.save()
-
-    @mock.patch('osf.models.user.OSFUser.objects.filter')
-    def test_search_contributor_email_not_valid(self, mockApi):
-        res = self.app.get(
-            api_url_for('search_contributor'), {
-                'query': 'abc@.@gmail.com',
-                'page': 5,
-                'size': 10},
-            expect_errors=True
-        )
-        mockApi.assert_not_called()
-        assert res.status_code == 200
-
-    def test_search_contributor_query_set_exists(self):
-        res = self.app.get(
-            api_url_for('search_contributor'), {
-                'query': self.user1_alternate_email,
-                'page': 5,
-                'size': 10
-            },
-            expect_errors=True
-        )
-        assert res.json['users'][0]['fullname'] == self.fullname1
-        assert res.status_code == 200
-
-    def test_search_contributor_user_schools(self):
-        res = self.app.get(
-            api_url_for('search_contributor'), {
-                'query': self.user1_alternate_email,
-                'page': 5,
-                'size': 10
-            },
-            expect_errors=True
-        )
-        assert res.json['users'][0]['education'] == self.user1.schools[0]['institution']
-        assert res.status_code == 200
-
-    def test_search_contributor_user_jobs(self):
-        res = self.app.get(
-            api_url_for('search_contributor'), {
-                'query': self.user1_alternate_email,
-                'page': 5,
-                'size': 10
-            },
-            expect_errors=True
-        )
-        assert res.json['users'][0]['employment'] == self.user1.jobs[0]['institution']
-        assert res.status_code == 200
-
-    @mock.patch('website.search.views.OSFUser.objects')
-    def test_search_contributor_email_not_valid_temp(self, mockOSFUser):
-        mockOSFUser.filter.return_value.filter.return_value = Email.objects.none()
-        self.app.get(
-            api_url_for('search_contributor'), {
-                'query': self.user1_alternate_email,
-                'page': 5,
-                'size': 10},
-            expect_errors=True
-        )
-        assert mockOSFUser.filter.return_value.filter.called == True
-
-    @mock.patch('osf.models.node.AbstractNode.load')
-    @mock.patch('website.search.views.OSFUser.objects')
-    def test_search_contributor_exclude_is_not_none_temp(self, mockOSFUser, mockAbstractNode):
-        mockOSFUser.filter.return_value.filter.return_value.exclude.return_value = Email.objects.none()
-        mockAbstractNode.contributors.return_value = 'contributor'
-
-        self.app.get(
-            api_url_for('search_contributor'), {
-                'query': self.user1_alternate_email,
-                'page': 5,
-                'size': 10,
-                'excludeNode': 'excludeNode value'},
-            expect_errors=True
-        )
-        assert mockOSFUser.filter.return_value.filter.return_value.exclude.called == True
