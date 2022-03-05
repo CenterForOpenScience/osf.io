@@ -14,7 +14,7 @@ import itsdangerous
 import pytest
 import pytz
 
-from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
+from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError, MergeDisableError
 from framework.auth.signals import user_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
@@ -227,7 +227,7 @@ class TestOSFUser:
         project.set_visible(user=user, visible=False)
         project.set_visible(user=user2, visible=True)
         project.save()
-        user.merge_user(user2)
+        user.merge_user(user2, is_forced=True)
         user.save()
         project.reload()
 
@@ -249,7 +249,7 @@ class TestOSFUser:
         project.set_permissions(user=user, permissions=permissions.READ)
         project.set_permissions(user=user2, permissions=permissions.WRITE)
         project.save()
-        user.merge_user(user2)
+        user.merge_user(user2, is_forced=True)
         user.save()
         project.reload()
 
@@ -258,6 +258,23 @@ class TestOSFUser:
         assert project.is_contributor(user2) is False
         assert group.is_member(user) is True
         assert group.is_member(user2) is False
+
+    def test_merged_user_with_is_forced_is_false(self, user):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(user, log=False)
+        project.set_permissions(user=user, permissions=permissions.READ)
+        project.set_permissions(user=user2, permissions=permissions.ADMIN)
+        project.set_visible(user=user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        with pytest.raises(MergeDisableError) as e:
+            user.merge_user(user2, is_forced=False)
+        assert str(e.value) == "The merge feature is disabled"
 
     def test_merge_projects(self):
         user = AuthUserFactory()
@@ -282,7 +299,7 @@ class TestOSFUser:
         assert user.nodes.filter(type='osf.node').count() == 3
         assert user2.nodes.filter(type='osf.node').count() == 4
 
-        user.merge_user(user2)
+        user.merge_user(user2, is_forced=True)
         project_one.reload()
         project_two.reload()
         project_three.reload()
@@ -352,7 +369,7 @@ class TestOSFUser:
         assert user.preprints.count() == 3
         assert user2.preprints.count() == 4
 
-        user.merge_user(user2)
+        user.merge_user(user2, is_forced=True)
         preprint_one.reload()
         preprint_two.reload()
         preprint_three.reload()
@@ -422,7 +439,7 @@ class TestOSFUser:
         assert user.draft_registrations.count() == 3
         assert user2.draft_registrations.count() == 4
 
-        user.merge_user(user2)
+        user.merge_user(user2, is_forced=True)
         draft_one.reload()
         draft_two.reload()
         draft_three.reload()
@@ -606,6 +623,9 @@ class TestOSFUser:
 
     def test_confirm_email_merge_select_for_update(self, user):
         mergee = UserFactory(username='foo@bar.com')
+        mergee.temp_account = True
+        mergee.save()
+
         token = user.add_unconfirmed_email('foo@bar.com')
 
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
@@ -621,6 +641,9 @@ class TestOSFUser:
     @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
     def test_confirm_email_merge_select_for_update_disabled(self, user):
         mergee = UserFactory(username='foo@bar.com')
+        mergee.temp_account = True
+        mergee.save()
+
         token = user.add_unconfirmed_email('foo@bar.com')
 
         with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
@@ -632,6 +655,23 @@ class TestOSFUser:
 
         for_update_sql = connection.ops.for_update_sql()
         assert not any(for_update_sql in query['sql'] for query in ctx.captured_queries)
+
+    @mock.patch('osf.utils.requests.settings.SELECT_FOR_UPDATE_ENABLED', False)
+    def test_confirm_email_save_unregistered_user(self, user):
+        mergee = UserFactory(username='foo@bar.com')
+        mergee.emails.filter(address='foo@bar.com').delete()
+        mergee.temp_account = True
+        mergee.save()
+
+        token = user.add_unconfirmed_email('foo@bar.com')
+
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            user.confirm_email(token, merge=True)
+
+        mergee.reload()
+        assert mergee.is_merged
+        assert mergee.merged_by == user
+        assert mergee.temp_account == False
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
@@ -1454,7 +1494,7 @@ class TestMergingUsers:
     def merge_dupe(self, master, dupe):
         def f():
             """Do the actual merge."""
-            master.merge_user(dupe)
+            master.merge_user(dupe, is_forced=True)
             master.save()
         return f
 
@@ -2022,7 +2062,7 @@ class TestUserMerging(OsfTestCase):
 
         with run_celery_tasks():
             # perform the merge
-            self.user.merge_user(other_user)
+            self.user.merge_user(other_user, is_forced=True)
             self.user.save()
 
         self.user.reload()
@@ -2044,7 +2084,7 @@ class TestUserMerging(OsfTestCase):
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
         unconfirmed_username = self.unconfirmed.username
-        self.user.merge_user(self.unconfirmed)
+        self.user.merge_user(self.unconfirmed, is_forced=True)
 
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
@@ -2076,15 +2116,15 @@ class TestUserMerging(OsfTestCase):
         no_id_user = UserFactory(external_identity={'ORCID': {}})
         no_provider_user = UserFactory(external_identity={})
 
-        linking_user.merge_user(creating_user)
+        linking_user.merge_user(creating_user, is_forced=True)
         assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'LINK'}}
-        linking_user.merge_user(verified_user)
+        linking_user.merge_user(verified_user, is_forced=True)
         assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
-        linking_user.merge_user(no_id_user)
+        linking_user.merge_user(no_id_user, is_forced=True)
         assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
-        linking_user.merge_user(no_provider_user)
+        linking_user.merge_user(no_provider_user, is_forced=True)
         assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED'}}
-        linking_user.merge_user(different_id_user)
+        linking_user.merge_user(different_id_user, is_forced=True)
         assert linking_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
 
         assert creating_user.external_identity == {}
@@ -2092,7 +2132,7 @@ class TestUserMerging(OsfTestCase):
         assert no_id_user.external_identity == {}
         assert no_provider_user.external_identity == {}
 
-        no_provider_user.merge_user(linking_user)
+        no_provider_user.merge_user(linking_user, is_forced=True)
         assert linking_user.external_identity == {}
         assert no_provider_user.external_identity == {'ORCID': {'1234-1234-1234-1234': 'VERIFIED', '4321-4321-4321-4321': 'VERIFIED'}}
 
@@ -2100,7 +2140,7 @@ class TestUserMerging(OsfTestCase):
         # test only those behaviors that are not tested with unconfirmed users
         self._add_unregistered_user()
 
-        self.user.merge_user(self.unregistered)
+        self.user.merge_user(self.unregistered, is_forced=True)
 
         self.project_with_unreg_contrib.reload()
         assert self.user.is_invited is True
@@ -2111,7 +2151,7 @@ class TestUserMerging(OsfTestCase):
         #Explictly reconnect signal as it is disconnected by default for test
         contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
-        self.user.merge_user(other_user)
+        self.user.merge_user(other_user, is_forced=True)
         assert other_user.merged_by._id == self.user._id
         assert mock_notify.called is False
 
