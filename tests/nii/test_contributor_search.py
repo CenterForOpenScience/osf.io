@@ -12,6 +12,7 @@ from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
 from osf_tests.factories import AuthUserFactory, InstitutionFactory, ProjectFactory
 from osf_tests.test_elastic_search import retry_assertion
+import time
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -92,6 +93,18 @@ class TestContributorSearch(OsfTestCase):
         assert_equal(set([u['fullname'] for u in contribs['users']]),
                      set([self.user2.fullname]))
 
+    def test_search_contributors_by_email(self):
+        email2 = self.user2.emails.get()
+        email2.address = 'test@example.com'
+        email2.save()
+        migrate(delete=False, remove=False,
+                index=None, app=self.app.app)
+        time.sleep(10)
+        contribs = search.search_contributor(
+            email2.address,
+            current_user=self.user1
+        )
+        assert_equal(contribs['users'][0]['fullname'], self.user2.fullname)
 
 class TestEscape(OsfTestCase):
 
