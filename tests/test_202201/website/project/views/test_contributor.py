@@ -1,114 +1,29 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Views tests for the GakuNin RDM."""
-
 from __future__ import absolute_import
-
-import datetime as dt
-from rest_framework import status as http_status
 import json
-import os
-import shutil
-import tempfile
-import time
-import unittest
-from future.moves.urllib.parse import quote
-import uuid
-
-from flask import request
 import mock
 import pytest
-from nose.tools import *  # noqa PEP8 asserts
-from django.utils import timezone
-from django.apps import apps
-from django.core.exceptions import ValidationError
-from django.db import connection, transaction
-from django.test import TransactionTestCase
-from django.test.utils import CaptureQueriesContext
-
-from api.base import settings as api_settings
-from addons.github.tests.factories import GitHubAccountFactory
-from addons.wiki.models import WikiPage
-from framework.auth import cas, authenticate
-from framework.flask import redirect
-from framework.auth.core import generate_verification_key
-from framework import auth
-from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
+from nose.tools import *
 from framework.auth import Auth
-from framework.auth.cas import get_login_url
-from framework.auth.exceptions import InvalidTokenError
-from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
-from framework.auth.views import login_and_register_handler
-from framework.celery_tasks import handlers
-from framework.exceptions import HTTPError, TemplateHTTPError
-from framework.transactions.handlers import no_auto_transaction
-from website import mailchimp_utils, mails, settings, language
-from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode, NodeLog, QuickFilesNode
+from osf.utils import permissions
+from tests.base import (
+    fake,
+    OsfTestCase,
+)
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription
-from website.project.decorators import check_can_access
-from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
-from website.project.utils import serialize_node
 from website.project.views.contributor import (
     deserialize_contributors,
     notify_added_contributor,
-    send_claim_email,
-    send_claim_registered_email,
 )
-from website import views as website_view
-from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
-from website.util import api_url_for, web_url_for
-from website.util import rubeus
-from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
-from website.util.timestamp import userkey_generation, AddTimestamp
-from osf.utils import permissions
-from osf.models import Comment
-from osf.models import OSFUser, Tag
-from osf.models import Email, TimestampTask
-from tests.base import (
-    assert_is_redirect,
-    capture_signals,
-    fake,
-    get_default_metaschema,
-    OsfTestCase,
-    assert_datetime_equal,
-)
-from tests.base import test_app as mock_app
-from tests.test_cas_authentication import generate_external_user_with_resp, make_external_response
-from api_tests.utils import create_test_file
-from tests.test_timestamp import create_test_file, create_rdmfiletimestamptokenverifyresult
-
-pytestmark = pytest.mark.django_db
-
-from osf.models import BaseFileNode, NodeRelation, QuickFilesNode, BlacklistedEmailDomain, Guid, RdmUserKey, RdmFileTimestamptokenVerifyResult
 from osf_tests.factories import (
     fake_email,
-    ApiOAuth2ApplicationFactory,
-    ApiOAuth2PersonalTokenFactory,
     AuthUserFactory,
-    CollectionFactory,
-    CommentFactory,
-    InstitutionFactory,
-    NodeFactory,
-    OSFGroupFactory,
-    PreprintFactory,
-    PreprintProviderFactory,
-    PrivateLinkFactory,
     ProjectFactory,
-    ProjectWithAddonFactory,
-    RegistrationFactory,
-    RegistrationProviderFactory,
     UserFactory,
-    UnconfirmedUserFactory,
     UnregUserFactory,
-    RegionFactory,
-    DraftRegistrationFactory,
 )
-from osf.models.node import set_project_storage_type
-from addons.osfstorage.models import NodeSettings
 
+pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.enable_bookmark_creation
@@ -155,79 +70,9 @@ class TestUserInviteViews(OsfTestCase):
         super(TestUserInviteViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
-
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_send_claim_email_with_user_has_eppn(self, send_mail):
-        project = ProjectFactory()
-        given_email = fake_email()
-        unreg_user = project.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=given_email,
-            auth=Auth(project.creator),
+        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(
+            self.project._primary_key
         )
-        unreg_user.eppn = 'EPPN'
-        project.save()
-        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
-        claimer_email = given_email.lower().strip()
-        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
-        referrer = OSFUser.load(unclaimed_record['referrer_id'])
-
-        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
-
-        assert_true(send_mail.called)
-        send_mail.assert_called_with(
-            given_email,
-            mails.INVITE_DEFAULT,
-            user=unreg_user,
-            referrer=referrer,
-            node=project,
-            claim_url=claim_url,
-            email=claimer_email,
-            fullname=unclaimed_record['name'],
-            branded_service=None,
-            can_change_preferences=False,
-            logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            login_by_eppn=False,
-        )
-        assert_true(unreg_user.eppn in unreg_user.temp_account)
-
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_send_claim_email_with_user_has_not_eppn(self, send_mail):
-        project = ProjectFactory()
-        given_email = fake_email()
-        unreg_user = project.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=given_email,
-            auth=Auth(project.creator),
-        )
-        unreg_user.eppn = None
-        project.save()
-        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
-        claimer_email = given_email.lower().strip()
-        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
-        referrer = OSFUser.load(unclaimed_record['referrer_id'])
-
-        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
-
-        assert_true(send_mail.called)
-        send_mail.assert_called_with(
-            given_email,
-            mails.INVITE_DEFAULT,
-            user=unreg_user,
-            referrer=referrer,
-            node=project,
-            claim_url=claim_url,
-            email=claimer_email,
-            fullname=unclaimed_record['name'],
-            branded_service=None,
-            can_change_preferences=False,
-            logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            login_by_eppn=False,
-        )
-        assert_equal(len(unreg_user.temp_account), 9)
 
     def test_claim_user_activate(self):
         self.referrer = AuthUserFactory()
@@ -248,12 +93,14 @@ class TestUserInviteViews(OsfTestCase):
         res = self.app.get(claim_url)
         assert_equal(res.status_code, 200)
 
+
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
     def setUp(self):
-
         super(TestConfirmationViewBlockBingPreview, self).setUp()
-        self.user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534+ (KHTML, like Gecko) BingPreview/1.0b'
+        self.user_agent = 'Mozilla/5.0 (Windows NT 6.1; WOW64)' \
+                          ' AppleWebKit/534+ (KHTML, like Gecko) ' \
+                          'BingPreview/1.0b'
 
     def test_claim_user_form_cancel_request(self):
         referrer = AuthUserFactory()
@@ -319,3 +166,45 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
+
+
+@pytest.mark.enable_implicit_clean
+class TestAddingContributorViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestAddingContributorViews, self).setUp()
+        self.creator = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.creator)
+        self.auth = Auth(self.project.creator)
+        # Authenticate all requests
+        self.app.authenticate(*self.creator.auth)
+        contributor_added.connect(notify_added_contributor)
+
+    def test_deserialize_contributors_temp_account(self):
+        contrib = UserFactory()
+        unreg = UnregUserFactory()
+        name, email = fake.name(), fake_email()
+        unreg_no_record = serialize_unregistered(name, email)
+        contrib_data = [
+            add_contributor_json(contrib),
+            serialize_unregistered(fake.name(), unreg.username),
+            unreg_no_record
+        ]
+        contrib_data[0]['permission'] = permissions.ADMIN
+        contrib_data[1]['permission'] = permissions.WRITE
+        contrib_data[2]['permission'] = permissions.READ
+        contrib_data[0]['visible'] = True
+        contrib_data[1]['visible'] = True
+        contrib_data[2]['visible'] = True
+        res = deserialize_contributors(
+            self.project,
+            contrib_data,
+            auth=Auth(self.creator))
+        assert_equal(len(res), len(contrib_data))
+        assert_true(res[0]['user'].is_registered)
+
+        assert_false(res[1]['user'].is_registered)
+        assert_true(res[1]['user']._id)
+
+        assert_false(res[2]['user'].is_registered)
+        assert_true(res[2]['user']._id)

@@ -46,7 +46,7 @@ from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription
+from website.profile.views import update_osf_help_mails_subscription, _profile_view
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
@@ -1555,6 +1555,93 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_user_update_not_temp_account(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_1 = 'test@cos.io'
+        email_2 = 'abcd@csp.com'
+        user2.emails.create(address=email_2)
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth,
+                                expect_errors=True)
+
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert_not_equal(res.json['message_long'], None)
+
+    def test_user_update_has_temp_account(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_1 = 'test@cos.io'
+        email_2 = 'abcd@csp.com'
+        user2.emails.create(address=email_2)
+        user2.temp_account = True
+        user2.save()
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth,
+                                expect_errors=True)
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_equal(len(res.json['profile']['emails']), 2)
+        assert_equal(res.json['user']['_id'], user1._id)
+        assert_true(res.json['user']['is_profile'])
+
+    def test_user_update_temp_user_not_exist(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_1 = 'test@cos.io'
+        email_2 = 'abcd@csp.com'
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1, 'confirmed': True, 'primary': True},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth,
+                                expect_errors=True)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+
+    def test_profile_view_has_temp_user(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_2 = 'abcd@csp.com'
+        user2.emails.create(address=email_2)
+
+        res = _profile_view(user1, is_profile=True, temp_user=user2)
+
+        assert_equal(res['profile']['id'], user1._id)
+        assert_equal(res['profile']['fullname'], user1.fullname)
+        assert_equal(res['profile']['inactive_profile']['id'], user2._id)
+        assert_equal(res['profile']['inactive_profile']['fullname'],
+                     user2.fullname)
+
+
 class TestUserProfileApplicationsPage(OsfTestCase):
 
     def setUp(self):
@@ -2354,78 +2441,6 @@ class TestUserInviteViews(OsfTestCase):
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
             login_by_eppn=False,
         )
-
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_send_claim_email_with_user_has_eppn(self, send_mail):
-        project = ProjectFactory()
-        given_email = fake_email()
-        unreg_user = project.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=given_email,
-            auth=Auth(project.creator),
-        )
-        unreg_user.eppn = 'EPPN'
-        project.save()
-        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
-        claimer_email = given_email.lower().strip()
-        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
-        referrer = OSFUser.load(unclaimed_record['referrer_id'])
-
-        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
-
-        assert_true(send_mail.called)
-        send_mail.assert_called_with(
-            given_email,
-            mails.INVITE_DEFAULT,
-            user=unreg_user,
-            referrer=referrer,
-            node=project,
-            claim_url=claim_url,
-            email=claimer_email,
-            fullname=unclaimed_record['name'],
-            branded_service=None,
-            can_change_preferences=False,
-            logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            login_by_eppn=False,
-        )
-        assert_true(unreg_user.eppn in unreg_user.temp_account)
-
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_send_claim_email_with_user_has_not_eppn(self, send_mail):
-        project = ProjectFactory()
-        given_email = fake_email()
-        unreg_user = project.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=given_email,
-            auth=Auth(project.creator),
-        )
-        unreg_user.eppn = None
-        project.save()
-        claim_url = unreg_user.get_claim_url(project._primary_key, external=True)
-        claimer_email = given_email.lower().strip()
-        unclaimed_record = unreg_user.get_unclaimed_record(project._primary_key)
-        referrer = OSFUser.load(unclaimed_record['referrer_id'])
-
-        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
-
-        assert_true(send_mail.called)
-        send_mail.assert_called_with(
-            given_email,
-            mails.INVITE_DEFAULT,
-            user=unreg_user,
-            referrer=referrer,
-            node=project,
-            claim_url=claim_url,
-            email=claimer_email,
-            fullname=unclaimed_record['name'],
-            branded_service=None,
-            can_change_preferences=False,
-            logo=settings.OSF_LOGO,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            login_by_eppn=False,
-        )
-        assert_equal(len(unreg_user.temp_account), 9)
 
     def test_claim_user_activate(self):
         self.referrer = AuthUserFactory()
