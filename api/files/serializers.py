@@ -2,12 +2,14 @@ from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
+from django.core.exceptions import ValidationError
+
 import furl
 import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
+from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode, Registration
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -334,30 +336,25 @@ class BaseFileSerializer(JSONAPISerializer):
             return obj._id
         return None
 
-    def update(self, instance, validated_data):
-        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
-        if instance.provider != 'osfstorage' and 'tags' in validated_data:
-            raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
-        auth = get_user_auth(self.context['request'])
-        old_tags = set(instance.tags.values_list('name', flat=True))
+    def update(self, file, validated_data):
+        assert isinstance(file, BaseFileNode), 'Instance must be a BaseFileNode'
         if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        else:
-            current_tags = set(old_tags)
+            if file.provider != 'osfstorage':
+                raise Conflict(f'File service provider {file.provider} does not support tags on the OSF.')
+            auth = get_user_auth(self.context['request'])
+            file.update_tags(set(validated_data.pop('tags', [])), auth=auth)
 
-        for new_tag in (current_tags - old_tags):
-            instance.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            instance.remove_tag(deleted_tag, auth=auth)
+        if 'checkout' in validated_data:
+            user = self.context['request'].user
+            if isinstance(file.target, Registration):
+                raise ValidationError('Registration files are static and cannot be checked in or out.')
+            file.check_in_or_out(user, validated_data.pop('checkout'))
 
+        # `validated_data` ignores Read-only fields in payload
         for attr, value in validated_data.items():
-            if attr == 'checkout':
-                user = self.context['request'].user
-                instance.check_in_or_out(user, value)
-            else:
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
+            setattr(file, attr, value)
+        file.save()
+        return file
 
     def is_valid(self, **kwargs):
         return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
