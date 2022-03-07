@@ -1,3 +1,4 @@
+import pytest
 from nose import tools as nt
 from django.test import RequestFactory
 from tests.base import AdminTestCase
@@ -10,6 +11,7 @@ from osf.models import Institution, UserQuota, OSFUser
 from admin.institutions import views
 
 
+@pytest.mark.skip('Clone test case from admin_tests/institutions/test_views.py for making coverage')
 class TestQuotaUserList(AdminTestCase):
     def setUp(self):
         super(TestQuotaUserList, self).setUp()
