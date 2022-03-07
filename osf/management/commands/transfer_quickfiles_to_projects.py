@@ -14,6 +14,8 @@ from osf.models import (
     AbstractNode,
     Guid
 )
+
+from osf.models.base import generate_guid
 from osf.models.quickfiles import get_quickfiles_project_title
 from osf.models.queued_mail import QueuedMail
 
@@ -66,11 +68,18 @@ def remove_quickfiles(dry_run=False, page_size=1000):
             id__in=quick_files_nodes.values_list('guids__id', flat=True)
         ).delete()
 
+        # generate unique guids prior to record creation to avoid collisions.
+        guids = set([])
+        while len(guids) < quick_files_node_with_files_ids.count():
+            guids.add(generate_guid())
+        guids = list(guids)
+
         guids = [
             Guid(
+                _id=_id,
                 object_id=node,
                 content_type=ContentType.objects.get_for_model(Node)
-            ) for node in quick_files_node_with_files_ids
+            ) for _id, node in zip(guids, quick_files_node_with_files_ids)
         ]
         Guid.objects.bulk_create(guids)
 
@@ -106,7 +115,7 @@ def remove_quickfiles(dry_run=False, page_size=1000):
                 log.params['node'] = node._id
                 log.save()
 
-            if not i % page_size:
+            if i and not i % page_size:
                 logger.info(f'{i} quickfiles were projectified at {datetime.datetime.now()}')
 
         quick_files_nodes.update(description=QUICKFILES_DESC, type='osf.node')
