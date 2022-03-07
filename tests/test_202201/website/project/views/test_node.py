@@ -21,6 +21,7 @@ from osf_tests.factories import (
 )
 
 
+@pytest.mark.skip('Clone test case from tests/test_views.py for making coverage')
 class TestComponentRemove(OsfTestCase):
 
     def setUp(self):

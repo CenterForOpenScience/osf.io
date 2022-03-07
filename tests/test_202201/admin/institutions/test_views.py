@@ -1,4 +1,5 @@
 import mock
+import pytest
 from admin.institutions import views
 from django.test import RequestFactory
 from django.urls import reverse
@@ -10,6 +11,7 @@ from osf_tests.factories import (
 from tests.base import AdminTestCase
 
 
+@pytest.mark.skip('Clone test case from admin_tests/institutions/test_views.py for making coverage')
 class TestRecalculateQuota(AdminTestCase):
     def setUp(self):
         super(TestRecalculateQuota, self).setUp()
@@ -66,6 +68,7 @@ class TestRecalculateQuota(AdminTestCase):
         mock_update_user_used_quota_method.assert_not_called()
 
 
+@pytest.mark.skip('Clone test case from admin_tests/institutions/test_views.py for making coverage')
 class TestRecalculateQuotaOfUsersInInstitution(AdminTestCase):
     def setUp(self):
         super(TestRecalculateQuotaOfUsersInInstitution, self).setUp()

@@ -1,6 +1,7 @@
 import datetime
 
 import mock
+import pytest
 import pytz
 from admin.nodes.views import NodeDeleteView
 from admin_tests.utilities import setup_log_view
@@ -13,6 +14,7 @@ from osf_tests.factories import ProjectFactory, NodeFactory
 from tests.base import AdminTestCase
 
 
+@pytest.mark.skip('Clone test case from admin_tests/nodes/test_views.py for making coverage')
 class TestNodeDeleteView(AdminTestCase):
     def setUp(self):
         super(TestNodeDeleteView, self).setUp()

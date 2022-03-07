@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
+import pytest
 from addons.osfstorage.models import OsfStorageFileNode
 from nose.tools import *  # noqa (PEP8 asserts)
 from osf.models import (
@@ -10,6 +11,7 @@ from tests.base import OsfTestCase
 from website.util import quota
 
 
+@pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestUpdateUserUsedQuota(OsfTestCase):
     def setUp(self):
         super(TestUpdateUserUsedQuota, self).setUp()
