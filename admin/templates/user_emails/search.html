@@ -12,12 +12,13 @@
 
 {% block content %}
     <div class="container-fluid">
+        <div id="error_message" class="row hidden"></div>
         <div class="row">
             <h3>{% trans "User Search" %}</h3>
         </div>
         <div class="row">
             <div class="col-md-6">
-                <form action="{% url 'user-emails:search' %}" method="post">
+                <form name="user-search"  action="{% url 'user-emails:search' %}" onsubmit="return validateForm()" method="post">
                     {% csrf_token %}
                     {{ form.as_p }}
                     <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}"/>
@@ -25,4 +26,20 @@
             </div>
         </div>
     </div>
+    <script>
+        function validateForm() {
+            let guid_string = document.forms["user-search"]["guid"].value;
+            let email_string = document.forms["user-search"]["email"].value;
+            let element = document.getElementById("error_message")
+            let message = "GUID is only contain Alphanumeric and not contain whitespace"
+            if (guid_string.length > 0 && !email_string){
+                if (!guid_string.match(/^[0-9a-z]+$/) || guid_string.indexOf(' ') >= 0) {
+                    element.classList.remove("hidden")
+                    document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>"
+                    return false;
+                }
+                return true;
+            }
+        }
+    </script>
 {% endblock content %}

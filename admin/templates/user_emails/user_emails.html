@@ -12,6 +12,7 @@
 
 {% block content %}
     <div class="container-fluid">
+        <div id="error_message" class="row hidden"></div>
         <div class="row">
             <div class="col-md-12">
                 <h3>{% trans "User Emails" %}</h3>
@@ -20,7 +21,7 @@
 
         <div class="row">
             <div class="col-md-12 clearfix">
-                <form class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
+                <form onsubmit="validateEmail(event)" class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
                       style="margin-top: 15px; margin-bottom: 15px; ">
                     {% csrf_token %}
                     <div class="form-group">
@@ -66,4 +67,17 @@
             </div>
         </div>
     </div>
+    <script>
+        function validateEmail(event){
+            let email_string = document.getElementById("primary_email").value;
+            let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+            let element = document.getElementById("error_message")
+            let message = "Invalid email"
+            if (!emailRegex.test(email_string)) {
+                event.preventDefault();
+                element.classList.remove("hidden")
+                document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>"
+            }
+        }
+    </script>
 {% endblock content %}
