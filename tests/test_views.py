@@ -1555,6 +1555,7 @@ class TestUserProfile(OsfTestCase):
         res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
         assert res.status_code == 404
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_not_temp_account(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')
@@ -1579,6 +1580,7 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_not_equal(res.json['message_long'], None)
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_has_temp_account(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')

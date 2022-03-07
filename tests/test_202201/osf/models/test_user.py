@@ -67,13 +67,13 @@ class TestOSFUser:
 
         token = user.add_unconfirmed_email('foo@bar.com')
 
-        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+        with transaction.atomic(), CaptureQueriesContext(connection):
             user.confirm_email(token, merge=True)
 
         mergee.reload()
         assert mergee.is_merged
         assert mergee.merged_by == user
-        assert mergee.temp_account == False
+        assert mergee.temp_account is False
 
     @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_merged_user_with_is_forced_is_false(self, user):

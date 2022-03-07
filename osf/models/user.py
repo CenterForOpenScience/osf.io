@@ -1,8 +1,6 @@
 import datetime as dt
 import logging
-import random
 import re
-import string
 from urllib.parse import urlparse, parse_qs
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid

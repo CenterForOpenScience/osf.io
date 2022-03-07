@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from rest_framework import status as http_status
 import pytest
+import mock
 from nose.tools import *
 from website.profile.views import _profile_view
 from website.util import api_url_for
@@ -21,6 +22,7 @@ class TestUserProfile(OsfTestCase):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_not_temp_account(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')
@@ -45,6 +47,7 @@ class TestUserProfile(OsfTestCase):
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
         assert_not_equal(res.json['message_long'], None)
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_has_temp_account(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')

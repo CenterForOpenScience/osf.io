@@ -259,6 +259,7 @@ class TestOSFUser:
         assert group.is_member(user) is True
         assert group.is_member(user2) is False
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_merged_user_with_is_forced_is_false(self, user):
         user2 = UserFactory.build()
         user2.save()
@@ -665,13 +666,13 @@ class TestOSFUser:
 
         token = user.add_unconfirmed_email('foo@bar.com')
 
-        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+        with transaction.atomic(), CaptureQueriesContext(connection):
             user.confirm_email(token, merge=True)
 
         mergee.reload()
         assert mergee.is_merged
         assert mergee.merged_by == user
-        assert mergee.temp_account == False
+        assert mergee.temp_account is False
 
     def test_confirm_email_comparison_is_case_insensitive(self):
         u = UnconfirmedUserFactory.build(
