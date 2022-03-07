@@ -4,7 +4,7 @@ import pytz
 from framework.celery_tasks import app as celery_app
 from osf.models import Institution, OSFUser
 from osf.models.institution import IntegrationType
-from website.settings import DATE_LAST_LOGIN_THROTTLE_DELTA
+from website.settings import DATE_LAST_LOGIN_THROTTLE_DELTA, EXTERNAL_IDENTITY_PROFILE
 
 
 @celery_app.task()
@@ -37,7 +37,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     institution affiliations.
     """
     user = OSFUser.load(user_id)
-    if not user:
+    if not user or not verify_user_orcid_id(user, orcid_id):
         # This should not happen as long as this task is called at the right place at the right time.
         # TODO: Log errors, raise exceptions and inform Sentry
         return
@@ -45,6 +45,14 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     if institution and not user.is_affiliated_with_institution(institution):
         user.affiliated_institutions.add(institution)
         user.save()
+
+
+def verify_user_orcid_id(user, orcid_id):
+    """Verify that the given ORCiD ID is verified for the given user.
+    """
+    provider = EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile')
+    status = user.external_identity.get(provider, {}).get(orcid_id, None)
+    return True if status and status == 'VERIFIED' else False
 
 
 def check_institution_affiliation(orcid_id):
