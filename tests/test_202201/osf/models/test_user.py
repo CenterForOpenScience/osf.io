@@ -20,6 +20,8 @@ def user():
 # Tests copied from tests/test_models.py
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_quickfiles_creation
+@pytest.mark.skip('Clone test case from osf/models/user.py '
+                  'for making coverage')
 class TestOSFUser:
     def test_confirm_email_merge_select_for_update(self, user):
         mergee = UserFactory(username='foo@bar.com')
@@ -73,6 +75,7 @@ class TestOSFUser:
         assert mergee.merged_by == user
         assert mergee.temp_account == False
 
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_merged_user_with_is_forced_is_false(self, user):
         user2 = UserFactory.build()
         user2.save()
@@ -88,4 +91,4 @@ class TestOSFUser:
         project.save()
         with pytest.raises(MergeDisableError) as e:
             user.merge_user(user2, is_forced=False)
-        assert str(e.value) == "The merge feature is disabled"
+        assert str(e.value) == 'The merge feature is disabled'

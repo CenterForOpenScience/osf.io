@@ -1582,8 +1582,8 @@ class TestUserProfile(OsfTestCase):
     def test_user_update_has_temp_account(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')
-        email_1 = 'test@cos.io'
-        email_2 = 'abcd@csp.com'
+        email_1 = 'test_1@cos.io'
+        email_2 = 'abc@scp.com'
         user2.emails.create(address=email_2)
         user2.temp_account = True
         user2.save()
@@ -1599,8 +1599,8 @@ class TestUserProfile(OsfTestCase):
             ]
         }
 
-        res = self.app.put_json(url, header, auth=user1.auth,
-                                expect_errors=True)
+        res = self.app.put_json(url, header, auth=user1.auth)
+
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_equal(len(res.json['profile']['emails']), 2)
         assert_equal(res.json['user']['_id'], user1._id)
@@ -1608,9 +1608,8 @@ class TestUserProfile(OsfTestCase):
 
     def test_user_update_temp_user_not_exist(self):
         user1 = AuthUserFactory(fullname='fullname_1')
-        user2 = AuthUserFactory(fullname='fullname_2')
-        email_1 = 'test@cos.io'
-        email_2 = 'abcd@csp.com'
+        email_1 = 'andy@cos.vn'
+        email_2 = 'wis@csp.com'
 
         url = api_url_for('update_user', user1._id)
 
@@ -1630,7 +1629,7 @@ class TestUserProfile(OsfTestCase):
     def test_profile_view_has_temp_user(self):
         user1 = AuthUserFactory(fullname='fullname_1')
         user2 = AuthUserFactory(fullname='fullname_2')
-        email_2 = 'abcd@csp.com'
+        email_2 = 'luk@com.vn'
         user2.emails.create(address=email_2)
 
         res = _profile_view(user1, is_profile=True, temp_user=user2)

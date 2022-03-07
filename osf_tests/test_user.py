@@ -274,7 +274,7 @@ class TestOSFUser:
         project.save()
         with pytest.raises(MergeDisableError) as e:
             user.merge_user(user2, is_forced=False)
-        assert str(e.value) == "The merge feature is disabled"
+        assert str(e.value) == 'The merge feature is disabled'
 
     def test_merge_projects(self):
         user = AuthUserFactory()
