@@ -27,7 +27,7 @@ class IntegrationType(Enum):
     """Defines 5 SSO types for OSF institution integration.
     """
 
-    SAML_SHIBBOLETH = 'saml-shib'  # SSO va SAML (Shibboleth impl) where CAS serves as the SP and institutions as IdP
+    SAML_SHIBBOLETH = 'saml-shib'  # SSO via SAML (Shibboleth impl) where CAS serves as the SP and institutions as IdP
     CAS_PAC4J = 'cas-pac4j'  # SSO via CAS (pac4j impl) where CAS serves as the client and institution as server
     OAUTH_PAC4J = 'oauth-pac4j'  # SSO via OAuth (pac4j impl) where CAS serves as the client and institution as server
     AFFILIATION_VIA_ORCID = 'via-orcid'  # Using ORCiD SSO for sign in; using ORCiD public API for affiliation
