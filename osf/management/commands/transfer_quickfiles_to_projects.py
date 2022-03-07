@@ -125,18 +125,18 @@ def remove_quickfiles(dry_run=False, page_size=1000):
 
 def reverse_remove_quickfiles(dry_run=False, page_size=1000):
     with transaction.atomic():
-        quickfiles_nodes_with_files = AbstractNode.objects.filter(
+        quickfiles_nodes_with_files = Node.objects.filter(
             logs__action=NodeLog.MIGRATED_QUICK_FILES
         )
+        for node in quickfiles_nodes_with_files:
+            node.guids.all().delete()
+            node.save()
+
         quickfiles_nodes_with_files.update(
             type='osf.quickfilesnode',
             is_deleted=False,
             deleted=None,
         )
-
-        for node in quickfiles_nodes_with_files:
-            node.guids.all().delete()
-            node.save()
 
         users_without_nodes = OSFUser.objects.exclude(
             id__in=QuickFilesNode.objects.all().values_list(
