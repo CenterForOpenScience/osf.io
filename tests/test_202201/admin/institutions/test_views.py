@@ -3,6 +3,7 @@ from operator import itemgetter
 from django.urls import reverse
 from nose import tools as nt
 import mock
+import pytest
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
@@ -24,6 +25,7 @@ from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
 
 
+@pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
     def setUp(self):
         super(TestUpdateQuotaUserListByInstitutionID, self).setUp()
