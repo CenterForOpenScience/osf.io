@@ -1,8 +1,8 @@
 import json
 from operator import itemgetter
-
 from nose import tools as nt
 import mock
+import pytest
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
@@ -16,13 +16,14 @@ from osf_tests.factories import (
     RegionFactory
 )
 from osf.models import Institution, Node, UserQuota
-
 from admin_tests.utilities import setup_form_view, setup_user_view, setup_view
-
 from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
 from django.urls import reverse
+
+
+@pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestUserListByInstitutionID(AdminTestCase):
 
     def setUp(self):
@@ -119,6 +120,7 @@ class TestUserListByInstitutionID(AdminTestCase):
         nt.assert_equal(len(res), 1)
 
 
+@pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestExportFileTSV(AdminTestCase):
     def setUp(self):
         super(TestExportFileTSV, self).setUp()

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-
 from addons.base import signals as file_signals
 from addons.osfstorage.models import OsfStorageFileNode, Region
 from api.base import settings as api_settings
