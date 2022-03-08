@@ -96,11 +96,11 @@ class MigrateQuickfiles(ManagementCommandPermissionView):
     def post(self, request, *args, **kwargs):
         action = request.POST.get('action')
         if action == 'run':
-            remove_quickfiles(dry_run=False)
+            remove_quickfiles()
             messages.success(request, 'quickfiles removed')
 
         if action == 'reverse':
-            reverse_remove_quickfiles(dry_run=False)
+            reverse_remove_quickfiles()
             messages.success(request, 'quickfiles restored')
 
         return redirect(reverse('management:commands'))

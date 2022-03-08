@@ -11,14 +11,17 @@ logger = logging.getLogger(__name__)
 @celery_app.task(name='osf.management.commands.delete_legacy_quickfiles_nodes')
 def delete_quickfiles(batch_size=1000, dry_run=False):
     with transaction.atomic():
-        for node in QuickFilesNode.objects.all()[:batch_size]:
+        i = 0
+        for i, node in enumerate(QuickFilesNode.objects.all()[:batch_size]):
             node.is_deleted = True
             node.deleted = timezone.now()
             node.recast(Node._typedmodels_type)
-            if not dry_run:
-                node.save()
+            node.save()
 
-        logger.info('All Quickfiles deleted')
+        logger.info(f'{i} Quickfiles deleted')
+
+        if dry_run:
+            raise RuntimeError('dry run rolling back changes')
 
     if not QuickFilesNode.objects.exists():
         logger.info('Clean-up complete, none more QuickFilesNode delete this task.')
@@ -41,17 +44,10 @@ class Command(BaseCommand):
             '--batch_size',
             type=int,
             help='how many many Quickfiles are we deleting tonight?',
-            required=False,
-        )
-        parser.add_argument(
-            '--page_size',
-            type=int,
-            help='how many many query items should be in a page?',
-            required=False,
+            required=True,
         )
 
     def handle(self, *args, **options):
-        dry_run = options.get('dry_run', 1000)
+        dry_run = options.get('dry_run', False)
         batch_size = options.get('batch_size', 1000)
-        page_size = options.get('page_size', 1000)
-        delete_quickfiles(dry_run, batch_size, page_size)
+        delete_quickfiles(batch_size, dry_run)

@@ -690,7 +690,7 @@ class CeleryConfig:
             'delete_legacy_quickfiles_nodes': {
                 'task': 'osf.management.commands.delete_legacy_quickfiles_nodes',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False, 'batch_size': 10000, 'page_size': 1000},
+                'kwargs': {'dry_run': False, 'batch_size': 10000},
             },
         }
 
