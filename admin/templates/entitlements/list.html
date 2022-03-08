@@ -13,9 +13,10 @@
 {% endblock title %}
 
 {% block content %}
+    <div id="error_message" class="row hidden"></div>
     <h2>{% trans "Entitlements" %}</h2>
 
-    <form action="{% url "entitlements:bulk_add" %}" method="post" class="form-horizontal" id="entitlements_form">
+    <form onsubmit="check_entitlement(event)" action="{% url "entitlements:bulk_add" %}" method="post" class="form-horizontal" id="entitlements_form">
         {% csrf_token %}
         <div class="form-group">
             <label for="institution_id" class="col-sm-2 control-label">Institution</label>
@@ -61,6 +62,32 @@
             <div class="input-group form-check"> <input type="checkbox" name="login_availability" checked="checked" value="on"
             onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}" data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked"> <label class="form-check-label" for="login_availability">login availability</label> </div> </div>`;
             document.getElementById("entitlements_block").append(new DOMParser().parseFromString(entitlements_html, 'text/html').body.childNodes[0])
+        }
+
+       function check_entitlement(event){
+            let element = document.getElementById("error_message");
+            let entitlement_input = document.getElementsByName("entitlements")[0].value;
+            if (entitlement_input.length === 0 || entitlement_input.trim() === ""){
+                 event.preventDefault();
+                 let message = "Entitlement is not empty";
+                 element.classList.remove("hidden");
+                 document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
+            }
+            else {
+                let entitlements = [];
+                let table = document.getElementsByTagName("table")[0];
+                let rows = table.rows;
+                for (let i = 0; i < rows.length; i++) {
+                    let cellValue = rows[i].cells[0].firstChild.nodeValue;
+                    entitlements.push(cellValue.trim());
+                }
+                if (entitlements.includes(entitlement_input.trim())) {
+                    event.preventDefault();
+                    let message = "Entitlement already exists";
+                    element.classList.remove("hidden");
+                    document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
+                }
+            }
         }
     </script>
 
