@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator
 from website.search.search import update_file
-from osf.models import Node, NodeLog, QuickFilesNode
+from osf.models import Node, NodeLog
 from addons.osfstorage.models import OsfStorageFileNode
 from django.core.management.base import BaseCommand
 

@@ -18,10 +18,11 @@ def delete_quickfiles(batch_size=1000, dry_run=False):
             if not dry_run:
                 node.save()
 
-        logger.info(f'All Quickfiles deleted')
+        logger.info('All Quickfiles deleted')
 
     if not QuickFilesNode.objects.exists():
-        logger.info("Clean-up complete, none more QuickFilesNode delete this task.")
+        logger.info('Clean-up complete, none more QuickFilesNode delete this task.')
+
 
 class Command(BaseCommand):
     """
