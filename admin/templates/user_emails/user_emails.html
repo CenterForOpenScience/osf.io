@@ -71,12 +71,12 @@
         function validateEmail(event){
             let email_string = document.getElementById("primary_email").value;
             let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-            let element = document.getElementById("error_message")
-            let message = "Invalid email"
+            let element = document.getElementById("error_message");
+            let message = "Invalid email";
             if (!emailRegex.test(email_string)) {
                 event.preventDefault();
-                element.classList.remove("hidden")
-                document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>"
+                element.classList.remove("hidden");
+                document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
             }
         }
     </script>
