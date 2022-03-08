@@ -18,28 +18,41 @@
         </div>
         <div class="row">
             <div class="col-md-6">
-                <form name="user-search"  action="{% url 'user-emails:search' %}" onsubmit="return validateForm()" method="post">
+                <form name="user-search" action="{% url 'user-emails:search' %}" method="post"
+                      onsubmit="return validateForm()">
                     {% csrf_token %}
-                    {{ form.as_p }}
+                    <p>
+                        <label for="id_guid">guid:</label>
+                        <input type="text" name="guid" value=""
+                               maxlength="5" minlength="5"
+                               pattern="[0-9a-z]{5}"
+                               title="Please enter only contain alphanumeric in lowercase"
+                               id="id_guid">
+                    </p>
+                    <p>
+                        <label for="id_name">name:</label>
+                        <input type="text" name="name" value=""
+                               maxlength="255"
+                               id="id_name">
+                    </p>
+                    <p>
+                        <label for="id_email">email:</label>
+                        <input type="email" name="email" value=""
+                               maxlength="255" minlength="6"
+                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                               title="Please enter an email address."
+                               id="id_email">
+                    </p>
                     <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}"/>
                 </form>
             </div>
         </div>
     </div>
+{% endblock content %}
+{% block bottom_js %}
     <script>
         function validateForm() {
-            let guid_string = document.forms["user-search"]["guid"].value;
-            let email_string = document.forms["user-search"]["email"].value;
-            let element = document.getElementById("error_message");
-            let message = "GUID is only contain Alphanumeric and not contain whitespace";
-            if (guid_string.length > 0 && !email_string){
-                if (!guid_string.match(/^[0-9a-z]+$/) || guid_string.indexOf(' ') >= 0) {
-                    element.classList.remove("hidden");
-                    document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
-                    return false;
-                }
-                return true;
-            }
+            return !!$('#id_guid').val() || (!!$('#id_name').val() && $('#id_name').val().length <= 255) || !!$('#id_email').val();
         }
     </script>
-{% endblock content %}
+{% endblock %}

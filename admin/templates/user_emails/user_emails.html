@@ -18,16 +18,29 @@
                 <h3>{% trans "User Emails" %}</h3>
             </div>
         </div>
-
+        {% if request.session.message %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-danger">
+                        {{ request.session.message }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <div class="row">
             <div class="col-md-12 clearfix">
-                <form onsubmit="validateEmail(event)" class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
+                <form class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
+                      onsubmit="return validateForm()"
                       style="margin-top: 15px; margin-bottom: 15px; ">
                     {% csrf_token %}
                     <div class="form-group">
                         <label for="primary_email" class="col-sm-1 control-label">Email address</label>
                         <div class="col-sm-4">
-                            <input type="email" class="form-control" name="primary_email" id="primary_email" placeholder="Email">
+                            <input type="email" class="form-control" name="primary_email"
+                                   maxlength="255" minlength="6"
+                                   pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                                   title="Please enter an email address."
+                                   id="primary_email" placeholder="Email">
                         </div>
                     </div>
                     <div class="form-group">
@@ -67,17 +80,11 @@
             </div>
         </div>
     </div>
+{% endblock content %}
+{% block bottom_js %}
     <script>
-        function validateEmail(event){
-            let email_string = document.getElementById("primary_email").value;
-            let emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-            let element = document.getElementById("error_message");
-            let message = "Invalid email";
-            if (!emailRegex.test(email_string)) {
-                event.preventDefault();
-                element.classList.remove("hidden");
-                document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
-            }
+        function validateForm() {
+            return !!$('#primary_email').val();
         }
     </script>
-{% endblock content %}
+{% endblock %}

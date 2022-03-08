@@ -15,7 +15,7 @@ from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.user_emails.forms import UserEmailsSearchForm
 from framework.exceptions import HTTPError
-from osf.models.user import OSFUser
+from osf.models.user import OSFUser, Email
 from website import mailchimp_utils
 from website import mails
 from website import settings
@@ -112,6 +112,10 @@ class UserEmailsView(RdmPermissionMixin, GuidView):
     raise_exception = True
 
     def get_context_data(self, **kwargs):
+        if self.request.session.get('from') == 'post':
+            del self.request.session['from']
+        elif 'message' in self.request.session:
+            del self.request.session['message']
         kwargs = super(UserEmailsView, self).get_context_data(**kwargs)
         return kwargs
 
@@ -155,7 +159,15 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
         # Refer to website.profile.views.update_user
         if primary_email:
             primary_email_address = primary_email.strip().lower()
-            if primary_email_address not in [each.strip().lower() for each in user.emails.values_list('address', flat=True)]:
+            user_emails = [each.strip().lower() for each in user.emails.values_list('address', flat=True)]
+            all_emails = [each.strip().lower() for each in Email.objects.values_list('address', flat=True)]
+            unavailable_emails = [each for each in all_emails if each not in user_emails]
+            if primary_email_address in unavailable_emails:
+                request.session['from'] = 'post'
+                request.session['message'] = 'Email "{}" cannot be used'.format(primary_email_address)
+                return redirect(reverse('user-emails:user', kwargs={'guid': user._id}))
+
+            if primary_email_address not in user_emails:
                 # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 # return permission_denied(self.request)
                 user.emails.create(address=primary_email_address.lower().strip())
