@@ -754,13 +754,12 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
         if file_node.get_guid():
-           guid = file_node.get_guid()
+            guid = file_node.get_guid()
         else:
             guid = file_node.get_guid(create=True)
             guid.save()
             file_node.save()
         return redirect(f'{settings.DOMAIN}{guid._id}/')
-
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user

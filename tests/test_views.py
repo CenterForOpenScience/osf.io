@@ -972,40 +972,6 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
-    @mock.patch('website.views.stream_emberapp')
-    def test_retraction_view(self, mock_ember):
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            project = ProjectFactory(creator=self.user1, is_public=True)
-
-            registration = RegistrationFactory(project=project, is_public=True)
-            reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
-            registration.retract_registration(self.user1)
-
-            approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
-            registration.retraction.approve_retraction(self.user1, approval_token)
-            registration.save()
-
-            url = registration.web_url_for('view_project')
-            res = self.app.get(url, auth=self.auth)
-
-            assert_not_in('Mako Runtime Error', res.body.decode())
-            assert_in(registration.title, res.body.decode())
-            assert_equal(res.status_code, 200)
-
-            for route in ['wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
-                res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
-                assert_equal(res.status_code, 302, route)
-                res = res.follow()
-                assert_equal(res.status_code, 200, route)
-                args, kwargs = mock_ember.call_args
-                assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-                assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
-
-            self.app.get(f'/{reg_file.guids.first()._id}/')
-            args, kwargs = mock_ember.call_args
-            assert_equals(kwargs, {})
-            assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
-            assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
 class TestEditableChildrenViews(OsfTestCase):
 
