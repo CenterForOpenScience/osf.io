@@ -73,6 +73,12 @@
                  element.classList.remove("hidden");
                  document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
             }
+            else if (entitlement_input.length >= 255) {
+                 event.preventDefault();
+                 let message = "Entitlement can be max 255 characters";
+                 element.classList.remove("hidden");
+                 document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
+            }
             else {
                 let entitlements = [];
                 let table = document.getElementsByTagName("table")[0];
