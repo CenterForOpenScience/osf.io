@@ -47,6 +47,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
+        kwargs['required'] = False
         kwargs['allow_null'] = True
         kwargs['lookup_field'] = '_id'
         kwargs['lookup_url_kwarg'] = 'user_id'
@@ -345,9 +346,9 @@ class BaseFileSerializer(JSONAPISerializer):
             file.update_tags(set(validated_data.pop('tags', [])), auth=auth)
 
         if 'checkout' in validated_data:
-            user = self.context['request'].user
             if isinstance(file.target, Registration):
                 raise ValidationError('Registration files are static and cannot be checked in or out.')
+            user = self.context['request'].user
             file.check_in_or_out(user, validated_data.pop('checkout'))
 
         # `validated_data` ignores Read-only fields in payload
