@@ -56,7 +56,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
         return
     institution = check_institution_affiliation(orcid_id)
     if institution:
-        logger.info(f'Eligible institution affiliation found for ORCiD SSO user: '
+        logger.info(f'Eligible institution affiliation has been found for ORCiD SSO user: '
                     f'institution=[{institution._id}], user=[{user_id}], orcid_id=[{orcid_id}]')
         if not user.is_affiliated_with_institution(institution):
             user.affiliated_institutions.add(institution)
@@ -91,9 +91,10 @@ def check_institution_affiliation(orcid_id):
         # Check source against all "affiliation-via-orcid" institutions
         for institution in via_orcid_institutions:
             if source == institution.orcid_record_verified_source:
-                logger.debug(f'Institution [{institution.name}]found with matching source [{source}]')
+                logger.debug(f'Institution has been found with matching source: '
+                             f'institution=[{institution._id}], source=[{source}], orcid_id=[{orcid_id}]')
                 return institution
-    logger.debug(f'No institution with matching source has been found for ORCiD ID {orcid_id}')
+    logger.debug(f'No institution with matching source has been found: orcid_id=[{orcid_id}]')
     return None
 
 
@@ -102,7 +103,7 @@ def get_orcid_employment_sources(orcid_id):
     """
     employment_data = orcid_public_api_make_request(ORCID_RECORD_EMPLOYMENT_PATH, orcid_id)
     source_list = []
-    if employment_data:
+    if employment_data is not None:
         affiliation_groups = employment_data.findall('{http://www.orcid.org/ns/activities}affiliation-group')
         for affiliation_group in affiliation_groups:
             employment_summary = affiliation_group.find('{http://www.orcid.org/ns/employment}employment-summary')
@@ -117,7 +118,7 @@ def get_orcid_education_sources(orcid_id):
     """
     education_data = orcid_public_api_make_request(ORCID_RECORD_EDUCATION_PATH, orcid_id)
     source_list = []
-    if education_data:
+    if education_data is not None:
         affiliation_groups = education_data.findall('{http://www.orcid.org/ns/activities}affiliation-group')
         for affiliation_group in affiliation_groups:
             education_summary = affiliation_group.find('{http://www.orcid.org/ns/education}education-summary')
