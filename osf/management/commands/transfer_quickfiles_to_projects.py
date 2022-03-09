@@ -31,10 +31,11 @@ QUICKFILES_DATE = datetime.datetime(2022, 3, 11, tzinfo=pytz.utc)
 
 
 def remove_quickfiles():
+    node_content_type = ContentType.objects.get_for_model(AbstractNode)
     quick_file_annotation = Exists(
         OsfStorageFile.objects.filter(
             target_object_id=OuterRef('id'),
-            target_content_type=ContentType.objects.get_for_model(AbstractNode)
+            target_content_type=node_content_type
         )
     )
     quick_files_nodes = QuickFilesNode.objects.annotate(has_files=quick_file_annotation).filter(has_files=True)
@@ -46,7 +47,7 @@ def remove_quickfiles():
     ).delete()
     logger.info(f'Deleted guids: {_}')
 
-    # generate unique guids prior to record creation to avoid collisions.
+    # generate unique guids prior to record creation to avoid collisions, set object ensures all guids are unique
     guids = set([])
     while len(guids) < target_count:
         guids.add(generate_guid())
@@ -57,7 +58,7 @@ def remove_quickfiles():
         Guid(
             _id=_id,
             object_id=node_id,
-            content_type=ContentType.objects.get_for_model(AbstractNode)
+            content_type=node_content_type,
         ) for _id, node_id in zip(guids, quick_files_nodes.values_list('id', flat=True))
     ]
     Guid.objects.bulk_create(guids)

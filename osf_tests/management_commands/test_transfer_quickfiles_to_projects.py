@@ -40,4 +40,4 @@ class TestTransferQuickfilesToProjects:
 
         quickfiles_node = QuickFilesNode.objects.get_for_user(user_with_quickfiles)
         assert QuickFilesNode.objects.all().get() == quickfiles_node
-        assert quickfiles_node.files.all()
+        assert quickfiles_node.files.exists()

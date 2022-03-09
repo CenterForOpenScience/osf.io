@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 @celery_app.task(name='osf.management.commands.delete_legacy_quickfiles_nodes')
 def delete_quickfiles(batch_size=1000, dry_run=False):
+    """
+    This is a periodic command to sunset our Quickfiles feature and can be safely deleted after
+    Quickfiles are all marked as deleted.
+    """
     with transaction.atomic():
         i = 0
         for i, node in enumerate(QuickFilesNode.objects.all()[:batch_size]):

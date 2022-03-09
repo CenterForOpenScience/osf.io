@@ -45,6 +45,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
         }
 
 
+##### Signal listeners #####
 @receiver(models.signals.m2m_changed, sender=PrivateLink.nodes.through)
 def check_if_private_link_is_to_quickfiles(sender, instance, action, reverse, model, pk_set, **kwargs):
     from osf.models.node import AbstractNode
