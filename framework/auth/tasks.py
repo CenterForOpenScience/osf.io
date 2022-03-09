@@ -1,9 +1,8 @@
 from datetime import datetime
+
 import pytz
 
 from framework.celery_tasks import app as celery_app
-from osf.models import Institution, OSFUser
-from osf.models.institution import IntegrationType
 from website.settings import DATE_LAST_LOGIN_THROTTLE_DELTA, EXTERNAL_IDENTITY_PROFILE
 
 
@@ -36,6 +35,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     """This is an asynchronous task that runs during CONFIRMED ORCiD SSO logins and makes eligible
     institution affiliations.
     """
+    from osf.models import OSFUser
     user = OSFUser.load(user_id)
     if not user or not verify_user_orcid_id(user, orcid_id):
         # This should not happen as long as this task is called at the right place at the right time.
@@ -62,6 +62,8 @@ def check_institution_affiliation(orcid_id):
           affiliation is found, which improves performance). In the future, if we have multiple
           institutions using this feature, we can update the loop easily.
     """
+    from osf.models import Institution
+    from osf.models.institution import IntegrationType
     employment_records = get_orcid_employment_records(orcid_id)
     education_records = get_orcid_education_records(orcid_id)
     via_orcid_institutions = Institution.objects.filter(
