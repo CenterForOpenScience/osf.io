@@ -89,27 +89,3 @@ class BanSpamByRegex(ManagementCommandPermissionView):
         spam_ban_count = manage_spammy_content(regex, days, models, ban=True)
         messages.success(request, f'{spam_ban_count} users have been banned')
         return redirect(reverse('management:commands'))
-
-
-class MigrateQuickfiles(ManagementCommandPermissionView):
-
-    def post(self, request, *args, **kwargs):
-        action = request.POST.get('action')
-        if action == 'run':
-            remove_quickfiles()
-            messages.success(request, 'quickfiles removed')
-
-        if action == 'reverse':
-            reverse_remove_quickfiles()
-            messages.success(request, 'quickfiles restored')
-
-        return redirect(reverse('management:commands'))
-
-
-class ReindexQuickfiles(ManagementCommandPermissionView):
-
-    def post(self, request, *args, **kwargs):
-        reindex_quickfiles(dry_run=False)
-        messages.success(request, 'quickfiles reindexed')
-
-        return redirect(reverse('management:commands'))
