@@ -1,9 +1,20 @@
 from datetime import datetime
+import logging
 
 import pytz
+import requests
 
+from lxml import etree
+
+from framework import sentry
 from framework.celery_tasks import app as celery_app
-from website.settings import DATE_LAST_LOGIN_THROTTLE_DELTA, EXTERNAL_IDENTITY_PROFILE
+from website.settings import (DATE_LAST_LOGIN_THROTTLE_DELTA, EXTERNAL_IDENTITY_PROFILE,
+                              ORCID_PUBLIC_API_V3_URL, ORCID_PUBLIC_API_ACCESS_TOKEN,
+                              ORCID_PUBLIC_API_REQUEST_TIMEOUT, ORCID_RECORD_ACCEPT_TYPE,
+                              ORCID_RECORD_EDUCATION_PATH, ORCID_RECORD_EMPLOYMENT_PATH)
+
+
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task()
@@ -39,12 +50,17 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     user = OSFUser.load(user_id)
     if not user or not verify_user_orcid_id(user, orcid_id):
         # This should not happen as long as this task is called at the right place at the right time.
-        # TODO: Log errors, raise exceptions and inform Sentry
+        error_message = f'Invalid ORCiD ID [{orcid_id}] for [{user_id}]' if user else f'User [{user_id}] Not Found'
+        logger.error(error_message)
+        sentry.log_message(error_message)
         return
     institution = check_institution_affiliation(orcid_id)
-    if institution and not user.is_affiliated_with_institution(institution):
-        user.affiliated_institutions.add(institution)
-        user.save()
+    if institution:
+        logger.info(f'Eligible institution affiliation found for ORCiD SSO user: '
+                    f'institution=[{institution._id}], user=[{user_id}], orcid_id=[{orcid_id}]')
+        if not user.is_affiliated_with_institution(institution):
+            user.affiliated_institutions.add(institution)
+            user.save()
 
 
 def verify_user_orcid_id(user, orcid_id):
@@ -64,33 +80,80 @@ def check_institution_affiliation(orcid_id):
     """
     from osf.models import Institution
     from osf.models.institution import IntegrationType
-    employment_records = get_orcid_employment_records(orcid_id)
-    education_records = get_orcid_education_records(orcid_id)
+    employment_source_list = get_orcid_employment_sources(orcid_id)
+    education_source_list = get_orcid_education_sources(orcid_id)
     via_orcid_institutions = Institution.objects.filter(
         delegation_protocol=IntegrationType.AFFILIATION_VIA_ORCID.value,
         is_deleted=False
     )
     # Check both employment and education records
-    for record in employment_records + education_records:
-        source = record.get('source')
-        if not source:
-            continue
-        # check source against all "affiliation-via-orcid" institutions
+    for source in employment_source_list + education_source_list:
+        # Check source against all "affiliation-via-orcid" institutions
         for institution in via_orcid_institutions:
             if source == institution.orcid_record_verified_source:
+                logger.debug(f'Institution [{institution.name}]found with matching source [{source}]')
                 return institution
+    logger.debug(f'No institution with matching source has been found for ORCiD ID {orcid_id}')
     return None
 
 
-def get_orcid_employment_records(orcid_id):
+def get_orcid_employment_sources(orcid_id):
     """Retrieve employment records for the given ORCiD ID.
     """
-    # TODO: this will be implemented in ENG-3621
-    return []
+    employment_data = orcid_public_api_make_request(ORCID_RECORD_EMPLOYMENT_PATH, orcid_id)
+    source_list = []
+    if employment_data:
+        affiliation_groups = employment_data.findall('{http://www.orcid.org/ns/activities}affiliation-group')
+        for affiliation_group in affiliation_groups:
+            employment_summary = affiliation_group.find('{http://www.orcid.org/ns/employment}employment-summary')
+            source = employment_summary.find('{http://www.orcid.org/ns/common}source')
+            source_name = source.find('{http://www.orcid.org/ns/common}source-name')
+            source_list.append(source_name.text)
+    return source_list
 
 
-def get_orcid_education_records(orcid_id):
+def get_orcid_education_sources(orcid_id):
     """Retrieve education records for the given ORCiD ID.
     """
-    # TODO: this will be implemented in ENG-3621
-    return []
+    education_data = orcid_public_api_make_request(ORCID_RECORD_EDUCATION_PATH, orcid_id)
+    source_list = []
+    if education_data:
+        affiliation_groups = education_data.findall('{http://www.orcid.org/ns/activities}affiliation-group')
+        for affiliation_group in affiliation_groups:
+            education_summary = affiliation_group.find('{http://www.orcid.org/ns/education}education-summary')
+            source = education_summary.find('{http://www.orcid.org/ns/common}source')
+            source_name = source.find('{http://www.orcid.org/ns/common}source-name')
+            source_list.append(source_name.text)
+    return source_list
+
+
+def orcid_public_api_make_request(path, orcid_id):
+    """Make the ORCiD public API request and returned a deserialized response.
+    """
+    request_url = ORCID_PUBLIC_API_V3_URL + orcid_id + path
+    headers = {
+        'Accept': ORCID_RECORD_ACCEPT_TYPE,
+        'Authorization': f'Bearer {ORCID_PUBLIC_API_ACCESS_TOKEN}',
+    }
+    try:
+        response = requests.get(request_url, headers=headers, timeout=ORCID_PUBLIC_API_REQUEST_TIMEOUT)
+    except Exception:
+        error_message = f'ORCiD public API request has encountered an exception: url=[{request_url}]'
+        logger.error(error_message)
+        sentry.log_message(error_message)
+        sentry.log_exception()
+        return None
+    if response.status_code != 200:
+        error_message = f'ORCiD public API request has failed: url=[{request_url}], status=[{response.status_code}]'
+        logger.error(error_message)
+        sentry.log_message(error_message)
+        return None
+    try:
+        xml_data = etree.XML(response.content)
+    except Exception:
+        error_message = 'Fail to read and parse ORCiD record response as XML'
+        logger.error(error_message)
+        sentry.log_message(error_message)
+        sentry.log_exception()
+        return None
+    return xml_data
