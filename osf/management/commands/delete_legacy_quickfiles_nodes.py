@@ -2,7 +2,7 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 from django.core.management.base import BaseCommand
-from framework.celery_tasks import app as celery_app
+from framework.celery_tasks import app as celery_app, utils
 
 from osf.models import QuickFilesNode, Node
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def delete_quickfiles(batch_size=1000, dry_run=False):
             raise RuntimeError('dry run rolling back changes')
 
     if not QuickFilesNode.objects.exists():
-        logger.info('Clean-up complete, none more QuickFilesNode delete this task.')
+        utils.log_to_sentry('Clean-up complete, none more QuickFilesNode delete this task.')
 
 
 class Command(BaseCommand):
