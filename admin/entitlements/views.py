@@ -88,7 +88,7 @@ class ToggleInstitutionEntitlement(PermissionRequiredMixin, View):
         entitlement.save()
 
         base_url = reverse('institutions:entitlements')
-        query_string = urlencode({'institution_id': self.kwargs['institution_id']})
+        query_string = urlencode({'institution_id': self.kwargs['institution_id'], 'page': request.GET.get('page', 1)})
         return redirect('{}?{}'.format(base_url, query_string))
 
 
@@ -101,5 +101,5 @@ class DeleteInstitutionEntitlement(PermissionRequiredMixin, View):
         entitlement.delete()
 
         base_url = reverse('institutions:entitlements')
-        query_string = urlencode({'institution_id': self.kwargs['institution_id']})
+        query_string = urlencode({'institution_id': self.kwargs['institution_id'], 'page': request.GET.get('page', 1)})
         return redirect('{}?{}'.format(base_url, query_string))

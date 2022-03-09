@@ -13,10 +13,20 @@
 {% endblock title %}
 
 {% block content %}
-    <div id="error_message" class="row hidden"></div>
     <h2>{% trans "Entitlements" %}</h2>
 
-    <form onsubmit="check_entitlement(event)" action="{% url "entitlements:bulk_add" %}" method="post" class="form-horizontal" id="entitlements_form">
+    <div class="row">
+        <div id="error_message" class="col-md-12">
+            {% if request.session.message %}
+                <div class="alert alert-danger">
+                    {{ request.session.message }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <form action="{% url "entitlements:bulk_add" %}" method="post" class="form-horizontal"
+          onsubmit="check_entitlements(event)"
+          id="entitlements_form">
         {% csrf_token %}
         <div class="form-group">
             <label for="institution_id" class="col-sm-2 control-label">Institution</label>
@@ -28,19 +38,21 @@
                 </select>
             </div>
         </div>
+
         <div class="form-group">
             <label for="entitlements" class="col-sm-2 control-label">Entitlements</label>
-            <div class="form-inline col-sm-4" id="entitlements_block">
+            <div class="form-inline col-sm-4" id="entitlements_block" style="max-height: 132px; overflow: auto;">
                 <div class="clearfix" style="margin-bottom: 15px;">
                     <div class="input-group">
                         <input type="text" name="entitlements" placeholder="Enter new entitlement"
+                               minlength="1" maxlength="255"
                                class="form-control">
                     </div>
                     <div class="input-group form-check">
                         <input type="checkbox" name="login_availability" checked="checked" value="on"
                                onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
                                data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked">
-                        <label class="form-check-label" for="login_availability">login availability</label>
+                        <label class="form-check-label" for="login_availability" style="padding-left: 15px;">login availability</label>
                     </div>
                 </div>
             </div>
@@ -52,51 +64,6 @@
             </div>
         </div>
     </form>
-    <script type="application/javascript">
-        document.getElementById("institution_id").addEventListener("change", function change_institution() {
-            window.location = window.location.origin + "{% url 'institutions:entitlements' %}" + '?institution_id=' + document.getElementById("institution_id").value;
-        });
-
-        function new_entitlement_element() {
-            let entitlements_html = `<div class="clearfix" style="margin-bottom: 15px;"> <div class="input-group"> <input type="text" name="entitlements" placeholder="Enter new entitlement" class="form-control"> </div>
-            <div class="input-group form-check"> <input type="checkbox" name="login_availability" checked="checked" value="on"
-            onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}" data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked"> <label class="form-check-label" for="login_availability">login availability</label> </div> </div>`;
-            document.getElementById("entitlements_block").append(new DOMParser().parseFromString(entitlements_html, 'text/html').body.childNodes[0])
-        }
-
-       function check_entitlement(event){
-            let element = document.getElementById("error_message");
-            let entitlement_input = document.getElementsByName("entitlements")[0].value;
-            if (entitlement_input.length === 0 || entitlement_input.trim() === ""){
-                 event.preventDefault();
-                 let message = "Entitlement is not empty";
-                 element.classList.remove("hidden");
-                 document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
-            }
-            else if (entitlement_input.length >= 255) {
-                 event.preventDefault();
-                 let message = "Entitlement can be max 255 characters";
-                 element.classList.remove("hidden");
-                 document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
-            }
-            else {
-                let entitlements = [];
-                let table = document.getElementsByTagName("table")[0];
-                let rows = table.rows;
-                for (let i = 0; i < rows.length; i++) {
-                    let cellValue = rows[i].cells[0].firstChild.nodeValue;
-                    entitlements.push(cellValue.trim());
-                }
-                if (entitlements.includes(entitlement_input.trim())) {
-                    event.preventDefault();
-                    let message = "Entitlement already exists";
-                    element.classList.remove("hidden");
-                    document.getElementById("error_message").innerHTML = "<ul><li>" + message + "</li></ul>";
-                }
-            }
-        }
-    </script>
-
     {% include "entitlements/pagination.html" with institution_id=selected_id items=page status=status %}
 
     <table class="table table-striped table-hover table-responsive">
@@ -104,22 +71,22 @@
         <tbody>
         {% for entitlement in entitlements %}
             <tr>
-                <td>{{ entitlement.entitlement }}</td>
+                <td class="entitlement current">{{ entitlement.entitlement }}</td>
                 <td>
                     <input type="checkbox"
                            {% if entitlement.login_availability %}checked="checked"{% endif %}
                            value="{% if entitlement.login_availability %}on{% else %}off{% endif %}"
-                            class="btn apple-switch {% if entitlement.login_availability %}checked{% endif %}"
+                           class="btn apple-switch {% if entitlement.login_availability %}checked{% endif %}"
                            onchange="{$('#toggle_entitlement_{{ entitlement.id }}').submit()}"
                            data-toggle="toggle" data-onstyle="success">
-                    <form id="toggle_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_toggle' selected_id entitlement.id %}">{% csrf_token %}</form>
+                    <form id="toggle_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_toggle' selected_id entitlement.id %}?page={{ request.GET.page }}">{% csrf_token %}</form>
                 </td>
                 <td>
                     <a class="btn btn-primary"
                        onclick="{$('#delete_entitlement_{{ entitlement.id }}').submit()}">
                         Delete
                     </a>
-                    <form id="delete_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_delete' selected_id entitlement.id %}">{% csrf_token %}</form>
+                    <form id="delete_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_delete' selected_id entitlement.id %}?page={{ request.GET.page }}">{% csrf_token %}</form>
                 </td>
             </tr>
         {% endfor %}
@@ -131,4 +98,46 @@
 {% block bottom_js %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+    <script type="application/javascript">
+        document.getElementById("institution_id").addEventListener("change", function change_institution() {
+            window.location = window.location.origin + "{% url 'institutions:entitlements' %}" + '?institution_id=' + document.getElementById("institution_id").value;
+        });
+
+        function new_entitlement_element() {
+            let entitlements_html = `<div class="clearfix" style="margin-bottom: 15px;"> <div class="input-group">
+            <input type="text" name="entitlements" placeholder="Enter new entitlement" minlength="1" maxlength="255" class="form-control"> </div>
+            <div class="input-group form-check"> <input type="checkbox" name="login_availability" checked="checked" value="on"
+            onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
+            data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked"> <label class="form-check-label" for="login_availability"
+            style="padding-left: 15px;">login availability</label> </div> </div>`;
+            document.getElementById("entitlements_block").append(new DOMParser().parseFromString(entitlements_html, 'text/html').body.childNodes[0])
+        }
+
+        function check_entitlements(event) {
+            $(".alert").remove();
+            let message = undefined;
+            let current_entitlements = [];
+            $(".entitlement.current").each(function (index, element) {
+                current_entitlements.push($(element).text());
+            });
+            for (let i = 0; i < $("[name='entitlements']").length; i++) {
+                let entitlement = $($("[name='entitlements']")[i]);
+                let entitlement_input = entitlement.val().trim();
+                if (!entitlement_input.length) {
+                    message = "Entitlement must be not empty";
+                    entitlement.val('').focus();
+                    break;
+                } else if (current_entitlements.includes(entitlement_input)) {
+                    message = "Entitlement '" + entitlement_input + "' already exists";
+                    entitlement.val('').focus();
+                    break;
+                }
+            }
+            let alert_html = !!message ? ("<div class='alert alert-danger'>" + message + "</div>") : undefined;
+            if (!!alert_html) {
+                event.preventDefault();
+                $("#error_message").append(new DOMParser().parseFromString(alert_html, 'text/html').body.childNodes[0]);
+            }
+        }
+    </script>
 {% endblock %}
