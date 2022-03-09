@@ -19,7 +19,6 @@ from framework.auth.exceptions import DuplicateEmailError, ExpiredTokenError, In
 from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
-from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
@@ -674,6 +673,7 @@ def external_login_confirm_email_get(auth, uid, token):
         )
 
     # Send to celery the following async task to affiliate the user with eligible institutions if verified
+    from framework.auth.tasks import update_affiliation_for_orcid_sso_users
     enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
     # redirect to CAS and authenticate the user with the verification key
