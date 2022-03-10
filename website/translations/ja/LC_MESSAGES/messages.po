@@ -1922,7 +1922,10 @@ msgstr "IdPプロフィールから読込み"
 
 #: website/templates/include/profile/jobs.mako:35
 msgid "Institution / Employer"
-msgstr "機関 / 雇用者"
+msgstr "機関/雇用者"
+
+msgid "Institution / Employer (English)"
+msgstr "機関/雇用者（英語）"
 
 #: website/templates/include/profile/jobs.mako:37
 #: website/templates/include/profile/schools.mako:37
@@ -1935,7 +1938,10 @@ msgstr "必須"
 
 #: website/templates/include/profile/jobs.mako:44
 msgid "Department / Institute"
-msgstr "部門 / 研究所"
+msgstr "部局/部門"
+
+msgid "Department / Institute (English)"
+msgstr "部局/部門（英語）"
 
 #: website/templates/include/profile/jobs.mako:49
 msgid "Job title"
@@ -2070,11 +2076,17 @@ msgstr "引用形式"
 
 #: website/templates/include/profile/schools.mako:35
 msgid "Institution"
-msgstr "機関"
+msgstr "所属"
+
+msgid "Institution (English)"
+msgstr "所属（英語）"
 
 #: website/templates/include/profile/schools.mako:44
 msgid "Department"
-msgstr "部門"
+msgstr "部局"
+
+msgid "Department (English)"
+msgstr "部局（英語）"
 
 #: website/templates/include/profile/schools.mako:49
 msgid "Degree"
@@ -3928,3 +3940,30 @@ msgstr "メンバー管理"
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+msgid "Display name"
+msgstr "表示名"
+
+msgid "Family name"
+msgstr "姓"
+
+msgid "Middle name(s)"
+msgstr "ミドルネーム、旧姓等"
+
+msgid "Given name"
+msgstr "名前"
+
+msgid "Given name (EN)"
+msgstr "名前（英語）"
+
+msgid "Middle name(s) (EN)"
+msgstr "ミドルネーム、旧姓等（英語）"
+
+msgid "Family name (EN)"
+msgstr "姓（英語）"
+
+msgid "e-Rad number"
+msgstr "e-Rad 番号"
+
+msgid "Your e-Rad number"
+msgstr "あなたのe-Rad番号"

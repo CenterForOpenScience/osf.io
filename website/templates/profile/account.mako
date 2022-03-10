@@ -18,7 +18,7 @@
                     <div class="panel-body">
                         <form role="form" data-bind="submit: submit">
                             <div class="form-group">
-                                <label>${_("Full name (e.g. Rosalind Elsie Franklin)")} <span style="color: red">*</span></label>
+                                <label>${_("Display name")} <span style="color: red">*</span></label>
                                 ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
                                 <input class="form-control" data-bind="value: full" maxlength="186"/>
                                 <div data-bind="visible: showMessages, css:'text-danger'">
@@ -70,7 +70,7 @@
 
                             <div class="form-row row">
                                 <div class="form-group col-md-6">
-                                    <label>${_("Institution / Employer")} <span style="color: red">*</span></label>
+                                    <label>${_("Institution")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution_ja"
                                         placeholder="${_('Required')}"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
@@ -78,14 +78,14 @@
                                     </div>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label>${_("Department / Institute")}</label>
+                                    <label>${_("Department")}</label>
                                     <input class="form-control" data-bind="value: department_ja" />
                                 </div>
                             </div>
 
                             <div class="form-row row">
                                 <div class="form-group col-md-6">
-                                    <label>${_("Institution / Employer (English)")} <span style="color: red">*</span></label>
+                                    <label>${_("Institution (English)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution"
                                            placeholder="${_('Required')}"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
@@ -93,7 +93,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label>${_("Department / Institute (English)")}</label>
+                                    <label>${_("Department (English)")}</label>
                                     <input class="form-control" data-bind="value: department" />
                                 </div>
                             </div>

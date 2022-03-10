@@ -1863,6 +1863,9 @@ msgstr ""
 msgid "Institution / Employer"
 msgstr ""
 
+msgid "Institution / Employer (English)"
+msgstr ""
+
 #: website/templates/include/profile/jobs.mako:37
 #: website/templates/include/profile/schools.mako:37
 #: website/templates/profile/oauth_app_detail.mako:55
@@ -1874,6 +1877,9 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:44
 msgid "Department / Institute"
+msgstr ""
+
+msgid "Department / Institute (English)"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:49
@@ -2007,8 +2013,14 @@ msgstr ""
 msgid "Institution"
 msgstr ""
 
+msgid "Institution (English)"
+msgstr ""
+
 #: website/templates/include/profile/schools.mako:44
 msgid "Department"
+msgstr ""
+
+msgid "Department (English)"
 msgstr ""
 
 #: website/templates/include/profile/schools.mako:49
@@ -3817,3 +3829,30 @@ msgstr ""
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr ""
+
+msgid "Display name"
+msgstr ""
+
+msgid "Family name"
+msgstr ""
+
+msgid "Middle name(s)"
+msgstr ""
+
+msgid "Given name"
+msgstr ""
+
+msgid "Given name (EN)"
+msgstr ""
+
+msgid "Middle name(s) (EN)"
+msgstr ""
+
+msgid "Family name (EN)"
+msgstr ""
+
+msgid "e-Rad number"
+msgstr ""
+
+msgid "Your e-Rad number"
+msgstr ""
