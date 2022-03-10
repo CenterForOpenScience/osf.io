@@ -4,6 +4,7 @@ import json
 import logging
 from operator import itemgetter
 
+from django.db import connection
 from django.http import Http404
 from django.core import serializers
 from django.shortcuts import redirect
@@ -351,7 +352,8 @@ class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         institution_id = self.kwargs['institution_id']
-        max_quota = self.request.POST.get('maxQuota')
+        min_value, max_value = connection.ops.integer_field_range('IntegerField')
+        max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
         for user in OSFUser.objects.filter(
                 affiliated_institutions=institution_id):
             UserQuota.objects.update_or_create(
