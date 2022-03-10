@@ -8,18 +8,32 @@
     </div>
 </div>
 
-<form class="form-inline" action="{% url 'institutions:institution_user_list' institution_id %}" method="get">
+<form class="form-inline" action="{% url 'institutions:institution_user_list' institution_id %}" method="get"
+      onsubmit="return validateForm()">
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">GUID</label>
-        <input name="guid" type="text" class="form-control" placeholder="GUID" value="">
+        <input name="guid" type="text" class="form-control" placeholder="GUID" value=""
+               maxlength="5" minlength="5"
+               pattern="[0-9a-z]{5}"
+               title="Please enter only contain alphanumeric in lowercase"
+               id="id_guid">
     </div>
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">Email</label>
-        <input name="email" type="email" class="form-control" oninvalid="this.setCustomValidity('Please enter an valid email')" oninput="setCustomValidity('')" placeholder="Email" value="">
+        <input name="email" type="email" class="form-control"
+               placeholder="Email" value=""
+               oninvalid="this.setCustomValidity('Please enter an valid email')"
+               oninput="setCustomValidity('')"
+               maxlength="255" minlength="6"
+               pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+               title="Please enter an email address."
+               id="id_email">
     </div>
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">Info</label>
-        <input name="info" type="text" class="form-control" placeholder="keyword" value="">
+        <input name="info" type="text" class="form-control" placeholder="keyword" value=""
+               maxlength="255"
+               id="id_name">
     </div>
     <div class="form-group">
         <button class="btn btn-primary" type="submit">Search</button>
@@ -84,3 +98,19 @@
 </table>
 
 <script src="/static/js/carets.js"></script>
+<script>
+    function validateForm() {
+        let $id_guid = $('#id_guid');
+        let $id_email = $('#id_email');
+        let $id_name = $('#id_name');
+        let id_guid = $id_guid.val().trim();
+        let id_email = $id_email.val().trim();
+        let id_name = $id_name.val().trim();
+        console.log(!id_guid, !id_email, !id_name);
+        !id_guid && $id_guid.val('').focus();
+        !id_email && $id_email.val('').focus();
+        !id_name && $id_name.val('').focus();
+
+        return !!id_guid || (!!id_name && id_name.length <= 255) || !!id_email;
+    }
+</script>

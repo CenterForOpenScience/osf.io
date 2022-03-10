@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 from operator import itemgetter
 
+from django.db.models import Q
 from django.http import Http404
 from django.core import serializers
 from django.shortcuts import redirect
@@ -19,7 +20,7 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
-from osf.models import Institution, Node, OSFUser, UserQuota
+from osf.models import Institution, Node, OSFUser, UserQuota, Email
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
@@ -358,24 +359,31 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     paginate_by = 10
 
     def get_userlist(self):
-        user_list = []
         guid = self.request.GET.get('guid')
         name = self.request.GET.get('info')
         email = self.request.GET.get('email')
         queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
 
-        query = queryset
-        if email or guid or name:
-            query = queryset.filter(username=email)
-            if len(query) == 0:
-                if guid or name:
-                    query = queryset.filter(guids___id=guid)
-                    if len(query) == 0:
-                        query = queryset.filter(fullname__icontains=name)
-
-        for user in query:
-            user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
-        return user_list
+        if email:
+            existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
+            query = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
+            if query.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
+        if guid:
+            query = queryset.filter(guids___id=guid)
+            if query.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
+        if name:
+            query = queryset.filter(Q(fullname__icontains=name) |
+                                    Q(given_name__icontains=name) |
+                                    Q(middle_names__icontains=name) |
+                                    Q(family_name__icontains=name) |
+                                    Q(family_name_ja__icontains=name) |
+                                    Q(given_name_ja__icontains=name) |
+                                    Q(middle_names_ja__icontains=name))
+            if query.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
+        return []
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
