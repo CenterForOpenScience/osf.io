@@ -284,6 +284,10 @@ def find_selected_files(schema, metadata):
     """
     targets = []
     paths = [('', p) for p in schema.schema['pages']]
+    file_block_qids = rs.schema_blocks.filter(
+        block_type='file-input'
+    ).values_list('registration_response_key', flat=True)
+
     while len(paths):
         prefix, path = paths.pop(0)
         if path.get('questions'):
@@ -316,23 +320,53 @@ def deep_get(obj, path):
         item = item[key]
     return item
 
+
+def _identify_attached_files(registration):
+    '''Extract the sha256 hashes for all file responses on the registration and map them to their response location.'''
+    file_input_qids = dst.registration_schema.schema_blocks.filter(
+        block_type='file-input'
+    ).values_list(
+        'registration_response_key',
+        flat=True
+    )
+
+    file_responses = {qid: registration.registration_responses[qid] for qid in file_input_qids}
+    file_hashes_to_responses = {}
+    for qid, response in file_responses.items():
+        for index, file_info in enumerate(response):
+            file_hashes_to_responses[file_info['hashes']['sha256']] = (qid, index)
+
+
+def _get_updated_file_references(registration, file_response):
+    '''Loop through archived files to get the updated references for the registration responses.'''
+    for archived_file in registration.files:
+        file_sha = archived_file.last_known_metadata['hashes']['sha256']
+        return {
+            'file_id': archived_file._id,
+            'file_name': archived_file.name,
+            'file_urls': {},
+            'file_hashes': {'sha256': sha}
+        }
+
+    raise ArchivedFileNotFound()
+
+
 def migrate_file_metadata(dst, schema):
-    metadata = dst.registered_meta[schema._id]
+    file_input_qids = dst.registration_schema.schema_blocks.filter(
+        block_type='file-input'
+    ).values_list(
+        'registration_response_key',
+        flat=True
+    )
+
+    responses_by_hash = dst.registration_responses
     missing_files = []
-    selected_files = find_selected_files(schema, metadata)
-
-    for path, selected in selected_files.items():
-        target = deep_get(metadata, path)
-
-        for archived_file_info, node_id, index in find_registration_files(selected, dst):
-            if not archived_file_info:
-                missing_files.append({
-                    'file_name': selected['extra'][index]['selectedFileName'],
-                    'question_title': get_title_for_question(schema.schema, path)
-                })
-                continue
-            archived_file_id = archived_file_info['path'].lstrip('/')
-            target['extra'][index]['viewUrl'] = VIEW_FILE_URL_TEMPLATE.format(node_id=node_id, file_id=archived_file_id)
+    for qid in file_input_qids:
+        for index, file_data in enumerate(responses[qid]):
+            try:
+                responses[qid][index] = _get_updated_file_reference(dst, file_data)
+            except ArchivedFileNotFound:
+                missing_files.append(file_data['file_name'])
 
     if missing_files:
         from website.archiver.tasks import ArchivedFileNotFound
