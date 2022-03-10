@@ -2,7 +2,11 @@ from __future__ import unicode_literals
 
 import logging
 
-from osf.models.node import AbstractNode, AbstractNodeManager
+from osf.models.node import (
+    AbstractNode,
+    AbstractNodeManager,
+)
+
 from osf.exceptions import NodeStateError
 
 
@@ -27,7 +31,10 @@ class QuickFilesNodeManager(AbstractNodeManager):
         return quickfiles
 
     def get_for_user(self, user):
-        return QuickFilesNode.objects.get(creator=user)
+        try:
+            return QuickFilesNode.objects.get(creator=user)
+        except AbstractNode.DoesNotExist:
+            return None
 
 
 class QuickFilesNode(AbstractNode):

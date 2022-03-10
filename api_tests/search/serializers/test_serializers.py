@@ -14,7 +14,6 @@ SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSearchSerializer:
 
     def test_search_serializer_mixed_model(self):

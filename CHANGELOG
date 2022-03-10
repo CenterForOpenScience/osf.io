@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.02.0 (2022-3-10)
+====================
+- Stop creating Quickfiles for new users
+- Stop surfacing a user's Quickfiles through the API
+- Script for migrating existing Quickfiles to projects
+- Script for deleting unused Quickfiles nodes
+
+
 22.01.0 (2022-2-02)
 ====================
 - Improve Admin App functionality

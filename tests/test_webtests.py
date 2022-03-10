@@ -81,7 +81,6 @@ class TestAnUnregisteredUser(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -396,7 +395,6 @@ class TestPrivateLinkView(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):

@@ -558,7 +558,6 @@ class TestUserEmailDetail:
         confirmed_tokens = [key for key, value in user_one.email_verifications.items() if value['confirmed']]
         assert unconfirmed_token not in confirmed_tokens
 
-    @pytest.mark.enable_quickfiles_creation
     def test_updating_verified_for_merge(self, app, user_one, user_two, payload):
         payload['data']['attributes'] = {'verified': True}
         token = user_one.add_unconfirmed_email(user_two.username)

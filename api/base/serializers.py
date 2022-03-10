@@ -961,6 +961,10 @@ class TargetField(ser.Field):
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id',
         },
+        'registration': {
+            'view': 'registrations:registration-detail',
+            'lookup_kwarg': 'node_id',
+        },
         'preprint': {
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
@@ -988,11 +992,15 @@ class TargetField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get(resource.target.referent._name, None)
+        if hasattr(resource.target, 'referent'):
+            name = resource.target.referent._name
+        else:
+            name = resource.target.__class__.__name__.lower()
+
+        view_info = self.view_map.get(name, None)
         if not view_info:
-            raise api_exceptions.TargetNotSupportedError('{} is not a supported target type'.format(
-                resource.target._name,
-            ))
+            raise api_exceptions.TargetNotSupportedError(f'{name} is not a supported target type')
+
         if not view_info['view']:
             return None, None, None
         embed_value = resource.target._id
