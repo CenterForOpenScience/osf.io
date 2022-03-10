@@ -116,6 +116,7 @@
         function check_entitlements(event) {
             $(".alert").remove();
             let message = undefined;
+            let input_entitlements = [];
             let current_entitlements = [];
             $(".entitlement.current").each(function (index, element) {
                 current_entitlements.push($(element).text());
@@ -131,6 +132,12 @@
                     message = "Entitlement '" + entitlement_input + "' already exists";
                     entitlement.val('').focus();
                     break;
+                } else if (input_entitlements.includes(entitlement_input)) {
+                    message = "Entitlement '" + entitlement_input + "' have been inputed";
+                    entitlement.val('').focus();
+                    break;
+                } else {
+                    input_entitlements.push(entitlement_input);
                 }
             }
             let alert_html = !!message ? ("<div class='alert alert-danger'>" + message + "</div>") : undefined;
