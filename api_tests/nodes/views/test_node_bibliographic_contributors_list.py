@@ -9,7 +9,6 @@ from osf.utils.permissions import READ, WRITE, ADMIN
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeBibliographicContributors:
     @pytest.fixture()
     def admin_contributor_bib(self):
