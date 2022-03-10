@@ -703,6 +703,26 @@ def unserialize_account_info(auth, **kwargs):
         first_job['department'] = (json_data.get('department', '')).strip()
         first_job['institution_ja'] = (json_data.get('institution_ja', '')).strip()
         first_job['department_ja'] = (json_data.get('department_ja', '')).strip()
+    else:
+        contents = [
+            {
+                "institution": (json_data.get('institution', '')).strip(),
+                "department": (json_data.get('department', '')).strip(),
+                "institution_ja": (json_data.get('institution_ja', '')).strip(),
+                "department_ja": (json_data.get('department_ja', '')).strip(),
+                'title': '',
+                'startMonth': None,
+                'startYear': None,
+                'endMonth': None,
+                'endYear': None,
+                'ongoing': False,
+            }
+        ]
+        setattr(
+            user,
+            'jobs',
+            contents
+        )
 
     user.save()
 

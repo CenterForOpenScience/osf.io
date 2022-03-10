@@ -117,7 +117,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="2">${_("Primary Email")}</th>
+                                    <th colspan="2">${_("Primary Email")} <span style="color: red">*</span></th>
                                 </tr>
                             </thead>
                             <tbody>
