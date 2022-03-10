@@ -22,12 +22,10 @@ from framework.routing import proxy_url
 from website import settings
 from website.institutions.views import serialize_institution
 
-from addons.osfstorage.models import Region
+from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features
 from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
-
-from addons.osfstorage.models import OsfStorageFile
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
