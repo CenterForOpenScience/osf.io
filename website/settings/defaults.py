@@ -516,6 +516,7 @@ class CeleryConfig:
         'osf.management.commands.populate_initial_schema_responses',
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.delete_legacy_quickfiles_nodes',
+        'osf.management.commands.fix_quickfiles_waterbulter_logs',
         'api.providers.tasks'
     )
 
@@ -691,6 +692,11 @@ class CeleryConfig:
                 'task': 'osf.management.commands.delete_legacy_quickfiles_nodes',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False, 'batch_size': 10000},
+            },
+            'fix_quickfiles_waterbulter_logs': {
+                'task': 'osf.management.commands.fix_quickfiles_waterbulter_logs',
+                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+                'kwargs': {'dry_run': False, 'batch_size': 100},
             },
         }
 
