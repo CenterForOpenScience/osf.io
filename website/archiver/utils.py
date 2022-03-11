@@ -338,10 +338,12 @@ def _get_file_response_hashes(registration):
     )
 
     file_responses = {qid: registration.registration_responses[qid] for qid in file_input_qids}
-    file_hashes_to_responses = {}
+    file_response_indices_by_hash = {}
     for qid, response in file_responses.items():
         for index, file_info in enumerate(response):
-            file_hashes_to_responses[file_info['hashes']['sha256']] = (qid, index)
+            file_response_indices_by_hash[file_info['hashes']['sha256']] = (qid, index)
+
+    return file_response_indices_by_hash
 
 
 def _get_updated_file_references(registration, file_response_indices_by_hash):
