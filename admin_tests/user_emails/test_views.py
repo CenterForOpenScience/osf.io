@@ -1,6 +1,8 @@
 from datetime import datetime
 import mock
 import pytest
+from django.contrib.sessions.middleware import SessionMiddleware
+
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm
 from admin_tests.utilities import setup_view, setup_form_view
@@ -266,12 +268,20 @@ class TestUserEmailSearchList(AdminTestCase):
         self.assertEqual(response.status_code, 200)
 
 
+def add_session_to_request(request):
+    """Annotate a request object with a session"""
+    middleware = SessionMiddleware()
+    middleware.process_request(request)
+    request.session.save()
+
+
 class TestUserEmailsView(AdminTestCase):
     def setUp(self):
         super(TestUserEmailsView, self).setUp()
         self.user = UserFactory()
         self.user.save()
         self.request = RequestFactory().get('/fake_path')
+        add_session_to_request(self.request)
         self.request.user = self.user
         self.plain_view = views.UserEmailsView
         self.view = views.UserEmailsView()
@@ -286,6 +296,7 @@ class TestUserEmailsView(AdminTestCase):
 
         request = RequestFactory().get(reverse('user-emails:user',
                                                kwargs={'guid': guid}))
+        add_session_to_request(request)
         request.user = user
 
         response = views.UserEmailsView.as_view()(request, guid=guid)
@@ -339,6 +350,7 @@ class TestUserEmailsView(AdminTestCase):
         nt.assert_equal(exc_info.exception.code, 403)
 
     def test_get_context_data(self):
+        self.view.request = self.request
         self.view.object = self.user
         res = self.view.get_context_data()
         nt.assert_is_instance(res, dict)
