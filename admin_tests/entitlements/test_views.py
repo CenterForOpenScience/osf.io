@@ -254,7 +254,7 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         )
 
         base_url = reverse('institutions:entitlements')
-        query_string = urlencode({'institution_id': self.institution.id, 'page': 1)})
+        query_string = urlencode({'institution_id': self.institution.id, 'page': 1})
 
         nt.assert_equal(response.status_code, 302)
         nt.assert_equal(response.url, '{}?{}'.format(base_url, query_string))
