@@ -15,7 +15,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeSparseFieldsList:
 
     @pytest.fixture()
@@ -119,7 +118,6 @@ class TestNodeSparseFieldsList:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestNodeSparseFieldsDetail:
 
     @pytest.fixture()
