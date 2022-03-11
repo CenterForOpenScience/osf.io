@@ -366,24 +366,24 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
 
         if email:
             existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
-            query = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
-            if query.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
+            queryset = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
+            if queryset.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
         if guid:
-            query = queryset.filter(guids___id=guid)
-            if query.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
+            queryset = queryset.filter(guids___id=guid)
+            if queryset.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
         if name:
-            query = queryset.filter(Q(fullname__icontains=name) |
+            queryset = queryset.filter(Q(fullname__icontains=name) |
                                     Q(given_name__icontains=name) |
                                     Q(middle_names__icontains=name) |
                                     Q(family_name__icontains=name) |
                                     Q(family_name_ja__icontains=name) |
                                     Q(given_name_ja__icontains=name) |
                                     Q(middle_names_ja__icontains=name))
-            if query.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query]
-        return []
+            if queryset.exists():
+                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+        return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
