@@ -25,14 +25,20 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
         is_deleted=False,
         creator_id=guid.object_id
     ).values_list('id', flat=True)
-
-    files_ids = OsfStorageFileNode.objects.filter(
-        target_object_id__in=projects_ids,
-        target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-        deleted_on=None,
-        deleted_by_id=None,
-    ).values_list('id', flat=True)
-
+    if storage_type != UserQuota.NII_STORAGE:
+        files_ids = BaseFileNode.objects.filter(
+            target_object_id__in=projects_ids,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            deleted_on=None,
+            deleted_by_id=None,
+        ).values_list('id', flat=True)
+    else:
+        files_ids = OsfStorageFileNode.objects.filter(
+            target_object_id__in=projects_ids,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            deleted_on=None,
+            deleted_by_id=None,
+        ).values_list('id', flat=True)
     db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(
         filesize_sum=Coalesce(Sum('file_size'), 0))
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
