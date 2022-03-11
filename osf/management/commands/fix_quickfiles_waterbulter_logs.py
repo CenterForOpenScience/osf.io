@@ -3,7 +3,7 @@ import logging
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from osf.models import Node, NodeLog
-from framework.celery_tasks import app as celery_app, utils
+from framework.celery_tasks import app as celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,13 @@ def fix_quickfiles_waterbutler_logs(batch_size=100, dry_run=False):
         nodes = Node.objects.filter(
             logs__action=NodeLog.MIGRATED_QUICK_FILES
         ).filter(
-            logs__action__in=['addon_file_renamed', 'osf_storage_file_added']
-        )
-        for node in nodes:
+            logs__action__in=['addon_file_renamed', 'addon_file_moved', 'addon_file_copied', 'osf_storage_file_added', 'file_tag_removed', 'file_tag_added', 'osf_storage_file_removed']
+        )[:batch_size]
+        i = 0
+        for i, node in enumerate(nodes):
+
             for log in node.logs.filter(action__in=['addon_file_renamed', 'addon_file_moved', 'addon_file_copied']):
                 log.params['params_node'].update({'id': node._id})
-
                 url = swap_guid(log.params['source']['url'], node)
                 log.params['destination'].update({'url': url})
 
@@ -58,6 +59,8 @@ def fix_quickfiles_waterbutler_logs(batch_size=100, dry_run=False):
                 log.save()
 
             node.save()
+
+        logger.info(f'{i} Quickfiles logs fixed')
 
         if dry_run:
             raise RuntimeError('Dry run, transaction rolled back')

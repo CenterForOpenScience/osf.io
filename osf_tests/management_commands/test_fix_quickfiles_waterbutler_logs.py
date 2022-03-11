@@ -1,11 +1,8 @@
-import time
-import json
-from framework.auth import signing
 import pytest
 from osf.management.commands.fix_quickfiles_waterbulter_logs import fix_quickfiles_waterbutler_logs
-from osf_tests.factories import ProjectFactory, RegistrationFactory
+from osf_tests.factories import ProjectFactory
 from osf.models import NodeLog
-from webtest_plus import TestApp
+
 
 @pytest.mark.django_db
 class TestFixQuickFilesLogs:
@@ -20,18 +17,18 @@ class TestFixQuickFilesLogs:
             action='osf_storage_file_added',
             node=node,
             params={
-                "contributors": [],
-                "params_node": {
-                    "id": "jpmxy",
-                    "title": "John Tordoff's Quick Files"
+                'contributors': [],
+                'params_node': {
+                    'id': 'jpmxy',
+                    'title': "John Tordoff's Quick Files"
                 },
-                "params_project": None,
-                "path": "/test.json",
-                "pointer": None,
-                "preprint_provider": None,
-                "urls": {
-                    "view": f"/{node._id}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={node._id}",
-                    "download": f"/{node._id}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={node._id}?action=download"
+                'params_project': None,
+                'path': '/test.json',
+                'pointer': None,
+                'preprint_provider': None,
+                'urls': {
+                    'view': f'/{node._id}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={node._id}',
+                    'download': f'/{node._id}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={node._id}?action=download'
                 }
             }
         ).save()
@@ -42,29 +39,29 @@ class TestFixQuickFilesLogs:
             action='addon_file_renamed',
             node=node,
             params={
-                    "contributors": [],
-                    "destination": {
-                        "materialized": "test-JATS1.xml",
-                        "url": "/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/",
-                        "addon": "OSF Storage",
-                        "node_url": "/jpmxy/",
-                        "node_title": "John Tordoff's Quick Files"
-                    },
-                    "params_node": {
-                        "id": "jpmxy",
-                        "title": "John Tordoff's Quick Files"
-                    },
-                    "params_project": None,
-                    "pointer": None,
-                    "preprint_provider": None,
-                    "source": {
-                        "materialized": "test-JATS.xml",
-                        "url": "/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/",
-                        "addon": "OSF Storage",
-                        "node_url": "/jpmxy/",
-                        "node_title": "John Tordoff's Quick Files"
-                    }
+                'contributors': [],
+                'destination': {
+                    'materialized': 'test-JATS1.xml',
+                    'url': '/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/',
+                    'addon': 'OSF Storage',
+                    'node_url': '/jpmxy/',
+                    'node_title': "John Tordoff's Quick Files"
+                },
+                'params_node': {
+                    'id': 'jpmxy',
+                    'title': "John Tordoff's Quick Files"
+                },
+                'params_project': None,
+                'pointer': None,
+                'preprint_provider': None,
+                'source': {
+                    'materialized': 'test-JATS.xml',
+                    'url': '/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/',
+                    'addon': 'OSF Storage',
+                    'node_url': '/jpmxy/',
+                    'node_title': "John Tordoff's Quick Files"
                 }
+            }
         ).save()
 
     def test_fix_quickfiles_waterbutler_logs_files_added(self, node, node_log_files_added):
@@ -76,9 +73,9 @@ class TestFixQuickFilesLogs:
         guid = node.guids.last()._id
 
         assert log.params['urls'] == {
-                    "view": f"/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}",
-                    "download": f"/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}?action=download"
-                }
+            'view': f'/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}',
+            'download': f'/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}?action=download'
+        }
 
     def test_fix_quickfiles_waterbutler_logs_files_renamed(self, node, node_log_files_renamed):
         node.guids.all().delete()
@@ -88,5 +85,5 @@ class TestFixQuickFilesLogs:
         log = node.logs.all().get(action='addon_file_renamed')
         guid = node.guids.last()._id
 
-        assert log.params['source']['url'] == f"/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/"
-        assert log.params['destination']['url'] == f"/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/"
+        assert log.params['source']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/'
+        assert log.params['destination']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/'
