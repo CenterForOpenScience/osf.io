@@ -364,26 +364,33 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
         email = self.request.GET.get('email')
         queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
 
+        if not email and not guid and not name:
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+
+        query_email = query_guid = query_name = None
+
         if email:
             existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
-            queryset = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
-            if queryset.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+            query_email = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
         if guid:
-            queryset = queryset.filter(guids___id=guid)
-            if queryset.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+            query_guid = queryset.filter(guids___id=guid)
         if name:
-            queryset = queryset.filter(Q(fullname__icontains=name) |
-                                    Q(given_name__icontains=name) |
-                                    Q(middle_names__icontains=name) |
-                                    Q(family_name__icontains=name) |
-                                    Q(family_name_ja__icontains=name) |
-                                    Q(given_name_ja__icontains=name) |
-                                    Q(middle_names_ja__icontains=name))
-            if queryset.exists():
-                return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
-        return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+            query_name = queryset.filter(Q(fullname__icontains=name) |
+                                         Q(given_name__icontains=name) |
+                                         Q(middle_names__icontains=name) |
+                                         Q(family_name__icontains=name) |
+                                         Q(family_name_ja__icontains=name) |
+                                         Q(given_name_ja__icontains=name) |
+                                         Q(middle_names_ja__icontains=name))
+
+        if query_email is not None and query_email.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_email]
+        elif query_guid is not None and query_guid.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_guid]
+        elif query_name is not None and query_name.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_name]
+        else:
+            return []
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
