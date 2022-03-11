@@ -16,11 +16,40 @@ class TestSearchUtils(OsfTestCase):
                 'should': [
                     query_body,
                     {
-                        'match_phrase': {
+                        'match': {
                             match_key: {
                                 'query': match_value,
                                 'boost': 10.0
                             }
+                        }
+                    }
+                ]
+            }
+        }
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = util.build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        nt.assert_is_instance(res, dict)
+        nt.assert_equal(res, expectedResult)
+
+    def test_build_query_with_match_key_is_email_and_match_value_valid(self):
+        match_key = 'emails'
+        match_value = 'test@example.com'
+        start = 0
+        size = 10
+        build_query_emails = 'emails:' + match_value
+        query_body = {
+            'bool': {
+                'should': [
+                    {
+                        'query_string': {
+                            'default_operator': 'AND',
+                            'query': build_query_emails
                         }
                     }
                 ]

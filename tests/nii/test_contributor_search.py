@@ -104,7 +104,8 @@ class TestContributorSearch(OsfTestCase):
             email2.address,
             current_user=self.user1
         )
-        assert_equal(contribs['users'][0]['fullname'], self.user2.fullname)
+        assert_equal(set([u['fullname'] for u in contribs['users']]),
+                     set([self.user2.fullname]))
 
 class TestEscape(OsfTestCase):
 
@@ -253,11 +254,40 @@ class TestSearchUtils(OsfTestCase):
                 'should': [
                     query_body,
                     {
-                        'match_phrase': {
+                        'match': {
                             match_key: {
                                 'query': match_value,
                                 'boost': 10.0
                             }
+                        }
+                    }
+                ]
+            }
+        }
+
+        expectedResult = {
+            'query': query_body,
+            'from': start,
+            'size': size,
+        }
+        res = build_query(start=start, size=size,
+                               match_value=match_value, match_key=match_key)
+        assert_is_instance(res, dict)
+        assert_equal(res, expectedResult)
+
+    def test_build_query_with_match_key_is_email_and_match_value_valid(self):
+        match_key = 'emails'
+        match_value = 'test@example.com'
+        start = 0
+        size = 10
+        build_query_emails = 'emails:' + match_value
+        query_body = {
+            'bool': {
+                'should': [
+                    {
+                        'query_string': {
+                            'default_operator': 'AND',
+                            'query': build_query_emails
                         }
                     }
                 ]

@@ -30,21 +30,36 @@ def validate_email(user_email):
 def build_query(qs='*', start=0, size=10, sort=None, match_value=None, match_key=None):
     query_body = build_query_string(qs)
     if isinstance(match_key, str) and match_value is not None:
-        query_body = {
-            'bool': {
-                'should': [
-                    query_body,
-                    {
-                        'match_phrase': {
-                            match_key: {
-                                'query': match_value,
-                                'boost': 10.0
+        if match_key == 'emails':
+            build_query_emails = 'emails:' + match_value
+            query_body = {
+                'bool': {
+                    'should': [
+                        {
+                            'query_string': {
+                                'default_operator': 'AND',
+                                'query': build_query_emails
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
+        else:
+            query_body = {
+                'bool': {
+                    'should': [
+                        query_body,
+                        {
+                            'match': {
+                                match_key: {
+                                    'query': match_value,
+                                    'boost': 10.0
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
     query = {
         'query': query_body,
         'from': start,
