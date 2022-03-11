@@ -29,6 +29,7 @@ from website.archiver.decorators import fail_archive_on_error
 from website import mails
 from website import settings
 from osf.models import RegistrationSchema, Registration
+from osf.utils.migrations import map_schema_to_schemablocks
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -276,14 +277,16 @@ def generate_schema_from_data(data):
         else:
             return {
                 'id': id,
-                'type': 'osf-upload' if prop.get('extra') else 'string'
+                'type': 'osf-upload' if prop.get('extra') else 'string',
+                'format': 'osf-upload-open' if prop.get('extra') else 'text'
             }
 
     def from_question(qid, question):
         if question.get('extra'):
             return {
                 'qid': qid,
-                'type': 'osf-upload'
+                'type': 'osf-upload',
+                'format': 'osf-upload-open'
             }
         elif isinstance(question.get('value'), dict):
             return {
@@ -297,7 +300,8 @@ def generate_schema_from_data(data):
         else:
             return {
                 'qid': qid,
-                'type': 'string'
+                'type': 'string',
+                'format': 'text'
             }
     _schema = {
         'name': 'Test',
@@ -329,7 +333,7 @@ def generate_schema_from_data(data):
         schema = RegistrationSchema.objects.get(name=_schema['name'], schema_version=_schema['version'])
         schema.schema = _schema
         schema.save()
-
+    map_schema_to_schemablocks(schema)
     return schema
 
 def generate_metadata(file_trees, selected_files, node_index):
@@ -587,6 +591,10 @@ class TestArchiverTasks(ArchiverTestCase):
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
+                print(registration.registration_schema.schema)
+                print(registration.registered_meta)
+                print(registration.registration_responses)
+                print(registration.files.all())
                 registration.reload()
                 for key, question in registration.registered_meta[schema._id].items():
                     target = None
@@ -595,6 +603,7 @@ class TestArchiverTasks(ArchiverTestCase):
                     elif 'extra' in question and 'hashes' in question['extra'][0]:
                         target = question
                     if target:
+                        print('target acquired')
                         assert_in(registration._id, target['extra'][0]['viewUrl'])
                         assert_not_in(node._id, target['extra'][0]['viewUrl'])
                         del selected_files[target['extra'][0]['sha256']]
