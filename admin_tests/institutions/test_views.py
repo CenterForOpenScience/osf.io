@@ -740,6 +740,24 @@ class TestUserListByInstitutionID(AdminTestCase):
         nt.assert_in(res[0]['fullname'], self.user.fullname)
         nt.assert_equal(len(res), 1)
 
+    def test_search_not_found(self):
+        request = RequestFactory().get(
+            reverse('institutions:institution_user_list',
+                    kwargs={'institution_id': self.institution.id}),
+            {
+                'email': 'sstest@gmail.com',
+                'guid': 'guid2',
+                'info': 'guid2'
+            }
+        )
+        request.user = self.user
+        view = views.UserListByInstitutionID()
+        view = setup_view(view, request,
+                          institution_id=self.institution.id)
+        res = view.get_userlist()
+
+        nt.assert_equal(len(res), 0)
+
 
 class TestExportFileTSV(AdminTestCase):
     def setUp(self):
