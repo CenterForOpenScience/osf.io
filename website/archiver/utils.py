@@ -1,5 +1,7 @@
 import functools
 
+from collections import defaultdict
+
 from framework.auth import Auth
 
 from website.archiver import (
@@ -16,6 +18,9 @@ from website import (
 )
 from osf.utils.sanitize import unescape_entities
 
+
+FILE_HTML_LINK_TEMPLATE = 'https://staging.osf.io/project/{registration_guid}/files/osfstorage/{file_id}'
+FILE_DOWNLOAD_LINK_TEMPLATE = 'https://staging.osf.io/download/{file_id}'
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     mails.send_mail(
@@ -284,9 +289,6 @@ def find_selected_files(schema, metadata):
     """
     targets = []
     paths = [('', p) for p in schema.schema['pages']]
-    file_block_qids = rs.schema_blocks.filter(
-        block_type='file-input'
-    ).values_list('registration_response_key', flat=True)
 
     while len(paths):
         prefix, path = paths.pop(0)
@@ -321,9 +323,14 @@ def deep_get(obj, path):
     return item
 
 
-def _identify_attached_files(registration):
-    '''Extract the sha256 hashes for all file responses on the registration and map them to their response location.'''
-    file_input_qids = dst.registration_schema.schema_blocks.filter(
+def _get_file_response_hashes(registration):
+    '''Extract the sha256 hashes for all file responses on the registration.
+
+    Returns a dictionary mapping the hashes to a (qid, index) tuple identifying where
+    the file was found in the registration's registration_responses dictionary, i,e,:
+    {hash1: (q1, 0), hash2: (q1, 1), hash3: (q5, 0) . . .}
+    '''
+    file_input_qids = registration.registration_schema.schema_blocks.filter(
         block_type='file-input'
     ).values_list(
         'registration_response_key',
@@ -337,46 +344,63 @@ def _identify_attached_files(registration):
             file_hashes_to_responses[file_info['hashes']['sha256']] = (qid, index)
 
 
-def _get_updated_file_references(registration, file_response):
-    '''Loop through archived files to get the updated references for the registration responses.'''
-    for archived_file in registration.files:
-        file_sha = archived_file.last_known_metadata['hashes']['sha256']
-        return {
-            'file_id': archived_file._id,
-            'file_name': archived_file.name,
-            'file_urls': {},
-            'file_hashes': {'sha256': sha}
-        }
+def _get_updated_file_references(registration, file_response_indices_by_hash):
+    '''Loop through archived files to get the updated references for the registration responses.
 
-    raise ArchivedFileNotFound()
+    Returns a nested dictionary mapping the location of the attached file within the registration's
+    registation_responses to a dictionary containing the new response value.
+    '''
+    updated_file_responses = defaultdict(dict)
+    guid = registration._id
+
+    discovered_files = set()
+    for archived_file in registration.files.all():
+        file_sha = archived_file.last_known_metadata['hashes']['sha256']
+        if file_sha in file_response_indices_by_hash:
+            discovered_files.add(file_sha)
+            qid, index = file_response_indices_by_hash[file_sha]
+            updated_file_responses[qid][index] = {
+                'file_id': archived_file._id,
+                'file_name': archived_file.name,
+                'file_urls': {
+                    'view':
+                        FILE_HTML_LINK_TEMPLATE.format(
+                            registration_guid=guid, file_id=archived_file._id
+                        ),
+                    'download':
+                        FILE_DOWNLOAD_LINK_TEMPLATE.format(file_id=archived_file._id)
+                },
+                'file_hashes': {'sha256': file_sha}
+            }
+
+    missing_file_indices = [
+        response_index for sha, response_index in file_response_indices_by_hash.items()
+        if sha not in discovered_files
+    ]
+    return updated_file_responses, missing_file_indices
 
 
 def migrate_file_metadata(dst, schema):
-    file_input_qids = dst.registration_schema.schema_blocks.filter(
-        block_type='file-input'
-    ).values_list(
-        'registration_response_key',
-        flat=True
+    file_response_indices_by_hash = _get_file_response_hashes(dst)
+    updated_file_responses, missing_file_indices = (
+        _get_updated_file_references(dst, file_response_indices_by_hash)
     )
 
-    responses_by_hash = dst.registration_responses
-    missing_files = []
-    for qid in file_input_qids:
-        for index, file_data in enumerate(responses[qid]):
-            try:
-                responses[qid][index] = _get_updated_file_reference(dst, file_data)
-            except ArchivedFileNotFound:
-                missing_files.append(file_data['file_name'])
-
-    if missing_files:
+    if missing_file_indices:
         from website.archiver.tasks import ArchivedFileNotFound
         raise ArchivedFileNotFound(
             registration=dst,
-            missing_files=missing_files
+            missing_files=[
+                dst.registration_responses[qid][index]['file_name']
+                for qid, index in missing_file_indices
+            ]
         )
 
-    dst.registered_meta[schema._id] = metadata
-    dst.registration_responses = dst.flatten_registration_metadata()
+    for qid in updated_file_responses:
+        for subindex, updated_response in updated_file_responses[qid].items():
+            dst.registration_resposnes[qid][subindex] = updated_response
+
+    dst.registered_meta[schema._id] = dst.expand_registration_responses()
     if dst.root_id == dst.id:  # Also fix the initial SchemaResponse for root registrations
         dst.schema_responses.get()._update_file_references(dst.registration_responses)
 
