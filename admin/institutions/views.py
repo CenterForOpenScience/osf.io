@@ -376,12 +376,12 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
             query_guid = queryset.filter(guids___id=guid)
         if name:
             query_name = queryset.filter(Q(fullname__icontains=name) |
+                                         # Q(family_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(given_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(middle_names_ja__icontains=name) |  # add in (1)4.1.4
                                          Q(given_name__icontains=name) |
                                          Q(middle_names__icontains=name) |
-                                         Q(family_name__icontains=name) |
-                                         Q(family_name_ja__icontains=name) |
-                                         Q(given_name_ja__icontains=name) |
-                                         Q(middle_names_ja__icontains=name))
+                                         Q(family_name__icontains=name))
 
         if query_email is not None and query_email.exists():
             return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_email]
