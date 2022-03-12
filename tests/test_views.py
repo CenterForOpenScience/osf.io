@@ -1655,7 +1655,7 @@ class TestUserProfile(OsfTestCase):
         assert_equal(response_data['institution_ja'], None)
         assert_equal(response_data['department_ja'], None)
 
-    def test_unserialize_account_info_without_jobs(self):
+    def test_unserialize_account_info_initial_jobs(self):
         url = api_url_for('serialize_account_info')
         payload = {
             'full': self.user.fullname,
@@ -1667,10 +1667,16 @@ class TestUserProfile(OsfTestCase):
             'family_ja': self.user.family_name_ja,
             'suffix': self.user.suffix,
             'erad': self.user.erad,
-            'institution': None,
-            'department': None,
-            'institution_ja': None,
-            'department_ja': None,
+            'institution': 'another institution',
+            'institution_ja': 'Another Institution',
+            'department': 'department B',
+            'department_ja': 'Department B',
+            'title': '',
+            'startMonth': None,
+            'startYear': None,
+            'endMonth': None,
+            'endYear': None,
+            'ongoing': False,
         }
 
         self.app.put_json(
@@ -1690,10 +1696,16 @@ class TestUserProfile(OsfTestCase):
         assert_equal(self.user.family_name_ja, payload['family_ja'])
         assert_equal(self.user.suffix, payload['suffix'])
         assert_equal(self.user.erad, payload['erad'])
-        assert_equal(None, payload['institution'])
-        assert_equal(None, payload['department'])
-        assert_equal(None, payload['institution_ja'])
-        assert_equal(None, payload['department_ja'])
+        assert_equal(self.user.jobs[0]['institution'], payload['institution'])
+        assert_equal(self.user.jobs[0]['department'], payload['department'])
+        assert_equal(self.user.jobs[0]['institution_ja'], payload['institution_ja'])
+        assert_equal(self.user.jobs[0]['department_ja'], payload['department_ja'])
+        assert_equal(self.user.jobs[0]['title'], payload['title'])
+        assert_equal(self.user.jobs[0]['startMonth'], payload['startMonth'])
+        assert_equal(self.user.jobs[0]['startYear'], payload['startYear'])
+        assert_equal(self.user.jobs[0]['endMonth'], payload['endMonth'])
+        assert_equal(self.user.jobs[0]['endYear'], payload['endYear'])
+        assert_equal(self.user.jobs[0]['ongoing'], payload['ongoing'])
 
     @mock.patch('osf.models.user.OSFUser.check_spam')
     def test_unserialize_account_info_with_jobs(self, mock_check_spam):
