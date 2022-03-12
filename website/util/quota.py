@@ -135,6 +135,7 @@ def update_used_quota(self, target, user, event_type, payload):
     data = dict(payload.get('metadata')) if payload.get('metadata') else None
     metadata_provider = data.get('provider') if payload.get('metadata') else None
     if metadata_provider in PROVIDERS or metadata_provider == 'osfstorage':
+        file_node= None
         action_payload = dict(payload).get('action')
         try:
             if metadata_provider in PROVIDERS:
@@ -199,6 +200,8 @@ def update_used_quota(self, target, user, event_type, payload):
                     file_node_remove.save()
                     if file_node_remove.type == 'osf.trashedfile':
                         node_removed(target, user, payload, file_node_remove, storage_type)
+            else:
+                node_removed(target, user, payload, file_node, storage_type)
         elif event_type == FileLog.FILE_UPDATED:
             file_modified(target, user, payload, file_node, storage_type)
     else:

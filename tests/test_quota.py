@@ -1134,7 +1134,65 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
+        
+    def test_rename_folder_with_AmazonS3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_base_file_node_orderby = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3folder', provider='s3', _path='/newfoldername',
+                _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3folder', provider='s3', _path='/newfoldername',
+                _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)
 
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_ADDED,
+                    payload={
+                        'destination': {
+                            'provider': 's3',
+                            'path': '/newfoldername',
+                            'kind': 'folder',
+                        },
+                        'source': {
+                            'provider': 's3',
+                            'path': '/prefolderename',
+                            'kind': 'folder',
+                        },
+                    }
+                )
+
+    def test_rename_file_with_AmazonS3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_base_file_node_orderby = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3file', provider='s3', _path='/newfilename',
+                _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3file', provider='s3', _path='/newfilename',
+                _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)
+
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_ADDED,
+                    payload={
+                        'destination': {
+                            'provider': 's3',
+                            'path': '/newfilename',
+                            'kind': 'file',
+                        },
+                        'source': {
+                            'provider': 's3',
+                            'path': '/prefilename',
+                            'kind': 'file',
+                        },
+                    }
+                )
+                
     def test_upload_file_with_Amazon_S3(self):
         UserQuota.objects.create(
             user=self.project_creator,
