@@ -765,7 +765,7 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
-         
+
     def test_rename_folder_with_AmazonS3(self):
         mock_base_file_node = mock.MagicMock()
         mock_base_file_node_orderby = mock.MagicMock()
@@ -823,7 +823,7 @@ class TestSaveUsedQuota(OsfTestCase):
                         },
                     }
                 )
-                
+
     def test_upload_file_with_Amazon_S3(self):
         UserQuota.objects.create(
             user=self.project_creator,

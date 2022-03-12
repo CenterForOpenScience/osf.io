@@ -40,25 +40,6 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
         filesize_sum=Coalesce(Sum('file_size'), 0))
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
 
-
-def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
-    used = used_quota(user._id, storage_type)
-    try:
-        user_quota = UserQuota.objects.get(
-            user=user,
-            storage_type=storage_type,
-        )
-        user_quota.used = used
-        user_quota.save()
-    except UserQuota.DoesNotExist:
-        UserQuota.objects.create(
-            user=user,
-            storage_type=storage_type,
-            max_quota=api_settings.DEFAULT_MAX_QUOTA,
-            used=used,
-        )
-
-
 def abbreviate_size(size):
     size = float(size)
     abbr_dict = {0: 'B', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
@@ -128,7 +109,7 @@ def update_used_quota(self, target, user, event_type, payload):
     data = dict(payload.get('metadata')) if payload.get('metadata') else None
     metadata_provider = data.get('provider') if payload.get('metadata') else None
     if metadata_provider in PROVIDERS or metadata_provider == 'osfstorage':
-        file_node= None
+        file_node = None
         action_payload = dict(payload).get('action')
         try:
             if metadata_provider in PROVIDERS:
