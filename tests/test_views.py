@@ -5019,8 +5019,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)

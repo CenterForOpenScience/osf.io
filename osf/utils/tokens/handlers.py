@@ -11,35 +11,66 @@ from transitions import MachineError
 from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
-    # TODO: Unnecessary and duplicated dictionary.
-    status.push_status_message({
-        'approve': 'Your registration approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
-    }[action], kind='success', trust=False)
+    status.push_status_message(
+        message={
+            'approve': 'Your registration approval has been accepted.',
+            'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
+        }[action],
+        id={
+            'approve': 'registration_approved',
+            'reject': 'registration_rejected'
+        }[action],
+        kind='success',
+        trust=False
+    )
     # Allow decorated view function to return response
     return None
 
 def embargo_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your embargo approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
-    }[action], kind='success', trust=False)
+    status.push_status_message(
+        message={
+            'approve': 'Your embargo approval has been accepted.',
+            'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
+        }[action],
+        id={
+            'approve': 'embargo_approved',
+            'reject': 'embargo_rejected'
+        }[action],
+        kind='success',
+        trust=False
+    )
     # Allow decorated view function to return response
     return None
 
 def embargo_termination_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your approval to make this embargo public has been accepted.',
-        'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
-    }[action], kind='success', trust=False)
+    status.push_status_message(
+        message={
+            'approve': 'Your approval to make this embargo public has been accepted.',
+            'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
+        }[action],
+        id={
+            'approve': 'embargo_termination_approved',
+            'reject': 'embargo_termination_rejected'
+        }[action],
+        kind='success',
+        trust=False
+    )
     # Allow decorated view function to return response
     return None
 
 def retraction_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your withdrawal approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.'
-    }[action], kind='success', trust=False)
+    status.push_status_message(
+        message={
+            'approve': 'Your withdrawal approval has been accepted.',
+            'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.'
+        }[action],
+        id={
+            'approve': 'retraction_approved',
+            'reject': 'retraction_rejected'
+        }[action],
+        kind='success',
+        trust=False
+    )
     # Allow decorated view function to return response
     return None
 
