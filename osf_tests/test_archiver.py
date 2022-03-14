@@ -16,6 +16,9 @@ from nose.tools import *  # noqa: F403
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
+from website import mails
+from website import settings
+
 from website.archiver import (
     ARCHIVER_INITIATED,
 )
@@ -23,12 +26,12 @@ from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
-from osf.models.archive import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
-from website import mails
-from website import settings
-from osf.models import RegistrationSchema, Registration
+from osf.models import Guid, RegistrationSchema, Registration
+from osf.models.archive import ArchiveTarget, ArchiveJob
+from osf.models.base import generate_object_id
+from osf.utils.migrations import map_schema_to_schemablocks
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -49,7 +52,7 @@ for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
 
 sha256_factory = _unique(fake.sha256)
-name_factory = _unique(fake.ean13)
+name_factory = _unique(generate_object_id)
 
 @contextmanager
 def nested(*contexts):
@@ -276,14 +279,16 @@ def generate_schema_from_data(data):
         else:
             return {
                 'id': id,
-                'type': 'osf-upload' if prop.get('extra') else 'string'
+                'type': 'osf-upload' if prop.get('extra') else 'string',
+                'format': 'osf-upload-open' if prop.get('extra') else 'text'
             }
 
     def from_question(qid, question):
         if question.get('extra'):
             return {
                 'qid': qid,
-                'type': 'osf-upload'
+                'type': 'osf-upload',
+                'format': 'osf-upload-open',
             }
         elif isinstance(question.get('value'), dict):
             return {
@@ -297,7 +302,8 @@ def generate_schema_from_data(data):
         else:
             return {
                 'qid': qid,
-                'type': 'string'
+                'type': 'string',
+                'format': 'text'
             }
     _schema = {
         'name': 'Test',
@@ -330,13 +336,14 @@ def generate_schema_from_data(data):
         schema.schema = _schema
         schema.save()
 
+    map_schema_to_schemablocks(schema)
+
     return schema
 
 def generate_metadata(file_trees, selected_files, node_index):
     data = {}
     uploader_types = {
         ('q_' + selected_file['name']): {
-            'value': fake.word(),
             'extra': [{
                 'sha256': sha256,
                 'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -354,7 +361,6 @@ def generate_metadata(file_trees, selected_files, node_index):
         ('q_' + selected_file['name'] + '_obj'): {
             'value': {
                 name_factory(): {
-                    'value': fake.word(),
                     'extra': [{
                         'sha256': sha256,
                         'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -588,19 +594,18 @@ class TestArchiverTasks(ArchiverTestCase):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
                 registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
-                    target = None
-                    if isinstance(question.get('value'), dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
-                    elif 'extra' in question and 'hashes' in question['extra'][0]:
-                        target = question
-                    if target:
-                        assert_in(registration._id, target['extra'][0]['viewUrl'])
-                        assert_not_in(node._id, target['extra'][0]['viewUrl'])
-                        del selected_files[target['extra'][0]['sha256']]
-                    else:
-                        # check non-file questions are unmodified
-                        assert_equal(data[key]['value'], question['value'])
+                for response_block in registration.schema_responses.last().response_blocks.all():
+                    if response_block.block_type != 'file-input':
+                        assert response_block.response == data[response_block.schema_key]['value']
+                        continue
+                    for file_response in response_block.response:
+                        file_sha = file_response['file_hashes']['sha256']
+                        originating_node = Guid.objects.get(_id=node_index[target_shaw]).referent
+                        parent_registration = originating_node.registrations.get()
+                        assert originating_node._id not in file_response['file_urls']['html']
+                        assert parent_registration._id in file_response['file_urls']['html']
+                        del selected_files[file_sha]
+
                 assert_false(selected_files)
 
     def test_archive_success_escaped_file_names(self):

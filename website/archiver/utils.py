@@ -341,7 +341,7 @@ def _get_file_response_hashes(registration):
     file_response_indices_by_hash = {}
     for qid, response in file_responses.items():
         for index, file_info in enumerate(response):
-            file_response_indices_by_hash[file_info['hashes']['sha256']] = (qid, index)
+            file_response_indices_by_hash[file_info['file_hashes']['sha256']] = (qid, index)
 
     return file_response_indices_by_hash
 
@@ -353,24 +353,25 @@ def _get_updated_file_references(registration, file_response_indices_by_hash):
     registation_responses to a dictionary containing the new response value.
     '''
     updated_file_responses = defaultdict(dict)
-    guid = registration._id
 
     discovered_files = set()
-    for archived_file in registration.files.all():
-        file_sha = archived_file.last_known_metadata['hashes']['sha256']
+    for file_sha, file_info, archived_node_id in get_file_map(registration):
         if file_sha in file_response_indices_by_hash:
-            discovered_files.add(file_sha)
+            archived_file_id = file_info['path'].lstrip('/')
             qid, index = file_response_indices_by_hash[file_sha]
+            if file_info['name'] != registration.registration_responses[qid][index]['file_name']:
+                continue   # same hash, different name, something is fishy
+            discovered_files.add(file_sha)
             updated_file_responses[qid][index] = {
-                'file_id': archived_file._id,
-                'file_name': archived_file.name,
+                'file_id': archived_file_id,
+                'file_name': file_info['name'],
                 'file_urls': {
-                    'view':
+                    'html':
                         FILE_HTML_LINK_TEMPLATE.format(
-                            registration_guid=guid, file_id=archived_file._id
+                            registration_guid=archived_node_id, file_id=archived_file_id
                         ),
                     'download':
-                        FILE_DOWNLOAD_LINK_TEMPLATE.format(file_id=archived_file._id)
+                        FILE_DOWNLOAD_LINK_TEMPLATE.format(file_id=archived_file_id)
                 },
                 'file_hashes': {'sha256': file_sha}
             }
@@ -400,7 +401,7 @@ def migrate_file_metadata(dst, schema):
 
     for qid in updated_file_responses:
         for subindex, updated_response in updated_file_responses[qid].items():
-            dst.registration_resposnes[qid][subindex] = updated_response
+            dst.registration_responses[qid][subindex] = updated_response
 
     dst.registered_meta[schema._id] = dst.expand_registration_responses()
     if dst.root_id == dst.id:  # Also fix the initial SchemaResponse for root registrations
