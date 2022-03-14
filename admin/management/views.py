@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from osf.management.commands.manage_switch_flags import manage_waffle
+from osf.management.commands.fix_quickfiles_waterbulter_logs import fix_quickfiles_waterbutler_logs
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from scripts.find_spammy_content import manage_spammy_content
 from django.core.urlresolvers import reverse
@@ -86,4 +87,12 @@ class BanSpamByRegex(ManagementCommandPermissionView):
             return redirect(reverse('management:commands'))
         spam_ban_count = manage_spammy_content(regex, days, models, ban=True)
         messages.success(request, f'{spam_ban_count} users have been banned')
+        return redirect(reverse('management:commands'))
+
+
+class MigrateQuickfiles(ManagementCommandPermissionView):
+
+    def post(self, request, *args, **kwargs):
+        fix_quickfiles_waterbutler_logs()
+        messages.success(request, 'quickfiles fix started')
         return redirect(reverse('management:commands'))
