@@ -7,6 +7,14 @@
 
         <form role="form" data-bind="submit: submit">
 
+            <div class="form-group">
+                <label>e-Rad Researcher Number</label>
+                <div class="input-group">
+                <span class="input-group-addon">e-Rad Researcher Number</span>
+                <input class="form-control" data-bind="value: eRadResearcherNumber" placeholder="xxxxxxxxx"/>
+                </div>
+            </div>
+
             <label>${_("Your websites")}</label>
             <div data-bind="sortable: {
                         data: profileWebsites,

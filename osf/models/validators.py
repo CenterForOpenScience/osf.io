@@ -398,7 +398,15 @@ class RegistrationResponsesValidator:
             }
         elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input',
                                      'e-rad-award-number-input', 'e-rad-award-title-ja-input',
-                                     'e-rad-award-title-en-input'):
+                                     'e-rad-award-title-en-input',
+                                     'e-rad-researcher-number-input',
+                                     'e-rad-researcher-name-ja-input',
+                                     'e-rad-researcher-name-en-input',
+                                     'e-rad-bunnya-input',
+                                     'file-metadata-input', 'date-input',
+                                     'file-capacity-input', 'file-creators-input',
+                                     'file-url-input', 'file-institution-ja-input',
+                                     'file-institution-en-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',

@@ -16,29 +16,37 @@ api_routes = {
             '/settings/{}/erad'.format(SHORT_NAME),
         ], 'put', views.metadata_set_user_erad_config, json_renderer),
         Rule([
-            '/project/<pid>/metadata/erad/candidates',
-            '/project/<pid>/node/<nid>/metadata/erad/candidates',
+            '/project/<pid>/{}/erad/candidates'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/erad/candidates'.format(SHORT_NAME),
         ], 'get', views.metadata_get_erad_candidates, json_renderer),
         Rule([
-            '/project/<pid>/metadata/project',
-            '/project/<pid>/node/<nid>/metadata/project',
+            '/project/<pid>/{}/project'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/project'.format(SHORT_NAME),
         ], 'get', views.metadata_get_project, json_renderer),
         Rule([
-            '/project/<pid>/metadata/project',
-            '/project/<pid>/node/<nid>/metadata/project',
+            '/project/<pid>/{}/project'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/project'.format(SHORT_NAME),
         ], 'patch', views.metadata_set_project, json_renderer),
         Rule([
-            '/project/<pid>/metadata/files/<path:filepath>',
-            '/project/<pid>/node/<nid>/metadata/files/<path:filepath>',
+            '/project/<pid>/{}/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/files/<path:filepath>'.format(SHORT_NAME),
         ], 'get', views.metadata_get_file, json_renderer),
         Rule([
-            '/project/<pid>/metadata/files/<path:filepath>',
-            '/project/<pid>/node/<nid>/metadata/files/<path:filepath>',
+            '/project/<pid>/{}/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/files/<path:filepath>'.format(SHORT_NAME),
         ], 'patch', views.metadata_set_file, json_renderer),
         Rule([
-            '/project/<pid>/metadata/files/<path:filepath>',
-            '/project/<pid>/node/<nid>/metadata/files/<path:filepath>',
+            '/project/<pid>/{}/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/files/<path:filepath>'.format(SHORT_NAME),
         ], 'delete', views.metadata_delete_file, json_renderer),
+        Rule([
+            '/project/<pid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+        ], 'put', views.metadata_set_file_to_drafts, json_renderer),
+        Rule([
+            '/project/<pid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+        ], 'delete', views.metadata_delete_file_from_drafts, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -52,6 +60,15 @@ page_routes = {
             ],
             'get',
             views.metadata_report_list_view,
+            notemplate
+        ),
+        Rule(
+            [
+                '/<pid>/{}/draft_registrations/<did>/csv'.format(SHORT_NAME),
+                '/<pid>/node/<nid>/{}/draft_registrations/<did>/csv'.format(SHORT_NAME),
+            ],
+            'get',
+            views.metadata_export_csv,
             notemplate
         ),
     ]
