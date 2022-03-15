@@ -60,16 +60,27 @@ def fix_logs(node_id, dry_run=False):
                 '_id': node._id,
                 'title': node.title
             }
+            if log.params.get('auth'):
+                log.params['auth']['callback_url'] = node.api_url_for(
+                    'create_waterbutler_log',
+                    _absolute=True,
+                    _internal=True
+                )
 
             url = swap_guid(log.params['source']['url'], node)
             log.params['destination'].update({'url': url})
+            log.params['destination']['resource'] = node._id
             log.params['destination']['node']['_id'] = node._id
+            log.params['destination']['resource'] = node._id
+            log.params['destination']['nid'] = node._id
             log.params['destination']['node']['url'] = f'/{node._id}/'
 
             if log.params['source']['resource'] == log.params['destination']['resource']:
                 log.params['source'].update({'url': url})
                 log.params['source']['node']['_id'] = node._id
                 log.params['source']['node']['url'] = f'/{node._id}/'
+                log.params['source']['resource'] = node._id
+                log.params['source']['nid'] = node._id
 
             log.save()
 
