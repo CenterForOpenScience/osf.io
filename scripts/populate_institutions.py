@@ -1084,6 +1084,33 @@ INSTITUTIONS = {
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
             },
+            {
+                '_id': 'oxford',
+                'name': 'University of Oxford [Stage]',
+                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
+            },
+            {
+                '_id': 'osftype1',
+                'name': 'Fake "via-ORCiD" Institution [Stage]',
+                'description': 'Fake OSF Institution Type 1. This institution uses ORCiD SSO for login and its user '
+                               'affiliation is retrieved from ORCiD public record.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'OSF Integration',
+            },
         ],
     'stage2': [
             {
