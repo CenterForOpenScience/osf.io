@@ -63,9 +63,13 @@ def fix_logs(node_id, dry_run=False):
 
             url = swap_guid(log.params['source']['url'], node)
             log.params['destination'].update({'url': url})
+            log.params['destination']['node']['_id'] = node._id
+            log.params['destination']['node']['url'] = f'/{node._id}/'
 
-            if log.action == 'addon_file_renamed':
+            if log.params['source']['resource'] == log.params['destination']['resource']:
                 log.params['source'].update({'url': url})
+                log.params['source']['node']['_id'] = node._id
+                log.params['source']['node']['url'] = f'/{node._id}/'
 
             log.save()
 
