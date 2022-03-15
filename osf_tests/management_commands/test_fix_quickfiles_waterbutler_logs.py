@@ -64,9 +64,8 @@ class TestFixQuickFilesLogs:
             }
         ).save()
 
+    @pytest.mark.enable_enqueue_task
     def test_fix_quickfiles_waterbutler_logs_files_added(self, node, node_log_files_added):
-        node.guids.all().delete()
-        node.save()
         NodeLog(node=node, action=NodeLog.MIGRATED_QUICK_FILES).save()
         fix_quickfiles_waterbutler_logs()
         log = node.logs.all().get(action='osf_storage_file_added')
@@ -74,16 +73,16 @@ class TestFixQuickFilesLogs:
 
         assert log.params['urls'] == {
             'view': f'/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}',
-            'download': f'/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}?action=download'
+            'download': f'/{guid}/files/osfstorage/622aad8d1e399c0c296017b0/?pid={guid}&action=download'
         }
 
+    @pytest.mark.enable_enqueue_task
     def test_fix_quickfiles_waterbutler_logs_files_renamed(self, node, node_log_files_renamed):
-        node.guids.all().delete()
-        node.save()
         NodeLog(node=node, action=NodeLog.MIGRATED_QUICK_FILES).save()
         fix_quickfiles_waterbutler_logs()
         log = node.logs.all().get(action='addon_file_renamed')
         guid = node.guids.last()._id
 
-        assert log.params['source']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/'
-        assert log.params['destination']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/'
+        assert log.params['source']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/?pid={guid}'
+        assert log.params['destination']['url'] == f'/project/{guid}/files/osfstorage/622aad914ef4bb0ac0333f9f/?pid={guid}'
+        assert log.params['params_node']['_id'] == guid

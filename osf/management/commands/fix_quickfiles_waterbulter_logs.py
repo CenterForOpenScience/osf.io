@@ -5,7 +5,6 @@ from django.db import transaction
 from osf.models import Node, NodeLog
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.handlers import enqueue_task
-from django.db.models import Q
 
 
 logger = logging.getLogger(__name__)
@@ -15,7 +14,7 @@ def swap_guid(url, node):
     url = url.split('/')[:-1]
     url[2] = node._id
     url = '/'.join(url)
-    return f'{url}?/pid={node._id}'
+    return f'{url}/?pid={node._id}'
 
 
 def swap_guid_view_download(url, node):
@@ -67,20 +66,32 @@ def fix_logs(node_id, dry_run=False):
                     _internal=True
                 )
 
-            url = swap_guid(log.params['source']['url'], node)
-            log.params['destination'].update({'url': url})
-            log.params['destination']['resource'] = node._id
-            log.params['destination']['node']['_id'] = node._id
-            log.params['destination']['resource'] = node._id
+            url = swap_guid(log.params['destination']['url'], node)
+            log.params['destination']['url'] = url
             log.params['destination']['nid'] = node._id
-            log.params['destination']['node']['url'] = f'/{node._id}/'
 
-            if log.params['source']['resource'] == log.params['destination']['resource']:
-                log.params['source'].update({'url': url})
-                log.params['source']['node']['_id'] = node._id
-                log.params['source']['node']['url'] = f'/{node._id}/'
-                log.params['source']['resource'] = node._id
+            if log.params['destination'].get('resource'):
+                log.params['destination']['resource'] = node._id
+
+            if log.params['destination'].get('node'):
+                log.params['destination']['node']['url'] = f'/{node._id}/'
+                log.params['destination']['node']['_id'] = node._id
+
+            if log.params['source']['node_url'] == log.params['destination']['node_url']:
+                log.params['source']['url'] = url
                 log.params['source']['nid'] = node._id
+                if log.params['source'].get('node'):
+                    log.params['source']['node']['url'] = f'/{node._id}/'
+                    log.params['source']['node']['_id'] = node._id
+                if log.params['source'].get('resource'):
+                    log.params['source']['resource'] = node._id
+
+            if log.params.get('urls'):
+                url = swap_guid_view_download(log.params['urls']['view'], node)
+                log.params['urls'] = {
+                    'view': url,
+                    'download': f'{url}&action=download'
+                }
 
             log.save()
 
@@ -91,6 +102,7 @@ def fix_logs(node_id, dry_run=False):
             }
 
             url = swap_guid_view_download(log.params['urls']['view'], node)
+
             log.params['urls'] = {
                 'view': url,
                 'download': f'{url}&action=download'
