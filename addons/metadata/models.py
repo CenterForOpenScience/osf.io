@@ -5,10 +5,9 @@ import os
 
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
-from . import settings
 
 logger = logging.getLogger(__name__)
 

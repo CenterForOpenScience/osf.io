@@ -923,7 +923,7 @@ var RegistrationEditor = function(urls, editorId, preview, registeredFrom) {
                 url: extractUrlFromMetadata(metadata),
             };
         });
-    }
+    };
 
     preview = preview || false;
     if (preview) {
