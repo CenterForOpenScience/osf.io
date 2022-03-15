@@ -3116,9 +3116,6 @@ msgstr ""
 msgid "User-Emails"
 msgstr ""
 
-msgid "User Search"
-msgstr ""
-
 #: admin/templates/user_emails/user_emails.html
 msgid "User Emails Setting"
 msgstr ""
