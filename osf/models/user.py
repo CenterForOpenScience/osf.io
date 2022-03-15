@@ -332,7 +332,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     family_name = models.CharField(max_length=255, blank=True)
     suffix = models.CharField(max_length=255, blank=True)
 
-    # names in english
+    # names in Japanese
     given_name_ja = models.CharField(max_length=255, blank=True)
     middle_names_ja = models.CharField(max_length=255, blank=True)
     family_name_ja = models.CharField(max_length=255, blank=True)
