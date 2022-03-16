@@ -202,7 +202,9 @@ def binderhub_oauth_authorize(**kwargs):
     }
 
     session.save()
-    return redirect(url)
+    sep = '&' if '?' in url else '?'
+    params = {'return_on_error': node.absolute_url}
+    return redirect(url + sep + urlencode(params))
 
 
 @must_be_logged_in
