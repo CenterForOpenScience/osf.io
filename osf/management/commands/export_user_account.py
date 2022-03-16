@@ -24,7 +24,6 @@ from osf.models import (
     OSFUser,
     Preprint,
     Registration,
-    QuickFilesNode
 )
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
@@ -216,13 +215,6 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
                             ...
         registrations/
             *same as projects*
-
-        quickfiles/
-            <quickfiles_id>/
-                metadata.json
-                files/
-                    osfstorage-archive.zip
-
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
     proceed = input('\nUser has {:.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] '.format(get_usage(user)))
@@ -234,13 +226,11 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     preprints_dir = os.path.join(base_dir, 'preprints')
     projects_dir = os.path.join(base_dir, 'projects')
     registrations_dir = os.path.join(base_dir, 'registrations')
-    quickfiles_dir = os.path.join(base_dir, 'quickfiles')
 
     os.mkdir(base_dir)
     os.mkdir(preprints_dir)
     os.mkdir(projects_dir)
     os.mkdir(registrations_dir)
-    os.mkdir(quickfiles_dir)
 
     preprints_to_export = get_preprints_to_export(user)
 
@@ -254,14 +244,9 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
         .get_roots()
     )
 
-    quickfiles_to_export = (
-        QuickFilesNode.objects.filter(creator=user)
-    )
-
     export_resources(projects_to_export, user, projects_dir, 'projects')
     export_resources(preprints_to_export, user, preprints_dir, 'preprints')
     export_resources(registrations_to_export, user, registrations_dir, 'registrations')
-    export_resources(quickfiles_to_export, user, quickfiles_dir, 'quickfiles')
 
     timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     output = os.path.join(path, '{user_id}-export-{timestamp}'.format(**locals()))

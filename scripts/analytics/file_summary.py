@@ -51,7 +51,7 @@ class FileSummary(SummaryAnalytics):
                 'timestamp': timestamp_datetime.isoformat()
             },
             # OsfStorageFiles - the number of files on OsfStorage
-            'osfstorage_files_including_quickfiles': {
+            'osfstorage_files': {
                 'total': file_qs.count(),
                 'public': file_qs.filter(public_query).count(),
                 'private': file_qs.filter(private_query).count(),
@@ -60,12 +60,6 @@ class FileSummary(SummaryAnalytics):
                 'private_daily': file_qs.filter(private_query & daily_query).count(),
             },
         }
-
-        logger.info(
-            'OsfStorage Files counted. Files: {}'.format(
-                totals['osfstorage_files_including_quickfiles']['total'],
-            )
-        )
 
         return [totals]
 

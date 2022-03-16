@@ -20,7 +20,7 @@ def update_storage_usage(dry_run=False, days=DAYS):
         recently_modified = AbstractNode.objects.filter(modified__gt=modified_limit)
         for modified_node in recently_modified:
             file_op_occurred = modified_node.logs.filter(action__contains='file', created__gt=modified_limit).exists()
-            if not modified_node.is_quickfiles and file_op_occurred:
+            if file_op_occurred:
                 update_storage_usage_cache(modified_node.id, modified_node._id)
 
         if dry_run:
