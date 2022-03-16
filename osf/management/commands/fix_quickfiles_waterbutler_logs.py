@@ -66,15 +66,6 @@ def fix_logs(node_id, dry_run=False):
                 )
 
             url = swap_guid(log.params['destination']['url'], node)
-            log.params['destination']['url'] = url
-            log.params['destination']['nid'] = node._id
-
-            if log.params['destination'].get('resource'):
-                log.params['destination']['resource'] = node._id
-
-            if log.params['destination'].get('node'):
-                log.params['destination']['node']['url'] = f'/{node._id}/'
-                log.params['destination']['node']['_id'] = node._id
 
             if log.params['source']['node_url'] == log.params['destination']['node_url']:
                 log.params['source']['url'] = url
@@ -84,6 +75,16 @@ def fix_logs(node_id, dry_run=False):
                     log.params['source']['node']['_id'] = node._id
                 if log.params['source'].get('resource'):
                     log.params['source']['resource'] = node._id
+
+            log.params['destination']['url'] = url
+            log.params['destination']['nid'] = node._id
+
+            if log.params['destination'].get('node'):
+                log.params['destination']['node']['url'] = f'/{node._id}/'
+                log.params['destination']['node']['_id'] = node._id
+
+            if log.params['destination'].get('resource'):
+                log.params['destination']['resource'] = node._id
 
             if log.params.get('urls'):
                 url = swap_guid_view_download(log.params['urls']['view'], node)
