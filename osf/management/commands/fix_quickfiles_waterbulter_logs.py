@@ -4,8 +4,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from osf.models import Node, NodeLog
 from framework.celery_tasks import app as celery_app
-from framework.celery_tasks.handlers import enqueue_task
-
+from urllib.parse import urljoin
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,9 @@ def fix_logs(node_id, dry_run=False):
                 'title': node.title
             }
             if log.params.get('auth'):
-                log.params['auth']['callback_url'] = node.api_url_for(
-                    'create_waterbutler_log',
-                    _absolute=True,
-                    _internal=True
+                log.params['auth']['callback_url'] = urljoin(
+                    settings.DOMAIN,
+                    f'project/{node_id}/node/{node_id}/waterbutler/logs/'
                 )
 
             url = swap_guid(log.params['destination']['url'], node)
@@ -126,7 +125,7 @@ def fix_quickfiles_waterbutler_logs(dry_run=False):
 
     for node in nodes:
         logger.info(f'{node._id} Quickfiles logs fixing started')
-        enqueue_task(fix_logs.s(node._id, dry_run=dry_run))
+        fix_logs.apply_async(node._id, dry_run=dry_run)
 
 
 class Command(BaseCommand):
