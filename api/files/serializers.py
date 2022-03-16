@@ -383,6 +383,14 @@ class FileSerializer(BaseFileSerializer):
         min_version='2.0', max_version='2.7',
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+    current_user_has_viewed = ser.SerializerMethodField(help_text='Whether the current user has already viewed the file')
+
+    def get_current_user_has_viewed(self, obj):
+        version = obj.versions.order_by('created').last()
+        if version and not self.context['request'].user.is_anonymous:  # This is to ensure compatibility with tests, ugh.
+            return version.seen_by.filter(id=self.context['request'].user.id).exists()
+        else:
+            return False
 
     def get_target_type(self, obj):
         target_type = 'node'
