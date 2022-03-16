@@ -1,5 +1,5 @@
 import pytest
-from osf.management.commands.fix_quickfiles_waterbulter_logs import fix_quickfiles_waterbutler_logs
+from osf.management.commands.fix_quickfiles_waterbutler_logs import fix_quickfiles_waterbutler_logs
 from osf_tests.factories import ProjectFactory
 from osf.models import NodeLog
 

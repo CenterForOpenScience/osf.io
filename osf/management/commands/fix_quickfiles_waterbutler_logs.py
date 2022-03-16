@@ -125,7 +125,7 @@ def fix_quickfiles_waterbutler_logs(dry_run=False):
 
     for node in nodes:
         logger.info(f'{node._id} Quickfiles logs fixing started')
-        fix_logs.apply_async(node._id, dry_run=dry_run)
+        fix_logs.apply_async(args=(node._id,), kwargs={'dry_run': dry_run})
 
 
 class Command(BaseCommand):
