@@ -45,6 +45,7 @@ class TestFixQuickFilesLogs:
                     'url': '/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/',
                     'addon': 'OSF Storage',
                     'node_url': '/jpmxy/',
+                    'resource': 'jpmxy',
                     'node_title': "John Tordoff's Quick Files"
                 },
                 'params_node': {
@@ -59,6 +60,7 @@ class TestFixQuickFilesLogs:
                     'url': '/project/jpmxy/files/osfstorage/622aad914ef4bb0ac0333f9f/',
                     'addon': 'OSF Storage',
                     'node_url': '/jpmxy/',
+                    'resource': 'jpmxy',
                     'node_title': "John Tordoff's Quick Files"
                 }
             }
