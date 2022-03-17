@@ -292,25 +292,6 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             self.response_blocks.remove(current_block)
             self.response_blocks.add(revised_block)
 
-    def _update_file_references(self, updated_responses, file_block_ids=None, save=True):
-        '''Update refernces in file-input responses post-archival for initial SchemaResponses.'''
-        if self.previous_response:
-            raise PreviousSchemaResponseError(
-                'Updating of file references only supported for initial responses'
-            )
-
-        if file_block_ids is None:
-            file_block_ids = self.schema.schema_blocks.filter(
-                block_type='file-input'
-            ).values_list('id', flat=True)
-        if not file_block_ids:
-            return
-
-        for block in self.response_blocks.all():
-            if block.source_schema_block.id in file_block_ids and save:
-                block.response = updated_responses[block.schema_key]
-                block.save()
-
     def delete(self, *args, **kwargs):
         if self.state is not ApprovalStates.IN_PROGRESS:
             raise SchemaResponseStateError(

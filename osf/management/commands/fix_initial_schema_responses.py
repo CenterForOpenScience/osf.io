@@ -1,27 +1,16 @@
-import functools
 import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from api.schema_responses import annotations
-from osf.models import RegistrationSchema, SchemaResponse
+from osf.models import SchemaResponse
+from website.archiver.utils import migrate_file_metadata
 
 
 logger = logging.getLogger(__name__)
 
 
-@functools.lru_cache()
-def _get_file_input_block_ids(schema_id):
-    schema = RegistrationSchema.objects.prefetch_related('schema_blocks').get(id=schema_id)
-    return list(
-        schema.schema_blocks.filter(
-            block_type='file-input'
-        ).values_list(
-            'id', flat=True
-        )
-    )
-
-
+@transaction.atomic
 def fix_initial_schema_responses(dry_run=False, batch_size=None):
     '''SchemaResponses were released into the wild not fully ready. Fix the ones with early issues.
 
@@ -51,21 +40,16 @@ def fix_initial_schema_responses(dry_run=False, batch_size=None):
                 parent.schema_responses.all().delete()
             continue
 
-        file_block_ids = _get_file_input_block_ids(schema_response.schema.id)
-        if not file_block_ids:
-            continue
-
         logger.info(
             f'{"[DRY RUN] " if dry_run else ""}'
             f'Updating file references for  SchemaResponses with id [{schema_response._id}] '
             f'on parent Registration with guid [{parent._id}]'
         )
-        schema_response._update_file_references(
-            updated_responses=parent.registration_responses,
-            file_block_ids=file_block_ids,
-            save=(not dry_run),
-        )
+        migrate_file_metadata(parent)
         corrected_schema_response_count += 1
+
+    if dry_run:
+        raise RuntimeError('Dry run, transaction rolled back')
 
     return corrected_schema_response_count, deleted_schema_response_count
 
@@ -89,7 +73,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         batch_size = options.get('batch_size')
-        with transaction.atomic():
-            fix_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)
-            if dry_run:
-                raise RuntimeError('Dry run, transaction rolled back')
+        fix_initial_schema_responses(dry_run=dry_run, batch_size=batch_size)

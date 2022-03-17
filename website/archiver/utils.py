@@ -1,13 +1,15 @@
+import bleach
 import functools
-import itertools
-import pprint
 
-from django.db import transaction
-from django.db.models import CharField, OuterRef, Subquery
 from collections import defaultdict
-
+from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 
+from osf.models import Guid
+from website import (
+    mails,
+    settings
+)
 from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
@@ -16,15 +18,10 @@ from website.archiver import (
     ARCHIVER_FORCED_FAILURE,
 )
 
-from website import (
-    mails,
-    settings
-)
-# from osf.utils.sanitize import unescape_entities
-
 
 FILE_HTML_LINK_TEMPLATE = 'https://staging.osf.io/project/{registration_guid}/files/osfstorage/{file_id}'
 FILE_DOWNLOAD_LINK_TEMPLATE = 'https://staging.osf.io/download/{file_id}'
+
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     mails.send_mail(
@@ -205,10 +202,8 @@ def _memoize_get_file_map(func):
     def wrapper(node):
         from osf.models import OSFUser
         if node._id not in cache:
-            print(node._id)
             osf_storage = node.get_addon('osfstorage')
             file_tree = osf_storage._get_file_tree(user=OSFUser.load(list(node.admin_contributor_or_group_member_ids)[0]))
-            pprint.pprint(file_tree)
             cache[node._id] = _do_get_file_map(file_tree)
         return func(node, cache[node._id])
     return wrapper
@@ -224,7 +219,7 @@ def get_file_map(node, file_map):
         yield (key, value, node._id)
     for child in node.nodes_primary:
         for key, value, node_id in get_file_map(child):
-            yield (key, value, child._id)  # node_id)
+            yield (key, value, node_id)
 
 
 def get_title_for_question(schema, qid):
@@ -243,29 +238,21 @@ def get_title_for_question(schema, qid):
     return annotated_blocks.get(qid=qid).display_text
 
 
-@transaction.atomic
 def migrate_file_metadata(dst, schema):
     if dst.root_id != dst.id:
         return
 
-    prearchive_responses = dst.schema_responses.get().all_responses
-
     file_input_qids = dst.registration_schema.schema_blocks.filter(
         block_type='file-input'
     ).values_list('registration_response_key', flat=True)
+    file_response_keys_by_hash = _get_file_response_hashes(dst, file_input_qids)
+    updated_file_responses = _get_updated_file_references(dst, file_response_keys_by_hash)
 
-    file_response_indices_by_hash = _get_file_response_hashes(dst, file_input_qids)
-    print(list(itertools.chain(*file_response_indices_by_hash.values())))
-
-    updated_file_responses = _get_updated_file_references(dst, file_response_indices_by_hash)
-
-    print(set(file_input_qids) - set(updated_file_responses))
+    _validate_updated_responses(dst, file_input_qids, updated_file_responses)
 
     for qid, updated_response in updated_file_responses.items():
         response_block = dst.schema_responses.get().response_blocks.get(schema_key=qid)
         response_block.set_response(updated_response)
-
-    _validate_updated_responses(dst, prearchive_responses, file_input_qids)
 
     dst.registration_responses = dst.schema_responses.get().all_responses
     dst.registered_meta[schema._id] = dst.expand_registration_responses()
@@ -275,36 +262,52 @@ def migrate_file_metadata(dst, schema):
 def _get_file_response_hashes(registration, file_input_qids):
     '''Extract the sha256 hashes for all file responses on the registration.
 
-    Returns a dictionary mapping the hashes to a list of qids where the file was found
-    was found in the registration's registration_responses dictionary, i,e,:
+    Returns a dictionary mapping the hashes to a list of qids where the file
+    was found in the registration's responses, i,e,:
     {hash1: [q1], hash2: [q1, q5], hash3: [q5] . . .}
     '''
-    file_response_indices_by_hash = defaultdict(list)
+    file_response_keys_by_hash = defaultdict(list)
     file_responses = {qid: registration.registration_responses[qid] for qid in file_input_qids}
     for qid, response in file_responses.items():
         for file_info in response:
-            file_response_indices_by_hash[file_info['file_hashes']['sha256']].append(qid)
+            file_response_keys_by_hash[file_info['file_hashes']['sha256']].append(qid)
 
-    return file_response_indices_by_hash
+    return file_response_keys_by_hash
 
 
-def _get_updated_file_references(registration, file_response_indices_by_hash):
+def _get_updated_file_references(registration, file_response_keys_by_hash):
     '''Loop through archived files to get the updated references for the registration responses.
 
-    Returns a nested dictionary mapping the location(s) of the attached file within the
-    registration's registation_responses to a dictionary containing the new response value.
+    Returns a dictionary mapping each qid to its list of updated responses
     '''
+    original_responses = registration.schema_responses.get().all_responses
     updated_file_responses = defaultdict(list)
-
+    previous_node_id = ''
     for file_sha, file_info, archived_node_id in get_file_map(registration):
-        print(archived_node_id)
-        if file_sha in file_response_indices_by_hash:
-            print(file_info['name'])
+        # cache the guid of the source project for the current file tree
+        if archived_node_id != previous_node_id:
+            previous_node_id = archived_node_id
+            source_project_id = Guid.objects.get(_id=archived_node_id).referent.registered_from._id
+
+        if file_sha in file_response_keys_by_hash:
             response_value = _make_file_response(file_info, archived_node_id)
-            for qid in file_response_indices_by_hash[file_sha]:
-                updated_file_responses[qid].append(response_value)
+            for qid in file_response_keys_by_hash[file_sha]:
+                # Handle the case where the same file exists in multiple components
+                original_response = _get_response_entry_for_hash(original_responses, qid, file_sha)
+                if (
+                    source_project_id in original_response['file_urls']['html']
+                    and response_value['file_name'] == original_response['file_name']
+                ):
+                    updated_file_responses[qid].append(response_value)
 
     return updated_file_responses
+
+
+def _get_response_entry_for_hash(response_dict, qid, file_hash):
+    for entry in response_dict[qid]:
+        if entry['file_hashes']['sha256'] == file_hash:
+            return entry
+    return None
 
 
 def _make_file_response(file_info, parent_guid):
@@ -312,7 +315,7 @@ def _make_file_response(file_info, parent_guid):
     archived_file_id = file_info['path'].lstrip('/')
     return {
         'file_id': archived_file_id,
-        'file_name': file_info['name'],
+        'file_name': bleach.clean(file_info['name']),
         'file_urls': {
             'html':
                 FILE_HTML_LINK_TEMPLATE.format(
@@ -325,22 +328,17 @@ def _make_file_response(file_info, parent_guid):
     }
 
 
-def _validate_updated_responses(registration, prearchival_responses, file_input_qids):
+def _validate_updated_responses(registration, file_input_qids, updated_responses):
+    '''Confirm that every file response has an updated value and that nothing fishy happened.'''
     schema = registration.registration_schema
-    updated_responses = registration.schema_responses.get().all_responses
     missing_responses = []
     for qid in file_input_qids:
-        original_response = prearchival_responses[qid]
-        updated_response = updated_responses[qid]
         question_title = ''
-        for entry in original_response:
+        for entry in registration.registration_responses[qid]:
             file_name = entry['file_name']
             file_hash = entry['file_hashes']['sha256']
-            matching_entry = [
-                entry for entries in updated_response
-                if entry['file_hashes']['sha256'] == file_hash
-            ]
-            if not matching_entry or matching_entry[0]['file_name'] != file_name or matching_entry == entry:
+            matching_entry = _get_response_entry_for_hash(updated_responses, qid, file_hash)
+            if not matching_entry:
                 question_title = question_title or get_title_for_question(schema, qid)
                 missing_responses.append({'file_name': file_name, 'question_title': question_title})
 

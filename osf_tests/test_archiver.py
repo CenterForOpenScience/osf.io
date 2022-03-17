@@ -52,7 +52,7 @@ for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
 
 sha256_factory = _unique(fake.sha256)
-name_factory = _unique(generate_object_id)
+id_factory = _unique(generate_object_id)
 
 @contextmanager
 def nested(*contexts):
@@ -65,9 +65,9 @@ def nested(*contexts):
         yield contexts
 
 def file_factory(name=None, sha256=None):
-    fname = name or name_factory()
+    fname = name or fake.word()
     return {
-        'path': '/' + fname,
+        'path': '/' + id_factory(),
         'name': fname,
         'kind': 'file',
         'size': random.randint(4, 4000),
@@ -592,9 +592,9 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file]
 
         node = factories.NodeFactory(creator=self.user)
+        qid = 'q_' + fake_file_name
         data = {
-            ('q_' + fake_file_name): {
-                'value': fake.word(),
+            qid: {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -607,14 +607,14 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
-                registration.reload()
-                for response_block in registration.schema_responses.get().response_blocks.all():
-                    assert response_block.response[0]['file_name'] == fake_file_name
+                registration.refresh_from_db()
+                updated_response = registration.schema_responses.get().all_responses[qid]
+                assert updated_response[0]['file_name'] == fake_file_name
 
     def test_archive_success_with_components(self):
         node = factories.NodeFactory(creator=self.user)
@@ -637,7 +637,7 @@ class TestArchiverTasks(ArchiverTestCase):
             def mock_get_file_tree(self, *args, **kwargs):
                 return file_trees[self.owner.registered_from._id]
 
-            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
+            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock_get_file_tree):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
 
@@ -664,7 +664,6 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         data = {
             ('q_' + fake_file['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -694,7 +693,6 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         data = {
             ('q_' + fake_file['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -711,8 +709,6 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                draft.registered_node = registration
-                draft.save()
                 with assert_raises(ArchivedFileNotFound):
                     archive_success(registration._id, job._id)
 
@@ -728,7 +724,6 @@ class TestArchiverTasks(ArchiverTestCase):
 
         data = {
             ('q_' + selected['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': selected['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
