@@ -117,11 +117,7 @@ def fix_logs(node_id, dry_run=False):
 
 
 def fix_quickfiles_waterbutler_logs(dry_run=False):
-    nodes = Node.objects.filter(
-        logs__action=NodeLog.MIGRATED_QUICK_FILES
-    ).filter(
-        logs__action__in=affected_log_actions
-    ).distinct('pk')
+    nodes = Node.objects.filter(logs__action=NodeLog.MIGRATED_QUICK_FILES)
     logger.info(f'{nodes.count()} Quickfiles nodes with bugged logs found.')
 
     for node in nodes:
