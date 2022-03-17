@@ -117,12 +117,12 @@ def fix_logs(node_id, dry_run=False):
 
 
 def fix_quickfiles_waterbutler_logs(dry_run=False):
-    nodes = Node.objects.filter(logs__action=NodeLog.MIGRATED_QUICK_FILES)
+    nodes = Node.objects.filter(logs__action=NodeLog.MIGRATED_QUICK_FILES).values_list('guids___id', flat=True)
     logger.info(f'{nodes.count()} Quickfiles nodes with bugged logs found.')
 
-    for node in nodes:
-        logger.info(f'{node._id} Quickfiles logs fixing started')
-        fix_logs.apply_async(args=(node._id,), kwargs={'dry_run': dry_run})
+    for node_id in nodes:
+        logger.info(f'{node_id} Quickfiles logs fixing started')
+        fix_logs.apply_async(args=(node_id,), kwargs={'dry_run': dry_run})
 
 
 class Command(BaseCommand):
