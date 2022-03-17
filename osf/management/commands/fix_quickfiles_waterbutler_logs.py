@@ -42,7 +42,7 @@ dead_links_actions = {
 affected_log_actions = error_causing_log_actions.union(dead_links_actions)
 
 
-@celery_app.task()
+@celery_app.task(name='osf.management.commands.fix_quickfiles_waterbutler_logs')
 def fix_logs(node_id, dry_run=False):
     '''
     Fixes view/download links for waterbutler based file logs, and also fixes old 10 digit node params for moved/renamed
