@@ -65,9 +65,9 @@ def fix_logs(node_id, dry_run=False):
                     f'project/{node_id}/node/{node_id}/waterbutler/logs/'
                 )
 
-            url = swap_guid(log.params['destination']['url'], node)
+            url = swap_guid(log.params['source']['url'], node)
 
-            if log.params['source']['node_url'] == log.params['destination']['node_url']:
+            if log.params['source']['resource'] == log.params['destination']['resource']:
                 log.params['source']['url'] = url
                 log.params['source']['nid'] = node._id
                 if log.params['source'].get('node'):
