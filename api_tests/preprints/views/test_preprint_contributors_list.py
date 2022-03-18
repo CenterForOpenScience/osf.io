@@ -81,7 +81,6 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorList(NodeCRUDTestCase):
 
@@ -363,7 +362,6 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorAdd(NodeCRUDTestCase):
 
@@ -1347,7 +1345,6 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_enqueue_task
 class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
@@ -1558,7 +1555,6 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1785,7 +1781,6 @@ class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2230,7 +2225,6 @@ class TestPreprintContributorBulkUpdate(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2589,7 +2583,6 @@ class TestPreprintContributorBulkPartialUpdate(NodeCRUDTestCase):
              data[1]['attributes']['permission']],
             [permissions.ADMIN, permissions.WRITE])
 
-@pytest.mark.enable_quickfiles_creation
 class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -2919,7 +2912,6 @@ class TestPreprintContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorFiltering:
 
