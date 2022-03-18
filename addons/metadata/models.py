@@ -6,7 +6,6 @@ import os
 from addons.base.models import BaseUserSettings, BaseNodeSettings
 from django.db import models
 from osf.models.base import BaseModel
-from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
 
 logger = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class ERadRecord(BaseModel):
 
 
 class RegistrationReportFormat(BaseModel):
-    registration_schema = models.ForeignKey(RegistrationSchema, null=True, on_delete=models.CASCADE)
+    registration_schema_id = models.CharField(max_length=64, blank=True, null=True)
 
     name = models.TextField(blank=True, null=True)
 

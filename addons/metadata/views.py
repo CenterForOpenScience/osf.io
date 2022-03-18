@@ -280,7 +280,7 @@ def metadata_export_csv(auth, did=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
-        formats = RegistrationReportFormat.objects.filter(registration_schema=draft.registration_schema)
+        formats = RegistrationReportFormat.objects.filter(registration_schema_id=draft.registration_schema._id)
         formats = [f for f in formats if f.csv_template]
         if len(formats) == 0:
             logger.error('No report format for {}'.format(draft.registration_schema.name))
