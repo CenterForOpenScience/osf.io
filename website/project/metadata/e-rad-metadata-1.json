@@ -1,0 +1,542 @@
+{
+  "name": "公的資金による研究データのメタデータ登録",
+  "version": 1,
+  "description": "公的資金による研究データのメタデータ登録",
+  "pages": [
+    {
+      "id": "page1",
+      "title": "メタデータ登録（Metadata Registration）",
+      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。",
+      "questions": [
+        {
+          "qid": "funder",
+          "nav": "資金配分機関情報",
+          "title": "資金配分機関情報",
+          "type": "choose",
+          "format": "e-rad-award-funder",
+          "options": ["JST", "JSPS", "NEDO", "BRAIN", "AMED", "MEXT", "METI", "MAFF", "MHLW"],
+          "required": true
+        },
+        {
+          "qid": "e-rad-project-id",
+          "nav": "e-Radの課題番号",
+          "title": "e-Radの課題番号",
+          "type": "string",
+          "format": "e-rad-award-number",
+          "required": true
+        },
+        {
+          "qid": "project-name-ja",
+          "nav": "プロジェクト名 (日本語)",
+          "title": "プロジェクト名 (日本語)",
+          "type": "string",
+          "format": "e-rad-award-title-ja",
+          "required": true
+        },
+        {
+          "qid": "project-name-en",
+          "nav": "Project name (English)",
+          "title": "Project name (English)",
+          "type": "string",
+          "format": "e-rad-award-title-en",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "page2",
+      "title": "登録データ",
+      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。",
+      "questions": [
+        {
+          "qid": "grdm-files",
+          "nav": "登録データ一覧",
+          "title": "登録データ一覧",
+          "type": "string",
+          "format": "file-metadata",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-number",
+          "nav": "データ No.",
+          "title": "データ No.",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:title-ja",
+          "nav": "データの名称 (日本語)",
+          "title": "データの名称 (日本語)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:title-en",
+          "nav": "Title (English)",
+          "title": "Title (English)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:date-issued-updated",
+          "nav": "掲載日・掲載更新日",
+          "title": "掲載日・掲載更新日",
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-description-ja",
+          "nav": "データの説明 (日本語)",
+          "title": "データの説明 (日本語)",
+          "type": "string",
+          "format": "textarea",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-description-en",
+          "nav": "Description (English)",
+          "title": "Description (English)",
+          "type": "string",
+          "format": "textarea",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-research-field",
+          "nav": "データの分野",
+          "title": "データの分野",
+          "type": "string",
+          "format": "e-rad-bunnya",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-type",
+          "nav": "データ種別",
+          "title": "データ種別",
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+              {
+                  "text": "conference paper",
+                  "tooltip": "conference paper - 会議発表論文"
+              },
+              {
+                  "text": "data paper",
+                  "tooltip": "data paper - データ論文"
+              },
+              {
+                  "text": "departmental bulletin paper",
+                  "tooltip": "departmental bulletin paper - 紀要論文"
+              },
+              {
+                  "text": "editorial",
+                  "tooltip": "editorial - エディトリアル"
+              },
+              {
+                  "text": "journal article",
+                  "tooltip": "journal article - 学術雑誌論文"
+              },
+              {
+                  "text": "newspaper",
+                  "tooltip": "newspaper - 新聞"
+              },
+              {
+                  "text": "periodical",
+                  "tooltip": "periodical - 逐次刊行物"
+              },
+              {
+                  "text": "review article",
+                  "tooltip": "review article - レビュー論文"
+              },
+              {
+                  "text": "software paper",
+                  "tooltip": "software paper - ソフトウェア論文"
+              },
+              {
+                  "text": "article",
+                  "tooltip": "article - 記事"
+              },
+              {
+                  "text": "book",
+                  "tooltip": "book - 図書"
+              },
+              {
+                  "text": "book part",
+                  "tooltip": "book part - 図書（部分）"
+              },
+              {
+                  "text": "cartographic material",
+                  "tooltip": "cartographic material - 地図資料"
+              },
+              {
+                  "text": "map",
+                  "tooltip": "map - 地図"
+              },
+              {
+                  "text": "conference object",
+                  "tooltip": "conference object - 会議発表資料"
+              },
+              {
+                  "text": "conference proceedings",
+                  "tooltip": "conference proceedings - 会議録"
+              },
+              {
+                  "text": "conference poster",
+                  "tooltip": "conference poster - 会議発表Dataset"
+              },
+              {
+                  "text": "dataset",
+                  "tooltip": "dataset - データセット"
+              },
+              {
+                  "text": "interview",
+                  "tooltip": "interview - インタビュー"
+              },
+              {
+                  "text": "image",
+                  "tooltip": "image - イメージ"
+              },
+              {
+                  "text": "still image",
+                  "tooltip": "still image - 静止画"
+              },
+              {
+                  "text": "moving image",
+                  "tooltip": "moving image - 動画"
+              },
+              {
+                  "text": "video",
+                  "tooltip": "video - 録画資料"
+              },
+              {
+                  "text": "lecture",
+                  "tooltip": "lecture - 講演"
+              },
+              {
+                  "text": "patent",
+                  "tooltip": "patent - 特許"
+              },
+              {
+                  "text": "internal report",
+                  "tooltip": "internal report - 内部報告書"
+              },
+              {
+                  "text": "report",
+                  "tooltip": "report - 報告書"
+              },
+              {
+                  "text": "research report",
+                  "tooltip": "research report - 研究報告書"
+              },
+              {
+                  "text": "technical report",
+                  "tooltip": "technical report - テクニカルレポート"
+              },
+              {
+                  "text": "policy report",
+                  "tooltip": "policy report - ポリシーレポート"
+              },
+              {
+                  "text": "report part",
+                  "tooltip": "report part - 報告書（部分）"
+              },
+              {
+                  "text": "working paper",
+                  "tooltip": "working paper - ワーキングペーパー"
+              },
+              {
+                  "text": "data management plan",
+                  "tooltip": "data management plan - データ管理計画"
+              },
+              {
+                  "text": "sound",
+                  "tooltip": "sound - 音声・音楽"
+              },
+              {
+                  "text": "thesis",
+                  "tooltip": "thesis - 学位論文"
+              },
+              {
+                  "text": "bachelor thesis",
+                  "tooltip": "bachelor thesis - 学士論文"
+              },
+              {
+                  "text": "master thesis",
+                  "tooltip": "master thesis - 修士論文"
+              },
+              {
+                  "text": "doctoral thesis",
+                  "tooltip": "doctoral thesis - 博士論文"
+              },
+              {
+                  "text": "interactive resource",
+                  "tooltip": "interactive resource - インタラクティブリソース"
+              },
+              {
+                  "text": "learning object",
+                  "tooltip": "learning object - 教材"
+              },
+              {
+                  "text": "manuscript",
+                  "tooltip": "manuscript - 手稿"
+              },
+              {
+                  "text": "musical notation",
+                  "tooltip": "musical notation - 楽譜"
+              },
+              {
+                  "text": "research proposal",
+                  "tooltip": "research proposal - 研究計画書"
+              },
+              {
+                  "text": "software",
+                  "tooltip": "software - ソフトウェア"
+              },
+              {
+                  "text": "technical documentation",
+                  "tooltip": "technical documentation - 技術文書"
+              },
+              {
+                  "text": "workflow",
+                  "tooltip": "workflow - ワークフロー"
+              },
+              {
+                  "text": "other",
+                  "tooltip": "other - その他"
+              }
+          ],
+          "required": true
+        },
+        {
+          "qid": "grdm-file:file-size",
+          "nav": "概略データ量",
+          "title": "概略データ量",
+          "type": "string",
+          "format": "file-capacity",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:data-policy-free",
+          "nav": "管理対象データの利活用・提供方針 (有償/無償)",
+          "title": "管理対象データの利活用・提供方針 (有償/無償)",
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+              {
+                  "text": "free",
+                  "tooltip": "free - 無償"
+              },
+              {
+                  "text": "consideration",
+                  "tooltip": "consideration - 有償"
+              }
+          ],
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-policy-license",
+          "nav": "管理対象データの利活用・提供方針 (ライセンス)",
+          "title": "管理対象データの利活用・提供方針 (ライセンス)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-policy-cite-ja",
+          "nav": "管理対象データの利活用・提供方針 (引用方法等・日本語)",
+          "title": "管理対象データの利活用・提供方針 (引用方法等・日本語)",
+          "type": "string",
+          "format": "textarea",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-policy-cite-en",
+          "nav": "Data utilization and provision policy (citation information, English)",
+          "title": "Data utilization and provision policy (citation information, English)",
+          "type": "string",
+          "format": "textarea",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:access-rights",
+          "nav": "アクセス権",
+          "title": "アクセス権",
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+            {
+              "text": "open access",
+              "tooltip": "open access - 公開"
+            },
+            {
+              "text": "restricted access",
+              "tooltip": "restricted access - 共有"
+            },
+            {
+              "text": "metadata only access",
+              "tooltip": "metadata only access - 非共有・非公開"
+            },
+            {
+              "text": "embargoed access",
+              "tooltip": "embargoed access - 公開期間猶予"
+            }
+          ],
+          "required": true
+        },
+        {
+          "qid": "grdm-file:available-date",
+          "nav": "公開予定日",
+          "title": "公開予定日",
+          "type": "string",
+          "format": "date",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:repo-information-ja",
+          "nav": "リポジトリ情報 (日本語)",
+          "title": "リポジトリ情報 (日本語)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:repo-information-en",
+          "nav": "Repository information (English)",
+          "title": "Repository information (English)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:repo-url-doi-link",
+          "nav": "リポジトリURL・DOIリンク",
+          "title": "リポジトリURL・DOIリンク",
+          "type": "string",
+          "format": "file-url",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:creators",
+          "nav": "データ作成者",
+          "title": "データ作成者",
+          "type": "string",
+          "format": "file-creators",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:hosting-inst-ja",
+          "nav": "データ管理組織 (日本語)",
+          "title": "データ管理組織 (日本語)",
+          "type": "string",
+          "format": "file-institution-ja",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:hosting-inst-en",
+          "nav": "Hosting institution (English)",
+          "title": "Hosting institution (English)",
+          "type": "string",
+          "format": "file-institution-en",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-man-number",
+          "nav": "データ管理者の e-Rad 研究者番号",
+          "title": "データ管理者の e-Rad 研究者番号",
+          "type": "string",
+          "format": "e-rad-researcher-number",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:data-man-name-ja",
+          "nav": "データ管理者 (日本語)",
+          "title": "データ管理者 (日本語)",
+          "type": "string",
+          "format": "e-rad-researcher-name-ja",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:data-man-name-en",
+          "nav": "Data manager (English)",
+          "title": "Data manager (English)",
+          "type": "string",
+          "format": "e-rad-researcher-name-en",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:data-man-address-ja",
+          "nav": "データ管理者の所属機関の連絡先住所 (日本語)",
+          "title": "データ管理者の所属機関の連絡先住所 (日本語)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-man-address-en",
+          "nav": "Contact address of data manager (English)",
+          "title": "Contact address of data manager (English)",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-man-tel",
+          "nav": "データ管理者の所属機関の連絡先電話番号",
+          "title": "データ管理者の所属機関の連絡先電話番号",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:data-man-email",
+          "nav": "データ管理者の所属機関の連絡先メールアドレス",
+          "title": "データ管理者の所属機関の連絡先メールアドレス",
+          "type": "string",
+          "format": "text",
+          "required": true
+        },
+        {
+          "qid": "grdm-file:remarks-ja",
+          "nav": "備考 (日本語)",
+          "title": "備考 (日本語)",
+          "type": "string",
+          "format": "textarea",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:remarks-en",
+          "nav": "Remarks (English)",
+          "title": "Remarks (English)",
+          "type": "string",
+          "format": "textarea",
+          "required": false
+        },
+        {
+          "qid": "grdm-file:metadata-access-rights",
+          "nav": "メタデータのアクセス権",
+          "title": "メタデータのアクセス権",
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+            {
+              "text": "open access",
+              "tooltip": "open access - 公開"
+            },
+            {
+              "text": "restricted access",
+              "tooltip": "restricted access - 共有"
+            },
+            {
+              "text": "closed access",
+              "tooltip": "closed access - 非共有・非公開"
+            }
+          ],
+          "required": true
+        }
+      ]
+    }
+  ]
+}
