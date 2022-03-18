@@ -9,7 +9,18 @@ import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode, Registration
+
+from osf.models import (
+    BaseFileNode,
+    DraftNode,
+    OSFUser,
+    Comment,
+    Preprint,
+    AbstractNode,
+    Registration,
+    Guid,
+)
+
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -413,6 +424,14 @@ class FileDetailSerializer(FileSerializer):
     Overrides FileSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+    def to_representation(self, value):
+        data = super().to_representation(value)
+        guid = Guid.load(self.context['view'].kwargs['file_id'])
+        if guid:
+            data['data']['id'] = guid._id
+
+        return data
 
 
 class QuickFilesSerializer(BaseFileSerializer):
