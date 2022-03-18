@@ -212,9 +212,9 @@ var LogFeed = {
             [ctrl.activityLogs() ? ctrl.activityLogs().map(function(item) {
                 var image = m('i.fa.fa-desktop');
                 if (ctrl.node.anonymous) item.anonymous = true;
-                if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.data) {
+                if (!ctrl.node.anonymous && item.embeds && item.embeds.user && item.embeds.user.data) {
                     image = m('img', { src : item.embeds.user.data.links.profile_image});
-                } else if (!ctrl.node.anonymous && item.embeds.user && item.embeds.user.errors[0].meta){
+                } else if (!ctrl.node.anonymous && item.embeds && item.embeds.user && item.embeds.user.errors[0].meta){
                     image = m('img', { src : item.embeds.user.errors[0].meta.profile_image});
                 }
                 return m('.db-activity-item', [

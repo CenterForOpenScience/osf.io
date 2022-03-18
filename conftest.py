@@ -70,10 +70,6 @@ _MOCKS = {
         'mark': 'enable_bookmark_creation',
         'replacement': lambda *args, **kwargs: None,
     },
-    'osf.models.user._create_quickfiles_project': {
-        'mark': 'enable_quickfiles_creation',
-        'replacement': lambda *args, **kwargs: None,
-    },
     'framework.celery_tasks.handlers._enqueue_task': {
         'mark': 'enable_enqueue_task',
         'replacement': lambda *args, **kwargs: None,

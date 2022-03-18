@@ -238,7 +238,6 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data'][0]['attributes']['reviews_state'] == RegistrationModerationStates.ACCEPTED.db_name
         assert resp.json['meta']['reviews_state_counts']['accepted'] == 1
 
-    @pytest.mark.enable_quickfiles_creation
     def test_get_registration_actions(self, app, registration_actions_url, registration, moderator):
         resp = app.get(registration_actions_url, expect_errors=True)
         assert resp.status_code == 401
@@ -263,7 +262,6 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data'][0]['attributes']['trigger'] == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name
         assert resp.json['data'][0]['relationships']['creator']['data']['id'] == registration.creator._id
 
-    @pytest.mark.enable_quickfiles_creation
     def test_get_provider_actions(self, app, provider_actions_url, registration, moderator):
         resp = app.get(provider_actions_url, expect_errors=True)
         assert resp.status_code == 401
@@ -312,7 +310,6 @@ class TestRegistriesModerationSubmissions:
         resp = app.get(registration_log_url, auth=moderator.auth)
         assert resp.status_code == 200
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_accept(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
@@ -331,7 +328,6 @@ class TestRegistriesModerationSubmissions:
 
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_reject_moderator(self, app, registration, reg_creator, moderator, registration_actions_url, actions_payload_base):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
@@ -348,7 +344,6 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
         embargo_registration.sanction.accept()
@@ -365,7 +360,6 @@ class TestRegistriesModerationSubmissions:
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_embargo_reject(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
         embargo_registration.sanction.accept()
@@ -382,7 +376,6 @@ class TestRegistriesModerationSubmissions:
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_accept(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
         retract_registration.sanction.accept()
         retract_registration.refresh_from_db()
@@ -398,7 +391,6 @@ class TestRegistriesModerationSubmissions:
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_reject(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
         retract_registration.sanction.accept()
         retract_registration.refresh_from_db()
@@ -414,7 +406,6 @@ class TestRegistriesModerationSubmissions:
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
@@ -432,7 +423,6 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_accept_errors(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
         registration.require_approval(user=registration.creator)
 
@@ -462,7 +452,6 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_withdraw_admin_cant_accept(self, app, retract_registration, reg_creator, retract_registration_actions_url, actions_payload_base, provider):
         retract_registration.sanction.accept()
 
@@ -473,7 +462,6 @@ class TestRegistriesModerationSubmissions:
         resp = app.post_json_api(retract_registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
         assert resp.status_code == 403
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_embargo_admin_cant_accept(self, app, embargo_registration, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         embargo_registration.require_approval(user=embargo_registration.creator)
         embargo_registration.registration_approval.accept()
@@ -487,7 +475,6 @@ class TestRegistriesModerationSubmissions:
         resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
         assert resp.status_code == 403
 
-    @pytest.mark.enable_quickfiles_creation
     def test_registries_moderation_post_admin_cant_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
         registration.require_approval(user=registration.creator)
 
@@ -520,7 +507,6 @@ class TestRegistriesModerationSubmissions:
             RegistrationModerationTriggers.REJECT_SUBMISSION
         ]
     )
-    @pytest.mark.enable_quickfiles_creation
     def test_post_submission_action_persists_comment(self, app, registration, moderator, registration_actions_url, actions_payload_base, moderator_trigger):
         assert registration.actions.count() == 0
         registration.require_approval(user=registration.creator)
@@ -543,7 +529,6 @@ class TestRegistriesModerationSubmissions:
             RegistrationModerationTriggers.REJECT_WITHDRAWAL,
         ]
     )
-    @pytest.mark.enable_quickfiles_creation
     def test_post_withdrawal_action_persists_comment(self, app, registration, moderator, registration_actions_url, actions_payload_base, moderator_trigger):
         assert registration.actions.count() == 0
         registration.is_public = True
@@ -560,7 +545,6 @@ class TestRegistriesModerationSubmissions:
         persisted_action = registration.actions.get(trigger=moderator_trigger.db_name)
         assert persisted_action.comment == moderator_comment
 
-    @pytest.mark.enable_quickfiles_creation
     def test_post_force_withdraw_action_persists_comment(self, app, registration, moderator, registration_actions_url, actions_payload_base):
         assert registration.actions.count() == 0
         registration.is_public = True
