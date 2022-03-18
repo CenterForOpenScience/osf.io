@@ -6,7 +6,6 @@ from flask import make_response
 import logging
 
 from . import SHORT_NAME
-from . import settings
 from .models import ERadRecord, RegistrationReportFormat
 from .utils import make_report_as_csv
 from framework.exceptions import HTTPError
@@ -279,7 +278,6 @@ def metadata_report_list_view(**kwargs):
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_export_csv(auth, did=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    addon = node.get_addon(SHORT_NAME)
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
         formats = RegistrationReportFormat.objects.filter(registration_schema=draft.registration_schema)
