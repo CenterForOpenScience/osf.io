@@ -28,6 +28,7 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
+from osf_tests.utils import get_default_test_schema
 from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
@@ -1375,43 +1376,37 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
     def test_cannot_register_draft_that_has_orphan_files(
             self, app, user, payload, draft_registration, url_registrations):
-        schema = draft_registration.registration_schema
-        schema.schema['pages'][0]['questions'][0].update({
-            u'description': u'Upload files!',
-            u'format': u'osf-upload-open',
-            u'qid': u'qwhatever',
-            u'title': u'Upload an analysis script with clear comments',
-            u'type': u'osf-upload',
-        })
-        schema.save()
+        draft_registration.registration_schema = get_default_test_schema()
 
-        draft_registration.registration_metadata = {
-            'qwhatever': {
-                'value': 'file 1',
-                'extra': [{
-                    'nodeId': 'badid',
-                    'selectedFileName': 'file 1',
-                }]
+        draft_registration.registration_responses['q6'] = [
+            {
+                'file_name': 'fake file',
+                'file_id': 12345678909876543210,
+                'file_urls': {
+                    'html': 'notaurl',
+                    'download': 'alsonotaurl',
+                },
+                'file_hashes': {'sha256': 'gobbledygook'},
             }
-        }
+        ]
+
         draft_registration.save()
         res = app.post_json_api(
             url_registrations,
             payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
-                                                  ' process. The following file(s) are attached, but are not part of' \
-                                                  ' a component being registered: file 1'
+        assert 'fake file' in res.json['errors'][0]['detail']
 
     def test_assert_file_validity_on_registration_metadata(
         self, app, user, payload, url_registrations, project_public
     ):
         file_name = 'registration_file.pdf'
         sha256 = 'asdfjkl'
-        file = create_test_file(project_public, user, file_name)
-        version = file.versions.first()
+        attached_file = create_test_file(project_public, user, file_name)
+        version = attached_file.versions.first()
         # mock sha256
         version.metadata['sha256'] = sha256
         version.save()
@@ -1454,11 +1449,11 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
         file_view_url = urljoin(settings.DOMAIN, '/project/{}/files/osfstorage/{}'.format(
             prereg_draft_registration.branched_from._id,
-            file._id,
+            attached_file._id,
         ))
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
-            'file_id': file._id,
+            'file_id': attached_file._id,
             'file_hashes': {
                 'sha256': 'incorrect_sha',
             },
@@ -1479,7 +1474,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
-            'file_id': file._id,
+            'file_id': attached_file._id,
             'file_hashes': {
                 'sha256': sha256,
             },

@@ -304,14 +304,9 @@ def archive_success(dst_pk, job_pk):
     # Cache registration files count
     dst.update_files_count()
 
-    # The filePicker extension addded with the Prereg Challenge registration schema
-    # allows users to select files in OSFStorage as their response to some schema
-    # questions. These files are references to files on the unregistered Node, and
-    # consequently we must migrate those file paths after archiver has run. Using
-    # sha256 hashes is a convenient way to identify files post-archival.
-    for schema in dst.registered_schema.all():
-        if schema.has_files:
-            utils.migrate_file_metadata(dst, schema)
+    # Update file references in the Registration's responses to point to the archived
+    # file on the Registration instead of the "live" version on the backing project
+    utils.migrate_file_metadata(dst)
     job = ArchiveJob.load(job_pk)
     if not job.sent:
         job.sent = True

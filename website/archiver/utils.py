@@ -238,11 +238,12 @@ def get_title_for_question(schema, qid):
     return annotated_blocks.get(qid=qid).display_text
 
 
-def migrate_file_metadata(dst, schema):
+def migrate_file_metadata(dst):
     if dst.root_id != dst.id:
         return
 
-    file_input_qids = dst.registration_schema.schema_blocks.filter(
+    schema = dst.registration_schema
+    file_input_qids = schema.schema_blocks.filter(
         block_type='file-input'
     ).values_list('registration_response_key', flat=True)
     file_response_keys_by_hash = _get_file_response_hashes(dst, file_input_qids)
