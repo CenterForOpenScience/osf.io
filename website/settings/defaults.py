@@ -446,6 +446,7 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
+        'osf.management.commands.fix_quickfiles_waterbutler_logs'
     }
 
     try:
@@ -515,6 +516,8 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.populate_initial_schema_responses',
         'osf.management.commands.approve_pending_schema_responses',
+        'osf.management.commands.delete_legacy_quickfiles_nodes',
+        'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'api.providers.tasks'
     )
 
