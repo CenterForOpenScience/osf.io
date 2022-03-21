@@ -148,7 +148,7 @@ def export_resource(node, user, current_dir):
 def export_resources(nodes_to_export, user, dir, nodes_type):
     """
     Creates appropriate directory structure and exports a given set of resources
-    (projects, registrations, quickfiles or preprints) by calling export helper functions.
+    (projects, registrations, or preprints) by calling export helper functions.
 
     """
     progress = Progress()
@@ -161,7 +161,7 @@ def export_resources(nodes_to_export, user, dir, nodes_type):
     progress.stop()
 
 def get_usage(user):
-    # includes nodes, registrations, quickfiles
+    # includes nodes and registrations
     nodes = user.nodes.filter(is_deleted=False).exclude(type='osf.collection').values_list('id', flat=True)
     node_ctype = ContentType.objects.get_for_model(AbstractNode)
     node_files = get_resource_files(nodes, node_ctype)
