@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Routes associated with the metadata addon
 """
@@ -24,9 +25,9 @@ api_routes = {
             '/project/<pid>/node/<nid>/{}/project'.format(SHORT_NAME),
         ], 'get', views.metadata_get_project, json_renderer),
         Rule([
-            '/project/<pid>/{}/project'.format(SHORT_NAME),
-            '/project/<pid>/node/<nid>/{}/project'.format(SHORT_NAME),
-        ], 'patch', views.metadata_set_project, json_renderer),
+            '/project/<pid>/{}/schemas'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/schemas'.format(SHORT_NAME),
+        ], 'get', views.metadata_get_schemas, json_renderer),
         Rule([
             '/project/<pid>/{}/files/<path:filepath>'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/files/<path:filepath>'.format(SHORT_NAME),
@@ -68,7 +69,16 @@ page_routes = {
                 '/<pid>/node/<nid>/{}/draft_registrations/<did>/csv'.format(SHORT_NAME),
             ],
             'get',
-            views.metadata_export_csv,
+            views.metadata_export_draft_registrations_csv,
+            notemplate
+        ),
+        Rule(
+            [
+                '/<pid>/{}/registrations/<rid>/csv'.format(SHORT_NAME),
+                '/<pid>/node/<nid>/{}/registrations/<rid>/csv'.format(SHORT_NAME),
+            ],
+            'get',
+            views.metadata_export_registrations_csv,
             notemplate
         ),
     ]

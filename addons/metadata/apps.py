@@ -33,6 +33,8 @@ class AddonAppConfig(BaseAddonAppConfig):
         'page': [],
     }
 
+    has_page_icon = False
+
     user_settings_template = os.path.join(TEMPLATE_PATH, 'metadata_user_settings.mako')
 
     node_settings_template = os.path.join(TEMPLATE_PATH, 'metadata_node_settings.mako')

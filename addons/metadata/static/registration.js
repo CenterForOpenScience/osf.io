@@ -11,8 +11,8 @@ function RegistrationSchemas() {
 
   self.schemas = [];
 
-  self.load = function(callback, page = 1) {
-    var params = new URLSearchParams({'filter[active]': 'true', page: page});
+  self.load = function(callback, page) {
+    var params = new URLSearchParams({'filter[active]': 'true', page: page === undefined ? 1 : page});
     var url = $osf.apiV2Url('schemas/registrations/') + '?' + params;
     $osf.ajaxJSON(
       'GET',

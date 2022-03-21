@@ -1,0 +1,10 @@
+【サンプル】データマネジメント報告書（令和○年度；日本語）
+掲載日・掲載更新日,
+目標名,{{project_name_ja | quotecsv}}
+PM名,
+e-Radの課題番号,{{e_rad_project_id | quotecsv}}
+
+データNo.,メタデータのアクセス権
+{% for grdm_file in grdm_files -%}
+{{grdm_file.data_number | quotecsv}},{{grdm_file.access_right | quotecsv}}
+{%- endfor %}

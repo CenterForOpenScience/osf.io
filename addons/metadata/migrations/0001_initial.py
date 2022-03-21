@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('registered', models.BooleanField()),
+                ('registered', models.BooleanField(default=False)),
                 ('folder', models.BooleanField()),
                 ('path', models.TextField()),
                 ('metadata', models.TextField(blank=True, null=True)),

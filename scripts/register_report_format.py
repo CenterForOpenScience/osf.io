@@ -18,8 +18,7 @@ django.setup()
 from scripts import utils as script_utils
 
 from website.app import init_app
-from osf.models.metaschema import RegistrationSchema
-from addons.metadata.models import RegistrationReportFormat
+from addons.metadata.utils import ensure_registration_report
 
 
 logger = logging.getLogger(__name__)
@@ -32,23 +31,16 @@ def validate_record(record_num, row):
         raise ValueError(f'Column "{column}" not exists (record={record_num})')
 
 
-def do_populate(schema_name, template_file):
-    registration_schema = RegistrationSchema.objects.get(name=schema_name)
-    template_query = RegistrationReportFormat.objects.filter(registration_schema=registration_schema)
-    if template_query.exists():
-        template = template_query.first()
-    else:
-        template = RegistrationReportFormat.objects.create(registration_schema=registration_schema)
+def do_populate(schema_name, report_name, template_file):
     with open(template_file, encoding='utf-8-sig') as f:
-        template.csv_template = f.read()
-    logger.info(f'Format registered: {registration_schema._id}')
-    template.save()
+        csv_template = f.read()
+        ensure_registration_report(schema_name, report_name, csv_template)
 
 
-def main(schema_name, template_file, dry=True):
+def main(schema_name, report_name, template_file, dry=True):
     init_app(routes=False)
     with transaction.atomic():
-        do_populate(schema_name, template_file)
+        do_populate(schema_name, report_name, template_file)
         if dry:
             raise Exception('Abort Transaction - Dry Run')
 
@@ -57,6 +49,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--dry-run', action='store_true', help='Dry run')
 parser.add_argument('schema_name', metavar='schema_name', type=str,
                     help='RegistrationSchema name')
+parser.add_argument('report_name', metavar='report_name', type=str,
+                    help='RegistrationReportFormat name')
 parser.add_argument('template_file', metavar='template_file', type=str,
                     help='Path of the template file for report')
 
@@ -64,4 +58,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if not args.dry_run:
         script_utils.add_file_logger(logger, __file__)
-    main(args.schema_name, args.template_file, dry=args.dry_run)
+    main(args.schema_name, args.report_name, args.template_file, dry=args.dry_run)

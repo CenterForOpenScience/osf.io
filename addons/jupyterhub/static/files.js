@@ -143,6 +143,8 @@ function JupyterButton() {
 
 }
 
-var btn = new JupyterButton();
-btn.initFileTree();
-btn.loadConfig();
+if (contextVars.jupyterhubAddonEnabled) {
+  var btn = new JupyterButton();
+  btn.initFileTree();
+  btn.loadConfig();
+}
