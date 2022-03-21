@@ -559,6 +559,8 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     """
     view_category = 'registrations'
     view_name = 'registration-files'
+
+    ordering_fields = ['modified', 'name']
     serializer_class = RegistrationFileSerializer
 
 
