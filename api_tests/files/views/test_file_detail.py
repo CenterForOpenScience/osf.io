@@ -13,13 +13,14 @@ from addons.osfstorage.listeners import checkin_files_task
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session, QuickFilesNode
+from osf.models import NodeLog, Session, QuickFilesNode, Node
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
     ProjectFactory,
+    RegistrationFactory,
     UserFactory,
     PreprintFactory,
 )
@@ -323,14 +324,6 @@ class TestFileView:
                 }
             }, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
-
-        # test_checkout_file_no_attributes
-        res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files'}},
-            auth=user.auth, expect_errors=True
-        )
-        assert res.status_code == 400
 
     def test_must_set_self(self, app, user, file, file_url):
         user_unauthorized = UserFactory()
@@ -687,33 +680,37 @@ class TestFileVersionView:
 @pytest.mark.django_db
 class TestFileTagging:
 
-    @pytest.fixture()
-    def node(self, user):
-        return ProjectFactory(creator=user)
+    @pytest.fixture
+    def node(self, user, request):
+        if request.param == 'project':
+            return ProjectFactory(creator=user)
+        if request.param == 'registration':
+            return RegistrationFactory(creator=user)
 
     @pytest.fixture()
-    def file_one(self, user, node):
-        return api_utils.create_test_file(
-            node, user, filename='file_one')
+    def file(self, user, node):
+        return api_utils.create_test_file(node, user, filename='file_one')
 
     @pytest.fixture()
-    def payload(self, file_one):
+    def payload(self, file):
         payload = {
             'data': {
                 'type': 'files',
-                'id': file_one._id,
+                'id': file._id,
                 'attributes': {
-                    'checkout': None,
                     'tags': ['goofy']
                 }
             }
         }
+        if isinstance(file.target, Node):
+            payload['data']['attributes']['checkout'] = None
         return payload
 
     @pytest.fixture()
-    def url(self, file_one):
-        return '/{}files/{}/'.format(API_BASE, file_one._id)
+    def url(self, file):
+        return '/{}files/{}/'.format(API_BASE, file._id)
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_update_properly(self, app, user, url, payload):
         # test_tags_add_properly
         res = app.put_json_api(url, payload, auth=user.auth)
@@ -730,6 +727,7 @@ class TestFileTagging:
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofier'
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_remove_properly(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
         payload['data']['attributes']['tags'] = []
@@ -737,15 +735,16 @@ class TestFileTagging:
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 0
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_put_wo_tags_doesnt_remove_tags(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
-        payload['data']['attributes'] = {'checkout': None}
         res = app.put_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         # Ensure adding tag data is correct from the PUT response
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofy'
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_add_and_remove_tag_adds_log(self, app, user, url, payload, node):
         # test_add_tag_adds_log
         count = node.logs.count()
