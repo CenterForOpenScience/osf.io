@@ -19,6 +19,7 @@ from osf.models import (
     AbstractNode,
     Registration,
     Guid,
+    Node,
 )
 
 from rest_framework import serializers as ser
@@ -395,12 +396,16 @@ class FileSerializer(BaseFileSerializer):
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     def get_target_type(self, obj):
-        target_type = 'node'
         if isinstance(obj, Preprint):
-            target_type = 'preprint'
-        if isinstance(obj, DraftNode):
-            target_type = 'draft_node'
-        return target_type
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
 
 
 class OsfStorageFileSerializer(FileSerializer):
