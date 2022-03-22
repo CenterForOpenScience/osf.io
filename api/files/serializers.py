@@ -437,10 +437,10 @@ class FileDetailSerializer(FileSerializer):
     def to_representation(self, value):
         data = super().to_representation(value)
         view = self.context['view']
+        data['data']['links']['self'] = absolute_reverse(f'{view.view_category}:{view.view_name}', kwargs=view.kwargs)
         guid = Guid.load(view.kwargs['file_id'])
         if guid:
             data['data']['id'] = guid._id
-            data['data']['links']['self'] = absolute_reverse(f'{view.view_category}:{view.view_name}', kwargs=view.kwargs)
 
         return data
 

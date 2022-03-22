@@ -424,11 +424,6 @@ class IDField(ser.CharField):
         return super(IDField, self).to_internal_value(data)
 
     def get_id(self, obj):
-        if isinstance(obj, BaseFileNode) and self.source == '_id':
-            guid = Guid.load(self.context['view'].kwargs['file_id'])
-            if guid:
-                return guid._id
-
         return getattr(obj, self.source, '_id')
 
 
@@ -440,7 +435,7 @@ class GuidOrIDField(IDField):
             if guid:
                 return guid._id
 
-        return getattr(obj, self.source, '_id')
+        return super().get_id(obj)
 
 
 class TypeField(ser.CharField):
