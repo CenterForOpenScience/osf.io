@@ -320,7 +320,7 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
-    elif isinstance(resource, Registration) and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+    elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):

@@ -972,6 +972,35 @@ class TestProjectViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.title, 'newtitle')
 
+    # Regression test
+    def test_retraction_view(self):
+        project = ProjectFactory(creator=self.user1, is_public=True)
+
+        registration = RegistrationFactory(project=project, is_public=True)
+        reg_file = create_test_file(registration, user=registration.creator, create_guid=True)
+        registration.retract_registration(self.user1)
+
+        approval_token = registration.retraction.approval_state[self.user1._id]['approval_token']
+        registration.retraction.approve_retraction(self.user1, approval_token)
+        registration.save()
+
+        url = registration.web_url_for('view_project')
+        res = self.app.get(url, auth=self.auth)
+
+        assert_not_in('Mako Runtime Error', res.body.decode())
+        assert_in(registration.title, res.body.decode())
+        assert_equal(res.status_code, 200)
+
+        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+            res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
+            assert_equal(res.status_code, 302, route)
+            res = res.follow()
+            assert_equal(res.status_code, 200, route)
+            assert_in('This project is a withdrawn registration of', res.body.decode(), route)
+
+        res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
+        assert_equal(res.status_code, 200)
+        assert_in('This project is a withdrawn registration of', res.body.decode())
 
 class TestEditableChildrenViews(OsfTestCase):
 
