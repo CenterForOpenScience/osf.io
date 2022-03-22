@@ -32,6 +32,7 @@ from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
     IDField,
+    GuidOrIDField,
     JSONAPIListField,
     JSONAPISerializer,
     Link,
@@ -426,7 +427,7 @@ class FileDetailSerializer(FileSerializer):
      the path attribute, so that should not be overridden.
 
     """
-    id = IDField(source='_id', required=True)
+    id = GuidOrIDField(source='_id', required=True)
 
     def to_representation(self, value):
         data = super().to_representation(value)
