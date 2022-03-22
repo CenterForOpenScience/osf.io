@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from osf.utils.migrations import ensure_schemas
+from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 
 
 def ensure_registration_reports(*args):
@@ -21,7 +21,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # To reverse this migrations simply revert changes to the schema and re-run
-        migrations.RunPython(ensure_schemas, ensure_schemas),
+        UpdateRegistrationSchemasAndSchemaBlocks(),
         migrations.RunPython(ensure_registration_reports, noop),
     ]
