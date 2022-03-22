@@ -14,9 +14,10 @@
         <tr>
             <th>{% trans "GUID" %}</th>
             <th>{% trans "Username" %}</th>
+            <th>{% trans "EPPN" %}</th>
+            <th>{% trans "Emails" %}</th>
             <th>{% trans "Fullname" %}</th>
-            <th>{% trans "Date confirmed" %}</th>
-            <th>{% trans "Date disabled" %}</th>
+            <th>{% trans "Affiliation" %}</th>
         </tr>
         </thead>
         <tbody>
@@ -32,13 +33,16 @@
                     {{ user.username }}
                 </td>
                 <td>
+                    {{ user.eppn }}
+                </td>
+                <td>
+                    {{ user.emails }}
+                </td>
+                <td>
                     {{ user.name }}
                 </td>
                 <td>
-                    {{ user.confirmed }}
-                </td>
-                <td>
-                    {{ user.disabled }}
+                    {% if user.affiliation is not None %}{{ user.affiliation.name }}{% endif %}
                 </td>
             </tr>
         {% endfor %}

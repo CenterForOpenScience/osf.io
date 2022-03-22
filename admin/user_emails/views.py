@@ -56,7 +56,7 @@ class UserEmailsFormView(RdmPermissionMixin, FormView):
                 except OSFUser.MultipleObjectsReturned:
                     msg = 'Multiple users with email address {} found, please notify DevOps.'.format(email)
                     return page_not_found(self.request, AttributeError(msg))
-            self.redirect_url = reverse('user-emails:user', kwargs={'guid': guid})
+            self.redirect_url = reverse('user-emails:search_list_guid', kwargs={'guid': guid})
         elif name:
             self.redirect_url = reverse('user-emails:search_list', kwargs={'name': name})
 
@@ -75,18 +75,22 @@ class UserEmailsSearchList(RdmPermissionMixin, ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        keyword = self.kwargs['name']
+        keyword = self.kwargs.get('name')
+        guid = self.kwargs.get('guid')
         request_user = self.request.user
 
-        if not keyword:
+        if not keyword and not guid:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-        users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
-        users_query = users_query.filter(fullname__icontains=keyword)
+        if guid:
+            users_query = OSFUser.objects.filter(guids___id=guid)
+        else:
+            users_query = OSFUser.objects.filter(is_active=True, is_registered=True)
+            users_query = users_query.filter(fullname__icontains=keyword)
         if self.is_admin:
             now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
             users_query = users_query.filter(affiliated_institutions__in=now_institutions_id)
         users_query = users_query.order_by('fullname').only(
-            'guids', 'fullname', 'username', 'date_confirmed', 'date_disabled'
+            'guids', 'eppn', 'username', 'fullname'
         )
         return users_query
 
@@ -96,11 +100,12 @@ class UserEmailsSearchList(RdmPermissionMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(users, page_size)
         kwargs['page'] = page
         kwargs['users'] = [{
-            'name': user.fullname,
-            'username': user.username,
             'id': user.guids.first()._id,
-            'confirmed': user.date_confirmed,
-            'disabled': user.date_disabled if user.is_disabled else None
+            'username': user.username,
+            'eppn': user.eppn,
+            'emails': user.username,
+            'name': user.fullname,
+            'affiliation': user.affiliated_institutions.first(),
         } for user in query_set]
         return super(UserEmailsSearchList, self).get_context_data(**kwargs)
 
