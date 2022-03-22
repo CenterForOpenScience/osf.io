@@ -2744,7 +2744,12 @@ mississippi@^2.0.0:
     stream-each "^1.1.0"
     through2 "^2.0.0"
 
-mithril@0.2.8, mithril@>=0.2, mithril@^0.2.8:
+mithril@0.2.3, mithril@>=0.2:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/mithril/-/mithril-0.2.3.tgz#7df32f1a8a9ed14f08ed92b76ccf6632b575cd6b"
+  integrity sha1-ffMvGoqe0U8I7ZK3bM9mMrV1zWs=
+
+mithril@^0.2.3:
   version "0.2.8"
   resolved "https://registry.yarnpkg.com/mithril/-/mithril-0.2.8.tgz#cc6d470b9227cebb342718655bd0a1d7ab2afb96"
   integrity sha512-9XuGnVmS2OyFexUuP/CcJFFJjHLM+RGYBxyVRNyQ6khbMfDJIF/xyZ4zq18ZRfPagpFmWUFpjHd5ZqPULGZyNg==
