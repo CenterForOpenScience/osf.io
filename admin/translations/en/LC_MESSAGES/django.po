@@ -3096,3 +3096,8 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
+#~ msgid "Institutional Storage for Institutions"
+#~ msgstr ""
+
+#~ msgid "Storage name"
+#~ msgstr ""
