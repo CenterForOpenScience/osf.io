@@ -3156,3 +3156,9 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
 #~ msgid "Institutions"
 #~ msgstr "機関"
+
+msgid "Configure NII Storage Quota"
+msgstr "NII保管クォータコンフィグレーション"
+
+msgid "Each user Quota for NII Storage (GB)"
+msgstr "NII保管の各ユーザークォータ（GB)"
