@@ -22,7 +22,7 @@
                         <h3 class="panel-title">Account Information</h3>
                     </div>
                     <div class="panel-body">
-                        <form role="form" data-bind="submit: submit">
+                        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
                             <div class="form-group">
                                 <label>${_("Display name")} <span style="color: red">*</span></label>
                                 ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files

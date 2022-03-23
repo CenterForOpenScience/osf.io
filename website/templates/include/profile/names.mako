@@ -1,6 +1,6 @@
 <script id="profileName" type="text/html">
 
-    <form role="form" data-bind="submit: submit">
+    <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
 
         <div class="form-group">
             <label>${_("Full name (e.g. Rosalind Elsie Franklin)")} <span style="color: red">*</span></label>

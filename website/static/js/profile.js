@@ -225,7 +225,13 @@ var TrackedMixin = function() {
 /** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
-    return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
+    if ($('.nav.nav-tabs>li.active>a').length) {
+        var href = $('.nav.nav-tabs>li.active>a')[0].getAttribute('href');
+        if (href === self.selector) {
+            return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
+        }
+    }
+    return false;
 };
 
 /** Store values in tracked fields for future use */
@@ -1226,24 +1232,29 @@ SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 var Names = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new NameViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
     window.nameModel = this.viewModel;
 };
 
 var Social = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new SocialViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
-    window.social = this.viewModel;
+    this.viewModel.selector = selector;
+    window.socialModel = this.viewModel;
 };
 
 var Jobs = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new JobsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
     window.jobsModel = this.viewModel;
 };
 
 var Schools = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new SchoolsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
+    window.schoolsModel = this.viewModel;
 };
 
 var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -1360,7 +1371,8 @@ $.extend(AccountInformationViewModel.prototype, SerializeMixin.prototype, Tracke
 var AccountInformation = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new AccountInformationViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
-    window.nameModel = this.viewModel;
+    this.viewModel.selector = selector;
+    window.accountInfoModel = this.viewModel;
 };
 
 /*global module */
