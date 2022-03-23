@@ -337,7 +337,7 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
         response = HttpResponse(content_type='text/tsv')
         writer = csv.writer(response, delimiter='\t')
         writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
-        convert_to_byte={
+        convert_to_byte = {
             'KB': 1024,
             'MB': pow(1024, 2),
             'GB': pow(1024, 3),
@@ -354,9 +354,9 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
             writer.writerow([user_data.get('id'), user_data.get('username'),
                              user_data.get('fullname'),
                              '{}'.format(round(user_data.get('ratio'), 1)),
-                             '{}'.format(user_data.get('usage_value')*convert_to_byte[user_data.get('usage_abbr')]),
-                             '{}'.format(user_data.get('remaining_value')*convert_to_byte[user_data.get('remaining_abbr')]),
-                             '{}'.format(user_data.get('quota')*convert_to_byte['GB'])])
+                             '{}'.format(user_data.get('usage_value') * convert_to_byte[user_data.get('usage_abbr')]),
+                             '{}'.format(user_data.get('remaining_value') * convert_to_byte[user_data.get('remaining_abbr')]),
+                             '{}'.format(user_data.get('quota') * convert_to_byte['GB'])])
         query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
             institution_id)
         response['Content-Disposition'] = query
