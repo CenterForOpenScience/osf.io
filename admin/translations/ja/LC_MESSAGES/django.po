@@ -3157,11 +3157,11 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-#~ msgid "Institutional Storage for Institutions"
-#~ msgstr "機関向けの機関保管"
+msgid "Institutional Storage for Institutions"
+msgstr "機関向けの機関保管"
 
-#~ msgid "Storage name"
-#~ msgstr "保管名"
+msgid "Storage name"
+msgstr "保管名"
 
 msgid "Institutional Storage Quota Control"
 msgstr "機関の保管クォータ制御"
