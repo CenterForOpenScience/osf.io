@@ -3924,3 +3924,6 @@ msgstr "メンバー管理"
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+msgid "Invitation Code"
+msgstr "再招待"

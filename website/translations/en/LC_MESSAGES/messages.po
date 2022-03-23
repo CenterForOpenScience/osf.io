@@ -3813,3 +3813,6 @@ msgstr ""
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr ""
+
+msgid "Invitation Code"
+msgstr ""
