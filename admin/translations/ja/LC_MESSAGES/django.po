@@ -3162,3 +3162,15 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 
 #~ msgid "Storage name"
 #~ msgstr "保管名"
+
+msgid "Institutional Storage Quota Control"
+msgstr "機関の保管クォータ制御"
+
+msgid "Configure Institutional Storage Quota"
+msgstr "機関の保管クォータコンフィグレーション"
+
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr "機関保管の各ユーザークォータ（GB）"
+
+msgid "inst. Storage Quota Control"
+msgstr "機関の保管クォータ制御"

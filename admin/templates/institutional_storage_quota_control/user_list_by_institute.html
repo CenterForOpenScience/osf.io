@@ -1,9 +1,9 @@
 {% load i18n %}
-<h2 id="title">Institutional Storage Quota Control</h2>
+<h2 id="title">{% trans "Institutional Storage Quota Control" %}</h2>
 {% if requested_user.is_superuser %}
     <h3 >{{institution_storage_name}} &gt; GakuNin RDM IdP</h3>
 {% elif requested_user.is_staff %}
-    <h3 >Institutional Storage Quota Control <span id="sub-gray-title" style="font-size: 16px;color: gray;">GakuNin RDM idP</span></h3>
+    <h3 >{% trans "Institutional Storage Quota Control" %}<span id="sub-gray-title" style="font-size: 16px;color: gray;">GakuNin RDM idP</span></h3>
 {% endif %}
 
 <form role="form" id="institutional_storage_form" action="{% url 'institutional_storage_quota_control:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
@@ -12,14 +12,14 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title label-large">Configure Institutional Storage Quota</h3>
+                    <h3 class="panel-title label-large">{% trans "Configure Institutional Storage Quota" %}</h3>
                 </div>
                 <div class="panel-body">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="form-group">
                                 <label for="storageLimit" class="col-sm-3 control-label">
-                                    Each user Quota for Institutional Storage (GB)
+                                    {% trans "Each user Quota for Institutional Storage (GB)" %}
                                 </label>
                                 <div class="col-sm-3">
                                     <div class="storageLimitContainer">
@@ -40,7 +40,7 @@
                     <div class="row">
                         <div class="col-sm-3"></div>
                         <div class="col-sm-3">
-                            <button class="btn btn-primary next-btn" type="submit">Apply</button>
+                            <button class="btn btn-primary next-btn" type="submit">{% trans "Apply" %}</button>
                         </div>
                     </div>
                 </div>

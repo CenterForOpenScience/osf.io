@@ -3101,3 +3101,15 @@ msgstr ""
 
 #~ msgid "Storage name"
 #~ msgstr ""
+
+msgid "Institutional Storage Quota Control"
+msgstr ""
+
+msgid "Configure Institutional Storage Quota"
+msgstr ""
+
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr ""
+
+msgid "inst. Storage Quota Control"
+msgstr ""
