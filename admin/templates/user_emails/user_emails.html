@@ -13,11 +13,6 @@
 {% block content %}
     <div class="container-fluid">
         <div id="error_message" class="row hidden"></div>
-        <div class="row">
-            <div class="col-md-12">
-                <h3>{% trans "User Emails" %}</h3>
-            </div>
-        </div>
         {% if request.session.message %}
             <div class="row">
                 <div class="col-md-12">
@@ -28,6 +23,62 @@
             </div>
         {% endif %}
         <div class="row">
+            <div class="col-md-12 clearfix">
+                <h3>{% trans "User details" %}</h3>
+            </div>
+            <div class="col-md-6 clearfix">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td><strong>{% trans "Name" %}</strong></td>
+                        <td>{{ user.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{% trans "Username" %}</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>{% trans "EPPN" %}</strong></td>
+                        <td>{{ user.eppn }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6 clearfix">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr >
+                        <td rowspan="3"><strong>{% trans "Affiliation" %}</strong></td>
+                        <td rowspan="3">
+                            {% if user.affiliations is not None %}
+                                <ul style="height: 6em;overflow: auto;">
+                                    {% for affiliation in user.affiliations %}
+                                        <li>{{ affiliation.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 clearfix">
+                <h3>{% trans "User Emails" %}</h3>
+            </div>
             <div class="col-md-12 clearfix">
                 <form class="form-horizontal" method="POST" action="{% url 'user-emails:primary' user.id %}"
                       onsubmit="return validateForm()"

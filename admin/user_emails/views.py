@@ -101,9 +101,8 @@ class UserEmailsSearchList(RdmPermissionMixin, ListView):
         kwargs['page'] = page
         kwargs['users'] = [{
             'id': user.guids.first()._id,
-            'username': user.username,
             'eppn': user.eppn,
-            'emails': user.username,
+            'username': user.username,
             'name': user.fullname,
             'affiliation': user.affiliated_institutions.first(),
         } for user in query_set]
@@ -136,9 +135,11 @@ class UserEmailsView(RdmPermissionMixin, GuidView):
                 raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
         return {
+            'id': user._id,
+            'eppn': user.eppn,
             'username': user.username,
             'name': user.fullname,
-            'id': user._id,
+            'affiliations': user.affiliated_institutions.all(),
             'emails': user.emails.values_list('address', flat=True),
         }
 

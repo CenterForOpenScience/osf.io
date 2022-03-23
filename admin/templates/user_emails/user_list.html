@@ -13,9 +13,8 @@
         <thead>
         <tr>
             <th>{% trans "GUID" %}</th>
-            <th>{% trans "Username" %}</th>
             <th>{% trans "EPPN" %}</th>
-            <th>{% trans "Emails" %}</th>
+            <th>{% trans "Username" %}</th>
             <th>{% trans "Fullname" %}</th>
             <th>{% trans "Affiliation" %}</th>
         </tr>
@@ -30,13 +29,10 @@
                     </a>
                 </td>
                 <td>
-                    {{ user.username }}
-                </td>
-                <td>
                     {{ user.eppn }}
                 </td>
                 <td>
-                    {{ user.emails }}
+                    {{ user.username }}
                 </td>
                 <td>
                     {{ user.name }}
