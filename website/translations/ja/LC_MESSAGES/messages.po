@@ -3970,3 +3970,6 @@ msgstr "e-Rad 番号"
 
 msgid "Your e-Rad number"
 msgstr "あなたのe-Rad番号"
+
+msgid "Account Information"
+msgstr "アカウント情報"

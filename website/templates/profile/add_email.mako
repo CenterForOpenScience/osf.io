@@ -19,7 +19,7 @@
             <div class="col-md-8">
                 <div id="accountInformation" class="panel panel-default scripted">
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Account Information</h3>
+                        <h3 class="panel-title">${_("Account Information")}</h3>
                     </div>
                     <div class="panel-body">
                         <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
