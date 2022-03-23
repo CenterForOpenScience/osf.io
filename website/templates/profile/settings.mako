@@ -4,6 +4,16 @@
     return 'user'
 %>
 </%def>
+<%def name="stylesheets()">
+    <style type="text/css">
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .form-row .form-group.col-md-4 .long-label {
+                white-space: nowrap;
+                // margin-left: -13px;
+            }
+        }
+    </style>
+</%def>
 <%def name="content()">
 <% from website import settings %>
 <h2 class="page-header">${_("Settings")}

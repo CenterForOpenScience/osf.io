@@ -6,6 +6,15 @@
 <%def name="stylesheets()">
    ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
+    <style>
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .form-row .form-group.col-md-4 .long-label,
+            .form-row .form-group.col-md-6 .long-label {
+                white-space: nowrap;
+                // margin-left: -13px;
+            }
+        }
+    </style>
 </%def>
 
 <%def name="content()">
@@ -34,18 +43,18 @@
 
                             <div class="form-row row">
                                 <div class="form-group col-md-4">
-                                    <label>${_("Family name")} <span style="color: red">*</span></label>
+                                    <label class="long-label">${_("Family name")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: family_ja" maxlength="255"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
                                         <p data-bind="validationMessage: family_ja"></p>
                                     </div>
                                 </div>
                                 <div class="form-group col-md-4">
-                                    <label>${_("Middle name(s)")}</label>
+                                    <label class="long-label">${_("Middle name(s)")}</label>
                                     <input class="form-control" data-bind="value: middle_ja" maxlength="255"/>
                                 </div>
                                 <div class="form-group col-md-4">
-                                    <label>${_("Given name")} <span style="color: red">*</span></label>
+                                    <label class="long-label">${_("Given name")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: given_ja" maxlength="255"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
                                         <p data-bind="validationMessage: given_ja"></p>
@@ -55,21 +64,21 @@
 
                             <div class="form-row row">
                                 <div class="form-group col-md-4">
-                                    <label>${_("Given name (EN)")} <span style="color: red">*</span></label>
-                                    <input class="form-control" data-bind="value: given" maxlength="255"/>
-                                    <div data-bind="visible: showMessages, css:'text-danger'">
-                                        <p data-bind="validationMessage: given"></p>
-                                    </div>
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label>${_("Middle name(s) (EN)")}</label>
-                                    <input class="form-control" data-bind="value: middle" maxlength="255"/>
-                                </div>
-                                <div class="form-group col-md-4">
-                                    <label>${_("Family name (EN)")} <span style="color: red">*</span></label>
+                                    <label class="long-label">${_("Family name (EN)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: family" maxlength="255"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
                                         <p data-bind="validationMessage: family"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Middle name(s) (EN)")}</label>
+                                    <input class="form-control" data-bind="value: middle" maxlength="255"/>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Given name (EN)")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: given" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: given"></p>
                                     </div>
                                 </div>
                             </div>
