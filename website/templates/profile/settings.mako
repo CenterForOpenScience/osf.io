@@ -40,7 +40,7 @@
       <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9 col-md-8">
 
         <div id="userProfile">
 

@@ -6,15 +6,6 @@
 <%def name="stylesheets()">
    ${parent.stylesheets()}
    <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
-    <style>
-        @media (min-width: 992px) and (max-width: 1199px) {
-            .form-row .form-group.col-md-4 .long-label,
-            .form-row .form-group.col-md-6 .long-label {
-                white-space: nowrap;
-                // margin-left: -13px;
-            }
-        }
-    </style>
 </%def>
 
 <%def name="content()">
@@ -25,7 +16,7 @@
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div id="accountInformation" class="panel panel-default scripted">
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">Account Information</h3>
@@ -385,6 +376,15 @@
   % for stylesheet in addons_css:
       <link rel="stylesheet" type="text/css" href="${stylesheet}">
   % endfor
+    <style>
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .form-row .form-group.col-md-4 .long-label,
+            .form-row .form-group.col-md-6 .long-label {
+                white-space: nowrap;
+                // margin-left: -13px;
+            }
+        }
+    </style>
 </%def>
 
 <%def name="render_user_settings(config)">
