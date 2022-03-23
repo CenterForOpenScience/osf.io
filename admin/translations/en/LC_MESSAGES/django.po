@@ -3096,3 +3096,5 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
+#~ msgid "Recalculate quota"
+#~ msgstr ""
