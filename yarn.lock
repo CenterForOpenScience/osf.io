@@ -1519,9 +1519,9 @@ dot-prop@^4.1.0:
   dependencies:
     is-obj "^1.0.0"
 
-"dropzone@git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae":
+"dropzone@https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae":
   version "4.3.0"
-  resolved "git://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae"
+  resolved "https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae"
 
 duplexer3@^0.1.4:
   version "0.1.4"
@@ -5516,9 +5516,9 @@ tough-cookie@>=0.12.0, tough-cookie@~2.3.0, tough-cookie@~2.3.3:
   dependencies:
     punycode "^1.4.1"
 
-"treebeard@git://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e":
+"treebeard@https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e":
   version "0.6.1"
-  resolved "git://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
+  resolved "https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e"
   dependencies:
     bootstrap "~3.3.2"
     jquery ">=1.11.0"
