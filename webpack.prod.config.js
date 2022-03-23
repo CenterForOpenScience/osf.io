@@ -5,8 +5,6 @@ var common = require('./webpack.common.config.js');
 var assign = require('object-assign');
 var SaveAssetsJson = require('assets-webpack-plugin');
 
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-
 module.exports = assign(common, {
     stats: {reasons: false},
     plugins: common.plugins.concat([
@@ -18,10 +16,10 @@ module.exports = assign(common, {
             DEBUG: false,
             '__DEV__': false
         }),
-        new UglifyJsPlugin({
+        new webpack.optimize.UglifyJsPlugin({
             exclude: /conference.*?\.js$/,
             sourceMap: true,
-            uglifyOptions: {warnings: true},
+            warnings: true,
         }),
         // Save a webpack-assets.json file that maps base filename to filename with
         // hash. This file is used by the webpack_asset mako filter to expand
