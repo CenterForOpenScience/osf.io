@@ -312,6 +312,7 @@ div[data-growl="container"] {
     border-top-right-radius: 5px;
 }
 
+/*
 .line-loader > .load-message {
     float: right;
     background: rgba(255, 255, 255, 0.66);
@@ -319,6 +320,7 @@ div[data-growl="container"] {
     font-weight: bold;
     color: #744E06;
 }
+*/
 
 .scroll-ball {
     position: relative;
