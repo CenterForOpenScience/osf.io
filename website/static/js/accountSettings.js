@@ -229,7 +229,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 }
                 if (activationConfirm === true) {
                     bootbox.confirm({
-                        title: _('Do you want to active account?\n'),
+                        title: _('Do you want to active account?') + '\n',
                         message: sprintf(_('Fullname: <em>%1$s</em></br>Email: <em>%2$s</em></br>'), this.inactive_profile.fullname, this.inactive_profile.email),
                         callback: function(confirmed) {
                             if (confirmed) {

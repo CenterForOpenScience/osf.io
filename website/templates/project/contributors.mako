@@ -326,7 +326,7 @@
             <!-- ko if: (!contributor.registered) -->
             <div class="td-content">
                 <a class="btn btn-success btn-sm m-l-md" data-bind="click: reInvite, class: {}">
-                    ${_("Invitation Code")}
+                    ${_('Invitation Code')}
                 </a>
             </div>
             <!-- /ko -->

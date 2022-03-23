@@ -127,7 +127,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
         ).done(function(response) {
             $osf.growl(_('Sent'), _('Email will arrive shortly'), 'success');
         }).fail(function(xhr) {
-            $osf.growl(_('Error'), _('Invitation failed '), 'danger');
+            $osf.growl(_('Error'), _('Invitation failed'), 'danger');
         });
     };
 

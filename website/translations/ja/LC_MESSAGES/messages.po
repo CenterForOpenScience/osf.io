@@ -3927,3 +3927,12 @@ msgstr "メンバー管理"
 
 msgid "Invitation Code"
 msgstr "再招待"
+
+msgid "Activate code"
+msgstr ""
+
+msgid "The Invitation Code has expired..."
+msgstr ""
+
+msgid "Please click the button below if you would like to receive an invitation to the project again."
+msgstr ""
