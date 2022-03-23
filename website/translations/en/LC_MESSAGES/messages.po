@@ -1863,7 +1863,10 @@ msgstr ""
 msgid "Institution / Employer"
 msgstr ""
 
-msgid "Institution / Employer (English)"
+msgid "Affiliation"
+msgstr ""
+
+msgid "Affiliation (English)"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:37

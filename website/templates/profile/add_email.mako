@@ -76,7 +76,7 @@
 
                             <div class="form-row row">
                                 <div class="form-group col-md-6">
-                                    <label>${_("Institution")} <span style="color: red">*</span></label>
+                                    <label>${_("Affiliation")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution_ja"
                                         placeholder="${_('Required')}"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">
@@ -91,7 +91,7 @@
 
                             <div class="form-row row">
                                 <div class="form-group col-md-6">
-                                    <label>${_("Institution (English)")} <span style="color: red">*</span></label>
+                                    <label>${_("Affiliation (English)")} <span style="color: red">*</span></label>
                                     <input class="form-control" data-bind="value: institution"
                                            placeholder="${_('Required')}"/>
                                     <div data-bind="visible: showMessages, css:'text-danger'">

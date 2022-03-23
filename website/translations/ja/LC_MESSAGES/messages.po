@@ -1924,8 +1924,11 @@ msgstr "IdPプロフィールから読込み"
 msgid "Institution / Employer"
 msgstr "機関/雇用者"
 
-msgid "Institution / Employer (English)"
-msgstr "機関/雇用者（英語）"
+msgid "Affiliation"
+msgstr "所属"
+
+msgid "Affiliation (English)"
+msgstr "所属（英語）"
 
 #: website/templates/include/profile/jobs.mako:37
 #: website/templates/include/profile/schools.mako:37
