@@ -3175,11 +3175,3 @@ msgstr "ログイン可用"
 msgid "Enter new entitlement"
 msgstr "新しい適格登録"
 
-msgid "Storage name"
-msgstr "保管名"
-
-msgid "Institutional Storage for Institutions"
-msgstr "機関向けの機関保管"
-
-msgid "Recalculate quota"
-msgstr "クォータ再計算"
