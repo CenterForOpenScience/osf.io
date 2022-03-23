@@ -51,6 +51,9 @@ msgstr "モバイル写真の代替テキスト"
 msgid "Name"
 msgstr "名前"
 
+msgid "name:"
+msgstr "名:"
+
 #: admin/banners/forms.py:25 admin/templates/messages.html:32
 msgid "Start date"
 msgstr "開始日"
@@ -1052,6 +1055,9 @@ msgstr "氏名"
 msgid "email"
 msgstr "eメール"
 
+msgid "email:"
+msgstr "メール:"
+
 #: admin/templates/messages.html:26 osf/models/institution.py:38
 msgid "CAS by pac4j"
 msgstr "pac4jによるCAS"
@@ -1847,6 +1853,9 @@ msgstr "ノードの詳細"
 #: admin/templates/users/user_list.html:22
 msgid "GUID"
 msgstr "GUID"
+
+msgid "guid:"
+msgstr "GUID:"
 
 #: admin/templates/nodes/node.html:149 admin/templates/nodes/node.html:247
 #: admin/templates/nodes/node_list.html:26
@@ -3167,10 +3176,10 @@ msgid "User Emails Setting"
 msgstr ""
 
 msgid "User Emails"
-msgstr ""
+msgstr "ユーザメール"
 
 msgid "Primary"
-msgstr ""
+msgstr "プライマリ"
 
 msgid "Set Primary"
 msgstr ""
@@ -3178,3 +3187,12 @@ msgstr ""
 #: admin/templates/user_emails/user_list.html
 msgid "Search Results"
 msgstr ""
+
+msgid "Search Results"
+msgstr ""
+
+msgid "Email address"
+msgstr "メールアドレス"
+
+msgid "Add email as Primary"
+msgstr "プライマリとしてメール追加"

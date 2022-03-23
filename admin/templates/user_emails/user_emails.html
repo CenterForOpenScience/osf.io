@@ -85,7 +85,7 @@
                       style="margin-top: 15px; margin-bottom: 15px; ">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="primary_email" class="col-sm-1 control-label">Email address</label>
+                        <label for="primary_email" class="col-sm-1 control-label">{% trans "Email address" %}</label>
                         <div class="col-sm-4">
                             <input type="email" class="form-control" name="primary_email"
                                    maxlength="255" minlength="6"
