@@ -19,6 +19,7 @@ from osf.models import (
     AbstractNode,
     Registration,
     Guid,
+    Node,
 )
 
 from rest_framework import serializers as ser
@@ -32,6 +33,7 @@ from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
     IDField,
+    GuidOrIDField,
     JSONAPIListField,
     JSONAPISerializer,
     Link,
@@ -394,12 +396,16 @@ class FileSerializer(BaseFileSerializer):
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     def get_target_type(self, obj):
-        target_type = 'node'
         if isinstance(obj, Preprint):
-            target_type = 'preprint'
-        if isinstance(obj, DraftNode):
-            target_type = 'draft_node'
-        return target_type
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
 
 
 class OsfStorageFileSerializer(FileSerializer):
@@ -421,13 +427,18 @@ class OsfStorageFileSerializer(FileSerializer):
 
 class FileDetailSerializer(FileSerializer):
     """
-    Overrides FileSerializer to make id required.
+    - Overrides FileSerializer to make id required
+    - Files should return the id type they are queried with, but only in osfstorage is the id is reliably equivalent to
+     the path attribute, so that should not be overridden.
+
     """
-    id = IDField(source='_id', required=True)
+    id = GuidOrIDField(source='_id', required=True)
 
     def to_representation(self, value):
         data = super().to_representation(value)
-        guid = Guid.load(self.context['view'].kwargs['file_id'])
+        view = self.context['view']
+        data['data']['links']['self'] = absolute_reverse(f'{view.view_category}:{view.view_name}', kwargs=view.kwargs)
+        guid = Guid.load(view.kwargs['file_id'])
         if guid:
             data['data']['id'] = guid._id
 

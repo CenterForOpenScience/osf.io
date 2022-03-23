@@ -61,6 +61,10 @@ class TestFileView:
     def file_url(self, file):
         return '/{}files/{}/'.format(API_BASE, file._id)
 
+    @pytest.fixture()
+    def file_guid_url(self, file):
+        return f'/{API_BASE}files/{file.get_guid(create=True)._id}/'
+
     def test_must_have_auth_and_be_contributor(self, app, file_url):
         # test_must_have_auth(self, app, file_url):
         res = app.get(file_url, expect_errors=True)
@@ -282,7 +286,7 @@ class TestFileView:
         assert file.checkout is None
         assert res.status_code == 200
 
-    def test_checkout_file_error(self, app, user, file_url, file):
+    def test_checkout_file_error(self, app, user, file_url, file_guid_url, file):
         # test_checkout_file_no_type
         res = app.put_json_api(
             file_url,
@@ -324,6 +328,19 @@ class TestFileView:
                 }
             }, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
+
+        # test_use_guid_as_id
+        res = app.put_json_api(
+            file_guid_url, {
+                'data': {
+                    'id': file.get_guid(create=True)._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
 
     def test_must_set_self(self, app, user, file, file_url):
         user_unauthorized = UserFactory()
