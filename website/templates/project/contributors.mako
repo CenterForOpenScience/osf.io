@@ -179,10 +179,10 @@
     <thead>
         <tr>
             <th class="responsive-table-hide"
-                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}" style="min-width: 100px;">${_("Name")}
+                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}" style="min-width: 100px;white-space: nowrap;">${_("Name")}
             </th>
-            <th style="min-width: 140px;width: 200px;"></th>
-            <th style="min-width: 150px;width: 160px;">
+            <th style="min-width: 140px;width: 200px;white-space: nowrap;"></th>
+            <th style="min-width: 150px;width: 160px;white-space: nowrap;">
                 ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -192,7 +192,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th class="biblio-contrib" style="min-width:144px">
+            <th class="biblio-contrib" style="min-width:144px;white-space: nowrap;">
                 ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
@@ -202,7 +202,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th style="width: 50px;max-width: 100px;"></th>
+            <th style="width: 50px;max-width: 100px; white-space: nowrap;"></th>
             <th class="remove"></th>
         </tr>
     </thead>
