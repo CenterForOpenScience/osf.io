@@ -3157,5 +3157,5 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-#~ msgid "Recalculate quota"
-#~ msgstr "クォータ再計算"
+msgid "Recalculate quota"
+msgstr "クォータ再計算"
