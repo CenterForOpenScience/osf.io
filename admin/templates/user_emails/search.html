@@ -22,25 +22,25 @@
                       onsubmit="return validateForm()">
                     {% csrf_token %}
                     <p>
-                        <label for="id_guid">guid:</label>
+                        <label for="id_guid">{% trans "GUID" %}</label>
                         <input type="text" name="guid" value=""
                                maxlength="5" minlength="5"
                                pattern="[0-9a-z]{5}"
-                               title="Please enter only contain alphanumeric in lowercase"
+                               title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
                                id="id_guid">
                     </p>
                     <p>
-                        <label for="id_name">name:</label>
+                        <label for="id_name">{% trans "Name" %}</label>
                         <input type="text" name="name" value=""
                                maxlength="255"
                                id="id_name">
                     </p>
                     <p>
-                        <label for="id_email">email:</label>
+                        <label for="id_email">{% trans "Email" %}</label>
                         <input type="email" name="email" value=""
                                maxlength="255" minlength="6"
                                pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
-                               title="Please enter an email address."
+                               title="{% trans 'Please enter an email address' %}"
                                id="id_email">
                     </p>
                     <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}"/>

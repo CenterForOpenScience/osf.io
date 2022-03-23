@@ -121,9 +121,6 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-msgid "name:"
-msgstr ""
-
 #: .\admin\templates\banners\list.html:21
 msgid "Dates"
 msgstr ""
@@ -145,7 +142,6 @@ msgstr ""
 #: .\admin\templates\base.html:233 .\admin\templates\base.html:236
 #: .\admin\templates\base.html:239 .\admin\templates\base.html:242
 #: .\admin\templates\base.html:246 .\admin\templates\base.html:279
-#: .\admin\templates\base.html:153
 msgid "RDM"
 msgstr ""
 
@@ -822,9 +818,6 @@ msgstr ""
 
 #: .\admin\templates\login.html:35
 msgid "Email:"
-msgstr ""
-
-msgid "email:"
 msgstr ""
 
 #: .\admin\templates\login.html:40
@@ -1852,9 +1845,6 @@ msgstr ""
 #: .\admin\templates\users\user_details.html:34
 #: .\admin\templates\users\user_list.html:22
 msgid "GUID"
-msgstr ""
-
-msgid "guid:"
 msgstr ""
 
 #: .\admin\templates\nodes\node.html:149 .\admin\templates\nodes\node.html:247
@@ -3106,15 +3096,31 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
-#: admin/templates/user_emails/search.html
 msgid "User-Emails"
 msgstr ""
 
-#: admin/templates/user_emails/user_emails.html
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr ""
+
+msgid "Please enter an email address"
+msgstr ""
+
 msgid "User Emails Setting"
 msgstr ""
 
+msgid "EPPN"
+msgstr ""
+
+msgid "Affiliation"
+msgstr ""
+
 msgid "User Emails"
+msgstr ""
+
+msgid "Email address"
+msgstr ""
+
+msgid "Add email as Primary"
 msgstr ""
 
 msgid "Primary"
@@ -3123,12 +3129,5 @@ msgstr ""
 msgid "Set Primary"
 msgstr ""
 
-#: admin/templates/user_emails/user_list.html
 msgid "Search Results"
-msgstr ""
-
-msgid "Email address"
-msgstr ""
-
-msgid "Add email as Primary"
 msgstr ""

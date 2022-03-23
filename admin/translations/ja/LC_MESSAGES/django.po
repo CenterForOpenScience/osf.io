@@ -51,9 +51,6 @@ msgstr "モバイル写真の代替テキスト"
 msgid "Name"
 msgstr "名前"
 
-msgid "name:"
-msgstr "名:"
-
 #: admin/banners/forms.py:25 admin/templates/messages.html:32
 msgid "Start date"
 msgstr "開始日"
@@ -255,7 +252,6 @@ msgstr "バナーを削除"
 #: admin/templates/base.html:233 admin/templates/base.html:236
 #: admin/templates/base.html:239 admin/templates/base.html:242
 #: admin/templates/base.html:246 admin/templates/base.html:279
-#: .\admin\templates\base.html:153
 msgid "RDM"
 msgstr "RDM"
 
@@ -1055,9 +1051,6 @@ msgstr "氏名"
 msgid "email"
 msgstr "eメール"
 
-msgid "email:"
-msgstr "メール:"
-
 #: admin/templates/messages.html:26 osf/models/institution.py:38
 msgid "CAS by pac4j"
 msgstr "pac4jによるCAS"
@@ -1853,9 +1846,6 @@ msgstr "ノードの詳細"
 #: admin/templates/users/user_list.html:22
 msgid "GUID"
 msgstr "GUID"
-
-msgid "guid:"
-msgstr "GUID:"
 
 #: admin/templates/nodes/node.html:149 admin/templates/nodes/node.html:247
 #: admin/templates/nodes/node_list.html:26
@@ -3167,16 +3157,32 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-#: admin/templates/user_emails/search.html
 msgid "User-Emails"
+msgstr "ユーザメール"
+
+msgid "Please enter only contain alphanumeric in lowercase"
 msgstr ""
 
-#: admin/templates/user_emails/user_emails.html
+msgid "Please enter an email address"
+msgstr ""
+
 msgid "User Emails Setting"
+msgstr ""
+
+msgid "EPPN"
+msgstr ""
+
+msgid "Affiliation"
 msgstr ""
 
 msgid "User Emails"
 msgstr "ユーザメール"
+
+msgid "Email address"
+msgstr "メールアドレス"
+
+msgid "Add email as Primary"
+msgstr "プライマリとしてメール追加"
 
 msgid "Primary"
 msgstr "プライマリ"
@@ -3184,15 +3190,5 @@ msgstr "プライマリ"
 msgid "Set Primary"
 msgstr ""
 
-#: admin/templates/user_emails/user_list.html
 msgid "Search Results"
 msgstr ""
-
-msgid "Search Results"
-msgstr ""
-
-msgid "Email address"
-msgstr "メールアドレス"
-
-msgid "Add email as Primary"
-msgstr "プライマリとしてメール追加"
