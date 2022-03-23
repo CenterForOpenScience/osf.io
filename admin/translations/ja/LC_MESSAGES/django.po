@@ -3158,13 +3158,28 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgstr "機関"
 
 msgid "Login Availability Control"
-msgstr ""
+msgstr "ログイン可用性制御"
 
 msgid "List of Entitlements"
 msgstr ""
 
 msgid "Entitlements"
-msgstr ""
+msgstr "適格"
 
 msgid "New entitlement"
-msgstr ""
+msgstr "新しい適格"
+
+msgid "login availability"
+msgstr "ログイン可用"
+
+msgid "Enter new entitlement"
+msgstr "新しい適格登録"
+
+msgid "Storage name"
+msgstr "保管名"
+
+msgid "Institutional Storage for Institutions"
+msgstr "機関向けの機関保管"
+
+msgid "Recalculate quota"
+msgstr "クォータ再計算"

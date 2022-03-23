@@ -13,7 +13,7 @@
 {% endblock title %}
 
 {% block content %}
-    <h2>{% trans "Entitlements" %}</h2>
+    <h2>{% trans ${_("Entitlements")} %}</h2>
 
     <div class="row">
         <div id="error_message" class="col-md-12">
@@ -29,7 +29,7 @@
           id="entitlements_form">
         {% csrf_token %}
         <div class="form-group">
-            <label for="institution_id" class="col-sm-2 control-label">Institution</label>
+            <label for="institution_id" class="col-sm-2 control-label">${_("Institutions")}</label>
             <div class="col-sm-9 col-lg-4" style="width:435px">
                 <select id="institution_id" name="institution_id" class="form-control">
                     {% for institution in institutions %}
@@ -40,11 +40,11 @@
         </div>
 
         <div class="form-group">
-            <label for="entitlements" class="col-sm-2 control-label">Entitlements</label>
+            <label for="entitlements" class="col-sm-2 control-label">${_("Entitlements")}</label>
             <div class="form-inline col-sm-9 col-lg-4" id="entitlements_block" style="max-height: 132px; width:420px; overflow: auto;">
                 <div class="clearfix" style="margin-bottom: 15px; display:flex;">
                     <div class="input-group" style="flex:1;">
-                        <input type="text" name="entitlements" placeholder="Enter new entitlement"
+                        <input type="text" name="entitlements" placeholder='${_("Enter new entitlement")}'
                                minlength="1" maxlength="255"
 				class="form-control">
                     </div>
@@ -52,14 +52,14 @@
                         <input type="checkbox" name="login_availability" checked="checked" value="on" style="margin-left:10px"
                                onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
                                data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked">
-                        <label class="form-check-label" for="login_availability" style="padding-left: 10px;">login availability</label>
+                        <label class="form-check-label" for="login_availability" style="padding-left: 10px;">${_("login availability")}</label>
                     </div>
                 </div>
             </div>
         </div>
         <div class="form-group">
             <div class="col-sm-offset-2 col-sm-10">
-                <button type="button" class="btn btn-default" onclick="new_entitlement_element()">{% trans 'New entitlement' %}</button>
+                <button type="button" class="btn btn-default" onclick="new_entitlement_element()">{% trans ${_("New entitlement")} %}</button>
                 <button type="submit" class="btn btn-primary" style="width: 90px;">{% trans 'Save' %}</button>
             </div>
         </div>

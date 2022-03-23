@@ -107,7 +107,7 @@
             {% if perms.osf.admin_institution_entitlement or user.is_superuser or user.is_staff %}
                 <li>
                     <a href="{% url 'institutions:entitlements' %}">
-                        <i class='fa fa-link'></i><span> {% trans "Login Availability Control" %}</span>
+                        <i class='fa fa-link'></i><span> {% trans ${_("Login Availability Control")} %}</span>
                     </a>
                 </li>
             {% endif %}

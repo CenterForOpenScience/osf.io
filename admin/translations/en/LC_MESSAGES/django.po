@@ -3107,3 +3107,18 @@ msgstr ""
 
 msgid "New entitlement"
 msgstr ""
+
+msgid "login availability"
+msgstr ""
+
+msgid "Enter new entitlement"
+msgstr ""
+
+msgid "Storage name"
+msgstr ""
+
+msgid "Institutional Storage for Institutions"
+msgstr ""
+
+msgid "Recalculate quota"
+msgstr ""
