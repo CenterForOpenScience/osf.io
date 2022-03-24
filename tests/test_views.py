@@ -1109,7 +1109,6 @@ class TestGetNodeTree(OsfTestCase):
 
 @pytest.mark.enable_enqueue_task
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1507,23 +1506,6 @@ class TestUserProfile(OsfTestCase):
         assert_equal(mock_client.lists.unsubscribe.call_count, 0)
         assert_equal(mock_client.lists.subscribe.call_count, 0)
         handlers.celery_teardown_request()
-
-    def test_user_with_quickfiles(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        create_test_file(quickfiles_node, self.user, filename='skrr_skrrrrrrr.pdf')
-
-        url = web_url_for('profile_view_id', uid=self.user._id)
-        res = self.app.get(url, auth=self.user.auth)
-
-        assert_in('Quick files', res.body.decode())
-
-    def test_user_with_no_quickfiles(self):
-        assert(not QuickFilesNode.objects.first().files.filter(type='osf.osfstoragefile').exists())
-
-        url = web_url_for('profile_view_id', uid=self.user._primary_key)
-        res = self.app.get(url, auth=self.user.auth)
-
-        assert_not_in('Quick files', res.body.decode())
 
     def test_user_update_region(self):
         user_settings = self.user.get_addon('osfstorage')
@@ -2388,7 +2370,6 @@ class TestUserInviteViews(OsfTestCase):
 
 
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestClaimViews(OsfTestCase):
 
     def setUp(self):
@@ -3212,7 +3193,6 @@ class TestPublicViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -4992,7 +4972,6 @@ class TestResetPassword(OsfTestCase):
         assert_in('resetpassword', location)
 
 
-@pytest.mark.enable_quickfiles_creation
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
@@ -5052,21 +5031,6 @@ class TestResolveGuid(OsfTestCase):
             res.request.path,
             '/{}/'.format(preprint._id)
         )
-
-    def test_deleted_quick_file_gone(self):
-        user = AuthUserFactory()
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('soon_to_be_deleted.txt')
-        guid = test_file.get_guid(create=True)._id
-        test_file.delete()
-
-        url = web_url_for('resolve_guid', _guid=True, guid=guid)
-        res = self.app.get(url, expect_errors=True)
-
-        assert_equal(res.status_code, http_status.HTTP_410_GONE)
-        assert_equal(res.request.path, '/{}/'.format(guid))
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

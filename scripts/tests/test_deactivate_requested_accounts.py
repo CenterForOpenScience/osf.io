@@ -12,7 +12,6 @@ from osf.management.commands.deactivate_requested_accounts import deactivate_req
 from website import mails, settings
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestDeactivateRequestedAccount:
 
     @pytest.fixture()

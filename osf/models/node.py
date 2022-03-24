@@ -1420,7 +1420,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
 
-        # Need to save here in order to set many-to-many fields
+        # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
+        registered.is_public = False
         registered.save()
 
         registered.registered_schema.add(schema)
@@ -1428,7 +1429,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
 
-        registered.is_public = False
         registered.access_requests_enabled = False
 
         if parent:

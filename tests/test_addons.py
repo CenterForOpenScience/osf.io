@@ -334,15 +334,6 @@ class TestAddonLogs(OsfTestCase):
         # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, 'perform not called')
 
-    @pytest.mark.enable_quickfiles_creation
-    def test_waterbutler_hook_succeeds_for_quickfiles_nodes(self):
-        quickfiles = QuickFilesNode.objects.get_for_user(self.user)
-        materialized_path = 'pizza'
-        url = quickfiles.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'path': 'abc123', 'materialized': materialized_path, 'kind': 'file'}, provider='osfstorage')
-        resp = self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
-        assert resp.status_code == 200
-
     def test_add_log_missing_args(self):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
