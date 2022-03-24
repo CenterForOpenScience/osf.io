@@ -26,7 +26,7 @@
                                         <input type="number" name="maxQuota"
                                                id="storageLimit" class="form-control"
                                                min="1" required="" value="100"
-                                               oninvalid="this.setCustomValidity('Value must be an integer number greater than or equal 1.')"
+                                               oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
                                                oninput="setCustomValidity('')"
                                         />
                                     </div>

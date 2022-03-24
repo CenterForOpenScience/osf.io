@@ -3096,13 +3096,16 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
+msgid "Inst. Storage Quota Control"
+msgstr ""
+
+msgid "Institutional Storage Quota Control"
+msgstr ""
+
 msgid "Institutional Storage for Institutions"
 msgstr ""
 
 msgid "Storage name"
-msgstr ""
-
-msgid "Institutional Storage Quota Control"
 msgstr ""
 
 msgid "Configure Institutional Storage Quota"
@@ -3111,5 +3114,5 @@ msgstr ""
 msgid "Each user Quota for Institutional Storage (GB)"
 msgstr ""
 
-msgid "inst. Storage Quota Control"
+msgid "Value must be an integer number greater than or equal 1"
 msgstr ""

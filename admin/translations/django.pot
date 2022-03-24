@@ -3110,3 +3110,24 @@ msgstr ""
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
+
+msgid "Inst. Storage Quota Control"
+msgstr ""
+
+msgid "Institutional Storage Quota Control"
+msgstr ""
+
+msgid "Institutional Storage for Institutions"
+msgstr ""
+
+msgid "Storage name"
+msgstr ""
+
+msgid "Configure Institutional Storage Quota"
+msgstr ""
+
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr ""
+
+msgid "Value must be an integer number greater than or equal 1"
+msgstr ""
