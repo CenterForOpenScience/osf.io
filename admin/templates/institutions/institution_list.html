@@ -20,7 +20,7 @@
             </div>
             <div class="col-md-6">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary pull-right" style="width: 140px;">${_("Recalculate quota")}</button>
+                <button type="submit" class="btn btn-primary pull-right" style="width: 140px;">{% trans "Recalculate quota" %}</button>
             </div>
         </div>
     </form>
