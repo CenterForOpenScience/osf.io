@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from scripts.find_spammy_content import manage_spammy_content
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect
 from osf.models import Preprint, Node, Registration
 
