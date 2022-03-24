@@ -158,7 +158,7 @@
   - Needed for api v2 citation style rendering.
     - `docker-compose run --rm web python3 -m scripts.parse_citation_styles`
 - Start ember_osf_web
-  - Needed for quickfiles feature:
+  - Needed for ember app:
     - `docker-compose up -d ember_osf_web`
 - OPTIONAL: Register OAuth Scopes
   - Needed for things such as the ember-osf dummy app

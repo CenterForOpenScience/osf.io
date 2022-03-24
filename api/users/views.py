@@ -8,7 +8,7 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.waffle_decorators import require_flag
-from api.base.exceptions import Conflict, UserGone, Gone
+from api.base.exceptions import Conflict, UserGone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -359,22 +359,6 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
-
-
-class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView):
-    view_category = 'users'
-    view_name = 'user-quickfiles'
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.NULL]
-    required_write_scopes = [CoreScopes.NULL]
-
-    def get(self, *args, **kwargs):
-        raise Gone()
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):

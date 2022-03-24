@@ -39,7 +39,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.transactions.handlers import no_auto_transaction
 from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
-from osf.models import AbstractNode, NodeLog, QuickFilesNode
+from osf.models import AbstractNode, NodeLog
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -51,14 +51,13 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
-from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
+from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
 from osf.utils import permissions
 from osf.models import Comment
 from osf.models import OSFUser, Tag
-from osf.models import Email
 from osf.models.spam import SpamStatus
 from tests.base import (
     assert_is_redirect,
@@ -70,12 +69,12 @@ from tests.base import (
 )
 from tests.base import test_app as mock_app
 from tests.utils import run_celery_tasks
-from tests.test_cas_authentication import generate_external_user_with_resp, make_external_response
+from tests.test_cas_authentication import generate_external_user_with_resp
 from api_tests.utils import create_test_file
 
 pytestmark = pytest.mark.django_db
 
-from osf.models import NodeRelation, QuickFilesNode, NotableEmailDomain
+from osf.models import NodeRelation, NotableEmailDomain
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,

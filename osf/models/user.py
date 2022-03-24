@@ -58,8 +58,6 @@ from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
 
-MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
-
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
 
@@ -783,9 +781,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor (group member only are not included).
         for node in user.contributed:
-            # Skip quickfiles
-            if node.is_quickfiles:
-                continue
             user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -809,11 +804,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Skip bookmark collections
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
-        from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
 
         # - projects where the user was the creator
-        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -1013,13 +1007,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if 'fullname' in dirty_fields:
-            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
-
-            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
-            if quickfiles:
-                quickfiles.title = get_quickfiles_project_title(self)
-                quickfiles.save()
         if 'username' in dirty_fields:
             for list_name, subscription in self.mailchimp_mailing_lists.items():
                 if subscription:
@@ -1403,7 +1390,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.deactivate_account()
         super().confirm_spam(save=save)
 
-        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter(is_public=True, is_deleted=False):
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
@@ -1412,7 +1399,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.reactivate_account()
         super().confirm_ham(save=save)
 
-        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter():
             node.confirm_ham(save=save, train_akismet=False)
         for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_akismet=False)
@@ -1810,7 +1797,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes.exclude(type__in=['osf.quickfilesnode', 'osf.draftnode']):
+        for node in shared_nodes.exclude(type__in=['osf.draftnode']):
             alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
@@ -1834,7 +1821,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
-        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        # delete all personal nodes (one contributor), bookmarks etc.
         for node in personal_nodes.all():
             logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
             node.remove_node(auth=Auth(self))
@@ -1887,18 +1874,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
         otherwise they must delete or transfer their outstanding resources.
 
-        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        :return bool: does the user have any active node, preprints, groups etc?
         """
         from osf.models import Preprint
 
-        # TODO: Update once quickfolders in merged
-
-        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
-        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        nodes = self.nodes.exclude(is_deleted=True).exists()
         groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
-        return groups or nodes or quickfiles or preprints
+        return groups or nodes or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App

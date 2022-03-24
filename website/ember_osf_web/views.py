@@ -11,8 +11,6 @@ from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMB
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
 routes = [
-    '/quickfiles/',
-    '/<uid>/quickfiles/',
     '/institutions/',
     '/support/',
 ]

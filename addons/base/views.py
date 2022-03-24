@@ -22,7 +22,6 @@ from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import update_analytics
 
@@ -33,7 +32,7 @@ from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
 from framework.sentry import log_exception
-from framework.routing import json_renderer, proxy_url
+from framework.routing import json_renderer
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
@@ -403,7 +402,7 @@ DOWNLOAD_ACTIONS = set([
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
+@must_be_valid_project(preprints_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
@@ -523,7 +522,7 @@ def create_waterbutler_log(payload, **kwargs):
     metadata = payload.get('metadata') or payload.get('destination')
 
     target_node = AbstractNode.load(metadata.get('nid'))
-    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
+    if target_node and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
@@ -846,16 +845,6 @@ def persistent_file_download(auth, **kwargs):
         code=http_status.HTTP_302_FOUND
     )
 
-
-def addon_view_or_download_quickfile(**kwargs):
-    fid = kwargs.get('fid', 'NOT_AN_FID')
-    file_ = OsfStorageFile.load(fid)
-    if not file_:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
-    return proxy_url('/project/{}/files/osfstorage/{}/'.format(file_.target._id, fid))
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue

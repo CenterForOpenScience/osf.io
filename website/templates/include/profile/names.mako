@@ -4,7 +4,7 @@
 
         <div class="form-group">
             <label>Full name (e.g. Rosalind Elsie Franklin)</label>
-            ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+            ## Maxlength for full names must be 186
             <input class="form-control" data-bind="value: full" maxlength="186"/>
             <div data-bind="visible: showMessages, css:'text-danger'">
                 <p data-bind="validationMessage: full"></p>

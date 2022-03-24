@@ -12,7 +12,7 @@ from django.apps import apps
 from django.contrib.auth.models import Permission, Group
 
 from osf.utils.permissions import PERMISSIONS, reduce_permissions
-from osf.models import AbstractNode, Contributor, Preprint, Node, Registration, QuickFilesNode
+from osf.models import AbstractNode, Contributor, Preprint, Node, Registration
 from osf.models.node import NodeGroupObjectPermission
 from osf.models.preprint import PreprintGroupObjectPermission
 from osf.utils.permissions import READ, WRITE, ADMIN
@@ -73,7 +73,7 @@ def verify_preprint_foreign_key_migration():
     check_expected(expected_preprintgroupobjperm_count, actual_preprintgroupobjperm_count, 'Discrepancy in PreprintGroupObjectPermission table.')
 
 def verify_random_objects():
-    resources = [Node, Registration, QuickFilesNode]
+    resources = [Node, Registration]
     for resource in resources:
         for i in range(1,10):
             random_resource = _get_random_object(resource)
