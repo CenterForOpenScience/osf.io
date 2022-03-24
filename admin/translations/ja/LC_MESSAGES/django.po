@@ -3161,19 +3161,19 @@ msgid "User-Emails"
 msgstr "ユーザメール"
 
 msgid "Please enter only contain alphanumeric in lowercase"
-msgstr ""
+msgstr "英数字のみを小文字で入力してください"
 
 msgid "Please enter an email address"
-msgstr ""
+msgstr "有効な電子メールアドレスではありません。"
 
 msgid "User Emails Setting"
-msgstr ""
+msgstr "ユーザメール設定"
 
 msgid "EPPN"
-msgstr ""
+msgstr "利用者ID"
 
 msgid "Affiliation"
-msgstr ""
+msgstr "所属"
 
 msgid "User Emails"
 msgstr "ユーザメール"
@@ -3188,7 +3188,7 @@ msgid "Primary"
 msgstr "プライマリ"
 
 msgid "Set Primary"
-msgstr ""
+msgstr "プライマリにする"
 
 msgid "Search Results"
-msgstr ""
+msgstr "ユーザ検索結果"
