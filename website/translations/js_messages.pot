@@ -6059,7 +6059,7 @@ msgstr ""
 msgid "Institution/Employer required"
 msgstr ""
 
-msgid "Institution/Employer(English) required"
+msgid "Institution/Employer (English) required"
 msgstr ""
 
 #: website/static/js/profile.js:1132

@@ -7294,7 +7294,7 @@ msgstr "機関が削除されました"
 msgid "Institution/Employer required"
 msgstr "機関/雇用者が必要です"
 
-msgid "Institution/Employer(English) required"
+msgid "Institution/Employer (English) required"
 msgstr "機関/雇用者（英語）が必要です"
 
 #: website/static/js/profile.js:1132
