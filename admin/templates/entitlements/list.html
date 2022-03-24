@@ -66,12 +66,12 @@
     </form>
     {% include "entitlements/pagination.html" with institution_id=selected_id items=page status=status %}
 
-    <table class="table table-striped table-hover table-responsive">
+    <table class="table table-striped table-hover table-responsive table-entitlement">
         <thead></thead>
         <tbody>
         {% for entitlement in entitlements %}
-            <tr style="display:flex">
-                <td class="entitlement current" style="display:inline-block; flex:1; width:200px; overflow-wrap: break-word;">{{ entitlement.entitlement }}</td>
+            <tr class="entitlement-row">
+                <td class="entitlement current">{{ entitlement.entitlement }}</td>
                 <td>
                     <input type="checkbox"
                            {% if entitlement.login_availability %}checked="checked"{% endif %}
