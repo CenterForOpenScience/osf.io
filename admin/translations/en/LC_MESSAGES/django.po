@@ -3101,3 +3101,6 @@ msgstr ""
 
 msgid "Each user Quota for NII Storage (GB)"
 msgstr ""
+
+msgid "Value must be an integer number greater than or equal 1"
+msgstr ""

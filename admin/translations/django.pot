@@ -3110,3 +3110,12 @@ msgstr ""
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
+
+msgid "Configure NII Storage Quota"
+msgstr ""
+
+msgid "Each user Quota for NII Storage (GB)"
+msgstr ""
+
+msgid "Value must be an integer number greater than or equal 1"
+msgstr ""
