@@ -3104,3 +3104,12 @@ msgstr ""
 
 msgid "keyword"
 msgstr ""
+
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr ""
+
+msgid "Please enter an email address"
+msgstr ""
+
+msgid "Please enter an valid email"
+msgstr ""

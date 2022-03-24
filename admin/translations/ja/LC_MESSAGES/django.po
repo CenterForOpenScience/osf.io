@@ -146,7 +146,7 @@ msgstr "本文"
 #: admin/templates/desk/customer.html:41 admin/templates/messages.html:8
 #: admin/templates/spam/detail.html:24 admin/templates/users/user.html:193
 msgid "Email"
-msgstr "eメール"
+msgstr "メール"
 
 #: admin/rdm_announcement/forms.py:22 admin/templates/messages.html:12
 msgid "Type@announcement"
@@ -905,7 +905,7 @@ msgstr "サインインしてセッションを始めてください。"
 
 #: admin/templates/login.html:35
 msgid "Email:"
-msgstr "Eメール："
+msgstr "メール："
 
 #: admin/templates/login.html:40
 msgid "Password:"
@@ -1139,7 +1139,7 @@ msgstr "1日あたりのユーザーゲイン"
 
 #: admin/templates/metrics/osf_metrics.html:56
 msgid "Registrations by Email Domain"
-msgstr "Eメールドメインによる登録"
+msgstr "メールドメインによる登録"
 
 #: admin/templates/metrics/osf_metrics.html:57
 msgid "Node Logs by User"
@@ -3080,7 +3080,7 @@ msgstr "GakuNin RDMアカウント"
 
 #: admin/templates/users/user.html:185
 msgid "Emails"
-msgstr "Eメール"
+msgstr "メール"
 
 #: admin/templates/users/user.html:190
 msgid "Primary: "
@@ -3165,3 +3165,12 @@ msgstr "情報"
 
 msgid "keyword"
 msgstr "キーワード"
+
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr ""
+
+msgid "Please enter an email address"
+msgstr ""
+
+msgid "Please enter an valid email"
+msgstr ""

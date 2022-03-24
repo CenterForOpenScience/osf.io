@@ -15,18 +15,18 @@
         <input name="guid" type="text" class="form-control" placeholder="{% trans 'GUID' %}" value="{{ request.GET.guid }}"
                maxlength="5" minlength="5"
                pattern="[0-9a-z]{5}"
-               title="Please enter only contain alphanumeric in lowercase"
+               title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
                id="id_guid">
     </div>
     <div class="form-group" style="margin-right: 20px;">
         <label style="margin: 0 10px;">{% trans "Email" %}</label>
         <input name="email" type="email" class="form-control"
                placeholder="{% trans 'Email' %}" value="{{ request.GET.email }}"
-               oninvalid="this.setCustomValidity('Please enter an valid email')"
+               oninvalid="this.setCustomValidity({% trans 'Please enter an valid email' %})"
                oninput="setCustomValidity('')"
                maxlength="255" minlength="6"
                pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
-               title="Please enter an email address."
+               title="{% trans 'Please enter an email address' %}"
                id="id_email">
     </div>
     <div class="form-group" style="margin-right: 20px;">
@@ -36,7 +36,7 @@
                id="id_name">
     </div>
     <div class="form-group">
-        <button class="btn btn-primary" type="submit">Search</button>
+        <button class="btn btn-primary" type="submit">{% trans 'Search' %}</button>
     </div>
 </form>
 
