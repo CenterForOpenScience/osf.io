@@ -3179,13 +3179,13 @@ msgid "Delete"
 msgstr "削除"
 
 msgid "Entitlement must be not empty"
-msgstr ""
+msgstr "資格は空であってはなりません"
 
 msgid "Entitlement '"
 msgstr "適格 '"
 
 msgid "' already exists"
-msgstr "' "
+msgstr "'は既に存在します。"
 
 msgid "' have been inputted"
-msgstr "' "
+msgstr "'は入力されました。"
