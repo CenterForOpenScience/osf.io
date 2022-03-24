@@ -3093,9 +3093,6 @@ msgstr ""
 #~ msgid "Submit"
 #~ msgstr ""
 
-#~ msgid "Institutions"
-#~ msgstr ""
-
 msgid "Login Availability Control"
 msgstr ""
 
@@ -3105,11 +3102,29 @@ msgstr ""
 msgid "Entitlements"
 msgstr ""
 
-msgid "New entitlement"
+msgid "Institutions"
+msgstr ""
+
+msgid "Enter new entitlement"
 msgstr ""
 
 msgid "login availability"
 msgstr ""
 
-msgid "Enter new entitlement"
+msgid "New entitlement"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Entitlement must be not empty"
+msgstr ""
+
+msgid "Entitlement '"
+msgstr ""
+
+msgid "' already exists"
+msgstr ""
+
+msgid "' have been inputted"
 msgstr ""

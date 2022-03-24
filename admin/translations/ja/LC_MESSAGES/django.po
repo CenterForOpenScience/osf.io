@@ -3154,24 +3154,38 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Submit"
 #~ msgstr "検索"
 
-#~ msgid "Institutions"
-#~ msgstr "機関"
-
 msgid "Login Availability Control"
 msgstr "ログイン可用性制御"
 
 msgid "List of Entitlements"
-msgstr ""
+msgstr "適格のリスト"
 
 msgid "Entitlements"
 msgstr "適格"
 
-msgid "New entitlement"
-msgstr "新しい適格"
-
-msgid "login availability"
-msgstr "ログイン可用"
+msgid "Institutions"
+msgstr "機関"
 
 msgid "Enter new entitlement"
 msgstr "新しい適格登録"
 
+msgid "login availability"
+msgstr "ログイン可用"
+
+msgid "New entitlement"
+msgstr "新しい適格"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "Entitlement must be not empty"
+msgstr ""
+
+msgid "Entitlement '"
+msgstr "適格 '"
+
+msgid "' already exists"
+msgstr "' "
+
+msgid "' have been inputted"
+msgstr "' "
