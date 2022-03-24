@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0053_add_quickfiles'),
+        ('osf', '0054_add_file_version_indices'),
     ]
 
     operations = [
         migrations.AlterField(
             model_name='abstractnode',
             name='type',
-            field=models.CharField(choices=[('osf.node', 'node'), ('osf.collection', 'collection'), ('osf.registration', 'registration'), ('osf.quickfilesnode', 'quick files node')], db_index=True, max_length=255),
+            field=models.CharField(choices=[('osf.node', 'node'), ('osf.collection', 'collection'), ('osf.registration', 'registration')], db_index=True, max_length=255),
         ),
     ]
