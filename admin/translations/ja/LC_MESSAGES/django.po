@@ -3164,4 +3164,4 @@ msgid "Each user Quota for NII Storage (GB)"
 msgstr "NII保管の各ユーザークォータ（GB)"
 
 msgid "Value must be an integer number greater than or equal 1"
-msgstr ""
+msgstr "値は1以上の整数である必要があります"
