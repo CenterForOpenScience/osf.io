@@ -3167,10 +3167,10 @@ msgid "keyword"
 msgstr "キーワード"
 
 msgid "Please enter only contain alphanumeric in lowercase"
-msgstr ""
+msgstr "英数字のみを小文字で入力してください"
 
 msgid "Please enter an email address"
-msgstr ""
+msgstr "有効な電子メールアドレスではありません。"
 
 msgid "Please enter an valid email"
-msgstr ""
+msgstr "有効な電子メールアドレスではありません。"
