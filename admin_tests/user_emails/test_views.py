@@ -47,8 +47,12 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/user-emails/{}/'.format(
-            self.user_1.guids.first()._id))
+        nt.assert_equal(
+            self.view.success_url,
+            '/user-emails/search/guid/{}/'.format(
+                self.user_1.guids.first()._id
+            )
+        )
 
     def test_form_valid_search_user_by_name(self):
         form_data = {
@@ -58,7 +62,10 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/user-emails/search/Hardy/')
+        nt.assert_equal(
+            self.view.success_url,
+            '/user-emails/search/name/Hardy/'
+        )
 
     def test_form_valid_search_user_by_name_with_punctuation(self):
         form_data = {
@@ -68,7 +75,7 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        _url = '/user-emails/search/Dr.%20Sportello-Fay,' \
+        _url = '/user-emails/search/name/Dr.%20Sportello-Fay,' \
                '%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/'
         nt.assert_equal(self.view.success_url, _url)
 
@@ -80,8 +87,12 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(self.view.success_url, '/user-emails/{}/'.format(
-            self.user_1.guids.first()._id))
+        nt.assert_equal(
+            self.view.success_url,
+            '/user-emails/search/guid/{}/'.format(
+                self.user_1.guids.first()._id
+            )
+        )
 
     @mock.patch('admin.user_emails.views.UserEmailsFormView.is_admin')
     def test_form_valid_is_admin(self, mock_is_admin):
@@ -106,8 +117,10 @@ class TestUserEmailsFormView(AdminTestCase):
         response = view.form_valid(form)
 
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(view.success_url,
-                        '/user-emails/{}/'.format(user_1.guids.first()._id))
+        nt.assert_equal(
+            view.success_url,
+            '/user-emails/search/guid/{}/'.format(user_1.guids.first()._id)
+        )
 
     def test_form_valid_search_user_by_alternate_email(self):
         form_data = {
@@ -119,7 +132,10 @@ class TestUserEmailsFormView(AdminTestCase):
         nt.assert_equal(response.status_code, 302)
         nt.assert_equal(
             self.view.success_url,
-            '/user-emails/{}/'.format(self.user_2.guids.first()._id))
+            '/user-emails/search/guid/{}/'.format(
+                self.user_2.guids.first()._id
+            )
+        )
 
     def test_form_valid_search_user_list_case_insensitive(self):
         view = views.UserEmailsSearchList()
@@ -226,7 +242,7 @@ class TestUserEmailSearchList(AdminTestCase):
         for user in results:
             nt.assert_in(self.user_1.fullname, user.fullname)
 
-    def test_get_context_data_method_with_user_is_disabled_equal_False(self):
+    def test_get_context_data_method(self):
         view = views.UserEmailsSearchList()
         view = setup_view(view, self.request)
         data = {'name': 'Broken Matt Hardy', 'is_disabled': False}
@@ -234,9 +250,9 @@ class TestUserEmailSearchList(AdminTestCase):
         view.object_list = [{'name': 'Broken Matt Hardy'}]
         result = view.get_context_data()
 
+        nt.assert_is_instance(result, dict)
         nt.assert_equal(result['users'][0]['name'], data['name'])
         nt.assert_equal(result['object_list'][0]['name'], data['name'])
-        nt.assert_equal(result['users'][0]['disabled'], None)
 
     @pytest.mark.skip
     def test_get_context_data_method_with_user_is_disabled_equal_True(self):
