@@ -337,26 +337,19 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
         response = HttpResponse(content_type='text/tsv')
         writer = csv.writer(response, delimiter='\t')
         writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
-        convert_to_byte = {
-            'KB': 1024,
-            'MB': pow(1024, 2),
-            'GB': pow(1024, 3),
-            'TB': pow(1024, 4),
-            'PB': pow(1024, 5),
-            'EB': pow(1024, 6),
-            'ZB': pow(1024, 7),
-            'YB': pow(1024, 8),
-            'BB': pow(1024, 9),
-        }
-        for user in OSFUser.objects.filter(
-                affiliated_institutions=institution_id):
+
+        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+            max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
+            remaining_quota = max_quota_bytes - used_quota
+
             user_data = self.get_user_quota_info(user, UserQuota.NII_STORAGE)
             writer.writerow([user_data.get('id'), user_data.get('username'),
                              user_data.get('fullname'),
-                             '{}'.format(round(user_data.get('ratio'), 1)),
-                             '{}'.format(user_data.get('usage_value') * convert_to_byte[user_data.get('usage_abbr')]),
-                             '{}'.format(user_data.get('remaining_value') * convert_to_byte[user_data.get('remaining_abbr')]),
-                             '{}'.format(user_data.get('quota') * convert_to_byte['GB'])])
+                             round(user_data.get('ratio'), 1),
+                             used_quota,
+                             remaining_quota,
+                             round(max_quota_bytes, 0)])
         query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
             institution_id)
         response['Content-Disposition'] = query
