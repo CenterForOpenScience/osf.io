@@ -7297,6 +7297,12 @@ msgstr "機関/雇用者が必要です"
 msgid "Institution/Employer (English) required"
 msgstr "機関/雇用者（英語）が必要です"
 
+msgid "Affiliation required"
+msgstr "所属が必要です"
+
+msgid "Affiliation (English) required"
+msgstr "所属（英語）が必要です"
+
 #: website/static/js/profile.js:1132
 msgid "Institution required"
 msgstr "機関が必要です"

@@ -1105,7 +1105,7 @@ var JobViewModel = function() {
             onlyIf: function() {
                return true;
             },
-            message: _('Institution/Employer (English) required')
+            message: _('Affiliation (English) required')
         }
     });
     self.institution_ja = ko.observable('').extend({
@@ -1114,7 +1114,7 @@ var JobViewModel = function() {
             onlyIf: function() {
                return true;
             },
-            message: _('Institution/Employer required')
+            message: _('Affiliation required')
         }
     });
 
@@ -1286,7 +1286,7 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
             onlyIf: function() {
                return true;
             },
-            message: _('Institution/Employer (English) required')
+            message: _('Affiliation (English) required')
         }
     });
     self.institution_ja = ko.observable('').extend({
@@ -1295,7 +1295,7 @@ var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCal
             onlyIf: function() {
                return true;
             },
-            message: _('Institution/Employer required')
+            message: _('Affiliation required')
         }
     });
 
