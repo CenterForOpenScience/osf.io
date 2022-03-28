@@ -1,14 +1,14 @@
 # Translations template for PROJECT.
-# Copyright (C) 2021 ORGANIZATION
+# Copyright (C) 2022 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-06-14 12:22+0900\n"
+"POT-Creation-Date: 2022-03-21 00:53+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,6 +21,87 @@ msgstr ""
 msgid "Launch"
 msgstr ""
 
+#: addons/metadata/static/files.js:250
+msgid "Data Schema:"
+msgstr ""
+
+#: addons/metadata/static/files.js:254
+msgid "Not selected"
+msgstr ""
+
+#: addons/metadata/static/files.js:320 addons/metadata/static/files.js:327
+msgid "No name"
+msgstr ""
+
+#: addons/metadata/static/files.js:420
+msgid "Loading..."
+msgstr ""
+
+#: addons/metadata/static/files.js:422 addons/metadata/static/files.js:737
+#: website/static/js/folderpicker.js:105
+msgid "Select"
+msgstr ""
+
+#: addons/metadata/static/files.js:437
+msgid "Registering..."
+msgstr ""
+
+#: addons/metadata/static/files.js:437
+msgid "Deleting..."
+msgstr ""
+
+#: addons/metadata/static/files.js:445
+msgid "Open"
+msgstr ""
+
+#: addons/metadata/static/files.js:475 addons/metadata/static/files.js:690
+#: addons/metadata/static/files.js:714 addons/metadata/static/files.js:735
+#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2298
+#: website/static/js/folderPickerNodeConfig.js:591
+#: website/static/js/pages/profile-settings-addons-page.js:72
+#: website/static/js/pages/project-settings-page.js:118
+msgid "Close"
+msgstr ""
+
+#: addons/metadata/static/files.js:517 addons/metadata/static/files.js:699
+msgid "Edit Metadata"
+msgstr ""
+
+#: addons/metadata/static/files.js:528
+msgid "Register Metadata"
+msgstr ""
+
+#: addons/metadata/static/files.js:537 addons/metadata/static/files.js:722
+msgid "Delete Metadata"
+msgstr ""
+
+#: addons/metadata/static/files.js:692 website/static/js/contribManager.js:429
+#: website/static/js/filepage/editor.js:180
+msgid "Save"
+msgstr ""
+
+#: addons/metadata/static/files.js:716 website/static/js/fangorn.js:1226
+#: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2028
+#: website/static/js/fangorn.js:2064 website/static/js/filepage/index.js:204
+#: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
+msgid "Delete"
+msgstr ""
+
+#: addons/metadata/static/files.js:727
+msgid "Do you want to delete metadata? This operation cannot be undone."
+msgstr ""
+
+#: addons/metadata/static/files.js:744
+msgid "Select draft registration"
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:23
+msgid "This field can't be blank."
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:99
+msgid "Choose..."
+msgstr ""
 #: addons/twofactor/static/twoFactorUserConfig.js:148
 #: addons/twofactor/static/twoFactorUserConfig.js:190
 #: admin/static/js/rdm_addons/rdm-addons-page.js:71
@@ -1852,6 +1933,68 @@ msgid ""
 "</ul>\n"
 msgstr ""
 
+#: scripts/translations/messages_addonsJson.js:47
+msgid ""
+"\n"
+"\n"
+"<h3>Metadata Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Permissions</td>\n"
+"                <td>The GakuNin RDM does not affect the permissions of "
+"Metadata.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Logs</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component copies information "
+"about linked Metadata but the GakuNin RDM does not affect authentication "
+"of Metadata.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+
 #: website/static/js/accessRequestManager.js:85
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
 msgstr ""
@@ -1952,13 +2095,6 @@ msgstr ""
 msgid ""
 " Please click the link in your email to confirm this action. You will be "
 "required to enter your password."
-msgstr ""
-
-#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2286
-#: website/static/js/folderPickerNodeConfig.js:591
-#: website/static/js/pages/profile-settings-addons-page.js:72
-#: website/static/js/pages/project-settings-page.js:118
-msgid "Close"
 msgstr ""
 
 #: website/static/js/accountSettings.js:236
@@ -2786,11 +2922,6 @@ msgstr ""
 
 #: website/static/js/contribManager.js:421
 msgid "Submission failed: "
-msgstr ""
-
-#: website/static/js/contribManager.js:429
-#: website/static/js/filepage/editor.js:180
-msgid "Save"
 msgstr ""
 
 #: website/static/js/contribRemover.js:56

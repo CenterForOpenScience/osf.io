@@ -1,0 +1,3 @@
+"""
+Metadata addon default settings
+"""

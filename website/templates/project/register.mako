@@ -52,6 +52,7 @@
     % if node.get('registered_schema') and not node.get('is_retracted'):
       <script type="text/javascript">
         window.contextVars.node.registrationMetaSchema = ${ node['registered_schema'] | sjson, n };
+        window.contextVars.node.registeredFrom = ${ node['registered_from'] | sjson, n };
       </script>
       <script src="${'/static/public/js/register-page.js' | webpack_asset}"></script>
     % endif
