@@ -3093,38 +3093,44 @@ msgstr ""
 #~ msgid "Submit"
 #~ msgstr ""
 
+# text of menuitem on left-side menu
 msgid "Login Availability Control"
 msgstr ""
 
+# page title
 msgid "List of Entitlements"
-msgstr ""
+msgstr "List of eduPersonEntitlement"
 
+# label for eduPersonEntitlement input box
 msgid "Entitlements"
-msgstr ""
+msgstr "eduPersonEntitlement"
 
 msgid "Institutions"
 msgstr ""
 
+# hint text of eduPersonEntitlement input box
 msgid "Enter new entitlement"
-msgstr ""
+msgstr "Enter new eduPersonEntitlement"
 
+# label for checkboxes
 msgid "login availability"
 msgstr ""
 
+# text for button to add another eduPersonEntitlement input box
 msgid "New entitlement"
-msgstr ""
+msgstr "New eduPersonEntitlement"
 
 msgid "Delete"
 msgstr ""
 
 msgid "Entitlement must be not empty"
-msgstr ""
+msgstr "eduPersonEntitlement must be not empty"
 
 msgid "Entitlement '"
-msgstr ""
+msgstr "eduPersonEntitlement '"
 
 msgid "' already exists"
 msgstr ""
 
 msgid "' have been inputted"
-msgstr ""
+msgstr "' is duplicated"

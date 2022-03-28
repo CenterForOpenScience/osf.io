@@ -3111,24 +3111,30 @@ msgstr ""
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
 
+# text of menuitem on left-side menu
 msgid "Login Availability Control"
 msgstr ""
 
+# page title
 msgid "List of Entitlements"
 msgstr ""
 
+# label for eduPersonEntitlement input box
 msgid "Entitlements"
 msgstr ""
 
 msgid "Institutions"
 msgstr ""
 
+# hint text of eduPersonEntitlement input box
 msgid "Enter new entitlement"
 msgstr ""
 
+# label for checkboxes
 msgid "login availability"
 msgstr ""
 
+# text for button to add another eduPersonEntitlement input box
 msgid "New entitlement"
 msgstr ""
 

@@ -3154,38 +3154,44 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Submit"
 #~ msgstr "検索"
 
+# text of menuitem on left-side menu
 msgid "Login Availability Control"
-msgstr "ログイン可用性制御"
+msgstr "ログイン可否設定"
 
+# page title
 msgid "List of Entitlements"
-msgstr "適格のリスト"
+msgstr "eduPersonEntitlement の一覧"
 
+# label for eduPersonEntitlement input box
 msgid "Entitlements"
-msgstr "適格"
+msgstr "eduPersonEntitlement"
 
 msgid "Institutions"
 msgstr "機関"
 
+# hint text of eduPersonEntitlement input box
 msgid "Enter new entitlement"
-msgstr "新しい適格登録"
+msgstr "新しい eduPersonEntitlement"
 
+# label for checkboxes
 msgid "login availability"
-msgstr "ログイン可用"
+msgstr "ログイン可否"
 
+# text for button to add another eduPersonEntitlement input box
 msgid "New entitlement"
-msgstr "新しい適格"
+msgstr "入力欄を追加"
 
 msgid "Delete"
 msgstr "削除"
 
 msgid "Entitlement must be not empty"
-msgstr "資格は空であってはなりません"
+msgstr "eduPersonEntitlement を入力してください。"
 
 msgid "Entitlement '"
-msgstr "適格 '"
+msgstr "eduPersonEntitlement '"
 
 msgid "' already exists"
 msgstr "'は既に存在します。"
 
 msgid "' have been inputted"
-msgstr "'は入力されました。"
+msgstr "'は重複しています。"
