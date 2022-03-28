@@ -343,12 +343,11 @@ class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
             max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
             remaining_quota = max_quota_bytes - used_quota
 
-            user_data = self.get_user_quota_info(user, UserQuota.NII_STORAGE)
-            writer.writerow([user_data.get('id'), user_data.get('username'),
-                             user_data.get('fullname'),
-                             round(user_data.get('ratio'), 1),
-                             used_quota,
-                             remaining_quota,
+            writer.writerow([user.guids.first()._id, user.username,
+                             user.fullname,
+                             round(float(used_quota) / max_quota_bytes * 100, 1),
+                             round(used_quota, 0),
+                             round(remaining_quota, 0),
                              round(max_quota_bytes, 0)])
         query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
             institution_id)
