@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from api.base.exceptions import InvalidQueryStringError
 from osf import features
+from website.settings import PREPRINT_METRICS_START_DATE
 
 
 class MetricsViewMixin(object):
@@ -53,6 +54,13 @@ class MetricsViewMixin(object):
         raise NotImplementedError('MetricsViewMixin subclasses must define add_metric_to_object().')
 
     @property
+    def metrics_default_after(self):
+        """Value to be used as the `after` in metrics queries if not otherwise specified.
+        Datetime or None.
+        """
+        return None
+
+    @property
     def metrics_requested(self):
         return (
             waffle.switch_is_active(features.ELASTICSEARCH_METRICS) and
@@ -96,7 +104,7 @@ class MetricsViewMixin(object):
                     raise InvalidQueryStringError("Invalid period for metric: '{}'".format(period), parameter='metrics')
                 metric_class = metric_map[metric]
                 if period == 'total':
-                    after = None
+                    after = self.metrics_default_after
                 else:
                     after = timezone.now() - self.TIMEDELTA_MAP[period]
                 queryset_or_obj = method(queryset_or_obj, metric_class, metric, after)
@@ -130,3 +138,9 @@ class MetricsSerializerMixin(object):
                 meta = meta or {'metrics': {}}
                 meta['metrics'][metric] = getattr(obj, metric)
         return meta
+
+
+class PreprintMetricsViewMixin(MetricsViewMixin):
+    @property
+    def metrics_default_after(self):
+        return PREPRINT_METRICS_START_DATE
