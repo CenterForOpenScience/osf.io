@@ -3100,7 +3100,7 @@ msgid "Export All Users Statistics"
 msgstr ""
 
 msgid "Info"
-msgstr ""
+msgstr "Name"
 
 msgid "keyword"
 msgstr ""

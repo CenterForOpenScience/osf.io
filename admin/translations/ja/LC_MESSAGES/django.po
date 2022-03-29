@@ -3161,7 +3161,7 @@ msgid "Export All Users Statistics"
 msgstr "全ユーザーの統計出力"
 
 msgid "Info"
-msgstr "情報"
+msgstr "名前"
 
 msgid "keyword"
 msgstr "キーワード"
