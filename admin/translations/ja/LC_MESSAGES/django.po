@@ -3158,22 +3158,22 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgstr "機関"
 
 msgid "Inst. Storage Quota Control"
-msgstr "機関の保管クォータ制御"
+msgstr "機関ストレージのクォータ"
 
 msgid "Institutional Storage Quota Control"
-msgstr "機関の保管クォータ制御"
+msgstr "機関ストレージのクォータ制御"
 
 msgid "Institutional Storage for Institutions"
-msgstr "機関向けの機関保管"
+msgstr "機関ストレージ"
 
 msgid "Storage name"
-msgstr "保管名"
+msgstr "ストレージ名"
 
 msgid "Configure Institutional Storage Quota"
-msgstr "機関の保管クォータコンフィグレーション"
+msgstr "機関ストレージのクォータ設定"
 
 msgid "Each user Quota for Institutional Storage (GB)"
-msgstr "機関保管の各ユーザークォータ（GB）"
+msgstr "各ユーザの機関ストレージのクォータ(GB)"
 
 msgid "Value must be an integer number greater than or equal 1"
 msgstr "値は1以上の整数である必要があります"
