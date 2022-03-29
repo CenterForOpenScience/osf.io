@@ -36,43 +36,32 @@
                 <h3>{% trans "User details" %}</h3>
             </div>
             <div class="col-md-6 clearfix">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    </thead>
+                <table class="table table-striped" style="margin-bottom: 0;">
                     <tbody>
                     <tr>
-                        <td><strong>{% trans "Name" %}</strong></td>
+                        <td class="w-label"><strong>{% trans "Name" %}</strong></td>
                         <td>{{ user.name }}</td>
                     </tr>
                     <tr>
-                        <td><strong>{% trans "Username" %}</strong></td>
+                        <td class="w-label"><strong>{% trans "Username" %}</strong></td>
                         <td>{{ user.username }}</td>
                     </tr>
                     <tr>
-                        <td><strong>{% trans "EPPN" %}</strong></td>
+                        <td class="w-label"><strong>{% trans "EPPN" %}</strong></td>
                         <td>{{ user.eppn }}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
             <div class="col-md-6 clearfix">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                    </thead>
+                <table class="table table-striped" style="margin-bottom: 0;">
                     <tbody>
-                    <tr >
-                        <td rowspan="3"><strong>{% trans "Affiliation" %}</strong></td>
+                    <tr class="hidden" aria-rowspan="0"></tr>
+                    <tr>
+                        <td class="w-label" rowspan="3"><strong>{% trans "Affiliation" %}</strong></td>
                         <td rowspan="3">
                             {% if user.affiliations is not None %}
-                                <ul style="height: 6em;overflow: auto;">
+                                <ul style="height: 6em; overflow: auto; padding-left: 1em;">
                                     {% for affiliation in user.affiliations %}
                                         <li>{{ affiliation.name }}</li>
                                     {% endfor %}
@@ -80,6 +69,7 @@
                             {% endif %}
                         </td>
                     </tr>
+                    <tr class="hidden" aria-rowspan="0"></tr>
                     </tbody>
                 </table>
             </div>
