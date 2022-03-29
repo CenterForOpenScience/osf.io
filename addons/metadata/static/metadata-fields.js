@@ -288,8 +288,8 @@ function createFileCreatorsFieldElement(erad) {
     create: function(addToContainer, callback) {
       const thead = $('<thead>')
         .append($('<tr>')
-          .append($('<th>' + _('e-Rad 研究者番号') + '</th>'))
-          .append($('<th>' + _('名前 (日本語)') + '</th>'))
+          .append($('<th>' + _('e-Rad Researcher Number') + '</th>'))
+          .append($('<th>' + _('Name (Japanese)') + '</th>'))
           .append($('<th>' + _('Name (English)') + '</th>'))
           .append($('<th></th>'))
         );
