@@ -6,6 +6,34 @@
 
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+    <style type="text/css">
+        .flex-container {
+            display: flex;
+        }
+
+        .flex-container .flex-item {
+            flex: 1;
+        }
+
+        .max-w-600 {
+            max-width: 600px;
+        }
+
+        .w-label {
+            min-width: 160px;
+            max-width: 200px;
+        }
+
+        @media (min-width: 768px) {
+            .xs-flex-container {
+                display: flex;
+            }
+
+            .xs-flex-container .xs-flex-item {
+                flex: 1;
+            }
+        }
+    </style>
 {% endblock %}
 
 {% block title %}
@@ -28,9 +56,9 @@
           onsubmit="check_entitlements(event)"
           id="entitlements_form">
         {% csrf_token %}
-        <div class="form-group">
-            <label for="institution_id" class="col-sm-2 control-label">{% trans 'Institutions' %}</label>
-            <div class="col-sm-9 col-lg-4" style="width:435px">
+        <div class="form-group xs-flex-container">
+            <label for="institution_id" class="col-sm-2 control-label xs-flex-item w-label">{% trans 'Institutions' %}</label>
+            <div class="col-sm-9 max-w-600">
                 <select id="institution_id" name="institution_id" class="form-control">
                     {% for institution in institutions %}
                         <option value="{{ institution.id }}" {% if selected_id == institution.id %}selected="selected"{% endif %}>{{ institution.name }}</option>
@@ -39,17 +67,16 @@
             </div>
         </div>
 
-        <div class="form-group">
-            <label for="entitlements" class="col-sm-2 control-label">{% trans 'Entitlements' %}</label>
-            <div class="form-inline col-sm-9 col-lg-4" id="entitlements_block" style="max-height: 132px; width:420px; overflow: auto;">
-                <div class="clearfix" style="margin-bottom: 15px; display:flex;">
-                    <div class="input-group" style="flex:1;">
+        <div class="form-group xs-flex-container">
+            <label for="entitlements" class="col-sm-2 control-label xs-flex-item w-label">{% trans 'Entitlements' %}</label>
+            <div class="form-inline col-sm-9 max-w-600" id="entitlements_block" style="max-height: 132px; overflow: auto;">
+                <div class="clearfix flex-container" style="margin-bottom: 15px;">
+                    <div class="input-group flex-item">
                         <input type="text" name="entitlements" placeholder="{% trans 'Enter new entitlement' %}"
-                               minlength="1" maxlength="255"
-				class="form-control">
+                               minlength="1" maxlength="255" class="form-control">
                     </div>
                     <div class="input-group form-check">
-                        <input type="checkbox" name="login_availability" checked="checked" value="on" style="margin-left:10px"
+                        <input type="checkbox" name="login_availability" checked="checked" value="on" style="margin-left: 10px;"
                                onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
                                data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked">
                         <label class="form-check-label" for="login_availability" style="padding-left: 10px;">{% trans 'login availability' %}</label>
@@ -57,8 +84,9 @@
                 </div>
             </div>
         </div>
-        <div class="form-group">
-            <div class="col-sm-offset-2 col-sm-10">
+        <div class="form-group xs-flex-container">
+            <div class="col-sm-2 control-label xs-flex-item w-label"></div>
+            <div class="col-sm-9 max-w-600">
                 <button type="button" class="btn btn-default" onclick="new_entitlement_element()">{% trans 'New entitlement' %}</button>
                 <button type="submit" class="btn btn-primary" style="width: 90px;">{% trans 'Save' %}</button>
             </div>
