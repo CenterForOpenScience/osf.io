@@ -4,6 +4,7 @@ const $ = require('jquery');
 const m = require('mithril');
 const Fangorn = require('js/fangorn').Fangorn;
 const Raven = require('raven-js');
+const datepicker = require('js/rdmDatepicker');
 
 const logPrefix = '[metadata] ';
 const _ = require('js/rdmGettext')._;
@@ -211,6 +212,7 @@ function MetadataButtons() {
         errorContainer: errorContainer
       });
     });
+    datepicker.mount('.datepicker', null);
     self.fieldsChanged();
   }
 
