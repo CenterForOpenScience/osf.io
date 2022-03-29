@@ -234,7 +234,6 @@ class TestSchemaResponseActionListGETPermissions:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListGETBehavior:
 
     def test_GET_schema_response_actions(self, app):
@@ -254,7 +253,6 @@ class TestSchemaResponseActionListGETBehavior:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTPermissions:
 
     def get_status_code_for_preconditions(self, registration_status, trigger, role):
@@ -395,7 +393,6 @@ class TestSchemaResponseActionListPOSTPermissions:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestSchemaResponseActionListPOSTBehavior:
 
     def test_POST_submit__denies_unchanged_submission(self, app):
