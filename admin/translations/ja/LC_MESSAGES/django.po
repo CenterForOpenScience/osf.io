@@ -3158,10 +3158,10 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgstr "機関"
 
 msgid "Configure NII Storage Quota"
-msgstr "NII保管クォータコンフィグレーション"
+msgstr "NIIストレージのクォータ設定"
 
 msgid "Each user Quota for NII Storage (GB)"
-msgstr "NII保管の各ユーザークォータ（GB)"
+msgstr "各ユーザのクォータ(GB)"
 
 msgid "Value must be an integer number greater than or equal 1"
 msgstr "値は1以上の整数である必要があります"
