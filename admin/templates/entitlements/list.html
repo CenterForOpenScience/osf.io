@@ -99,7 +99,7 @@
         <tbody>
         {% for entitlement in entitlements %}
             <tr class="entitlement-row">
-                <td class="entitlement current">{{ entitlement.entitlement }}</td>
+                <td class="entitlement current">{% autoescape on %}{{ entitlement.entitlement }}{% endautoescape %}</td>
                 <td>
                     <input type="checkbox"
                            {% if entitlement.login_availability %}checked="checked"{% endif %}
@@ -127,6 +127,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
     <script type="application/javascript">
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         document.getElementById("institution_id").addEventListener("change", function change_institution() {
             window.location = window.location.origin + "{% url 'institutions:entitlements' %}" + '?institution_id=' + document.getElementById("institution_id").value;
         });
@@ -168,7 +177,7 @@
                     input_entitlements.push(entitlement_input);
                 }
             }
-            let alert_html = !!message ? ("<div class='alert alert-danger'>" + message + "</div>") : undefined;
+            let alert_html = !!message ? ("<div class='alert alert-danger'>" + escapeHtml(message) + "</div>") : undefined;
             if (!!alert_html) {
                 event.preventDefault();
                 $("#error_message").append(new DOMParser().parseFromString(alert_html, 'text/html').body.childNodes[0]);
