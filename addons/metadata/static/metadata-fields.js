@@ -4,6 +4,7 @@ const $ = require('jquery');
 const $osf = require('js/osfHelpers');
 const oop = require('js/oop');
 const _ = require('js/rdmGettext')._;
+const datepicker = require('js/rdmDatepicker');
 require('typeahead.js');
 
 
@@ -55,7 +56,9 @@ function createStringField(erad, question, value, callback) {
   } else if (question.format == 'date') {
     return new SingleElementField(
       createFormElement(function() {
-        return $('<input></input>').addClass('datepicker');
+        const elem = $('<input></input>').addClass('datepicker');
+        datepicker.mount(elem, null);
+        return elem;
       }),
       question,
       value,
@@ -160,7 +163,11 @@ function createFormElement(createHandler) {
       return input.val();
     },
     setValue: function(input, value) {
-      input.val(value);
+      if (input.hasClass('datepicker')) {
+        input.datepicker('update', value);
+      } else {
+        input.val(value);
+      }
     },
   };
 }
