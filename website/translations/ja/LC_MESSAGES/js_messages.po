@@ -8236,7 +8236,7 @@ msgid "Active"
 msgstr "アクティブ"
 
 msgid "Sent"
-msgstr "送信"
+msgstr "送信完了"
 
 msgid "Error"
 msgstr "エラー"
