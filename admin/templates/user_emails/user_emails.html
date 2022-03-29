@@ -8,6 +8,15 @@
 
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/users.css"/>
+    <style type="text/css">
+        .w-label {
+            width: 130px;
+        }
+        .w-item {
+            max-width: 360px;
+            min-width: 180px;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -85,8 +94,8 @@
                       style="margin-top: 15px; margin-bottom: 15px; ">
                     {% csrf_token %}
                     <div class="form-group">
-                        <label for="primary_email" class="col-sm-1 control-label">{% trans "Email address" %}</label>
-                        <div class="col-sm-4">
+                        <label for="primary_email" class="col-sm-4 control-label w-label">{% trans "Email address" %}</label>
+                        <div class="col-sm-8 w-item">
                             <input type="email" class="form-control" name="primary_email"
                                    maxlength="255" minlength="6"
                                    pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
@@ -95,7 +104,8 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <div class="col-sm-offset-1 col-sm-4">
+                        <div class="col-sm-4 control-label w-label"></div>
+                        <div class="col-sm-8">
                             <button type="submit" class="btn btn-primary">{% trans "Add email as Primary" %}</button>
                         </div>
                     </div>
