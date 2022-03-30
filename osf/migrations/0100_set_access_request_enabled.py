@@ -45,5 +45,5 @@ class Migration(migrations.Migration):
             name='permissions',
             field=models.CharField(choices=[('read', 'Read'), ('write', 'Write'), ('admin', 'Admin')], default='read', max_length=5),
         ),
-        migrations.RunPython(add_default_access_requests_enabled, remove_default_access_requests_enabled),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
     ]
