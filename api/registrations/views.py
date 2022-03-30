@@ -560,7 +560,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
-    ordering_fields = ['modified', 'name']
+    ordering_fields = ['modified', 'name', 'date_modified']
     serializer_class = RegistrationFileSerializer
 
 
