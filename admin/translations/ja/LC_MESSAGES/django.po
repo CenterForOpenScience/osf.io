@@ -3157,11 +3157,14 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-msgid "Export All Users Statistics"
-msgstr "全ユーザーの統計出力"
+msgid "Export All Users Statistics (TSV)"
+msgstr "全ユーザの統計出力(TSV)"
 
-msgid "Info"
-msgstr "名前"
+msgid "EmailLabel"
+msgstr "ユーザ名"
+
+msgid "InfoLabel"
+msgstr "氏名"
 
 msgid "keyword"
 msgstr "キーワード"

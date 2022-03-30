@@ -4,24 +4,73 @@
 
 <div class="form-row justify-content-between">
     <div style="margin: 20px 0">
-        <a class="btn btn-primary" href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics" %}</a>
+        <a class="btn btn-primary" href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics (TSV)" %}</a>
     </div>
 </div>
 
-<form class="form-inline" action="{% url 'institutions:institution_user_list' institution_id %}" method="get"
+<style type="text/css">
+    .w-search-input {
+        width: 6em !important;
+        max-width: 16em !important;
+    }
+
+    .form-group.flex-item {
+        max-width: 20em !important;
+    }
+
+    .flex-container,
+    .flex-container .form-group.flex-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: baseline;
+    }
+
+    .form-group.flex-item .w-search-input,
+    .flex-container .flex-item {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0%;
+        white-space: nowrap;
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+
+    @media (max-width: 768px) {
+        .w-search-input {
+            width: auto !important;
+        }
+
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+        }
+
+        .form-group.flex-item label {
+            width: 5em;
+            flex-grow: 1;
+        }
+    }
+</style>
+<form class="form-inline flex-container"
+      action="{% url 'institutions:institution_user_list' institution_id %}" method="get"
       onsubmit="return validateForm()">
-    <div class="form-group" style="margin-right: 20px;">
-        <label style="margin: 0 10px;">{% trans "GUID" %}</label>
-        <input name="guid" type="text" class="form-control" placeholder="{% trans 'GUID' %}" value="{{ request.GET.guid }}"
+    <div class="form-group flex-item">
+        <label>{% trans "GUID" %}</label>
+        <input name="guid" type="text" class="form-control w-search-input"
+               placeholder="abcde"
+               value="{{ request.GET.guid }}"
                maxlength="5" minlength="5"
                pattern="[0-9a-z]{5}"
                title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
                id="id_guid">
     </div>
-    <div class="form-group" style="margin-right: 20px;">
-        <label style="margin: 0 10px;">{% trans "Email" %}</label>
-        <input name="email" type="email" class="form-control"
-               placeholder="{% trans 'Email' %}" value="{{ request.GET.email }}"
+    <div class="form-group flex-item" style="flex-grow: 3;">
+        <label>{% trans "EmailLabel" %}</label>
+        <input name="email" type="email" class="form-control w-search-input"
+               placeholder="john@example.com"
+               value="{{ request.GET.email }}"
                oninvalid="this.setCustomValidity({% trans 'Please enter an valid email' %})"
                oninput="setCustomValidity('')"
                maxlength="255" minlength="6"
@@ -29,13 +78,15 @@
                title="{% trans 'Please enter an email address' %}"
                id="id_email">
     </div>
-    <div class="form-group" style="margin-right: 20px;">
-        <label style="margin: 0 10px;">{% trans "Info" %}</label>
-        <input name="info" type="text" class="form-control" placeholder="{% trans 'keyword' %}" value="{{ request.GET.info }}"
+    <div class="form-group flex-item" style="flex-grow: 2;">
+        <label>{% trans "InfoLabel" %}</label>
+        <input name="info" type="text" class="form-control w-search-input"
+               placeholder="john"
+               value="{{ request.GET.info }}"
                maxlength="255"
                id="id_name">
     </div>
-    <div class="form-group">
+    <div class="form-group flex-item" style="flex-grow: 0;">
         <button class="btn btn-primary" type="submit">{% trans 'Search' %}</button>
     </div>
 </form>

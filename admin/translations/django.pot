@@ -3111,10 +3111,13 @@ msgstr ""
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
 
-msgid "Export All Users Statistics"
+msgid "Export All Users Statistics (TSV)"
 msgstr ""
 
-msgid "Info"
+msgid "EmailLabel"
+msgstr ""
+
+msgid "InfoLabel"
 msgstr ""
 
 msgid "keyword"

@@ -3096,11 +3096,14 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
-msgid "Export All Users Statistics"
+msgid "Export All Users Statistics (TSV)"
 msgstr ""
 
-msgid "Info"
-msgstr "Name"
+msgid "EmailLabel"
+msgstr "Username"
+
+msgid "InfoLabel"
+msgstr "Fullname"
 
 msgid "keyword"
 msgstr ""
