@@ -6,7 +6,7 @@ from api.entitlements.serializers import LoginAvailabilitySerializer
 class TestLoginAvailabilitySerializer:
 
     def test_serializer(self):
-        id_test = 1
+        id_test = '1'
         payload = {
             'institution_id': id_test,
             'entitlements': ['gkn1-ent1', 'gkn1-ent2', 'gkn1-ent1']

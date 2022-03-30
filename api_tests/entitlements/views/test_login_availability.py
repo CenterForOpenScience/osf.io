@@ -23,7 +23,7 @@ class TestLoginAvailability:
         self.user.save()
         url = '/{0}institutions/login_availability/'.format(API_BASE)
         data = {
-            'institution_id': self.institution.id,
+            'institution_id': self.institution._id,
             'entitlements': [self.institution_entitlement1.entitlement, self.institution_entitlement2.entitlement,
                              self.institution_entitlement3.entitlement]
         }
@@ -49,7 +49,7 @@ class TestLoginAvailability:
         self.user.save()
         url = '/{0}institutions/login_availability/'.format(API_BASE)
         data = {
-            'institution_id': self.institution.id,
+            'institution_id': self.institution._id,
             'entitlements': [True, False, True]
         }
 
