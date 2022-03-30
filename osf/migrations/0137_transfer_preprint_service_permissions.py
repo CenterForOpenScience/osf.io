@@ -44,5 +44,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_preprint_service_permissions, unmigrate_preprint_service_permissions),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
     ]
