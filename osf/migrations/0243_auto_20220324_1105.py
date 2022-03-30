@@ -23,8 +23,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_if_exist, migrations.RunPython.noop),
-        migrations.DeleteModel(name='quickfilesnode'),
+        migrations.RunPython(migrations.RunPython.noop, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='abstractnode',
             name='type',
