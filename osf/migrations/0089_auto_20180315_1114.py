@@ -33,10 +33,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.AlterModelOptions(
-            name='collection',
-            options={'permissions': (('read_collection', 'Read Collection'), ('write_collection', 'Write Collection'), ('admin_collection', 'Admin Collection'))},
-        ),
         migrations.AddField(
             model_name='collectionuserobjectpermission',
             name='content_object',

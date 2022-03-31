@@ -19,7 +19,6 @@ def get_admin_read_permissions():
         'view_osfuser',
         'view_user',
         'view_preprintservice',
-        'view_institution',
         'view_preprintprovider',
         'view_subject',
         'view_scheduledbanner',
@@ -72,7 +71,6 @@ def update_admin_permissions(verbosity=0):
     group, created = Group.objects.get_or_create(name='read_only')
     if created and should_log:
         logger.info('read_only group created')
-    [group.permissions.add(perm) for perm in get_admin_read_permissions()]
     group.save()
     if should_log:
         logger.info('View permissions added to read only admin group')
@@ -81,8 +79,6 @@ def update_admin_permissions(verbosity=0):
     admin_group, created = Group.objects.get_or_create(name='osf_admin')
     if created and should_log:
         logger.info('admin_user Group created')
-    [admin_group.permissions.add(perm) for perm in get_admin_read_permissions()]
-    [admin_group.permissions.add(perm) for perm in get_admin_write_permissions()]
     group.save()
     if should_log:
         logger.info('Administrator permissions added to admin group')

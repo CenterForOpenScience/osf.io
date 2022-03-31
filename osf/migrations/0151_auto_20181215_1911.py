@@ -12,8 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='preprint',
-            options={'permissions': (('view_preprint', 'Can view preprint details in the admin app'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
-        ),
     ]

@@ -12,8 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='providerassetfile',
-            options={'permissions': (('view_providerassetfile', 'Can view provider asset files'),)},
-        ),
     ]

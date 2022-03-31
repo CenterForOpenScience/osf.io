@@ -12,13 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='institution',
-            options={'permissions': (('view_institution', 'Can view institution details'),)},
-        ),
-        migrations.AlterModelOptions(
-            name='preprintprovider',
-            options={'permissions': (('view_preprintprovider', 'Can view preprint provider details'),)},
-        ),
-
     ]

@@ -16,11 +16,6 @@ class Migration(migrations.Migration):
             name='RegistrationProvider',
             fields=[
             ],
-            options={
-                'indexes': [],
-                'proxy': True,
-                'permissions': (('view_registrationprovider', 'Can view registration provider details'),),
-            },
             bases=('osf.abstractprovider',),
         ),
         migrations.AlterField(

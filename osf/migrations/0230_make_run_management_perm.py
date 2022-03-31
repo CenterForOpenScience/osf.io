@@ -8,8 +8,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='adminprofile',
-            options={'permissions': (('view_management', 'Can view and run management commands in the admin app.'),)},
-        ),
     ]

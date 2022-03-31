@@ -55,10 +55,6 @@ class Migration(migrations.Migration):
             bases=('osf.abstractnode',),
         ),
         migrations.AlterModelOptions(
-            name='draftregistration',
-            options={'permissions': (('read_draft_registration', 'Can read the draft registration'), ('write_draft_registration', 'Can edit the draft registration'), ('admin_draft_registration', 'Can manage the draft registration'))},
-        ),
-        migrations.AlterModelOptions(
             name='draftregistrationlog',
             options={'get_latest_by': 'created', 'ordering': ['-created']},
         ),

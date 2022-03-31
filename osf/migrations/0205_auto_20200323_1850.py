@@ -12,10 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='institution',
-            options={'permissions': (('view_institution', 'Can view institution details'), ('view_institutional_metrics', 'Can access metrics endpoints for their Institution'))},
-        ),
         migrations.AddField(
             model_name='osfuser',
             name='department',

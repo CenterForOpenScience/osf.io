@@ -78,9 +78,6 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=False)),
                 ('is_staff', models.BooleanField(default=False)),
             ],
-            options={
-                'permissions': (('view_user', 'Can view user details'),),
-            },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -143,9 +140,6 @@ class Migration(migrations.Migration):
                 ('desk_token_secret', models.CharField(blank=True, max_length=45)),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='admin_profile', to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'permissions': (('mark_spam', 'Can mark comments, projects and registrations as spam'), ('view_spam', 'Can view nodes, comments, and projects marked as spam'), ('view_metrics', 'Can view metrics on the OSF Admin app'), ('view_prereg', 'Can view entries for the preregistration chellenge on the admin'), ('administer_prereg', 'Can update, comment on, and approve entries to the prereg challenge'), ('view_desk', 'Can view details about Desk users')),
-            },
         ),
         migrations.CreateModel(
             name='AlternativeCitation',
@@ -332,9 +326,6 @@ class Migration(migrations.Migration):
                 ('num_submissions', models.IntegerField(default=0)),
                 ('admins', models.ManyToManyField(to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'permissions': (('view_conference', 'Can view conference details in the admin app.'),),
-            },
         ),
         migrations.CreateModel(
             name='Contributor',
@@ -1069,10 +1060,6 @@ class Migration(migrations.Migration):
             name='Node',
             fields=[
             ],
-            options={
-                'proxy': True,
-                'permissions': (('view_node', 'Can view node details'),),
-            },
             bases=('osf.abstractnode',),
         ),
         migrations.CreateModel(
@@ -1097,10 +1084,6 @@ class Migration(migrations.Migration):
             name='Registration',
             fields=[
             ],
-            options={
-                'proxy': True,
-                'permissions': (('view_registration', 'Can view registration details'),),
-            },
             bases=('osf.abstractnode',),
         ),
         migrations.CreateModel(

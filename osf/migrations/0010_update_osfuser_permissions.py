@@ -12,8 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterModelOptions(
-            name='osfuser',
-            options={'permissions': (('view_osfuser', 'Can view user details'),)},
-        ),
     ]

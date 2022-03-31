@@ -26,9 +26,6 @@ class Migration(migrations.Migration):
                 ('creator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='osfgroups_created', to=settings.AUTH_USER_MODEL)),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
             ],
-            options={
-                'permissions': (('view_group', 'Can view group details'), ('member_group', 'Has group membership'), ('manage_group', 'Can manage group membership'),),
-            },
         ),
         migrations.CreateModel(
             name='OSFGroupGroupObjectPermission',
