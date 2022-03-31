@@ -260,7 +260,7 @@ def resolve_guid_download(guid, provider=None):
     if 'revision' not in request.args:  # This is to maintain legacy behavior
         request.args.update({'action': 'download'})
 
-    return proxy_url(unquote(resource.deep_url))
+    return proxy_url(_build_guid_url(unquote(resource.deep_url)))
 
 
 def stream_emberapp(server, directory):
@@ -328,7 +328,7 @@ def resolve_guid(guid, suffix=None):
             return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
-    url = unquote(_build_guid_url(resource.deep_url, suffix))
+    url = _build_guid_url(unquote(resource.deep_url), suffix)
     return proxy_url(url)
 
 # Redirects #
