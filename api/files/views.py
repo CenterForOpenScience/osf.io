@@ -73,7 +73,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'target'),
-        PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]

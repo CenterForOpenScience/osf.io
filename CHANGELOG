@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.03.0 (2022-03-31)
+====================
+- Add waffle flags for registration files
+- Enable writeable tags on registration files
+- Allow embedding of target on files
+- Fix serialization of files
+
 22.02.0 (2022-3-10)
 ====================
 - Stop creating Quickfiles for new users
