@@ -38,6 +38,7 @@ from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
+from website.settings import EXTERNAL_EMBER_APPS
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -1409,24 +1410,19 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
-    def test_file_views(self):
-        file = create_test_file(target=self.node, user=self.user)
-        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
-        # Test valid url file 200 on redirect
-        redirect = self.app.get(url, auth=self.user.auth)
-        assert redirect.status_code == 302
-        res = redirect.follow(auth=self.user.auth)
-        assert res.status_code == 200
 
-        # Test invalid node but valid deep_url redirects (moved log urls)
-        project_two = ProjectFactory(creator=self.user)
-        url = project_two.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
-        redirect = self.app.get(url, auth=self.user.auth)
-        assert redirect.status_code == 302
-        redirect_two = redirect.follow(auth=self.user.auth)
-        assert redirect_two.status_code == 302
-        res = redirect_two.follow(auth=self.user.auth)
-        assert res.status_code == 200
+    @mock.patch('website.views.stream_emberapp')
+    def test_file_views(self, mock_ember):
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            file = create_test_file(target=self.node, user=self.user)
+            url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+            res = self.app.get(url, auth=self.user.auth)
+            assert res.status_code == 200
+            assert mock_ember.called
+            args, kwargs = mock_ember.call_args
+
+            assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
+            assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)
