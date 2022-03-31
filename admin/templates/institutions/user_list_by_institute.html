@@ -2,13 +2,11 @@
 <h2 id="title">{% trans "Statistical Status of NII Storage" %}</h2>
 <h3 id="sub-title">{% blocktrans %}NII Storage > {{ institution_name }}{% endblocktrans %}</h3>
 
-<div class="form-row justify-content-between">
-    <div style="margin: 20px 0">
-        <a class="btn btn-primary" href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics (TSV)" %}</a>
-    </div>
-</div>
-
 <style type="text/css">
+    .nowrap {
+        white-space: nowrap;
+    }
+
     .w-search-input {
         width: 6em !important;
         max-width: 16em !important;
@@ -24,7 +22,17 @@
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: flex-start;
-        align-items: baseline;
+        align-items: center;
+    }
+
+    .flex-container input[type=hiden],
+    .flex-container .form-group.flex-item input[type=hiden] {
+        flex: 0;
+    }
+
+    .row.flex-container {
+        padding-left: 15px;
+        padding-right: 15px;
     }
 
     .form-group.flex-item .w-search-input,
@@ -53,6 +61,7 @@
         }
     }
 </style>
+
 <form class="form-inline flex-container"
       action="{% url 'institutions:institution_user_list' institution_id %}" method="get"
       onsubmit="return validateForm()">
@@ -91,60 +100,73 @@
     </div>
 </form>
 
-{% include "util/pagination.html" with items=page status=direction order=order_by %}
+<div class="row flex-container">
+    <div class="flex-item" style="flex-grow: 0;">
+        {% include "util/pagination.html" with items=page status=direction order=order_by %}
+    </div>
+    <div class="flex-item">
+    </div>
+    <div class="flex-item" style="flex-grow: 0;">
+        <div style="margin: 20px 0;">
+            <a class="btn btn-primary" style="padding-left: 6px; padding-right: 6px;"
+               href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics (TSV)" %}</a>
+        </div>
+    </div>
+</div>
+
 <table class="table table-striped table-hover table-responsive">
     <thead>
-        <tr>
-            <th>GUID</th>
-            <th>
-                {% trans "Username" %}
-                <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
-                {% trans "Fullname" %}
-                <a href="?order_by=fullname&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
-                {% trans "Ratio" %}
-                <a href="?order_by=ratio&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
-                {% trans "Usage" %}
-                <a href="?order_by=usage&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
-                {% trans "Remaining" %}
-                <a href="?order_by=remaining&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-            <th>
-                {% trans "Quota" %}
-                <a href="?order_by=quota&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
-            </th>
-        </tr>
+    <tr>
+        <th>GUID</th>
+        <th class="nowrap">
+            {% trans "Username" %}
+            <a href="?order_by=username&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+        <th class="nowrap">
+            {% trans "Fullname" %}
+            <a href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+        <th class="nowrap">
+            {% trans "Ratio" %}
+            <a href="?order_by=ratio&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+        <th class="nowrap">
+            {% trans "Usage" %}
+            <a href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+        <th class="nowrap">
+            {% trans "Remaining" %}
+            <a href="?order_by=remaining&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+        <th class="nowrap">
+            {% trans "Quota" %}
+            <a href="?order_by=quota&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+            <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+        </th>
+    </tr>
     </thead>
     <tbody>
-        {% for user in users %}
+    {% for user in users %}
         <tr>
             <td>
-                <a href="{%  url 'users:user' user.id %}"
+                <a href="{% url 'users:user' user.id %}"
                    class="btn btn-primary">
                     {{ user.id }}
                 </a>
             </td>
-            <td>{{user.username}}</td>
-            <td>{{user.fullname}}</td>
-            <td>{{user.ratio|floatformat:1}}%</td>
-            <td>{{user.usage_value|floatformat:1}} {{user.usage_abbr}}</td>
-            <td>{{user.remaining_value|floatformat:1}} {{user.remaining_abbr}}</td>
-            <td>{{user.quota}} GB</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.fullname }}</td>
+            <td>{{ user.ratio|floatformat:1 }}%</td>
+            <td>{{ user.usage_value|floatformat:1 }} {{ user.usage_abbr }}</td>
+            <td>{{ user.remaining_value|floatformat:1 }} {{ user.remaining_abbr }}</td>
+            <td>{{ user.quota }} GB</td>
         </tr>
-        {% endfor %}
+    {% endfor %}
     </tbody>
 </table>
 
@@ -157,7 +179,6 @@
         let id_guid = $id_guid.val().trim();
         let id_email = $id_email.val().trim();
         let id_name = $id_name.val().trim();
-        console.log(!id_guid, !id_email, !id_name);
         !id_guid && $id_guid.val('').focus();
         !id_email && $id_email.val('').focus();
         !id_name && $id_name.val('').focus();
