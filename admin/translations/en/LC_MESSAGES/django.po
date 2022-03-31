@@ -3096,8 +3096,8 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
-msgid "Configure NII Storage Quota"
-msgstr ""
+# msgid "Configure NII Storage Quota"
+# msgstr ""
 
 msgid "Each user Quota for NII Storage (GB)"
 msgstr ""
