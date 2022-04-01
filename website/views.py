@@ -225,6 +225,15 @@ def resolve_guid_download(guid, provider=None):
 
     resource = guid.referent
 
+    if isinstance(resource, BaseFileNode) and request.args.get('action') == 'download':
+        return redirect(
+            resource.generate_waterbutler_url(
+                action='download',
+                direct=None,
+                version=request.args.get('revision', '')
+            )
+        )
+
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
         filename = suffix.replace('osfstorage/files/', '').rstrip('/')
