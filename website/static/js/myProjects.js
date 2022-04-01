@@ -812,7 +812,7 @@ var MyProjects = {
                         } else {
                             template = m('.db-non-load-template.m-md.p-md.osf-box',
                             'You have not made any registrations yet. Go to ',
-                            m('a', {href: 'https://openscience.zendesk.com/hc/en-us/categories/360001550953'}, 'Guides'), ' to learn how registrations work.' );
+                            m('a', {href: 'https://help.osf.io'}, 'Guides'), ' to learn how registrations work.' );
                         }
                     } else if (lastcrumb.data.nodeType === 'preprints'){
                         template = m('.db-non-load-template.m-md.p-md.osf-box', [m('span', 'You have not made any preprints yet. Learn more about preprints in the '), m('a[href="https://openscience.zendesk.com/hc/en-us/categories/360001530554"]', 'OSF Guides'), m('span', ' or '), m('a[href="/preprints/"]', 'make one now.')]);
