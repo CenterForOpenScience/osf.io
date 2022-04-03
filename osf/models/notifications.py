@@ -17,7 +17,7 @@ class NotificationSubscription(BaseModel):
 
     user = models.ForeignKey('OSFUser', related_name='notification_subscriptions',
                              null=True, blank=True, on_delete=models.CASCADE)
-    node = models.ForeignKey('Node', related_name='notification_subscriptions',
+    node = models.ForeignKey('AbstractNode', related_name='notification_subscriptions',
                              null=True, blank=True, on_delete=models.CASCADE)
     provider = models.ForeignKey('AbstractProvider', related_name='notification_subscriptions',
                                  null=True, blank=True, on_delete=models.CASCADE)
