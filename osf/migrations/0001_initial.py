@@ -1172,12 +1172,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='archivejob',
             name='dst_node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='archive_jobs', to='osf.Registration', verbose_name='destination node'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='archive_jobs', to='osf.AbstractNode', verbose_name='destination node'),
         ),
         migrations.AddField(
             model_name='archivejob',
             name='src_node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.Node', verbose_name='source node'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode', verbose_name='source node'),
         ),
         migrations.AlterIndexTogether(
             name='abstractnode',

@@ -52,10 +52,10 @@ class ArchiveJob(ObjectIDMixin, BaseModel):
     status = models.CharField(max_length=40, default=ARCHIVER_INITIATED)
     datetime_initiated = NonNaiveDateTimeField(default=timezone.now, verbose_name='initiated at')
 
-    dst_node = models.ForeignKey('Registration', related_name='archive_jobs',
+    dst_node = models.ForeignKey('AbstractNode', related_name='archive_jobs',
                                  verbose_name='destination node', null=True,
                                  blank=True, on_delete=models.CASCADE)
-    src_node = models.ForeignKey('Node', verbose_name='source node', null=True,
+    src_node = models.ForeignKey('AbstractNode', verbose_name='source node', null=True,
                                  blank=True, on_delete=models.CASCADE)
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
 
