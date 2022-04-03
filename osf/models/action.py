@@ -21,7 +21,6 @@ class BaseAction(ObjectIDMixin, BaseModel):
     class Meta:
         abstract = True
 
-
     creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
 
     trigger = models.CharField(max_length=31, choices=DefaultTriggers.choices())
