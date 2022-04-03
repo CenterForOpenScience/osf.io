@@ -278,7 +278,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().include('user__guids')
+        return node.contributor_set.all()
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):

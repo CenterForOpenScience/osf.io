@@ -24,11 +24,7 @@ from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, Prepri
 
 
 def get_review_actions_queryset():
-    return ReviewAction.objects.include(
-        'creator__guids',
-        'target__guids',
-        'target__provider',
-    ).filter(is_deleted=False)
+    return ReviewAction.objects.filter(is_deleted=False)
 
 
 class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -94,11 +90,6 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         ]
         if action_querysets:
             action = [action_queryset for action_queryset in action_querysets if action_queryset][0]  # clear empty querysets
-            action.include(
-                'creator__guids',
-                'target__guids',
-                'target__provider',
-            )
             action = action.get()
         else:
             raise NotFound('Unable to find specified Action')

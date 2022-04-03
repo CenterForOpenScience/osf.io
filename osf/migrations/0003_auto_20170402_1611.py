@@ -17,12 +17,6 @@ class Migration(migrations.Migration):
             name='tag',
             options={'ordering': ('name',)},
         ),
-        migrations.AlterModelManagers(
-            name='fileversion',
-            managers=[
-                ('includable_objects', django.db.models.manager.Manager()),
-            ],
-        ),
         migrations.RemoveField(
             model_name='abstractnode',
             name='public_comments',

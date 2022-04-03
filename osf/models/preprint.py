@@ -5,7 +5,6 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from include import IncludeManager
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -45,6 +44,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.identifiers import IdentifierMixin, Identifier
 from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
+from typedmodels.models import TypedModelManager
 
 from framework.sentry import log_exception
 from osf.exceptions import (
@@ -57,7 +57,7 @@ from django.contrib.postgres.fields import ArrayField
 logger = logging.getLogger(__name__)
 
 
-class PreprintManager(IncludeManager):
+class PreprintManager(TypedModelManager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 
