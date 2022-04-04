@@ -99,7 +99,7 @@ class Registration(AbstractNode):
         'category',
     ]
     provider = models.ForeignKey(
-        'RegistrationProvider',
+        'AbstractProvider',
         related_name='registrations',
         null=True,
         on_delete=models.SET_NULL
