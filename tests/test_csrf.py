@@ -11,6 +11,6 @@ class TestCSRF(OsfTestCase):
         # use session auth
         session_cookie = user.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, session_cookie.decode())
-        res = self.app.get('/settings/')
+        res = self.app.get('/settings/').follow()
         assert res.status_code == 200
         assert api_settings.CSRF_COOKIE_NAME in self.app.cookies

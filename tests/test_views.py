@@ -1991,7 +1991,6 @@ class TestAddingContributorViews(OsfTestCase):
         # finalize_invitation should only have been called once
         assert_equal(mock_send_claim_email.call_count, 1)
 
-    @mock.patch('website.mails.send_mail')
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self, mock_send_mail):
         # Project has components
         comp1 = NodeFactory(creator=self.creator, parent=self.project)
@@ -2012,14 +2011,14 @@ class TestAddingContributorViews(OsfTestCase):
         }
 
         # send request
-        url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
-        self.app.post_json(url, payload, auth=self.creator.auth)
+        with mock.patch('website.mails.send_mail') as mock_send_mail:
+            url = self.project.api_url_for('project_contributors_post')
+            assert self.project.can_edit(user=self.creator)
+            self.app.post_json(url, payload, auth=self.creator.auth)
 
         # send_mail should only have been called once
         assert_equal(mock_send_mail.call_count, 1)
 
-    @mock.patch('website.mails.send_mail')
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self, mock_send_mail):
         # Project has a component with a sub-component
         component = NodeFactory(creator=self.creator, parent=self.project)
@@ -2040,9 +2039,10 @@ class TestAddingContributorViews(OsfTestCase):
         }
 
         # send request
-        url = self.project.api_url_for('project_contributors_post')
-        assert self.project.can_edit(user=self.creator)
-        self.app.post_json(url, payload, auth=self.creator.auth)
+        with mock.patch('website.mails.send_mail'):
+            url = self.project.api_url_for('project_contributors_post')
+            assert self.project.can_edit(user=self.creator)
+            self.app.post_json(url, payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
         assert_equal(mock_send_mail.call_count, 2)
@@ -2104,87 +2104,96 @@ class TestAddingContributorViews(OsfTestCase):
         project.save()
         assert_true(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
-    def test_forking_project_does_not_send_contributor_added_email(self, send_mail):
+    def test_forking_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        project.fork_node(auth=Auth(project.creator))
-        assert_false(send_mail.called)
+        with mock.patch('website.mails.send_mail') as send_mail:
+            project.fork_node(auth=Auth(project.creator))
+            assert_false(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
-    def test_templating_project_does_not_send_contributor_added_email(self, send_mail):
+    def test_templating_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        project.use_as_template(auth=Auth(project.creator))
+        with mock.patch('website.mails.send_mail') as send_mail:
+            project.use_as_template(auth=Auth(project.creator))
+
         assert_false(send_mail.called)
 
     @mock.patch('website.archiver.tasks.archive')
-    @mock.patch('website.mails.send_mail')
-    def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
+    def test_registering_project_does_not_send_contributor_added_email(self, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        project.register_node(
-            get_default_metaschema(),
-            Auth(user=project.creator),
-            DraftRegistrationFactory(branched_from=project),
-            None,
-            provider=provider
-        )
+
+        with mock.patch('website.mails.send_mail') as send_mail:
+            project.register_node(
+                get_default_metaschema(),
+                Auth(user=project.creator),
+                DraftRegistrationFactory(branched_from=project),
+                None,
+                provider=provider
+            )
         assert_false(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self, send_mail):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
-        notify_added_contributor(project, contributor, auth)
-        assert_true(send_mail.called)
 
-        # 2nd call does not send email because throttle period has not expired
-        notify_added_contributor(project, contributor, auth)
-        assert_equal(send_mail.call_count, 1)
+        with mock.patch('website.mails.send_mail') as send_mail:
+            notify_added_contributor(project, contributor, auth)
+            assert_true(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
-    def test_notify_contributor_email_sends_after_throttle_expires(self, send_mail):
+            # 2nd call does not send email because throttle period has not expired
+            notify_added_contributor(project, contributor, auth)
+            assert_equal(send_mail.call_count, 1)
+
+    def test_notify_contributor_email_sends_after_throttle_expires(self):
         throttle = 0.5
 
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
-        notify_added_contributor(project, contributor, auth, throttle=throttle)
-        assert_true(send_mail.called)
 
-        time.sleep(1)  # throttle period expires
-        notify_added_contributor(project, contributor, auth, throttle=throttle)
-        assert_equal(send_mail.call_count, 2)
+        with mock.patch('website.mails.send_mail') as send_mail:
+            notify_added_contributor(project, contributor, auth, throttle=throttle)
+            assert_true(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
+            time.sleep(1)  # throttle period expires
+            notify_added_contributor(project, contributor, auth, throttle=throttle)
+            assert_equal(send_mail.call_count, 2)
+
     def test_add_contributor_to_fork_sends_email(self, send_mail):
         contributor = UserFactory()
         fork = self.project.fork_node(auth=Auth(self.creator))
-        fork.add_contributor(contributor, auth=Auth(self.creator))
-        fork.save()
+
+        with mock.patch('website.mails.send_mail') as send_mail:
+            fork.add_contributor(contributor, auth=Auth(self.creator))
+            fork.save()
         assert_true(send_mail.called)
         assert_equal(send_mail.call_count, 1)
 
-    @mock.patch('website.mails.send_mail')
-    def test_add_contributor_to_template_sends_email(self, send_mail):
+    def test_add_contributor_to_template_sends_email(self):
         contributor = UserFactory()
         template = self.project.use_as_template(auth=Auth(self.creator))
-        template.add_contributor(contributor, auth=Auth(self.creator))
-        template.save()
+
+        with mock.patch('website.mails.send_mail') as send_mail:
+            template.add_contributor(contributor, auth=Auth(self.creator))
+            template.save()
+
         assert_true(send_mail.called)
         assert_equal(send_mail.call_count, 1)
 
     @mock.patch('website.mails.send_mail')
     def test_creating_fork_does_not_email_creator(self, send_mail):
         contributor = UserFactory()
-        fork = self.project.fork_node(auth=Auth(self.creator))
+        with mock.patch('website.mails.send_mail') as send_mail:
+            self.project.fork_node(auth=Auth(self.creator))
+
         assert_false(send_mail.called)
 
-    @mock.patch('website.mails.send_mail')
     def test_creating_template_does_not_email_creator(self, send_mail):
         contributor = UserFactory()
-        template = self.project.use_as_template(auth=Auth(self.creator))
-        assert_false(send_mail.called)
+        with mock.patch('website.mails.send_mail') as send_mail:
+            template = self.project.use_as_template(auth=Auth(self.creator))
+            assert_false(send_mail.called)
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
@@ -2528,8 +2537,7 @@ class TestClaimViews(OsfTestCase):
         }, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_claim_user_post_with_registered_user_id(self, send_mail):
+    def test_claim_user_post_with_registered_user_id(self):
         # registered user who is attempting to claim the unclaimed contributor
         reg_user = UserFactory()
         payload = {
@@ -2542,7 +2550,8 @@ class TestClaimViews(OsfTestCase):
             pid=self.project._primary_key,
         )
 
-        res = self.app.post_json(url, payload)
+        with mock.patch('website.project.views.contributor.mails.send_mail') as send_mail:
+            res = self.app.post_json(url, payload)
 
         # mail was sent
         assert_equal(send_mail.call_count, 2)
@@ -2561,14 +2570,15 @@ class TestClaimViews(OsfTestCase):
             'fullname': self.given_name,
         })
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_send_claim_registered_email(self, mock_send_mail):
+
+    def test_send_claim_registered_email(self):
         reg_user = UserFactory()
-        send_claim_registered_email(
-            claimer=reg_user,
-            unclaimed_user=self.user,
-            node=self.project
-        )
+        with mock.patch('website.project.views.contributor.mails.send_mail') as mock_send_mail:
+            send_claim_registered_email(
+                claimer=reg_user,
+                unclaimed_user=self.user,
+                node=self.project
+            )
         assert_equal(mock_send_mail.call_count, 2)
         first_call_args = mock_send_mail.call_args_list[0][0]
         assert_equal(first_call_args[0], self.referrer.username)
@@ -4083,12 +4093,13 @@ class TestExternalAuthViews(OsfTestCase):
         assert_true(self.user.is_registered)
         assert_true(self.user.has_usable_password())
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
+    def test_external_login_confirm_email_get_duped_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert_equal(dupe_user.external_identity, self.user.external_identity)
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth)
+
+        with mock.patch('website.mails.send_mail') as mock_confirm:
+            res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302, 'redirects to cas login')
         assert_in('/login?service=', res.location)
 
@@ -4100,11 +4111,13 @@ class TestExternalAuthViews(OsfTestCase):
         assert_equal(self.user.external_identity['orcid'][self.provider_id], 'VERIFIED')
         assert_equal(dupe_user.external_identity, {})
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
+    def test_external_login_confirm_email_get_duping_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
+
+        with mock.patch('website.mails.send_mail') as mock_confirm:
+            res = self.app.get(url, auth=self.auth, expect_errors=True)
+
         assert_equal(res.status_code, 403, 'only allows one user to link an id')
 
         assert_equal(mock_confirm.call_count, 0)

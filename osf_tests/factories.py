@@ -364,6 +364,9 @@ class RegistrationProviderFactory(DjangoModelFactory):
 
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
+        from osf.migrations import update_provider_auth_groups
+        update_provider_auth_groups()
+
         return obj
 
 

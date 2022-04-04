@@ -67,45 +67,45 @@ class TestAuthUtils(OsfTestCase):
 
         assert_true(user.get_confirmation_token(user.username))
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_confirm_email(self, mock_mail):
+    def test_confirm_email(self):
         user = UnregUserFactory()
 
-        auth.register_unconfirmed(
-            username=user.username,
-            password='gattaca',
-            fullname='Rosie'
-        )
+        with mock.patch('framework.auth.views.mails.send_mail') as mock_mail:
+            auth.register_unconfirmed(
+                username=user.username,
+                password='gattaca',
+                fullname='Rosie'
+            )
 
-        user.reload()
-        token = user.get_confirmation_token(user.username)
+            user.reload()
+            token = user.get_confirmation_token(user.username)
 
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
-        res = res.follow()
+            res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
+            res = res.follow()
 
-        assert_equal(res.status_code, 302)
-        assert_in('login?service=', res.location)
+            assert_equal(res.status_code, 302)
+            assert_in('login?service=', res.location)
 
-        user.reload()
+            user.reload()
 
-        mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                                     storage_flag_is_active=False,
-                                     to_addr=user.username,
-                                     domain=settings.DOMAIN,
-                                     user=user,
-                                     mail=mails.WELCOME)
+            mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
+                                         storage_flag_is_active=False,
+                                         to_addr=user.username,
+                                         domain=settings.DOMAIN,
+                                         user=user,
+                                         mail=mails.WELCOME)
 
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
+            self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
+            res = self.app.get('/confirm/{}/{}'.format(user._id, token))
 
-        res = res.follow()
+            res = res.follow()
 
-        assert_equal(res.status_code, 302)
-        assert_equal('/', urlparse(res.location).path)
-        assert_equal(len(mock_mail.call_args_list), 1)
-        session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
-        assert_equal(len(session.data['status']), 1)
+            assert_equal(res.status_code, 302)
+            assert_equal('/', urlparse(res.location).path)
+            assert_equal(len(mock_mail.call_args_list), 1)
+            session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
+            assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
         user = UserFactory()
@@ -169,11 +169,12 @@ class TestAuthUtils(OsfTestCase):
         cas.make_response_from_ticket(ticket, service_url)
         assert_equal(user, mock_external_first_login_authenticate.call_args[0][0])
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_password_change_sends_email(self, mock_mail):
+    def test_password_change_sends_email(self):
         user = UserFactory()
-        user.set_password('killerqueen')
-        user.save()
+
+        with mock.patch('framework.auth.views.mails.send_mail') as mock_mail:
+            user.set_password('killerqueen')
+            user.save()
         assert_equal(len(mock_mail.call_args_list), 1)
         empty, kwargs = mock_mail.call_args
         kwargs['user'].reload()

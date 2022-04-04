@@ -89,7 +89,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
     def test_valid_cookie(self):
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
-        res = self.app.get(self.reachable_url)
+        res = self.app.get(self.reachable_url).follow()
         assert_equal(res.status_code, 200)
 
     def test_expired_cookie(self):

@@ -416,6 +416,7 @@ class TestSubscriptionView(OsfTestCase):
         self.node = factories.NodeFactory()
         self.user = self.node.creator
         self.registration = factories.RegistrationFactory(creator=self.user)
+        self.registration.save()
 
     def test_create_new_subscription(self):
         payload = {
@@ -1817,8 +1818,7 @@ class TestSendDigest(OsfTestCase):
         digest_ids = [d._id, d2._id, d3._id]
         remove_notifications(email_notification_ids=digest_ids)
 
-    @mock.patch('website.mails.send_mail')
-    def test_send_users_email_called_with_correct_args(self, mock_send_mail):
+    def test_send_users_email_called_with_correct_args(self):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
             send_type=send_type,
@@ -1827,7 +1827,9 @@ class TestSendDigest(OsfTestCase):
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]
         )
-        d.save()
+
+        with mock.patch('website.mails.send_mail') as mock_send_mail:
+            d.save()
         user_groups = list(get_users_emails(send_type))
         send_users_email(send_type)
         assert_true(mock_send_mail.called)
@@ -1845,8 +1847,7 @@ class TestSendDigest(OsfTestCase):
         message = group_by_node(user_groups[last_user_index]['info'])
         assert_equal(kwargs['message'], message)
 
-    @mock.patch('website.mails.send_mail')
-    def test_send_users_email_ignores_disabled_users(self, mock_send_mail):
+    def test_send_users_email_ignores_disabled_users(self):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
             send_type=send_type,
@@ -1855,7 +1856,8 @@ class TestSendDigest(OsfTestCase):
             message='Hello',
             node_lineage=[factories.ProjectFactory()._id]
         )
-        d.save()
+        with mock.patch('website.mails.send_mail') as mock_send_mail:
+            d.save()
 
         user_groups = list(get_users_emails(send_type))
         last_user_index = len(user_groups) - 1
