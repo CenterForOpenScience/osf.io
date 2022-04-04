@@ -106,16 +106,6 @@ def check_draft_state(draft):
             'message_short': 'This draft has already been registered',
             'message_long': 'This draft has already been registered and cannot be modified.'
         })
-    if draft.is_pending_review:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_short': 'This draft is pending review',
-            'message_long': 'This draft is pending review and cannot be modified.'
-        })
-    if draft.requires_approval and draft.is_approved and (not registered_and_deleted):
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-            'message_short': 'This draft has already been approved',
-            'message_long': 'This draft has already been approved and cannot be modified.'
-        })
 
 
 @must_have_permission(ADMIN)

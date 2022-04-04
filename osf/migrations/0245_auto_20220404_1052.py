@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
         ('addons_gitlab', '0004_auto_20190627_2029'),
         ('addons_box', '0004_rename_deleted_field'),
         ('addons_figshare', '0004_rename_deleted_field'),
-        ('osf', '0243_auto_20220324_1105'),
+        ('osf', '0244_auto_20220324_1105'),
     ]
 
     operations = [

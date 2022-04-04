@@ -345,3 +345,7 @@ select.form-control {
     display: inherit;
     overflow-y: hidden;
 }
+
+.progress-bar-success {
+    background-color: #357935
+}

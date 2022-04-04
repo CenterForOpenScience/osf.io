@@ -24,22 +24,22 @@
 
         <div class="form-group">
             <label>Given name (e.g. Rosalind)</label>
-            <input class="form-control" data-bind="value: given" maxlength="255"/>
+            <input class="form-control" data-bind="value: given" maxlength="255" aria-label="given name input" />
         </div>
 
         <div class="form-group">
             <label>Middle name(s) (e.g. Elsie)</label>
-            <input class="form-control" data-bind="value: middle" maxlength="255"/>
+            <input class="form-control" data-bind="value: middle" maxlength="255" aria-label="middle name input" />
         </div>
 
         <div class="form-group">
             <label>Family name (e.g. Franklin)</label>
-            <input class="form-control" data-bind="value: family" maxlength="255"/>
+            <input class="form-control" data-bind="value: family" maxlength="255" aria-label="family name input" />
         </div>
 
         <div class="form-group">
             <label>Suffix</label>
-            <input class="form-control" data-bind="value: suffix" maxlength="255"/>
+            <input class="form-control" data-bind="value: suffix" maxlength="255" aria-label="suffix input" />
         </div>
 
         <hr />

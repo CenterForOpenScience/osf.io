@@ -21,7 +21,7 @@
                         <i title="Click to remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
                         <div class="input-group" >
                             <span class="input-group-addon"><i title="Drag to reorder"  class="fa fa-bars"></i></span>
-                            <input type="url" class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
+                            <input type="url" class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/  aria-label="personal website input" >
                         </div>
                     </div>
                     <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
@@ -39,7 +39,7 @@
                 <label>ORCID</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://orcid.org/</span>
-                <input class="form-control" data-bind="value: orcid" placeholder="xxxx-xxxx-xxxx-xxxx"/>
+                <input class="form-control" data-bind="value: orcid" placeholder="xxxx-xxxx-xxxx-xxxx" aria-label="ORCID input" />
                 </div>
             </div>
 
@@ -47,7 +47,7 @@
                 <label>ResearcherID</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://researcherid.com/rid/</span>
-                <input class="form-control" data-bind="value: researcherId" placeholder="x-xxxx-xxxx" />
+                <input class="form-control" data-bind="value: researcherId" placeholder="x-xxxx-xxxx" aria-label="ResearcherID username input" />
                 </div>
             </div>
 
@@ -55,7 +55,7 @@
                 <label>Twitter</label>
                 <div class="input-group">
                 <span class="input-group-addon">@</span>
-                <input class="form-control" data-bind="value: twitter" placeholder="twitterhandle"/>
+                <input class="form-control" data-bind="value: twitter" placeholder="twitterhandle" aria-label="Twitter username input" />
                 </div>
             </div>
 
@@ -63,7 +63,7 @@
                 <label>GitHub</label>
                 <div class="input-group">
                     <span class="input-group-addon">https://github.com/</span>
-                    <input class="form-control" data-bind="value: github" placeholder="username"/>
+                    <input class="form-control" data-bind="value: github" placeholder="username" aria-label="github username input" />
                     <span class="input-group-btn" data-bind="if: github.hasAddon()">
                         <button
                                 class="btn btn-primary"
@@ -77,7 +77,7 @@
                 <label>LinkedIn</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://www.linkedin.com/</span>
-                <input class="form-control" data-bind="value: linkedIn" placeholder="in/userID, profile/view?id=profileID, or pub/pubID"/>
+                <input class="form-control" data-bind="value: linkedIn" placeholder="in/userID, profile/view?id=profileID, or pub/pubID" aria-label="LinkedIn input" />
                 </div>
             </div>
 
@@ -85,7 +85,7 @@
                 <label>ImpactStory</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://impactstory.org/u/</span>
-                <input class="form-control" data-bind="value: impactStory" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: impactStory" placeholder="profileID" aria-label="ImpactStory input" />
                 </div>
             </div>
 
@@ -93,7 +93,7 @@
                 <label>Google Scholar</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://scholar.google.com/citations?user=</span>
-                <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: scholar" placeholder="profileID" aria-label="Google Scholar information input" />
                 </div>
             </div>
 
@@ -101,7 +101,7 @@
                 <label>ResearchGate</label>
                 <div class="input-group">
                 <span class="input-group-addon">https://researchgate.net/profile/</span>
-                <input class="form-control" data-bind="value: researchGate" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: researchGate" placeholder="profileID" aria-label="ResearchGate information input" />
                 </div>
             </div>
 
@@ -111,7 +111,7 @@
                 <span class="input-group-addon">https://</span>
                 <input class="form-control" data-bind="value: academiaInstitution" placeholder="institution" size="5"/>
                 <span class="input-group-addon">.academia.edu/</span>
-                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: academiaProfileID" placeholder="profileID" aria-label="Academia information input" />
                 </div>
             </div>
 
@@ -119,7 +119,7 @@
                 <label>Baidu Scholar</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://xueshu.baidu.com/scholarID/</span>
-                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: baiduScholar" placeholder="profileID" aria-label="Baidu Scholar id input" />
                 </div>
             </div>
 
@@ -127,7 +127,7 @@
                 <label>SSRN</label>
                 <div class="input-group">
                 <span class="input-group-addon">http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id=</span>
-                <input class="form-control" data-bind="value: ssrn" placeholder="profileID"/>
+                <input class="form-control" data-bind="value: ssrn" placeholder="profileID" aria-label="ssrn information input" />
                 </div>
             </div>
 
@@ -169,7 +169,7 @@
 
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
-                    <td><a target="_blank" data-bind="attr: {href: value}"><span data-bind="html: iconName(label)"></span></a></td>
+                    <td><a target="_blank" ="" data-bind="attr: {href: value, 'aria-label': 'Link to user ' + label}"><span data-bind="html: iconName(label)"></span></a></td>
                     <td><span data-bind="text: label"></span></td>
                     <td><a target="_blank" data-bind="attr: {href: value}, text: text"></a></td>
                 </tr>

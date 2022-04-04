@@ -6,7 +6,7 @@
     <%include file="dataverse_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}>
+        <img class="addon-icon" src=${addon_icon_url} aria-label="Dataverse icon" alt="Dataverse icon">
         <span data-bind="text: properName"></span> <!-- TODO: Can we use mako addon_full_name as some other addons do? -->
         <small>
             <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th><th></th>
+                        <th class="default-authorized-by">Authorized on <a data-bind="attr: {href: dataverseUrl}"><em data-bind="text: dataverseHost"></em></a></th><th></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->

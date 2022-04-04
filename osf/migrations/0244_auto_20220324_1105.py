@@ -19,7 +19,7 @@ def remove_if_exist(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0242_auto_20220125_1604'),
+        ('osf', '0243_auto_20211025_1353'),
     ]
 
     operations = [
