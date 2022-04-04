@@ -32,7 +32,7 @@ class RegistrationBulkUploadJob(BaseModel):
     initiator = models.ForeignKey('OSFUser', blank=False, null=True, on_delete=models.CASCADE)
 
     # The registration provider this bulk upload targets
-    provider = models.ForeignKey('RegistrationProvider', blank=False, null=True, on_delete=models.CASCADE)
+    provider = models.ForeignKey('AbstractProvider', blank=False, null=True, on_delete=models.CASCADE)
 
     # The registration template this bulk upload uses
     schema = models.ForeignKey('RegistrationSchema', blank=False, null=True, on_delete=models.CASCADE)

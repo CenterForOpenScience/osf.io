@@ -1132,7 +1132,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mailrecord',
             name='nodes_created',
-            field=models.ManyToManyField(to='osf.Node'),
+            field=models.ManyToManyField(to='osf.AbstractNode'),
         ),
         migrations.AlterUniqueTogether(
             name='institutionalcontributor',
@@ -1149,12 +1149,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='embargoterminationapproval',
             name='embargoed_registration',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.Registration'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode'),
         ),
         migrations.AddField(
             model_name='draftregistration',
             name='branched_from',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='registered_draft', to='osf.Node'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='registered_draft', to='osf.AbstractNode'),
         ),
         migrations.AddField(
             model_name='draftregistration',

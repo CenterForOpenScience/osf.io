@@ -97,5 +97,5 @@ class Conference(ObjectIDMixin, BaseModel):
 
 class MailRecord(ObjectIDMixin, BaseModel):
     data = DateTimeAwareJSONField()
-    nodes_created = models.ManyToManyField('Node')
+    nodes_created = models.ManyToManyField('AbstractNode')
     users_created = models.ManyToManyField('OSFUser')

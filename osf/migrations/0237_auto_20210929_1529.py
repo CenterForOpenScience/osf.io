@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('state', models.IntegerField(choices=[(osf.models.registration_bulk_upload_job.JobState(0), 'PENDING'), (osf.models.registration_bulk_upload_job.JobState(1), 'INITIALIZED'), (osf.models.registration_bulk_upload_job.JobState(2), 'PICKED_UP'), (osf.models.registration_bulk_upload_job.JobState(3), 'DONE_FULL'), (osf.models.registration_bulk_upload_job.JobState(4), 'DONE_PARTIAL'), (osf.models.registration_bulk_upload_job.JobState(5), 'DONE_ERROR')], default=osf.models.registration_bulk_upload_job.JobState(0))),
                 ('email_sent', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('provider', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.RegistrationProvider')),
+                ('provider', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractProvider')),
                 ('schema', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.RegistrationSchema')),
             ],
             options={

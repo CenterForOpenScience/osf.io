@@ -967,7 +967,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
     initiator = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     provider = models.ForeignKey(
-        'RegistrationProvider',
+        'AbstractProvider',
         related_name='draft_registrations',
         null=False,
         on_delete=models.CASCADE,

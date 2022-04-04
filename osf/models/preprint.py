@@ -139,7 +139,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                          ('not_applicable', 'Not applicable')
                          ]
 
-    provider = models.ForeignKey('osf.PreprintProvider',
+    provider = models.ForeignKey('AbstractProvider',
                                  on_delete=models.SET_NULL,
                                  related_name='preprints',
                                  null=True, blank=True, db_index=True)
