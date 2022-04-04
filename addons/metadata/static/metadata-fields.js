@@ -4,6 +4,7 @@ const $ = require('jquery');
 const $osf = require('js/osfHelpers');
 const oop = require('js/oop');
 const _ = require('js/rdmGettext')._;
+const datepicker = require('js/rdmDatepicker');
 require('typeahead.js');
 
 
@@ -48,6 +49,24 @@ function createStringField(erad, question, value, callback) {
       createFormElement(function() {
         return $('<textarea></textarea>');
       }),
+      question,
+      value,
+      callback
+    );
+  } else if (question.format == 'date') {
+    return new SingleElementField(
+      createFormElement(function() {
+        const elem = $('<input></input>').addClass('datepicker');
+        datepicker.mount(elem, null);
+        return elem;
+      }),
+      question,
+      value,
+      callback
+    );
+  } else if (question.format == 'file-creators') {
+    return new SingleElementField(
+      createFileCreatorsFieldElement(erad),
       question,
       value,
       callback
@@ -144,7 +163,11 @@ function createFormElement(createHandler) {
       return input.val();
     },
     setValue: function(input, value) {
-      input.val(value);
+      if (input.hasClass('datepicker')) {
+        input.datepicker('update', value);
+      } else {
+        input.val(value);
+      }
     },
   };
 }
@@ -194,24 +217,137 @@ function SingleElementField(formField, question, defaultValue, callback) {
   };
 }
 
+function createFileCreatorsFieldElement(erad) {
+  console.log('ERad', erad.candidates);
+  const typeaheadSource = (function () {
+    const allResearchers = erad.candidates.map(function (c) {
+      return {
+        kenkyusha_no: c.kenkyusha_no,
+        kenkyusha_shimei: c.kenkyusha_shimei
+      };
+    });
+    const uniqResearchers = {};
+    allResearchers.forEach(function (researcher) {
+      uniqResearchers[JSON.stringify(researcher)] = researcher;
+    });
+    return substringMatcher(Object.values(uniqResearchers));
+  })();
+
+  const addResearcher = function(container, defaultValues) {
+    const numberInput = $('<input class="form-control" name="file-creator-number">');
+    const nameJaInput = $('<input class="form-control" name="file-creator-name-ja">');
+    const nameEnInput = $('<input class="form-control" name="file-creator-name-en">');
+    if (defaultValues) {
+      numberInput.val(defaultValues.number);
+      nameJaInput.val(defaultValues.name_ja);
+      nameEnInput.val(defaultValues.name_en);
+    }
+    const tr = $('<tr>')
+      .append($('<td>').append(numberInput))
+      .append($('<td>').append(nameJaInput))
+      .append($('<td>').append(nameEnInput))
+      .append('<td><span class="file-creator-remove"><i class="fa fa-times fa-2x remove-or-reject"></i></span></td>');
+    const tbody = container.find('tbody');
+    tbody.append(tr);
+    numberInput.typeahead(
+      {
+        hint: false,
+        highlight: true,
+        minLength: 0
+      },
+      {
+        display: function(data) {
+          return data.kenkyusha_no;
+        },
+        templates: {
+          suggestion: function(data) {
+            return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.kenkyusha_shimei) + '</span> ' +
+              '<span><small class="m-l-md text-muted">'+
+              $osf.htmlEscape(data.kenkyusha_no) + ' ' +
+              $osf.htmlEscape(data.kenkyusha_shimei) +
+              + '</small></span></div>';
+          }
+        },
+        source: typeaheadSource,
+      }
+    );
+    numberInput.bind('typeahead:selected', function(event, data) {
+      if (!data.kenkyusha_no) {
+        return;
+      }
+      const names = data.kenkyusha_shimei.split('|');
+      const jaNames = names.slice(0, Math.floor(names.length / 2))
+      const enNames = names.slice(Math.floor(names.length / 2))
+      nameJaInput.val(jaNames.join(' '));
+      nameEnInput.val(enNames.join(' '));
+    });
+    tbody.find('.twitter-typeahead').css('width', '100%');
+  }
+
+  return {
+    create: function(addToContainer, callback) {
+      const thead = $('<thead>')
+        .append($('<tr>')
+          .append($('<th>' + _('e-Rad Researcher Number') + '</th>'))
+          .append($('<th>' + _('Name (Japanese)') + '</th>'))
+          .append($('<th>' + _('Name (English)') + '</th>'))
+          .append($('<th></th>'))
+        );
+      const tbody = $('<tbody>');
+      const addButton = $('<a class="btn btn-success btn-sm m-l-md">')
+        .append('<i class="fa fa-plus">' + _('Add') + '</i>');
+      const container = $('<div></div>')
+        .addClass('file-creators-container')
+        .append($('<table class="table responsive-table responsive-table-xxs">')
+          .append(thead)
+          .append(tbody)
+        )
+        .append(addButton);
+      addButton.on('click', function (e) {
+        e.preventDefault();
+        addResearcher(container);
+      });
+      tbody.on('click', '.file-creator-remove', function (e) {
+        e.preventDefault();
+        $(this).closest('tr').remove();
+        if (callback) {
+          callback();
+        }
+      });
+      tbody.on('change', '.input', function (e) {
+        if (callback) {
+          callback();
+        }
+      });
+      addToContainer(container);
+      return container;
+    },
+    getValue: function(container) {
+      const researchers = container.find('tbody tr').map(function () {
+        return {
+          'number': $(this).find('[name=file-creator-number]').val(),
+          'name_ja': $(this).find('[name=file-creator-name-ja]').val(),
+          'name_en': $(this).find('[name=file-creator-name-en]').val()
+        };
+      }).toArray().filter(function (researcher) {
+        return Object.values(researcher).every(function (v) { return v && v.trim().length > 0; });
+      });
+      return JSON.stringify(researchers);
+    },
+    setValue: function(container, value) {
+      const researchers = value ? JSON.parse(value) : [];
+      researchers.forEach(function (researcher) {
+        addResearcher(container, researcher);
+      });
+    }
+  };
+}
+
 function createERadResearcherNumberFieldElement(erad) {
   console.log('ERad', erad.candidates);
   return {
     create: function(addToContainer, callback) {
       const input = $('<input></input>').addClass('erad-researcher-number');
-
-      const substringMatcher = function(candidates) {
-        return function findMatches(q, cb) {
-          const substrRegex = new RegExp(q, 'i');
-          const matches = (candidates || []).filter(function(c) {
-            if (!c.kenkyusha_no) {
-              return false;
-            }
-            return substrRegex.test(c.kenkyusha_no);
-          });
-          cb(matches);
-        };
-      };
       const container = $('<div></div>')
         .addClass('erad-researcher-number-container')
         .append(input.addClass('form-control'));
@@ -260,6 +396,20 @@ function createERadResearcherNumberFieldElement(erad) {
     setValue: function(container, value) {
       container.find('input').val(value);
     },
+  };
+}
+
+
+function substringMatcher(candidates) {
+  return function findMatches(q, cb) {
+    const substrRegex = new RegExp(q, 'i');
+    const matches = (candidates || []).filter(function(c) {
+      if (!c.kenkyusha_no) {
+        return false;
+      }
+      return substrRegex.test(c.kenkyusha_no);
+    });
+    cb(matches);
   };
 }
 
