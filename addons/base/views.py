@@ -38,16 +38,28 @@ from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
-from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
-                        OSFUser, AbstractNode, DraftNode, Preprint,
-                        NodeLog, DraftRegistration,
-                        Guid, FileVersionUserMetadata, FileVersion)
+from osf.models import (
+    BaseFileNode,
+    TrashedFileNode,
+    BaseFileVersionsThrough,
+    OSFUser,
+    AbstractNode,
+    DraftNode,
+    Preprint,
+    Node,
+    NodeLog,
+    Registration,
+    DraftRegistration,
+    Guid,
+    FileVersionUserMetadata,
+    FileVersion
+)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
+from website.ember_osf_web.views import use_ember_app
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
-from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
 from website.util import rubeus
 
@@ -677,7 +689,6 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
 
 
 @must_be_contributor_or_public
-@ember_flag_is_active(features.EMBER_FILE_DETAIL)
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
     extras.pop('_', None)  # Clean up our url params a bit
@@ -717,6 +728,17 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
+    if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        return use_ember_app()
+
+    if action != 'download' and isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if file_node.get_guid():
+            guid = file_node.get_guid()
+        else:
+            guid = file_node.get_guid(create=True)
+            guid.save()
+            file_node.save()
+        return redirect(f'{settings.DOMAIN}{guid._id}/')
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overriden to force authentication as the current user
