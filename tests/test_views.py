@@ -1991,7 +1991,7 @@ class TestAddingContributorViews(OsfTestCase):
         # finalize_invitation should only have been called once
         assert_equal(mock_send_claim_email.call_count, 1)
 
-    def test_add_contributors_post_only_sends_one_email_to_registered_user(self, mock_send_mail):
+    def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
         comp1 = NodeFactory(creator=self.creator, parent=self.project)
         comp2 = NodeFactory(creator=self.creator, parent=self.project)
@@ -2019,7 +2019,7 @@ class TestAddingContributorViews(OsfTestCase):
         # send_mail should only have been called once
         assert_equal(mock_send_mail.call_count, 1)
 
-    def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self, mock_send_mail):
+    def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
         # Project has a component with a sub-component
         component = NodeFactory(creator=self.creator, parent=self.project)
         sub_component = NodeFactory(creator=self.creator, parent=component)
@@ -2039,7 +2039,7 @@ class TestAddingContributorViews(OsfTestCase):
         }
 
         # send request
-        with mock.patch('website.mails.send_mail'):
+        with mock.patch('website.mails.send_mail') as mock_send_mail:
             url = self.project.api_url_for('project_contributors_post')
             assert self.project.can_edit(user=self.creator)
             self.app.post_json(url, payload, auth=self.creator.auth)
@@ -2132,7 +2132,7 @@ class TestAddingContributorViews(OsfTestCase):
             )
         assert_false(send_mail.called)
 
-    def test_notify_contributor_email_does_not_send_before_throttle_expires(self, send_mail):
+    def test_notify_contributor_email_does_not_send_before_throttle_expires(self):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
@@ -2160,7 +2160,7 @@ class TestAddingContributorViews(OsfTestCase):
             notify_added_contributor(project, contributor, auth, throttle=throttle)
             assert_equal(send_mail.call_count, 2)
 
-    def test_add_contributor_to_fork_sends_email(self, send_mail):
+    def test_add_contributor_to_fork_sends_email(self):
         contributor = UserFactory()
         fork = self.project.fork_node(auth=Auth(self.creator))
 
@@ -2189,7 +2189,7 @@ class TestAddingContributorViews(OsfTestCase):
 
         assert_false(send_mail.called)
 
-    def test_creating_template_does_not_email_creator(self, send_mail):
+    def test_creating_template_does_not_email_creator(self):
         contributor = UserFactory()
         with mock.patch('website.mails.send_mail') as send_mail:
             template = self.project.use_as_template(auth=Auth(self.creator))

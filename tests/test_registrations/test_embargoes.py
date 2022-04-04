@@ -1147,32 +1147,32 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             with assert_raises(NodeStateError):
                 reg._nodes.first().request_embargo_termination(node.creator)
 
-    @mock.patch('website.mails.send_mail')
-    def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
+    def test_embargoed_registration_set_privacy_sends_mail(self):
         """
         Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668
         """
         # Initiate and approve embargo
-        for i in range(3):
-            c = AuthUserFactory()
-            self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
-        self.registration.save()
-        self.registration.embargo_registration(
-            self.user,
-            timezone.now() + datetime.timedelta(days=10)
-        )
-        for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
-            approval_token = embargo_tokens['approval_token']
-            self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
-        self.registration.refresh_from_db()
+        with mock.patch('website.mails.send_mail') as mock_send_mail:
+            for i in range(3):
+                c = AuthUserFactory()
+                self.registration.add_contributor(c, permissions.ADMIN, auth=Auth(self.user))
+            self.registration.save()
+            self.registration.embargo_registration(
+                self.user,
+                timezone.now() + datetime.timedelta(days=10)
+            )
+            for user_id, embargo_tokens in self.registration.embargo.approval_state.items():
+                approval_token = embargo_tokens['approval_token']
+                self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
+            self.registration.refresh_from_db()
 
-        self.registration.set_privacy('public', Auth(self.registration.creator))
-        admin_contributors = []
-        for contributor in self.registration.contributors:
-            if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
-                admin_contributors.append(contributor)
-        for admin in admin_contributors:
-            assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
+            self.registration.set_privacy('public', Auth(self.registration.creator))
+            admin_contributors = []
+            for contributor in self.registration.contributors:
+                if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
+                    admin_contributors.append(contributor)
+            for admin in admin_contributors:
+                assert_true(any([each[0][0] == admin.username for each in mock_send_mail.call_args_list]))
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):

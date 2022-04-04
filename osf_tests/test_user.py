@@ -2093,14 +2093,15 @@ class TestUserMerging(OsfTestCase):
         assert self.user.is_invited is True
         assert self.user in self.project_with_unreg_contrib.contributors
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_merge_doesnt_send_signal(self, mock_notify):
+    def test_merge_doesnt_send_signal(self):
         #Explictly reconnect signal as it is disconnected by default for test
         contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
-        self.user.merge_user(other_user)
-        assert other_user.merged_by._id == self.user._id
-        assert mock_notify.called is False
+
+        with mock.patch('website.project.views.contributor.mails.send_mail') as mock_notify:
+            self.user.merge_user(other_user)
+            assert other_user.merged_by._id == self.user._id
+            assert mock_notify.called is False
 
 
 @pytest.mark.enable_implicit_clean

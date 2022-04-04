@@ -48,8 +48,6 @@ REVIEW_PERMISSIONS = (
 REVIEW_GROUPS = {
     'admin': ('set_up_moderation', 'add_moderator', 'update_moderator', 'remove_moderator', 'view_submissions', 'accept_submissions', 'reject_submissions', 'withdraw_submissions', 'edit_review_comments', 'view_actions'),
     'moderator': ('view_submissions', 'accept_submissions', 'reject_submissions', 'withdraw_submissions', 'edit_review_comments', 'view_actions'),
-    # 'manager': (),  # TODO "Senior editor"-like role, can add/remove/assign moderators and reviewers
-    # 'reviewer': (),  # TODO Implement reviewers
 }
 
 

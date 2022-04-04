@@ -455,7 +455,7 @@ class TestSubscriptionView(OsfTestCase):
             'notification_type': 'email_transactional'
         }
         url = api_url_for('configure_subscription')
-        res = self.app.post_json(url, payload, auth=self.registration.creator.auth, expect_errors=True)
+        res = self.app.post_json(url, payload, auth=self.node.creator.auth, expect_errors=True)
         assert res.status_code == 400
 
     def test_adopt_parent_subscription_default(self):
@@ -1820,32 +1820,32 @@ class TestSendDigest(OsfTestCase):
 
     def test_send_users_email_called_with_correct_args(self):
         send_type = 'email_transactional'
-        d = factories.NotificationDigestFactory(
-            send_type=send_type,
-            event='comment_replies',
-            timestamp=timezone.now(),
-            message='Hello',
-            node_lineage=[factories.ProjectFactory()._id]
-        )
-
+        project = factories.ProjectFactory()
         with mock.patch('website.mails.send_mail') as mock_send_mail:
-            d.save()
-        user_groups = list(get_users_emails(send_type))
-        send_users_email(send_type)
-        assert_true(mock_send_mail.called)
-        assert_equals(mock_send_mail.call_count, len(user_groups))
+            factories.NotificationDigestFactory(
+                user=project.creator,
+                send_type=send_type,
+                event='comment_replies',
+                timestamp=timezone.now(),
+                message='Hello',
+                node_lineage=[project._id]
+            )
+            user_groups = list(get_users_emails(send_type))
+            send_users_email(send_type)
+            assert_true(mock_send_mail.called)
+            assert_equals(mock_send_mail.call_count, len(user_groups))
 
-        last_user_index = len(user_groups) - 1
-        user = OSFUser.load(user_groups[last_user_index]['user_id'])
+            last_user_index = len(user_groups) - 1
+            user = OSFUser.load(user_groups[last_user_index]['user_id'])
 
-        args, kwargs = mock_send_mail.call_args
+            args, kwargs = mock_send_mail.call_args
 
-        assert_equal(kwargs['to_addr'], user.username)
-        assert_equal(kwargs['mail'], mails.DIGEST)
-        assert_equal(kwargs['name'], user.fullname)
-        assert_equal(kwargs['can_change_node_preferences'], True)
-        message = group_by_node(user_groups[last_user_index]['info'])
-        assert_equal(kwargs['message'], message)
+            assert_equal(kwargs['to_addr'], user.username)
+            assert_equal(kwargs['mail'], mails.DIGEST)
+            assert_equal(kwargs['name'], user.fullname)
+            assert_equal(kwargs['can_change_node_preferences'], True)
+            message = group_by_node(user_groups[last_user_index]['info'])
+            assert_equal(kwargs['message'], message)
 
     def test_send_users_email_ignores_disabled_users(self):
         send_type = 'email_transactional'

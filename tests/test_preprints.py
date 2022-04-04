@@ -2613,6 +2613,8 @@ class TestWithdrawnPreprint:
 
     def test_crossref_status_is_updated(self, make_withdrawal_request, preprint, preprint_post_mod, preprint_pre_mod, moderator, admin, crossref_client):
         # test_non_moderated_preprint
+
+        preprint.provider.update_group_permissions()
         assert preprint.verified_publishable
         assert crossref_client.get_status(preprint) == 'public'
 

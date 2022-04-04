@@ -216,57 +216,58 @@ class TestOSFGroup:
         assert manager in osf_group.managers
         assert manager in osf_group.members
 
-    @mock.patch('website.osf_groups.views.mails.send_mail')
-    def test_notify_group_member_email_does_not_send_before_throttle_expires(self, mock_send_mail, manager, osf_group):
+    def test_notify_group_member_email_does_not_send_before_throttle_expires(self, manager, osf_group):
         member = AuthUserFactory()
-        assert member.member_added_email_records == {}
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
-        assert mock_send_mail.call_count == 1
 
-        record = member.member_added_email_records[osf_group._id]
-        assert record is not None
-        # 2nd call does not send email because throttle period has not expired
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
-        assert member.member_added_email_records[osf_group._id] == record
-        assert mock_send_mail.call_count == 1
+        with mock.patch('website.osf_groups.views.mails.send_mail') as mock_send_mail:
+            assert member.member_added_email_records == {}
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+            assert mock_send_mail.call_count == 1
 
-    @mock.patch('website.osf_groups.views.mails.send_mail')
-    def test_notify_group_member_email_sends_after_throttle_expires(self, mock_send_mail, osf_group, member, manager):
+            record = member.member_added_email_records[osf_group._id]
+            assert record is not None
+            # 2nd call does not send email because throttle period has not expired
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+            assert member.member_added_email_records[osf_group._id] == record
+            assert mock_send_mail.call_count == 1
+
+    def test_notify_group_member_email_sends_after_throttle_expires(self, osf_group, member, manager):
         throttle = 0.5
 
         member = AuthUserFactory()
-        assert member.member_added_email_records == {}
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
-        assert mock_send_mail.call_count == 1
+        with mock.patch('website.osf_groups.views.mails.send_mail') as mock_send_mail:
+            assert member.member_added_email_records == {}
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+            assert mock_send_mail.call_count == 1
 
-        time.sleep(1)  # throttle period expires
-        # 2nd call does not send email because throttle period has not expired
-        assert member.member_added_email_records[osf_group._id] is not None
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
-        assert mock_send_mail.call_count == 2
+            time.sleep(1)  # throttle period expires
+            # 2nd call does not send email because throttle period has not expired
+            assert member.member_added_email_records[osf_group._id] is not None
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+            assert mock_send_mail.call_count == 2
 
-    @mock.patch('website.osf_groups.views.mails.send_mail')
-    def test_notify_group_unregistered_member_throttle(self, mock_send_mail, osf_group, member, manager):
+    def test_notify_group_unregistered_member_throttle(self, osf_group, member, manager):
         throttle = 0.5
 
         member = AuthUserFactory()
-        member.is_registered = False
-        member.add_unclaimed_record(osf_group, referrer=manager, given_name='grapes mcgee', email='grapes@cos.io')
-        member.save()
-        assert member.member_added_email_records == {}
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
-        assert mock_send_mail.call_count == 1
+        with mock.patch('website.osf_groups.views.mails.send_mail') as mock_send_mail:
+            member.is_registered = False
+            member.add_unclaimed_record(osf_group, referrer=manager, given_name='grapes mcgee', email='grapes@cos.io')
+            member.save()
+            assert member.member_added_email_records == {}
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+            assert mock_send_mail.call_count == 1
 
-        assert member.member_added_email_records[osf_group._id] is not None
-        # 2nd call does not send email because throttle period has not expired
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
-        assert mock_send_mail.call_count == 1
+            assert member.member_added_email_records[osf_group._id] is not None
+            # 2nd call does not send email because throttle period has not expired
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager))
+            assert mock_send_mail.call_count == 1
 
-        time.sleep(1)  # throttle period expires
-        # 2nd call does not send email because throttle period has not expired
-        assert member.member_added_email_records[osf_group._id] is not None
-        group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
-        assert mock_send_mail.call_count == 2
+            time.sleep(1)  # throttle period expires
+            # 2nd call does not send email because throttle period has not expired
+            assert member.member_added_email_records[osf_group._id] is not None
+            group_signals.member_added.send(osf_group, user=member, permission=WRITE, auth=Auth(manager), throttle=throttle)
+            assert mock_send_mail.call_count == 2
 
     def test_rename_osf_group(self, manager, member, user_two, osf_group):
         new_name = 'Platform Team'
