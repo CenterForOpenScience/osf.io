@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 ('from_state', models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn'), ('pending_embargo', 'Pending_Embargo'), ('embargo', 'Embargo'), ('pending_embargo_termination', 'Pending_Embargo_Termination'), ('pending_withdraw', 'Pending_Withdraw')], max_length=31)),
                 ('to_state', models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn'), ('pending_embargo', 'Pending_Embargo'), ('embargo', 'Embargo'), ('pending_embargo_termination', 'Pending_Embargo_Termination'), ('pending_withdraw', 'Pending_Withdraw')], max_length=31)),
                 ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions', to='osf.Registration')),
+                ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions', to='osf.AbstractNode')),
             ],
             options={
                 'abstract': False,

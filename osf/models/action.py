@@ -60,7 +60,7 @@ class PreprintRequestAction(BaseAction):
 
 
 class RegistrationAction(BaseAction):
-    target = models.ForeignKey('Registration', related_name='actions', on_delete=models.CASCADE)
+    target = models.ForeignKey('AbstractNode', related_name='actions', on_delete=models.CASCADE)
 
     trigger = models.CharField(
         max_length=31, choices=RegistrationModerationTriggers.char_field_choices())
