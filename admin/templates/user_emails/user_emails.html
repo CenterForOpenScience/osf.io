@@ -11,10 +11,18 @@
     <style type="text/css">
         .w-label {
             width: 130px;
+            white-space: nowrap;
         }
+
         .w-item {
             max-width: 360px;
             min-width: 180px;
+        }
+
+        @media (max-width: 991px) {
+            table .w-label {
+                width: 80px;
+            }
         }
     </style>
 {% endblock %}
@@ -35,7 +43,7 @@
             <div class="col-md-12 clearfix">
                 <h3>{% trans "User details" %}</h3>
             </div>
-            <div class="col-md-6 clearfix">
+            <div class="col-sm-6 clearfix">
                 <table class="table table-striped" style="margin-bottom: 0;">
                     <tbody>
                     <tr>
@@ -53,15 +61,15 @@
                     </tbody>
                 </table>
             </div>
-            <div class="col-md-6 clearfix">
+            <div class="col-sm-6 clearfix">
                 <table class="table table-striped" style="margin-bottom: 0;">
                     <tbody>
                     <tr class="hidden" aria-rowspan="0"></tr>
                     <tr>
-                        <td class="w-label" rowspan="3"><strong>{% trans "Affiliation" %}</strong></td>
-                        <td rowspan="3">
+                        <td class="w-label"><strong>{% trans "Affiliation" %}</strong></td>
+                        <td>
                             {% if user.affiliations is not None %}
-                                <ul style="height: 6em; overflow: auto; padding-left: 1em;">
+                                <ul style="max-height: 6em; overflow: auto; padding-left: 1em; margin: 0;">
                                     {% for affiliation in user.affiliations %}
                                         <li>{{ affiliation.name }}</li>
                                     {% endfor %}
