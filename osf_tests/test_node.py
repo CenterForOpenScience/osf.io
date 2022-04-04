@@ -33,11 +33,9 @@ from osf.models import (
     NodeLog,
     Contributor,
     RegistrationSchema,
-    Sanction,
     NodeRelation,
     Registration,
     DraftRegistration,
-    DraftRegistrationApproval,
     CollectionSubmission
 )
 
@@ -2071,7 +2069,7 @@ class TestRegisterNode:
         root.add_contributor(bib_contrib, auth=Auth(user))
         non_bib_contrib = UserFactory()
         root.add_contributor(non_bib_contrib, visible=False, auth=Auth(user))
-        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        schema = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=2)
 
         draft_reg = DraftRegistrationFactory(branched_from=root)
 
@@ -2767,21 +2765,6 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
         assert Node.objects.filter(guids___id__in=reg_ids, is_deleted=False).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
-
-    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
-        reg = RegistrationFactory()
-
-        dr = DraftRegistrationFactory(initiator=user)
-        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
-        approval.save()
-        dr.approval = approval
-        dr.registered_node = reg
-        dr.save()
-
-        reg.delete_registration_tree(save=True)
-
-        dr.reload()
-        assert dr.approval is None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
