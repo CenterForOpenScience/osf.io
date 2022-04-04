@@ -2,15 +2,38 @@
 import logging
 import json
 import os
+import re
 
 from addons.base.models import BaseUserSettings, BaseNodeSettings
+from addons.osfstorage.models import OsfStorageFileNode
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from django.contrib.contenttypes.models import ContentType
+from osf.models import DraftRegistration, BaseFileNode
+from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
-from . import settings
 
 logger = logging.getLogger(__name__)
+
+
+FIELD_GRDM_FILES = 'grdm-files'
+
+
+def get_draft_files(draft_metadata):
+    if FIELD_GRDM_FILES not in draft_metadata:
+        return []
+    draft_files = draft_metadata[FIELD_GRDM_FILES]
+    if 'value' not in draft_files:
+        return []
+    draft_value = draft_files['value']
+    if draft_value == '':
+        return []
+    return json.loads(draft_value)
+
+def schema_has_field(schema, name):
+    questions = sum([page['questions'] for page in schema['pages']], [])
+    qids = [q['qid'] for q in questions]
+    return name in qids
 
 
 class ERadRecordSet(BaseModel):
@@ -66,7 +89,7 @@ class ERadRecord(BaseModel):
 
 
 class RegistrationReportFormat(BaseModel):
-    registration_schema = models.ForeignKey(RegistrationSchema, null=True, on_delete=models.CASCADE)
+    registration_schema_id = models.CharField(max_length=64, blank=True, null=True)
 
     name = models.TextField(blank=True, null=True)
 
@@ -101,9 +124,9 @@ class NodeSettings(BaseNodeSettings):
         for m in self.file_metadata.all():
             r = {
                 'generated': False,
-                'registered': m.registered,
                 'path': m.path,
                 'folder': m.folder,
+                'urlpath': m.resolve_urlpath(),
             }
             r.update(self._get_file_metadata(m))
             files.append(r)
@@ -119,15 +142,14 @@ class NodeSettings(BaseNodeSettings):
             if r is None:
                 return None
             r['generated'] = True
-            r['registered'] = False
             r['path'] = path
             return r
         m = q.first()
         r = {
             'generated': False,
-            'registered': m.registered,
             'path': m.path,
             'folder': m.folder,
+            'urlpath': m.resolve_urlpath(),
         }
         r.update(self._get_file_metadata(m))
         return r
@@ -141,20 +163,28 @@ class NodeSettings(BaseNodeSettings):
                 project=self,
                 path=filepath,
                 folder=file_metadata['folder'],
-                registered=file_metadata['registered'],
                 metadata=json.dumps({'items': file_metadata['items']})
             )
             return
         m = q.first()
-        m.registered = file_metadata['registered']
         m.metadata = json.dumps({'items': file_metadata['items']})
+        for item in file_metadata['items']:
+            if not item['active']:
+                continue
+            self._update_draft_files(
+                item['schema'],
+                filepath,
+                item['data'])
         m.save()
 
     def delete_file_metadata(self, filepath):
         q = self.file_metadata.filter(path=filepath)
         if not q.exists():
             return
-        q.first().delete()
+        metadata = q.first()
+        for schema in self._get_related_schemas(metadata.metadata):
+            self._remove_draft_files(schema, filepath)
+        metadata.delete()
 
     def get_project_metadata(self):
         if self.project_metadata is None or self.project_metadata == '':
@@ -166,33 +196,17 @@ class NodeSettings(BaseNodeSettings):
         })
         return r
 
-    def set_project_metadata(self, project_metadata):
-        self._validate_project_metadata(project_metadata)
-        files = project_metadata['files']
-        del project_metadata['files']
-        self.project_metadata = json.dumps(project_metadata)
-
-        new_pathset = dict([(f['path'], f) for f in files])
-        old_pathset = {}
-        for m in self.file_metadata.all():
-            old_pathset[m.path] = m
-            if m.path not in new_pathset:
-                m.delete()
-                continue
-            new_metadata = new_pathset[m.path]
-            m.registered = new_metadata['registered']
-            m.metadata = json.dumps({'items': new_metadata['items']})
-            m.save()
-        for path, f in new_pathset.items():
-            if path in old_pathset:
-                continue
-            FileMetadata.objects.create(
-                project=self,
-                path=path,
-                folder=f['folder'],
-                metadata=json.dumps({'items': f['items']})
-            )
-        self.save()
+    def get_report_formats_for(self, schemas):
+        formats = []
+        for schema in schemas:
+            for format in RegistrationReportFormat.objects.filter(registration_schema_id=schema._id):
+                formats.append({
+                    'schema_id': schema._id,
+                    'name': format.name,
+                })
+        return {
+            'formats': formats
+        }
 
     def _get_file_metadata(self, file_metadata):
         if file_metadata.metadata is None or file_metadata.metadata == '':
@@ -202,20 +216,76 @@ class NodeSettings(BaseNodeSettings):
     def _validate_file_metadata(self, file_metadata):
         if 'path' not in file_metadata:
             raise ValueError('Property "path" is not defined')
-        if 'registered' not in file_metadata:
-            raise ValueError('Property "registered" is not defined')
+        if 'folder' not in file_metadata:
+            raise ValueError('Property "folder" is not defined')
         if 'items' not in file_metadata:
             raise ValueError('Property "items" is not defined')
+        for i in file_metadata['items']:
+            self._validate_file_metadata_item(i)
 
-    def _validate_project_metadata(self, project_metadata):
-        if 'type' not in project_metadata:
-            raise ValueError('Property "type" is not defined')
-        if 'items' not in project_metadata:
-            raise ValueError('Property "items" is not defined')
-        if 'files' not in project_metadata:
-            raise ValueError('Property "files" is not defined')
-        for f in project_metadata['files']:
-            self._validate_file_metadata(f)
+    def _validate_file_metadata_item(self, item):
+        if 'active' not in item:
+            raise ValueError('Property "active" is not defined')
+        if 'schema' not in item:
+            raise ValueError('Property "schema" is not defined')
+        if 'data' not in item:
+            raise ValueError('Property "data" is not defined')
+
+    def _update_draft_files(self, schema, filepath, metadata):
+        drafts = self._get_registration_schema(schema)
+        for draft in drafts:
+            draft_schema = draft.registration_schema.schema
+            if not schema_has_field(draft_schema, FIELD_GRDM_FILES):
+                raise ValueError('Schema has no grdm-files field')
+            draft_metadata = draft.registration_metadata
+            draft_files = get_draft_files(draft_metadata)
+            for draft_file in draft_files:
+                if draft_file['path'] != filepath:
+                    continue
+                draft_file['metadata'] = metadata
+            draft.update_metadata({
+                FIELD_GRDM_FILES: {
+                    'value': json.dumps(draft_files, indent=2),
+                },
+            })
+            draft.save()
+
+    def _remove_draft_files(self, schema, filepath):
+        drafts = self._get_registration_schema(schema)
+        for draft in drafts:
+            draft_schema = draft.registration_schema.schema
+            if not schema_has_field(draft_schema, FIELD_GRDM_FILES):
+                raise ValueError('Schema has no grdm-files field')
+            draft_metadata = draft.registration_metadata
+            draft_files = get_draft_files(draft_metadata)
+            draft_files = [draft_file
+                           for draft_file in draft_files
+                           if draft_file['path'] != filepath]
+            draft.update_metadata({
+                FIELD_GRDM_FILES: {
+                    'value': json.dumps(draft_files, indent=2),
+                },
+            })
+            draft.save()
+
+    def _get_related_schemas(self, metadata):
+        if metadata is None or len(metadata) == 0:
+            return []
+        metadataobj = json.loads(metadata)
+        if 'items' not in metadataobj:
+            return []
+        return [i['schema'] for i in metadataobj['items']]
+
+    def _get_registration_schema(self, schema):
+        try:
+            registration_schema = RegistrationSchema.objects.get(_id=schema)
+            drafts = DraftRegistration.objects.filter(
+                branched_from=self.owner,
+                registration_schema=registration_schema
+            )
+            return drafts
+        except RegistrationSchema.DoesNotExist:
+            return []
 
 
 class FileMetadata(BaseModel):
@@ -223,10 +293,31 @@ class FileMetadata(BaseModel):
                                 db_index=True, null=True, blank=True,
                                 on_delete=models.CASCADE)
 
-    registered = models.BooleanField()
-
     folder = models.BooleanField()
 
     path = models.TextField()
 
     metadata = models.TextField(blank=True, null=True)
+
+    def resolve_urlpath(self):
+        node = self.project.owner
+        if self.folder:
+            return '/' + node._id + '/files/dir/' + self.path
+        m = re.match(r'([^\/]+)(/.*)', self.path)
+        if not m:
+            raise ValueError('Malformed path: ' + self.path)
+        provider = m.group(1)
+        path = m.group(2)
+        if provider == 'osfstorage':
+            # materialized path -> object path
+            content_type = ContentType.objects.get_for_model(node)
+            filenode = [fn for fn in OsfStorageFileNode.objects.filter(target_content_type=content_type) if fn.materialized_path == path]
+            path = filenode[0].path
+        file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
+            materialized_path=path,
+            provider=provider,
+            target=node
+        )
+        if len(file_guids) == 0:
+            raise ValueError('No guid: ' + self.path)
+        return '/' + file_guids[0] + '/'

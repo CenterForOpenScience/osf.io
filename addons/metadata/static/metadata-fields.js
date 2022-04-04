@@ -52,7 +52,27 @@ function createStringField(erad, question, value, callback) {
       value,
       callback
     );
+  } else if (question.format == 'e-rad-researcher-number') {
+    return new SingleElementField(
+      createERadResearcherNumberFieldElement(erad),
+      question,
+      value,
+      callback
+    );
+  } else if (
+    question.format == 'e-rad-researcher-name-ja' ||
+    question.format == 'e-rad-researcher-name-en'
+  ) {
+    return new SingleElementField(
+      createFormElement(function() {
+        return $('<input></input>').addClass(question.format);
+      }),
+      question,
+      value,
+      callback
+    );
   }
+
   // TBD
   return new SingleElementField(
     createFormElement(function() {
@@ -111,11 +131,13 @@ function createChooser(options) {
 
 function createFormElement(createHandler) {
   return {
-    create: function(callback) {
+    create: function(addToContainer, callback) {
       const elem = createHandler();
       if (callback) {
         elem.change(callback);
       }
+      elem.addClass('form-control');
+      addToContainer(elem);
       return elem;
     },
     getValue: function(input) {
@@ -159,89 +181,87 @@ function SingleElementField(formField, question, defaultValue, callback) {
   };
 
   self.addElementTo = function(parent, errorContainer) {
-    const input = formField.create(callback);
-    input.addClass('form-control');
+    const input = formField.create(
+      function(child) {
+        parent.append(self.createFormGroup(child, errorContainer));
+      },
+      callback
+    );
     if (self.defaultValue) {
       formField.setValue(input, self.defaultValue);
     }
-    parent.append(self.createFormGroup(input, errorContainer));
     return input;
   };
 }
 
+function createERadResearcherNumberFieldElement(erad) {
+  console.log('ERad', erad.candidates);
+  return {
+    create: function(addToContainer, callback) {
+      const input = $('<input></input>').addClass('erad-researcher-number');
 
-/*function ERadResearcherNumberField(erad, label) {
-  var self = this;
-  self.baseTextField = new BaseTextField(label);
-  self.label = label;
-
-  self.addElementTo = function(parent) {
-    var input = $('<input></input>').addClass('erad-researcher-number');
-
-    var substringMatcher = function(candidates) {
-      return function findMatches(q, cb) {
-        var substrRegex = new RegExp(q, 'i');
-
-        // iterate through the pool of strings and for any string that
-        // contains the substring `q`, add it to the `matches` array
-
-        var matches = (candidates || []).filter(function(c) {
-          if (!c.kenkyusha_no) {
-            return false;
-          }
-          return substrRegex.test(c.kenkyusha_no);
-        });
-
-        cb(matches);
+      const substringMatcher = function(candidates) {
+        return function findMatches(q, cb) {
+          const substrRegex = new RegExp(q, 'i');
+          const matches = (candidates || []).filter(function(c) {
+            if (!c.kenkyusha_no) {
+              return false;
+            }
+            return substrRegex.test(c.kenkyusha_no);
+          });
+          cb(matches);
+        };
       };
-    };
-    var container = $('<div></div>')
-      .addClass('erad-researcher-number-container');
-    parent.append(self.baseTextField.createFormGroup(container
-      .append(input.addClass('form-control'))));
-    input.typeahead({
-      hint: false,
-      highlight: true,
-      minLength: 0
-    },
-    {
-      display: function(data) {
-        return data.kenkyusha_no;
-      },
-      templates: {
-        suggestion: function(data) {
-          return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.kenkyusha_shimei) + '</span> ' +
-              '<span><small class="m-l-md text-muted">'+
-              $osf.htmlEscape(data.kenkyukikan_mei) + ' - ' +
-              $osf.htmlEscape(data.kadai_mei) + ' (' + data.nendo + ')'
-              + '</small></span></div>';
+      const container = $('<div></div>')
+        .addClass('erad-researcher-number-container')
+        .append(input.addClass('form-control'));
+      addToContainer(container);
+      input.typeahead(
+        {
+          hint: false,
+          highlight: true,
+          minLength: 0
+        },
+        {
+          display: function(data) {
+            return data.kenkyusha_no;
+          },
+          templates: {
+            suggestion: function(data) {
+              return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.kenkyusha_shimei) + '</span> ' +
+                '<span><small class="m-l-md text-muted">'+
+                $osf.htmlEscape(data.kenkyukikan_mei) + ' - ' +
+                $osf.htmlEscape(data.kadai_mei) + ' (' + data.nendo + ')'
+                + '</small></span></div>';
+            }
+          },
+          source: substringMatcher(erad.candidates),
         }
-      },
-      source: substringMatcher(erad.candidates),
-    });
-
-    input.bind('typeahead:selected', function(event, data) {
-        console.log('selected', event, data);
-        //if ( $.isFunction( settings.complete ) ) {
-        //    settings.complete( event, data.value );
-        //}
-    });
-    container.find('.twitter-typeahead').css('width', '100%');
-    return input;
+      );
+      input.bind('typeahead:selected', function(event, data) {
+        if (!data.kenkyusha_shimei) {
+          return;
+        }
+        const names = data.kenkyusha_shimei.split('|');
+        const jaNames = names.slice(0, Math.floor(names.length / 2))
+        const enNames = names.slice(Math.floor(names.length / 2))
+        $('.e-rad-researcher-name-ja').val(jaNames.join(' '));
+        $('.e-rad-researcher-name-en').val(enNames.join(' '));
+      });
+      container.find('.twitter-typeahead').css('width', '100%');
+      if (callback) {
+        input.change(callback);
+      }
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
   };
 }
-
-
-function ERadResearcherNameField(erad, label) {
-  var self = this;
-  self.baseTextField = new BaseTextField(label);
-  self.label = label;
-
-  self.addElementTo = function(parent) {
-    return self.baseTextField.addElementTo(parent);
-  };
-}*/
-
 
 module.exports = {
   createField: createField,

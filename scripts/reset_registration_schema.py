@@ -23,11 +23,11 @@ if __name__ == '__main__':
     logger.info(sys.argv)
     init_app(routes=False)
 
-    schema_name = '公的資金による研究データのメタデータ登録'
+    schema_name = sys.argv[1]
 
     # delete schema if it exists
-    if RegistrationSchema.objects.exists(name=schema_name):
-        schema = RegistrationSchema.objects.get(name=schema_name)
+    schema = RegistrationSchema.objects.filter(name=schema_name).first()
+    if schema is not None:
         RegistrationSchemaBlock.objects.filter(schema_id=schema).delete()
         schema.delete()
 
@@ -44,5 +44,3 @@ if __name__ == '__main__':
         )
         for question in page['questions']:
             create_schema_blocks_for_question(apps, schema, question)
-
-    commit()

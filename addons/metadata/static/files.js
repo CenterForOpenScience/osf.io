@@ -56,21 +56,52 @@ function MetadataButtons() {
   self.registeringFilepath = null;
   self.selectDraftDialog = null;
 
-  self.loadConfig = function() {
+  self.loadConfig = function(callback) {
     if (self.loading !== null) {
       return;
     }
     self.loading = true;
     self.erad.load(self.baseUrl, function() {
       self.registrationSchemas.load(function() {
-        self.draftRegistrations.load(function() {
-          self.loadMetadata(self.baseUrl, function() {
-            self.loading = false;
-          });
+        self.loadMetadata(self.baseUrl, function() {
+          self.loading = false;
+          const path = self.processHash();
+          if (!callback) {
+            return;
+          }
+          callback(path);
         });
       });
     });
   };
+
+  self.processHash = function() {
+    const path = self.getContextPath();
+    if (!path) {
+      return null;
+    }
+    if (window.location.hash !== '#edit-metadata') {
+      return path;
+    }
+    self.editMetadata(path, null);
+    return path;
+  }
+
+  self.getContextPath = function() {
+    if (contextVars.file && contextVars.file.provider) {
+      return contextVars.file.provider + contextVars.file.materializedPath;
+    }
+    if (!self.projectMetadata) {
+      return null;
+    }
+    const currentMetadata = (self.projectMetadata.files || []).filter(function(f) {
+      return f.urlpath === window.location.pathname;
+    })[0];
+    if (!currentMetadata) {
+      return null;
+    }
+    return currentMetadata.path;
+  }
 
   self.loadMetadata = function(baseUrl, callback) {
     var url = baseUrl + 'project';
@@ -193,7 +224,8 @@ function MetadataButtons() {
     return targetSchemas[0];
   }
 
-  self.editMetadata = function(filepath, item, dialog) {
+  self.editMetadata = function(filepath, item) {
+    const dialog = self.editMetadataDialog;
     console.log(logPrefix, 'edit metadata: ', filepath, item);
     const currentMetadatas = self.projectMetadata.files.filter(function(f) {
       return f.path === filepath;
@@ -202,17 +234,16 @@ function MetadataButtons() {
     if (!currentMetadata) {
       self.lastMetadata = {
         path: filepath,
-        folder: item.kind === 'folder',
+        folder: item === null ? false : item.kind === 'folder',
         items: [],
-        registered: false
       };
     } else {
       self.lastMetadata = currentMetadata;
     }
     dialog.container.empty();
     const fieldContainer = $('<div></div>');
-    const activeItems = (self.lastMetadata.items || []).filter(function(item) {
-      return item.active;
+    const activeItems = (self.lastMetadata.items || []).filter(function(item_) {
+      return item_.active;
     });
     const targetItem = activeItems[0] || {};
     const label = $('<label></label>').text(_('Data Schema:'));
@@ -303,13 +334,43 @@ function MetadataButtons() {
     return projectNameJaValue + ' / ' + projectNameEnValue;
   };
 
+  self.includePathInDraftRegistration = function(path, registration) {
+    if (!registration.attributes) {
+      return false;
+    }
+    if (!registration.attributes.registration_metadata) {
+      return false;
+    }
+    const files = registration.attributes.registration_metadata['grdm-files'];
+    if (!files) {
+      return false;
+    }
+    if (!files.value) {
+      return false;
+    }
+    const fileEntries = JSON.parse(files.value);
+    return fileEntries.filter(function(file) {
+      return file.path == path;
+    }).length > 0;
+  };
+
   self.createDraftsSelect = function() {
-    const registrations = $('<select></select>');
+    const registrations = $('<ul></ul>').css('list-style-type', 'none');
     (self.draftRegistrations.registrations || []).forEach(function(r) {
       const projectName = self.extractProjectName(r.attributes.registration_metadata);
-      registrations.append($('<option></option>')
-        .attr('value', r.id)
-        .text(r.id + ' - ' + projectName));
+      registrations.append($('<li></li>')
+        .append($('<input></input>')
+          .css('margin-right', '0.5em')
+          .attr('type', 'checkbox')
+          .attr('id', 'draft-' + r.id)
+          .attr('name', 'draft-' + r.id)
+          .attr('checked', self.includePathInDraftRegistration(self.registeringFilepath, r)))
+        .append($('<label></label>')
+          .css('margin-right', '0.5em')
+          .attr('for', 'draft-' + r.id)
+          .text(projectName + ' - ' + r.id))
+        .append($('<span></span>')
+          .attr('id', 'draft-' + r.id + '-link')));
     });
     return registrations;
   }
@@ -354,48 +415,175 @@ function MetadataButtons() {
     return '/registries/drafts/' + draftId + '/' + encodeURIComponent(pageName) + '?view_only=';
   };
 
-  self.selectDraftModal = function() {
-    const select = self.selectDraftDialog.container.find('select');
-    const draftId = select.val();
-    const filepath = self.registeringFilepath;
-    if (!filepath) {
-      const url = self.getFileMetadataPageURL(draftId);
-      if (!url) {
-        return;
-      }
-      window.open(url, '_blank');
-      return;
-    }
-    self.registeringFilepath = null;
-    console.log(logPrefix, 'register metadata: ', filepath, draftId);
-    var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + filepath;
-    return $.ajax({
-        url: url,
-        type: 'PUT',
-        dataType: 'json'
-    }).done(function (data) {
-      console.log(logPrefix, 'updated: ', data);
-      self.selectDraftDialog.select
-        .text(_('Open Registration'))
-        .attr('data-dismiss', 'modal');
-      self.draftRegistrations.load();
-    }).fail(function(xhr, status, error) {
-      Raven.captureMessage('Error while retrieving addon info', {
-          extra: {
-              url: url,
-              status: status,
-              error: error
-          }
-      });
+  self.openDraftModal = function() {
+    const draftSelection = $('<div></div>').text(_('Loading...'));
+    self.selectDraftDialog.select
+      .text(_('Select'))
+      .attr('data-dismiss', false);
+    self.selectDraftDialog.container.empty();
+    self.selectDraftDialog.container.append(draftSelection);
+    self.selectDraftDialog.dialog.modal('show');
+    self.draftRegistrations.load(function() {
+      draftSelection.empty();
+      draftSelection.append(self.createDraftsSelect());
     });
   };
 
-  self.initFileTree = function() {
+  self.updateRegistrationAsync = function(checked, filepath, draftId, link) {
+    return new Promise(function(resolve, perror) {
+      console.log(logPrefix, 'register metadata: ', filepath, draftId);
+      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + filepath;
+      link.text(checked ? _('Registering...') : _('Deleting...'));
+      return $.ajax({
+          url: url,
+          type: checked ? 'PUT' : 'DELETE',
+          dataType: 'json'
+      }).done(function (data) {
+        link.empty();
+        link.append($('<a></a>')
+          .text(_('Open'))
+          .attr('href', self.getFileMetadataPageURL(draftId)));
+        resolve(data);
+      }).fail(function(xhr, status, error) {
+        perror(url, xhr, status, error);
+      });
+    });
+  }
+
+  self.selectDraftModal = function() {
+    const filepath = self.registeringFilepath;
+    if (!filepath) {
+      return;
+    }
+    self.registeringFilepath = null;
+    const ops = [];
+    (self.draftRegistrations.registrations || []).forEach(function(r) {
+      const checkbox = self.selectDraftDialog.container.find('#draft-' + r.id);
+      const checked = checkbox.is(':checked');
+      const oldChecked = self.includePathInDraftRegistration(filepath, r);
+      if (checked == oldChecked) {
+        return;
+      }
+      const link = self.selectDraftDialog.container.find('#draft-' + r.id + '-link');
+      ops.push(self.updateRegistrationAsync(checked, filepath, r.id, link));
+    });
+    Promise.all(ops)
+      .then(function(data) {
+        console.log(logPrefix, 'updated: ', data);
+        self.selectDraftDialog.select
+          .text(_('Close'))
+          .attr('data-dismiss', 'modal');
+        self.draftRegistrations.load();
+      })
+      .catch(function(url, xhr, status, error) {
+        Raven.captureMessage('Error while retrieving addon info', {
+            extra: {
+                url: url,
+                status: status,
+                error: error
+            }
+        });
+      });
+  };
+
+  self.createFangornButtons = function(filepath, item) {
+    return self.createButtonsBase(
+      filepath,
+      item,
+      function(options, label) {
+        return m.component(Fangorn.Components.button, options, label);
+      }
+    );
+  }
+
+  self.createButtonsBase = function(filepath, item, createButton) {
+    const currentMetadatas = self.projectMetadata.files.filter(function(f) {
+      return f.path === filepath;
+    });
+    const currentMetadata = currentMetadatas[0] || null;
+    const parentMetadatas = self.projectMetadata.files.filter(function(f) {
+      return f.path !== filepath && filepath.startsWith(f.path);
+    });
+    const parentMetadata = parentMetadatas[0] || null;
+    const buttons = [];
+    if (!parentMetadata) {
+      const editButton = createButton({
+        onclick: function(event) {
+          self.editMetadata(filepath, item);
+        },
+        icon: 'fa fa-edit',
+        className : 'text-primary'
+      }, _('Edit Metadata'));
+      buttons.push(editButton);
+    }
+    if (currentMetadata) {
+      const registerButton = createButton({
+        onclick: function(event) {
+          self.registeringFilepath = filepath;
+          self.openDraftModal();
+        },
+        icon: 'fa fa-external-link',
+        className : 'text-success'
+      }, _('Register Metadata'));
+      buttons.push(registerButton)
+      const deleteButton = createButton({
+        onclick: function(event) {
+          self.deleteConfirmingFilepath = filepath;
+          self.deleteConfirmationDialog.modal('show');
+        },
+        icon: 'fa fa-trash',
+        className : 'text-danger'
+      }, _('Delete Metadata'));
+      buttons.push(deleteButton)
+    }
+    return buttons;
+  }
+
+  self.initBase = function(callback) {
     self.deleteConfirmationDialog = self.initConfirmDeleteDialog();
-    var dialog = self.initEditMetadataDialog();
+    self.editMetadataDialog = self.initEditMetadataDialog();
     self.selectDraftDialog = self.initSelectDraftDialog();
     // Request to load config
-    self.loadConfig();
+    self.loadConfig(callback);
+  }
+
+  self.initFileView = function() {
+    self.initBase(function(path) {
+      if (!path) {
+        return;
+      }
+      const buttons = $('<div></div>')
+        .addClass('btn-group m-t-xs')
+        .attr('id', 'metadata-toolbar');
+      self.createButtonsBase(
+        path,
+        null,
+        function(options, label) {
+          const btn = $('<button></button>')
+            .addClass('btn')
+            .addClass('btn-sm');
+          if (options.className) {
+            btn.addClass(options.className.replace(/^text-/, 'btn-'));
+          }
+          if (options.icon) {
+            btn.append($('<i></i>').addClass(options.icon));
+          }
+          if (options.onclick) {
+            btn.click(options.onclick);
+          }
+          btn.append($('<span></span>').text(label));
+          return btn;
+        }
+      )
+        .forEach(function(button) {
+          buttons.append(button);
+        });
+      $('.btn-toolbar').prepend(buttons);
+    });
+  }
+
+  self.initFileTree = function() {
+    self.initBase();
 
     Fangorn.config = new Proxy(Fangorn.config, {
       get: function(targetprov, name) {
@@ -422,50 +610,7 @@ function MetadataButtons() {
                   }
                 }
                 var filepath = item.data.provider + (item.data.materialized || '/');
-                var currentMetadatas = self.projectMetadata.files.filter(function(f) {
-                  return f.path === filepath;
-                });
-                var currentMetadata = currentMetadatas[0] || null;
-                var parentMetadatas = self.projectMetadata.files.filter(function(f) {
-                  return f.path !== filepath && filepath.startsWith(f.path);
-                });
-                var parentMetadata = parentMetadatas[0] || null;
-                var buttons = [];
-                if (!parentMetadata) {
-                  var editButton = m.component(Fangorn.Components.button, {
-                      onclick: function(event) {
-                        self.editMetadata(filepath, item, dialog);
-                      },
-                      icon: 'fa fa-edit',
-                      className : 'text-primary'
-                  }, _('Edit Metadata'));
-                  buttons.push(editButton);
-                }
-                if (currentMetadata) {
-                  var registerButton = m.component(Fangorn.Components.button, {
-                      onclick: function(event) {
-                        self.registeringFilepath = filepath;
-                        self.selectDraftDialog.select
-                          .text(_('Select'))
-                          .attr('data-dismiss', false);
-                        self.selectDraftDialog.container.empty();
-                        self.selectDraftDialog.container.append(self.createDraftsSelect());
-                        self.selectDraftDialog.dialog.modal('show');
-                      },
-                      icon: 'fa fa-external-link',
-                      className : 'text-success'
-                  }, _('Register Metadata'));
-                  buttons.push(registerButton)
-                  var deleteButton = m.component(Fangorn.Components.button, {
-                      onclick: function(event) {
-                        self.deleteConfirmingFilepath = filepath;
-                        self.deleteConfirmationDialog.modal('show');
-                      },
-                      icon: 'fa fa-trash',
-                      className : 'text-danger'
-                  }, _('Delete Metadata'));
-                  buttons.push(deleteButton)
-                }
+                const buttons = self.createFangornButtons(filepath, item);
                 return {
                   view : function(ctrl, args, children) {
                     var tb = args.treebeard;
@@ -515,9 +660,10 @@ function MetadataButtons() {
       });
       metadata.items.unshift(metacontent);
     }
+    const url = self.baseUrl + 'files/' + metadata.path;
     $.ajax({
       method: 'PATCH',
-      url: self.baseUrl + 'files/' + metadata.path,
+      url: url,
       contentType: 'application/json',
       data: JSON.stringify(metadata),
     }).done(function (data) {
@@ -549,7 +695,7 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Edit metadata'))))
+            .append($('<h3></h3>').text(_('Edit Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
@@ -572,12 +718,12 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Delete confirmation'))))
+            .append($('<h3></h3>').text(_('Delete Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
                 .append($('<div class="col-sm-12"></div>')
-                  .append(_('Delete to confirm')))))
+                  .append(_('Do you want to delete metadata? This operation cannot be undone.')))))
             .append($('<div class="modal-footer"></div>')
               .append(close).append(del)))));
     dialog.appendTo($('#treeGrid'));
@@ -608,5 +754,12 @@ function MetadataButtons() {
 
 }
 
-var btn = new MetadataButtons();
-btn.initFileTree();
+if (contextVars.metadataAddonEnabled) {
+  var btn = new MetadataButtons();
+  if ($('#fileViewPanelLeft').length > 0) {
+    // File View
+    btn.initFileView();
+  } else {
+    btn.initFileTree();
+  }
+}

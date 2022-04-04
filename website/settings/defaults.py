@@ -66,6 +66,7 @@ RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_TERMINATION_PENDING_TIME = datetime.timedelta(days=2)
 REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
+ENABLED_REGISTRATION_APPROVAL_TIME = False
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years

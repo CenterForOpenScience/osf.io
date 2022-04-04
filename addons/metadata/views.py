@@ -6,12 +6,12 @@ from flask import make_response
 import logging
 
 from . import SHORT_NAME
-from . import settings
-from .models import ERadRecord, RegistrationReportFormat
+from .models import ERadRecord, RegistrationReportFormat, get_draft_files, FIELD_GRDM_FILES, schema_has_field
 from .utils import make_report_as_csv
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from osf.models import DraftRegistration
+from osf.models import DraftRegistration, Registration
+from osf.models.metaschema import RegistrationSchema
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from website.project.decorators import (
     must_be_valid_project,
@@ -28,7 +28,6 @@ ERAD_COLUMNS = [
     'HAIBUNKIKAN_CD', 'HAIBUNKIKAN_MEI', 'NENDO', 'SEIDO_CD', 'SEIDO_MEI',
     'JIGYO_CD', 'JIGYO_MEI', 'KADAI_ID', 'KADAI_MEI', 'BUNYA_CD', 'BUNYA_MEI'
 ]
-FIELD_GRDM_FILES = 'grdm-files'
 
 
 def _response_user_erad_config(addon):
@@ -60,17 +59,21 @@ def _response_file_metadata(addon, path):
         }
     }
 
+def _response_schemas(addon, schemas):
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'metadata-node-schema',
+            'attributes': addon.get_report_formats_for(schemas),
+        }
+    }
+
 def _erad_candidates(researcher_number):
     r = []
     for record in ERadRecord.objects.filter(kenkyusha_no=researcher_number):
         r.append(dict([(k.lower(), getattr(record, k.lower()))
                        for k in ERAD_COLUMNS]))
     return r
-
-def _schema_has_field(schema, name):
-    questions = sum([page['questions'] for page in schema['pages']], [])
-    qids = [q['qid'] for q in questions]
-    return name in qids
 
 def _get_file_metadata_for_schema(schema_id, file_metadata):
     assert not file_metadata['generated']
@@ -82,20 +85,9 @@ def _get_file_metadata_for_schema(schema_id, file_metadata):
     return {
         'path': file_metadata['path'],
         'folder': file_metadata['folder'],
+        'urlpath': file_metadata['urlpath'],
         'metadata': items[0]['data'],
     }
-
-def _get_draft_files(draft_metadata):
-    if FIELD_GRDM_FILES not in draft_metadata:
-        return []
-    draft_files = draft_metadata[FIELD_GRDM_FILES]
-    if 'value' not in draft_files:
-        return []
-    draft_value = draft_files['value']
-    if draft_value == '':
-        return []
-    return json.loads(draft_value)
-
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
@@ -152,17 +144,15 @@ def metadata_get_project(auth, **kwargs):
 
 @must_be_valid_project
 @must_be_logged_in
-@must_have_permission('write')
+@must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
-def metadata_set_project(auth, **kwargs):
+def metadata_get_schemas(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
-    try:
-        addon.set_project_metadata(request.json)
-    except ValueError as e:
-        logger.error('Invalid metadata: ' + str(e))
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    return _response_project_metadata(addon)
+    schemas = [schema
+               for schema in RegistrationSchema.objects.all()
+               if schema_has_field(schema.schema, FIELD_GRDM_FILES)]
+    return _response_schemas(addon, schemas)
 
 @must_be_valid_project
 @must_be_logged_in
@@ -207,13 +197,13 @@ def metadata_set_file_to_drafts(auth, did=None, filepath=None, **kwargs):
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
         draft_schema = draft.registration_schema.schema
-        if not _schema_has_field(draft_schema, FIELD_GRDM_FILES):
+        if not schema_has_field(draft_schema, FIELD_GRDM_FILES):
             logger.error('No grdm-files metadata: schema={}'.format(
                 draft.registration_schema._id,
             ))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         draft_metadata = draft.registration_metadata
-        draft_files = _get_draft_files(draft_metadata)
+        draft_files = get_draft_files(draft_metadata)
         file_metadata_ = addon.get_file_metadata_for_path(filepath)
         file_metadata = _get_file_metadata_for_schema(
             draft.registration_schema._id,
@@ -250,10 +240,10 @@ def metadata_delete_file_from_drafts(auth, did=None, filepath=None, **kwargs):
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
         draft_schema = draft.registration_schema.schema
-        if not _schema_has_field(draft_schema, FIELD_GRDM_FILES):
+        if not schema_has_field(draft_schema, FIELD_GRDM_FILES):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         draft_metadata = draft.registration_metadata
-        draft_files = _get_draft_files(draft_metadata)
+        draft_files = get_draft_files(draft_metadata)
         logger.info('Draft: draft={}'.format(draft_files))
         draft_files = [df
                        for df in draft_files
@@ -277,15 +267,18 @@ def metadata_report_list_view(**kwargs):
 @must_be_logged_in
 @must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
-def metadata_export_csv(auth, did=None, **kwargs):
+def metadata_export_draft_registrations_csv(auth, did=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    addon = node.get_addon(SHORT_NAME)
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
-        formats = RegistrationReportFormat.objects.filter(registration_schema=draft.registration_schema)
+        formats = RegistrationReportFormat.objects.filter(registration_schema_id=draft.registration_schema._id)
         formats = [f for f in formats if f.csv_template]
+        name = request.args.get('name', None)
+        if name is not None:
+            formats = [f for f in formats if f.name == name]
         if len(formats) == 0:
-            logger.error('No report format for {}'.format(draft.registration_schema.name))
+            logger.error('No report format for {} (name={})'
+                .format(draft.registration_schema.name, name))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         draft_metadata = draft.registration_metadata
         filename, csvcontent = make_report_as_csv(formats[0], draft_metadata)
@@ -295,4 +288,31 @@ def metadata_export_csv(auth, did=None, **kwargs):
         response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
     except DraftRegistration.DoesNotExist:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('read')
+def metadata_export_registrations_csv(auth, rid=None, **kwargs):
+    registration = kwargs['node'] or kwargs['project']
+    try:
+        formats = RegistrationReportFormat.objects.filter(registration_schema_id=registration.registration_schema._id)
+        formats = [f for f in formats if f.csv_template]
+        name = request.args.get('name', None)
+        if name is not None:
+            formats = [f for f in formats if f.name == name]
+        if len(formats) == 0:
+            logger.error('No report format for {} (name={})'
+                .format(registration.registration_schema.name, name))
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        registration_metadata = registration.get_registration_metadata(
+            registration.registration_schema
+        )
+        filename, csvcontent = make_report_as_csv(formats[0], registration_metadata)
+        response = make_response()
+        response.data = csvcontent.encode('utf8')
+        response.mimetype = 'text/csv;charset=utf-8'
+        response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
+        return response
+    except Registration.DoesNotExist:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
