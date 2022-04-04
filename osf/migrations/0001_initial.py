@@ -1159,7 +1159,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='draftregistration',
             name='registered_node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf.Registration'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf.AbstractNode'),
         ),
         migrations.AlterUniqueTogether(
             name='contributor',

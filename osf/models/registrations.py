@@ -990,7 +990,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     # }
     registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
-    registered_node = models.ForeignKey('Registration', null=True, blank=True,
+    registered_node = models.ForeignKey('AbstractNode', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
 
     approval = models.ForeignKey('DraftRegistrationApproval', null=True, blank=True, on_delete=models.CASCADE)
