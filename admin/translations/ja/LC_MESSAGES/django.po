@@ -3173,7 +3173,7 @@ msgstr "ストレージ名"
 # msgstr "機関ストレージのクォータ設定"
 
 msgid "Each user Quota for Institutional Storage (GB)"
-msgstr "各ユーザの機関ストレージのクォータ(GB)"
+msgstr "クォータ一律設定 (GB)"
 
 msgid "Value must be an integer number greater than or equal 1"
 msgstr "値は1以上の整数である必要があります"
