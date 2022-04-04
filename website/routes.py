@@ -39,7 +39,6 @@ from osf.models import Institution
 from osf.utils import sanitize
 from osf.utils import permissions
 from website import util
-from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
@@ -519,8 +518,8 @@ def make_url_map(app):
         Rule(
             '/prereg/',
             'get',
-            prereg.prereg_landing_page,
-            OsfWebRenderer('prereg_landing_page.mako', trust=False)
+            website_views.redirect_to_registration_workflow,
+            notemplate
         ),
 
         Rule(

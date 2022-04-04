@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
 import datetime
-from rest_framework import status as http_status
 import time
 import functools
 
@@ -13,12 +11,10 @@ import jwt
 import mock
 import pytest
 from django.utils import timezone
-from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
-from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (AuthUserFactory, ProjectFactory,
@@ -30,9 +26,10 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import Session, RegistrationSchema, QuickFilesNode
+from osf import features
+from osf.models import Session, QuickFilesNode
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -43,6 +40,9 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
+from website.settings import EXTERNAL_EMBER_APPS
+from waffle.testutils import override_flag
+
 
 class SetEnvironMiddleware(object):
 
@@ -1361,7 +1361,6 @@ class TestAddonFileViews(OsfTestCase):
         location = furl.furl(resp.location)
         assert_equal(location.url, file_node.generate_waterbutler_url( format='pdf', action='download', direct=None, version=''))
 
-
     def test_action_download_redirects_to_download_with_version(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
@@ -1373,45 +1372,39 @@ class TestAddonFileViews(OsfTestCase):
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
-    @mock.patch('addons.base.views.addon_view_file')
+    @mock.patch('website.views.stream_emberapp')
     @pytest.mark.enable_bookmark_creation
-    def test_action_view_calls_view_file(self, mock_view_file):
+    def test_action_view_calls_view_file(self, mock_ember):
         self.user.reload()
         self.project.reload()
 
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        mock_view_file.return_value = self.get_mako_return()
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            self.app.get(f'/{guid._id}/?action=view', auth=self.user.auth)
 
-        self.app.get('/{}/?action=view'.format(guid._id), auth=self.user.auth)
-
-        args, kwargs = mock_view_file.call_args
+        args, kwargs = mock_ember.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user._id, self.user._id)
-        assert_equals(args[1], self.project)
-        assert_equals(args[2], file_node)
-        assert_true(isinstance(args[3], file_node.touch(None).__class__))
+        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
-    @mock.patch('addons.base.views.addon_view_file')
+    @mock.patch('website.views.stream_emberapp')
     @pytest.mark.enable_bookmark_creation
-    def test_no_action_calls_view_file(self, mock_view_file):
+    def test_no_action_calls_view_file(self, mock_ember):
         self.user.reload()
         self.project.reload()
 
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        mock_view_file.return_value = self.get_mako_return()
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            self.app.get(f'/{guid._id}/', auth=self.user.auth)
 
-        self.app.get('/{}/'.format(guid._id), auth=self.user.auth)
-
-        args, kwargs = mock_view_file.call_args
+        args, kwargs = mock_ember.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user._id, self.user._id)
-        assert_equals(args[1], self.project)
-        assert_equals(args[2], file_node)
-        assert_true(isinstance(args[3], file_node.touch(None).__class__))
+        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
 
     def test_download_create_guid(self):
         file_node = self.get_test_file()
@@ -1482,14 +1475,20 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 400)
 
-    def test_head_returns_url_and_redriect(self):
+    @mock.patch('website.views.stream_emberapp')
+    def test_head_returns_url_and_redriect(self, mock_ember):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
-        location = furl.furl(resp.location)
-        assert_equals(resp.status_code, 302)
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, version=''))
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            resp = self.app.head('/{}/'.format(guid._id), auth=self.user.auth)
+        assert_equals(resp.status_code, 200)
+
+        args, kwargs = mock_ember.call_args
+        assert_equals(kwargs, {})
+        assert_equals(args[0], EXTERNAL_EMBER_APPS['ember_osf_web']['server'])
+        assert_equals(args[1], EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/'))
+
 
     def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
@@ -1770,6 +1769,7 @@ class TestLegacyViews(OsfTestCase):
         )
         assert_urls_equal(res.location, expected_url)
 
+    @pytest.mark.enable_bookmark_creation
     def test_action_as_param(self):
         url = '/{}/osfstorage/files/{}/?action=download'.format(
             self.project._id,

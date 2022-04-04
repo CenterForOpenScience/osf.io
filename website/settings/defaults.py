@@ -446,6 +446,7 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
+        'osf.management.commands.fix_quickfiles_waterbutler_logs'
     }
 
     try:
@@ -516,6 +517,7 @@ class CeleryConfig:
         'osf.management.commands.populate_initial_schema_responses',
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.delete_legacy_quickfiles_nodes',
+        'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'api.providers.tasks'
     )
 
@@ -2093,3 +2095,5 @@ PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
 PRODUCT_OWNER_EMAIL_ADDRESS = {}
 
 CAS_LOG_LEVEL = 3  # ERROR
+
+PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)

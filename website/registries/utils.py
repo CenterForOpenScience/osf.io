@@ -1,5 +1,4 @@
 REG_CAMPAIGNS = {
-    'prereg': 'OSF Preregistration',
     'osf-registered-reports': 'Registered Report Protocol Preregistration',
 }
 

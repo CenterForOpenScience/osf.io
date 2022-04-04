@@ -5,7 +5,7 @@
     <form role="form" id="addonSettingsGitLab" data-addon="${addon_short_name}">
         <div>
             <h4 class="addon-title">
-                <img class="addon-icon" src="${addon_icon_url}">
+                <img class="addon-icon" src="${addon_icon_url}" aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
                 GitLab
                 <small class="authorized-by">
                     % if node_has_auth:

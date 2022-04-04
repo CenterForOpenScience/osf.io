@@ -2,12 +2,26 @@ from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
+from django.core.exceptions import ValidationError
+
 import furl
 import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
+
+from osf.models import (
+    BaseFileNode,
+    DraftNode,
+    OSFUser,
+    Comment,
+    Preprint,
+    AbstractNode,
+    Registration,
+    Guid,
+    Node,
+)
+
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -19,6 +33,7 @@ from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
     IDField,
+    GuidOrIDField,
     JSONAPIListField,
     JSONAPISerializer,
     Link,
@@ -45,6 +60,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
+        kwargs['required'] = False
         kwargs['allow_null'] = True
         kwargs['lookup_field'] = '_id'
         kwargs['lookup_url_kwarg'] = 'user_id'
@@ -334,30 +350,25 @@ class BaseFileSerializer(JSONAPISerializer):
             return obj._id
         return None
 
-    def update(self, instance, validated_data):
-        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
-        if instance.provider != 'osfstorage' and 'tags' in validated_data:
-            raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
-        auth = get_user_auth(self.context['request'])
-        old_tags = set(instance.tags.values_list('name', flat=True))
+    def update(self, file, validated_data):
+        assert isinstance(file, BaseFileNode), 'Instance must be a BaseFileNode'
         if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        else:
-            current_tags = set(old_tags)
+            if file.provider != 'osfstorage':
+                raise Conflict(f'File service provider {file.provider} does not support tags on the OSF.')
+            auth = get_user_auth(self.context['request'])
+            file.update_tags(set(validated_data.pop('tags', [])), auth=auth)
 
-        for new_tag in (current_tags - old_tags):
-            instance.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            instance.remove_tag(deleted_tag, auth=auth)
+        if 'checkout' in validated_data:
+            if isinstance(file.target, Registration):
+                raise ValidationError('Registration files are static and cannot be checked in or out.')
+            user = self.context['request'].user
+            file.check_in_or_out(user, validated_data.pop('checkout'))
 
+        # `validated_data` ignores Read-only fields in payload
         for attr, value in validated_data.items():
-            if attr == 'checkout':
-                user = self.context['request'].user
-                instance.check_in_or_out(user, value)
-            else:
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
+            setattr(file, attr, value)
+        file.save()
+        return file
 
     def is_valid(self, **kwargs):
         return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
@@ -385,12 +396,16 @@ class FileSerializer(BaseFileSerializer):
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
     def get_target_type(self, obj):
-        target_type = 'node'
         if isinstance(obj, Preprint):
-            target_type = 'preprint'
-        if isinstance(obj, DraftNode):
-            target_type = 'draft_node'
-        return target_type
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
 
 
 class OsfStorageFileSerializer(FileSerializer):
@@ -412,9 +427,22 @@ class OsfStorageFileSerializer(FileSerializer):
 
 class FileDetailSerializer(FileSerializer):
     """
-    Overrides FileSerializer to make id required.
+    - Overrides FileSerializer to make id required
+    - Files should return the id type they are queried with, but only in osfstorage is the id is reliably equivalent to
+     the path attribute, so that should not be overridden.
+
     """
-    id = IDField(source='_id', required=True)
+    id = GuidOrIDField(source='_id', required=True)
+
+    def to_representation(self, value):
+        data = super().to_representation(value)
+        view = self.context['view']
+        data['data']['links']['self'] = absolute_reverse(f'{view.view_category}:{view.view_name}', kwargs=view.kwargs)
+        guid = Guid.load(view.kwargs['file_id'])
+        if guid:
+            data['data']['id'] = guid._id
+
+        return data
 
 
 class QuickFilesSerializer(BaseFileSerializer):

@@ -6,7 +6,7 @@
     <%include file="owncloud_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}>
+        <img class="addon-icon" src=${addon_icon_url} aria-label="Owncloud icon" alt="Owncloud icon">
         <span data-bind="text: properName"></span>
         <small>
             <a href="#ownCloudCredentialsModal" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em> on <a data-bind="attr: {href: profileUrl}"><em data-bind="text: profileUrl"></em></a></th><th></th>
+                        <th class="default-authorized-by">Authorized by <em><span data-bind="text: name"></span></em> on <a data-bind="attr: {href: profileUrl}"><em data-bind="text: profileUrl"></em></a></th><th></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
