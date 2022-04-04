@@ -872,11 +872,6 @@ class Registration(AbstractNode):
         for children in Registration.objects.get_children(self, active=True, include_root=True):
             archive_to_ia(children)
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_registration', 'Can view registration details'),
-        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations

@@ -88,12 +88,6 @@ class Conference(ObjectIDMixin, BaseModel):
         """
         return self.submissions.filter(is_public=True, is_deleted=False)
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_conference', 'Can view conference details in the admin app.'),
-        )
-
 
 class MailRecord(ObjectIDMixin, BaseModel):
     data = DateTimeAwareJSONField()

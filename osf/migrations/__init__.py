@@ -10,21 +10,13 @@ def get_admin_read_permissions():
     return Permission.objects.filter(codename__in=[
         'view_brand',
         'view_node',
-        'view_registration',
         'view_user',
-        'view_conference',
         'view_spam',
         'view_metrics',
         'view_desk',
         'view_osfuser',
         'view_user',
         'view_preprintservice',
-        'view_preprintprovider',
-        'view_subject',
-        'view_scheduledbanner',
-        'view_collectionprovider',
-        'view_providerassetfile',
-        'view_registrationprovider',
         'view_management',
     ])
 
