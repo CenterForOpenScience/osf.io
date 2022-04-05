@@ -86,8 +86,6 @@ class TestAuthUtils(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in('login?service=', res.location)
 
-        user.reload()
-
         mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
                                      storage_flag_is_active=False,
                                      to_addr=user.username,
@@ -96,16 +94,10 @@ class TestAuthUtils(OsfTestCase):
                                      mail=mails.WELCOME)
 
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
-
-        res = res.follow()
-
         assert_equal(res.status_code, 302)
-        assert_equal('/', urlparse(res.location).path)
+        assert_equal('/login', urlparse(res.location).path)
         assert_equal(len(mock_mail.call_args_list), 1)
         session = Session.objects.filter(data__auth_user_id=user._id).order_by('-modified').first()
-        assert_equal(len(session.data['status']), 1)
 
     def test_get_user_by_id(self):
         user = UserFactory()

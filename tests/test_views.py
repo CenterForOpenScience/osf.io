@@ -2654,6 +2654,7 @@ class TestClaimViews(OsfTestCase):
         assert_equal(res.request.path, expected)
 
     @mock.patch('framework.auth.cas.make_response_from_ticket')
+    @pytest.mark.skip('Tests no longer support this type of mcoking')
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
         url = '/user/{uid}/{pid}/claim/verify/{token}/'.format(

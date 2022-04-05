@@ -126,17 +126,19 @@ class TestInstitutionManager:
         assert institution.deactivated is None
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_send_deactivation_email_call_count(self, mock_send_mail):
+    def test_send_deactivation_email_call_count(self):
         institution = InstitutionFactory()
+
         user_1 = UserFactory()
         user_1.affiliated_institutions.add(institution)
         user_1.save()
         user_2 = UserFactory()
         user_2.affiliated_institutions.add(institution)
         user_2.save()
-        institution._send_deactivation_email()
-        assert mock_send_mail.call_count == 2
+
+        with mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail) as mock_send_mail:
+            institution._send_deactivation_email()
+            assert mock_send_mail.call_count == 2
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
     @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)

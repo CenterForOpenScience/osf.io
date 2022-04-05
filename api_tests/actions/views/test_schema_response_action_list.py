@@ -493,7 +493,7 @@ class TestSchemaResponseActionListPOSTBehavior:
         assert action.to_state == ApprovalStates.UNAPPROVED.db_name
         assert schema_response.state is ApprovalStates.UNAPPROVED
 
-        app.post_json_api(make_api_url(schema_response), payload, auth=registration.creator.auth)
+        app.post_json_api(make_api_url(schema_response), payload, auth=(registration.contributors.first().username, 'queenfan86'))
 
         schema_response.refresh_from_db()
         action = schema_response.actions.last()
