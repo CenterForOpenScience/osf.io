@@ -20,7 +20,7 @@ class MetricMixin(object):
         for index, aliases in all_aliases.items():
             indices.add(index)
             if aliases['aliases']:
-                for alias in aliases.keys():
+                for alias in aliases['aliases'].keys():
                     indices.add(alias)
         return indices
 
