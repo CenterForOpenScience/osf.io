@@ -39,13 +39,13 @@
     .flex-container .flex-item {
         flex-grow: 1;
         flex-shrink: 1;
-        flex-basis: 0%;
+        flex-basis: 0;
         white-space: nowrap;
         margin-left: 2px;
         margin-right: 2px;
     }
 
-    @media (max-width: 767px) {
+    @media screen and (max-width: 767px) {
         .w-search-input {
             width: auto !important;
         }
@@ -53,11 +53,21 @@
         .flex-container {
             flex-direction: column;
             flex-wrap: wrap;
+            align-items: flex-start;
         }
 
-        .form-group.flex-item label {
-            width: 5em;
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+
+        .form-inline.flex-container .form-group.flex-item label {
+            min-width: 140px;
             flex-grow: 1;
+        }
+
+        .table-responsive {
+            margin-top: 15px;
+            margin-bottom: 15px;
         }
     }
 </style>
@@ -66,7 +76,7 @@
     <div class="flex-item" style="flex-grow: 0;">
         {% include "util/pagination.html" with items=page status=direction order=order_by %}
     </div>
-    <div class="flex-item text-right" style="margin: 20px 0;">
+    <div class="flex-item text-right">
         <form role="form" id="institutional_storage_form"
               class="form-inline flex-container"
               action="{% url 'institutions:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
