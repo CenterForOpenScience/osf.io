@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import furl
+import waffle
 import itertools
 from rest_framework import status as http_status
 import logging
@@ -12,7 +13,6 @@ from future.moves.urllib.parse import unquote
 from django.apps import apps
 from flask import request, send_from_directory, Response, stream_with_context
 
-from framework import sentry
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.forms import SignInForm, ForgotPasswordForm
@@ -23,9 +23,10 @@ from framework.routing import proxy_url
 from website import settings
 from website.institutions.views import serialize_institution
 
+from addons.osfstorage.models import Region, OsfStorageFile
+
 from osf import features
-from osf.models import BaseFileNode, Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration
-from addons.osfstorage.models import Region
+from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -33,7 +34,7 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
-from api.waffle.utils import flag_is_active, storage_i18n_flag_active
+from api.waffle.utils import storage_i18n_flag_active
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -217,7 +218,58 @@ def forgot_password_form():
     return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
 
-# GUID ###
+def resolve_guid_download(guid, provider=None):
+    try:
+        guid = Guid.objects.get(_id=guid.lower())
+    except Guid.DoesNotExist:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    resource = guid.referent
+
+    suffix = request.view_args.get('suffix')
+    if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
+        filename = suffix.replace('osfstorage/files/', '').rstrip('/')
+        if '/' in filename:  # legacy behavior
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        try:
+            file_path = resource.files.get(name=filename)._id
+        except OsfStorageFile.DoesNotExist:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        return redirect(
+            resource.web_url_for(
+                'addon_view_or_download_file',
+                path=file_path,
+                action='download',
+                provider='osfstorage',
+            ), code=http_status.HTTP_301_MOVED_PERMANENTLY
+        )
+
+    if isinstance(resource, Preprint):
+        if not resource.is_published:
+            auth = Auth.from_kwargs(request.args.to_dict(), {})
+            # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
+            if auth.user is None:
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+            if not (auth.user.has_perm('view_submissions', resource.provider) or
+                    resource.has_permission(auth.user, permissions.ADMIN)):
+                raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+        resource = resource.primary_file
+
+    request.args = request.args.copy()
+    if 'revision' not in request.args:  # This is to maintain legacy behavior
+        request.args.update({'action': 'download'})
+
+    return proxy_url(_build_guid_url(unquote(resource.deep_url)))
+
+
+def stream_emberapp(server, directory):
+    if PROXY_EMBER_APPS:
+        resp = requests.get(server, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+        return Response(stream_with_context(resp.iter_content()), resp.status_code)
+    return send_from_directory(directory, 'index.html')
+
 
 def _build_guid_url(base, suffix=None):
     url = '/'.join([
@@ -229,122 +281,56 @@ def _build_guid_url(base, suffix=None):
     return u'/{0}/'.format(url)
 
 
-def resolve_guid_download(guid, suffix=None, provider=None):
-    return resolve_guid(guid, suffix='download')
-
-
 def resolve_guid(guid, suffix=None):
-    """Load GUID by primary key, look up the corresponding view function in the
-    routing table, and return the return value of the view function without
-    changing the URL.
+    '''
+    This function is supposed to resolve a guid to a specific page of the OSF some pages are "legacy pages" that use v1
+    endpoints to serve pages from django, some page are new "emberized" pages only available via the ember app.
+    Preprints for example are served from the external emberapp and streamed into Django and on to the user, while Wikis
+    are served via a `/v1` endpoint, the `deep_url` for that resource.
 
-    :param str guid: GUID primary key
-    :param str suffix: Remainder of URL after the GUID
-    :return: Return value of proxied view function
-    """
+    There are also additional routes in this fintion that lead to legacies views that serve bytes for that files guid,
+    for example the url `/<file-guid>/?action=download` a response for file data is served.
+    '''
+
+    # Legacies views that serve bytes
+    if suffix and 'download' == suffix.rstrip('/'):
+        return resolve_guid_download(guid)
+    if 'download' == request.args.get('action'):
+        return resolve_guid_download(guid)
+    if 'revision' in request.args:
+        return resolve_guid_download(guid)
+
+    # Retrieve guid data if present, error if missing
     try:
-        # Look up
-        guid_object = Guid.load(guid)
-    except KeyError as e:
-        if e.message == 'osfstorageguidfile':  # Used when an old detached OsfStorageGuidFile object is accessed
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-        else:
-            raise e
-    if guid_object:
-        # verify that the object implements a GuidStoredObject-like interface. If a model
-        #   was once GuidStoredObject-like but that relationship has changed, it's
-        #   possible to have referents that are instances of classes that don't
-        #   have a deep_url attribute or otherwise don't behave as
-        #   expected.
-        if not hasattr(guid_object.referent, 'deep_url'):
-            sentry.log_message(
-                'Guid resolved to an object with no deep_url', dict(guid=guid)
-            )
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-        referent = guid_object.referent
-        if referent is None:
-            logger.error('Referent of GUID {0} not found'.format(guid))
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-        if not referent.deep_url:
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+        resource = Guid.objects.get(_id=guid.lower()).referent
+    except Guid.DoesNotExist:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-        # Handle file `/download` shortcut with supported types.
-        if suffix and suffix.rstrip('/').lower() == 'download':
-            file_referent = None
-            if isinstance(referent, Preprint) and referent.primary_file:
-                file_referent = referent.primary_file
-            elif isinstance(referent, BaseFileNode) and referent.is_file:
-                file_referent = referent
+    if not resource or not resource.deep_url:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-            if file_referent:
-                if isinstance(file_referent.target, Preprint) and not file_referent.target.is_published:
-                    # TODO: Ideally, permissions wouldn't be checked here.
-                    # This is necessary to prevent a logical inconsistency with
-                    # the routing scheme - if a preprint is not published, only
-                    # admins and moderators should be able to know it exists.
-                    auth = Auth.from_kwargs(request.args.to_dict(), {})
-                    # Check if user isn't a nonetype or that the user has admin/moderator/superuser permissions
-                    if auth.user is None or not (auth.user.has_perm('view_submissions', file_referent.target.provider) or
-                            file_referent.target.has_permission(auth.user, permissions.ADMIN)):
-                        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+    if isinstance(resource, DraftNode):
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-                # Extend `request.args` adding `action=download`.
-                request.args = request.args.copy()
-                request.args.update({'action': 'download'})
-                # Do not include the `download` suffix in the url rebuild.
-                url = _build_guid_url(unquote(file_referent.deep_url))
-                return proxy_url(url)
+    # Stream to ember app if resource has emberized view
+    if isinstance(resource, Preprint):
+        if resource.provider.domain_redirect_enabled:
+            return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
+        return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
 
-        # Handle Ember Applications
-        if isinstance(referent, Preprint):
-            if referent.provider.domain_redirect_enabled:
-                # This route should always be intercepted by nginx for the branded domain,
-                # w/ the exception of `<guid>/download` handled above.
-                return redirect(referent.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
+    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
-            if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['preprints']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
-                return Response(stream_with_context(resp.iter_content()), resp.status_code)
+    elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
-            return send_from_directory(preprints_dir, 'index.html')
+    elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
+        if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
-        # Handle DraftNodes - these should never be accessed directly
-        if isinstance(referent, DraftNode):
-            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-        if isinstance(referent, BaseFileNode) and referent.is_file and (getattr(referent.target, 'is_quickfiles', False)):
-            if referent.is_deleted:
-                raise HTTPError(http_status.HTTP_410_GONE)
-            if PROXY_EMBER_APPS:
-                resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
-                return Response(stream_with_context(resp.iter_content()), resp.status_code)
-
-            return send_from_directory(ember_osf_web_dir, 'index.html')
-
-        if isinstance(referent, Registration) and (
-                not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components')
-        ):
-            if flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-                # Route only the base detail view to ember
-                if PROXY_EMBER_APPS:
-                    resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
-                    return Response(stream_with_context(resp.iter_content()), resp.status_code)
-
-                return send_from_directory(ember_osf_web_dir, 'index.html')
-
-        url = _build_guid_url(unquote(referent.deep_url), suffix)
-        return proxy_url(url)
-
-    # GUID not found; try lower-cased and redirect if exists
-    guid_object_lower = Guid.load(guid.lower())
-    if guid_object_lower:
-        return redirect(
-            _build_guid_url(guid.lower(), suffix)
-        )
-
-    # GUID not found
-    raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
+    # Redirect to legacy endpoint for Nodes, Wikis etc.
+    url = _build_guid_url(unquote(resource.deep_url), suffix)
+    return proxy_url(url)
 
 # Redirects #
 
