@@ -938,16 +938,6 @@ table.add-links {
     color: #205075;
 }
 
-.alert-info {
-    background-color: #337AB7;
-    color: white;
-}
-
-.alert-info a {
-    color: white;
-    text-decoration: underline;
-}
-
 .high-contrast-link {
     color: #595959;
 }
