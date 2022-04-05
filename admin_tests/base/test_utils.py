@@ -126,6 +126,9 @@ class TestNodeChanges(AdminTestCase):
         self.user = UserFactory()
         self.user.is_staff = True
         self.user.groups.add(Group.objects.get(name='osf_admin'))
+        from osf.migrations import update_admin_permissions
+        update_admin_permissions()
+
         self.user.save()
 
         self.date_valid = self.registration.registered_date + datetime.timedelta(days=365)
