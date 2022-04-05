@@ -74,8 +74,8 @@ def test_folder_update_calls_folder_update_method(project, create_test_file):
 def test_file_update_respects_region(project, user, create_test_file):
     test_file = create_test_file(target=project)
     version = test_file.versions.first()
-    original_region = project.osfstorage_region
-    assert version.region == original_region
+    original_region_id = project.osfstorage_region.id
+    assert version.region.id == original_region_id
 
     # update the region on the project, ensure the new version has the new region
     node_settings = NodeSettings.objects.get(owner=project.id)
@@ -94,7 +94,7 @@ def test_file_update_respects_region(project, user, create_test_file):
             'sha256': 'existing',
         }
     )
-    assert new_region != original_region
+    assert new_region.id != original_region_id
     assert new_version.region == new_region
 
 def test_file_purged(project, create_test_file):
