@@ -185,7 +185,7 @@ class TestPreprintView:
         request.user = user
 
         response = plain_view.as_view()(request, guid=preprint._id)
-        assert response.status_code == 302
+        assert response.status_code == 200
 
     def test_change_preprint_provider(self, user, preprint, plain_view):
         change_permission = Permission.objects.get(codename='change_preprint')

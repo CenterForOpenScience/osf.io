@@ -924,10 +924,6 @@ class ConferenceFactory(DjangoModelFactory):
     active = True
     is_meeting = True
 
-    @factory.post_generation
-    def admins(self, create, extracted, **kwargs):
-        self.admins.add(*(extracted or [UserFactory()]))
-
 
 class SessionFactory(DjangoModelFactory):
     class Meta:

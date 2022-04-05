@@ -61,7 +61,7 @@ class PreprintView(PreprintMixin, GuidView):
     """ Allows authorized users to view preprint info and change a preprint's provider.
     """
     template_name = 'preprints/preprint.html'
-    permission_required = ('osf.view_preprint', 'osf.change_preprint',)
+    permission_required = ('osf.view_preprint', )
     form_class = ChangeProviderForm
 
     def post(self, request, *args, **kwargs):

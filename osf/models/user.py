@@ -1730,8 +1730,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except itsdangerous.BadSignature:
             return None
 
-        user_session = Session.load(token)
-
+        user_session = Session.load(token.decode().split('.')[0])
         if user_session is None:
             return None
 

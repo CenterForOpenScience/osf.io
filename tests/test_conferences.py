@@ -139,6 +139,7 @@ class TestProvisionNode(ContextTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
         self.conference = ConferenceFactory()
+        self.conference.admins.add(UserFactory())
         self.body = 'dragon on my back'
         self.content = b'dragon attack'
         self.attachment = BytesIO(self.content)
