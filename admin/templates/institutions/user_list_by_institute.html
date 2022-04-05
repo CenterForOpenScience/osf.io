@@ -25,7 +25,6 @@
         align-items: center;
     }
 
-    .min-xs-table,
     .flex-container {
         margin-top: 0;
         margin-bottom: 15px;
@@ -68,14 +67,6 @@
     @media screen and (max-width: 991px) {
         .pagination-extra-div.flex-container > .flex-item:last-child {
             margin-bottom: 0;
-        }
-
-        .min-xs-table {
-            overflow: auto;
-        }
-
-        .min-xs-table .table-responsive {
-            min-width: 731px; /* to fit */
         }
     }
 
@@ -165,8 +156,8 @@
     </div>
 </div>
 
-<div class="min-xs-table">
-    <table class="table table-striped table-hover table-responsive">
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
         <thead>
         <tr>
             <th>GUID</th>
