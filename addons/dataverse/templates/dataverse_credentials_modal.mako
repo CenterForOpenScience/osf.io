@@ -15,9 +15,8 @@
 
                             <!-- Select Dataverse installation -->
                             <div class="form-group">
-                                <label for="hostSelect">Dataverse Repository</label>
+                                <label>Dataverse Repository</label>
                                 <select class="form-control"
-                                        id="hostSelect"
                                         data-bind="options: visibleHosts,
                                                    optionsCaption: 'Select a Dataverse repository',
                                                    value: selectedHost,

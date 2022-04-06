@@ -239,9 +239,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if not last_version:
             return None
         return {
-            'sha1': last_version.metadata['sha1'],
-            'sha256': last_version.metadata['sha256'],
-            'md5': last_version.metadata['md5']
+            'sha1': last_version.metadata.get('sha1', ''),
+            'sha256': last_version.metadata.get('sha256', ''),
+            'md5': last_version.metadata.get('md5', ''),
         }
 
     @property

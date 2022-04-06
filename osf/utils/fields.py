@@ -1,5 +1,4 @@
 import jwe
-from cryptography.exceptions import InvalidTag
 from django.db import models
 from django.contrib.postgres.fields.jsonb import JSONField
 from website import settings
@@ -28,14 +27,7 @@ def encrypt_string(value, prefix='jwe:::'):
     if value:
         value = ensure_bytes(value)
         if value and not value.startswith(prefix):
-            try:
-                value = (prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
-            except InvalidTag:
-                # Allow use of an encrypted DB locally without encrypting fields
-                if settings.DEBUG_MODE:
-                    pass
-                else:
-                    raise
+            value = (prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
     return value
 
 
@@ -44,14 +36,7 @@ def decrypt_string(value, prefix='jwe:::'):
     if value:
         value = ensure_bytes(value)
         if value.startswith(prefix):
-            try:
-                value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
-            except InvalidTag:
-                # Allow use of an encrypted DB locally without decrypting fields
-                if settings.DEBUG_MODE:
-                    pass
-                else:
-                    raise
+            value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
     return value
 
 class LowercaseCharField(models.CharField):

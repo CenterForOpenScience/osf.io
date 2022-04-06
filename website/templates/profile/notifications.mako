@@ -16,22 +16,22 @@
             <div class="panel-body">
                  <h3>Emails</h3>
                     </br>
-                    <form>
+                    <form aria-label="general email list subscription form">
                         <div class="form-group">
                             <input type="checkbox"
                                 data-bind="checked: subscribed"
                                 value="${settings.MAILCHIMP_GENERAL_LIST}"/>
                               <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                            <p style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
                     </form>
-                    <form>
+                    <form aria-label="help email list subscription form">
                         <div class="form-group">
                             <input type="checkbox"
                                 data-bind="checked: subscribed"
                                 value="${settings.OSF_HELP_LIST}"/>
                               <label>${settings.OSF_HELP_LIST}</label>
-                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
+                            <p style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -51,9 +51,9 @@
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
             <div class="panel-body">
                 <div class="help-block">
-                     <p class="text-muted"> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
+                     <p> NOTE: Regardless of your selected preferences, OSF will continue to provide transactional and administrative service emails.</p>
                 </div>
-                <form id="selectNotifications" class="osf-treebeard-minimal">
+                <form id="selectNotifications" class="osf-treebeard-minimal" aria-label="notification form">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
                             <div class="ball-scale ball-scale-blue">

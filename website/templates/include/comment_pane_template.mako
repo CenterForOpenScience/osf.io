@@ -11,14 +11,14 @@
 
     <div class="comments cp-sidebar" id="comments_window">
         <div class="cp-sidebar-content">
-            <button type="button" class="close text-smaller" data-bind="click: togglePane">
+            <button type="button" class="close text-smaller" aria-label="Toggle Comment Pane" data-bind="click: togglePane">
                 <i class="fa fa-times"></i>
             </button>
-            <h4>
+            <div>
                 <span data-bind="if: page() == 'files'">Files | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'wiki'">Wiki | <span data-bind="text: pageTitle"></span> Discussion</span>
                 <span data-bind="if: page() == 'node'"><span data-bind="text: pageTitle"></span> | Discussion</span>
-            </h4>
+            </div>
 
             <div data-bind="if: canComment" style="margin-top: 20px">
                 <form class="form">

@@ -6,7 +6,7 @@
     <%include file="gitlab_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        <img class="addon-icon" src=${addon_icon_url}>
+        <img class="addon-icon" src=${addon_icon_url} aria-label="${addon_full_name} icon" alt="${addon_full_name} icon">
         <span data-bind="text: properName"></span>
         <small>
             <a href="#gitlabInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect or Reauthorize Account</a>
@@ -20,7 +20,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr class="user-settings-addon-auth">
-                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr: {href: gitlabUrl}"><em data-bind="text: gitlabHost"></em></a></th>
+                        <th class="default-authorized-by">Authorized on <a data-bind="attr: {href: gitlabUrl}"><em data-bind="text: gitlabHost"></em></a></th>
                     </tr>
                 </thead>
                 <!-- ko if: connectedNodes().length > 0 -->
