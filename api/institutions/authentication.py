@@ -319,7 +319,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     job = {
                         'title': '',
                         'institution': organization_name,  # required
-                        'institution_ja': organization_name_ja,  # required
+                        'institution_ja': '',  # required
                         'department': '',
                         'department_ja': '',
                         'location': '',
@@ -329,6 +329,8 @@ class InstitutionAuthentication(BaseAuthentication):
                         'endYear': '',
                         'ongoing': False,
                     }
+                    if organization_name_ja:
+                        job['institution_ja'] = organization_name_ja
                     if organizational_unit:
                         job['department'] = organizational_unit
                     if organizational_unit_ja:
