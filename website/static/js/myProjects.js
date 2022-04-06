@@ -1983,7 +1983,7 @@ var Filters = {
                         'data-placement' : 'bottom'
                     }, '')
                 ]),
-                m('p', [
+                m('ul', [
                     args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
                 m('p.m-t-sm', [
