@@ -865,8 +865,7 @@ class TestOSFUser:
             'startYear': '1970',
             'endMonth': 1,
             'endYear': '1980',
-            'organization_name': 'Organization',
-            'organization_name_ja': 'Organization JP'
+            'institution_ja': 'Organization JP'
         }]
 
         user_auth.save()
@@ -896,12 +895,12 @@ class TestOSFUser:
             'startYear': '1970',
             'endMonth': 1,
             'endYear': '1980',
-            'organization_name': 'Organization',
-            'organization_name_ja': 'Organization JP'
+            'institution_ja': 'Organization JP'
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
         assert_equal(user_auth.is_full_account_required_info, True)
+
 
 class TestProjectsInCommon:
 

@@ -479,12 +479,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not self.jobs:
             return False
         try:
+            institution = self.jobs[0].get('institution')
+            institution_ja = self.jobs[0].get('institution_ja')
+        except Exception:
             idp_attrs = self.ext.data.get('idp_attr', {})
             institution = idp_attrs.get('organization_name')
             institution_ja = idp_attrs.get('organization_name_ja')
-        except Exception:
-            institution = self.jobs[0].get('organization_name')
-            institution_ja = self.jobs[0].get('organization_name_ja')
         en = [self.family_name, self.given_name, institution]
         ja = [self.family_name_ja, self.given_name_ja, institution_ja]
         return all(ja + en)
