@@ -52,5 +52,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_regions_to_existing_versions, remove_regions_from_versions)
     ]

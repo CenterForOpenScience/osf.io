@@ -304,7 +304,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if metadata:
             version.update_metadata(metadata, save=False)
 
-        from addons.osfstorage.models import Region
         if getattr(self.target, '_settings_model', None):
             osfs_settings = self.target._settings_model('osfstorage')
             region_subquery = osfs_settings.objects.filter(owner=self.target.id).values_list('region_id', flat=True)[0]
@@ -471,6 +470,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         for child in self.children.all().prefetch_related('versions'):
             child.update_region_from_latest_version(destination_parent)
 
+
 class Region(models.Model):
     _id = models.CharField(max_length=255, db_index=True)
     name = models.CharField(max_length=200)
@@ -495,9 +495,13 @@ class Region(models.Model):
 
 
 class UserSettings(BaseUserSettings):
-    default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)
+    default_region = models.ForeignKey('addons_osfstorage.region', null=True, on_delete=models.CASCADE)
 
     def on_add(self):
+        from django.apps import apps
+
+        Region = apps.get_model('addons_osfstorage', 'Region')
+
         default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
         self.default_region = default_region
 

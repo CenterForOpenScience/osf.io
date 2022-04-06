@@ -125,4 +125,3 @@ def update_provider_auth_groups(verbosity=0):
 def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
-        update_provider_auth_groups(verbosity)

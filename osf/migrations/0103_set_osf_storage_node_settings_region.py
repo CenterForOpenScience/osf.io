@@ -7,11 +7,60 @@ import logging
 from django.apps import apps
 from django.db import migrations, models
 
-from addons.osfstorage.models import NodeSettings, Region
+from addons.osfstorage.models import NodeSettings
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
 logger = logging.getLogger(__name__)
 osfstorage_config = apps.get_app_config('addons_osfstorage')
+
+
+def add_default_region_to_nodesettings(state, schema):
+    Region = apps.get_model('addons_osfstorage', 'Region')
+
+    default_region, created = Region.objects.get_or_create(
+        _id=DEFAULT_REGION_ID,
+        name=DEFAULT_REGION_NAME,
+    )
+    if created:
+        logger.info('Created default region: {}'.format(DEFAULT_REGION_NAME))
+    BATCHSIZE = 5000
+
+    max_pk = NodeSettings.objects.aggregate(models.Max('pk'))['pk__max']
+    if max_pk is not None:
+        for offset in range(0, max_pk + 1, BATCHSIZE):
+            (NodeSettings.objects
+             .filter(pk__gte=offset)
+             .filter(pk__lt=offset + BATCHSIZE)
+             .filter(region__isnull=True)
+             .update(region=default_region))
+            logger.info(
+                'Updated addons_osfstorage_nodesettings {}-{}/{}'.format(
+                    offset,
+                    offset + BATCHSIZE,
+                    max_pk,
+                )
+            )
+
+
+def unset_default_region(*args, **kwargs):
+    BATCHSIZE = 5000
+
+    max_pk = NodeSettings.objects.aggregate(models.Max('pk'))['pk__max']
+    if max_pk is not None:
+        for offset in range(0, max_pk + 1, BATCHSIZE):
+            (NodeSettings.objects
+             .filter(pk__gte=offset)
+             .filter(pk__lt=offset + BATCHSIZE)
+             .filter(region__isnull=False)
+             .update(region=None))
+            logger.info(
+                'Unset addons_osfstorage_nodesettings {}-{}/{}'.format(
+                    offset,
+                    offset + BATCHSIZE,
+                    max_pk,
+                )
+            )
+
 
 class Migration(migrations.Migration):
 
@@ -22,50 +71,5 @@ class Migration(migrations.Migration):
         ('osf', '0102_merge_20180509_0846'),
     ]
 
-    def add_default_region_to_nodesettings(self, *args, **kwargs):
-        default_region, created = Region.objects.get_or_create(
-            _id=DEFAULT_REGION_ID,
-            name=DEFAULT_REGION_NAME,
-        )
-        if created:
-            logger.info('Created default region: {}'.format(DEFAULT_REGION_NAME))
-        BATCHSIZE = 5000
-
-        max_pk = NodeSettings.objects.aggregate(models.Max('pk'))['pk__max']
-        if max_pk is not None:
-            for offset in range(0, max_pk + 1, BATCHSIZE):
-                (NodeSettings.objects
-                 .filter(pk__gte=offset)
-                 .filter(pk__lt=offset + BATCHSIZE)
-                 .filter(region__isnull=True)
-                 .update(region=default_region))
-                logger.info(
-                    'Updated addons_osfstorage_nodesettings {}-{}/{}'.format(
-                        offset,
-                        offset + BATCHSIZE,
-                        max_pk,
-                    )
-                )
-
-    def unset_default_region(self, *args, **kwargs):
-        BATCHSIZE = 5000
-
-        max_pk = NodeSettings.objects.aggregate(models.Max('pk'))['pk__max']
-        if max_pk is not None:
-            for offset in range(0, max_pk + 1, BATCHSIZE):
-                (NodeSettings.objects
-                 .filter(pk__gte=offset)
-                 .filter(pk__lt=offset + BATCHSIZE)
-                 .filter(region__isnull=False)
-                 .update(region=None))
-                logger.info(
-                    'Unset addons_osfstorage_nodesettings {}-{}/{}'.format(
-                        offset,
-                        offset + BATCHSIZE,
-                        max_pk,
-                    )
-                )
-
     operations = [
-        migrations.RunPython(add_default_region_to_nodesettings, unset_default_region),
     ]
