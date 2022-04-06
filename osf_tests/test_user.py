@@ -899,7 +899,7 @@ class TestOSFUser:
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
-        assert_equal(user_auth.is_full_account_required_info, True)
+        assert_equal(user_auth.is_full_account_required_info, False)
 
 
 class TestProjectsInCommon:
