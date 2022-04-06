@@ -5,7 +5,6 @@ from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 
-from osf.models import Guid
 from website import (
     mails,
     settings
@@ -284,6 +283,7 @@ def _get_updated_file_references(registration, file_response_keys_by_hash):
 
     Returns a dictionary mapping each qid to its list of updated responses
     '''
+    from osf.models import Guid
     original_responses = registration.schema_responses.get().all_responses
     updated_file_responses = defaultdict(list)
     previous_node_id = ''
