@@ -33,11 +33,7 @@
                         {{ log.user }}
                     </td>
                     <td>
-                        {% for key, value in logs.params %}
-                            <div>
-                                <span><b>{{ key }}</b></span> : <span>{{ value }}</span>
-                            </div>
-                        {% endfor %}
+                        <pre style="white-space:pre-wrap; width:50%;">{{ log.params }}</pre>
                     </td>
                 </tr>
             {% endfor %}
