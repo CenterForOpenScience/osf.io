@@ -246,6 +246,9 @@ def migrate_file_metadata(dst):
     file_input_qids = schema.schema_blocks.filter(
         block_type='file-input'
     ).values_list('registration_response_key', flat=True)
+    if not file_input_qids:
+        return
+
     file_response_keys_by_hash = _get_file_response_hashes(dst, file_input_qids)
     updated_file_responses = _get_updated_file_references(dst, file_response_keys_by_hash)
 
