@@ -157,16 +157,12 @@ def remove_licenses(*args):
     logger.info('{} licenses removed from the database.'.format(pre_count))
 
 
-def ensure_schemas(*args):
+def ensure_schemas(*args, **kwargs):
     """Import meta-data schemas from JSON to database if not already loaded
     """
     state = args[0] if args else apps
     schema_count = 0
-    try:
-        schema_model = state.get_model('osf', 'registrationschema')
-    except LookupError:
-        # Use MetaSchema model if migrating from a version before RegistrationSchema existed
-        schema_model = state.get_model('osf', 'metaschema')
+    schema_model = state.get_model('osf', 'registrationschema')
 
     for schema in get_osf_meta_schemas():
         schema_obj, created = schema_model.objects.update_or_create(

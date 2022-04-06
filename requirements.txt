@@ -35,7 +35,7 @@ google-api-python-client==1.6.4
 Babel==2.9.1
 citeproc-py==0.4.0
 boto3==1.4.7
-django-waffle==0.13.0
+django-waffle==2.4.1
 pymongo==3.7.1
 tqdm==4.28.1
 # Python markdown extensions for comment emails
@@ -51,9 +51,9 @@ requests-oauthlib==0.8.0
 raven==6.4.0
 
 # API requirements
-Django==2.2.27
-djangorestframework==3.8.2
-django-cors-headers==2.1.0
+Django==3.2
+djangorestframework==3.13.1
+django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
 pyjwt==1.5.3
@@ -64,7 +64,7 @@ pyjwe==1.0.0
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
 cryptography==3.3.2
 jsonschema==2.6.0
-django-guardian==1.4.9
+django-guardian==2.4.0
 
 # Admin requirements
 django-webpack-loader==0.5.0
@@ -91,6 +91,8 @@ transitions==0.8.2
 datacite==1.0.1
 
 # Metrics
+git+https://github.com/Johnetordoff/django-elasticsearch-metrics.git@update-django-3
+
 django-elasticsearch-metrics==5.0.0
 
 # Impact Metrics CSV Export

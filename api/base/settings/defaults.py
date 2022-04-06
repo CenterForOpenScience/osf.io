@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATABASES = {
     'default': {
         'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
         'USER': os.environ.get('OSF_DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
