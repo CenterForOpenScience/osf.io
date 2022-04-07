@@ -340,7 +340,7 @@ def _validate_updated_responses(registration, file_input_qids, updated_responses
     missing_responses = []
     for qid in file_input_qids:
         question_title = ''
-        for entry in registration.registration_responses[qid]:
+        for entry in registration.registration_responses.get(qid, []):
             file_name = entry['file_name']
             file_hash = entry['file_hashes']['sha256']
             matching_entry = _get_response_entry_for_hash(updated_responses, qid, file_hash)
