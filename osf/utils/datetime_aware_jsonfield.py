@@ -87,7 +87,7 @@ class DateTimeAwareJSONField(JSONField):
     def from_db_value(self, value, expression, connection):
         if value is None:
             return None
-        return super().to_python(decode_datetime_objects(value))
+        return super().to_python(decode_datetime_objects(json.loads(value)))
 
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type in ('has_key', 'has_keys', 'has_any_keys'):
