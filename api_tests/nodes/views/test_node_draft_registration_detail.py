@@ -11,6 +11,8 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from website.project.metadata.schemas import ensure_schema
+
 
 SCHEMA_VERSION = 2
 
@@ -20,9 +22,7 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('osf-standard-2.json')
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -142,9 +142,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('osf-standard-2.json')
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -156,9 +154,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def reg_schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF Preregistration',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('osf-preregistration-3.json')
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, reg_schema):
@@ -416,7 +412,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         url = '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_public._id, draft_registration_prereg._id)
 
-        del metadata_registration['q1']
+        print(metadata_registration)
+        del metadata_registration['q2']
         draft_registration_prereg.metadata_registration = metadata_registration
         draft_registration_prereg.save()
 
@@ -426,7 +423,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 'type': 'draft_registrations',
                 'attributes': {
                     'registration_metadata': {
-                        'q3': {
+                        'q7': {
                             'value': 'New response'
                         }
                     }
@@ -438,7 +435,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q3']['value'] == 'New response'
+        assert res.json['data']['attributes']['registration_metadata']['q7']['value'] == 'New response'
         assert 'q1' not in res.json['data']['attributes']['registration_metadata']
 
     def test_required_registration_responses_questions_not_required_on_update(
@@ -448,7 +445,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         registration_responses = {
-            'q1': 'First question answered'
+            'q7': 'First question answered'
         }
 
         draft_registration_prereg.registration_responses = {}
@@ -469,8 +466,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == registration_responses['q1']
-        assert res.json['data']['attributes']['registration_responses']['q1'] == registration_responses['q1']
+        assert res.json['data']['attributes']['registration_metadata']['q7']['value'] == registration_responses['q7']
+        assert res.json['data']['attributes']['registration_responses']['q7'] == registration_responses['q7']
 
     def test_registration_responses_must_be_a_dictionary(
             self, app, user, payload_with_registration_responses, url_draft_registrations):
@@ -531,9 +528,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF-Standard Pre-Data Collection Registration',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('osf-standard-2.json')
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -640,6 +635,10 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schema('osf-standard-2.json')
 
     @pytest.fixture()
     def schema(self):

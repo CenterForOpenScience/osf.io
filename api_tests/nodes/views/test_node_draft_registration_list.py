@@ -15,6 +15,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
+from website.project.metadata.schemas import ensure_schema
 from website import settings
 
 OPEN_ENDED_SCHEMA_VERSION = 3
@@ -89,9 +90,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='Open-Ended Registration',
-            schema_version=OPEN_ENDED_SCHEMA_VERSION)
+        return ensure_schema('osf-open-ended-3.json')
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -221,6 +220,15 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schema('osf-open-ended-3.json')
+        ensure_schema('erpc-prize.json')
+        inactive = ensure_schema('erpc-prize.json')
+        inactive.active = False
+        inactive.save()
+        ensure_schema('osf-standard-2.json')
 
     @pytest.fixture()
     def provider(self):

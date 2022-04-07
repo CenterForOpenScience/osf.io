@@ -88,3 +88,19 @@ def get_osf_meta_schemas():
         for json_filename in OSF_META_SCHEMA_FILES
     ]
     return schemas
+
+def ensure_schema(filename):
+    """Returns the current contents of all known schema files."""
+    schema = ensure_schema_structure(from_json(filename))
+    from osf.models import RegistrationSchema
+
+    schema_obj, created = RegistrationSchema.objects.update_or_create(
+        name=schema['name'],
+        schema_version=schema.get('version', 1),
+        defaults={
+            'schema': schema,
+        }
+    )
+    from osf.utils.migrations import map_schemas_to_schemablocks
+    map_schemas_to_schemablocks()
+    return schema_obj
