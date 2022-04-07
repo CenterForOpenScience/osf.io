@@ -235,9 +235,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def metaschema_open_ended(self):
-        return RegistrationSchema.objects.get(
+        return RegistrationSchema.objects.get_or_create(
             name='Open-Ended Registration',
-            schema_version=OPEN_ENDED_SCHEMA_VERSION)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION)[0]
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):

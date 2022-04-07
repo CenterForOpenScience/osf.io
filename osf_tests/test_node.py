@@ -1991,7 +1991,7 @@ class TestRegisterNode:
         c1 = ProjectFactory(creator=user, parent=root)
         ProjectFactory(creator=user, parent=c1)
 
-        meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+        meta_schema, _ = RegistrationSchema.objects.get_or_create(name='Open-Ended Registration', schema_version=2)
 
         draft_registration = DraftRegistrationFactory(branched_from=root)
         data = {'summary': {'extra': [], 'value': 'This is a summary of my registration...', 'comments': []}}

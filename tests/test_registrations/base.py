@@ -30,7 +30,7 @@ class RegistrationsTestBase(OsfTestCase):
         self.group = OSFGroupFactory(creator=self.group_mem)
         self.node.add_osf_group(self.group, permissions.ADMIN)
 
-        self.meta_schema = RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=2)
+        self.meta_schema, _ = RegistrationSchema.objects.get_or_create(name='Open-Ended Registration', schema_version=2)
 
         self.draft = DraftRegistrationFactory(
             initiator=self.user,
