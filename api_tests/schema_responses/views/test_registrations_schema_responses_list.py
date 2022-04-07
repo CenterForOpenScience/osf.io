@@ -3,6 +3,7 @@ import pytest
 from django.utils import timezone
 
 from api.providers.workflows import Workflows as ModerationWorkflows
+from osf.migrations import update_provider_auth_groups
 
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
@@ -272,6 +273,10 @@ class TestRegistrationSchemaResponseListUnsupportedMethods:
     @pytest.fixture
     def registration(self):
         return RegistrationFactory()
+
+    @pytest.fixture(autouse=True)
+    def auth(self):
+        return update_provider_auth_groups()
 
     @pytest.fixture()
     def url(self, registration):
