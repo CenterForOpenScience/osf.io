@@ -40,7 +40,8 @@ logger = logging.getLogger(__name__)
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return RegistrationSchema.objects.first()
+    from osf_tests.utils import get_default_test_schema
+    return get_default_test_schema()
 
 try:
     test_app = init_app(routes=True, set_backends=False)

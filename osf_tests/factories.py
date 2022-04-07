@@ -46,7 +46,8 @@ PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.RegistrationSchema.objects.first()
+    from osf_tests.utils import get_default_test_schema
+    return get_default_test_schema()
 
 
 def FakeList(provider, n, *args, **kwargs):
