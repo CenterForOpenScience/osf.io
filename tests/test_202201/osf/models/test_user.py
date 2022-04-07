@@ -37,8 +37,7 @@ class TestPropertyIsFullAccountRequiredInfo(OsfTestCase):
             'startYear': '1970',
             'endMonth': 1,
             'endYear': '1980',
-            'organization_name': 'Organization',
-            'organization_name_ja': 'Organization JP'
+            'institution_ja': 'Organization JP'
         }]
 
         user_auth.save()
@@ -68,8 +67,7 @@ class TestPropertyIsFullAccountRequiredInfo(OsfTestCase):
             'startYear': '1970',
             'endMonth': 1,
             'endYear': '1980',
-            'organization_name': 'Organization',
-            'organization_name_ja': 'Organization JP'
+            'institution_ja': 'Organization JP'
         }]
         user_auth.save()
         mock_idp_attr.side_effect = AttributeError('exception')
