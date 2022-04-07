@@ -71,7 +71,7 @@ class EncryptedTextField(models.TextField):
     def to_python(self, value):
         return decrypt_string(value, prefix=self.prefix)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
 
@@ -97,5 +97,5 @@ class EncryptedJSONField(JSONField):
         value = rapply(value, decrypt_string, prefix=self.prefix)
         return super(EncryptedJSONField, self).to_python(value)
 
-    def from_db_value(self, value, expression, connection, context=None):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
