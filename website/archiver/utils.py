@@ -270,7 +270,9 @@ def _get_file_response_hashes(registration, file_input_qids):
     {hash1: [q1], hash2: [q1, q5], hash3: [q5] . . .}
     '''
     file_response_keys_by_hash = defaultdict(list)
-    file_responses = {qid: registration.registration_responses[qid] for qid in file_input_qids}
+    file_responses = {
+        qid: registration.registration_responses.get(qid, []) for qid in file_input_qids
+    }
     for qid, response in file_responses.items():
         for file_info in response:
             file_response_keys_by_hash[file_info['file_hashes']['sha256']].append(qid)
