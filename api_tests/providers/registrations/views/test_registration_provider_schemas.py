@@ -13,6 +13,7 @@ from waffle.models import Flag
 
 from osf.migrations import update_provider_auth_groups
 from osf.features import EGAP_ADMINS
+from website.project.metadata.schemas import ensure_schema
 
 
 @pytest.mark.django_db
@@ -31,7 +32,8 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def schema(self):
-        reg_schema = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=2)
+        reg_schema = ensure_schema('osf-preregistration-3.json')
+        reg_schema.schema_version = 2
         reg_schema.active = True
         reg_schema.save()
         return reg_schema

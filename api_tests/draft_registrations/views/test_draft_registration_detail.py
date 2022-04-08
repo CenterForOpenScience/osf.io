@@ -16,6 +16,8 @@ from osf_tests.factories import (
     SubjectFactory,
     ProjectFactory,
 )
+from website.project.metadata.schemas import ensure_schema
+
 
 
 @pytest.mark.django_db
@@ -268,9 +270,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
     @pytest.fixture()
     def schema_open_ended(self):
-        return RegistrationSchema.objects.get(
-            name='Open-Ended Registration',
-            schema_version=3)
+        return ensure_schema('osf-open-ended-3.json')
 
     @pytest.fixture
     def draft_registration_open_ended(self, user, schema_open_ended):
