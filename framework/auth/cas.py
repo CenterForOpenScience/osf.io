@@ -283,10 +283,14 @@ def make_response_from_ticket(ticket, service_url):
 
             # if user is authenticated by CAS
             # TODO [CAS-27]: Remove Access Token From Service Validation
+            redirect_url = service_furl.url
+            if not user.is_full_account_required_info:
+                from website.util import web_url_for
+                redirect_url = web_url_for('user_profile', _absolute=True)
             return authenticate(
                 user,
                 cas_resp.attributes.get('accessToken', ''),
-                redirect(service_furl.url)
+                redirect(redirect_url)
             )
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
