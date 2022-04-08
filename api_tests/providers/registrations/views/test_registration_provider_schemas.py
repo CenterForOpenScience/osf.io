@@ -40,7 +40,7 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def egap_schema(self):
-        schema = RegistrationSchema.objects.get(name='EGAP Registration', schema_version=3)
+        schema = ensure_schema('egap-registration-3.json')
         schema.visible = True
         schema.active = True
         schema.save()
@@ -54,7 +54,7 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def osf_reg_schema(self):
-        osf_reg = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=3)
+        osf_reg = ensure_schema('osf-preregistration-3.json')
         osf_reg.visible = True
         osf_reg.active = True
         osf_reg.save()

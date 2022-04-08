@@ -10,6 +10,7 @@ from osf_tests.factories import (
 )
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
+from osf.migrations import update_provider_auth_groups
 
 
 USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthenticated']
@@ -81,6 +82,7 @@ class TestSchemaResponseListGETBehavior:
         response = parent.schema_responses.last()
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
+        update_provider_auth_groups()
         return response
 
     @pytest.fixture()
@@ -90,6 +92,7 @@ class TestSchemaResponseListGETBehavior:
         response = parent.schema_responses.last()
         response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         response.save()
+        update_provider_auth_groups()
         return response
 
     @pytest.mark.parametrize('response_state', UNAPPROVED_RESPONSE_STATES)

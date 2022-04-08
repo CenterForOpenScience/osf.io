@@ -5,13 +5,13 @@ from api.base.settings.defaults import API_BASE
 from api.users.views import UserDraftRegistrations
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
 from api_tests.utils import only_supports_methods
-from osf.models import RegistrationSchema
 from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
+from website.project.metadata.schemas import ensure_schema
 
 SCHEMA_VERSION = 2
 
@@ -27,9 +27,7 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='Open-Ended Registration',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('osf-open-ended-3.json')
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):

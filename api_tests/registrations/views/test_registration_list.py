@@ -34,6 +34,7 @@ from website import settings
 from website.views import find_bookmark_collection
 from website.project.metadata.schemas import from_json
 from osf.utils import permissions
+from website.project.metadata.schemas import ensure_schema
 
 SCHEMA_VERSION = 2
 
@@ -612,9 +613,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def schema(self):
-        return RegistrationSchema.objects.get(
-            name='Replication Recipe (Brandt et al., 2013): Post-Completion',
-            schema_version=SCHEMA_VERSION)
+        return ensure_schema('brandt-postcomp-2.json')
 
     @pytest.fixture()
     def project_public_child(self, project_public):
