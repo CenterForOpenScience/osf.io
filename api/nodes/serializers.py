@@ -1616,6 +1616,7 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationLegacySerializer)
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
     )
 
     provider = RegistrationProviderRelationshipField(

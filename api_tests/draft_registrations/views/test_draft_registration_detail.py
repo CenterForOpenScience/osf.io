@@ -7,7 +7,7 @@ from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftRegistrationPatch,
     TestDraftRegistrationDelete,
 )
-from osf.models import DraftNode, Node, NodeLicense, RegistrationSchema
+from osf.models import DraftNode, Node, NodeLicense
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import (
     DraftRegistrationFactory,
@@ -17,7 +17,6 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 from website.project.metadata.schemas import ensure_schema
-
 
 
 @pytest.mark.django_db

@@ -20,6 +20,7 @@ from api.nodes.serializers import (
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
 from website import settings
+from api.nodes.serializers import RegistrationSchemaRelationshipField
 
 
 class NodeRelationshipField(RelationshipField):
@@ -36,6 +37,8 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
 
     DraftRegistrations have several fields that can be edited that are persisted to the final registration.
     """
+    id = IDField(source='_id', required=True)
+
     category_choices = list(settings.NODE_CATEGORY_MAP.items())
     category_choices_string = ', '.join(["'{}'".format(choice[0]) for choice in category_choices])
 
@@ -85,6 +88,13 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
+        read_only=False,
+    )
+
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
         read_only=False,
     )
 

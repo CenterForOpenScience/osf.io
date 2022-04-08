@@ -1,6 +1,7 @@
 from rest_framework import permissions as drf_permissions, exceptions
 
 from framework.auth.oauth_scopes import CoreScopes
+from django.db.models import Q
 
 from api.base import permissions as base_permissions
 from api.base.pagination import DraftRegistrationContributorPagination
@@ -27,7 +28,8 @@ from api.nodes.views import (
 )
 from api.nodes.permissions import ContributorOrPublic, AdminDeletePermissions
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
-from osf.models import DraftRegistrationContributor
+from osf.models import DraftRegistrationContributor, Node
+from api.base.utils import get_object_or_error
 
 class DraftRegistrationMixin(DraftMixin):
     """
@@ -85,6 +87,17 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
     # overrides NodeDraftRegistrationDetail
     def get_serializer_class(self):
         return DraftRegistrationDetailSerializer
+
+    def get_node(self, node_id=True):
+        node = get_object_or_error(
+            Node,
+            Q(guids___id=node_id),
+            request=self.request,
+            display_name='node',
+        )
+
+        self.check_object_permissions(self.request, node)
+        return node
 
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
