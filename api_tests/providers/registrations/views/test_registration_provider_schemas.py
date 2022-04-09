@@ -54,7 +54,7 @@ class TestRegistrationProviderSchemas:
 
     @pytest.fixture()
     def osf_reg_schema(self):
-        osf_reg = ensure_schema('osf-preregistration-3.json')
+        osf_reg = ensure_schema('osf-preregistration-2.json')
         osf_reg.visible = True
         osf_reg.active = True
         osf_reg.save()

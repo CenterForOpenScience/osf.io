@@ -3,30 +3,33 @@ import pytest
 
 from osf.models import RegistrationSchema
 from osf.exceptions import ValidationValueError
+from website.project.metadata.schemas import ensure_schema
+
 
 @pytest.mark.django_db
 class TestRegistrationSchema:
 
     @pytest.fixture()
-    def schema_name(self):
-        return 'Preregistration Template from AsPredicted.org'
-
-    @pytest.fixture()
-    def schema_v2(self, schema_name):
-        v2 = RegistrationSchema.objects.create(name=schema_name, schema_version=2)
+    def schema_v2(self):
+        v2 = ensure_schema('aspredicted.json')
+        v2.schema_version = 2
+        v2.save()
         return v2
 
     @pytest.fixture()
-    def schema_v3(self, schema_name):
-        return RegistrationSchema.objects.get(name=schema_name, schema_version=3)
+    def schema_v3(self):
+        v3 = ensure_schema('aspredicted.json')
+        v3.schema_version = 3
+        v3.save()
+        return v3
 
     def test_get_latest_versions(self, schema_v2, schema_v3):
         latest_versions = RegistrationSchema.objects.get_latest_versions()
         assert schema_v3 in latest_versions
         assert schema_v2 not in latest_versions
 
-    def test_get_latest_version(self, schema_name):
-        assert RegistrationSchema.objects.get_latest_version(name=schema_name).schema_version == 3
+    def test_get_latest_version(self, schema_v2, schema_v3):
+        assert RegistrationSchema.objects.get_latest_version(name=schema_v2.name).schema_version == 3
 
 
 @pytest.mark.django_db
