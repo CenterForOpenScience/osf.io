@@ -125,6 +125,7 @@ class NodeSettings(BaseNodeSettings):
             r = {
                 'generated': False,
                 'path': m.path,
+                'hash': m.hash,
                 'folder': m.folder,
                 'urlpath': m.resolve_urlpath(),
             }
@@ -142,6 +143,7 @@ class NodeSettings(BaseNodeSettings):
             if r is None:
                 return None
             r['generated'] = True
+            r['hash'] = None
             r['path'] = path
             return r
         m = q.first()
@@ -149,6 +151,7 @@ class NodeSettings(BaseNodeSettings):
             'generated': False,
             'path': m.path,
             'folder': m.folder,
+            'hash': m.hash,
             'urlpath': m.resolve_urlpath(),
         }
         r.update(self._get_file_metadata(m))
@@ -158,15 +161,16 @@ class NodeSettings(BaseNodeSettings):
         self._validate_file_metadata(file_metadata)
         q = self.file_metadata.filter(path=filepath)
         if not q.exists():
-            # TBD 親ファイルまたは子ファイルにすでにメタデータが付与されていたらエラー
             FileMetadata.objects.create(
                 project=self,
                 path=filepath,
+                hash=file_metadata['hash'],
                 folder=file_metadata['folder'],
                 metadata=json.dumps({'items': file_metadata['items']})
             )
             return
         m = q.first()
+        m.hash = file_metadata['hash']
         m.metadata = json.dumps({'items': file_metadata['items']})
         for item in file_metadata['items']:
             if not item['active']:
@@ -175,6 +179,14 @@ class NodeSettings(BaseNodeSettings):
                 item['schema'],
                 filepath,
                 item['data'])
+        m.save()
+
+    def set_file_hash(self, filepath, hash):
+        q = self.file_metadata.filter(path=filepath)
+        if not q.exists():
+            return
+        m = q.first()
+        m.hash = hash
         m.save()
 
     def delete_file_metadata(self, filepath):
@@ -218,6 +230,8 @@ class NodeSettings(BaseNodeSettings):
             raise ValueError('Property "path" is not defined')
         if 'folder' not in file_metadata:
             raise ValueError('Property "folder" is not defined')
+        if 'hash' not in file_metadata:
+            raise ValueError('Property "hash" is not defined')
         if 'items' not in file_metadata:
             raise ValueError('Property "items" is not defined')
         for i in file_metadata['items']:
@@ -297,12 +311,14 @@ class FileMetadata(BaseModel):
 
     path = models.TextField()
 
+    hash = models.CharField(max_length=128, blank=True, null=True)
+
     metadata = models.TextField(blank=True, null=True)
 
     def resolve_urlpath(self):
         node = self.project.owner
         if self.folder:
-            return '/' + node._id + '/files/dir/' + self.path
+            return node.url + 'files/dir/' + self.path
         m = re.match(r'([^\/]+)(/.*)', self.path)
         if not m:
             raise ValueError('Malformed path: ' + self.path)
@@ -312,6 +328,9 @@ class FileMetadata(BaseModel):
             # materialized path -> object path
             content_type = ContentType.objects.get_for_model(node)
             filenode = [fn for fn in OsfStorageFileNode.objects.filter(target_content_type=content_type) if fn.materialized_path == path]
+            if len(filenode) == 0:
+                logger.warn('No files: ' + self.path)
+                return None
             path = filenode[0].path
         file_guids = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_file_guids(
             materialized_path=path,
@@ -319,5 +338,7 @@ class FileMetadata(BaseModel):
             target=node
         )
         if len(file_guids) == 0:
-            raise ValueError('No guid: ' + self.path)
+            fileUrl = node.url + 'files/' + provider + path
+            logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
+            return fileUrl
         return '/' + file_guids[0] + '/'

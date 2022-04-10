@@ -8,12 +8,12 @@ const datepicker = require('js/rdmDatepicker');
 require('typeahead.js');
 
 
-function createField(erad, question, valueEntry, callback) {
+function createField(erad, question, valueEntry, options, callback) {
   if (question.type == 'string') {
-    return createStringField(erad, question, (valueEntry || {}).value, callback);
+    return createStringField(erad, question, (valueEntry || {}).value, options, callback);
   }
   if (question.type == 'choose') {
-    return createChooseField(erad, question, (valueEntry || {}).value, callback);
+    return createChooseField(erad, question, (valueEntry || {}).value, options, callback);
   }
   throw new Error('Unsupported type: ' + question.type);
 }
@@ -34,23 +34,25 @@ function validateField(erad, question, value) {
   throw new Error('Unsupported type: ' + question.type);
 }
 
-function createStringField(erad, question, value, callback) {
+function createStringField(erad, question, value, options, callback) {
   if (question.format == 'text') {
     return new SingleElementField(
       createFormElement(function() {
         return $('<input></input>');
-      }),
+      }, options),
       question,
       value,
+      options,
       callback
     );
   } else if (question.format == 'textarea') {
     return new SingleElementField(
       createFormElement(function() {
         return $('<textarea></textarea>');
-      }),
+      }, options),
       question,
       value,
+      options,
       callback
     );
   } else if (question.format == 'date') {
@@ -59,23 +61,26 @@ function createStringField(erad, question, value, callback) {
         const elem = $('<input></input>').addClass('datepicker');
         datepicker.mount(elem, null);
         return elem;
-      }),
+      }, options),
       question,
       value,
+      options,
       callback
     );
   } else if (question.format == 'file-creators') {
     return new SingleElementField(
-      createFileCreatorsFieldElement(erad),
+      createFileCreatorsFieldElement(erad, options),
       question,
       value,
+      options,
       callback
     );
   } else if (question.format == 'e-rad-researcher-number') {
     return new SingleElementField(
-      createERadResearcherNumberFieldElement(erad),
+      createERadResearcherNumberFieldElement(erad, options),
       question,
       value,
+      options,
       callback
     );
   } else if (
@@ -85,42 +90,43 @@ function createStringField(erad, question, value, callback) {
     return new SingleElementField(
       createFormElement(function() {
         return $('<input></input>').addClass(question.format);
-      }),
+      }, options),
       question,
       value,
+      options,
       callback
     );
   }
-
-  // TBD
   return new SingleElementField(
     createFormElement(function() {
       return $('<input></input>');
-    }),
+    }, options),
     question,
     value,
+    options,
     callback
   );
 }
 
-function createChooseField(erad, question, value, callback) {
+function createChooseField(erad, question, value, options, callback) {
   if (question.format == 'singleselect') {
     return new SingleElementField(
       createFormElement(function() {
         return createChooser(question.options);
-      }),
+      }, options),
       question,
       value,
+      options,
       callback
     );
   }
-  // TBD
   return new SingleElementField(
     createFormElement(function() {
       return $('<input></input>');
-    }),
+    }, options),
     question,
     value,
+    options,
     callback
   );
 }
@@ -148,10 +154,13 @@ function createChooser(options) {
   return select;
 }
 
-function createFormElement(createHandler) {
+function createFormElement(createHandler, options) {
   return {
     create: function(addToContainer, callback) {
       const elem = createHandler();
+      if (options && options.readonly) {
+        elem.attr('readonly', true);
+      }
       if (callback) {
         elem.change(callback);
       }
@@ -173,7 +182,7 @@ function createFormElement(createHandler) {
 }
 
 
-function SingleElementField(formField, question, defaultValue, callback) {
+function SingleElementField(formField, question, defaultValue, options, callback) {
   if (!question.qid) {
     throw new Error('No labels');
   }
@@ -203,6 +212,10 @@ function SingleElementField(formField, question, defaultValue, callback) {
     return formField.getValue(input);
   };
 
+  self.setValue = function(input, value) {
+    formField.setValue(input, value);
+  };
+
   self.addElementTo = function(parent, errorContainer) {
     const input = formField.create(
       function(child) {
@@ -217,8 +230,7 @@ function SingleElementField(formField, question, defaultValue, callback) {
   };
 }
 
-function createFileCreatorsFieldElement(erad) {
-  console.log('ERad', erad.candidates);
+function createFileCreatorsFieldElement(erad, options) {
   const typeaheadSource = (function () {
     const allResearchers = erad.candidates.map(function (c) {
       return {
@@ -232,11 +244,19 @@ function createFileCreatorsFieldElement(erad) {
     });
     return substringMatcher(Object.values(uniqResearchers));
   })();
+  const emptyLine = $('<div></div>')
+    .text(_('No members'))
+    .show();
 
   const addResearcher = function(container, defaultValues) {
     const numberInput = $('<input class="form-control" name="file-creator-number">');
     const nameJaInput = $('<input class="form-control" name="file-creator-name-ja">');
     const nameEnInput = $('<input class="form-control" name="file-creator-name-en">');
+    if (options && options.readonly) {
+      numberInput.attr('readonly', true);
+      nameJaInput.attr('readonly', true);
+      nameEnInput.attr('readonly', true);
+    }
     if (defaultValues) {
       numberInput.val(defaultValues.number);
       nameJaInput.val(defaultValues.name_ja);
@@ -245,8 +265,10 @@ function createFileCreatorsFieldElement(erad) {
     const tr = $('<tr>')
       .append($('<td>').append(numberInput))
       .append($('<td>').append(nameJaInput))
-      .append($('<td>').append(nameEnInput))
-      .append('<td><span class="file-creator-remove"><i class="fa fa-times fa-2x remove-or-reject"></i></span></td>');
+      .append($('<td>').append(nameEnInput));
+    if (!options || !options.readonly) {
+      tr.append('<td><span class="file-creator-remove"><i class="fa fa-times fa-2x remove-or-reject"></i></span></td>');
+    }
     const tbody = container.find('tbody');
     tbody.append(tr);
     numberInput.typeahead(
@@ -282,6 +304,7 @@ function createFileCreatorsFieldElement(erad) {
       nameEnInput.val(enNames.join(' '));
     });
     tbody.find('.twitter-typeahead').css('width', '100%');
+    emptyLine.hide();
   }
 
   return {
@@ -294,26 +317,32 @@ function createFileCreatorsFieldElement(erad) {
           .append($('<th></th>'))
         );
       const tbody = $('<tbody>');
-      const addButton = $('<a class="btn btn-success btn-sm m-l-md">')
-        .append('<i class="fa fa-plus">' + _('Add') + '</i>');
       const container = $('<div></div>')
         .addClass('file-creators-container')
         .append($('<table class="table responsive-table responsive-table-xxs">')
           .append(thead)
           .append(tbody)
-        )
-        .append(addButton);
-      addButton.on('click', function (e) {
-        e.preventDefault();
-        addResearcher(container);
-      });
-      tbody.on('click', '.file-creator-remove', function (e) {
-        e.preventDefault();
-        $(this).closest('tr').remove();
-        if (callback) {
-          callback();
-        }
-      });
+        );
+      tbody.append(emptyLine);
+      if (!options || !options.readonly) {
+        const addButton = $('<a class="btn btn-success btn-sm m-l-md">')
+          .append('<i class="fa fa-plus">' + _('Add') + '</i>');
+        container.append(addButton);
+        addButton.on('click', function (e) {
+          e.preventDefault();
+          addResearcher(container);
+        });
+        tbody.on('click', '.file-creator-remove', function (e) {
+          e.preventDefault();
+          $(this).closest('tr').remove();
+          if (container.find('tbody tr').length === 0) {
+            emptyLine.show();
+          }
+          if (callback) {
+            callback();
+          }
+        });
+      }
       tbody.on('change', '.input', function (e) {
         if (callback) {
           callback();
@@ -332,6 +361,9 @@ function createFileCreatorsFieldElement(erad) {
       }).toArray().filter(function (researcher) {
         return Object.values(researcher).every(function (v) { return v && v.trim().length > 0; });
       });
+      if (researchers.length === 0) {
+        return '';
+      }
       return JSON.stringify(researchers);
     },
     setValue: function(container, value) {
@@ -343,11 +375,13 @@ function createFileCreatorsFieldElement(erad) {
   };
 }
 
-function createERadResearcherNumberFieldElement(erad) {
-  console.log('ERad', erad.candidates);
+function createERadResearcherNumberFieldElement(erad, options) {
   return {
     create: function(addToContainer, callback) {
       const input = $('<input></input>').addClass('erad-researcher-number');
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
       const container = $('<div></div>')
         .addClass('erad-researcher-number-container')
         .append(input.addClass('form-control'));

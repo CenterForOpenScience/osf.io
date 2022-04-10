@@ -181,6 +181,20 @@ def metadata_set_file(auth, filepath=None, **kwargs):
 @must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
+def metadata_set_file_hash(auth, filepath=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    try:
+        addon.set_file_hash(filepath, request.json['hash'])
+    except KeyError as e:
+        logger.error('Invalid hash: ' + str(e))
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return _response_file_metadata(addon, filepath)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'node')
 def metadata_delete_file(auth, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
