@@ -20,7 +20,8 @@ class TestMakeReportAsCsv(OsfTestCase):
                 'value': 'TEST',
             }
         }
-        filename, result = make_report_as_csv(format, data)
+        schema = {'pages': []}
+        filename, result = make_report_as_csv(format, data, schema)
         assert_equal(filename, 'report.csv')
         assert_equal(result, 'TEST')
 
@@ -33,7 +34,8 @@ class TestMakeReportAsCsv(OsfTestCase):
                 'value': 'TEST',
             }
         }
-        filename, result = make_report_as_csv(format, data)
+        schema = {'pages': []}
+        filename, result = make_report_as_csv(format, data, schema)
         assert_equal(filename, 'report.csv')
         assert_equal(result, 'TEST')
 
@@ -46,6 +48,7 @@ class TestMakeReportAsCsv(OsfTestCase):
                 'value': 'TEST,DATA',
             }
         }
-        filename, result = make_report_as_csv(format, data)
+        schema = {'pages': []}
+        filename, result = make_report_as_csv(format, data, schema)
         assert_equal(filename, 'report.csv')
         assert_equal(result, '"TEST,DATA"')
