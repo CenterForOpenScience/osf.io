@@ -134,7 +134,7 @@
         "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM.",
         "binderhub": "BinderHub is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from BinderHub",
         "onedrivebusiness": "OneDrive for Office365 is a file storage add-on. Connect your Microsoft OneDrive account to a GakuNin RDM project to interact with files hosted on Microsoft OneDrive via the GakuNin RDM.",
-        "metadata": "Metadata addon is ..."
+        "metadata": "The Metadata addon provides the functionality to register metadata to files and generate reports."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -161,6 +161,6 @@
         "dropboxbusiness": "http://www.dropbox.com",
         "binderhub": "https://binder.cs.rcos.nii.ac.jp",
         "onedrivebusiness": "https://onedrive.live.com",
-        "metadata": "https://dummy.nii.ac.jp/metadata"
+        "metadata": "https://rcos.nii.ac.jp/service/rdm/"
     }
 }

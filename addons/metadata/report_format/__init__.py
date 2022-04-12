@@ -7,5 +7,6 @@ def from_csv(fname):
         return f.read()
 
 REPORT_FORMATS = [
-    ('公的資金による研究データのメタデータ登録', 'sample', from_csv('sample_report.csv')),
+    ('公的資金による研究データのメタデータ登録', 'レポート(日本語)', from_csv('report_ja.csv.j2')),
+    ('公的資金による研究データのメタデータ登録', 'Report(English)', from_csv('report_en.csv.j2')),
 ]
