@@ -3179,10 +3179,10 @@ msgid "User Emails"
 msgstr "ユーザメール"
 
 msgid "Email address"
-msgstr "メールアドレス"
+msgstr "プライマリメールアドレス"
 
 msgid "Add email as Primary"
-msgstr "プライマリとしてメール追加"
+msgstr "追加"
 
 msgid "Primary"
 msgstr "プライマリ"

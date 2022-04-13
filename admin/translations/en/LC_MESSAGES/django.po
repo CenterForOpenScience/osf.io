@@ -3118,10 +3118,10 @@ msgid "User Emails"
 msgstr ""
 
 msgid "Email address"
-msgstr ""
+msgstr "Primary Email Address"
 
 msgid "Add email as Primary"
-msgstr ""
+msgstr "Add"
 
 msgid "Primary"
 msgstr ""
