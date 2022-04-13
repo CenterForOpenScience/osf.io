@@ -429,7 +429,7 @@ class TestRegistrationsWithGitLab(OsfTestCase):
     def setUp(self):
 
         super(TestRegistrationsWithGitLab, self).setUp()
-        self.project = ProjectFactory.build()
+        self.project = ProjectFactory()
         self.project.save()
         self.consolidated_auth = Auth(user=self.project.creator)
 
