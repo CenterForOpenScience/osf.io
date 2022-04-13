@@ -9,7 +9,7 @@
 
     .w-search-input {
         width: 6em !important;
-        max-width: 16em !important;
+        margin-right: 2px;
     }
 
     .form-group.flex-item {
@@ -46,8 +46,8 @@
         flex-shrink: 1;
         flex-basis: 0;
         white-space: nowrap;
-        margin-left: 2px;
-        margin-right: 2px;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .flex-item .flex-container,
@@ -62,6 +62,11 @@
     .pagination-extra-div.flex-container > .flex-item {
         margin-top: 0;
         margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
     }
 
     @media screen and (max-width: 991px) {
@@ -112,21 +117,21 @@
         <form role="form" id="institutional_storage_form"
               class="form-inline flex-container"
               action="{% url 'institutions:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
-            <div class="form-group flex-item" style="max-width: initial !important;
-justify-content: end;">
+            <div class="form-group flex-item"
+                 style="max-width: initial !important; justify-content: start;">
                 {% csrf_token %}
                 <label for="storageLimit" class="">
                     {% trans "Each user Quota for NII Storage (GB)" %}
                 </label>
                 <input type="number" name="maxQuota"
                        id="storageLimit" class="form-control"
-                       style="min-width:70px; max-width: 115px; margin-left: .5em;"
+                       style="min-width:70px; max-width: 115px; margin-left: 2px;"
                        min="1" required="" value="100"
                        oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
                        oninput="setCustomValidity('')"
                 />
                 <button type="submit"
-                        style="margin-left: .5em;"
+                        style="margin-left: 2px;"
                         class="btn btn-primary next-btn">{% trans 'Apply' %}</button>
             </div>
         </form>
