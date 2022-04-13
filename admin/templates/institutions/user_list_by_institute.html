@@ -9,7 +9,7 @@
 
     .w-search-input {
         width: 6em !important;
-        max-width: 16em !important;
+        margin-right: 2px;
     }
 
     .form-group.flex-item {
@@ -46,8 +46,8 @@
         flex-shrink: 1;
         flex-basis: 0;
         white-space: nowrap;
-        margin-left: 2px;
-        margin-right: 2px;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .flex-item .flex-container,
@@ -62,6 +62,11 @@
     .pagination-extra-div.flex-container > .flex-item {
         margin-top: 0;
         margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
     }
 
     @media screen and (max-width: 991px) {
