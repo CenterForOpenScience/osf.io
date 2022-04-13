@@ -471,6 +471,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
 
+    def get_idp_attr(self):
+        try:
+            return self.ext.data.get('idp_attr', {})
+        except Exception:  # self.ext may not exist
+            return {}
+
     @property
     def is_full_account_required_info(self):
         """required idp's attr: sn, givenName, o, jasn, jaGivenName, jao"""
@@ -482,7 +488,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             institution = self.jobs[0].get('institution')
             institution_ja = self.jobs[0].get('institution_ja')
         except Exception:
-            idp_attrs = self.ext.data.get('idp_attr', {})
+            idp_attrs = self.get_idp_attr()
             institution = idp_attrs.get('organization_name')
             institution_ja = idp_attrs.get('organization_name_ja')
         en = [self.family_name, self.given_name, institution]
