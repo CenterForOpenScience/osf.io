@@ -308,9 +308,6 @@ SELECT_FOR_UPDATE_ENABLED = True
 # Disable anonymous user permissions in django-guardian
 ANONYMOUS_USER_NAME = None
 
-# If set to True, automated tests with extra queries will fail.
-NPLUSONE_RAISE = False
-
 # salt used for generating hashids
 HASHIDS_SALT = 'pinkhimalayan'
 

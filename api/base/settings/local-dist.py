@@ -12,21 +12,11 @@ CORS_ORIGIN_ALLOW_ALL = True
 # DEBUG_PROPAGATE_EXCEPTIONS = True
 
 if DEBUG:
-    INSTALLED_APPS += ('debug_toolbar', 'nplusone.ext.django',)
-    MIDDLEWARE += (
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
-        'nplusone.ext.django.NPlusOneMiddleware',
-    )
-    DEBUG_TOOLBAR_CONFIG = {
-        'SHOW_TOOLBAR_CALLBACK': lambda _: True,
-    }
     ALLOWED_HOSTS.append('localhost')
 
     # django-silk
-    INSTALLED_APPS += ('silk',)
     MIDDLEWARE += (
         'django.contrib.sessions.middleware.SessionMiddleware',
-        'silk.middleware.SilkyMiddleware',
     )
 
 
