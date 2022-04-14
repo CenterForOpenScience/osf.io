@@ -71,11 +71,11 @@ class InstitutionAuthentication(BaseAuthentication):
                     "username":     "",  # email or eppn
                     "fullname":     "",  # displayName
                     "familyName":   "",  # sn or surname
-                    "givenName":    "",  # givenName
+                    "givenName":    "",
                     "middleNames":  "",
-                    "jaDisplayName": "",  # jaDisplayName
+                    "jaDisplayName": "",
                     "jaSurname":     "",  # jasn
-                    "jaGivenName":   "",  # jaGivenName
+                    "jaGivenName":   "",
                     "jaMiddleNames": "",
                     "suffix":       "",
                     "groups":       "",  # isMemberOf for mAP API v1
@@ -119,23 +119,51 @@ class InstitutionAuthentication(BaseAuthentication):
 
         p_idp = provider['idp']
         p_user = provider['user']
+
+        def get_next(obj, *args):
+            ret = None
+            for key in args:
+                val = obj.get(key)
+                if val is not None:
+                    ret = val
+                if val:
+                    break
+            return ret
+
+        # username
         username = p_user.get('username')
-        fullname = p_user.get('fullname', p_user.get('displayName'))
-        given_name = p_user.get('givenName')
-        family_name = p_user.get('familyName', p_user.get('surname'))
+        # display name: 'displayName' is friendlyName
+        fullname = get_next(p_user, 'displayName', 'fullname')
+        # first name: 'givenName' is friendlyName
+        given_name = get_next(p_user, 'givenName', 'firstName')
+        # last name: 'sn' is friendlyName
+        family_name = get_next(p_user, 'sn', 'surname', 'familyName', 'lastName')
+        # middle names
         middle_names = p_user.get('middleNames')
-        fullname_ja = p_user.get('jaFullname', p_user.get('jaDisplayName'))
-        given_name_ja = p_user.get('jaGivenName')
-        family_name_ja = p_user.get('jaSurname')
-        middle_names_ja = p_user.get('jaMiddleNames')
+        # suffix name
         suffix = p_user.get('suffix')
+        # display name: 'jaDisplayName' is friendlyName
+        fullname_ja = get_next(p_user, 'jaDisplayName', 'jaFullname')
+        # first name: 'jaGivenName' is friendlyName
+        given_name_ja = get_next(p_user, 'jaGivenName', 'jaFirstName')
+        # last name: 'jasn' is friendlyName
+        family_name_ja = get_next(p_user, 'jasn', 'jaSurname', 'jaFamilyName', 'jaLastName')
+        # middle names
+        middle_names_ja = p_user.get('jaMiddleNames')
+        # department
         department = p_user.get('department')
-        entitlement = p_user.get('entitlement')
-        email = p_user.get('email')
-        organization_name = p_user.get('organizationName')
-        organizational_unit = p_user.get('organizationalUnit')
-        organization_name_ja = p_user.get('jaOrganizationName')
-        organizational_unit_ja = p_user.get('jaOrganizationalUnitName')
+        # entitlement: 'eduPersonEntitlement' is friendlyName
+        entitlement = get_next(p_user, 'eduPersonEntitlement', 'entitlement')
+        # email: 'mail' is friendlyName
+        mail = email = get_next(p_user, 'mail', 'email')
+        # organization: 'o' is friendlyName
+        organization_name = get_next(p_user, 'o', 'organizationName')
+        # affiliation: 'ou' is friendlyName
+        organizational_unit = get_next(p_user, 'ou', 'organizationalUnitName')
+        # organization: 'jao' is friendlyName
+        organization_name_ja = get_next(p_user, 'jao', 'jaOrganizationName')
+        # affiliation: 'jaou' is friendlyName
+        organizational_unit_ja = get_next(p_user, 'jaou', 'jaOrganizationalUnitName')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -361,7 +389,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 'fullname': fullname,
                 'fullname_ja': fullname_ja,
                 'entitlement': entitlement,
-                'email': email,
+                'email': mail,
                 'organization_name': organization_name,
                 'organizational_unit': organizational_unit,
                 'organization_name_ja': organization_name_ja,
