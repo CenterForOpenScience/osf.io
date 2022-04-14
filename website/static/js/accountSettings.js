@@ -186,10 +186,8 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         this.client.fetch().done(
             function(profile) {
                 this.profile(profile);
-                let email = this.profile().primaryEmail().address();
-                if (this.profile().idpEmail() && email.startsWith('tmp_eppn_')) {
-                    email = this.profile().idpEmail();
-                    this.emailInput(email);
+                if (this.profile().idpEmail() && this.profile().primaryEmail().address().startsWith('tmp_eppn_')) {
+                    this.emailInput(this.profile().idpEmail());
                 }
             }.bind(this)
         );
