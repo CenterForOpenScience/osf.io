@@ -18,8 +18,8 @@ from website.archiver import (
 )
 
 
-FILE_HTML_LINK_TEMPLATE = 'https://staging.osf.io/project/{registration_guid}/files/osfstorage/{file_id}'
-FILE_DOWNLOAD_LINK_TEMPLATE = 'https://staging.osf.io/download/{file_id}'
+FILE_HTML_LINK_TEMPLATE = settings.DOMAIN + 'project/{registration_guid}/files/osfstorage/{file_id}'
+FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
