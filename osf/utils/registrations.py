@@ -313,6 +313,7 @@ def build_answer_block(block_type, value, file_storage_resource=None):
         extra = list(map(build_extra_file_dict, value))
         value = ''
     return {
+        'comments': [],
         'value': value,
         'extra': extra
     }
