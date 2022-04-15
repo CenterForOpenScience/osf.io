@@ -73,6 +73,11 @@
         .pagination-extra-div.flex-container > .flex-item:last-child {
             margin-bottom: 0;
         }
+
+        .pagination-extra-div > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
     }
 
     @media (min-width: 768px) and (max-width: 991px) {
@@ -151,9 +156,9 @@
     <div class="flex-item" style="flex-grow: 0;">
         {% include "util/pagination.html" with items=page status=direction order=order_by %}
     </div>
-    <div class="flex-item">
+    <div class="flex-item text-right" style="margin-left: 4em;">
     </div>
-    <div class="flex-item" style="flex-grow: 0;">
+    <div class="flex-item" style="flex-grow: 0; margin-left: 2em;">
         <div>
             <a class="btn btn-primary" style="padding-left: 6px; padding-right: 6px;"
                href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics (TSV)" %}</a>
