@@ -51,7 +51,7 @@ def make_payload(
                 'jaFullname': jaFullname,
                 'jaMiddleNames': jaMiddleNames,
                 'jaOrganizationalUnitName': jaOrganizationalUnitName,
-                'organizationalUnit': organizationalUnit,
+                'organizationalUnitName': organizationalUnit,
                 'organizationName': organizationName,
             }
         }

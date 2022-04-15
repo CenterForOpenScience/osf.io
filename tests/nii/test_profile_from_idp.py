@@ -48,7 +48,7 @@ def make_payload(
                 'entitlement':  entitlement,
                 'email': email,
                 'organizationName': organization_name,
-                'organizationalUnit': organizational_unit,
+                'organizationalUnitName': organizational_unit,
                 'jaDisplayName': '',  # jaDisplayName
                 'jaSurname': family_name + '_ja',  # jasn
                 'jaGivenName': given_name + '_ja',  # jaGivenName
