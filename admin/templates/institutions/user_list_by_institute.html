@@ -73,6 +73,11 @@
         .pagination-extra-div.flex-container > .flex-item:last-child {
             margin-bottom: 0;
         }
+
+        .pagination-extra-div > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
     }
 
     @media (min-width: 768px) and (max-width: 991px) {
@@ -113,26 +118,26 @@
     <div class="flex-item" style="flex-grow: 0;">
         {% include "util/pagination.html" with items=page status=direction order=order_by %}
     </div>
-    <div class="flex-item text-right">
+    <div class="flex-item text-right" style="margin-left: 4em;">
         <form role="form" id="institutional_storage_form"
               class="form-inline flex-container"
               action="{% url 'institutions:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
             <div class="form-group flex-item"
-                 style="max-width: initial !important; justify-content: start;">
+                 style="max-width: initial !important; justify-content: end;">
                 {% csrf_token %}
-                <label for="storageLimit" class="">
+                <label for="storageLimit" class="flex-item" style="flex-grow: 0;">
                     {% trans "Each user Quota for NII Storage (GB)" %}
                 </label>
                 <input type="number" name="maxQuota"
-                       id="storageLimit" class="form-control"
-                       style="min-width:70px; max-width: 115px; margin-left: 2px;"
+                       id="storageLimit" class="form-control flex-item"
+                       style="width:70px; max-width: 115px; margin-left: 2px;"
                        min="1" required="" value="100"
                        oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
                        oninput="setCustomValidity('')"
                 />
                 <button type="submit"
-                        style="margin-left: 2px;"
-                        class="btn btn-primary next-btn">{% trans 'Apply' %}</button>
+                        style="margin-left: 2px; flex-grow: 0;"
+                        class="btn btn-primary next-btn flex-item">{% trans 'Apply' %}</button>
             </div>
         </form>
     </div>
