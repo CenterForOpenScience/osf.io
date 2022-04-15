@@ -31,7 +31,8 @@ def get_schema_file_input_qids(schema_id):
     )
 
 def fix_registration_response_file_links(registration):
-    file_input_qids = get_schema_file_input_qids(registration.registration_schema.id)
+    schema = registration.registration_schema
+    file_input_qids = get_schema_file_input_qids(schema.id)
     # Fix the *initial* schema_response
     # Any updates to file-input responses since then would have fixed the file references already
     for block in registration.schema_responses.last().response_blocks.all():
@@ -47,7 +48,7 @@ def fix_registration_response_file_links(registration):
     # Re-set registration_responses and registered_meta bssed on the *latest* schema_response,
     # which will have inherited these fixes if not already explicitly updated
     registration.registration_responses = registration.schema_responses.first().all_responses
-    registration.registered_meta = registration.expand_registration_responses()
+    registration.registered_meta[schema._id] = registration.expand_registration_responses()
     registration.save()
 
 
