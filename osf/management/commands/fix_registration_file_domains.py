@@ -15,14 +15,14 @@ for all file responses on registrations as part of the osf.io 22.04.0 release.
 
 # 9 p.m. April 6, 2022, EDT; time of 22.04 release
 SINCE_FORMAT = '%d-%m-%Y %H:%M %z'
-RELEASE_TIME = '4-7-2022 01:00 +0000'
+RELEASE_TIME = '7-4-2022 01:00 +0000'
 BAD_DOMAIN = 'https://staging.osf.io/'
 
 
 @lru_cache(maxsize=128)
 def get_schema_file_input_qids(schema_id):
     return set(
-        RegistrationSchema.get(schema_id).schema_blocks.filter(
+        RegistrationSchema.objects.get(id=schema_id).schema_blocks.filter(
             block_type='file-input'
         ).values_list(
             'registration_response_key',
@@ -35,12 +35,15 @@ def fix_registration_response_file_links(registration):
     file_input_qids = get_schema_file_input_qids(schema.id)
     # Fix the *initial* schema_response
     # Any updates to file-input responses since then would have fixed the file references already
-    for block in registration.schema_responses.last().response_blocks.all():
+    initial_response = registration.schema_responses.last()
+    if not initial_response:
+        return
+    for block in initial_response.response_blocks.all():
         if block.schema_key in file_input_qids:
             # SchemaResponseBlocks have a default value of [] for file-input blocks;
             # can safely iterate
             for file_response in block.response:
-                urls = file_response['urls']
+                urls = file_response['file_urls']
                 urls['html'] = urls['html'].replace(BAD_DOMAIN, DOMAIN)
                 urls['download'] = urls['download'].replace(BAD_DOMAIN, DOMAIN)
             block.save()
