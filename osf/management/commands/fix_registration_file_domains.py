@@ -1,4 +1,4 @@
-from datetime import strptime
+from datetime import datetime
 from functools import lru_cache
 
 from django.core.management.base import BaseCommand
@@ -19,7 +19,7 @@ RELEASE_TIME = '4-7-2022 01:00 +0000'
 BAD_DOMAIN = 'https://staging.osf.io/'
 
 
-@lru_cache
+@lru_cache(maxsize=128)
 def get_schema_file_input_qids(schema_id):
     return set(
         RegistrationSchema.get(schema_id).schema_blocks.filter(
@@ -54,7 +54,7 @@ def fix_registration_response_file_links(registration):
 
 @transaction.atomic
 def fix_registration_file_domains(dry_run=False, since=None):
-    modified_threshold = since or strptime(RELEASE_TIME, SINCE_FORMAT)
+    modified_threshold = since or datetime.strptime(RELEASE_TIME, SINCE_FORMAT)
     # Check modified instead of registration date as some registrations were "fixed" during release
     impacted_registrations = Registration.objects.filter(modified__gte=modified_threshold)
     for registration in impacted_registrations:
@@ -83,5 +83,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
-        since = strptime(options.get('since'), SINCE_FORMAT)
+        since = datetime.strptime(options.get('since'), SINCE_FORMAT)
         fix_registration_file_domains(dry_run=dry_run, since=since)
