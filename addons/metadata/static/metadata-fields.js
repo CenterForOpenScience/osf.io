@@ -7,6 +7,7 @@ const _ = require('js/rdmGettext')._;
 const datepicker = require('js/rdmDatepicker');
 require('typeahead.js');
 
+const logPrefix = '[metadata] ';
 
 function createField(erad, question, valueEntry, options, callback) {
   if (question.type == 'string') {
@@ -90,6 +91,16 @@ function createStringField(erad, question, value, options, callback) {
     return new SingleElementField(
       createFormElement(function() {
         return $('<input></input>').addClass(question.format);
+      }, options),
+      question,
+      value,
+      options,
+      callback
+    );
+  } else if (question.format == 'file-capacity') {
+    return new SingleElementField(
+      createFileCapacityFieldElement(function() {
+        return $('<input></input>');
       }, options),
       question,
       value,
@@ -227,6 +238,109 @@ function SingleElementField(formField, question, defaultValue, options, callback
       formField.setValue(input, self.defaultValue);
     }
     return input;
+  };
+}
+
+
+function createFileCapacityFieldElement(createHandler, options) {
+  // ref: website/project/util.py sizeof_fmt()
+  function sizeofFormat(num) {
+    for (const unit of ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']) {
+      if (Math.abs(num) < 1000) {
+        return Math.round(num * 10) / 10 + unit + 'B';
+      }
+      num /= 1000.0
+    }
+    return Math.round(num * 10) / 10 + 'YB';
+  }
+
+  function calcCapacity(input, calcIndicator, errorContainer) {
+    errorContainer.hide().text('');
+    calcIndicator.show();
+    const task = options.filepath.endsWith('/') ?
+      options.wbcache.listFiles(options.filepath, true)
+        .then(function (files) {
+          return files.reduce(function(y, x) {
+            return y + Number(x.item.attributes.size);
+          }, 0);
+        }) :
+      new Promise(function (resolve, reject) {
+        try {
+          options.wbcache.searchFile(options.filepath, function (item) {
+            console.log(item);
+            resolve(Number(item.data.size));
+          });
+        } catch (err) {
+          reject(err);
+        }
+      });
+    return task
+      .then(function (totalSize) {
+        console.log(logPrefix, 'totalSize: ', totalSize);
+        input.val(sizeofFormat(totalSize));
+      })
+      .catch(function (err) {
+        console.error(err);
+        Raven.captureMessage(_('Could not list files'), {
+          extra: {
+            error: err.toString()
+          }
+        });
+        errorContainer.text(_('Could not list files')).show();
+      })
+      .then(function () {
+        calcIndicator.hide();
+      });
+  }
+
+  return {
+    create: function(addToContainer, callback) {
+      const input = createHandler();
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
+      if (callback) {
+        input.change(callback);
+      }
+      input.addClass('form-control');
+      const container = $('<div>').append(input);
+      if (!options || !options.readonly) {
+        const calcButton = $('<a class="btn btn-default btn-sm m-l-md">')
+          .append('<i class="fa fa-refresh"> ' + _('Calc') + '</i>');
+        const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
+          .hide();
+        const errorContainer = $('<span>')
+          .css('color', 'red').hide();
+        const calcContainer = $('<div>')
+          .css('margin-top', '4px')
+          .append(calcButton)
+          .append(calcIndicator)
+          .append(errorContainer);
+        let calculating = false;
+        calcButton.on('click', function (e) {
+          e.preventDefault();
+          if (!calculating) {
+            calculating = true;
+            calcButton.attr('disabled', true);
+            calcCapacity(input, calcIndicator, errorContainer)
+              .then(function () {
+                calculating = false;
+                calcButton.attr('disabled', false);
+              });
+          }
+        });
+        container.append(calcContainer)
+      }
+
+      addToContainer(container);
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
   };
 }
 

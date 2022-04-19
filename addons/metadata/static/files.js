@@ -195,7 +195,7 @@ function MetadataButtons() {
     });
   }
 
-  self.prepareFields = function(container, schema) {
+  self.prepareFields = function(container, schema, filepath) {
     const lastMetadataItems = (self.lastMetadata.items || []).filter(function(item) {
       return item.schema == schema.id;
     });
@@ -204,7 +204,10 @@ function MetadataButtons() {
     const fields = self.createFields(
       schema.attributes.schema,
       lastMetadataItem,
-      {},
+      {
+        filepath: filepath,
+        wbcache: self.wbcache
+      },
       self.fieldsChanged
     );
     self.lastFields = [];
@@ -306,7 +309,8 @@ function MetadataButtons() {
       self.currentSchemaId = event.target.value;
       self.prepareFields(
         fieldContainer,
-        self.findSchemaById(self.currentSchemaId)
+        self.findSchemaById(self.currentSchemaId),
+        filepath
       );
     });
     const pasteButton = $('<button></button>')
@@ -322,7 +326,8 @@ function MetadataButtons() {
       .append(pasteButton));
     self.prepareFields(
       fieldContainer,
-      self.findSchemaById(self.currentSchemaId)
+      self.findSchemaById(self.currentSchemaId),
+      filepath
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.modal('show');
