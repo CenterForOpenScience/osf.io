@@ -71,9 +71,24 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
+        with pytest.raises(ValueError):
+            self.node_settings.set_file_metadata('osfstorage/', {
+                'path': 'osfstorage/',
+                'folder': True,
+                'items': [
+                    {
+                        'active': True,
+                        'schema': 'xxxx',
+                        'data': {
+                            'test': True,
+                        },
+                    }
+                ],
+            })
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': True,
+            'hash': '1234567890',
             'items': [
                     {
                         'active': True,
@@ -89,6 +104,7 @@ class TestNodeSettings(unittest.TestCase):
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': True,
+            'hash': '1234567890',
             'items': [
                 {
                     'active': True,
@@ -105,6 +121,7 @@ class TestNodeSettings(unittest.TestCase):
             'generated': False,
             'path': 'osfstorage/',
             'folder': True,
+            'hash': '1234567890',
             'urlpath': '/{}/files/dir/osfstorage/'.format(node_id),
             'items': [
                 {
@@ -128,6 +145,7 @@ class TestNodeSettings(unittest.TestCase):
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': False,
+            'hash': '1234567890',
             'items': [
                 {
                     'active': True,
@@ -144,6 +162,7 @@ class TestNodeSettings(unittest.TestCase):
             'generated': False,
             'path': 'osfstorage/',
             'folder': False,
+            'hash': '1234567890',
             'urlpath': '/testFileGUID/',
             'items': [
                 {

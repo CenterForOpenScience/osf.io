@@ -181,6 +181,20 @@ def metadata_set_file(auth, filepath=None, **kwargs):
 @must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
+def metadata_set_file_hash(auth, filepath=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    try:
+        addon.set_file_hash(filepath, request.json['hash'])
+    except KeyError as e:
+        logger.error('Invalid hash: ' + str(e))
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return _response_file_metadata(addon, filepath)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'node')
 def metadata_delete_file(auth, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
@@ -281,7 +295,8 @@ def metadata_export_draft_registrations_csv(auth, did=None, **kwargs):
                 .format(draft.registration_schema.name, name))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         draft_metadata = draft.registration_metadata
-        filename, csvcontent = make_report_as_csv(formats[0], draft_metadata)
+        schema = draft.registration_schema.schema
+        filename, csvcontent = make_report_as_csv(formats[0], draft_metadata, schema)
         response = make_response()
         response.data = csvcontent.encode('utf8')
         response.mimetype = 'text/csv;charset=utf-8'
@@ -308,7 +323,8 @@ def metadata_export_registrations_csv(auth, rid=None, **kwargs):
         registration_metadata = registration.get_registration_metadata(
             registration.registration_schema
         )
-        filename, csvcontent = make_report_as_csv(formats[0], registration_metadata)
+        schema = registration.registration_schema.schema
+        filename, csvcontent = make_report_as_csv(formats[0], registration_metadata, schema)
         response = make_response()
         response.data = csvcontent.encode('utf8')
         response.mimetype = 'text/csv;charset=utf-8'

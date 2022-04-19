@@ -33,6 +33,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': True,
+            'hash': '1234567890',
             'items': [
                 {
                     'active': True,
@@ -50,6 +51,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
             {
                 'path': 'osfstorage/',
                 'generated': False,
+                'hash': '1234567890',
                 'urlpath': '/{}/files/dir/osfstorage/'.format(self.node_settings.owner._id),
                 'folder': True,
                 'items': [
