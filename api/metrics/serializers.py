@@ -1,3 +1,4 @@
+import logging
 import datetime
 
 from rest_framework import serializers as ser
@@ -6,6 +7,8 @@ from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
 from osf.metrics.counted_usage import CountedUsage
 from website import settings as website_settings
+
+logger = logging.getLogger(__name__)
 
 
 class PreprintMetricSerializer(BaseAPISerializer):
@@ -65,6 +68,7 @@ class CountedUsageSerializer(ser.Serializer):
             provider_id=validated_data.get('provider_id'),
             item_guid=validated_data.get('item_guid'),
             session_id=validated_data['session_id'],  # must be provided by the view
+            user_is_authenticated=validated_data['user_is_authenticated'],  # must be provided by the view
             action_labels=validated_data.get('action_labels'),
             pageview_info=validated_data.get('pageview_info'),
         )
@@ -151,5 +155,45 @@ class NodeAnalyticsSerializer(ser.BaseSerializer):
                 'unique_visits': unique_visits,
                 'time_of_day': time_of_day,
                 'referer_domain': referer_domain,
+            },
+        }
+
+
+class UserVisitsSerializer(ser.BaseSerializer):
+    def to_representation(self, instance):
+        aggs = instance.aggregations
+        unique_visits = [
+            {
+                'date': bucket['key'].date(),
+                'count': bucket['doc_count'],
+            }
+            for bucket in aggs['unique-visits'].buckets
+        ]
+        timespan = self.context['timespan']
+        return {
+            'id': f'user-visits:{timespan}',
+            'type': 'user-visits-analytics',
+            'attributes': {
+                'unique_visits': unique_visits,
+            },
+        }
+
+
+class UniqueUserVisitsSerializer(ser.BaseSerializer):
+    def to_representation(self, instance):
+        aggs = instance.aggregations
+        unique_visits = [
+            {
+                'date': bucket['key'].date(),
+                'count': bucket['doc_count'],
+            }
+            for bucket in aggs['unique-visits'].buckets
+        ]
+        timespan = self.context['timespan']
+        return {
+            'id': f'unique-user-visits:{timespan}',
+            'type': 'unique-user-visits-analytics',
+            'attributes': {
+                'unique_visits': unique_visits,
             },
         }

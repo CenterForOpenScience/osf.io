@@ -30,4 +30,14 @@ urlpatterns = [
         views.NodeAnalyticsQuery.as_view(),
         name=views.NodeAnalyticsQuery.view_name,
     ),
+    re_path(
+        r'^query/user_visits/$',
+        views.UserVisitsQuery.as_view(),
+        name=views.UserVisitsQuery.view_name,
+    ),
+    re_path(
+        r'^query/unique_user_visits/$',
+        views.UniqueUserVisitsQuery.as_view(),
+        name=views.UniqueUserVisitsQuery.view_name,
+    ),
 ]
