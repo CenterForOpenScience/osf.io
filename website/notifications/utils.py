@@ -426,16 +426,11 @@ def get_global_notification_type(global_subscription, user):
 
 
 def check_if_all_global_subscriptions_are_none(user):
-    all_global_subscriptions_none = False
-    user_sunscriptions = get_all_user_subscriptions(user)
-    for user_subscription in user_sunscriptions:
-        if user_subscription.event_name.startswith('global_'):
-            all_global_subscriptions_none = True
-            global_notification_type = get_global_notification_type(user_subscription, user)
-            if global_notification_type != 'none':
-                return False
-
-    return all_global_subscriptions_none
+    # This function predates comment mentions, which is a global_ notification that cannot be disabled
+    # Therefore, an actual check would never return True.
+    # If this changes, an optimized query would look something like:
+    # not NotificationSubscription.objects.filter(Q(event_name__startswith='global_') & (Q(email_digest=user.pk)|Q(email_transactional=user.pk))).exists()
+    return False
 
 
 def subscribe_user_to_global_notifications(user):
