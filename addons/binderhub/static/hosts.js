@@ -18,33 +18,34 @@ function urljoin(url, path) {
 function BinderHubHostSettingsMixin() {
   var self = this;
   self.binderhubUrl = ko.observable('');
+  self.binderhubHasOAuthClient = ko.observable(false);
   self.binderhubOAuthClientId = ko.observable('');
   self.binderhubOAuthClientSecret = ko.observable('');
   self.jupyterhubUrl = ko.observable('');
+  self.jupyterhubHasOAuthClient = ko.observable(false);
   self.jupyterhubOAuthClientId = ko.observable('');
   self.jupyterhubOAuthClientSecret = ko.observable('');
   self.jupyterhubAdminAPIToken = ko.observable('');
 
-  self.binderhubConfig = ko.computed(function() {
+  self.binderhubOAuthClient = ko.computed(function() {
     if (!self.binderhubUrl()) {
-      return null;
-    }
-    if (!self.binderhubOAuthClientId() || !self.binderhubOAuthClientSecret()) {
-      return null;
-    }
-    if (!self.jupyterhubUrl()) {
-      return null;
-    }
-    if (!self.jupyterhubOAuthClientId() || !self.jupyterhubOAuthClientSecret()) {
-      return null;
-    }
-    if (!self.jupyterhubAdminAPIToken()) {
       return null;
     }
     if (self.binderhubUrlInvalid()) {
       return null;
     }
-    if (self.jupyterhubUrlInvalid()) {
+    if (!self.binderhubHasOAuthClient()) {
+      return {
+        binderhub_url: self.binderhubUrl(),
+        binderhub_oauth_client_id: null,
+        binderhub_oauth_client_secret: null,
+        binderhub_oauth_authorize_url: null,
+        binderhub_oauth_token_url: null,
+        binderhub_oauth_scope: null,
+        binderhub_services_url: null,
+      };
+    }
+    if (!self.binderhubOAuthClientId() || !self.binderhubOAuthClientSecret()) {
       return null;
     }
     return {
@@ -55,6 +56,42 @@ function BinderHubHostSettingsMixin() {
       binderhub_oauth_token_url: urljoin(self.binderhubUrl(), '/api/oauth2/token'),
       binderhub_oauth_scope: ['identity'],
       binderhub_services_url: urljoin(self.binderhubUrl(), '/api/services'),
+    };
+  });
+
+  self.jupyterhubOAuthClient = ko.computed(function() {
+    if (!self.jupyterhubHasOAuthClient()) {
+      // Use binderhubUrl as URL for JupyterHub
+      if (!self.binderhubUrl()) {
+        return null;
+      }
+      if (self.binderhubUrlInvalid()) {
+        return null;
+      }
+      return {
+        jupyterhub_url: self.binderhubUrl(),
+        jupyterhub_oauth_client_id: null,
+        jupyterhub_oauth_client_secret: null,
+        jupyterhub_oauth_authorize_url: null,
+        jupyterhub_oauth_token_url: null,
+        jupyterhub_oauth_scope: null,
+        jupyterhub_api_url: null,
+        jupyterhub_admin_api_token: null,
+      };
+    }
+    if (!self.jupyterhubUrl()) {
+      return null;
+    }
+    if (self.jupyterhubUrlInvalid()) {
+      return null;
+    }
+    if (!self.jupyterhubOAuthClientId() || !self.jupyterhubOAuthClientSecret()) {
+      return null;
+    }
+    if (!self.jupyterhubAdminAPIToken()) {
+      return null;
+    }
+    return {
       jupyterhub_url: self.jupyterhubUrl(),
       jupyterhub_oauth_client_id: self.jupyterhubOAuthClientId(),
       jupyterhub_oauth_client_secret: self.jupyterhubOAuthClientSecret(),
@@ -63,7 +100,19 @@ function BinderHubHostSettingsMixin() {
       jupyterhub_oauth_scope: ['identity'],
       jupyterhub_api_url: urljoin(self.jupyterhubUrl(), '/hub/api/'),
       jupyterhub_admin_api_token: self.jupyterhubAdminAPIToken(),
+    };
+  });
+
+  self.binderhubConfig = ko.computed(function() {
+    var jhClient = self.jupyterhubOAuthClient();
+    if (!jhClient) {
+      return jhClient;
     }
+    var bhClient = self.binderhubOAuthClient();
+    if (!bhClient) {
+      return bhClient;
+    }
+    return Object.assign({}, jhClient, bhClient);
   });
 
   self.binderhubUrlInvalid = ko.computed(function() {
@@ -74,6 +123,14 @@ function BinderHubHostSettingsMixin() {
     return self.jupyterhubUrl() && self.jupyterhubUrl().match('^https?\://.+') === null;
   });
 
+  self.binderhubOAuthDisabled = ko.computed(function() {
+    return !self.binderhubHasOAuthClient();
+  }, self);
+
+  self.jupyterhubOAuthDisabled = ko.computed(function() {
+    return !self.jupyterhubHasOAuthClient();
+  }, self);
+
   self.hostCompleted = ko.computed(function() {
     return self.binderhubConfig() !== null;
   }, self);
@@ -82,9 +139,11 @@ function BinderHubHostSettingsMixin() {
   self.clearModal = function() {
       var self = this;
       self.binderhubUrl(null);
+      self.binderhubHasOAuthClient(false);
       self.binderhubOAuthClientId(null);
       self.binderhubOAuthClientSecret(null);
       self.jupyterhubUrl(null);
+      self.jupyterhubHasOAuthClient(false);
       self.jupyterhubOAuthClientId(null);
       self.jupyterhubOAuthClientSecret(null);
       self.jupyterhubAdminAPIToken(null);

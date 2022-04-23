@@ -41,6 +41,25 @@ def make_binderhub(
         'jupyterhub_admin_api_token': jupyterhub_admin_api_token,
     }
 
+def make_tljh(tljh_url='https://test.binderhub.my.site'):
+    return make_binderhub(
+        binderhub_url=tljh_url,
+        jupyterhub_url=tljh_url,
+        binderhub_oauth_client_id=None,
+        binderhub_oauth_client_secret=None,
+        binderhub_oauth_authorize_url=None,
+        binderhub_oauth_token_url=None,
+        binderhub_oauth_scope=None,
+        binderhub_services_url=None,
+        jupyterhub_oauth_client_id=None,
+        jupyterhub_oauth_client_secret=None,
+        jupyterhub_oauth_authorize_url=None,
+        jupyterhub_oauth_token_url=None,
+        jupyterhub_oauth_scope=None,
+        jupyterhub_api_url=None,
+        jupyterhub_admin_api_token=None,
+    )
+
 class UserSettingsFactory(DjangoModelFactory):
     class Meta:
         model = UserSettings

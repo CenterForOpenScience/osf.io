@@ -162,12 +162,17 @@ def binderhub_get_config_ember(**kwargs):
         token = tokens[0] if len(tokens) > 0 else None
         binderhub_token = json.loads(token.binderhub_token) if token is not None and token.binderhub_token else None
         jupyterhub_url = token.jupyterhub_url if token is not None else None
+        authorize_url = None
+        if binderhub['binderhub_oauth_client_id'] is not None:
+            authorize_url = binderhub_authorize_url + '?' + urlencode({
+                'binderhub_url': binderhub_url,
+            })
+        else:
+            jupyterhub_url = binderhub['jupyterhub_url']
         binderhubs.append({
             'default': default_binderhub_url == binderhub_url,
             'url': binderhub_url,
-            'authorize_url': binderhub_authorize_url + '?' + urlencode({
-                'binderhub_url': binderhub_url,
-            }),
+            'authorize_url': authorize_url,
             'token': binderhub_token,
             'jupyterhub_url': jupyterhub_url,
         })
@@ -180,14 +185,19 @@ def binderhub_get_config_ember(**kwargs):
         token = tokens[0] if len(tokens) > 0 else None
         jupyterhub_token = json.loads(token.jupyterhub_token) if token is not None and token.jupyterhub_token else None
         jupyterhub_url = token.jupyterhub_url if token is not None else None
+        if binderhub['jupyterhub_oauth_client_id'] is None:
+            jupyterhub_url = binderhub['jupyterhub_url']
         if jupyterhub_url is None or jupyterhub_url in jupyterhub_urls:
             continue
         api_url = binderhub['jupyterhub_api_url']
+        authorize_url = None
+        if binderhub['jupyterhub_oauth_client_id'] is not None:
+            authorize_url = jupyterhub_authorize_url + '?' + urlencode({
+                'binderhub_url': binderhub_url,
+            })
         jupyterhubs.append({
             'url': jupyterhub_url,
-            'authorize_url': jupyterhub_authorize_url + '?' + urlencode({
-                'binderhub_url': binderhub_url,
-            }),
+            'authorize_url': authorize_url,
             'token': jupyterhub_token,
             'api_url': api_url,
         })
