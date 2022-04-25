@@ -575,7 +575,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nesta',
                 'name': 'Nesta',
-                'description': '',
+                'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
                 'banner_name': 'nesta-banner.png',
                 'logo_name': 'nesta-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkum8enx4nlKaJR50x7')),
@@ -1591,7 +1591,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nesta',
                 'name': 'Nesta [Test]',
-                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
                 'banner_name': 'nesta-banner.png',
                 'logo_name': 'nesta-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkum8f6y1gTYTIaT0x7')),
