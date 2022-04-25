@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2021-06-14 12:22+0900\n"
+"POT-Creation-Date: 2022-04-12 12:37+0000\n"
 "PO-Revision-Date: 2020-11-23 09:30+0900\n"
 "Last-Translator: Hidetoshi Yoshimoto\n"
 "Language: ja\n"
@@ -21,6 +21,173 @@ msgstr ""
 #: addons/jupyterhub/static/files.js:93
 msgid "Launch"
 msgstr "起動"
+
+#: addons/metadata/static/files.js:237
+msgid "Data Schema:"
+msgstr "データスキーマ:"
+
+#: addons/metadata/static/files.js:317
+msgid "Paste from Clipboard"
+msgstr "クリップボードから貼り付け"
+
+#: addons/metadata/static/files.js:339 addons/metadata/static/files.js:353
+msgid "Could not copy text"
+msgstr "テキストをコピーできませんでした"
+
+#: addons/metadata/static/files.js:351 website/static/js/clipboard.js:27
+#: website/static/js/fangorn.js:1493
+msgid "Copied!"
+msgstr "コピーされました！"
+
+#: addons/metadata/static/files.js:368 addons/metadata/static/files.js:381
+#: addons/metadata/static/files.js:388
+msgid "Could not paste text"
+msgstr "テキストを貼り付けできませんでした"
+
+#: addons/metadata/static/files.js:435 addons/metadata/static/files.js:449
+#: addons/metadata/static/files.js:774
+msgid "Loading..."
+msgstr "読み込み中..."
+
+#: addons/metadata/static/files.js:447
+msgid "Select the destination of the file metadata."
+msgstr "ファイルメタデータの移動先を選択してください。"
+
+#: addons/metadata/static/files.js:452
+msgid "Current Metadata:"
+msgstr "現在のメタデータ:"
+
+#: addons/metadata/static/files.js:509
+msgid "Delete metadata"
+msgstr "メタデータを削除"
+
+#: addons/metadata/static/files.js:512
+msgid "Could not list hashes"
+msgstr "ハッシュ情報の一覧を取得できませんでした"
+
+#: addons/metadata/static/files.js:520
+msgid "Could not list files"
+msgstr "ファイルの一覧を取得できませんでした"
+
+#: addons/metadata/static/files.js:601 addons/metadata/static/files.js:608
+msgid "No name"
+msgstr "名称未設定"
+
+#: addons/metadata/static/files.js:751
+msgid "There are errors in some fields."
+msgstr "いくつかのフィールドにエラーがあります。"
+
+#: addons/metadata/static/files.js:785 addons/metadata/static/files.js:1313
+#: addons/metadata/static/files.js:1338 website/static/js/folderpicker.js:105
+msgid "Select"
+msgstr "選択"
+
+#: addons/metadata/static/files.js:789
+msgid "Select the destination draft for the file metadata."
+msgstr "ファイルメタデータの送信先を選択してください。"
+
+#: addons/metadata/static/files.js:810
+msgid "Registering..."
+msgstr "登録中..."
+
+#: addons/metadata/static/files.js:810
+msgid "Deleting..."
+msgstr "削除中..."
+
+#: addons/metadata/static/files.js:818
+msgid "Open"
+msgstr "開く"
+
+#: addons/metadata/static/files.js:848 addons/metadata/static/files.js:1246
+#: addons/metadata/static/files.js:1290 addons/metadata/static/files.js:1311
+#: addons/metadata/static/files.js:1336
+#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2298
+#: website/static/js/folderPickerNodeConfig.js:591
+#: website/static/js/pages/profile-settings-addons-page.js:72
+#: website/static/js/pages/project-settings-page.js:118
+msgid "Close"
+msgstr "閉じる"
+
+#: addons/metadata/static/files.js:885 addons/metadata/static/files.js:1263
+msgid "Edit Metadata"
+msgstr "メタデータ編集"
+
+#: addons/metadata/static/files.js:894
+msgid "Register Metadata"
+msgstr "メタデータ登録"
+
+#: addons/metadata/static/files.js:902 addons/metadata/static/files.js:1298
+msgid "Delete Metadata"
+msgstr "メタデータ削除"
+
+#: addons/metadata/static/files.js:1032
+msgid "Some of the children have metadata."
+msgstr "いくつかの子ファイルにメタデータが定義されています。"
+
+#: addons/metadata/static/files.js:1041
+msgid "File not found: "
+msgstr "ファイルが見つかりません:"
+
+#: addons/metadata/static/files.js:1055
+msgid "Metadata is defined"
+msgstr "メタデータが定義されています"
+
+#: addons/metadata/static/files.js:1248 website/static/js/contribManager.js:429
+#: website/static/js/filepage/editor.js:180
+msgid "Save"
+msgstr "保存"
+
+#: addons/metadata/static/files.js:1252 addons/metadata/static/files.js:1342
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
+
+#: addons/metadata/static/files.js:1292 website/static/js/fangorn.js:1226
+#: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2028
+#: website/static/js/fangorn.js:2064 website/static/js/filepage/index.js:204
+#: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
+msgid "Delete"
+msgstr "削除"
+
+#: addons/metadata/static/files.js:1303
+msgid "Do you want to delete metadata? This operation cannot be undone."
+msgstr "メタデータを削除してよろしいですか？この操作は元に戻せません。"
+
+#: addons/metadata/static/files.js:1320
+msgid "Select draft registration"
+msgstr "ドラフトレポートの選択"
+
+#: addons/metadata/static/files.js:1352
+msgid "Resolve metadata"
+msgstr "メタデータの解決"
+
+#: addons/metadata/static/metadata-fields.js:24
+msgid "This field can't be blank."
+msgstr "このフィールドは必須項目です。"
+
+#: addons/metadata/static/metadata-fields.js:144
+msgid "Choose..."
+msgstr "選択..."
+
+#: addons/metadata/static/metadata-fields.js:248
+msgid "No members"
+msgstr "作成者が設定されていません"
+
+#: addons/metadata/static/metadata-fields.js:314
+msgid "e-Rad Researcher Number"
+msgstr "e-Rad研究者番号"
+
+#: addons/metadata/static/metadata-fields.js:315
+msgid "Name (Japanese)"
+msgstr "名前　(日本語)"
+
+#: addons/metadata/static/metadata-fields.js:316
+msgid "Name (English)"
+msgstr "名前　(英語)"
+
+#: addons/metadata/static/metadata-fields.js:329
+#: website/static/js/myProjects.js:1565
+msgid "Add"
+msgstr "追加"
 
 #: addons/twofactor/static/twoFactorUserConfig.js:148
 #: addons/twofactor/static/twoFactorUserConfig.js:190
@@ -2922,8 +3089,8 @@ msgstr ""
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
-"                <td>プロジェクトやコンポーネントのフォーク時、Google Drive"
-"の認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでIQB-"
+"                <td>プロジェクトやコンポーネントのフォーク時、Google "
+"Driveの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでIQB-"
 "RIMSアドオンを承認したユーザーと同一である場合はコピーされます。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
@@ -3053,6 +3220,111 @@ msgstr ""
 "RDM内には保存されません。</li>\n"
 "</ul>\n"
 
+#: scripts/translations/messages_addonsJson.js:47
+msgid ""
+"\n"
+"\n"
+"<h3>Metadata Add-on Terms</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>Function</th>\n"
+"            <th>Status</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Permissions</td>\n"
+"                <td>The GakuNin RDM does not affect the permissions of "
+"Metadata.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>View / download file versions</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Add / update files</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Delete files</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>Logs</td>\n"
+"                <td>The Metadata add-on does not provide Storage "
+"Features.</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>Forking</td>\n"
+"                <td>Forking a project or component copies information "
+"about linked Metadata but the GakuNin RDM does not affect authentication "
+"of Metadata.</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+"<ul>\n"
+"        <li>This add-on connects your GakuNin RDM project to an external "
+"service. Use of this service is bound by its terms and conditions. The "
+"GakuNin RDM is not responsible for the service or for your use "
+"thereof.</li>\n"
+"        <li>This add-on allows you to store files using an external "
+"service. Files added to this add-on are not stored within the GakuNin "
+"RDM.</li>\n"
+"</ul>\n"
+msgstr ""
+"\n"
+"\n"
+"<h3>Metadata アドオン規約</h3>\n"
+"\n"
+"<table class=\"table table-bordered table-addon-terms\">\n"
+"\n"
+"    <thead>\n"
+"        <tr>\n"
+"            <th>機能</th>\n"
+"            <th>ステータス</th>\n"
+"        </tr>\n"
+"    </thead>\n"
+"\n"
+"    <tbody>\n"
+"            <tr class=\"danger\">\n"
+"                <td>権限</td>\n"
+"                <td>MetadataアドオンはGRDMの権限に影響を及ぼしません。</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
+"                <td>Metadataアドオンはストレージ機能を提供しません。</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>ファイルの追加/更新</td>\n"
+"                <td>Metadataアドオンはストレージ機能を提供しません。</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>ファイルの削除</td>\n"
+"                <td>Metadataアドオンはストレージ機能を提供しません。</td>\n"
+"            </tr>\n"
+"            <tr class=\"danger\">\n"
+"                <td>ログ</td>\n"
+"                <td>Metadataアドオンはストレージ機能を提供しません。</td>\n"
+"            </tr>\n"
+"            <tr class=\"warning\">\n"
+"                <td>フォーク</td>\n"
+"                "
+"<td>プロジェクトまたはコンポーネントのフォークを行うと、リンクされたMetadataに関する情報がコピーされます。</td>\n"
+"            </tr>\n"
+"    </tbody>\n"
+"\n"
+"</table>\n"
+"\n"
+
 #: website/static/js/accessRequestManager.js:85
 msgid "There was a problem trying to %1$s the request from the user. %2$s"
 msgstr "ユーザーからのリクエストを%1$sしようとして問題が発生しました。%2$s"
@@ -3154,13 +3426,6 @@ msgid ""
 " Please click the link in your email to confirm this action. You will be "
 "required to enter your password."
 msgstr "このアクションを確認するには、メールのリンクをクリックしてください。 パスワードを入力する必要があります。"
-
-#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2286
-#: website/static/js/folderPickerNodeConfig.js:591
-#: website/static/js/pages/profile-settings-addons-page.js:72
-#: website/static/js/pages/project-settings-page.js:118
-msgid "Close"
-msgstr "閉じる"
 
 #: website/static/js/accountSettings.js:236
 msgid "Email cannot be empty."
@@ -3793,10 +4058,6 @@ msgstr "接続"
 msgid "Import %1$s access token"
 msgstr "%1$sアクセストークンをインポート"
 
-#: website/static/js/clipboard.js:27 website/static/js/fangorn.js:1480
-msgid "Copied!"
-msgstr "コピーされました！"
-
 #: website/static/js/clipboard.js:32
 msgid "Copy failed!"
 msgstr "コピーが失敗しました！"
@@ -4005,11 +4266,6 @@ msgstr "これらの変更を保存してもよろしいですか？"
 #: website/static/js/contribManager.js:421
 msgid "Submission failed: "
 msgstr "送信に失敗しました："
-
-#: website/static/js/contribManager.js:429
-#: website/static/js/filepage/editor.js:180
-msgid "Save"
-msgstr "保存"
 
 #: website/static/js/contribRemover.js:56
 #: website/static/js/contribRemover.js:57
@@ -4228,13 +4484,6 @@ msgid ""
 "This folder and ALL its contents will be deleted. This action is "
 "irreversible."
 msgstr "このフォルダーとその内容はすべて削除されます。 このアクションは元に戻せません。"
-
-#: website/static/js/fangorn.js:1213 website/static/js/fangorn.js:1236
-#: website/static/js/fangorn.js:2015 website/static/js/fangorn.js:2051
-#: website/static/js/filepage/index.js:209
-#: website/static/js/filepage/index.js:522 website/static/js/myProjects.js:1637
-msgid "Delete"
-msgstr "削除"
 
 #: website/static/js/fangorn.js:1215 website/static/js/fangorn.js:1240
 msgid "Delete \"%1$s\"?"
@@ -4668,10 +4917,6 @@ msgstr "%1$sアカウントを切断しますか？"
 #: website/static/js/folderpicker.js:101
 msgid "Folders"
 msgstr "フォルダ"
-
-#: website/static/js/folderpicker.js:105
-msgid "Select"
-msgstr "選択"
 
 #: website/static/js/institutionNodes.js:26
 msgid "Failed to load Institution's nodes"
@@ -6332,7 +6577,9 @@ msgstr "${user}が${node}のOCIオブジェクトストレージ(for Institution
 msgid ""
 "${user} removed ${path_type} ${path} from Oracle Cloud Infrastructure for"
 " Institutions in ${node}"
-msgstr "${user}が${node}のOCIオブジェクトストレージ(for Institutions)から${path_type}(${path})を削除しました"
+msgstr ""
+"${user}が${node}のOCIオブジェクトストレージ(for "
+"Institutions)から${path_type}(${path})を削除しました"
 
 #: website/static/js/logActionsList_extract.js:281
 msgid ""
@@ -6568,10 +6815,6 @@ msgstr "コレクション名"
 #: website/static/js/myProjects.js:1548
 msgid "e.g.  My Replications"
 msgstr "例：マイコレクション"
-
-#: website/static/js/myProjects.js:1565
-msgid "Add"
-msgstr "追加"
 
 #: website/static/js/myProjects.js:1576
 msgid "Rename collection"
@@ -8228,3 +8471,6 @@ msgstr ""
 #: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:345
 msgid "CantCreateXMLParser"
 msgstr ""
+
+#~ msgid "Not selected"
+#~ msgstr "未選択"

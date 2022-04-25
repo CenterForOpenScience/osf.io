@@ -16,13 +16,19 @@ _user_settings_cache = {}
 FILE_ENTRY_MARGIN = 3
 
 
+def _ensure_string(access_token):
+    if isinstance(access_token, bytes):
+        return access_token.decode('utf8')
+    return access_token
+
+
 class IQBRIMSAuthClient(BaseClient):
 
     def userinfo(self, access_token):
         return self._make_request(
             'GET',
             self._build_url(settings.API_BASE_URL, 'oauth2', 'v3', 'userinfo'),
-            params={'access_token': access_token},
+            params={'access_token': _ensure_string(access_token)},
             expects=(200, ),
             throws=HTTPError(401)
         ).json()
@@ -36,7 +42,8 @@ class IQBRIMSClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'authorization': 'Bearer {}'.format(self.access_token)}
+            access_token = _ensure_string(self.access_token)
+            return {'authorization': 'Bearer {}'.format(access_token)}
         return {}
 
     def about(self):
@@ -353,7 +360,8 @@ class SpreadsheetClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'authorization': 'Bearer {}'.format(self.access_token)}
+            access_token = _ensure_string(self.access_token)
+            return {'authorization': 'Bearer {}'.format(access_token)}
         return {}
 
     def sheets(self):

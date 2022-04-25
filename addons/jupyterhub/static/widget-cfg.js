@@ -45,6 +45,8 @@ function JupyterWidget() {
 
 }
 
-var w = new JupyterWidget();
-osfHelpers.applyBindings(w, '#jupyterhubLinks');
-w.loadConfig();
+if (contextVars.jupyterhubAddonEnabled) {
+  var w = new JupyterWidget();
+  osfHelpers.applyBindings(w, '#jupyterhubLinks');
+  w.loadConfig();
+}
