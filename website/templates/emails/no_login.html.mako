@@ -14,7 +14,7 @@
             <li>You can connect to third-party services like Dropbox or Google Drive</li>
         </ul>
         To get started now, visit your dashboard and click on “Create a project.”
-        Need help getting started with a project? Check out the <a href="https://openscience.zendesk.com/hc/en-us?utm_source=notification&utm_medium=email&utm_campaign=no_login">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
+        Need help getting started with a project? Check out the <a href="https://help.osf.io/article/383-creating-a-project">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
         <br><br>
         Sincerely,
         <br>
