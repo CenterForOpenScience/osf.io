@@ -136,7 +136,7 @@ def iqbrims_get_status(**kwargs):
                      'attributes': status}}
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def iqbrims_set_status(**kwargs):
     node = kwargs['node'] or kwargs['project']
