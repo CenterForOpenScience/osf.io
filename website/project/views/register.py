@@ -149,7 +149,20 @@ def node_register_template_page(auth, node, metaschema_id, **kwargs):
                 for idx, schema_question in enumerate(schema_page['questions']):
                     if schema_question['title'] in settings.ANONYMIZED_TITLES:
                         del my_meta['schema']['pages'][indx]['questions'][idx]
-        ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
+        # ignore GRDM file specific fields
+        for indx, schema_page in enumerate(my_meta['schema']['pages']):
+            schema_page['questions'] = [
+                schema_question
+                for schema_question in schema_page['questions']
+                if not schema_question['qid'].startswith('grdm-file:')
+            ]
+        ret['node']['registered_schema'] = my_meta
+        ret['node']['registered_from'] = {
+            'title': node.registered_from.title,
+            'urls': {
+                'web': node.registered_from.url
+            }
+        }
         return ret
     else:
         status.push_status_message(

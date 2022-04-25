@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%include file="util/render_grdm_addons_context.mako"/>
 
 <div id="alertBar"></div>
 

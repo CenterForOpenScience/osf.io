@@ -36,6 +36,15 @@ page_routes = {
 api_routes = {
     'rules': [
         Rule([
+            '/settings/{}/settings'.format(SHORT_NAME),
+        ], 'get', views.binderhub_get_user_config, json_renderer),
+        Rule([
+            '/settings/{}/settings'.format(SHORT_NAME),
+        ], 'put', views.binderhub_set_user_config, json_renderer),
+        Rule([
+            '/settings/{}/settings'.format(SHORT_NAME),
+        ], 'post', views.binderhub_add_user_config, json_renderer),
+        Rule([
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/settings'.format(SHORT_NAME),
         ], 'get', views.binderhub_get_config, json_renderer),

@@ -20,7 +20,7 @@ $(function() {
         update: node.urls.api + 'drafts/{draft_pk}/',
         get: node.urls.api + 'drafts/{draft_pk}/',
         draftRegistrations: node.urls.web + 'registrations/'
-    }, null, true);
+    }, null, true, node.registeredFrom);
 
     if (ctx.draft) { // if registering draft
         var draft = new registrationUtils.Draft(ctx.draft);

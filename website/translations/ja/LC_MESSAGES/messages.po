@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2021-03-12 18:15+0900\n"
+"POT-Creation-Date: 2022-02-01 08:32+0000\n"
 "PO-Revision-Date: 2020-11-10 20:10+0900\n"
 "Last-Translator: Hiroki Ohashi\n"
 "Language: ja\n"
@@ -32,6 +32,8 @@ msgstr "アカウントキー"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_node_settings.mako:39
+#: addons/binderhub/templates/hosts_modal.mako:64
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:75
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:55
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:99
@@ -77,6 +79,8 @@ msgstr "キャンセル"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:79
+#: addons/binderhub/templates/binderhub_node_settings.mako:42
+#: addons/binderhub/templates/hosts_modal.mako:67
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:78
 #: addons/dataverse/templates/dataverse_node_settings.mako:118
 #: addons/forward/templates/forward_node_settings.mako:36
@@ -260,6 +264,7 @@ msgid "Private project"
 msgstr "非公開プロジェクト"
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
+#: addons/binderhub/templates/binderhub_user_settings.mako:41
 #: addons/s3/templates/s3_user_settings.mako:36
 #: addons/s3compat/templates/s3compat_user_settings.mako:36
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
@@ -268,6 +273,90 @@ msgstr "非公開プロジェクト"
 #: website/templates/profile/user_settings_default.mako:32
 msgid "disconnect Project"
 msgstr "プロジェクトを切断する"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:14
+msgid "Select a BinderHub client"
+msgstr "BinderHubクライアント情報の選択"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:24
+#: addons/binderhub/templates/binderhub_node_settings.mako:77
+#: addons/binderhub/templates/binderhub_user_settings.mako:31
+#: addons/binderhub/templates/hosts_modal.mako:17
+msgid "BinderHub URL"
+msgstr "BinderHub URL"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:28
+msgid "Select a BinderHub"
+msgstr "BinderHubを選択"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:61
+msgid "Default BinderHub URL:"
+msgstr "デフォルトBinderHub URL:"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:69
+#: addons/binderhub/templates/binderhub_user_settings.mako:22
+msgid "Loading..."
+msgstr "読み込み中..."
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:87
+msgid "disconnect binderhub"
+msgstr "BinderHubの接続を解除"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:91
+msgid "set to default"
+msgstr "デフォルトに設定"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:95
+msgid "default"
+msgstr "デフォルト"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:105
+msgid "Add Host"
+msgstr "BinderHubを追加"
+
+#: addons/binderhub/templates/binderhub_node_settings.mako:108
+msgid "Add Host from Account or GRDM"
+msgstr "アカウントまたはGRDMからBinderHubを追加"
+
+#: addons/binderhub/templates/binderhub_user_settings.mako:14
+msgid "Add BinderHub"
+msgstr "BinderHubを追加"
+
+#: addons/binderhub/templates/hosts_modal.mako:6
+msgid "Configure a BinderHub client"
+msgstr "BinderHubクライアント情報の設定"
+
+#: addons/binderhub/templates/hosts_modal.mako:21
+msgid "BinderHub OAuth Client ID"
+msgstr "BinderHub OAuthクライアントID"
+
+#: addons/binderhub/templates/hosts_modal.mako:25
+msgid "BinderHub OAuth Client Secret"
+msgstr "BinderHub OAuthクライアントシークレット"
+
+#: addons/binderhub/templates/hosts_modal.mako:29
+msgid "JupyterHub URL"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:33
+msgid "JupyterHub OAuth Client ID"
+msgstr "JupyterHub OAuthクライアントID"
+
+#: addons/binderhub/templates/hosts_modal.mako:37
+msgid "JupyterHub OAuth Client Secret"
+msgstr "JupyterHub OAuthクライアントシークレット"
+
+#: addons/binderhub/templates/hosts_modal.mako:41
+msgid "JupyterHub Admin Token"
+msgstr "JupyterHub 管理者トークン"
+
+#: addons/binderhub/templates/hosts_modal.mako:51
+msgid "BinderHub URL is invalid. BinderHub URL should be start with http(s)://"
+msgstr "BinderHub URLは無効です。http(s):// から始まる文字列である必要があります。"
+
+#: addons/binderhub/templates/hosts_modal.mako:56
+msgid "JupyterHub URL is invalid. JupyterHub URL should be start with http(s)://"
+msgstr "JupyterHub URLは無効です。http(s):// から始まる文字列である必要があります。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
 #: addons/github/templates/github_node_settings.mako:25
@@ -3558,11 +3647,8 @@ msgid "Control who can edit the wiki of <b>%(title)s</b>"
 msgstr "<b>%(title)s</b>内のWikiを編集できるユーザーを制御します"
 
 #: website/templates/project/settings.mako:288
-#, python-format
-msgid ""
-"Control who can edit your wiki"
-msgstr ""
-"Wikiを編集できるユーザーを制御します"
+msgid "Control who can edit your wiki"
+msgstr "Wikiを編集できるユーザーを制御します"
 
 #: website/templates/project/settings.mako:298
 msgid "Loading wiki settings..."
