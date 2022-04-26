@@ -120,6 +120,10 @@
           "format": "singleselect",
           "options": [
               {
+                "text": "dataset",
+                "tooltip": "dataset - データセット"
+              },
+              {
                   "text": "conference paper",
                   "tooltip": "conference paper - 会議発表論文"
               },
@@ -186,10 +190,6 @@
               {
                   "text": "conference poster",
                   "tooltip": "conference poster - 会議発表Dataset"
-              },
-              {
-                  "text": "dataset",
-                  "tooltip": "dataset - データセット"
               },
               {
                   "text": "interview",
