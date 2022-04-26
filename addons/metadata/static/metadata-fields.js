@@ -257,6 +257,7 @@ function createFileCapacityFieldElement(createHandler, options) {
   function calcCapacity(input, calcIndicator, errorContainer) {
     errorContainer.hide().text('');
     calcIndicator.show();
+    options.wbcache.clearCache();
     const task = options.filepath.endsWith('/') ?
       options.wbcache.listFiles(options.filepath, true)
         .then(function (files) {
