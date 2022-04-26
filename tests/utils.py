@@ -162,12 +162,8 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
     draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, registration_schema=schema)
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
-        registration = project.register_node(
-            schema=schema,
-            auth=auth,
-            draft_registration=draft_registration,
-            parent=parent,
-        )
+        registration = draft_registration.register(auth=auth, save=True)
+
     if embargo:
         embargo_end_date = embargo_end_date or (
             timezone.now() + datetime.timedelta(days=20)

@@ -4,8 +4,13 @@
 
         <div class="form-group">
             <label>Full name (e.g. Rosalind Elsie Franklin)</label>
+<<<<<<< HEAD
             ## Maxlength for full names must be 186
             <input class="form-control" data-bind="value: full" maxlength="186"/>
+=======
+            ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+            <input class="form-control" data-bind="value: full" maxlength="186" aria-label="full name input" />
+>>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
             <div data-bind="visible: showMessages, css:'text-danger'">
                 <p data-bind="validationMessage: full"></p>
             </div>
@@ -24,22 +29,22 @@
 
         <div class="form-group">
             <label>Given name (e.g. Rosalind)</label>
-            <input class="form-control" data-bind="value: given" maxlength="255"/>
+            <input class="form-control" data-bind="value: given" maxlength="255" aria-label="given name input" />
         </div>
 
         <div class="form-group">
             <label>Middle name(s) (e.g. Elsie)</label>
-            <input class="form-control" data-bind="value: middle" maxlength="255"/>
+            <input class="form-control" data-bind="value: middle" maxlength="255" aria-label="middle name input" />
         </div>
 
         <div class="form-group">
             <label>Family name (e.g. Franklin)</label>
-            <input class="form-control" data-bind="value: family" maxlength="255"/>
+            <input class="form-control" data-bind="value: family" maxlength="255" aria-label="family name input" />
         </div>
 
         <div class="form-group">
             <label>Suffix</label>
-            <input class="form-control" data-bind="value: suffix" maxlength="255"/>
+            <input class="form-control" data-bind="value: suffix" maxlength="255" aria-label="suffix input" />
         </div>
 
         <hr />

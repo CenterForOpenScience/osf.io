@@ -381,12 +381,13 @@
 
 <%def name="content_wrap()">
     <div class="watermarked">
-        <div class="container ${self.container_class()}">
-
+        <div class="container ${self.container_class()}" role="main">
             % if status:
                 ${self.alert()}
             % endif
 
+            ### A11y Reccommended header
+            <h1 style="display: none;">Main content</h1>
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->

@@ -41,7 +41,8 @@
             </h4>
             <ul>
                 Use this management command to download a CSV of spam content that matches a regular expression
-                In the last number of specified days.
+                in the last number of specified days.
+                <br>Specifying "Fast" will only check against "title" and "description."
                 <br>
                 <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/" target="_blank">Here is a nice cheat sheet for regular expressions</a>
                 <br>
@@ -53,6 +54,7 @@
                     <label>Nodes:</label>   <input type="checkbox" name="node_get" checked /><br>
                     <label>Registrations:</label>  <input type="checkbox" name="registration_get" checked /><br>
                     <label>Preprints:</label>   <input type="checkbox" name="preprint_get" checked /><br>
+                    <label>Fast:</label>   <input type="checkbox" name="fast_get" checked /><br>
                     <input class="btn btn-success" type="submit"
                            value="Run" />
                 </form>

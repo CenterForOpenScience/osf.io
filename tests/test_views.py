@@ -8,38 +8,49 @@ import datetime as dt
 from rest_framework import status as http_status
 import json
 import time
+import mock
+
 import unittest
 from future.moves.urllib.parse import quote
 
 from flask import request
-import mock
 import pytest
 from nose.tools import *  # noqa PEP8 asserts
 from django.utils import timezone
-from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.db import connection, transaction
-from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.osfstorage import settings as osfstorage_settings
 from addons.wiki.models import WikiPage
-from framework.auth import cas, authenticate
-from framework.flask import redirect
-from framework.auth.core import generate_verification_key
+
 from framework import auth
-from framework.auth.campaigns import get_campaigns, is_institution_login, is_native_login, is_proxy_login, campaign_url_for
-from framework.auth import Auth
-from framework.auth.cas import get_login_url
+from framework.auth import Auth, authenticate, cas, core
+from framework.auth.campaigns import (
+    get_campaigns,
+    is_institution_login,
+    is_native_login,
+    is_proxy_login,
+    campaign_url_for
+)
+
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
 from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
 from framework.exceptions import HTTPError, TemplateHTTPError
+from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
+
+from waffle.testutils import override_flag
+
 from website import mailchimp_utils, mails, settings, language
+<<<<<<< HEAD
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog
+=======
+>>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -51,14 +62,34 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
+<<<<<<< HEAD
+=======
+from website.settings import EXTERNAL_EMBER_APPS
+>>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
+from osf import features
 from osf.utils import permissions
+<<<<<<< HEAD
 from osf.models import Comment
 from osf.models import OSFUser, Tag
 from osf.models.spam import SpamStatus
+=======
+from osf.models import (
+    Comment,
+    AbstractNode,
+    NodeLog,
+    OSFUser,
+    Tag,
+    SpamStatus,
+    NodeRelation,
+    QuickFilesNode,
+    NotableEmailDomain
+)
+
+>>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -66,15 +97,17 @@ from tests.base import (
     get_default_metaschema,
     OsfTestCase,
     assert_datetime_equal,
+    test_app
 )
-from tests.base import test_app as mock_app
 from tests.utils import run_celery_tasks
 from tests.test_cas_authentication import generate_external_user_with_resp
 from api_tests.utils import create_test_file
 
-pytestmark = pytest.mark.django_db
 
+<<<<<<< HEAD
 from osf.models import NodeRelation, NotableEmailDomain
+=======
+>>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -99,17 +132,20 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 
-@mock_app.route('/errorexc')
+pytestmark = pytest.mark.django_db
+
+
+@test_app.route('/errorexc')
 def error_exc():
     UserFactory()
     raise RuntimeError
 
-@mock_app.route('/error500')
+@test_app.route('/error500')
 def error500():
     UserFactory()
     return 'error', 500
 
-@mock_app.route('/noautotransact')
+@test_app.route('/noautotransact')
 @no_auto_transaction
 def no_auto_transact():
     UserFactory()
@@ -122,12 +158,12 @@ class TestViewsAreAtomic(OsfTestCase):
         assert_equal(OSFUser.objects.count(), original_user_count)
 
         # Need to set debug = False in order to rollback transactions in transaction_teardown_request
-        mock_app.debug = False
+        test_app.debug = False
         try:
             self.app.get('/errorexc', expect_errors=True)
         except RuntimeError:
             pass
-        mock_app.debug = True
+        test_app.debug = True
 
         self.app.get('/noautotransact', expect_errors=True)
         assert_equal(OSFUser.objects.count(), original_user_count + 1)
@@ -983,7 +1019,6 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
         assert_in('This project is a withdrawn registration of', res.body.decode())
-
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -2866,7 +2901,7 @@ class TestPointerViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
         has_controls = res.lxml.xpath(
-            '//li[@node_id]//i[contains(@class, "remove-pointer")]')
+            '//div[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(has_controls), 3)
 
     def test_pointer_list_read_contributor_cannot_remove_private_component_entry(self):
@@ -2882,8 +2917,8 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_id]')
-        has_controls = res.lxml.xpath('//li[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
+        pointer_nodes = res.lxml.xpath('//div[@node_id]')
+        has_controls = res.lxml.xpath('//div[@node_id]/p[starts-with(normalize-space(text()), "Private Link")]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
         assert_false(has_controls)
 
@@ -2903,7 +2938,7 @@ class TestPointerViews(OsfTestCase):
         res = self.app.get(url, auth=user2.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-        pointer_nodes = res.lxml.xpath('//li[@node_id]')
+        pointer_nodes = res.lxml.xpath('//div[@node_id]')
         has_controls = res.lxml.xpath(
             '//li[@node_id]//i[contains(@class, "remove-pointer")]')
         assert_equal(len(pointer_nodes), 1)
@@ -3741,7 +3776,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         request.url = web_url_for('auth_login', next=self.next_url, _absolute=True)
         data = login_and_register_handler(self.no_auth, next_url=self.next_url)
         assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
-        assert_equal(data.get('next_url'), get_login_url(request.url))
+        assert_equal(data.get('next_url'), cas.get_login_url(request.url))
 
     def test_next_url_register_with_auth(self):
         # register: user with auth
@@ -3770,7 +3805,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
-            get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
+            cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution'))
 
     def test_institution_login_next_url_with_auth(self):
         # institution login: user with auth and next url
@@ -3784,7 +3819,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
-            get_login_url(self.next_url, campaign='institution'))
+            cas.get_login_url(self.next_url, campaign='institution'))
 
     def test_institution_regsiter_with_auth(self):
         # institution register: user with auth
@@ -3798,7 +3833,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
         assert_equal(
             data.get('next_url'),
-            get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
+            cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
         )
 
     def test_campaign_login_with_auth(self):
@@ -4875,7 +4910,7 @@ class TestResetPassword(OsfTestCase):
         super(TestResetPassword, self).setUp()
         self.user = AuthUserFactory()
         self.another_user = AuthUserFactory()
-        self.osf_key_v2 = generate_verification_key(verification_type='password')
+        self.osf_key_v2 = core.generate_verification_key(verification_type='password')
         self.user.verification_key_v2 = self.osf_key_v2
         self.user.verification_key = None
         self.user.save()
@@ -4887,7 +4922,7 @@ class TestResetPassword(OsfTestCase):
         self.get_url_invalid_key = web_url_for(
             'reset_password_get',
             uid=self.user._id,
-            token=generate_verification_key()
+            token=core.generate_verification_key()
         )
         self.get_url_invalid_user = web_url_for(
             'reset_password_get',
@@ -5031,6 +5066,7 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
+
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 
     def setUp(self):
@@ -5042,7 +5078,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
     def test_reset_password_get_returns_403(self):
 
         user = UserFactory()
-        osf_key_v2 = generate_verification_key(verification_type='password')
+        osf_key_v2 = core.generate_verification_key(verification_type='password')
         user.verification_key_v2 = osf_key_v2
         user.verification_key = None
         user.save()
