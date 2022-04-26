@@ -119,6 +119,11 @@ class NodeSettings(BaseNodeSettings):
 
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
+    @property
+    def complete(self):
+        # Implementation for enumeration with <node_id>/addons API
+        return False
+
     def get_file_metadatas(self):
         files = []
         for m in self.file_metadata.all():
