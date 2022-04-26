@@ -122,7 +122,7 @@ class NodeSettings(BaseNodeSettings):
     @property
     def complete(self):
         # Implementation for enumeration with <node_id>/addons API
-        return False
+        return True
 
     def get_file_metadatas(self):
         files = []
