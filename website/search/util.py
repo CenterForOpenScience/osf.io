@@ -18,24 +18,48 @@ DESCRIPTION_WEIGHT = 1.2
 JOB_SCHOOL_BOOST = 1
 ALL_JOB_SCHOOL_BOOST = 0.125
 
-def build_query(qs='*', start=0, size=10, sort=None, user_guid=None):
+
+def validate_email(user_email):
+    if user_email is not None:
+        regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        return bool(re.fullmatch(regex, user_email))
+
+    return False
+
+
+def build_query(qs='*', start=0, size=10, sort=None, match_value=None, match_key=None):
     query_body = build_query_string(qs)
-    if user_guid is not None:
-        query_body = {
-            'bool': {
-                'should': [
-                    query_body,
-                    {
-                        'match': {
-                            'id': {
-                                'query': user_guid,
-                                'boost': 10.0
+    if isinstance(match_key, str) and match_value is not None:
+        if match_key == 'emails':
+            build_query_emails = 'emails:' + match_value
+            query_body = {
+                'bool': {
+                    'should': [
+                        {
+                            'query_string': {
+                                'default_operator': 'AND',
+                                'query': build_query_emails
                             }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
+        else:
+            query_body = {
+                'bool': {
+                    'should': [
+                        query_body,
+                        {
+                            'match': {
+                                match_key: {
+                                    'query': match_value,
+                                    'boost': 10.0
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
     query = {
         'query': query_body,
         'from': start,
