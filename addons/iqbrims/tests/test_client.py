@@ -6,6 +6,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 
 from addons.iqbrims.client import (
+    IQBRIMSAuthClient,
     IQBRIMSClient,
     SpreadsheetClient,
     IQBRIMSFlowableClient,
@@ -19,7 +20,39 @@ from tests.base import OsfTestCase
 
 pytestmark = pytest.mark.django_db
 
+class TestIQBRIMSAuthClient(OsfTestCase):
+
+    def test_userinfo(self):
+        client = IQBRIMSAuthClient()
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.userinfo('TESTAC1234')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('GET', 'https://www.googleapis.com/oauth2/v3/userinfo'))
+            assert_equal(kwargs['params']['access_token'], 'TESTAC1234')
+        with mock.patch.object(client, '_make_request',
+                               return_value=MockResponse('{"test": true}',
+                                                         200)) as mkreq:
+            client.userinfo(b'TESTAC1234')
+            assert_equal(len(mkreq.mock_calls), 1)
+            name, args, kwargs = mkreq.mock_calls[0]
+            assert_equal(args, ('GET', 'https://www.googleapis.com/oauth2/v3/userinfo'))
+            assert_equal(kwargs['params']['access_token'], 'TESTAC1234')
+
+
 class TestIQBRIMSClient(OsfTestCase):
+
+    def test_authorization(self):
+        client = IQBRIMSClient(None)
+        assert_false('authorization' in client._default_headers)
+        client = IQBRIMSClient('TESTAC1234')
+        assert_equal(client._default_headers['authorization'],
+                     'Bearer TESTAC1234')
+        client = IQBRIMSClient(b'TESTAC1234')
+        assert_equal(client._default_headers['authorization'],
+                     'Bearer TESTAC1234')
 
     def test_create_content(self):
         client = IQBRIMSClient('0001')
@@ -114,6 +147,16 @@ class TestIQBRIMSClient(OsfTestCase):
 
 
 class TestIQBRIMSSpreadsheetClient(OsfTestCase):
+
+    def test_authorization(self):
+        client = SpreadsheetClient('0001', access_token=None)
+        assert_false('authorization' in client._default_headers)
+        client = SpreadsheetClient('0001', access_token='TESTAC1234')
+        assert_equal(client._default_headers['authorization'],
+                     'Bearer TESTAC1234')
+        client = SpreadsheetClient('0001', access_token=b'TESTAC1234')
+        assert_equal(client._default_headers['authorization'],
+                     'Bearer TESTAC1234')
 
     def test_add_files_no_dirs(self):
         client = SpreadsheetClient('0001')

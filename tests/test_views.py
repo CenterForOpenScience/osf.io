@@ -46,7 +46,7 @@ from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription
+from website.profile.views import update_osf_help_mails_subscription, _profile_view
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
@@ -614,6 +614,16 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs.latest().action, 'contributor_removed')
 
+    @mock.patch('website.project.views.contributor.finalize_invitation')
+    def test_project_contributor_re_invite(self, mock_finalize_invitation):
+        url = self.project.api_url_for('project_contributor_re_invite')
+        payload = {'guid': self.user2._id}
+        self.app.post(url, json.dumps(payload),
+                      content_type='application/json',
+                      auth=self.auth).maybe_follow()
+        self.project.reload()
+        mock_finalize_invitation.assert_called()
+
     def test_multiple_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
@@ -974,6 +984,25 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get('/{}/'.format(reg_file.guids.first()._id))
         assert_equal(res.status_code, 200)
         assert_in('This project is a withdrawn registration of', res.body.decode())
+
+    @mock.patch('website.util.quota.update_user_used_quota')
+    def test_component_remove_with_node_is_project(self, mock_update_user_used_quota_method):
+        url = self.project.api_url_for('component_remove')
+        res = self.app.delete_json(url, {'node_id': self.project._id}, auth=self.auth)
+        res_data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(res_data.get('url'), '/dashboard/')
+        mock_update_user_used_quota_method.assert_called()
+
+    @mock.patch('website.util.quota.update_user_used_quota')
+    def test_component_remove_with_node_is_component(self, mock_update_user_used_quota_method):
+        child_node = NodeFactory(parent=self.project, creator=self.user1)
+        url = child_node.api_url_for('component_remove')
+        res = self.app.delete_json(url, {'node_id': child_node._id}, auth=self.auth)
+        res_data = res.json
+        assert_equal(res.status_code, 200)
+        assert_equal(res_data.get('url'), child_node.parent_node.url)
+        mock_update_user_used_quota_method.assert_not_called()
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1544,6 +1573,94 @@ class TestUserProfile(OsfTestCase):
 
         res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
         assert res.status_code == 404
+
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
+    def test_user_update_not_temp_account(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_1 = 'test@cos.io'
+        email_2 = 'abcd@csp.com'
+        user2.emails.create(address=email_2)
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth,
+                                expect_errors=True)
+
+        assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+        assert_not_equal(res.json['message_long'], None)
+
+    @mock.patch('website.settings.ENABLE_USER_MERGE', False)
+    def test_user_update_has_temp_account(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_1 = 'test_1@cos.io'
+        email_2 = 'abc@scp.com'
+        user2.emails.create(address=email_2)
+        user2.temp_account = True
+        user2.save()
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth)
+
+        assert_equal(res.status_code, http_status.HTTP_200_OK)
+        assert_equal(len(res.json['profile']['emails']), 2)
+        assert_equal(res.json['user']['_id'], user1._id)
+        assert_true(res.json['user']['is_profile'])
+
+    def test_user_update_temp_user_not_exist(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        email_1 = 'andy@cos.vn'
+        email_2 = 'wis@csp.com'
+
+        url = api_url_for('update_user', user1._id)
+
+        header = {
+            'id': user1._id,
+            'emails': [
+                {'address': email_1, 'confirmed': True, 'primary': True},
+                {'address': email_2},
+                {'address': user1.username},
+            ]
+        }
+
+        res = self.app.put_json(url, header, auth=user1.auth,
+                                expect_errors=True)
+        assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
+
+    def test_profile_view_has_temp_user(self):
+        user1 = AuthUserFactory(fullname='fullname_1')
+        user2 = AuthUserFactory(fullname='fullname_2')
+        email_2 = 'luk@com.vn'
+        user2.emails.create(address=email_2)
+
+        res = _profile_view(user1, is_profile=True, temp_user=user2)
+
+        assert_equal(res['profile']['id'], user1._id)
+        assert_equal(res['profile']['fullname'], user1.fullname)
+        assert_equal(res['profile']['inactive_profile']['id'], user2._id)
+        assert_equal(res['profile']['inactive_profile']['fullname'],
+                     user2.fullname)
+
 
 class TestUserProfileApplicationsPage(OsfTestCase):
 
@@ -2344,6 +2461,25 @@ class TestUserInviteViews(OsfTestCase):
             osf_contact_email=settings.OSF_CONTACT_EMAIL,
             login_by_eppn=False,
         )
+
+    def test_claim_user_activate(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+        given_email = fake_email()
+        unreg_user = self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(self.project.creator),
+        )
+        unreg_user.save()
+
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid=unreg_user._id,
+            pid=self.project._id,
+        )
+        res = self.app.get(claim_url)
+        assert_equal(res.status_code, 200)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_referrer(self, send_mail):
@@ -5188,6 +5324,71 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
             }
         )
         assert_equal(res.status_code, 403)
+
+    def test_claim_user_form_cancel_request(self):
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        project.save()
+
+        claim_url = user.get_claim_url(project._primary_key)
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true'
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 302)
+
+    def test_claim_user_form_contributor_is_none(self):
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        claim_url = user.get_claim_url(project._primary_key)
+        claim_url = claim_url.replace(user._id, 'abcde')
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true',
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+
+    @mock.patch('osf.models.node.Node.cancel_invite')
+    def test_claim_user_form_not_nodes_removed(self, mock):
+        mock.return_value = False
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = fake.name()
+        given_email = fake_email()
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        claim_url = user.get_claim_url(project._primary_key)
+        res = self.app.get(
+            claim_url,
+            {
+                'cancel': 'true',
+            },
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
     # confirmation for existing user claiming contributor should fail with BingPreview
     def test_claim_user_form_existing_user(self):

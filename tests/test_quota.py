@@ -9,7 +9,8 @@ from api.base import settings as api_settings
 from framework.auth import signing
 from tests.base import OsfTestCase
 from osf.models import (
-    FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota, ProjectStorageType
+    FileLog, FileInfo, TrashedFileNode, TrashedFolder, UserQuota, ProjectStorageType, BaseFileNode
+
 )
 from osf_tests.factories import (
     AuthUserFactory, ProjectFactory, UserFactory, InstitutionFactory, RegionFactory
@@ -368,6 +369,10 @@ class TestSaveUsedQuota(OsfTestCase):
             materialized_path='/testfile'
         )
         self.file.save()
+        self.base_file_node = BaseFileNode(type='osf.s3file', provider='s3', _path='/testfile',
+                _materialized_path='/testfile', target_object_id=self.node.id, target_content_type_id=2)
+        self.base_folder_node = BaseFileNode(type='osf.s3folder', provider='s3', _path='/testfolder',
+                _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
 
     def test_add_first_file(self):
         assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
@@ -1104,6 +1109,11 @@ class TestSaveUsedQuota(OsfTestCase):
             user=self.user,
             event_type=FileLog.FILE_ADDED,
             payload={
+                'metadata': {
+                    'created_utc': '',
+                    'modified_utc': '',
+                    'extra': {'version': '1'}
+                },
                 'source': {
                     'provider': 'osfstorage',
                     'name': 'testfile',
@@ -1124,6 +1134,281 @@ class TestSaveUsedQuota(OsfTestCase):
                 }
             }
         )
+
+    def test_rename_folder_with_AmazonS3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_base_file_node_orderby = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3folder', provider='s3', _path='/newfoldername',
+                _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3folder', provider='s3', _path='/newfoldername',
+                _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)
+
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_RENAMED,
+                    payload={
+                        'destination': {
+                            'provider': 's3',
+                            'path': '/newfoldername',
+                            'kind': 'folder',
+                        },
+                        'source': {
+                            'provider': 's3',
+                            'path': '/prefolderename',
+                            'kind': 'folder',
+                        },
+                    }
+                )
+
+    def test_rename_file_with_AmazonS3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_base_file_node_orderby = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3file', provider='s3', _path='/newfilename',
+                _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3file', provider='s3', _path='/newfilename',
+                _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)
+
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_RENAMED,
+                    payload={
+                        'destination': {
+                            'provider': 's3',
+                            'path': '/newfilename',
+                            'kind': 'file',
+                        },
+                        'source': {
+                            'provider': 's3',
+                            'path': '/prefilename',
+                            'kind': 'file',
+                        },
+                    }
+                )
+
+    def test_upload_file_with_Amazon_S3(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5000
+        )
+
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+        mock_base_file_node = mock.MagicMock()
+        mock_file_info = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3file', provider='s3', _path='/testfile',
+                _materialized_path='/testfile', parent_id=self.node.id, target_object_id=self.node.id, target_content_type_id=2)
+        mock_file_info.objects.create.return_value = None
+
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.FileInfo', mock_file_info):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_ADDED,
+                    payload={
+                        'provider': 's3',
+                        'metadata': {
+                            'provider': 's3',
+                            'name': 'testfile',
+                            'materialized': '/testfile',
+                            'path': '/testfile',
+                            'kind': 'file',
+                            'size': 2000,
+                        }
+                    }
+                )
+
+        user_quota = UserQuota.objects.filter(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.project_creator
+        ).all()
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 7000)
+
+    def test_add_folder_with_Amazon_S3(self):
+        UserQuota.objects.create(
+            user=self.project_creator,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5000
+        )
+        institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(institution)
+        RegionFactory(_id=institution._id)
+        ProjectStorageType.objects.filter(node=self.node).update(
+            storage_type=ProjectStorageType.CUSTOM_STORAGE
+        )
+        mock_base_file_node = mock.MagicMock()
+        mock_file_info = mock.MagicMock()
+        mock_base_file_node.return_value = BaseFileNode(type='osf.s3folder', provider='s3', _path='/testfolder',
+                _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
+        mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(type='osf.s3folder', provider='s3', _path='/testfolder',
+                _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
+        mock_file_info.objects.create.return_value = None
+
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.FileInfo', mock_file_info):
+                quota.update_used_quota(
+                    self=None,
+                    target=self.node,
+                    user=self.user,
+                    event_type=FileLog.FILE_ADDED,
+                    payload={
+                        'provider': 's3',
+                        'action': 'create_folder',
+                        'metadata': {
+                            'provider': 's3',
+                            'name': '/testfolder',
+                            'materialized': '/testfolder',
+                            'path': '/testfolder',
+                            'kind': 'folder',
+                            'size': 0,
+                        }
+                    }
+                )
+
+        user_quota = UserQuota.objects.filter(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.project_creator
+        ).all()
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 5000)
+
+    def test_delete_file_with_Amazon_S3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_file_info = mock.MagicMock()
+        mock_user_quota = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = self.base_file_node
+        mock_file_info.objects.get.return_value = FileInfo(file=self.base_file_node, file_size=1000)
+        mock_user_quota.objects.filter.return_value.first.return_value = UserQuota(
+            user=self.project_creator,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.FileInfo', mock_file_info):
+                with mock.patch('website.util.quota.UserQuota', mock_user_quota):
+                    quota.update_used_quota(
+                        self=None,
+                        target=self.node,
+                        user=self.user,
+                        event_type=FileLog.FILE_REMOVED,
+                        payload={
+                            'provider': 's3',
+                            'metadata': {
+                                'provider': 's3',
+                                'name': 'testfile',
+                                'materialized': '/filename',
+                                'path': '/filename',
+                                'kind': 'file'
+                            }
+                        }
+                    )
+        user_quota = UserQuota.objects.get(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.project_creator
+        )
+        assert_equal(user_quota.used, 4500)
+
+    def test_delete_folder_with_Amazon_S3(self):
+        mock_base_file_node = mock.MagicMock()
+        mock_file_info = mock.MagicMock()
+        mock_user_quota = mock.MagicMock()
+        mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = self.base_folder_node
+        folder_element = BaseFileNode(type='osf.s3folder', provider='s3', _path='/testfolder/foldername',
+                _materialized_path='/testfolder/foldername', target_object_id=self.node.id, target_content_type_id=2)
+        mock_base_file_node.objects.filter.return_value.all.return_value = [self.base_file_node, folder_element]
+        mock_file_info.objects.get.return_value = FileInfo(file=self.base_file_node, file_size=1500)
+        mock_user_quota.objects.filter.return_value.first.return_value = UserQuota(
+            user=self.project_creator,
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=5500
+        )
+        with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
+            with mock.patch('website.util.quota.FileInfo', mock_file_info):
+                with mock.patch('website.util.quota.UserQuota', mock_user_quota):
+                    quota.update_used_quota(
+                        self=None,
+                        target=self.node,
+                        user=self.user,
+                        event_type=FileLog.FILE_REMOVED,
+                        payload={
+                            'provider': 's3',
+                            'metadata': {
+                                'provider': 's3',
+                                'name': 'testfolder',
+                                'materialized': '/testfolder',
+                                'path': '/testfolder',
+                                'kind': 'folder'
+                            }
+                        }
+                    )
+        user_quota = UserQuota.objects.get(
+            storage_type=UserQuota.CUSTOM_STORAGE,
+            user=self.project_creator
+        )
+        assert_equal(user_quota.used, 4000)
+
+
+class TestUpdateUserUsedQuota(OsfTestCase):
+    def setUp(self):
+        super(TestUpdateUserUsedQuota, self).setUp()
+        self.user = UserFactory()
+        self.user.save()
+        self.user_quota = UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200,
+                                                   used=1000)
+
+    @mock.patch.object(UserQuota, 'save')
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_with_user_quota_exist(self, mock_used, mock_user_quota_save):
+
+        mock_used.return_value = 500
+        quota.update_user_used_quota(
+            user=self.user,
+            storage_type=UserQuota.NII_STORAGE
+        )
+
+        mock_user_quota_save.assert_called()
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_with_user_quota_not_exist(self, mock_used):
+        another_user = UserFactory()
+        mock_used.return_value = 500
+
+        quota.update_user_used_quota(
+            user=another_user,
+            storage_type=UserQuota.NII_STORAGE
+        )
+
+        user_quota = UserQuota.objects.filter(
+            storage_type=UserQuota.NII_STORAGE,
+        ).all()
+
+        assert_equal(len(user_quota), 2)
+        user_quota = user_quota.filter(user=another_user)
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 500)
+
 
 class TestQuotaApiWaterbutler(OsfTestCase):
     def setUp(self):

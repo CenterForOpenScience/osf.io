@@ -149,6 +149,11 @@
                   </ul>
               </div>
           {% endif %}
+          <li>
+              <a href="{% url 'user-emails:search' %}">
+                  <i class='fa fa-link'></i> <span> {% trans "RDM" %} {% trans "User Emails" %}</span>
+              </a>
+          </li>
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Spam" %}</span></a></li>
           {% endif %}

@@ -3,26 +3,18 @@ import datetime
 import mock
 import pytest
 import pytz
-
+from addons.osfstorage.models import NodeSettings
+from addons.wiki.models import WikiPage, WikiVersion
+from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
+from api_tests.utils import disconnected_from_listeners
 from django.utils import timezone
+from framework.auth.core import Auth
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
 from framework.sessions import set_session
-from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added, contributor_removed, after_create_registration
+from nose.tools import assert_not_in
 from osf.exceptions import NodeStateError
-from osf.utils import permissions
-from website.util import api_url_for, web_url_for
-from api_tests.utils import disconnected_from_listeners
-from website.citations.utils import datetime_to_csl
-from website import language, settings
-from website.project.views.node import serialize_collections
-from website.views import find_bookmark_collection
-from osf.models.node import set_project_storage_type
-from addons.osfstorage.models import NodeSettings
-
-from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
-
+from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.models import (
     AbstractNode,
     Email,
@@ -38,13 +30,12 @@ from osf.models import (
     DraftRegistrationApproval,
     CollectionSubmission
 )
-
-from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
-from osf.exceptions import ValidationError, ValidationValueError, UserStateError
+from osf.models.node import set_project_storage_type
+from osf.models.project_storage_type import ProjectStorageType
+from osf.utils import permissions
+from osf.utils.permissions import READ, WRITE, ADMIN, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from osf.utils.workflows import DefaultStates
-from framework.auth.core import Auth
-
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -68,32 +59,44 @@ from osf_tests.factories import (
     CollectionProviderFactory,
     RegionFactory,
 )
-from .factories import get_default_metaschema
-from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
-from osf.models.project_storage_type import ProjectStorageType
+from website import language, settings
+from website.citations.utils import datetime_to_csl
+from website.project.model import has_anonymous_link
+from website.project.signals import contributor_added, contributor_removed, after_create_registration
+from website.project.views.node import serialize_collections
+from website.util import api_url_for, web_url_for
+from website.views import find_bookmark_collection
+
+from .factories import get_default_metaschema
 
 pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture()
 def user():
     return UserFactory()
 
+
 @pytest.fixture()
 def node(user):
     return NodeFactory(creator=user)
+
 
 @pytest.fixture()
 def project(user):
     return ProjectFactory(creator=user)
 
+
 @pytest.fixture()
 def auth(user):
     return Auth(user)
 
+
 @pytest.fixture()
 def subject():
     return SubjectFactory()
+
 
 @pytest.fixture()
 def preprint(user):
@@ -754,7 +757,8 @@ class TestProject:
         assert deleted_linked_node not in project.nodes_active
 
     def test_project_storage_type_with_default_region(self, project, auth):
-        projectStorageType = ProjectStorageType(node=project, storage_type=auth.user.get_addon('osfstorage').default_region_id)
+        projectStorageType = ProjectStorageType(node=project,
+                                                storage_type=auth.user.get_addon('osfstorage').default_region_id)
         fetch_newly_created_project = ProjectStorageType.objects.get(node=project)
         assert fetch_newly_created_project.storage_type == projectStorageType.storage_type
 
@@ -866,12 +870,14 @@ class TestTagging:
         node.add_system_tag('systag')
         assert 'systag' not in node.tags.values_list('name', flat=True)
 
+
 class TestSearch:
 
     @mock.patch('website.search.search.update_node')
     def test_update_search(self, mock_update_node, node):
         node.update_search()
         assert mock_update_node.called
+
 
 class TestNodeCreation:
 
@@ -902,6 +908,7 @@ class TestNodeCreation:
         params = first_log.params
         assert params['node'] == node._id
         assert_datetime_equal(first_log.date, node.created)
+
 
 # Copied from tests/test_models.py
 class TestContributorMethods:
@@ -970,8 +977,8 @@ class TestContributorMethods:
         with pytest.raises(UserStateError) as excinfo:
             node.add_contributor(unregistered_user, auth=Auth(user))
         assert str(excinfo.value) == 'This contributor cannot be added. ' \
-                                        'If the problem persists please report it to please report it to' \
-                                        ' <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>.'
+                                     'If the problem persists please report it to please report it to' \
+                                     ' <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>.'
 
     def test_cant_add_creator_as_contributor_twice(self, node, user):
         node.add_contributor(contributor=user)
@@ -988,7 +995,7 @@ class TestContributorMethods:
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self, node, auth):
         new_user = node.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
+                                                     email='david@davidson.com', auth=auth)
         node.save()
         assert node.is_contributor(new_user)  # sanity check
         assert node._primary_key in new_user.unclaimed_records
@@ -1214,7 +1221,6 @@ class TestContributorMethods:
         )
 
     def test_permission_override_on_readded_contributor(self, node, user):
-
         # A child node created
         child_node = NodeFactory(parent=node, creator=user)
 
@@ -1285,6 +1291,65 @@ class TestContributorMethods:
                 auth=auth
             )
 
+    def test_cancel_invite(self, node, auth):
+        user = UserFactory()
+        node.add_contributor(contributor=user, auth=auth, save=True)
+        assert user in node.contributors
+        node.cancel_invite(contributor=user)
+        node.reload()
+
+        assert user not in node.contributors
+        assert node.logs.latest().params['contributors'] == [user._id]
+
+    def test_cancel_invite_isinstance(self, node, auth):
+        user = AuthUserFactory()
+        contributor = Contributor()
+        setattr(contributor, 'user', user)
+        node.add_contributor(contributor=user, auth=auth, save=True)
+        assert user in node.contributors
+
+        node.cancel_invite(contributor=contributor)
+        node.reload()
+
+        assert user not in node.contributors
+        assert node.logs.latest().params['contributors'] == [user._id]
+
+    def test_cancel_invite_unclaimed_records(self, node, auth):
+        referrer = AuthUserFactory()
+        project = ProjectFactory(creator=referrer, is_public=True)
+        given_name = 'given'
+        given_email = 'abc@gmail.com'
+        user = project.add_unregistered_contributor(
+            fullname=given_name,
+            email=given_email,
+            auth=Auth(user=referrer)
+        )
+        project.save()
+        project.cancel_invite(user)
+
+        assert isinstance(user, Contributor) is False
+
+        assert_not_in(
+            project._primary_key,
+            user.unclaimed_records.keys()
+        )
+
+    def test_cancel_invite_get_identifier_value(self, node, auth):
+        user = AuthUserFactory()
+        node.add_contributor(contributor=user, auth=auth, save=True)
+
+        def my_function(name=''):
+            return {'name': name}
+
+        setattr(node, 'get_identifier_value', my_function)
+        assert user in node.contributors
+
+        node.cancel_invite(contributor=user)
+        node.reload()
+
+        assert user not in node.contributors
+        assert node.logs.latest().params['contributors'] == [user._id]
+
 
 # Copied from tests/test_models.py
 @pytest.mark.enable_implicit_clean
@@ -1292,7 +1357,8 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id,
+                                                                 save=True)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1300,7 +1366,8 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email,
+                                                                 full_name=unregistered_user.fullname)
 
         contributor = contributor_obj.user
         assert contributor in node.contributors
@@ -1318,7 +1385,8 @@ class TestNodeAddContributorRegisteredOrNot:
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe',
+                                                                 email='jane@doe.com')
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
@@ -1331,7 +1399,8 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury',
+                                                                 email=registered_user.username)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1340,7 +1409,8 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         secondary_email = 'secondary@test.test'
         Email.objects.create(address=secondary_email, user=registered_user)
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury',
+                                                                 email=secondary_email)
         contributor = contributor_obj.user
         assert contributor == registered_user
         assert contributor in node.contributors
@@ -1349,7 +1419,8 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_unregistered(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname,
+                                                                 email=unregistered_user.email)
         contributor = contributor_obj.user
         assert contributor == unregistered_user
         assert contributor in node.contributors
@@ -1382,7 +1453,8 @@ class TestContributorProperties:
         child1 = ProjectFactory(parent=project)
         child2 = ProjectFactory(parent=child1)
         assert child1.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id}
-        assert child2.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id, child2.creator._id}
+        assert child2.admin_contributor_or_group_member_ids == {project.creator._id, child1.creator._id,
+                                                                child2.creator._id}
         admin = UserFactory()
         project.add_contributor(admin, auth=Auth(project.creator), permissions=ADMIN)
         project.set_permissions(project.creator, WRITE)
@@ -1402,7 +1474,8 @@ class TestContributorProperties:
         project.update_osf_group(group, permissions.ADMIN)
         project.save()
         assert child1.admin_contributor_or_group_member_ids == {child1.creator._id, admin._id, group_member._id}
-        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id, group_member._id}
+        assert child2.admin_contributor_or_group_member_ids == {child2.creator._id, child1.creator._id, admin._id,
+                                                                group_member._id}
 
 
 class TestContributorAddedSignal:
@@ -1437,7 +1510,7 @@ class TestContributorVisibility:
     def project(self, user, user2):
         p = ProjectFactory(creator=user)
         p.add_contributor(user2)
-        #p.save()
+        # p.save()
         return p
 
     def test_get_visible_true(self, project):
@@ -1831,6 +1904,7 @@ class TestPermissionMethods:
         project.save()
         assert project.is_contributor(unreg) is True
 
+
 # Copied from tests/test_models
 # Permissions are now on the Contributor model, and are well-defined (i.e. not 'dance')
 # Consider removing this class
@@ -2181,6 +2255,7 @@ class TestAddUnregisteredContributor:
         unclaimed_data = unreg_user.get_unclaimed_record(node._primary_key)
         assert unclaimed_data['email'] == username
 
+
 def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()
     project = ProjectFactory(is_public=True)
@@ -2216,6 +2291,7 @@ def test_can_comment():
     group = OSFGroupFactory(creator=group_mem)
     private_node.add_osf_group(group, permissions.READ)
     assert private_node.can_comment(Auth(group_mem)) is True
+
 
 def test_parent_kwarg():
     parent = NodeFactory()
@@ -2315,6 +2391,7 @@ class TestSetPrivacy:
             registration.set_privacy('public', auth=auth)
             assert mock_request_embargo_termination.call_count == 1
 
+
 # copied from tests/test_models.py
 class TestNodeSpam:
 
@@ -2333,7 +2410,8 @@ class TestNodeSpam:
     def test_check_spam_disabled_by_default(self, project, user):
         # SPAM_CHECK_ENABLED is False by default
         with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+            with mock.patch('osf.models.node.Node.do_check_spam',
+                            mock.Mock(side_effect=Exception('should not get here'))):
                 project.set_privacy('public')
                 assert project.check_spam(user, None, None) is False
 
@@ -2341,14 +2419,16 @@ class TestNodeSpam:
     def test_check_spam_only_public_node_by_default(self, project, user):
         # SPAM_CHECK_PUBLIC_ONLY is True by default
         with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+            with mock.patch('osf.models.node.Node.do_check_spam',
+                            mock.Mock(side_effect=Exception('should not get here'))):
                 project.set_privacy('private')
                 assert project.check_spam(user, None, None) is False
 
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_check_spam_skips_ham_user(self, project, user):
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
-            with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
+            with mock.patch('osf.models.AbstractNode.do_check_spam',
+                            mock.Mock(side_effect=Exception('should not get here'))):
                 user.confirm_ham()
                 project.set_privacy('public')
                 assert project.check_spam(user, None, None) is False
@@ -2515,8 +2595,8 @@ class TestManageContributors:
 
     def test_contributor_manage_visibility(self, node, user, auth):
         reg_user1 = UserFactory()
-        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
-        #for other contributors is removed ensuring there is always at least one visible contributor
+        # This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        # for other contributors is removed ensuring there is always at least one visible contributor
         node.add_contributor(contributor=user, permissions=ADMIN, auth=auth)
         node.add_contributor(contributor=reg_user1, permissions=ADMIN, auth=auth)
 
@@ -2730,6 +2810,7 @@ class TestManageContributors:
         assert noncontrib not in result
         assert nonactive_admin not in result
         assert group_member not in result
+
 
 # copied from tests/test_models.py
 class TestNodeTraversals:
@@ -3304,6 +3385,7 @@ class TestForkNode:
         assert fork_wiki_version._id != wiki._id
         assert fork_wiki_version.identifier == 1
 
+
 class TestContributorOrdering:
 
     def test_can_get_contributor_order(self, node):
@@ -3401,6 +3483,7 @@ class TestNodeOrdering:
         assert len(parent.get_nodes()) == 1  # child
         assert len(linker.get_nodes()) == 2  # child and unrelated
 
+
 def test_node_ids(node):
     child1, child2 = NodeFactory(parent=node), NodeFactory(parent=node)
 
@@ -3470,6 +3553,7 @@ class TestLogMethods:
         n_logs_after = parent.get_logs_queryset(auth=Auth(parent.creator)).count()
         # one more log for adding the node link
         assert n_logs_after == n_logs_before + 1
+
 
 # copied from tests/test_notifications.py
 class TestHasPermissionOnChildren:
@@ -3841,7 +3925,8 @@ class TestOnNodeUpdate:
         node.title = 'A new title'
         node.save()
 
-        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated',
+                                            predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
         assert task.kwargs['node_id'] == node._id
@@ -3850,12 +3935,14 @@ class TestOnNodeUpdate:
         assert 'title' in task.kwargs['saved_fields']
 
     def test_queueing_on_node_updated(self, node, user):
-        node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
+        node.set_identifier_value(category='doi',
+                                  value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
         node.title = 'Something New'
         node.save()
 
         # make sure on_node_updated is in the queue
-        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        assert handlers.get_task_from_queue('website.project.tasks.on_node_updated',
+                                            predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         # adding a contributor to the node will also trigger on_node_updated
         new_person = UserFactory()
@@ -3874,7 +3961,8 @@ class TestOnNodeUpdate:
         node.save()
 
         # Make sure there's just one on_node_updated task, and that is has contributors and node_license in the kwargs
-        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
+        task = handlers.get_task_from_queue('website.project.tasks.on_node_updated',
+                                            predicate=lambda task: task.kwargs['node_id'] == node._id)
         assert 'contributors' in task.kwargs['saved_fields']
         assert 'node_license' in task.kwargs['saved_fields']
 
@@ -4205,6 +4293,7 @@ class TestTemplateNode:
                 set([permissions.READ, permissions.WRITE, permissions.ADMIN])
             )
 
+
 # copied from tests/test_models.py
 class TestNodeLog:
 
@@ -4329,6 +4418,7 @@ class TestAddonMethods:
             len(node.get_addon_names()) ==
             addon_count
         )
+
 
 # copied from tests/test_models.py
 class TestAddonCallbacks:
@@ -4517,7 +4607,7 @@ class TestAdminImplicitRead(object):
         assert project not in qs
 
     def test_private_link_public(self, project, lvl1component,
-            lvl1component_two, project_public):
+                                 lvl1component_two, project_public):
         pl = PrivateLinkFactory()
 
         lvl1component.private_links.add(pl)
@@ -4628,7 +4718,8 @@ class TestCollectionProperties:
 
         ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
         ids_expected = {collection_one._id, collection_two._id, collection_public._id}
-        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
+        ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id,
+                            private_non_provided_collection._id}
 
         assert ids_not_expected.isdisjoint(ids_actual)
         assert ids_actual == ids_expected

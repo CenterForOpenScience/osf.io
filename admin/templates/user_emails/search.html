@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
+    <style type="text/css">
+        .w-label {
+            width: 110px;
+        }
+        .w-item {
+            max-width: 320px;
+            min-width: 160px;
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "RDM" %} {% trans "User-Emails" %} - {% trans "User Search" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div id="error_message" class="row hidden"></div>
+        <div class="row">
+            <h3>{% trans "User Search" %}</h3>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <form name="user-search" action="{% url 'user-emails:search' %}" method="post"
+                      onsubmit="return validateForm()"
+                      class="form-horizontal">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="id_guid" class="col-sm-3 control-label w-label">{% trans "GUID" %}</label>
+                        <div class="col-sm-9 w-item">
+                            <input type="text" name="guid" value="" class="form-control"
+                                   maxlength="5" minlength="5"
+                                   pattern="[0-9a-z]{5}"
+                                   title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
+                                   id="id_guid">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_name" class="col-sm-3 control-label w-label">{% trans "Name" %}</label>
+                        <div class="col-sm-9 w-item">
+                            <input type="text" name="name" value="" class="form-control"
+                                   maxlength="255"
+                                   id="id_name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_email" class="col-sm-3 control-label w-label">{% trans "Email" %}</label>
+                        <div class="col-sm-9 w-item">
+                            <input type="email" name="email" value="" class="form-control"
+                                   maxlength="255" minlength="6"
+                                   pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+                                   title="{% trans 'Please enter an email address' %}"
+                                   id="id_email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-3 control-label w-label"></div>
+                        <div class="col-sm-9">
+                            <input type="submit" class="btn btn-primary" value="{% trans 'Submit@search' %}"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    <script>
+        function validateForm() {
+            return !!$('#id_guid').val() || (!!$('#id_name').val() && $('#id_name').val().length <= 255) || !!$('#id_email').val();
+        }
+    </script>
+{% endblock %}

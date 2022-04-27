@@ -64,6 +64,8 @@ def main(dry_run=True):
 
 @celery_app.task(name='scripts.approve_registrations')
 def run_main(dry_run=True):
+    if not settings.ENABLED_REGISTRATION_APPROVAL_TIME:
+        return
     init_app(routes=False)
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)

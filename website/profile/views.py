@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
+
+from django.db.models import Q
 from rest_framework import status as http_status
 
 from django.utils import timezone
@@ -37,6 +39,10 @@ from website.profile import utils as profile_utils
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from addons.base import utils as addon_utils
+from api.base import settings as api_settings
+from addons.metadata import FULL_NAME as METADATA_FULL_NAME
+from addons.metadata.utils import append_user_social as append_metadata_user_social
+from addons.metadata.utils import unserialize_user_social as unserialize_metadata_user_social
 from admin.rdm_addons.utils import validate_rdm_addons_allowed
 
 from api.waffle.utils import storage_i18n_flag_active
@@ -169,12 +175,23 @@ def update_user(auth):
                     message_long=language.BLACKLISTED_EMAIL)
                 )
 
+            email_obj = next((email for email in data['emails'] if email.get('address') == address))
+
             if settings.ENABLE_USER_MERGE is False:
-                if Email.objects.filter(address=address).exists() \
-                   or OSFUser.objects.filter(username=address).exists():
-                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
-                        message_long='Existing email address')
-                    )
+                existing_user_ids = list(Email.objects.filter(Q(address__exact=address)).values_list('user_id', flat=True))
+                existing_users = OSFUser.objects.filter(Q(pk__in=existing_user_ids) | Q(username__exact=address))
+                existing_user = existing_users.first() if existing_users.exists() else None
+                if existing_user:
+                    if not existing_user.temp_account:
+                        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+                            message_long='Existing email address')
+                        )
+                    else:
+                        if not email_obj.get('allow_active'):
+                            # To Show dialog to confirm activation
+                            data['emails'].remove(email_obj)
+                            user.remove_unconfirmed_email(address)
+                            return _profile_view(user, is_profile=True, temp_user=existing_user)
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -247,13 +264,25 @@ def update_user(auth):
     return _profile_view(user, is_profile=True)
 
 
-def _profile_view(profile, is_profile=False, include_node_counts=False):
+def _profile_view(profile, is_profile=False, include_node_counts=False, temp_user=None):
     if profile and profile.is_disabled:
         raise HTTPError(http_status.HTTP_410_GONE)
 
     if profile:
         profile_quickfilesnode = QuickFilesNode.objects.get_for_user(profile)
         profile_user_data = profile_utils.serialize_user(profile, full=True, is_profile=is_profile, include_node_counts=include_node_counts)
+        if temp_user:
+            fullname = temp_user.display_full_name()
+            temp_profile = {
+                'id': str(temp_user._id),
+                'email': temp_user.username.strip().lower(),
+                'registered': temp_user.is_registered,
+                'surname': temp_user.family_name,
+                'fullname': fullname,
+                'givenName': temp_user.given_name,
+                'active': temp_user.is_active,
+            }
+            profile_user_data['inactive_profile'] = temp_profile
         ret = {
             'profile': profile_user_data,
             'user': {
@@ -680,6 +709,8 @@ def serialize_social(auth, uid=None, **kwargs):
     append_editable(ret, auth, uid)
     if ret['editable']:
         ret['addons'] = serialize_social_addons(target)
+    if METADATA_FULL_NAME in api_settings.INSTALLED_APPS:
+        append_metadata_user_social(ret, target)
     return ret
 
 
@@ -786,6 +817,8 @@ def unserialize_social(auth, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long=exc.messages[0]
         ))
+    if METADATA_FULL_NAME in api_settings.INSTALLED_APPS:
+        unserialize_metadata_user_social(json_data, user)
 
 
 def unserialize_job(job):
