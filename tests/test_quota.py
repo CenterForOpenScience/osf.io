@@ -1368,7 +1368,7 @@ class TestSaveUsedQuota(OsfTestCase):
         )
         assert_equal(user_quota.used, 4000)
 
-        
+
 class TestUpdateUserUsedQuota(OsfTestCase):
     def setUp(self):
         super(TestUpdateUserUsedQuota, self).setUp()
