@@ -142,19 +142,20 @@
                     <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a %(registeredFromUrl)s>this %(nodeType)s</a>') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"',nodeType=node['node_type']) }</div>
                 % endif
             % else:
-                <div class="alert alert-info">
-                    <div>${ _('This is a pending registration of <a %(registeredFromUrl)s>this %(nodeType)s</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"', nodeType=h(node['node_type'])) | n }</div>
-
-                    % if 'permissions.ADMIN' in user['permissions']:
-                        <div>
-                            <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                ${ _("Cancel registration") }
-                            </button>
-                        </div>
-                        <%include file="modal_confirm_cancel_registration.mako"/>
-                    % endif
-                </div>
+                ## Hide top alert message for metadata addon
+##                 <div class="alert alert-info">
+##                     <div>${ _('This is a pending registration of <a %(registeredFromUrl)s>this %(nodeType)s</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"', nodeType=h(node['node_type'])) | n }</div>
+##
+##                     % if 'permissions.ADMIN' in user['permissions']:
+##                         <div>
+##                             <br>
+##                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+##                                 ${ _("Cancel registration") }
+##                             </button>
+##                         </div>
+##                         <%include file="modal_confirm_cancel_registration.mako"/>
+##                     % endif
+##                 </div>
             % endif
 
             <style type="text/css">

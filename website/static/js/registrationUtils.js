@@ -783,14 +783,16 @@ Draft.prototype.reject = function() {
  * @param {String} urls.update: endpoint to update a draft instance
  * @param {String} editorId: id of editor DOM node
  * @param {Boolean} preview: enable preview mode-- adds a KO binding handler to allow extensions to define custom preview behavior
+ * @param {Object} registeredFrom
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
  * @property {Object} extensions: mapping of extenstion names to their view models
  **/
-var RegistrationEditor = function(urls, editorId, preview) {
+var RegistrationEditor = function(urls, editorId, preview, registeredFrom) {
     var self = this;
     self.urls = urls;
+    self.registeredFrom = registeredFrom;
 
     self.readonly = ko.observable(false);
 
@@ -880,40 +882,103 @@ var RegistrationEditor = function(urls, editorId, preview) {
         'osf-author-import': editorExtensions.AuthorImport
     };
 
+    var serializeFileMetadatas = function (fileMetadatas) {
+        var extractTitleFromMetadata = function (metadata) {
+            const titleJa = metadata.metadata['grdm-file:title-ja'];
+            const titleEn = metadata.metadata['grdm-file:title-en'];
+            if (!titleJa && !titleEn) {
+                return null;
+            }
+            if (titleJa && !titleEn) {
+                return titleJa.value;
+            }
+            if (!titleJa && titleEn) {
+                return titleEn.value;
+            }
+            if (!titleJa.value && !titleEn.value) {
+                return null;
+            }
+            if (titleJa.value && !titleEn.value) {
+                return titleJa.value;
+            }
+            if (!titleJa.value && titleEn.value) {
+                return titleEn.value;
+            }
+            return titleJa.value + '/' + titleEn.value;
+        };
+
+        var extractUrlFromMetadata = function (metadata) {
+            const url = metadata.metadata['grdm-file:repo-url-doi-link'];
+            if (!url) {
+                return null;
+            }
+            return url.value;
+        };
+
+        return $.map(fileMetadatas, function (metadata) {
+            return {
+                path: metadata.path,
+                folder: metadata.path.match(/.+\/$/) !== null,
+                title: extractTitleFromMetadata(metadata),
+                url: extractUrlFromMetadata(metadata),
+            };
+        });
+    };
+
     preview = preview || false;
     if (preview) {
-	var unwrap = function(question) {
-	    var $elem = $('<span>');
-	    if (question.type === 'object') {
-                $elem.append(
-		    $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                    $.map(question.properties, function(subQuestion) {
-                        subQuestion = self.context(subQuestion, self, true);
-			return unwrap(subQuestion);
-		    })
-                );
+	var unwrap = function (question) {
+        var $elem = $('<span>');
+        if (question.format === 'file-metadata') {
+            var fileEntries = serializeFileMetadatas(JSON.parse(question.value()));
+            var baseUrl = self.registeredFrom.urls.web;
+            var fromTitle = self.registeredFrom.title;
+            $elem.append(
+                $('<span class="col-md-12">').append(
+                    $('<h4 id="file-metadata">').append(fromTitle),
+                    $('<p>').append('<a href="' + baseUrl + '" target="_blank" rel="noopener">' + baseUrl + '</a>'),
+                    $('<span class="col-md-12 well">').append(
+                        $('<ul>').append(
+                            $.map(fileEntries, function (fileEntry) {
+                                return $('<li>').append(
+                                    $('<span>').append(fileEntry.title),
+                                    fileEntry.url ?
+                                        $('<a href="' + fileEntry.url + '" target="_blank" rel="noopener">').append(fileEntry.url) :
+                                        $('<a href="' + baseUrl + '/files/" target="_blank" rel="noopener">').append(fileEntry.path)
+                                );
+                            })
+                        )
+                    )
+                ));
+        } else if (question.type === 'object') {
+            $elem.append(
+                $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                $.map(question.properties, function (subQuestion) {
+                    subQuestion = self.context(subQuestion, self, true);
+                    return unwrap(subQuestion);
+                })
+            );
+        } else {
+            var value;
+            if (self.extensions[question.type]) {
+                value = question.preview();
+            } else {
+                value = $osf.htmlEscape(question.value() || '');
             }
-	    else {
-                var value;
-                if (self.extensions[question.type] ) {
-                    value = question.preview();
-                } else {
-                    value = $osf.htmlEscape(question.value() || '');
-                }
-		$elem.append(
-		    $('<span class="col-md-12">').append(
-			$('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
-                            $('<span class="well breaklines col-xs-12">').append(value)
-		));
-            }
-	    return $elem;
-	};
+            $elem.append(
+                $('<span class="col-md-12">').append(
+                    $('<p class="breaklines"><small><em>' + $osf.htmlEscape(question.description) + '</em></small></p>'),
+                    $('<span class="well breaklines col-xs-12">').append(value)
+                ));
+        }
+        return $elem;
+    };
 
         ko.bindingHandlers.previewQuestion = {
-            init: function(elem, valueAccessor) {
+            init: function (elem, valueAccessor) {
                 var question = valueAccessor();
                 var $elem = $(elem);
-		$elem.append(unwrap(question));
+                $elem.append(unwrap(question));
             }
         };
     }

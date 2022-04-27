@@ -375,7 +375,7 @@ class RegistrationResponsesValidator:
             question.registration_response_key,  # default
         )
 
-        if question.block_type == 'single-select-input':
+        if question.block_type in ('single-select-input', 'e-rad-award-funder-input'):
             return {
                 'type': 'string',
                 'enum': self._get_multiple_choice_options(question),
@@ -396,7 +396,17 @@ class RegistrationResponsesValidator:
                 'items': self.FILE_REFERENCE,
                 'description': question_text,
             }
-        elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input'):
+        elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input',
+                                     'e-rad-award-number-input', 'e-rad-award-title-ja-input',
+                                     'e-rad-award-title-en-input',
+                                     'e-rad-researcher-number-input',
+                                     'e-rad-researcher-name-ja-input',
+                                     'e-rad-researcher-name-en-input',
+                                     'e-rad-bunnya-input',
+                                     'file-metadata-input', 'date-input',
+                                     'file-capacity-input', 'file-creators-input',
+                                     'file-url-input', 'file-institution-ja-input',
+                                     'file-institution-en-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',

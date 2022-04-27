@@ -3192,3 +3192,6 @@ msgstr "プライマリにする"
 
 msgid "Search Results"
 msgstr "ユーザ検索結果"
+
+msgid "Recalculate quota"
+msgstr "クォータ再計算"

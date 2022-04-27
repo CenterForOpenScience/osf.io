@@ -283,7 +283,7 @@ function buttonClicked(button, route) {
     ajaxRequest(params, providerShortName, route, null);
 }
 
-var csrftoken = Cookie.get('admin-csrf');
+var csrftoken = $('[name=csrfmiddlewaretoken]').val()
 
 function csrfSafeMethod(method) {
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));

@@ -8,7 +8,7 @@ timestampCommon.setWebOrAdmin('admin');
 
 
 $(function () {
-    var csrftoken = Cookie.get('admin-csrf');
+    var csrftoken = $('[name=csrfmiddlewaretoken]').val()
     function csrfSafeMethod (method) {
         // these HTTP methods do not require CSRF protection
         return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));

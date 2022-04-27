@@ -44,6 +44,11 @@ PROVIDERS = {
     'weko': 'WEKO',
     'dropboxbusiness': 'Dropbox Business',
     'nextcloudinstitutions': 'Nextcloud for Institutions',
+    's3compatinstitutions': 'S3 Compatible Storage for Institutions',
+    's3compatb3': 'S3 Compatible Storage',
+    'ociinstitutions': 'Oracle Cloud Infrastructure for Institutions',
+    'iqbrims': 'IQB-RIMS',
+    'onedrivebusiness': 'OneDrive for Office365',
 }
 # install-addons.py
 PROVIDERS['s3compat'] = 'S3 Compatible Storage'

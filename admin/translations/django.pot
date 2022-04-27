@@ -3146,3 +3146,6 @@ msgstr ""
 
 msgid "Search Results"
 msgstr ""
+
+msgid "Recalculate quota"
+msgstr ""
