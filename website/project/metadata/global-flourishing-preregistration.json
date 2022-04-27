@@ -52,7 +52,7 @@
       },
       {
          "required":true,
-         "block_type":"long-text-input",
+         "block_type":"long-text-input"
       },
       {
          "block_type":"question-label",
