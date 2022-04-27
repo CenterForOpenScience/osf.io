@@ -23,7 +23,6 @@ from admin_tests.utilities import setup_form_view, setup_user_view, setup_view
 from admin.institutions import views
 from admin.institutions.forms import InstitutionForm
 from admin.base.forms import ImportFileForm
-from django.urls import reverse
 
 
 class TestInstitutionList(AdminTestCase):
