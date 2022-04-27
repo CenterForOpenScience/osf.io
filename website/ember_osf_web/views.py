@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import requests
 from website import settings
 from framework.status import pop_status_messages
-from flask import send_from_directory, Response, stream_with_context
 
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
+from website.settings import EXTERNAL_EMBER_APPS
 
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
 
@@ -18,12 +16,8 @@ routes = [
 ]
 
 def use_ember_app(**kwargs):
-    if PROXY_EMBER_APPS:
-        resp = requests.get(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
-        resp = Response(stream_with_context(resp.iter_content()), resp.status_code)
-    else:
-        resp = send_from_directory(ember_osf_web_dir, 'index.html')
-
+    from website.views import stream_emberapp
+    resp = stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
     messages = pop_status_messages()
     if messages:
         try:

@@ -184,10 +184,6 @@ CONFIRM_EMAIL = Mail(
     'confirm',
     subject='Add a new email to your OSF account'
 )
-CONFIRM_EMAIL_PREREG = Mail(
-    'confirm_prereg',
-    subject='OSF Account Verification, OSF Preregistration'
-)
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
@@ -513,23 +509,28 @@ REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
 
 SCHEMA_RESPONSE_INITIATED = Mail(
     'updates_initiated',
-    subject='Updates in in-progress for your ${resource_type} ${title}'
+    subject='Updates for ${resource_type} ${title} are in progress'
 )
 
 
 SCHEMA_RESPONSE_SUBMITTED = Mail(
     'updates_pending_approval',
-    subject='Updates to your ${resource_type} ${title} are pending admin approval'
+    subject='Updates for ${resource_type} ${title} are pending Admin approval'
 )
 
 
 SCHEMA_RESPONSE_APPROVED = Mail(
     'updates_approved',
-    subject='Updates to your ${resource_type} ${title} have been approved'
+    subject='The updates for ${resource_type} ${title} have been approved'
 )
 
 
 SCHEMA_RESPONSE_REJECTED = Mail(
     'updates_rejected',
-    subject='Changes requested for the proposed updates to your ${resource_type} ${title}'
+    subject='The updates for ${resource_type} ${title} were not accepted'
+)
+
+QUICKFILES_MIGRATED = Mail(
+    'quickfiles_migrated',
+    subject='Your Quick Files have moved'
 )

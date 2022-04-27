@@ -124,8 +124,6 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
     cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
-    if print_sql:
-        cmd += ' --print-sql'
     if notebook:
         cmd += ' --notebook'
     if not transaction:
@@ -377,7 +375,6 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
-    'api_tests/sloan',
     'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
@@ -460,7 +457,6 @@ def test(ctx, all=False, lint=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
-        karma(ctx)
 
 @task
 def remove_failures_from_testmon(ctx, db_path=None):
@@ -501,8 +497,6 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
-    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
-    # karma(ctx)
     #travis_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
@@ -517,14 +511,6 @@ def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     #travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
-
-@task
-def karma(ctx, travis=False):
-    """Run JS tests with Karma. Requires Chrome to be installed."""
-    if travis:
-        return ctx.run('yarn test-travis', echo=True)
-    ctx.run('yarn test', echo=True)
-
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):

@@ -7,6 +7,13 @@
 {% block content %}
     <div class="container-fluid">
         <div class="row">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="row">
             <form action="{% url 'nodes:search' %}" method="post">
                 {% csrf_token %}
                 {% if form.errors %}

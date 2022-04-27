@@ -36,10 +36,4 @@ $(document).ready(function() {
         },
         institutionId: institutionId,
     }));
-    setTimeout(function(){
-        if($('#inst .spinner-loading-wrapper').length > 0) {
-            var OSF_SUPPORT_EMAIL = window.contextVars.osfSupportEmail;
-            $('#inst').append('<div class="text-danger text-center text-bigger">This is taking longer than normal. <br>  Try reloading the page. If the problem persist, please contact us at ' + OSF_SUPPORT_EMAIL + '.</div>');
-        }
-    }, 10000);
 });

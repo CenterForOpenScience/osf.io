@@ -10,6 +10,7 @@ OSF_META_SCHEMA_FILES = [
     'brandt-postcomp-2.json',
     'character-lab-fully-powered-study.json',
     'character-lab-pilot-study.json',
+    'character-lab-winter.json',
     'prereg-prize.json',
     'erpc-prize.json',
     'confirmatory-general-2.json',
@@ -37,10 +38,12 @@ OSF_META_SCHEMA_FILES = [
     'other-studies-using-youth-data.json',
     'character-lab-short-form-registration.json',
     'character-lab-long-form-registration.json',
+    'global-flourishing-preregistration.json',
+    'global-flourishing.json',
+    'sample-schema.json',
 ]
 
 METASCHEMA_ORDERING = (
-    'Prereg Challenge',
     'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',

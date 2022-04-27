@@ -10,13 +10,15 @@ flags = {
     'EMBER_AUTH_REGISTER': 'ember_auth_register',
     'EMBER_CREATE_DRAFT_REGISTRATION': 'ember_create_draft_registration_page',
     'EMBER_EDIT_DRAFT_REGISTRATION': 'ember_edit_draft_registration_page',
-    'EMBER_FILE_DETAIL': 'ember_file_detail_page',
+    'EMBER_FILE_REGISTRATION_DETAIL': 'ember_file_registration_detail_page',
+    'EMBER_FILE_PROJECT_DETAIL': 'ember_file_project_detail_page',
     'EMBER_MEETINGS': 'ember_meetings_page',
     'EMBER_MEETING_DETAIL': 'ember_meeting_detail_page',
     'EMBER_MY_PROJECTS': 'ember_my_projects_page',
     'EMBER_PROJECT_ANALYTICS': 'ember_project_analytics_page',
     'EMBER_PROJECT_CONTRIBUTORS': 'ember_project_contributors_page',
     'EMBER_PROJECT_DETAIL': 'ember_project_detail_page',
+    'EMBER_REGISTRATION_FILES': 'ember_registration_files_page',
     'EMBER_PROJECT_FILES': 'ember_project_files_page',
     'EMBER_PROJECT_FORKS': 'ember_project_forks_page',
     'EMBER_PROJECT_REGISTRATIONS': 'ember_project_registrations_page',
@@ -32,9 +34,6 @@ flags = {
     'EMBER_USER_SETTINGS_APPS': 'ember_user_settings_apps_page',
     'EMBER_USER_SETTINGS_NOTIFICATIONS': 'ember_user_settings_notifications_page',
     'EMBER_USER_SETTINGS_TOKENS': 'ember_user_settings_tokens_page',
-    'SLOAN_COI_DISPLAY': 'sloan_coi_display',
-    'SLOAN_DATA_DISPLAY': 'sloan_data_display',
-    'SLOAN_PREREG_DISPLAY': 'sloan_prereg_display',
 }
 
 switches = {
@@ -43,9 +42,6 @@ switches = {
     'DISABLE_ENGAGEMENT_EMAILS': 'disable_engagement_emails',
     'ELASTICSEARCH_METRICS': 'elasticsearch_metrics',
     'ENFORCE_CSRF': 'enforce_csrf',
-    'SLOAN_COI_INPUT': 'sloan_coi_input',
-    'SLOAN_DATA_INPUT': 'sloan_data_input',
-    'SLOAN_PREREG_INPUT': 'sloan_prereg_input',
     'ENABLE_RAW_METRICS': 'enable_raw_metrics',
 }
 

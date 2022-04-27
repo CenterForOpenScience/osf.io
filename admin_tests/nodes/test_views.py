@@ -6,7 +6,7 @@ import pytz
 import datetime
 import responses
 
-from osf.models import AdminLogEntry, OSFUser, Node, NodeLog
+from osf.models import AdminLogEntry, NodeLog
 from admin.nodes.views import (
     NodeDeleteView,
     NodeRemoveContributorView,
@@ -33,6 +33,13 @@ from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
 from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory
+
+
+def patch_messages(request):
+    from django.contrib.messages.storage.fallback import FallbackStorage
+    setattr(request, 'session', 'session')
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
 
 
 class TestNodeView(AdminTestCase):
@@ -64,22 +71,6 @@ class TestNodeView(AdminTestCase):
         response = NodeKnownHamList.as_view()(request)
         nt.assert_equal(response.status_code, 200)
 
-    def test_no_guid(self):
-        request = RequestFactory().get('/fake_path')
-        view = NodeView()
-        view = setup_view(view, request)
-        with nt.assert_raises(AttributeError):
-            view.get_object()
-
-    def test_load_data(self):
-        node = ProjectFactory()
-        guid = node._id
-        request = RequestFactory().get('/fake_path')
-        view = NodeView()
-        view = setup_view(view, request, guid=guid)
-        res = view.get_object()
-        nt.assert_is_instance(res, dict)
-
     def test_name_data(self):
         node = ProjectFactory()
         guid = node._id
@@ -88,8 +79,8 @@ class TestNodeView(AdminTestCase):
         view = setup_view(view, request, guid=guid)
         temp_object = view.get_object()
         view.object = temp_object
-        res = view.get_context_data()
-        nt.assert_equal(res[NodeView.context_object_name], temp_object)
+        res = view.get_context_data()['node']
+        nt.assert_equal(res, temp_object)
 
     def test_no_user_permissions_raises_error(self):
         user = AuthUserFactory()
@@ -123,37 +114,26 @@ class TestNodeDeleteView(AdminTestCase):
         self.node = ProjectFactory()
         self.request = RequestFactory().post('/fake_path')
         self.plain_view = NodeDeleteView
-        self.view = setup_log_view(self.plain_view(), self.request,
-                                   guid=self.node._id)
-
+        self.view = setup_log_view(self.plain_view(), self.request, guid=self.node._id)
         self.url = reverse('nodes:remove', kwargs={'guid': self.node._id})
-
-    def test_get_object(self):
-        obj = self.view.get_object()
-        nt.assert_is_instance(obj, Node)
-
-    def test_get_context(self):
-        res = self.view.get_context_data(object=self.node)
-        nt.assert_in('guid', res)
-        nt.assert_equal(res.get('guid'), self.node._id)
 
     def test_remove_node(self):
         count = AdminLogEntry.objects.count()
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.view.delete(self.request)
+            self.view.post(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
         nt.assert_equal(self.node.deleted, mock_now)
 
     def test_restore_node(self):
-        self.view.delete(self.request)
+        self.view.post(self.request)
         self.node.refresh_from_db()
         nt.assert_true(self.node.is_deleted)
         nt.assert_true(self.node.deleted is not None)
         count = AdminLogEntry.objects.count()
-        self.view.delete(self.request)
+        self.view.post(self.request)
         self.node.reload()
         nt.assert_false(self.node.is_deleted)
         nt.assert_true(self.node.deleted is None)
@@ -178,11 +158,12 @@ class TestNodeDeleteView(AdminTestCase):
         user.user_permissions.add(view_permission)
         user.save()
 
-        request = RequestFactory().get(self.url)
+        request = RequestFactory().post(self.url)
+        patch_messages(request)
         request.user = user
 
         response = self.plain_view.as_view()(request, guid=guid)
-        nt.assert_equal(response.status_code, 200)
+        nt.assert_equal(response.status_code, 302)
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -195,42 +176,33 @@ class TestRemoveContributor(AdminTestCase):
         self.node.save()
         self.view = NodeRemoveContributorView
         self.request = RequestFactory().post('/fake_path')
-        self.url = reverse('nodes:remove_user', kwargs={'guid': self.node._id, 'user_id': self.user._id})
+        self.url = reverse('nodes:remove-user', kwargs={'guid': self.node._id, 'user_id': self.user.id})
 
-    def test_get_object(self):
-        view = setup_log_view(self.view(), self.request, guid=self.node._id,
-                              user_id=self.user._id)
-        node, user = view.get_object()
-        nt.assert_is_instance(node, Node)
-        nt.assert_is_instance(user, OSFUser)
-
-    @mock.patch('admin.nodes.views.Node.remove_contributor')
-    def test_remove_contributor(self, mock_remove_contributor):
-        user_id = self.user_2._id
+    def test_remove_contributor(self):
+        user_id = self.user_2.id
         node_id = self.node._id
-        view = setup_log_view(self.view(), self.request, guid=node_id,
-                              user_id=user_id)
-        view.delete(self.request)
-        mock_remove_contributor.assert_called_with(self.user_2, None, log=False)
+        view = setup_log_view(self.view(), self.request, guid=node_id, user_id=user_id)
+        view.post(self.request)
+        assert not self.node.contributors.filter(id=user_id)
 
     def test_integration_remove_contributor(self):
+        patch_messages(self.request)
         nt.assert_in(self.user_2, self.node.contributors)
-        view = setup_log_view(self.view(), self.request, guid=self.node._id,
-                              user_id=self.user_2._id)
+        view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
         count = AdminLogEntry.objects.count()
-        view.delete(self.request)
+        view.post(self.request)
         nt.assert_not_in(self.user_2, self.node.contributors)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_do_not_remove_last_admin(self):
+        patch_messages(self.request)
         nt.assert_equal(
             len(list(self.node.get_admin_contributors(self.node.contributors))),
             1
         )
-        view = setup_log_view(self.view(), self.request, guid=self.node._id,
-                              user_id=self.user._id)
+        view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user.id)
         count = AdminLogEntry.objects.count()
-        view.delete(self.request)
+        view.post(self.request)
         self.node.reload()  # Reloads instance to show that nothing was removed
         nt.assert_equal(len(list(self.node.contributors)), 2)
         nt.assert_equal(
@@ -240,9 +212,8 @@ class TestRemoveContributor(AdminTestCase):
         nt.assert_equal(AdminLogEntry.objects.count(), count)
 
     def test_no_log(self):
-        view = setup_log_view(self.view(), self.request, guid=self.node._id,
-                              user_id=self.user_2._id)
-        view.delete(self.request)
+        view = setup_log_view(self.view(), self.request, guid=self.node._id, user_id=self.user_2.id)
+        view.post(self.request)
         nt.assert_not_equal(self.node.logs.latest().action, NodeLog.CONTRIB_REMOVED)
 
     def test_no_user_permissions_raises_error(self):
@@ -260,11 +231,12 @@ class TestRemoveContributor(AdminTestCase):
         self.user.user_permissions.add(view_permission)
         self.user.save()
 
-        request = RequestFactory().get(self.url)
+        request = RequestFactory().post(self.url)
+        patch_messages(request)
         request.user = self.user
 
-        response = self.view.as_view()(request, guid=self.node._id, user_id=self.user._id)
-        nt.assert_equal(response.status_code, 200)
+        response = self.view.as_view()(request, guid=self.node._id, user_id=self.user.id)
+        nt.assert_equal(response.status_code, 302)
 
 
 @pytest.mark.enable_search
@@ -287,7 +259,7 @@ class TestNodeReindex(AdminTestCase):
             with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
                 with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
                     rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
-                    view.delete(self.request)
+                    view.post(self.request)
                     data = json.loads(rsps.calls[-1].request.body.decode())
 
                     share_graph = data['data']['attributes']['data']['@graph']
@@ -303,7 +275,7 @@ class TestNodeReindex(AdminTestCase):
             with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
                 with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
                     rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
-                    view.delete(self.request)
+                    view.post(self.request)
                     data = json.loads(rsps.calls[-1].request.body.decode())
 
                     assert any(graph for graph in data['data']['attributes']['data']['@graph']
@@ -315,7 +287,7 @@ class TestNodeReindex(AdminTestCase):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.node._id)
-        view.delete(self.request)
+        view.post(self.request)
 
         nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
@@ -325,7 +297,7 @@ class TestNodeReindex(AdminTestCase):
         count = AdminLogEntry.objects.count()
         view = NodeReindexElastic()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        view.delete(self.request)
+        view.post(self.request)
 
         nt.assert_true(mock_update_node.called)
         nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
@@ -343,7 +315,7 @@ class TestNodeConfirmHamView(AdminTestCase):
     def test_confirm_node_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.node._id)
-        view.delete(self.request)
+        view.post(self.request)
 
         self.node.refresh_from_db()
         nt.assert_true(self.node.spam_status == 4)
@@ -351,7 +323,7 @@ class TestNodeConfirmHamView(AdminTestCase):
     def test_confirm_registration_as_ham(self):
         view = NodeConfirmHamView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        resp = view.delete(self.request)
+        resp = view.post(self.request)
 
         nt.assert_true(resp.status_code == 302)
 
@@ -370,13 +342,6 @@ class TestAdminNodeLogView(AdminTestCase):
         self.auth = Auth(self.user)
         self.node = ProjectFactory(creator=self.user)
 
-    def test_get_object(self):
-
-        view = AdminNodeLogView()
-        view = setup_log_view(view, self.request, guid=self.node._id)
-
-        nt.assert_true(self.node, view.get_object())
-
     def test_get_queryset(self):
 
         self.node.set_title('New Title', auth=self.auth, save=True)
@@ -386,44 +351,9 @@ class TestAdminNodeLogView(AdminTestCase):
 
         logs = view.get_queryset()
 
-        log_entry = logs.first()
+        log_entry = logs.last()
         nt.assert_true(log_entry.action == 'edit_title')
         nt.assert_true(log_entry.params['title_new'] == u'New Title')
-
-    def test_get_context_data(self):
-
-        self.node.set_title('New Title', auth=self.auth, save=True)
-
-        view = AdminNodeLogView()
-        view = setup_log_view(view, self.request, guid=self.node._id)
-
-        logs = view.get_context_data()['logs']
-        log_entry = logs[0][0]
-        log_params = logs[0][1]
-        nt.assert_true(log_entry.action == NodeLog.EDITED_TITLE)
-        nt.assert_true((u'title_new', u'New Title') in log_params)
-        nt.assert_true((u'node', self.node._id) in log_params)
-
-    def test_get_logs_for_children(self):
-        """ The "create component" action is actually logged as a create_project action
-        for its child with a log parameter 'node' having its guid as a value. We have to ensure
-        that all the components a parent has created appear in its admin app logs, so we can't just
-         do node.logs.all(), that will leave out component creation.
-        """
-
-        component = ProjectFactory(creator=self.user, parent=self.node)
-        component.save()
-
-        view = AdminNodeLogView()
-        view = setup_log_view(view, self.request, guid=self.node._id)
-
-        logs = view.get_context_data()['logs']
-        log_entry = logs[0][0]
-        log_params = logs[0][1]
-
-        nt.assert_true(log_entry.action == NodeLog.PROJECT_CREATED)
-        nt.assert_true(log_entry.node._id == component._id)
-        nt.assert_true(('node', component._id) in log_params)
 
 
 class TestRestartStuckRegistrationsView(AdminTestCase):

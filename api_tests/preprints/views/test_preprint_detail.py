@@ -1,6 +1,7 @@
 import mock
 import pytest
 import datetime
+import responses
 
 from django.utils import timezone
 from rest_framework import exceptions
@@ -29,8 +30,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from website.settings import DOI_FORMAT, CROSSREF_URL
-from website.language import SWITCH_VALIDATOR_ERROR
-import responses
+
 
 def build_preprint_update_payload(
         node_id, attributes=None, relationships=None,
@@ -164,7 +164,6 @@ class TestPreprintDetail:
         assert 'assumptions no longer apply' == data['attributes']['withdrawal_justification']
         assert 'date_withdrawn' in data['attributes']
 
-    @pytest.mark.enable_quickfiles_creation
     def test_embed_contributors(self, app, user, preprint):
         url = '/{}preprints/{}/?embed=contributors'.format(
             API_BASE, preprint._id)
@@ -657,7 +656,6 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.tags.count() == 0
 
-    @pytest.mark.enable_quickfiles_creation
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
             self, mock_update_doi_metadata, app, user, preprint, url):
@@ -803,9 +801,6 @@ class TestPreprintUpdate:
             preprint._id,
             attributes={'has_coi': True}
         )
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
@@ -813,8 +808,7 @@ class TestPreprintUpdate:
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_COI_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_coi']
@@ -830,10 +824,6 @@ class TestPreprintUpdate:
             preprint._id,
             attributes={'conflict_of_interest_statement': 'Owns shares in Closed Science Corporation.'}
         )
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
@@ -842,8 +832,7 @@ class TestPreprintUpdate:
 
         preprint.has_coi = False
         preprint.save()
-        with override_switch(features.SLOAN_COI_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You do not have the ability to edit a conflict of interest while the ' \
@@ -851,8 +840,7 @@ class TestPreprintUpdate:
 
         preprint.has_coi = True
         preprint.save()
-        with override_switch(features.SLOAN_COI_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['conflict_of_interest_statement'] ==\
@@ -867,18 +855,13 @@ class TestPreprintUpdate:
     def test_update_has_data_links(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'has_data_links': 'available'})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_data_links'] == 'available'
@@ -892,18 +875,13 @@ class TestPreprintUpdate:
     def test_update_why_no_data(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_data': 'My dog ate it.'})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
@@ -911,8 +889,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = 'no'
         preprint.save()
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['why_no_data'] == 'My dog ate it.'
@@ -927,10 +904,6 @@ class TestPreprintUpdate:
         data_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': data_links})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
@@ -939,8 +912,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = 'no'
         preprint.save()
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your data links availability' \
@@ -948,8 +920,7 @@ class TestPreprintUpdate:
 
         preprint.has_data_links = 'available'
         preprint.save()
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['data_links'] == data_links
@@ -961,13 +932,11 @@ class TestPreprintUpdate:
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
         update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
 
-    @override_switch(features.SLOAN_DATA_INPUT, active=True)
     def test_invalid_data_links(self, app, user, preprint, url):
         preprint.has_data_links = 'available'
         preprint.save()
@@ -981,18 +950,13 @@ class TestPreprintUpdate:
     def test_update_has_prereg_links(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'has_prereg_links': 'available'})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_prereg_links'] == 'available'
@@ -1003,7 +967,6 @@ class TestPreprintUpdate:
         assert log.action == PreprintLog.UPDATE_HAS_PREREG_LINKS
         assert log.params == {'value': 'available', 'user': user._id, 'preprint': preprint._id}
 
-    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
     def test_invalid_prereg_links(self, app, user, preprint, url):
         preprint.has_prereg_links = 'available'
         preprint.save()
@@ -1015,7 +978,6 @@ class TestPreprintUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Enter a valid URL.'
 
-    @override_switch(features.SLOAN_DATA_INPUT, active=True)
     def test_no_data_links_clears_links(self, app, user, preprint, url):
         preprint.has_data_links = 'available'
         preprint.data_links = ['http://www.apple.com']
@@ -1029,7 +991,6 @@ class TestPreprintUpdate:
         assert res.json['data']['attributes']['has_data_links'] == 'no'
         assert res.json['data']['attributes']['data_links'] == []
 
-    @override_switch(features.SLOAN_PREREG_INPUT, active=True)
     def test_no_prereg_links_clears_links(self, app, user, preprint, url):
         preprint.has_prereg_links = 'available'
         preprint.prereg_links = ['http://example.com']
@@ -1048,18 +1009,13 @@ class TestPreprintUpdate:
     def test_update_why_no_prereg(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(preprint._id, attributes={'why_no_prereg': 'My dog ate it.'})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
 
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this statement while your prereg links availability' \
@@ -1067,8 +1023,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = False
         preprint.save()
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['why_no_prereg'] == 'My dog ate it.'
@@ -1084,10 +1039,6 @@ class TestPreprintUpdate:
         prereg_links = ['http://www.JasonKelce.com', 'http://www.ItsTheWholeTeam.com/']
         update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': prereg_links})
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)
         res = app.patch_json_api(url, update_payload, auth=contrib.auth, expect_errors=True)
@@ -1096,8 +1047,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = 'no'
         preprint.save()
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability' \
@@ -1105,8 +1055,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = 'available'
         preprint.save()
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['prereg_links'] == prereg_links
@@ -1118,8 +1067,7 @@ class TestPreprintUpdate:
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
         update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Expected a list of items but got type "str".'
@@ -1130,14 +1078,9 @@ class TestPreprintUpdate:
             attributes={'prereg_link_info': 'prereg_designs'}
         )
 
-        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == SWITCH_VALIDATOR_ERROR
-
         preprint.has_prereg_links = 'no'
         preprint.save()
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You cannot edit this field while your prereg links availability' \
@@ -1145,8 +1088,7 @@ class TestPreprintUpdate:
 
         preprint.has_prereg_links = 'available'
         preprint.save()
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth)
+        res = app.patch_json_api(url, update_payload, auth=user.auth)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['prereg_link_info'] == 'prereg_designs'
@@ -1161,8 +1103,7 @@ class TestPreprintUpdate:
             preprint._id,
             attributes={'prereg_link_info': 'maformed payload'}
         )
-        with override_switch(features.SLOAN_DATA_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
@@ -1185,8 +1126,7 @@ class TestPreprintUpdate:
                 'prereg_links': ['http://osf.io'],  # changing here should be only non-factory created log.
             }
         )
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         # Any superfluous log statements?
         logs = preprint.logs.all().values_list('action', 'params')
@@ -1201,8 +1141,7 @@ class TestPreprintUpdate:
                 'why_no_prereg': 'My dog ate it.'
             }
         )
-        with override_switch(features.SLOAN_PREREG_INPUT, active=True):
-            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
+        res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 200
         assert res.json['data']['attributes']['has_prereg_links'] == 'no'

@@ -28,15 +28,16 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
-from osf import features
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
+from website.ember_osf_web.decorators import ember_flag_is_active
+from osf import features
+#from osf.models import PreprintProvider
 
 
 @block_bing_preview
@@ -705,7 +706,7 @@ def confirm_email_get(token, auth=None, **kwargs):
     if log_out:
         return auth_email_logout(token, user)
 
-    if auth and auth.user and (auth.user._id == user._id or auth.user._id == user.merged_by._id):
+    if auth and auth.user and (auth.user._id == user._id or auth.user._id == getattr(user.merged_by, '_id', False)):
         if not is_merge:
             # determine if the user registered through a campaign
             campaign = campaigns.campaign_for_user(user)
@@ -1076,7 +1077,7 @@ def external_login_email_post():
                     if campaign != 'osf-preprints':
                         break
             elif service_url.startswith(campaign_url):
-                # osf campaigns: OSF Prereg and ERPC
+                # osf campaigns: ERPC
                 destination = campaign
                 break
 

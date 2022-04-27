@@ -14,7 +14,7 @@ class NotableEmailDomain(BaseModel):
         @classmethod
         def choices(cls):
             return [
-                (enum_item, enum_item.name)
+                (int(enum_item), enum_item.name)
                 for enum_item in cls
             ]
 

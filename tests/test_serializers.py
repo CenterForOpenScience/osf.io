@@ -26,7 +26,6 @@ from website import filters, settings
 pytestmark = pytest.mark.django_db
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestUserSerializers(OsfTestCase):
     def test_serialize_user(self):
         master = UserFactory()

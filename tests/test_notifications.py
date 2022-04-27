@@ -1034,14 +1034,16 @@ class TestNotificationUtils(OsfTestCase):
         all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
         assert_false(all_global_subscriptions_none)
 
-    def test_check_if_all_global_subscriptions_are_none_true(self):
-        for x in self.user_subscription:
-            x.none.add(self.user)
-            x.email_transactional.remove(self.user)
-        for x in self.user_subscription:
-            x.save()
-        all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
-        assert_true(all_global_subscriptions_none)
+    # # Business logic prevents this from being an applicable unit test;
+    # # global_mentions cannot be unsubscribed from
+    # def test_check_if_all_global_subscriptions_are_none_true(self):
+    #     for x in self.user_subscription:
+    #         x.none.add(self.user)
+    #         x.email_transactional.remove(self.user)
+    #     for x in self.user_subscription:
+    #         x.save()
+    #     all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
+    #     assert_true(all_global_subscriptions_none)
 
     def test_format_data_user_settings(self):
         data = utils.format_user_and_project_subscriptions(self.user)

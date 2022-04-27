@@ -10,6 +10,7 @@ from nose.tools import assert_raises
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
+from osf.registrations.utils import get_registration_provider_submissions_url
 
 from website import settings
 
@@ -625,7 +626,7 @@ class TestRegistrationMixin:
         assert registration_metadata == veer_condensed
 
 
-class TestRegistationModerationStates():
+class TestRegistationModerationStates:
 
     @pytest.fixture
     def embargo(self):
@@ -828,7 +829,7 @@ class TestRegistationModerationStates():
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
 
-class TestForcedWithdrawal():
+class TestForcedWithdrawal:
 
     @pytest.fixture
     def embargo_termination(self):
@@ -897,3 +898,26 @@ class TestForcedWithdrawal():
 
         assert moderated_registration.retraction is None
         assert moderated_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+
+class TestUtils:
+
+    @pytest.fixture
+    def provider_valid(self):
+        provider = factories.RegistrationProviderFactory()
+        return provider
+
+    @pytest.fixture
+    def provider_invalid(self):
+        provider = factories.PreprintProviderFactory()
+        return provider
+
+    def test_submissions_url_with_valid_provider(self, provider_valid):
+
+        submissions_url = get_registration_provider_submissions_url(provider_valid)
+        assert submissions_url == f'{settings.DOMAIN}registries/{provider_valid._id}/moderation/pending'
+
+    def test_submissions_url_with_invalid_provider(self, provider_invalid):
+
+        with pytest.raises(AssertionError):
+            get_registration_provider_submissions_url(provider_invalid)

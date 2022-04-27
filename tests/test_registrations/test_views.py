@@ -473,33 +473,11 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         except Exception:
             self.fail()
 
-    def test_check_draft_state_approved(self):
-        try:
-            with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
-                draft_views.check_draft_state(self.draft)
-        except HTTPError as e:
-            assert_equal(e.code, http_status.HTTP_403_FORBIDDEN)
-        else:
-            self.fail()
-
     def test_check_draft_state_ok(self):
         try:
             draft_views.check_draft_state(self.draft)
         except Exception:
             self.fail()
-
-    def test_check_draft_state_registered_and_deleted_and_approved(self):
-        reg = RegistrationFactory()
-        self.draft.registered_node = reg
-        self.draft.save()
-        reg.is_deleted = True
-        reg.save()
-
-        with mock.patch('osf.models.DraftRegistration.is_approved', mock.PropertyMock(return_value=True)):
-            try:
-                draft_views.check_draft_state(self.draft)
-            except HTTPError:
-                self.fail()
 
 
 @pytest.mark.django_db
@@ -565,7 +543,6 @@ class TestModeratorRegistrationViews:
         return url
 
 
-    @pytest.mark.enable_quickfiles_creation
     def test_moderator_cannot_view_subpath_of_initial_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators should not have non-standard access to a registration
@@ -575,7 +552,6 @@ class TestModeratorRegistrationViews:
         resp = app.get(registration_subpath, auth=moderator.auth, expect_errors=True)
         assert resp.status_code == 403
 
-    @pytest.mark.enable_quickfiles_creation
     def test_moderator_can_view_subpath_of_submitted_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of the pending registration
@@ -587,7 +563,6 @@ class TestModeratorRegistrationViews:
         resp = app.get(registration_subpath, auth=moderator.auth)
         assert resp.status_code == 200
 
-    @pytest.mark.enable_quickfiles_creation
     def test_moderator_can_viw_subpath_of_embargoed_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration

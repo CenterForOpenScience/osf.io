@@ -38,6 +38,7 @@ from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
+from website.settings import EXTERNAL_EMBER_APPS
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -1047,7 +1048,6 @@ class TestDeleteHookPreprint(TestDeleteHookNode):
         assert_equal(res.status_code, 200)
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestMoveHook(HookTestCase):
 
     def setUp(self):
@@ -1210,61 +1210,6 @@ class TestMoveHook(HookTestCase):
         assert_equal(file.name, new_name)
         assert_equal(file.versions.first().get_basefilenode_version(file).version_name, new_name)
 
-    def test_can_move_file_out_of_quickfiles_node(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='slippery.mp3')
-        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
-
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': quickfiles_node._id},
-            payload={
-                'source': quickfiles_file._id,
-                'target': quickfiles_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': dest_folder._id,
-                    'target': self.project._id,
-                    'name': dest_folder.name,
-                }
-            },
-            target=quickfiles_node,
-            method='post_json',
-        )
-        assert_equal(res.status_code, 200)
-
-    def test_can_rename_file_in_quickfiles_node(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_file = create_test_file(quickfiles_node, self.user, filename='road_dogg.mp3')
-        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
-        new_name = 'JesseJames.mp3'
-
-        res = self.send_hook(
-            'osfstorage_move_hook',
-            {'guid': quickfiles_node._id},
-            payload={
-                'action': 'rename',
-                'source': quickfiles_file._id,
-                'target': quickfiles_node._id,
-                'user': self.user._id,
-                'name': quickfiles_file.name,
-                'destination': {
-                    'parent': quickfiles_folder._id,
-                    'target': quickfiles_node._id,
-                    'name': new_name,
-                }
-            },
-            target=quickfiles_node,
-            method='post_json',
-            expect_errors=True,
-        )
-        quickfiles_file.reload()
-
-        assert_equal(res.status_code, 200)
-        assert_equal(quickfiles_file.name, new_name)
-
 
 @pytest.mark.django_db
 class TestMoveHookPreprint(TestMoveHook):
@@ -1362,40 +1307,6 @@ class TestMoveHookProjectsOnly(TestMoveHook):
         assert storage_usage_cache.get(key) is None
 
         assert_equal(res.status_code, 200)
-
-
-@pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
-class TestCopyHook(HookTestCase):
-
-    def setUp(self):
-        super(TestCopyHook, self).setUp()
-        self.root_node = self.node_settings.get_root()
-
-    @pytest.mark.enable_implicit_clean
-    def test_can_copy_file_out_of_quickfiles_node(self):
-        quickfiles_node = QuickFilesNode.objects.get_for_user(self.user)
-        quickfiles_folder = OsfStorageFolder.objects.get_root(target=quickfiles_node)
-        dest_folder = OsfStorageFolder.objects.get_root(target=self.project)
-
-        res = self.send_hook(
-            'osfstorage_copy_hook',
-            {'guid': quickfiles_node._id},
-            payload={
-                'source': quickfiles_folder._id,
-                'target': quickfiles_node._id,
-                'user': self.user._id,
-                'destination': {
-                    'parent': dest_folder._id,
-                    'target': self.project._id,
-                    'name': dest_folder.name,
-                }
-            },
-            target=self.project,
-            method='post_json',
-        )
-        assert_equal(res.status_code, 201)
-
 
 
 @pytest.mark.django_db
@@ -1499,24 +1410,19 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
-    def test_file_views(self):
-        file = create_test_file(target=self.node, user=self.user)
-        url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
-        # Test valid url file 200 on redirect
-        redirect = self.app.get(url, auth=self.user.auth)
-        assert redirect.status_code == 302
-        res = redirect.follow(auth=self.user.auth)
-        assert res.status_code == 200
 
-        # Test invalid node but valid deep_url redirects (moved log urls)
-        project_two = ProjectFactory(creator=self.user)
-        url = project_two.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
-        redirect = self.app.get(url, auth=self.user.auth)
-        assert redirect.status_code == 302
-        redirect_two = redirect.follow(auth=self.user.auth)
-        assert redirect_two.status_code == 302
-        res = redirect_two.follow(auth=self.user.auth)
-        assert res.status_code == 200
+    @mock.patch('website.views.stream_emberapp')
+    def test_file_views(self, mock_ember):
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            file = create_test_file(target=self.node, user=self.user)
+            url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
+            res = self.app.get(url, auth=self.user.auth)
+            assert res.status_code == 200
+            assert mock_ember.called
+            args, kwargs = mock_ember.call_args
+
+            assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
+            assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)

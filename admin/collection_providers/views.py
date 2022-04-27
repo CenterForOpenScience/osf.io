@@ -1,19 +1,23 @@
 import json
 
 from django.http import HttpResponse
-from django.core import serializers
-from django.core.exceptions import ValidationError
+from django.core import serializers, exceptions
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
-from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 
 from admin.collection_providers.forms import CollectionProviderForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
-from osf.models import Collection, CollectionProvider, NodeLicense
+from osf.models import (
+    Collection,
+    CollectionProvider,
+    NodeLicense
+)
+from admin.preprint_providers.views import ImportProviderView
+from django.contrib import messages
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
@@ -43,12 +47,12 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
         for item in form.cleaned_data['study_design_choices']['added']:
             self.object.primary_collection.study_design_choices.append(item)
         self.object.primary_collection.save()
-        return super(CreateCollectionProvider, self).form_valid(form)
+        return super().form_valid(form)
 
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
-        return super(CreateCollectionProvider, self).get_context_data(*args, **kwargs)
+        return super().get_context_data(*args, **kwargs)
 
 
 class CollectionProviderList(PermissionRequiredMixin, ListView):
@@ -167,6 +171,52 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         fields['program_area_choices'] = json.dumps(primary_collection.program_area_choices)
         fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
         fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
+
+        fields = model_to_dict(collection_provider)
+
+        # compile html list of collected_type_choices
+        if collection_provider.primary_collection:
+            collected_type_choices_html = '<ul>'
+            for choice in collection_provider.primary_collection.collected_type_choices:
+                collected_type_choices_html += u'<li>{}</li>'.format(choice)
+            collected_type_choices_html += '</ul>'
+            kwargs['collected_type_choices'] = collected_type_choices_html
+
+            # compile html list of status_choices
+            status_choices_html = '<ul>'
+            for choice in collection_provider.primary_collection.status_choices:
+                status_choices_html += u'<li>{}</li>'.format(choice)
+            status_choices_html += '</ul>'
+            kwargs['status_choices'] = status_choices_html
+
+            # compile html list of volume_choices
+            volume_choices_html = '<ul>'
+            for choice in collection_provider.primary_collection.volume_choices:
+                volume_choices_html += u'<li>{}</li>'.format(choice)
+            volume_choices_html += '</ul>'
+            kwargs['volume_choices'] = volume_choices_html
+
+            # compile html list of issue_choices
+            issue_choices_html = '<ul>'
+            for choice in collection_provider.primary_collection.issue_choices:
+                issue_choices_html += u'<li>{}</li>'.format(choice)
+            issue_choices_html += '</ul>'
+            kwargs['issue_choices'] = issue_choices_html
+
+            # compile html list of program_area_choices
+            program_area_choices_html = '<ul>'
+            for choice in collection_provider.primary_collection.program_area_choices:
+                program_area_choices_html += u'<li>{}</li>'.format(choice)
+            program_area_choices_html += '</ul>'
+            kwargs['program_area_choices'] = program_area_choices_html
+
+            # get a dict of model fields so that we can set the initial value for the update form
+            fields['collected_type_choices'] = json.dumps(collection_provider.primary_collection.collected_type_choices)
+            fields['status_choices'] = json.dumps(collection_provider.primary_collection.status_choices)
+            fields['volume_choices'] = json.dumps(collection_provider.primary_collection.volume_choices)
+            fields['issue_choices'] = json.dumps(collection_provider.primary_collection.issue_choices)
+            fields['program_area_choices'] = json.dumps(collection_provider.primary_collection.program_area_choices)
+
         kwargs['form'] = CollectionProviderForm(initial=fields)
 
         # set api key for tinymce
@@ -182,25 +232,26 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
     form_class = CollectionProviderForm
 
     def form_valid(self, form):
-        self.object.primary_collection.collected_type_choices.extend(form.cleaned_data['collected_type_choices']['added'])
-        for item in form.cleaned_data['collected_type_choices']['removed']:
-            self.object.primary_collection.collected_type_choices.remove(item)
+        if self.object.primary_collection:
+            self.object.primary_collection.collected_type_choices.extend(form.cleaned_data['collected_type_choices']['added'])
+            for item in form.cleaned_data['collected_type_choices']['removed']:
+                self.object.primary_collection.collected_type_choices.remove(item)
 
-        self.object.primary_collection.status_choices.extend(form.cleaned_data['status_choices']['added'])
-        for item in form.cleaned_data['status_choices']['removed']:
-            self.object.primary_collection.status_choices.remove(item)
+            self.object.primary_collection.status_choices.extend(form.cleaned_data['status_choices']['added'])
+            for item in form.cleaned_data['status_choices']['removed']:
+                self.object.primary_collection.status_choices.remove(item)
 
-        self.object.primary_collection.issue_choices.extend(form.cleaned_data['issue_choices']['added'])
-        for item in form.cleaned_data['issue_choices']['removed']:
-            self.object.primary_collection.issue_choices.remove(item)
+            self.object.primary_collection.issue_choices.extend(form.cleaned_data['issue_choices']['added'])
+            for item in form.cleaned_data['issue_choices']['removed']:
+                self.object.primary_collection.issue_choices.remove(item)
 
-        self.object.primary_collection.volume_choices.extend(form.cleaned_data['volume_choices']['added'])
-        for item in form.cleaned_data['volume_choices']['removed']:
-            self.object.primary_collection.volume_choices.remove(item)
+            self.object.primary_collection.volume_choices.extend(form.cleaned_data['volume_choices']['added'])
+            for item in form.cleaned_data['volume_choices']['removed']:
+                self.object.primary_collection.volume_choices.remove(item)
 
-        self.object.primary_collection.program_area_choices.extend(form.cleaned_data['program_area_choices']['added'])
-        for item in form.cleaned_data['program_area_choices']['removed']:
-            self.object.primary_collection.program_area_choices.remove(item)
+            self.object.primary_collection.program_area_choices.extend(form.cleaned_data['program_area_choices']['added'])
+            for item in form.cleaned_data['program_area_choices']['removed']:
+                self.object.primary_collection.program_area_choices.remove(item)
 
         self.object.primary_collection.school_type_choices.extend(form.cleaned_data['school_type_choices']['added'])
         for item in form.cleaned_data['school_type_choices']['removed']:
@@ -211,7 +262,7 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
             self.object.primary_collection.study_design_choices.remove(item)
 
         self.object.primary_collection.save()
-        return super(CollectionProviderChangeForm, self).form_valid(form)
+        return super().form_valid(form)
 
     def form_invalid(self, form):
         super(CollectionProviderChangeForm, self).form_invalid(form)
@@ -275,7 +326,8 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         cleaned_fields = cleaned_data['fields']
         cleaned_fields['licenses_acceptable'] = [node_license.license_id for node_license in collection_provider.licenses_acceptable.all()]
         cleaned_fields['default_license'] = collection_provider.default_license.license_id if collection_provider.default_license else ''
-        cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
+        if collection_provider.primary_collection:
+            cleaned_fields['primary_collection'] = self.serialize_primary_collection(cleaned_fields['primary_collection'])
         cleaned_data['fields'] = cleaned_fields
         filename = '{}_export.json'.format(collection_provider.name)
         response = HttpResponse(json.dumps(cleaned_data), content_type='text/json')
@@ -289,9 +341,10 @@ class ExportColectionProvider(PermissionRequiredMixin, View):
         return cleaned_data
 
 
-class ImportCollectionProvider(PermissionRequiredMixin, View):
+class ImportCollectionProvider(ImportProviderView):
     permission_required = 'osf.change_collectionprovider'
     raise_exception = True
+    provider_class = CollectionProvider
 
     def post(self, request, *args, **kwargs):
         form = ImportFileForm(request.POST, request.FILES)
@@ -301,7 +354,7 @@ class ImportCollectionProvider(PermissionRequiredMixin, View):
             cleaned_result = file_json['fields']
             try:
                 collection_provider = self.create_or_update_provider(cleaned_result)
-            except ValidationError:
+            except exceptions.ValidationError:
                 messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
                 return redirect('collection_providers:create')
 

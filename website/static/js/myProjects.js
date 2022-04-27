@@ -93,6 +93,8 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
     this.loaded = 0;
     this._failed = 0;
     this.total = 0;
+    this.counted = false;
+    this.limit = 14;
     this._flat = [];
     this._orphans = [];
     this._cache = {};
@@ -131,12 +133,15 @@ function NodeFetcher(type, link, handleOrphans, regType, regLink, preprintType, 
 
 NodeFetcher.prototype = {
   isFinished: function() {
-    return this.loaded >= this.total && this._promise === null && this._orphans.length === 0 && !this.nextLink;
+    return (!this.total && this.counted) || this.loaded > this.limit && this._promise === null && this._orphans.length === 0 && !this.nextLink;
   },
   isEmpty: function() {
     return this.loaded === 0 && this.isFinished();
   },
   progress: function() {
+    if (this.isFinished()){
+        return 100;
+    }
     return Math.ceil(this.loaded / (this.total || 1) * 100);
   },
   start: function() {
@@ -155,7 +160,15 @@ NodeFetcher.prototype = {
       .then(this._success.bind(this), this._fail.bind(this))
       .then((function() {
           m.redraw(true);
-          if(this.nextLink && this._continue) return this.resume();
+          if(this.nextLink && this._continue && this._flat.length < this.limit) {
+            this._continue = true;
+            return this.resume();
+          } else {
+            this._continue = false;
+            m.redraw(true);
+
+          }
+
       }).bind(this));
   },
   add: function(item) {
@@ -230,6 +243,7 @@ NodeFetcher.prototype = {
     // Only reset if we're lower as loading children will increment this number
     if (this.total < results.meta.total)
         this.total = results.meta.total;
+        this.counted = true;
 
     this.nextLink = results.links.next;
     this.loaded += results.data.length;
@@ -428,7 +442,7 @@ var MyProjects = {
 
         // Add All my Projects and All my registrations to collections
         self.systemCollections = options.systemCollections || [
-            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects'),
+            new LinkObject('collection', { nodeType : 'projects'}, 'All my projects and components'),
             new LinkObject('collection', { nodeType : 'registrations'}, 'All my registrations'),
             new LinkObject('collection', { nodeType : 'preprints'}, 'All my preprints')
         ];
@@ -620,7 +634,9 @@ var MyProjects = {
             self.currentView().contributor = [];
 
             self.currentView().fetcher = self.fetchers[filter.id];
-            self.currentView().fetcher.resume();
+            if (!self.currentView().fetcher.loaded) {
+                self.currentView().fetcher.resume();
+            }
             self.loadValue(self.currentView().fetcher.isFinished() ? 100 : self.currentView().fetcher.progress());
 
             self.generateFiltersList();
@@ -748,7 +764,28 @@ var MyProjects = {
             if (self.treeData().children[0] && ((self.multiselected()().length === 0 && self.currentView().fetcher.isFinished()) || self.currentView().fetcher.forceRedraw === true)) {
               self.updateTbMultiselect([self.treeData().children[0]]);
             }
+            if (!$('.results-tail-btn').length && (!self.currentView().fetcher.isFinished() || !this.counted)) {
+                var span = document.createElement('span');
+                span.style = 'width: 100%; text-align: center;';
+                var caret = document.createElement('i');
+                span.className = 'results-tail-btn fa-stack fa-4x';
+                caret.className = 'fa fa-caret-down fa-stack-2x';
+                span.append(caret);
+                var innerspan = document.createElement('span');
+                innerspan.style = 'font-size:12px; margin-top:-3%; display:block;';
+                innerspan.innerHTML = 'Load More Results';
+                span.onclick = function () {
+                    self.currentView().fetcher.resume();
+                };
+                span.append(innerspan);
+
+                $('#tb-tbody').append(span);
+            }
+            if (self.currentView().fetcher.isFinished() || self.currentView().fetcher.loaded === self.currentView().fetcher.total) {
+                $('.results-tail-btn').remove();
+            }
             m.redraw(true);
+
         };
 
         self.nonLoadTemplate = function (){
@@ -1051,6 +1088,17 @@ var MyProjects = {
             var filterIndex = self.getFilterIndex();
             self.updateBreadcrumbs(self.collections()[filterIndex]);
             self.updateFilter(self.collections()[filterIndex]);
+            document.addEventListener('wheel', function(e) {
+                  var fetcher;
+                  fetcher = self.currentView().fetcher;
+                  var scroll = $('#tb-tbody')[0];
+                  if(fetcher.loaded < fetcher.total && scroll.scrollHeight - scroll.scrollTop === scroll.clientHeight) {
+                      fetcher.limit = fetcher.limit + 10;
+                      fetcher.resume();
+                      m.redraw();
+                  }
+            });
+            m.redraw();
         };
 
         self.init();
@@ -1111,7 +1159,7 @@ var MyProjects = {
                     m('small.hidden-xs', 'Browse and organize all your projects')
                 ])),
                 m('.col-xs-4.p-sm', m('.pull-right', m.component(AddProject, {
-                    buttonTemplate: m('.btn.btn-success.btn-success-high-contrast.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
+                    buttonTemplate: m('.btn.btn-success.f-w-xl[data-toggle="modal"][data-target="#addProject"]', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-project', 'open-add-project-modal');
                     }}, 'Create Project'),
                     parentID: null,
@@ -1167,10 +1215,12 @@ var MyProjects = {
                 m.component(Filters, ctrl)
             ]) : '',
             m('.db-main', { style : poStyle },[
-                ctrl.loadValue() < 100 ? m('.line-loader', [
+                ctrl.loadValue() < 100 && ctrl.currentView().fetcher.total && ctrl.currentView().fetcher.counted ? m('.line-loader', [
                     m('.line-empty'),
-                    m('.line-full.bg-color-blue', { style : 'width: ' + ctrl.loadValue() +'%'}),
-                    m('.load-message', 'Fetching more projects')
+                    m('', { style : 'width: ' + ctrl.loadValue() +'%;', class: 'line-full ' + (ctrl.currentView().fetcher._continue ? 'bg-color-green': 'bg-color-blue')}, m('span.progress')),
+                    m('.spinner-loading-wrapper', {},
+                        m('#load-message.ball-scale.ball-scale-blue.scroll-ball', { style : ctrl.currentView().fetcher._continue ? 'display: block': 'display: none'}, m(''), m(''), m(''))
+                    )
                 ]) : '',
                 ctrl.nonLoadTemplate(),
                 m('.db-poOrganizer', {
@@ -1458,7 +1508,7 @@ var Collections = {
                     'data-index' : index,
                     onclick : collectionOnclick.bind(null, item)
                   },[
-                        m('span', item.label + childCount),
+                        m('span.high-contrast-link-italic', item.label + childCount),
                         submenuTemplate
                     ]
                 ));
@@ -1466,14 +1516,14 @@ var Collections = {
             return list;
         };
         var collectionListTemplate = [
-            m('h5.clearfix', [
+            m('p.clearfix', [
                 'Collections ',
                  viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
                     'data-toggle':  'tooltip',
                     'title':  'Collections are groups of projects. You can create custom collections. Drag and drop your projects or bookmarked projects to add them.',
                     'data-placement' : 'bottom'
                 }, ''),
-                !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"].m-h-xs', {onclick: function() {
+                !viewOnly ? m('button.btn.btn-xs.btn-default[data-toggle="modal"][data-target="#addColl"][aria-label="Add Collection"].m-h-xs', {onclick: function() {
                         $osf.trackClick('myProjects', 'add-collection', 'open-add-collection-modal');
                     }}, m('i.fa.fa-plus')) : '',
                 m('.pull-right',
@@ -1721,7 +1771,7 @@ var Breadcrumbs = {
                         m('i.fa.fa-angle-right')
                     ]),
                     m('li', [
-                      m('span.btn', items[items.length-1].label),
+                      m('span.btn.high-contrast-link', items[items.length-1].label),
                       contributorsTemplate,
                       tagsTemplate
                     ])
@@ -1817,7 +1867,7 @@ var Breadcrumbs = {
                         }
                         return [
                             m('li', [
-                                m('span.btn', $osf.decodeText(item.label)),
+                                m('span.btn.high-contrast-link', $osf.decodeText(item.label)),
                                 contributorsTemplate,
                                 tagsTemplate,
                                 m('i.fa.fa-angle-right')
@@ -1829,7 +1879,7 @@ var Breadcrumbs = {
                 item.index = index; // Add index to update breadcrumbs
                 item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',[
-                    m('span.btn.btn-link', {onclick : updateFilesOnClick.bind(null, item)},  $osf.decodeText(item.label)),
+                    m('span.btn.btn-link.high-contrast-link-italic', {onclick : updateFilesOnClick.bind(null, item)},  $osf.decodeText(item.label)),
                     index === 0 && arr.length === 1 ? [contributorsTemplate, tagsTemplate] : '',
                     m('i.fa.fa-angle-right'),
                     ]
@@ -1889,14 +1939,14 @@ var Filters = {
                 item = args.nameFilters[i];
                 selectedCSS = args.currentView().contributor.indexOf(item) !== -1 ? '.active' : '';
                 list.push(m('li.pointer' + selectedCSS, {onclick : filterContributor.bind(null, item)},
-                    m('span', item.label)
+                    m('span.high-contrast-link-italic', item.label)
                 ));
             }
             return list;
         };
         var returnTagFilters = function _returnTagFilters(){
             if (args.currentView().fetcher.isEmpty() || args.tagFilters.length < 1)
-                return m('.text-muted.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
+                return m('.high-contrast-link.text-smaller', 'No tags to display in this collection. Project administrators and write contributors can add tags.');
 
             var list = [];
             var selectedCSS;
@@ -1913,7 +1963,7 @@ var Filters = {
                 item = args.tagFilters[i];
                 selectedCSS = args.currentView().tag.indexOf(item) !== -1  ? '.active' : '';
                 list.push(m('li.pointer' + selectedCSS, {onclick : filterTag.bind(null, item)},
-                    m('span', item.label
+                    m('span.high-contrast-link-italic', item.label
                     )
                 ));
             }
@@ -1921,27 +1971,29 @@ var Filters = {
         };
         return m('.db-filters.m-t-lg',
             [
-                m('h5.m-t-sm', [
+                m('p.m-t-sm', [
                     'Contributors ',
-                    args.viewOnly ? '' : m('i.fa.fa-question-circle.text-muted', {
+                    m('.pull-right',
+                        args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
+                    ),
+                    m('.m-t-sm.m-r-sm.m-b-md.font-italic', {style : {'font-style': 'italic' }}, 'Only contributors on loaded resources are filterable.'),
+                    args.viewOnly ? '' : m('i.fa.fa-question-circle', {
                         'data-toggle':  'tooltip',
                         'title': 'Click a contributor\'s name to see projects that you have in common.',
                         'data-placement' : 'bottom'
-                    }, ''),
-                    m('.pull-right',
-                        args.nameFilters.length && ctrl.nameTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.nameCurrentPage, totalPages : ctrl.nameTotalPages, type: 'contributors'}) : ''
-                        )
+                    }, '')
                 ]),
                 m('ul', [
                     args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnNameFilters()
                 ]),
-                m('h5.m-t-sm', [
+                m('p.m-t-sm', [
                     'Tags',
                     m('.pull-right',
                         args.tagFilters.length && ctrl.tagTotalPages() > 1 ? m.component(MicroPagination, { currentPage : ctrl.tagCurrentPage, totalPages : ctrl.tagTotalPages, type: 'tags' }) : ''
-                        )
+                    ),
+                    m('.text-muted.m-t-sm.m-r-sm.m-b-md.', {style : {'font-style': 'italic' }}, 'Only tags on loaded resources are filterable')
                 ]), m('ul', [
-                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
+                    args.currentView().fetcher.loaded === 0 && !args.currentView().fetcher.isEmpty() ? m('li.ball-beat.text-center.m-t-md', m('')) : returnTagFilters()
                 ])
             ]
         );
@@ -2017,7 +2069,7 @@ var Information = {
                             ]),
                             item.attributes.tags.length > 0 ?
                             m('p.m-t-md', [
-                                m('h5', 'Tags'),
+                                m('p', 'Tags'),
                                 item.attributes.tags.map(function(tag){
                                     return m('a.tag', { href : '/search/?q=(tags:' + tag + ')', onclick: function(){
                                         $osf.trackClick('myProjects', 'information-panel', 'navigate-to-search-by-tag');

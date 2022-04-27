@@ -10,7 +10,6 @@ from osf.utils import permissions as osf_permissions
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestReviewActionCreateRoot(object):
     def create_payload(self, reviewable_id=None, **attrs):
         payload = {

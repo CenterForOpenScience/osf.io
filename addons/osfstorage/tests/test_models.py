@@ -930,7 +930,6 @@ class TestOsfStorageFileVersion(StorageTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOsfStorageCheckout(StorageTestCase):
     def setUp(self):
         super(TestOsfStorageCheckout, self).setUp()

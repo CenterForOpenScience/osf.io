@@ -26,14 +26,7 @@ class RegistrationBulkUploadJob(BaseModel):
     payload_hash = models.CharField(blank=False, null=False, unique=True, max_length=255)
 
     # The status/state of the bulk upload
-    state = models.IntegerField(choices=[
-        (JobState.PENDING, JobState.PENDING.name),
-        (JobState.INITIALIZED, JobState.INITIALIZED.name),
-        (JobState.PICKED_UP, JobState.PICKED_UP.name),
-        (JobState.DONE_FULL, JobState.DONE_FULL.name),
-        (JobState.DONE_PARTIAL, JobState.DONE_PARTIAL.name),
-        (JobState.DONE_ERROR, JobState.DONE_ERROR.name),
-    ], default=JobState.PENDING)
+    state = models.IntegerField(choices=[(state, state.name) for state in JobState], default=JobState.PENDING)
 
     # The user / admin who started this bulk upload
     initiator = models.ForeignKey('OSFUser', blank=False, null=True, on_delete=models.CASCADE)
@@ -48,7 +41,13 @@ class RegistrationBulkUploadJob(BaseModel):
     email_sent = NonNaiveDateTimeField(blank=True, null=True)
 
     @classmethod
-    def create(cls, payload_hash, initiator, provider, schema):
-        upload = cls(payload_hash=payload_hash, state=JobState.PENDING,
-                     initiator=initiator, provider=provider, schema=schema, email_sent=None)
+    def create(cls, payload_hash, initiator, provider, schema, state=JobState.PENDING, email_sent=None):
+        upload = cls(
+            payload_hash=payload_hash,
+            state=state,
+            initiator=initiator,
+            provider=provider,
+            schema=schema,
+            email_sent=email_sent,
+        )
         return upload

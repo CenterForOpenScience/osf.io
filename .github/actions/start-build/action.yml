@@ -26,6 +26,9 @@ runs:
       invoke requirements --dev --addons
       pip uninstall uritemplate.py --yes
       pip install uritemplate.py==0.3.0
-      sudo npm install -g bower
-      npm install @centerforopenscience/list-of-licenses@^1.1.0
-      bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"
+      # use yarn add --exact to match versions in yarn.lock w/o installing all deps
+      yarn add --exact bower@^1.8.8
+      yarn add --exact @centerforopenscience/list-of-licenses@^1.1.0
+      # styles.git is a ruby project that contains a lot of useful data files. This
+      # just clones the repo into bower_components, where we can access them.
+      ./node_modules/.bin/bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"

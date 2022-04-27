@@ -1,0 +1,20 @@
+{% if perms.osf.mark_spam %}
+    {% if node.spam_status and node.spam_status == 1 %}
+        <form action="{% url 'nodes:confirm-unflag' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/unflag_modal.html" with node=node %}
+        </form>
+    {% endif %}
+    {% if node.spam_status != 2 %}
+        <form action="{% url 'nodes:confirm-spam' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/spam_modal.html" with node=node %}
+        </form>
+    {% endif %}
+    {% if node.spam_status != 4  %}
+        <form action="{% url 'nodes:confirm-ham' guid=node.guid %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            {% include "nodes/ham_modal.html" with node=node %}
+        </form>
+    {% endif %}
+{% endif %}

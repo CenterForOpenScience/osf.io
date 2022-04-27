@@ -41,12 +41,15 @@ class GetSpamDataCSV(ManagementCommandPermissionView):
     def post(self, request, *args, **kwargs):
         days = int(request.POST.get('days_get', 0))
         models = []
+        fast = False
         if request.POST.get('preprint_get', None):
             models.append(Preprint)
         if request.POST.get('node_get', None):
             models.append(Node)
         if request.POST.get('registration_get', None):
             models.append(Registration)
+        if request.POST.get('fast_get', None):
+            fast = True
         regex = request.POST.get('regex_get', None)
         if not days:
             messages.error(request, 'A number of days over 0 must be specified. Check your inputs and try again')
@@ -58,7 +61,7 @@ class GetSpamDataCSV(ManagementCommandPermissionView):
             messages.error(request, 'A regular expression input must be specified. Check your inputs and try again')
             return redirect(reverse('management:commands'))
         response = HttpResponse(content_type='text/csv')
-        manage_spammy_content(regex, days, models, response_object=response)
+        manage_spammy_content(regex, days, models, response_object=response, fast=fast)
         filename = 'spam_document.csv'
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response

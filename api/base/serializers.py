@@ -21,7 +21,14 @@ from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint
+from osf.models import (
+    AbstractNode,
+    DraftRegistration,
+    MaintenanceState,
+    Preprint,
+    Guid,
+    BaseFileNode,
+)
 from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
@@ -407,11 +414,28 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = self.get_id(self.root.instance)
                 if id_field != data:
-                    raise api_exceptions.Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
+                    raise api_exceptions.Conflict(
+                        detail=(
+                            f'The id you used in the URL, "{id_field}", does not match the id you used in the json'
+                            f' body\'s id field, "{data}". The object "{id_field}" exists, otherwise you\'d get a'
+                            f' 404, so most likely you need to change the id field to match.'
+                        ),
+                    )
         return super(IDField, self).to_internal_value(data)
 
     def get_id(self, obj):
         return getattr(obj, self.source, '_id')
+
+
+class GuidOrIDField(IDField):
+
+    def get_id(self, obj):
+        if isinstance(obj, BaseFileNode) and self.source == '_id':
+            guid = Guid.load(self.context['view'].kwargs['file_id'])
+            if guid:
+                return guid._id
+
+        return super().get_id(obj)
 
 
 class TypeField(ser.CharField):
@@ -961,6 +985,10 @@ class TargetField(ser.Field):
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id',
         },
+        'registration': {
+            'view': 'registrations:registration-detail',
+            'lookup_kwarg': 'node_id',
+        },
         'preprint': {
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
@@ -988,11 +1016,15 @@ class TargetField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get(resource.target.referent._name, None)
+        if hasattr(resource.target, 'referent'):
+            name = resource.target.referent._name
+        else:
+            name = resource.target.__class__.__name__.lower()
+
+        view_info = self.view_map.get(name, None)
         if not view_info:
-            raise api_exceptions.TargetNotSupportedError('{} is not a supported target type'.format(
-                resource.target._name,
-            ))
+            raise api_exceptions.TargetNotSupportedError(f'{name} is not a supported target type')
+
         if not view_info['view']:
             return None, None, None
         embed_value = resource.target._id
