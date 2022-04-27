@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import json
 from operator import itemgetter
 
+from django.db.models import Q
 from django.http import Http404
 from django.core import serializers
 from django.shortcuts import redirect
@@ -20,10 +21,11 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
-from osf.models import Institution, Node, OSFUser, UserQuota
+from osf.models import Institution, Node, OSFUser, UserQuota, Email
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
+import csv
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -327,17 +329,72 @@ class QuotaUserList(ListView):
         return super(QuotaUserList, self).get_context_data(**kwargs)
 
 
-class UserListByInstitutionID(QuotaUserList, PermissionRequiredMixin):
+class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+
+    def get(self, request, **kwargs):
+        institution_id = self.kwargs['institution_id']
+        response = HttpResponse(content_type='text/tsv')
+        writer = csv.writer(response, delimiter='\t')
+        writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
+
+        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+            max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
+            remaining_quota = max_quota_bytes - used_quota
+
+            writer.writerow([user.guids.first()._id, user.username,
+                             user.fullname,
+                             round(float(used_quota) / max_quota_bytes * 100, 1),
+                             round(used_quota, 0),
+                             round(remaining_quota, 0),
+                             round(max_quota_bytes, 0)])
+        query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
+            institution_id)
+        response['Content-Disposition'] = query
+        return response
+
+
+class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     template_name = 'institutions/list_institute.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 10
 
     def get_userlist(self):
-        user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
-        return user_list
+        guid = self.request.GET.get('guid')
+        name = self.request.GET.get('info')
+        email = self.request.GET.get('email')
+        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+
+        if not email and not guid and not name:
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+
+        query_email = query_guid = query_name = None
+
+        if email:
+            existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
+            query_email = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
+        if guid:
+            query_guid = queryset.filter(guids___id=guid)
+        if name:
+            query_name = queryset.filter(Q(fullname__icontains=name) |
+                                         # Q(family_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(given_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(middle_names_ja__icontains=name) |  # add in (1)4.1.4
+                                         Q(given_name__icontains=name) |
+                                         Q(middle_names__icontains=name) |
+                                         Q(family_name__icontains=name))
+
+        if query_email is not None and query_email.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_email]
+        elif query_guid is not None and query_guid.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_guid]
+        elif query_name is not None and query_name.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_name]
+        else:
+            return []
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])

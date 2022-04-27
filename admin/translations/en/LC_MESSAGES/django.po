@@ -3096,6 +3096,21 @@ msgstr ""
 #~ msgid "Institutions"
 #~ msgstr ""
 
+msgid "Export All Users Statistics (TSV)"
+msgstr ""
+
+msgid "EmailLabel"
+msgstr "Username"
+
+msgid "InfoLabel"
+msgstr "Fullname"
+
+msgid "keyword"
+msgstr ""
+
+msgid "Please enter an valid email"
+msgstr ""
+
 msgid "User-Emails"
 msgstr ""
 
