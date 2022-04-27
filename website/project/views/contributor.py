@@ -38,6 +38,7 @@ from framework.auth.campaigns import NODE_SOURCE_TAG_CLAIMED_TAG_RELATION
 from api.base.settings import LOGIN_BY_EPPN
 from api.institutions.authentication import NEW_USER_NO_NAME, send_welcome
 from nii.mapcore import mapcore_sync_is_enabled, mapcore_sync_map_group
+from datetime import datetime, timedelta
 
 
 @collect_auth
@@ -195,6 +196,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             contributor.add_unclaimed_record(node, referrer=auth.user,
                 given_name=fullname,
                 email=email)
+            contributor.temp_account = True
             contributor.save()
 
         contribs.append({
@@ -214,6 +216,15 @@ def finalize_invitation(node, contributor, auth, email_template='default'):
     else:
         if record['email']:
             send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
+
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_not_be_registration
+def project_contributor_re_invite(auth, node, **kwargs):
+    guid = request.json.get('guid')
+    contributor = OSFUser.load(guid)
+    finalize_invitation(node, contributor, auth, email_template='default')
 
 
 @must_be_valid_project
@@ -918,6 +929,22 @@ def claim_user_form(auth, **kwargs):
     HTTP Method: GET, POST
     """
 
+    cancel_request = request.form.get('cancel') or request.args.get('cancel')
+    if cancel_request == 'true':
+        contributor_id, node_id = kwargs['uid'], kwargs['pid']
+        contributor = OSFUser.load(contributor_id)
+        if contributor is None:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Contributor not found.'})
+        redirect_url = request.host_url + 'dashboard'
+        node = AbstractNode.load(node_id)
+        nodes_removed = node.cancel_invite(contributor)
+        # remove_contributor returns false if there is not one admin or visible contributor left after the move.
+        if not nodes_removed:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                'message_long': 'Could not remove contributor.'})
+
+        return redirect(redirect_url)
+
     uid, pid = kwargs['uid'], kwargs['pid']
     token = request.form.get('token') or request.args.get('token')
     user = OSFUser.load(uid)
@@ -940,6 +967,13 @@ def claim_user_form(auth, **kwargs):
             uid=uid, pid=pid, token=token))
 
     unclaimed_record = user.unclaimed_records[pid]
+    expire_time = unclaimed_record['expires']
+    time_now = datetime.now(timezone.utc)
+    if expire_time < time_now:
+        unclaimed_record['expires'] = datetime.now(timezone.utc) + timedelta(minutes=5)
+        user.unclaimed_records[pid] = unclaimed_record
+        user.save()
+        return redirect(web_url_for('claim_user_activate', uid=uid, pid=pid))
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
     # The email can be the original referrer email if no claimer email has been specified.
@@ -996,6 +1030,14 @@ def claim_user_form(auth, **kwargs):
         'form': forms.utils.jsonify(form) if is_json_request() else form,
         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     }
+
+
+def claim_user_activate(**kwargs):
+    uid, pid = kwargs['uid'], kwargs['pid']
+    user = OSFUser.load(uid)
+    url = user.get_claim_url(project_id=pid)
+
+    return {'url': url}
 
 
 def _add_related_claimed_tag_to_user(pid, user):

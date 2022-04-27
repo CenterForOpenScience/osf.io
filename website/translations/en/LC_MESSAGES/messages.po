@@ -3900,3 +3900,15 @@ msgstr ""
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr ""
+
+msgid "Invitation Code"
+msgstr ""
+
+msgid "Activate code"
+msgstr ""
+
+msgid "The Invitation Code has expired..."
+msgstr ""
+
+msgid "Please click the button below if you would like to receive an invitation to the project again."
+msgstr ""

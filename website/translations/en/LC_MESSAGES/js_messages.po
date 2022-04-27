@@ -7235,5 +7235,20 @@ msgstr ""
 #~ msgid "${user}updated file ${path} in Dropbox Business in ${node}"
 #~ msgstr ""
 
+msgid "Do you want to active account?"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Sent"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Invitation failed"
+msgstr ""
+
 #~ msgid "Not selected"
 #~ msgstr ""
