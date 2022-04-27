@@ -83,7 +83,7 @@
          "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content."
       },
       {
-         "block_type":"long-text-input",
+         "block_type":"long-text-input"
       },
       {
          "block_type":"question-label",
