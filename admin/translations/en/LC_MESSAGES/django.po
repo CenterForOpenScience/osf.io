@@ -3108,11 +3108,44 @@ msgstr "Fullname"
 msgid "keyword"
 msgstr ""
 
+msgid "Please enter an valid email"
+msgstr ""
+
+msgid "User-Emails"
+msgstr ""
+
 msgid "Please enter only contain alphanumeric in lowercase"
 msgstr ""
 
 msgid "Please enter an email address"
 msgstr ""
 
-msgid "Please enter an valid email"
+msgid "User Emails Setting"
+msgstr ""
+
+msgid "EPPN"
+msgstr ""
+
+msgid "Affiliation"
+msgstr ""
+
+msgid "User Emails"
+msgstr ""
+
+msgid "Email address"
+msgstr "Primary Email Address"
+
+msgid "Add email as Primary"
+msgstr "Add"
+
+msgid "Primary"
+msgstr ""
+
+msgid "Set Primary"
+msgstr ""
+
+msgid "Search Results"
+msgstr ""
+
+msgid "Recalculate quota"
 msgstr ""

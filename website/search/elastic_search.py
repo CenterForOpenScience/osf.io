@@ -36,7 +36,12 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters, es_escape, convert_query_string, unicode_normalize, quote
+from website.search.util import (
+    build_query, clean_splitters,
+    es_escape, convert_query_string,
+    unicode_normalize, quote,
+    validate_email
+)
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -1293,6 +1298,7 @@ def update_user(user, index=None):
         'ongoing_school': ongoing_school,
         'ongoing_school_department': ongoing_school_department,
         'ongoing_school_degree': ongoing_school_degree,
+        'emails': list(user.emails.values_list('address', flat=True))
     }
 
     client().index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
@@ -1790,7 +1796,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             current_user.affiliated_institutions.values_list('_id', flat=True)
         ))
 
-    results = search(build_query(query, start=start, size=size, sort=None, user_guid=escaped_query), index=None, doc_type='user', normalize=False, private=True)
+    match_key = 'emails' if validate_email(escaped_query) else 'id'
+    query_object = build_query(query, start=start, size=size, sort=None, match_value=escaped_query, match_key=match_key)
+    results = search(query_object, index=None, doc_type='user', normalize=False, private=True)
     docs = results['results']
     pages = math.ceil(results['counts'].get('user', 0) / size)
     validate_page_num(page, pages)

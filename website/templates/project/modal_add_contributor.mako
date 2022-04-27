@@ -196,9 +196,9 @@
                                         ${_('<a %(gotoInvite)s>add <strong><em %(textQuery)s></em></strong> as an unregistered contributor</a>.') % dict(gotoInvite='href="#" data-bind="click:gotoInvite"',textQuery='data-bind="text: query"') | n}
                                     </div>
                                 </div>
-                                <div data-bind="if: emailSearch">
+                                <%doc><div data-bind="if: emailSearch">
                                     <p>${_("It looks like you are trying to search by email address. Please try your search again using your collaborator's name. You will be able to add users without GakuNin RDM accounts as unregistered contributors.")}</p>
-                                </div>
+                                </div></%doc>
                             </div>
                         </div><!-- ./col-md -->
 

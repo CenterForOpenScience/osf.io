@@ -11,6 +11,7 @@ from django.forms.models import model_to_dict
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
@@ -419,3 +420,29 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
+
+
+class RecalculateQuota(RdmPermissionMixin, RedirectView):
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.is_super_admin:
+            institutions_list = Institution.objects.all()
+
+            for institution in institutions_list:
+                user_list = OSFUser.objects.filter(affiliated_institutions=institution)
+                for user in user_list:
+                    quota.update_user_used_quota(user)
+
+        return redirect('institutions:institution_list')
+
+
+class RecalculateQuotaOfUsersInInstitution(RdmPermissionMixin, RedirectView):
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.is_admin:
+            institution = self.request.user.affiliated_institutions.first()
+            if institution is not None and Region.objects.filter(_id=institution._id).exists():
+                for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+                    quota.update_user_used_quota(user, UserQuota.CUSTOM_STORAGE)
+
+        return redirect('institutions:statistical_status_default_storage')

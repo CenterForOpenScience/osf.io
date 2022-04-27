@@ -3169,11 +3169,44 @@ msgstr "氏名"
 msgid "keyword"
 msgstr "キーワード"
 
+msgid "Please enter an valid email"
+msgstr "有効な電子メールアドレスではありません。"
+
+msgid "User-Emails"
+msgstr "ユーザメール"
+
 msgid "Please enter only contain alphanumeric in lowercase"
 msgstr "英数字のみを小文字で入力してください"
 
 msgid "Please enter an email address"
 msgstr "有効な電子メールアドレスではありません。"
 
-msgid "Please enter an valid email"
-msgstr "有効な電子メールアドレスではありません。"
+msgid "User Emails Setting"
+msgstr "ユーザメール設定"
+
+msgid "EPPN"
+msgstr "利用者ID"
+
+msgid "Affiliation"
+msgstr "所属"
+
+msgid "User Emails"
+msgstr "ユーザメール"
+
+msgid "Email address"
+msgstr "プライマリメールアドレス"
+
+msgid "Add email as Primary"
+msgstr "追加"
+
+msgid "Primary"
+msgstr "プライマリ"
+
+msgid "Set Primary"
+msgstr "プライマリにする"
+
+msgid "Search Results"
+msgstr "ユーザ検索結果"
+
+msgid "Recalculate quota"
+msgstr "クォータ再計算"

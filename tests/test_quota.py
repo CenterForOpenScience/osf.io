@@ -1368,6 +1368,47 @@ class TestSaveUsedQuota(OsfTestCase):
         )
         assert_equal(user_quota.used, 4000)
 
+        
+class TestUpdateUserUsedQuota(OsfTestCase):
+    def setUp(self):
+        super(TestUpdateUserUsedQuota, self).setUp()
+        self.user = UserFactory()
+        self.user.save()
+        self.user_quota = UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200,
+                                                   used=1000)
+
+    @mock.patch.object(UserQuota, 'save')
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_with_user_quota_exist(self, mock_used, mock_user_quota_save):
+
+        mock_used.return_value = 500
+        quota.update_user_used_quota(
+            user=self.user,
+            storage_type=UserQuota.NII_STORAGE
+        )
+
+        mock_user_quota_save.assert_called()
+
+    @mock.patch('website.util.quota.used_quota')
+    def test_update_user_used_quota_method_with_user_quota_not_exist(self, mock_used):
+        another_user = UserFactory()
+        mock_used.return_value = 500
+
+        quota.update_user_used_quota(
+            user=another_user,
+            storage_type=UserQuota.NII_STORAGE
+        )
+
+        user_quota = UserQuota.objects.filter(
+            storage_type=UserQuota.NII_STORAGE,
+        ).all()
+
+        assert_equal(len(user_quota), 2)
+        user_quota = user_quota.filter(user=another_user)
+        assert_equal(len(user_quota), 1)
+        user_quota = user_quota[0]
+        assert_equal(user_quota.used, 500)
+
 
 class TestQuotaApiWaterbutler(OsfTestCase):
     def setUp(self):

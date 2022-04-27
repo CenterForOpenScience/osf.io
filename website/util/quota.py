@@ -27,19 +27,46 @@ def used_quota(user_id, storage_type=UserQuota.NII_STORAGE):
     )
     projects_ids = AbstractNode.objects.filter(
         projectstoragetype__storage_type=storage_type,
+        is_deleted=False,
         creator_id=guid.object_id
     ).values_list('id', flat=True)
-
-    files_ids = OsfStorageFileNode.objects.filter(
-        target_object_id__in=projects_ids,
-        target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
-        deleted_on=None,
-        deleted_by_id=None,
-    ).values_list('id', flat=True)
-
+    if storage_type != UserQuota.NII_STORAGE:
+        files_ids = BaseFileNode.objects.filter(
+            target_object_id__in=projects_ids,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            deleted_on=None,
+            deleted_by_id=None,
+        ).values_list('id', flat=True)
+    else:
+        files_ids = OsfStorageFileNode.objects.filter(
+            target_object_id__in=projects_ids,
+            target_content_type_id=ContentType.objects.get_for_model(AbstractNode),
+            deleted_on=None,
+            deleted_by_id=None,
+        ).values_list('id', flat=True)
     db_sum = FileInfo.objects.filter(file_id__in=files_ids).aggregate(
         filesize_sum=Coalesce(Sum('file_size'), 0))
     return db_sum['filesize_sum'] if db_sum['filesize_sum'] is not None else 0
+
+
+def update_user_used_quota(user, storage_type=UserQuota.NII_STORAGE):
+    used = used_quota(user._id, storage_type)
+
+    try:
+        user_quota = UserQuota.objects.get(
+            user=user,
+            storage_type=storage_type,
+        )
+        user_quota.used = used
+        user_quota.save()
+    except UserQuota.DoesNotExist:
+        UserQuota.objects.create(
+            user=user,
+            storage_type=storage_type,
+            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+            used=used,
+        )
+
 
 def abbreviate_size(size):
     size = float(size)
