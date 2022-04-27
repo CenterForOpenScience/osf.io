@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    <title>{% trans "RDM" %} {% trans "User-Emails" %} - {% trans "User Emails Setting" %}</title>
+{% endblock title %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/users.css"/>
+    <style type="text/css">
+        .w-label {
+            width: 130px;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .flex-container,
+        .flex-container .form-group.flex-item {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .flex-container {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .flex-container input[type=hiden],
+        .flex-container .form-group.flex-item input[type=hiden] {
+            flex: 0;
+        }
+
+        .flex-container .flex-item {
+            flex-grow: 1;
+            flex-shrink: 1;
+            flex-basis: 0;
+            white-space: nowrap;
+            margin-left: 2px;
+            margin-right: 2px;
+        }
+
+        .flex-item .flex-container,
+        .flex-item .flex-container .flex-item {
+            margin-bottom: 0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div id="error_message" class="row hidden"></div>
+        {% if request.session.message %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="alert alert-danger">
+                        {{ request.session.message }}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-12 clearfix">
+                <h3>{% trans "User details" %}</h3>
+            </div>
+            <div class="col-md-6 clearfix">
+                <table class="table table-striped" style="margin-bottom: 0;">
+                    <tbody>
+                    <tr>
+                        <td class="w-label nowrap"><strong>{% trans "Name" %}</strong></td>
+                        <td>{{ user.name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-label nowrap"><strong>{% trans "Username" %}</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="w-label nowrap"><strong>{% trans "EPPN" %}</strong></td>
+                        <td>{{ user.eppn }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6 clearfix">
+                <table class="table table-striped" style="margin-bottom: 0;">
+                    <tbody>
+                    <tr class="hidden" aria-rowspan="0"></tr>
+                    <tr>
+                        <td class="w-label nowrap"><strong>{% trans "Affiliation" %}</strong></td>
+                        <td>
+                            {% if user.affiliations is not None %}
+                                <ul style="max-height: 6em; overflow: auto; padding-left: 1em; margin: 0;">
+                                    {% for affiliation in user.affiliations %}
+                                        <li>{{ affiliation.name }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr class="hidden" aria-rowspan="0"></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 clearfix">
+                <h3>{% trans "User Emails" %}</h3>
+            </div>
+            <div class="col-md-12 clearfix">
+                <form class="form-inline flex-container"
+                      method="POST" action="{% url 'user-emails:primary' user.id %}"
+                      onsubmit="return validateForm()"
+                      style="margin-top: 15px; margin-bottom: 15px; ">
+                    <div class="form-group flex-item">
+                        <label for="primary_email" class="nowrap">{% trans "Email address" %}</label>
+                        <input type="email" class="form-control flex-item" name="primary_email"
+                               maxlength="255" minlength="6"
+                               pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+                               title="{% trans 'Please enter an email address' %}"
+                               id="primary_email" placeholder="{% trans "Email" %}">
+                    </div>
+                    <div class="form-group flex-item" style="flex-grow: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">{% trans "Add email as Primary" %}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-striped table-hover table-responsive">
+                    <thead></thead>
+                    <tbody>
+                    {% for email in user.emails %}
+                        <tr>
+                            <td>
+                                {% if email == user.username %}
+                                    <button type="button" class="btn btn-default disabled">{% trans "Primary" %}</button>
+                                {% else %}
+                                    <form id="set_primary_{{ email.id }}" method="POST" action="{% url 'user-emails:primary' user.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="primary_email" value="{{ email }}">
+                                        <button type="submit" class="btn btn-primary">{% trans "Set Primary" %}</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ email }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    <script>
+        function validateForm() {
+            return !!$('#primary_email').val();
+        }
+    </script>
+{% endblock %}
