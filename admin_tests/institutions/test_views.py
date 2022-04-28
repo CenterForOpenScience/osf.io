@@ -4,7 +4,6 @@ from django.urls import reverse
 from nose import tools as nt
 import mock
 from django.test import RequestFactory
-from django.urls import reverse
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
 
