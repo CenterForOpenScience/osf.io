@@ -7,6 +7,7 @@ import mock
 from nose import SkipTest
 from nose.tools import *  # noqa:
 
+from api.entitlements.views import LoginAvailability
 from tests.base import ApiTestCase
 from osf_tests import factories
 from osf.utils.permissions import READ, WRITE
@@ -51,7 +52,7 @@ for mod in URLS_MODULES:
 class TestApiBaseViews(ApiTestCase):
     def setUp(self):
         super(TestApiBaseViews, self).setUp()
-        self.EXCLUDED_VIEWS = [ClaimUser, MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
+        self.EXCLUDED_VIEWS = [ClaimUser, MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation, LoginAvailability]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))

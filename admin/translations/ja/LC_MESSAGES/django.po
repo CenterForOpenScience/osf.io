@@ -146,7 +146,7 @@ msgstr "本文"
 #: admin/templates/desk/customer.html:41 admin/templates/messages.html:8
 #: admin/templates/spam/detail.html:24 admin/templates/users/user.html:193
 msgid "Email"
-msgstr "eメール"
+msgstr "メール"
 
 #: admin/rdm_announcement/forms.py:22 admin/templates/messages.html:12
 msgid "Type@announcement"
@@ -865,22 +865,22 @@ msgstr "氏名"
 #: admin/templates/institutions/statistical_status_default_storage_user.html:26
 #: admin/templates/institutions/user_list_by_institute.html:21
 msgid "Ratio"
-msgstr "比"
+msgstr "使用率"
 
 #: admin/templates/institutions/statistical_status_default_storage_user.html:31
 #: admin/templates/institutions/user_list_by_institute.html:26
 msgid "Usage"
-msgstr "使用率"
+msgstr "使用容量"
 
 #: admin/templates/institutions/statistical_status_default_storage_user.html:36
 #: admin/templates/institutions/user_list_by_institute.html:31
 msgid "Remaining"
-msgstr "残り"
+msgstr "残容量"
 
 #: admin/templates/institutions/statistical_status_default_storage_user.html:41
 #: admin/templates/institutions/user_list_by_institute.html:36
 msgid "Quota"
-msgstr "割当て"
+msgstr "割当容量"
 
 #: admin/templates/institutions/user_list_by_institute.html:2
 msgid "Statistical Status of NII Storage"
@@ -905,7 +905,7 @@ msgstr "サインインしてセッションを始めてください。"
 
 #: admin/templates/login.html:35
 msgid "Email:"
-msgstr "Eメール："
+msgstr "メール："
 
 #: admin/templates/login.html:40
 msgid "Password:"
@@ -1139,7 +1139,7 @@ msgstr "1日あたりのユーザーゲイン"
 
 #: admin/templates/metrics/osf_metrics.html:56
 msgid "Registrations by Email Domain"
-msgstr "Eメールドメインによる登録"
+msgstr "メールドメインによる登録"
 
 #: admin/templates/metrics/osf_metrics.html:57
 msgid "Node Logs by User"
@@ -3080,7 +3080,7 @@ msgstr "GakuNin RDMアカウント"
 
 #: admin/templates/users/user.html:185
 msgid "Emails"
-msgstr "Eメール"
+msgstr "メール"
 
 #: admin/templates/users/user.html:190
 msgid "Primary: "
@@ -3154,5 +3154,128 @@ msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
 #~ msgid "Submit"
 #~ msgstr "検索"
 
+# text of menuitem on left-side menu
+msgid "Login Availability Control"
+msgstr "ログイン可否設定"
+
+# page title
+msgid "List of Entitlements"
+msgstr "eduPersonEntitlement の一覧"
+
+# label for eduPersonEntitlement input box
+msgid "Entitlements"
+msgstr "eduPersonEntitlement"
+
+msgid "Institutions"
+msgstr "機関"
+
+# hint text of eduPersonEntitlement input box
+msgid "Enter new entitlement"
+msgstr "新しい eduPersonEntitlement"
+
+# label for checkboxes
+msgid "login availability"
+msgstr "ログイン可否"
+
+# text for button to add another eduPersonEntitlement input box
+msgid "New entitlement"
+msgstr "入力欄を追加"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "Entitlement must be not empty"
+msgstr "eduPersonEntitlement を入力してください。"
+
+msgid "Entitlement '"
+msgstr "eduPersonEntitlement '"
+
+msgid "' already exists"
+msgstr "'は既に存在します。"
+
+msgid "' have been inputted"
+msgstr "'は重複しています。"
+
 #~ msgid "Institutions"
 #~ msgstr "機関"
+
+# msgid "Configure NII Storage Quota"
+# msgstr "NIIストレージのクォータ設定"
+
+msgid "Each user Quota for NII Storage (GB)"
+msgstr "クォータ一律設定 (GB)"
+
+msgid "Inst. Storage Quota Control"
+msgstr "機関ストレージのクォータ"
+
+msgid "Institutional Storage Quota Control"
+msgstr "機関ストレージのクォータ制御"
+
+msgid "Institutional Storage for Institutions"
+msgstr "機関ストレージ"
+
+msgid "Storage name"
+msgstr "ストレージ名"
+
+# msgid "Configure Institutional Storage Quota"
+# msgstr "機関ストレージのクォータ設定"
+
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr "クォータ一律設定 (GB)"
+
+msgid "Value must be an integer number greater than or equal 1"
+msgstr "値は1以上の整数である必要があります"
+
+msgid "Export All Users Statistics (TSV)"
+msgstr "全ユーザの統計出力 (TSV)"
+
+msgid "EmailLabel"
+msgstr "ユーザ名"
+
+msgid "InfoLabel"
+msgstr "氏名"
+
+msgid "keyword"
+msgstr "キーワード"
+
+msgid "Please enter an valid email"
+msgstr "有効な電子メールアドレスではありません。"
+
+msgid "User-Emails"
+msgstr "ユーザメール"
+
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr "英数字のみを小文字で入力してください"
+
+msgid "Please enter an email address"
+msgstr "有効な電子メールアドレスではありません。"
+
+msgid "User Emails Setting"
+msgstr "ユーザメール設定"
+
+msgid "EPPN"
+msgstr "利用者ID"
+
+msgid "Affiliation"
+msgstr "所属"
+
+msgid "User Emails"
+msgstr "ユーザメール"
+
+msgid "Email address"
+msgstr "プライマリメールアドレス"
+
+msgid "Add email as Primary"
+msgstr "追加"
+
+msgid "Primary"
+msgstr "プライマリ"
+
+msgid "Set Primary"
+msgstr "プライマリにする"
+
+msgid "Search Results"
+msgstr "ユーザ検索結果"
+
+msgid "Recalculate quota"
+msgstr "クォータ再計算"

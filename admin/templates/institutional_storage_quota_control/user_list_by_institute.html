@@ -1,0 +1,212 @@
+{% load i18n %}
+<h2 id="title">{% trans "Institutional Storage Quota Control" %}</h2>
+{% if requested_user.is_superuser %}
+    <h3>{{ institution_storage_name }} &gt; GakuNin RDM IdP</h3>
+{% elif requested_user.is_staff %}
+    <h3>{% trans "Institutional Storage Quota Control" %}<span id="sub-gray-title" style="font-size: 16px;color: gray;">GakuNin RDM idP</span></h3>
+{% endif %}
+
+<style type="text/css">
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    .form-group.flex-item {
+        max-width: 20em !important;
+    }
+
+    .flex-container,
+    .flex-container .form-group.flex-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .flex-container {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-container input[type=hiden],
+    .flex-container .form-group.flex-item input[type=hiden] {
+        flex: 0;
+    }
+
+    .row.flex-container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .flex-container .flex-item {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0;
+        white-space: nowrap;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .flex-item .flex-container,
+    .flex-item .flex-container .flex-item {
+        margin-bottom: 0;
+    }
+
+    .pagination-extra-div.flex-container .pagination {
+        margin: 0;
+    }
+
+    .pagination-extra-div.flex-container > .flex-item {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
+    }
+
+    @media screen and (max-width: 991px) {
+        .pagination-extra-div.flex-container > .flex-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .pagination-extra-div > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .pagination-extra-div.flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .pagination-extra-div .form-group.flex-item {
+            margin-top: 0;
+        }
+    }
+
+    @media screen and (max-width: 767px) {
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+
+        .form-inline.flex-container .form-group.flex-item label {
+            min-width: 140px;
+            flex-grow: 1;
+        }
+    }
+</style>
+
+<div class="row flex-container pagination-extra-div">
+    <div class="flex-item" style="flex-grow: 0;">
+        {% include "util/pagination.html" with items=page status=direction order=order_by %}
+    </div>
+    <div class="flex-item text-right" style="margin-left: 4em;">
+        <form role="form" id="institutional_storage_form"
+              class="form-inline flex-container"
+              action="{% url 'institutional_storage_quota_control:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
+            <div class="form-group flex-item"
+                 style="max-width: initial !important; justify-content: end;">
+                {% csrf_token %}
+                <label for="storageLimit" class="flex-item" style="flex-grow: 0;">
+                    {% trans "Each user Quota for Institutional Storage (GB)" %}
+                </label>
+                <input type="number" name="maxQuota"
+                       id="storageLimit" class="form-control flex-item"
+                       style="width:70px; max-width: 115px; margin-left: 2px;"
+                       min="1" required="" value="100"
+                       oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
+                       oninput="setCustomValidity('')"
+                />
+                <button type="submit"
+                        style="margin-left: 2px; flex-grow: 0;"
+                        class="btn btn-primary next-btn flex-item">{% trans 'Apply' %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+        <tr>
+            <th>GUID</th>
+            {% if requested_user.is_staff and not requested_user.is_superuser %}
+                <th class="nowrap">
+                    {% trans "eduPersonPrincipleName" %}
+                    <a href="?order_by=eppn&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                    <span class="dropup"><a href="?order_by=eppn&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+                </th>
+            {% endif %}
+            <th class="nowrap">
+                {% trans "Username" %}
+                <a href="?order_by=username&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th class="nowrap">
+                {% trans "Fullname" %}
+                <a href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th class="nowrap">
+                {% trans "Ratio" %}
+                <a href="?order_by=ratio&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th class="nowrap">
+                {% trans "Usage" %}
+                <a href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th class="nowrap">
+                {% trans "Remaining" %}
+                <a href="?order_by=remaining&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+            <th class="nowrap">
+                {% trans "Quota" %}
+                <a href="?order_by=quota&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>
+                    <a href="{% url 'users:user' user.id %}"
+                       class="btn btn-primary">
+                        {{ user.id }}
+                    </a>
+                </td>
+                {% if requested_user.is_staff and not requested_user.is_superuser %}
+                    <td>
+                        {% if user.eppn %}
+                            {{ user.eppn }}
+                        {% endif %}
+                    </td>
+                {% endif %}
+                <td>{{ user.username }}</td>
+                <td>{{ user.fullname }}</td>
+                <td>{{ user.ratio|floatformat:1 }}%</td>
+                <td>{{ user.usage_value|floatformat:1 }} {{ user.usage_abbr }}</td>
+                <td>{{ user.remaining_value|floatformat:1 }} {{ user.remaining_abbr }}</td>
+                <td>{{ user.quota }} GB</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script src="/static/js/carets.js"></script>

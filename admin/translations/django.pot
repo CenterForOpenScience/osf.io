@@ -3110,3 +3110,126 @@ msgstr ""
 #, python-format
 msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
 msgstr ""
+
+# text of menuitem on left-side menu
+msgid "Login Availability Control"
+msgstr ""
+
+# page title
+msgid "List of Entitlements"
+msgstr ""
+
+# label for eduPersonEntitlement input box
+msgid "Entitlements"
+msgstr ""
+
+msgid "Institutions"
+msgstr ""
+
+# hint text of eduPersonEntitlement input box
+msgid "Enter new entitlement"
+msgstr ""
+
+# label for checkboxes
+msgid "login availability"
+msgstr ""
+
+# text for button to add another eduPersonEntitlement input box
+msgid "New entitlement"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Entitlement must be not empty"
+msgstr ""
+
+msgid "Entitlement '"
+msgstr ""
+
+msgid "' already exists"
+msgstr ""
+
+msgid "' have been inputted"
+msgstr ""
+
+# msgid "Configure NII Storage Quota"
+# msgstr ""
+
+msgid "Each user Quota for NII Storage (GB)"
+msgstr ""
+
+msgid "Inst. Storage Quota Control"
+msgstr ""
+
+msgid "Institutional Storage Quota Control"
+msgstr ""
+
+msgid "Institutional Storage for Institutions"
+msgstr ""
+
+msgid "Storage name"
+msgstr ""
+
+# msgid "Configure Institutional Storage Quota"
+# msgstr ""
+
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr ""
+
+msgid "Value must be an integer number greater than or equal 1"
+msgstr ""
+
+msgid "Export All Users Statistics (TSV)"
+msgstr ""
+
+msgid "EmailLabel"
+msgstr ""
+
+msgid "InfoLabel"
+msgstr ""
+
+msgid "keyword"
+msgstr ""
+
+msgid "Please enter an valid email"
+msgstr ""
+
+msgid "User-Emails"
+msgstr ""
+
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr ""
+
+msgid "Please enter an email address"
+msgstr ""
+
+msgid "User Emails Setting"
+msgstr ""
+
+msgid "EPPN"
+msgstr ""
+
+msgid "Affiliation"
+msgstr ""
+
+msgid "User Emails"
+msgstr ""
+
+msgid "Email address"
+msgstr ""
+
+msgid "Add email as Primary"
+msgstr ""
+
+msgid "Primary"
+msgstr ""
+
+msgid "Set Primary"
+msgstr ""
+
+msgid "Search Results"
+msgstr ""
+
+msgid "Recalculate quota"
+msgstr ""

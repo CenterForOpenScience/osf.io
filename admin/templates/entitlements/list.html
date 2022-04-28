@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load static %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+    <style type="text/css">
+        .flex-container {
+            display: flex;
+        }
+
+        .flex-container .flex-item {
+            flex: 1;
+        }
+
+        .max-w-600 {
+            max-width: 600px;
+        }
+
+        .w-label {
+            min-width: 160px;
+            max-width: 200px;
+        }
+
+        @media (min-width: 768px) {
+            .xs-flex-container {
+                display: flex;
+            }
+
+            .xs-flex-container .xs-flex-item {
+                flex: 1;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "List of Entitlements" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <h2>{% trans "Entitlements" %}</h2>
+
+    <div class="row">
+        <div id="error_message" class="col-md-12">
+            {% if request.session.message %}
+                <div class="alert alert-danger">
+                    {{ request.session.message }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <form action="{% url "entitlements:bulk_add" %}" method="post" class="form-horizontal"
+          onsubmit="check_entitlements(event)"
+          id="entitlements_form">
+        {% csrf_token %}
+        <div class="form-group xs-flex-container">
+            <label for="institution_id" class="col-sm-2 control-label xs-flex-item w-label">{% trans 'Institutions' %}</label>
+            <div class="col-sm-9 max-w-600">
+                <select id="institution_id" name="institution_id" class="form-control">
+                    {% for institution in institutions %}
+                        <option value="{{ institution.id }}" {% if selected_id == institution.id %}selected="selected"{% endif %}>{{ institution.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group xs-flex-container">
+            <label for="entitlements" class="col-sm-2 control-label xs-flex-item w-label">{% trans 'Entitlements' %}</label>
+            <div class="form-inline col-sm-9 max-w-600" id="entitlements_block" style="max-height: 132px; overflow: auto;">
+                <div class="clearfix flex-container" style="margin-bottom: 15px;">
+                    <div class="input-group flex-item">
+                        <input type="text" name="entitlements" placeholder="{% trans 'Enter new entitlement' %}"
+                               minlength="1" maxlength="255" class="form-control">
+                    </div>
+                    <div class="input-group form-check">
+                        <input type="checkbox" name="login_availability" checked="checked" value="on" style="margin-left: 10px;"
+                               onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
+                               data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked">
+                        <label class="form-check-label" for="login_availability" style="padding-left: 10px;">{% trans 'login availability' %}</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group xs-flex-container">
+            <div class="col-sm-2 control-label xs-flex-item w-label"></div>
+            <div class="col-sm-9 max-w-600">
+                <button type="button" class="btn btn-default" onclick="new_entitlement_element()">{% trans 'New entitlement' %}</button>
+                <button type="submit" class="btn btn-primary" style="width: 90px;">{% trans 'Save' %}</button>
+            </div>
+        </div>
+    </form>
+    {% include "entitlements/pagination.html" with institution_id=selected_id items=page status=status %}
+
+    <table class="table table-striped table-hover table-responsive table-entitlement">
+        <thead></thead>
+        <tbody>
+        {% for entitlement in entitlements %}
+            <tr class="entitlement-row">
+                <td class="entitlement current">{% autoescape on %}{{ entitlement.entitlement }}{% endautoescape %}</td>
+                <td>
+                    <input type="checkbox"
+                           {% if entitlement.login_availability %}checked="checked"{% endif %}
+                           value="{% if entitlement.login_availability %}on{% else %}off{% endif %}"
+                           class="btn apple-switch {% if entitlement.login_availability %}checked{% endif %}"
+                           onchange="{$('#toggle_entitlement_{{ entitlement.id }}').submit()}"
+                           data-toggle="toggle" data-onstyle="success">
+                    <form id="toggle_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_toggle' selected_id entitlement.id %}?page={{ request.GET.page }}">{% csrf_token %}</form>
+                </td>
+                <td>
+                    <a class="btn btn-primary"
+                       onclick="{$('#delete_entitlement_{{ entitlement.id }}').submit()}">
+                        {% trans 'Delete' %}
+                    </a>
+                    <form id="delete_entitlement_{{ entitlement.id }}" method="POST" action="{% url 'institutions:entitlement_delete' selected_id entitlement.id %}?page={{ request.GET.page }}">{% csrf_token %}</form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock content %}
+
+{% block bottom_js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+    <script type="application/javascript">
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        document.getElementById("institution_id").addEventListener("change", function change_institution() {
+            window.location = window.location.origin + "{% url 'institutions:entitlements' %}" + '?institution_id=' + document.getElementById("institution_id").value;
+        });
+
+        function new_entitlement_element() {
+            let entitlements_html = `<div class="clearfix" style="margin-bottom: 15px; display:flex;"> <div class="input-group" style="flex:1;">
+            <input type="text" name="entitlements" placeholder="{% trans "Enter new entitlement" %}" minlength="1" maxlength="255" class="form-control"> </div>
+            <div class="input-group form-check"> <input type="checkbox" name="login_availability" checked="checked" value="on" style="margin-left:10px"
+            onchange="{this.classList.toggle('checked'); this.value = this.classList.contains('checked') ? 'on' : 'off'; this.checked= true;}"
+            data-toggle="toggle" data-onstyle="success" class="btn apple-switch checked"> <label class="form-check-label" for="login_availability"
+            style="padding-left: 10px;">{% trans "login availability" %}</label> </div> </div>`;
+            document.getElementById("entitlements_block").append(new DOMParser().parseFromString(entitlements_html, 'text/html').body.childNodes[0])
+        }
+
+        function check_entitlements(event) {
+            $(".alert").remove();
+            let message = undefined;
+            let input_entitlements = [];
+            let current_entitlements = [];
+            $(".entitlement.current").each(function (index, element) {
+                current_entitlements.push($(element).text());
+            });
+            for (let i = 0; i < $("[name='entitlements']").length; i++) {
+                let entitlement = $($("[name='entitlements']")[i]);
+                let entitlement_input = entitlement.val().trim();
+                if (!entitlement_input.length) {
+                    message = "{% trans "Entitlement must be not empty" %}";
+                    entitlement.val('').focus();
+                    break;
+                } else if (current_entitlements.includes(entitlement_input)) {
+                    message = "{% trans "Entitlement '" %}" + entitlement_input + "{% trans "' already exists" %}";
+                    entitlement.val('').focus();
+                    break;
+                } else if (input_entitlements.includes(entitlement_input)) {
+                    message = "{% trans "Entitlement '" %}" + entitlement_input + "{% trans "' have been inputted" %}";
+                    entitlement.val('').focus();
+                    break;
+                } else {
+                    input_entitlements.push(entitlement_input);
+                }
+            }
+            let alert_html = !!message ? ("<div class='alert alert-danger'>" + escapeHtml(message) + "</div>") : undefined;
+            if (!!alert_html) {
+                event.preventDefault();
+                $("#error_message").append(new DOMParser().parseFromString(alert_html, 'text/html').body.childNodes[0]);
+            }
+        }
+    </script>
+{% endblock %}

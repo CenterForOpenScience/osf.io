@@ -703,6 +703,7 @@ SELECT json_agg(
                                         INNER JOIN osf_osfuser_affiliated_institutions
                                           ON (INST.id = osf_osfuser_affiliated_institutions.institution_id)
                                       WHERE osf_osfuser_affiliated_institutions.osfuser_id = U.id)
+            , 'emails', (SELECT array_agg(address) from osf_email WHERE osf_email.user_id = U.id)
         )
     )
 )

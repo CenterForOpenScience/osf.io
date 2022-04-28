@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/carets.css" />
+{% endblock %}
+
+{% block title %}
+<title>{{ institution_name }} - {% trans 'Institutional Storage Quota Control' %}</title>
+{% endblock title %}
+
+{% block content %}
+  {% include 'institutional_storage_quota_control/user_list_by_institute.html' %}
+    {% if not users|length %}
+     <h3>{% trans "No results found" %}</h3>
+    {% endif %}
+{% endblock content %}

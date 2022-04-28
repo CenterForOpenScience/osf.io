@@ -23,7 +23,7 @@ class TestSearchViews(OsfTestCase):
         self.project = factories.ProjectFactory(creator=robbie)
         self.contrib = factories.UserFactory(fullname='Brian May')
         for i in range(0, 12):
-            factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
+            factories.UserFactory(fullname='Serena Victoria{}'.format(i))
 
         self.user_one = factories.AuthUserFactory()
         self.user_two = factories.AuthUserFactory()
@@ -51,7 +51,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(brian['active'], self.contrib.is_active)
 
         #Test search pagination
-        res = self.app.get(url, {'query': 'fr'})
+        res = self.app.get(url, {'query': 'Serena'})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
@@ -61,7 +61,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 0)
 
         #Test default page 1
-        res = self.app.get(url, {'query': 'fr', 'page': 1})
+        res = self.app.get(url, {'query': 'Serena', 'page': 1})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
@@ -69,15 +69,15 @@ class TestSearchViews(OsfTestCase):
         assert_equal(page, 1)
 
         #Test default page 2
-        res = self.app.get(url, {'query': 'fr', 'page': 2})
+        res = self.app.get(url, {'query': 'Serena', 'page': 2})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         page = res.json['page']
-        assert_equal(len(result), 4)
+        assert_equal(len(result), 2)
         assert_equal(page, 2)
 
         #Test smaller pages
-        res = self.app.get(url, {'query': 'fr', 'size': 5})
+        res = self.app.get(url, {'query': 'Serena', 'size': 5})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
@@ -87,12 +87,12 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
         #Test smaller pages page 2
-        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        res = self.app.get(url, {'query': 'Serena', 'page': 2, 'size': 5, })
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']
         page = res.json['page']
-        assert_equal(len(result), 4)
+        assert_equal(len(result), 2)
         assert_equal(page, 2)
         assert_equal(pages, 3)
 
