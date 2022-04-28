@@ -13,7 +13,18 @@
 {% block content %}
     <h2>{% trans "List of Institutions" %}</h2>
 
-    {% include "util/pagination.html" with items=page status=status %}
+    <form action={% url 'institutions:recalculate_quota' %} method="post">
+        <div class="row">
+            <div class="col-md-6">
+                {% include "util/pagination.html" with items=page status=status %}
+            </div>
+            <div class="col-md-6">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary pull-right" style="width: 140px;">{% trans "Recalculate quota" %}</button>
+            </div>
+        </div>
+    </form>
+
     <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>

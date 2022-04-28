@@ -4010,3 +4010,15 @@ msgstr "メンバー管理"
 #~ "{addon} add-on in the new fork "
 #~ "on the settings page."
 #~ msgstr "{addon}アドオンは別のユーザーによって承認されているため、フォークすると、認証がフォークされた{category}に転送されません。設定ページの新しいフォークで{addon}アドオンを承認して設定できます。"
+
+msgid "Invitation Code"
+msgstr "招待再送信"
+
+msgid "Activate code"
+msgstr "再有効化"
+
+msgid "The Invitation Code has expired..."
+msgstr "招待の有効期限が切れています。"
+
+msgid "Please click the button below if you would like to receive an invitation to the project again."
+msgstr "プロジェクトへの招待を再度受け取りたい場合、以下のボタンをクリックしてください。"

@@ -7180,3 +7180,18 @@ msgstr ""
 #: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:345
 msgid "CantCreateXMLParser"
 msgstr ""
+
+msgid "Do you want to active account?"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Sent"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Invitation failed"
+msgstr ""

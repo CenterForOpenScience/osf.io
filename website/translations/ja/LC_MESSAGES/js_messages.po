@@ -8472,5 +8472,20 @@ msgstr ""
 msgid "CantCreateXMLParser"
 msgstr ""
 
+msgid "Do you want to active account?"
+msgstr "アカウントを有効にしますか？"
+
+msgid "Active"
+msgstr "アクティブ"
+
+msgid "Sent"
+msgstr "送信完了"
+
+msgid "Error"
+msgstr "エラー"
+
+msgid "Invitation failed"
+msgstr "招待に失敗しました"
+
 #~ msgid "Not selected"
 #~ msgstr "未選択"

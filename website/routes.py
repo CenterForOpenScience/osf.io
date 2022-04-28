@@ -894,6 +894,12 @@ def make_url_map(app):
             project_views.contributor.claim_user_form,
             OsfWebRenderer('claim_account.mako', trust=False)
         ),
+        Rule(
+            ['/user/<uid>/<pid>/claim/activate'],
+            'get',
+            project_views.contributor.claim_user_activate,
+            OsfWebRenderer('claim_account_activate.mako', trust=False)
+        ),
 
         # registered user claim account (contributor-ship of a project)
         # user will be required to verify password
@@ -1663,6 +1669,13 @@ def make_url_map(app):
             ],
             'POST',
             project_views.contributor.project_remove_contributor,
+            json_renderer,
+        ),
+
+        Rule(
+            '/project/<pid>/contributor/re_invite/',
+            'POST',
+            project_views.contributor.project_contributor_re_invite,
             json_renderer,
         ),
 

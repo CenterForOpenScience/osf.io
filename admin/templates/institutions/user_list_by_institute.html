@@ -2,61 +2,270 @@
 <h2 id="title">{% trans "Statistical Status of NII Storage" %}</h2>
 <h3 id="sub-title">{% blocktrans %}NII Storage > {{ institution_name }}{% endblocktrans %}</h3>
 
-{% include "util/pagination.html" with items=page status=direction order=order_by %}
-<table class="table table-striped table-hover table-responsive">
-    <thead>
+<style type="text/css">
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    .w-search-input {
+        width: 6em !important;
+        margin-right: 2px;
+    }
+
+    .form-group.flex-item {
+        max-width: 20em !important;
+    }
+
+    .flex-container,
+    .flex-container .form-group.flex-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .flex-container {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-container input[type=hiden],
+    .flex-container .form-group.flex-item input[type=hiden] {
+        flex: 0;
+    }
+
+    .row.flex-container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .form-group.flex-item .w-search-input,
+    .flex-container .flex-item {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0;
+        white-space: nowrap;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .flex-item .flex-container,
+    .flex-item .flex-container .flex-item {
+        margin-bottom: 0;
+    }
+
+    .pagination-extra-div.flex-container .pagination {
+        margin: 0;
+    }
+
+    .pagination-extra-div.flex-container > .flex-item {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
+    }
+
+    .search-form .flex-item + .flex-item > label {
+        margin-left: 2px;
+    }
+
+    .search-form .flex-item > label {
+        margin-right: 2px;
+    }
+
+    @media screen and (max-width: 991px) {
+        .pagination-extra-div.flex-container > .flex-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .pagination-extra-div > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .pagination-extra-div.flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .pagination-extra-div .form-group.flex-item {
+            margin-top: 0;
+        }
+    }
+
+    @media screen and (max-width: 767px) {
+        .w-search-input {
+            width: auto !important;
+        }
+
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+
+        .form-inline.flex-container .form-group.flex-item label {
+            min-width: 140px;
+            flex-grow: 1;
+        }
+    }
+</style>
+
+<form class="form-inline flex-container search-form"
+      action="{% url 'institutions:institution_user_list' institution_id %}" method="get"
+      onsubmit="return validateForm()">
+    <div class="form-group flex-item">
+        <label>{% trans "GUID" %}</label>
+        <input name="guid" type="text" class="form-control w-search-input"
+               placeholder="abcde"
+               value="{{ request.GET.guid }}"
+               maxlength="5" minlength="5"
+               pattern="[0-9a-z]{5}"
+               title="{% trans 'Please enter only contain alphanumeric in lowercase' %}"
+               id="id_guid">
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 3;">
+        <label>{% trans "EmailLabel" %}</label>
+        <input name="email" type="email" class="form-control w-search-input"
+               placeholder="john@example.com"
+               value="{{ request.GET.email }}"
+               oninvalid="this.setCustomValidity({% trans 'Please enter an valid email' %})"
+               oninput="setCustomValidity('')"
+               maxlength="255" minlength="6"
+               pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+               title="{% trans 'Please enter an email address' %}"
+               id="id_email">
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 2;">
+        <label>{% trans "InfoLabel" %}</label>
+        <input name="info" type="text" class="form-control w-search-input"
+               placeholder="john"
+               value="{{ request.GET.info }}"
+               maxlength="255"
+               id="id_name">
+    </div>
+    <div class="form-group flex-item" style="flex-grow: 0;">
+        <button class="btn btn-primary" type="submit">{% trans 'Search' %}</button>
+    </div>
+</form>
+
+<div class="row flex-container pagination-extra-div">
+    <div class="flex-item" style="flex-grow: 0;">
+        {% include "util/pagination.html" with items=page status=direction order=order_by %}
+    </div>
+    <div class="flex-item text-right" style="margin-left: 4em;">
+        <form role="form" id="institutional_storage_form"
+              class="form-inline flex-container"
+              action="{% url 'institutions:update_quota_institution_user_list' institution_id=institution_id %}" method="post">
+            <div class="form-group flex-item"
+                 style="max-width: initial !important; justify-content: end;">
+                {% csrf_token %}
+                <label for="storageLimit" class="flex-item" style="flex-grow: 0;">
+                    {% trans "Each user Quota for NII Storage (GB)" %}
+                </label>
+                <input type="number" name="maxQuota"
+                       id="storageLimit" class="form-control flex-item"
+                       style="width:70px; max-width: 115px; margin-left: 2px;"
+                       min="1" required="" value="100"
+                       oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
+                       oninput="setCustomValidity('')"
+                />
+                <button type="submit"
+                        style="margin-left: 2px; flex-grow: 0;"
+                        class="btn btn-primary next-btn flex-item">{% trans 'Apply' %}</button>
+            </div>
+        </form>
+    </div>
+    <div class="flex-item" style="flex-grow: 0; margin-left: 2em;">
+        <div>
+            <a class="btn btn-primary" style="padding-left: 6px; padding-right: 6px;"
+               href="{% url 'institutions:tsvexport' institution_id %}">{% trans "Export All Users Statistics (TSV)" %}</a>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
         <tr>
             <th>GUID</th>
-            <th>
+            <th class="nowrap">
                 {% trans "Username" %}
-                <a href="?order_by=username&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=username&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=username&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
-            <th>
+            <th class="nowrap">
                 {% trans "Fullname" %}
-                <a href="?order_by=fullname&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
-            <th>
+            <th class="nowrap">
                 {% trans "Ratio" %}
-                <a href="?order_by=ratio&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=ratio&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=ratio&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
-            <th>
+            <th class="nowrap">
                 {% trans "Usage" %}
-                <a href="?order_by=usage&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
-            <th>
+            <th class="nowrap">
                 {% trans "Remaining" %}
-                <a href="?order_by=remaining&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=remaining&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=remaining&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
-            <th>
+            <th class="nowrap">
                 {% trans "Quota" %}
-                <a href="?order_by=quota&amp;status=desc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a>
-                <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{page.number}}" class="caret caret-sort tb-sort-inactive"></a></span>
+                <a href="?order_by=quota&amp;status=desc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a>
+                <span class="dropup"><a href="?order_by=quota&amp;status=asc&amp;page={{ page.number }}" class="caret caret-sort tb-sort-inactive"></a></span>
             </th>
         </tr>
-    </thead>
-    <tbody>
+        </thead>
+        <tbody>
         {% for user in users %}
-        <tr>
-            <td>
-                <a href="{%  url 'users:user' user.id %}"
-                   class="btn btn-primary">
-                    {{ user.id }}
-                </a>
-            </td>
-            <td>{{user.username}}</td>
-            <td>{{user.fullname}}</td>
-            <td>{{user.ratio|floatformat:1}}%</td>
-            <td>{{user.usage_value|floatformat:1}} {{user.usage_abbr}}</td>
-            <td>{{user.remaining_value|floatformat:1}} {{user.remaining_abbr}}</td>
-            <td>{{user.quota}} GB</td>
-        </tr>
+            <tr>
+                <td>
+                    <a href="{% url 'users:user' user.id %}"
+                       class="btn btn-primary">
+                        {{ user.id }}
+                    </a>
+                </td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.fullname }}</td>
+                <td>{{ user.ratio|floatformat:1 }}%</td>
+                <td>{{ user.usage_value|floatformat:1 }} {{ user.usage_abbr }}</td>
+                <td>{{ user.remaining_value|floatformat:1 }} {{ user.remaining_abbr }}</td>
+                <td>{{ user.quota }} GB</td>
+            </tr>
         {% endfor %}
-    </tbody>
-</table>
+        </tbody>
+    </table>
+</div>
 
 <script src="/static/js/carets.js"></script>
+<script>
+    function validateForm() {
+        let $id_guid = $('#id_guid');
+        let $id_email = $('#id_email');
+        let $id_name = $('#id_name');
+        let id_guid = $id_guid.val().trim();
+        let id_email = $id_email.val().trim();
+        let id_name = $id_name.val().trim();
+        !id_guid && $id_guid.val('').focus();
+        !id_email && $id_email.val('').focus();
+        !id_name && $id_name.val('').focus();
+
+        return !!id_guid || (!!id_name && id_name.length <= 255) || !!id_email;
+    }
+</script>
